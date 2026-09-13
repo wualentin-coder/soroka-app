@@ -66,6 +66,21 @@
   .tick:active { background: var(--accent); }
   a { color: var(--link); text-decoration: none; }
   .empty { color: var(--dim); text-align: center; padding: 28px 0; }
+  body { max-width: 720px; margin: auto; padding: max(20px, env(safe-area-inset-top)) 16px 110px; }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; gap:12px; }
+  header h1 { font-size:24px; letter-spacing:-.7px; margin:0; }
+  button { font:inherit; cursor:pointer; }
+  button:focus-visible, a:focus-visible { outline:2px solid var(--link); outline-offset:3px; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .action { min-height:44px; padding:10px 14px; border:0; border-radius:10px; color:var(--text); background:var(--card); }
+  nav { position:fixed; bottom:0; left:0; right:0; z-index:5; margin:0; padding:10px 6px max(10px, env(safe-area-inset-bottom)); background:var(--bg); border-top:1px solid var(--dim); display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
+  nav button { min-height:48px; padding:8px 2px; font-size:12px; background:transparent; }
+  .card { padding:18px; border-radius:16px; margin-bottom:12px; }
+  .row { flex-wrap:wrap; }
+  .tick { width:44px; height:44px; border-radius:12px; }
+  h2 { text-transform:none; letter-spacing:0; font-size:16px; color:var(--text); }
+  .notice { margin:12px 0; padding:12px; border-left:3px solid var(--accent); }
+  #status { color:var(--danger); margin:12px 0; }
 </style>
 </head>
 <body>
@@ -79,7 +94,8 @@ tg?.expand();
 const API = "https://bvbjhrutbmtndmgvhzqg.functions.supabase.co/soroka-app";
 const root = document.getElementById("root");
 let data = null;
-let tab = "money";
+let tab = "today";
+let busy = false;
 
 const SIGNS = { RUB: "₽", USD: "$", EUR: "€" };
 
@@ -95,7 +111,11 @@ function money(amount, currency) {
 }
 
 function esc(text) {
-  return String(text ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  return String(text ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': '&quot;', "'": '&#39;' }[c]));
+}
+function safeLink(url) {
+  try { const parsed = new URL(url); return ['https:', 'http:'].includes(parsed.protocol) ? esc(parsed.href) : ''; }
+  catch { return ''; }
 }
 
 async function call(body) {
@@ -111,6 +131,7 @@ async function call(body) {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ initData: init, ...body }),
+    signal: AbortSignal.timeout(20000),
   });
   if (!answer.ok) throw new Error(answer.status === 401 ? "unauthorized" : "server");
   return await answer.json();
@@ -148,7 +169,7 @@ function moneyTab() {
         esc(p.title) + "</span>" +
         '<span class="sum">' + money(p.amount, p.currency) + "</span></div>"
       ).join("") +
-      '<div class="small dim" style="margin-top:9px">Подтверждаются в чате: /pay</div>'
+      '<div class="small dim" style="margin-top:9px">В чате напиши «подтвердить списания».</div>'
     ));
   }
 
@@ -216,11 +237,13 @@ function reportTab() {
   );
 }
 
-function doingTab() {
+function doingTab(todayOnly = false) {
   const out = [];
+  const tasks = todayOnly ? data.tasks.filter(t => t.due_on && t.due_on <= data.today) : data.tasks;
+  const events = todayOnly ? data.events.filter(e => new Date(e.starts_at).toLocaleDateString('en-CA', { timeZone: 'Europe/Moscow' }) === data.today) : data.events;
 
-  if (data.events.length) {
-    out.push(card("<h2>События</h2>" + data.events.map((e) => {
+  if (events.length) {
+    out.push(card("<h2>События</h2>" + events.map((e) => {
       const at = new Date(e.starts_at);
       const when = at.toLocaleString("ru-RU", {
         day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
@@ -230,11 +253,11 @@ function doingTab() {
     }).join("")));
   }
 
-  const overdue = data.tasks.filter((t) => t.due_on && t.due_on < data.today);
-  const rest = data.tasks.filter((t) => !(t.due_on && t.due_on < data.today));
+  const overdue = tasks.filter((t) => t.due_on && t.due_on < data.today);
+  const rest = tasks.filter((t) => !(t.due_on && t.due_on < data.today));
 
   const line = (t) =>
-    '<div class="item"><button class="tick" data-task="' + t.id + '">✓</button>' +
+    '<div class="item"><button class="tick" aria-label="Завершить: ' + esc(t.title) + '" data-task="' + t.id + '">✓</button>' +
     '<div class="body"><div class="title">' + esc(t.title) + "</div>" +
     (t.due_on
       ? '<div class="small ' + (t.due_on < data.today ? "danger" : "dim") + '">' +
@@ -242,22 +265,24 @@ function doingTab() {
       : "") +
     "</div></div>";
 
-  if (overdue.length) out.push(card("<h2>Просрочено</h2>" + overdue.map(line).join("")));
+  if (overdue.length) out.push(card("<h2>⚠️ Просрочено</h2>" + overdue.map(line).join("")));
   if (rest.length) out.push(card("<h2>Дела</h2>" + rest.map(line).join("")));
-  if (!out.length) out.push('<div class="empty">Всё закрыто</div>');
+  if (!todayOnly && data.projects?.length) out.push(card('<h2>Проекты</h2>' + data.projects.map(p =>
+    '<details class="item"><summary>' + esc(p.name) + '</summary><p class="small dim">' + esc(p.about || 'Описание пока не добавлено') + '</p></details>').join('')));
+  if (!out.length) out.push('<div class="empty">' + (todayOnly ? 'На сегодня дел нет' : 'Открытых дел нет') + '<br><span class="small">Чтобы добавить задачу, напиши боту.</span></div>');
   return out.join("");
 }
 
 function queueTab() {
-  if (!data.queue.length) return '<div class="empty">Очередь пуста</div>';
+  if (!data.queue.length) return '<div class="empty">Материалов пока нет<br><span class="small">Пришли боту ссылку или файл.</span></div>';
   const total = data.queue.reduce((sum, l) => sum + (l.est_minutes || 0), 0);
   return card(
     "<h2>Очередь · " + data.queue.length +
       (total ? " · " + Math.round(total / 60) + " ч" : "") + "</h2>" +
     data.queue.map((l) =>
-      '<div class="item"><button class="tick" data-link="' + l.id + '">✓</button>' +
+      '<div class="item"><button class="tick" aria-label="Отметить просмотренным: ' + esc(l.title) + '" data-link="' + l.id + '">✓</button>' +
       '<div class="body"><div class="title">' +
-      (l.url ? '<a href="' + esc(l.url) + '" target="_blank">' + esc(l.title) + "</a>" : esc(l.title)) +
+      (safeLink(l.url) ? '<a href="' + safeLink(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.title) + "</a>" : esc(l.title)) +
       "</div>" +
       '<div class="small dim">' +
       [l.topic, l.est_minutes ? l.est_minutes + " мин" : ""].filter(Boolean).join(" · ") +
@@ -267,10 +292,11 @@ function queueTab() {
 }
 
 const TABS = [
-  ["money", "Деньги", moneyTab],
-  ["report", "Отчёт", reportTab],
+  ["today", "Сегодня", () => doingTab(true)],
   ["doing", "Дела", doingTab],
-  ["queue", "Очередь", queueTab],
+  ["money", "Финансы", () => moneyTab() + '<details class="card"><summary>Расходы по категориям</summary>' + reportTab() + '</details>'],
+  ["queue", "Сохранённое", () => queueTab() + (data.notes?.length ? card('<h2>Заметки</h2>' + data.notes.map(n =>
+    '<details class="item"><summary>' + esc(n.title) + '</summary><p style="white-space:pre-wrap">' + esc(n.body || '') + '</p></details>').join('')) : '')],
 ];
 
 function draw() {
@@ -278,13 +304,17 @@ function draw() {
   // открыта: внутри приложения своего меню нет и не нужно — оно в боте.
   const nav = '<nav>' + TABS.map(([key, name]) =>
     '<button data-tab="' + key + '" aria-current="' + (tab === key) + '">' + name + "</button>"
-  ).join("") + '<button data-close="1">Меню</button>' + "</nav>";
+  ).join("") + "</nav>";
   const body = TABS.find(([key]) => key === tab)[2]();
-  root.innerHTML = nav + body +
-    (data.inbox ? '<div class="small dim" style="text-align:center">В инбоксе: ' + data.inbox + "</div>" : "");
+  root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
+    '<h2>' + TABS.find(([key]) => key === tab)[1] + '</h2><div id="status" role="status"></div>' + body +
+    (data.inbox ? '<div class="notice">Неразобранное: ' + data.inbox + '<br><span class="small">Открой «Сохранённое» в чате, чтобы разобрать записи.</span></div>' : '') +
+    '<p class="small dim">Чтобы найти сохранённое, просто спроси бота.</p>' + nav;
 }
 
 root.addEventListener("click", async (event) => {
+  if (busy) return;
+  if (event.target.closest('[data-refresh]')) { await load(); return; }
   const tabButton = event.target.closest("[data-tab]");
   if (tabButton) { tab = tabButton.dataset.tab; draw(); return; }
 
@@ -295,6 +325,9 @@ root.addEventListener("click", async (event) => {
   const task = event.target.closest("[data-task]");
   const link = event.target.closest("[data-link]");
   if (!task && !link) return;
+  busy = true;
+  const active = task || link;
+  active.disabled = true;
 
   tg?.HapticFeedback?.impactOccurred?.("light");
   try {
@@ -303,31 +336,34 @@ root.addEventListener("click", async (event) => {
       : { action: "link_done", id: Number(link.dataset.link) });
     draw();
   } catch {
-    tg?.showAlert?.("Не получилось. Попробуй ещё раз.");
+    document.getElementById('status').textContent = 'Не удалось сохранить изменение. Попробуй ещё раз.';
+    active.disabled = false;
+  } finally {
+    busy = false;
   }
 });
 
-(async () => {
+async function load() {
+  busy = true;
   try {
     data = await call({});
     draw();
   } catch (error) {
     root.innerHTML = '<div class="empty">' +
       (String(error.message) === "no-telegram"
-        ? "Открой приложение из чата с ботом — кнопкой «Открыть» под сообщением.<br><br>" +
-          "<span class=\"small\">По прямой ссылке оно не работает: Telegram не передаёт " +
-          "подпись, и бот не может убедиться, что это ты.</span>"
+        ? "Открой приложение из чата с ботом — кнопкой «Приложение»."
         : String(error.message) === "unauthorized"
         ? "Это приложение только для владельца бота."
         : "Не удалось загрузить. Открой ещё раз.") +
       // Одна техническая строка: «не работает» бывает не про права, а про
       // отсутствие подписи или старую страницу из кеша клиента.
-      '<div class="small dim" style="margin-top:16px">сборка 3 · Telegram: ' +
-      (window.Telegram?.WebApp ? "есть" : "нет") +
-      " · подпись: " + (tg?.initData || "").length + " символов</div>" +
+      '<p><button class="action" data-refresh="1">Повторить</button></p>' +
       "</div>";
+  } finally {
+    busy = false;
   }
-})();
+}
+load();
 </script>
 </body>
 </html>
