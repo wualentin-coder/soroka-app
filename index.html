@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сорока</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  /*
+   * Цвета берём у Telegram, а не выбираем свои: приложение открывается внутри
+   * мессенджера, и чужая палитра там выглядит именно чужой. Значения приходят
+   * переменными темы, тёмная и светлая меняются сами.
+   */
+  :root {
+    --bg: var(--tg-theme-bg-color, #17212b);
+    --card: var(--tg-theme-secondary-bg-color, #232e3c);
+    --text: var(--tg-theme-text-color, #f5f5f5);
+    --dim: var(--tg-theme-hint-color, #8c9aa8);
+    --link: var(--tg-theme-link-color, #6ab3f3);
+    --accent: var(--tg-theme-button-color, #5288c1);
+    --danger: #e8735a;
+    --ok: #6cc070;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    padding: 12px 12px 32px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 17px; margin: 0 0 12px; font-weight: 600; }
+  h2 { font-size: 13px; margin: 0 0 8px; color: var(--dim); font-weight: 600;
+       text-transform: uppercase; letter-spacing: .04em; }
+
+  nav { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+  nav button {
+    flex: 0 0 auto; border: 0; border-radius: 9px; padding: 8px 13px;
+    background: var(--card); color: var(--dim); font-size: 14px; font-weight: 500;
+    cursor: pointer;
+  }
+  nav button[aria-current="true"] { background: var(--accent); color: #fff; }
+
+  .card { background: var(--card); border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .row + .row { margin-top: 9px; }
+  .sum { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .dim { color: var(--dim); }
+  .small { font-size: 13px; }
+  .danger { color: var(--danger); }
+  .ok { color: var(--ok); }
+
+  .bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); margin-top: 7px;
+         overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .bar.over span { background: var(--danger); }
+
+  .item { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; }
+  .item + .item { border-top: 1px solid rgba(255,255,255,.07); }
+  .item .body { flex: 1; min-width: 0; }
+  .item .title { overflow-wrap: anywhere; }
+  .tick {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; border: 0;
+    background: rgba(255,255,255,.1); color: var(--text); cursor: pointer; font-size: 14px;
+  }
+  .tick:active { background: var(--accent); }
+  a { color: var(--link); text-decoration: none; }
+  .empty { color: var(--dim); text-align: center; padding: 28px 0; }
+</style>
+</head>
+<body>
+<div id="root"><div class="empty">Загружаю…</div></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
+
+const API = "https://bvbjhrutbmtndmgvhzqg.functions.supabase.co/soroka-app";
+const root = document.getElementById("root");
+let data = null;
+let tab = "money";
+
+const SIGNS = { RUB: "₽", USD: "$", EUR: "€" };
+
+function money(amount, currency) {
+  const value = Number(amount || 0);
+  // Копейки показываем только когда они есть: «6 000 ₽» читается быстрее,
+  // чем «6 000,00 ₽», а в чеке важна каждая.
+  const text = value.toLocaleString("ru-RU", {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+  return text + " " + (SIGNS[currency] || currency || "");
+}
+
+function esc(text) {
+  return String(text ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+
+async function call(body) {
+  const answer = await fetch(API, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ initData: tg?.initData || "", ...body }),
+  });
+  if (!answer.ok) throw new Error(answer.status === 401 ? "unauthorized" : "server");
+  return await answer.json();
+}
+
+function card(inner) { return '<div class="card">' + inner + "</div>"; }
+
+function moneyTab() {
+  const out = [];
+
+  out.push(card(
+    '<h2>Счета</h2>' +
+    data.accounts.map((a) =>
+      '<div class="row"><span>' + esc(a.name) + '</span>' +
+      '<span class="sum">' + money(a.balance, a.currency) + "</span></div>"
+    ).join("")
+  ));
+
+  const totals = data.totals.map((t) =>
+    '<div class="row"><span class="dim">Доходы</span><span class="sum ok">' +
+      money(t.income, t.currency) + "</span></div>" +
+    '<div class="row"><span class="dim">Расходы</span><span class="sum">' +
+      money(t.expense, t.currency) + "</span></div>" +
+    '<div class="row"><span>Итого</span><span class="sum ' +
+      (t.income - t.expense < 0 ? "danger" : "ok") + '">' +
+      money(t.income - t.expense, t.currency) + "</span></div>"
+  ).join("");
+  out.push(card("<h2>" + esc(data.month) + "</h2>" + (totals || '<div class="dim">Операций нет</div>')));
+
+  if (data.payments.length) {
+    out.push(card(
+      '<h2>Ждут подтверждения</h2>' +
+      data.payments.map((p) =>
+        '<div class="row"><span class="' + (p.overdue > 0 ? "danger" : "") + '">' +
+        esc(p.title) + "</span>" +
+        '<span class="sum">' + money(p.amount, p.currency) + "</span></div>"
+      ).join("") +
+      '<div class="small dim" style="margin-top:9px">Подтверждаются в чате: /pay</div>'
+    ));
+  }
+
+  if (data.budgets.length) {
+    out.push(card(
+      "<h2>Бюджеты</h2>" +
+      data.budgets.map((b) => {
+        const share = Math.min(1.4, Number(b.spent) / Number(b.limit_amount || 1));
+        const over = share >= 1 || (b.over_on && b.over_on <= b.days_in_month);
+        return '<div style="margin-bottom:12px">' +
+          '<div class="row"><span>' + esc(b.category) + "</span>" +
+          '<span class="sum ' + (over ? "danger" : "") + '">' +
+          money(b.spent, b.currency) + ' <span class="dim">из ' +
+          money(b.limit_amount, b.currency) + "</span></span></div>" +
+          '<div class="bar' + (over ? " over" : "") + '"><span style="width:' +
+          Math.min(100, share * 100) + '%"></span></div>' +
+          (b.over_on && b.over_on <= b.days_in_month
+            ? '<div class="small danger" style="margin-top:5px">Хватит до ' + b.over_on + "-го</div>"
+            : "") +
+          "</div>";
+      }).join("")
+    ));
+  }
+
+  const debts = data.debts.filter((d) => d.mine || d.theirs);
+  if (debts.length) {
+    out.push(card(
+      "<h2>Долги</h2>" +
+      debts.map((d) =>
+        (d.mine ? '<div class="row"><span>Должны мне</span><span class="sum ok">' +
+          money(d.mine, d.currency) + "</span></div>" : "") +
+        (d.theirs ? '<div class="row"><span>Должен я</span><span class="sum danger">' +
+          money(d.theirs, d.currency) + "</span></div>" : "")
+      ).join("")
+    ));
+  }
+
+  if (data.obligations.length) {
+    out.push(card(
+      "<h2>Обязательные платежи</h2>" +
+      data.obligations.map((o) =>
+        '<div class="row"><span class="dim">В месяц</span><span class="sum">' +
+          money(o.total, o.currency) + "</span></div>" +
+        '<div class="row"><span class="dim">В год</span><span class="sum">' +
+          money(o.total * 12, o.currency) + "</span></div>"
+      ).join("")
+    ));
+  }
+
+  return out.join("");
+}
+
+function reportTab() {
+  if (!data.categories.length) return '<div class="empty">Трат в этом месяце нет</div>';
+  const max = Math.max(...data.categories.map((c) => Number(c.amount)));
+  return card(
+    "<h2>Куда ушли деньги · " + esc(data.month) + "</h2>" +
+    data.categories.map((c) =>
+      '<div style="margin-bottom:11px">' +
+      '<div class="row"><span>' + esc(c.name) + "</span>" +
+      '<span class="sum">' + money(c.amount, c.currency) + "</span></div>" +
+      '<div class="bar"><span style="width:' + (Number(c.amount) / max * 100) + '%"></span></div>' +
+      "</div>"
+    ).join("")
+  );
+}
+
+function doingTab() {
+  const out = [];
+
+  if (data.events.length) {
+    out.push(card("<h2>События</h2>" + data.events.map((e) => {
+      const at = new Date(e.starts_at);
+      const when = at.toLocaleString("ru-RU", {
+        day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+      });
+      return '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
+        '</div><div class="small dim">' + when + "</div></div></div>";
+    }).join("")));
+  }
+
+  const overdue = data.tasks.filter((t) => t.due_on && t.due_on < data.today);
+  const rest = data.tasks.filter((t) => !(t.due_on && t.due_on < data.today));
+
+  const line = (t) =>
+    '<div class="item"><button class="tick" data-task="' + t.id + '">✓</button>' +
+    '<div class="body"><div class="title">' + esc(t.title) + "</div>" +
+    (t.due_on
+      ? '<div class="small ' + (t.due_on < data.today ? "danger" : "dim") + '">' +
+        new Date(t.due_on).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) + "</div>"
+      : "") +
+    "</div></div>";
+
+  if (overdue.length) out.push(card("<h2>Просрочено</h2>" + overdue.map(line).join("")));
+  if (rest.length) out.push(card("<h2>Дела</h2>" + rest.map(line).join("")));
+  if (!out.length) out.push('<div class="empty">Всё закрыто</div>');
+  return out.join("");
+}
+
+function queueTab() {
+  if (!data.queue.length) return '<div class="empty">Очередь пуста</div>';
+  const total = data.queue.reduce((sum, l) => sum + (l.est_minutes || 0), 0);
+  return card(
+    "<h2>Очередь · " + data.queue.length +
+      (total ? " · " + Math.round(total / 60) + " ч" : "") + "</h2>" +
+    data.queue.map((l) =>
+      '<div class="item"><button class="tick" data-link="' + l.id + '">✓</button>' +
+      '<div class="body"><div class="title">' +
+      (l.url ? '<a href="' + esc(l.url) + '" target="_blank">' + esc(l.title) + "</a>" : esc(l.title)) +
+      "</div>" +
+      '<div class="small dim">' +
+      [l.topic, l.est_minutes ? l.est_minutes + " мин" : ""].filter(Boolean).join(" · ") +
+      "</div></div></div>"
+    ).join("")
+  );
+}
+
+const TABS = [
+  ["money", "Деньги", moneyTab],
+  ["report", "Отчёт", reportTab],
+  ["doing", "Дела", doingTab],
+  ["queue", "Очередь", queueTab],
+];
+
+function draw() {
+  const nav = '<nav>' + TABS.map(([key, name]) =>
+    '<button data-tab="' + key + '" aria-current="' + (tab === key) + '">' + name + "</button>"
+  ).join("") + "</nav>";
+  const body = TABS.find(([key]) => key === tab)[2]();
+  root.innerHTML = nav + body +
+    (data.inbox ? '<div class="small dim" style="text-align:center">В инбоксе: ' + data.inbox + "</div>" : "");
+}
+
+root.addEventListener("click", async (event) => {
+  const tabButton = event.target.closest("[data-tab]");
+  if (tabButton) { tab = tabButton.dataset.tab; draw(); return; }
+
+  // Отметить сделанным можно прямо здесь: это единственное действие, за которым
+  // не нужна карточка с историей, а тянуться за ним в чат — лишний шаг.
+  const task = event.target.closest("[data-task]");
+  const link = event.target.closest("[data-link]");
+  if (!task && !link) return;
+
+  tg?.HapticFeedback?.impactOccurred?.("light");
+  try {
+    data = await call(task
+      ? { action: "task_done", id: Number(task.dataset.task) }
+      : { action: "link_done", id: Number(link.dataset.link) });
+    draw();
+  } catch {
+    tg?.showAlert?.("Не получилось. Попробуй ещё раз.");
+  }
+});
+
+(async () => {
+  try {
+    data = await call({});
+    draw();
+  } catch (error) {
+    root.innerHTML = '<div class="empty">' +
+      (String(error.message) === "unauthorized"
+        ? "Это приложение только для владельца бота."
+        : "Не удалось загрузить. Открой ещё раз.") +
+      "</div>";
+  }
+})();
+</script>
+</body>
+</html>
