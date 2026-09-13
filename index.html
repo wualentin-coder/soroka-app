@@ -99,10 +99,18 @@ function esc(text) {
 }
 
 async function call(body) {
+  // Подпись Telegram — единственное доказательство, что это владелец. Её нет,
+  // когда страницу открыли не из мессенджера: по ссылке в браузере, из
+  // сохранённых вкладок, из истории. Сервер в этом случае ответит одинаковым
+  // отказом, и человек будет думать, что дело в правах, — поэтому проверяем
+  // здесь и говорим прямо.
+  const init = tg?.initData || "";
+  if (!init) throw new Error("no-telegram");
+
   const answer = await fetch(API, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ initData: tg?.initData || "", ...body }),
+    body: JSON.stringify({ initData: init, ...body }),
   });
   if (!answer.ok) throw new Error(answer.status === 401 ? "unauthorized" : "server");
   return await answer.json();
@@ -305,7 +313,11 @@ root.addEventListener("click", async (event) => {
     draw();
   } catch (error) {
     root.innerHTML = '<div class="empty">' +
-      (String(error.message) === "unauthorized"
+      (String(error.message) === "no-telegram"
+        ? "Открой приложение из чата с ботом — кнопкой «Открыть» под сообщением.<br><br>" +
+          "<span class=\"small\">По прямой ссылке оно не работает: Telegram не передаёт " +
+          "подпись, и бот не может убедиться, что это ты.</span>"
+        : String(error.message) === "unauthorized"
         ? "Это приложение только для владельца бота."
         : "Не удалось загрузить. Открой ещё раз.") +
       "</div>";
