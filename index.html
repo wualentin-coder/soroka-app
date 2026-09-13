@@ -266,9 +266,11 @@ const TABS = [
 ];
 
 function draw() {
+  // «Меню» закрывает приложение и возвращает в чат, где панель бота уже
+  // открыта: внутри приложения своего меню нет и не нужно — оно в боте.
   const nav = '<nav>' + TABS.map(([key, name]) =>
     '<button data-tab="' + key + '" aria-current="' + (tab === key) + '">' + name + "</button>"
-  ).join("") + "</nav>";
+  ).join("") + '<button data-close="1">Меню</button>' + "</nav>";
   const body = TABS.find(([key]) => key === tab)[2]();
   root.innerHTML = nav + body +
     (data.inbox ? '<div class="small dim" style="text-align:center">В инбоксе: ' + data.inbox + "</div>" : "");
@@ -277,6 +279,8 @@ function draw() {
 root.addEventListener("click", async (event) => {
   const tabButton = event.target.closest("[data-tab]");
   if (tabButton) { tab = tabButton.dataset.tab; draw(); return; }
+
+  if (event.target.closest("[data-close]")) { tg?.close?.(); return; }
 
   // Отметить сделанным можно прямо здесь: это единственное действие, за которым
   // не нужна карточка с историей, а тянуться за ним в чат — лишний шаг.
