@@ -66,6 +66,19 @@
   .tick:active { background: var(--accent); }
   a { color: var(--link); text-decoration: none; }
   .empty { color: var(--dim); text-align: center; padding: 28px 0; }
+
+  .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin: 10px 0 4px;
+              font-size: 11px; color: var(--dim); text-align: center; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day { position: relative; aspect-ratio: 1; border: 0; border-radius: 8px;
+             background: rgba(255,255,255,.05); color: var(--text); font-size: 13px;
+             cursor: pointer; padding: 0; }
+  .cal-empty { background: none; }
+  .cal-today { outline: 1px solid var(--accent); }
+  .cal-pick { background: var(--accent); color: #fff; }
+  .cal-dot { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
+             width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .cal-pick .cal-dot { background: #fff; }
   body { max-width: 720px; margin: auto; padding: max(20px, env(safe-area-inset-top)) 16px 110px; }
   header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; gap:12px; }
   header h1 { font-size:24px; letter-spacing:-.7px; margin:0; }
@@ -291,9 +304,76 @@ function queueTab() {
   );
 }
 
+
+/**
+ * Календарь: месяц сеткой, под ним — что в выбранный день.
+ *
+ * Список событий отвечает на «что дальше», но не на «свободен ли четверг» —
+ * для этого нужно видеть месяц целиком. Точка под числом значит, что день
+ * занят: так занятость читается, не открывая ни одного дня.
+ */
+let calShift = 0;
+let calPick = null;
+
+function calendarTab() {
+  const base = new Date(data.today + "T12:00:00");
+  base.setMonth(base.getMonth() + calShift);
+  const year = base.getFullYear();
+  const month = base.getMonth();
+
+  const byDay = {};
+  for (const e of data.events || []) {
+    const day = new Date(e.starts_at).toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" });
+    (byDay[day] = byDay[day] || []).push(e);
+  }
+  for (const t of data.tasks || []) {
+    if (t.due_on) (byDay[t.due_on] = byDay[t.due_on] || []).push({ title: t.title, task: true });
+  }
+
+  const first = new Date(year, month, 1);
+  // Неделя начинается с понедельника: воскресенье первым — чужая привычка.
+  const lead = (first.getDay() + 6) % 7;
+  const days = new Date(year, month + 1, 0).getDate();
+
+  const name = base.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push('<div class="cal-day cal-empty"></div>');
+  for (let d = 1; d <= days; d++) {
+    const iso = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+    const has = (byDay[iso] || []).length;
+    cells.push(
+      '<button class="cal-day' + (iso === data.today ? " cal-today" : "") +
+      (iso === calPick ? " cal-pick" : "") + '" data-day="' + iso + '">' + d +
+      (has ? '<i class="cal-dot"></i>' : "") + "</button>",
+    );
+  }
+
+  const chosen = calPick || data.today;
+  const list = (byDay[chosen] || []).map((e) =>
+    '<div class="item"><div class="body"><div class="title">' + esc(e.title) + "</div>" +
+    '<div class="small dim">' + (e.task ? "дело" :
+      new Date(e.starts_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })) +
+    "</div></div></div>"
+  ).join("");
+
+  return card(
+    '<div class="row"><button class="tick" data-cal="-1">‹</button>' +
+    "<h2 style=\"margin:0\">" + esc(name) + "</h2>" +
+    '<button class="tick" data-cal="1">›</button></div>' +
+    '<div class="cal-week">' + ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+      .map((w) => "<span>" + w + "</span>").join("") + "</div>" +
+    '<div class="cal-grid">' + cells.join("") + "</div>"
+  ) + card(
+    "<h2>" + new Date(chosen + "T12:00:00").toLocaleDateString("ru-RU",
+      { day: "numeric", month: "long" }) + "</h2>" +
+    (list || '<div class="dim small">Ничего не запланировано</div>')
+  );
+}
+
 const TABS = [
   ["today", "Сегодня", () => doingTab(true)],
   ["doing", "Дела", doingTab],
+  ["calendar", "Календарь", calendarTab],
   ["money", "Финансы", () => moneyTab() + '<details class="card"><summary>Расходы по категориям</summary>' + reportTab() + '</details>'],
   ["queue", "Сохранённое", () => queueTab() + (data.notes?.length ? card('<h2>Заметки</h2>' + data.notes.map(n =>
     '<details class="item"><summary>' + esc(n.title) + '</summary><p style="white-space:pre-wrap">' + esc(n.body || '') + '</p></details>').join('')) : '')],
@@ -319,6 +399,12 @@ root.addEventListener("click", async (event) => {
   if (tabButton) { tab = tabButton.dataset.tab; draw(); return; }
 
   if (event.target.closest("[data-close]")) { tg?.close?.(); return; }
+
+  const shift = event.target.closest("[data-cal]");
+  if (shift) { calShift += Number(shift.dataset.cal); calPick = null; draw(); return; }
+
+  const day = event.target.closest("[data-day]");
+  if (day) { calPick = day.dataset.day; draw(); return; }
 
   // Отметить сделанным можно прямо здесь: это единственное действие, за которым
   // не нужна карточка с историей, а тянуться за ним в чат — лишний шаг.
