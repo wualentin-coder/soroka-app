@@ -67,6 +67,12 @@
   a { color: var(--link); text-decoration: none; }
   .empty { color: var(--dim); text-align: center; padding: 28px 0; }
 
+  .add { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .add input { flex: 1 1 120px; min-width: 0; border: 0; border-radius: 9px; padding: 9px 11px;
+               background: rgba(255,255,255,.08); color: var(--text); font-size: 14px; }
+  .add button { flex: 0 0 auto; border: 0; border-radius: 9px; padding: 9px 14px;
+                background: var(--accent); color: #fff; font-size: 14px; cursor: pointer; }
+
   .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin: 10px 0 4px;
               font-size: 11px; color: var(--dim); text-align: center; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
@@ -262,7 +268,8 @@ function doingTab(todayOnly = false) {
         day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
       });
       return '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
-        '</div><div class="small dim">' + when + "</div></div></div>";
+        '</div><div class="small dim">' + when + "</div></div>" +
+        '<button class="tick" data-event-del="' + e.id + '" aria-label="Удалить событие">×</button></div>";
     }).join("")));
   }
 
@@ -276,32 +283,53 @@ function doingTab(todayOnly = false) {
       ? '<div class="small ' + (t.due_on < data.today ? "danger" : "dim") + '">' +
         new Date(t.due_on).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) + "</div>"
       : "") +
-    "</div></div>";
+    "</div>" +
+    '<button class="tick" data-task-del="' + t.id + '" aria-label="Удалить дело">×</button></div>";
 
   if (overdue.length) out.push(card("<h2>⚠️ Просрочено</h2>" + overdue.map(line).join("")));
   if (rest.length) out.push(card("<h2>Дела</h2>" + rest.map(line).join("")));
   if (!todayOnly && data.projects?.length) out.push(card('<h2>Проекты</h2>' + data.projects.map(p =>
     '<details class="item"><summary>' + esc(p.name) + '</summary><p class="small dim">' + esc(p.about || 'Описание пока не добавлено') + '</p></details>').join('')));
-  if (!out.length) out.push('<div class="empty">' + (todayOnly ? 'На сегодня дел нет' : 'Открытых дел нет') + '<br><span class="small">Чтобы добавить задачу, напиши боту.</span></div>');
+  out.push(card(
+    "<h2>Новое дело</h2>" +
+    '<div class="add"><input id="task-title" placeholder="Что сделать" maxlength="200">' +
+    '<input id="task-due" type="date"' + (todayOnly ? ' value="' + data.today + '"' : "") + ">" +
+    '<button data-task-add="1">Добавить</button></div>'
+  ));
+  if (!out.length) out.push('<div class="empty">' + (todayOnly ? 'На сегодня дел нет' : 'Открытых дел нет') + "</div>");
   return out.join("");
 }
 
 function queueTab() {
   if (!data.queue.length) return '<div class="empty">Материалов пока нет<br><span class="small">Пришли боту ссылку или файл.</span></div>';
-  const total = data.queue.reduce((sum, l) => sum + (l.est_minutes || 0), 0);
-  return card(
-    "<h2>Очередь · " + data.queue.length +
-      (total ? " · " + Math.round(total / 60) + " ч" : "") + "</h2>" +
-    data.queue.map((l) =>
-      '<div class="item"><button class="tick" aria-label="Отметить просмотренным: ' + esc(l.title) + '" data-link="' + l.id + '">✓</button>' +
-      '<div class="body"><div class="title">' +
-      (safeLink(l.url) ? '<a href="' + safeLink(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.title) + "</a>" : esc(l.title)) +
-      "</div>" +
-      '<div class="small dim">' +
-      [l.topic, l.est_minutes ? l.est_minutes + " мин" : ""].filter(Boolean).join(" · ") +
-      "</div></div></div>"
-    ).join("")
-  );
+
+  // Что можно открыть — открываем. Файл и пост живут в чате Telegram, и
+  // страница туда не дотянется: у них кнопка «в чат», а отправляет бот.
+  const open = data.queue.filter((l) => safeLink(l.url));
+  const inChat = data.queue.filter((l) => !safeLink(l.url));
+
+  const row = (l) =>
+    '<div class="item"><button class="tick" aria-label="Отметить просмотренным: ' + esc(l.title) + '" data-link="' + l.id + '">✓</button>' +
+    '<div class="body"><div class="title">' +
+    (safeLink(l.url) ? '<a href="' + safeLink(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.title) + "</a>" : esc(l.title)) +
+    "</div>" +
+    '<div class="small dim">' +
+    [l.topic, l.est_minutes ? l.est_minutes + " мин" : ""].filter(Boolean).join(" · ") +
+    "</div></div>" +
+    (safeLink(l.url) ? "" : '<button class="tick" data-send="' + l.id + '" aria-label="Прислать в чат">→</button>') +
+    "</div>";
+
+  const total = open.reduce((sum, l) => sum + (l.est_minutes || 0), 0);
+  const out = [];
+  if (open.length) {
+    out.push(card("<h2>Ссылки · " + open.length +
+      (total ? " · " + Math.round(total / 60) + " ч" : "") + "</h2>" + open.map(row).join("")));
+  }
+  if (inChat.length) {
+    out.push(card("<h2>В чате · " + inChat.length + "</h2>" + inChat.map(row).join("") +
+      '<div class="small dim" style="margin-top:9px">Стрелка присылает файл или пост в чат с ботом.</div>'));
+  }
+  return out.join("");
 }
 
 
@@ -366,7 +394,11 @@ function calendarTab() {
   ) + card(
     "<h2>" + new Date(chosen + "T12:00:00").toLocaleDateString("ru-RU",
       { day: "numeric", month: "long" }) + "</h2>" +
-    (list || '<div class="dim small">Ничего не запланировано</div>')
+    (list || '<div class="dim small">Ничего не запланировано</div>') +
+    '<div class="add" style="margin-top:10px">' +
+    '<input id="event-title" placeholder="Что за событие" maxlength="200">' +
+    '<input id="event-time" type="time" value="12:00">' +
+    '<button data-event-add="' + chosen + '">Добавить</button></div>'
   );
 }
 
@@ -392,6 +424,22 @@ function draw() {
     '<p class="small dim">Чтобы найти сохранённое, просто спроси бота.</p>' + nav;
 }
 
+/** Действие с обновлением экрана и защитой от двойного нажатия. */
+async function act(body, button) {
+  busy = true;
+  if (button) button.disabled = true;
+  tg?.HapticFeedback?.impactOccurred?.("light");
+  try {
+    data = await call(body);
+    draw();
+  } catch {
+    tg?.showAlert?.("Не получилось. Попробуй ещё раз.");
+    if (button) button.disabled = false;
+  } finally {
+    busy = false;
+  }
+}
+
 root.addEventListener("click", async (event) => {
   if (busy) return;
   if (event.target.closest('[data-refresh]')) { await load(); return; }
@@ -405,6 +453,44 @@ root.addEventListener("click", async (event) => {
 
   const day = event.target.closest("[data-day]");
   if (day) { calPick = day.dataset.day; draw(); return; }
+
+  // Создание и удаление. Удаление мягкое — запись уходит в корзину бота и
+  // возвращается оттуда, поэтому спрашивать подтверждение здесь незачем.
+  const addTask = event.target.closest("[data-task-add]");
+  if (addTask) {
+    const title = document.getElementById("task-title")?.value.trim();
+    if (!title) return;
+    await act({
+      action: "task_add",
+      title,
+      due_on: document.getElementById("task-due")?.value || null,
+    }, addTask);
+    return;
+  }
+
+  const addEvent = event.target.closest("[data-event-add]");
+  if (addEvent) {
+    const title = document.getElementById("event-title")?.value.trim();
+    if (!title) return;
+    const time = document.getElementById("event-time")?.value || "12:00";
+    await act({ action: "event_add", title, at: addEvent.dataset.eventAdd + "T" + time }, addEvent);
+    return;
+  }
+
+  const dropTask = event.target.closest("[data-task-del]");
+  if (dropTask) { await act({ action: "task_del", id: Number(dropTask.dataset.taskDel) }, dropTask); return; }
+
+  const dropEvent = event.target.closest("[data-event-del]");
+  if (dropEvent) { await act({ action: "event_del", id: Number(dropEvent.dataset.eventDel) }, dropEvent); return; }
+
+  // Файл живёт в чате, а не в приложении: просим бота прислать его туда и
+  // закрываемся — человек оказывается ровно там, где файл появился.
+  const send = event.target.closest("[data-send]");
+  if (send) {
+    await act({ action: "send", id: Number(send.dataset.send) }, send);
+    tg?.close?.();
+    return;
+  }
 
   // Отметить сделанным можно прямо здесь: это единственное действие, за которым
   // не нужна карточка с историей, а тянуться за ним в чат — лишний шаг.
