@@ -269,7 +269,7 @@ function doingTab(todayOnly = false) {
       });
       return '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
         '</div><div class="small dim">' + when + "</div></div>" +
-        '<button class="tick" data-event-del="' + e.id + '" aria-label="Удалить событие">×</button></div>";
+        '<button class="tick" data-event-del="' + e.id + '" aria-label="Удалить событие">×</button></div>';
     }).join("")));
   }
 
@@ -284,7 +284,7 @@ function doingTab(todayOnly = false) {
         new Date(t.due_on).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) + "</div>"
       : "") +
     "</div>" +
-    '<button class="tick" data-task-del="' + t.id + '" aria-label="Удалить дело">×</button></div>";
+    '<button class="tick" data-task-del="' + t.id + '" aria-label="Удалить дело">×</button></div>';
 
   if (overdue.length) out.push(card("<h2>⚠️ Просрочено</h2>" + overdue.map(line).join("")));
   if (rest.length) out.push(card("<h2>Дела</h2>" + rest.map(line).join("")));
