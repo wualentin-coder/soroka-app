@@ -110,7 +110,7 @@ const tg = window.Telegram?.WebApp;
 tg?.ready();
 tg?.expand();
 
-const API = "https://bvbjhrutbmtndmgvhzqg.functions.supabase.co/soroka-app";
+const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
 const root = document.getElementById("root");
 let data = null;
 let tab = "today";
@@ -126,7 +126,7 @@ function money(amount, currency) {
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
     maximumFractionDigits: 2,
   });
-  return text + " " + (SIGNS[currency] || currency || "");
+  return text + " " + esc(SIGNS[currency] || currency || "");
 }
 
 function esc(text) {
@@ -259,7 +259,7 @@ function reportTab() {
 function doingTab(todayOnly = false) {
   const out = [];
   const tasks = todayOnly ? data.tasks.filter(t => t.due_on && t.due_on <= data.today) : data.tasks;
-  const events = todayOnly ? data.events.filter(e => new Date(e.starts_at).toLocaleDateString('en-CA', { timeZone: 'Europe/Moscow' }) === data.today) : data.events;
+  const events = todayOnly ? data.events.filter(e => new Date(e.starts_at).toLocaleDateString('en-CA', { timeZone: data.timezone || 'Europe/Moscow' }) === data.today) : data.events;
 
   if (events.length) {
     out.push(card("<h2>События</h2>" + events.map((e) => {
@@ -314,7 +314,7 @@ function queueTab() {
     (safeLink(l.url) ? '<a href="' + safeLink(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.title) + "</a>" : esc(l.title)) +
     "</div>" +
     '<div class="small dim">' +
-    [l.topic, l.est_minutes ? l.est_minutes + " мин" : ""].filter(Boolean).join(" · ") +
+    [esc(l.topic), l.est_minutes ? Number(l.est_minutes) + " мин" : ""].filter(Boolean).join(" · ") +
     "</div></div>" +
     (safeLink(l.url) ? "" : '<button class="tick" data-send="' + l.id + '" aria-label="Прислать в чат">→</button>') +
     "</div>";
@@ -351,7 +351,7 @@ function calendarTab() {
 
   const byDay = {};
   for (const e of data.events || []) {
-    const day = new Date(e.starts_at).toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" });
+    const day = new Date(e.starts_at).toLocaleDateString("en-CA", { timeZone: data.timezone || "Europe/Moscow" });
     (byDay[day] = byDay[day] || []).push(e);
   }
   for (const t of data.tasks || []) {
@@ -380,7 +380,7 @@ function calendarTab() {
   const list = (byDay[chosen] || []).map((e) =>
     '<div class="item"><div class="body"><div class="title">' + esc(e.title) + "</div>" +
     '<div class="small dim">' + (e.task ? "дело" :
-      new Date(e.starts_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })) +
+      new Date(e.starts_at).toLocaleTimeString("ru-RU", { timeZone: data.timezone || "Europe/Moscow", hour: "2-digit", minute: "2-digit" })) +
     "</div></div></div>"
   ).join("");
 
@@ -420,8 +420,8 @@ function draw() {
   const body = TABS.find(([key]) => key === tab)[2]();
   root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
     '<h2>' + TABS.find(([key]) => key === tab)[1] + '</h2><div id="status" role="status"></div>' + body +
-    (data.inbox ? '<div class="notice">Неразобранное: ' + data.inbox + '<br><span class="small">Открой «Сохранённое» в чате, чтобы разобрать записи.</span></div>' : '') +
-    '<p class="small dim">Чтобы найти сохранённое, просто спроси бота.</p>' + nav;
+    (data.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
+    '<p class="small dim">Поиск — обычным вопросом боту в чате.</p>' + nav;
 }
 
 /** Действие с обновлением экрана и защитой от двойного нажатия. */
@@ -432,9 +432,13 @@ async function act(body, button) {
   try {
     data = await call(body);
     draw();
+    return true;
   } catch {
     tg?.showAlert?.("Не получилось. Попробуй ещё раз.");
+    const status = document.getElementById("status");
+    if (status) status.textContent = "Не получилось. Попробуй ещё раз.";
     if (button) button.disabled = false;
+    return false;
   } finally {
     busy = false;
   }
@@ -487,8 +491,7 @@ root.addEventListener("click", async (event) => {
   // закрываемся — человек оказывается ровно там, где файл появился.
   const send = event.target.closest("[data-send]");
   if (send) {
-    await act({ action: "send", id: Number(send.dataset.send) }, send);
-    tg?.close?.();
+    if (await act({ action: "send", id: Number(send.dataset.send) }, send)) tg?.close?.();
     return;
   }
 
