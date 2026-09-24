@@ -92,7 +92,7 @@
   button:focus-visible, a:focus-visible { outline:2px solid var(--link); outline-offset:3px; }
   button:disabled { opacity:.5; cursor:wait; }
   .action { min-height:44px; padding:10px 14px; border:0; border-radius:10px; color:var(--text); background:var(--card); }
-  nav { position:fixed; bottom:0; left:0; right:0; z-index:5; margin:0; padding:10px 6px max(10px, env(safe-area-inset-bottom)); background:var(--bg); border-top:1px solid var(--dim); display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
+  nav { position:fixed; bottom:0; left:0; right:0; z-index:5; margin:0; padding:10px 6px max(10px, env(safe-area-inset-bottom)); background:var(--bg); border-top:1px solid var(--dim); display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
   nav button { min-height:48px; padding:8px 2px; font-size:12px; background:transparent; }
   .card { padding:18px; border-radius:16px; margin-bottom:12px; }
   .row { flex-wrap:wrap; }
@@ -100,6 +100,12 @@
   h2 { text-transform:none; letter-spacing:0; font-size:16px; color:var(--text); }
   .notice { margin:12px 0; padding:12px; border-left:3px solid var(--accent); }
   #status { color:var(--danger); margin:12px 0; }
+  body { padding-bottom: calc(142px + env(safe-area-inset-bottom)); }
+  .vault-field { display:block; margin:10px 0; color:var(--dim); font-size:13px; }
+  .vault-field input, .vault-field textarea { display:block; width:100%; min-height:44px; margin-top:4px; padding:10px 12px; border:1px solid var(--dim); border-radius:9px; background:var(--bg); color:var(--text); font:inherit; }
+  .vault-field textarea { min-height:72px; resize:vertical; }
+  .vault-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .vault-secret { overflow-wrap:anywhere; white-space:pre-wrap; user-select:text; }
 </style>
 </head>
 <body>
@@ -113,8 +119,12 @@ tg?.expand();
 const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
 const root = document.getElementById("root");
 let data = null;
-let tab = "today";
+let tab = new URLSearchParams(location.search).get("tab") === "vault" ? "vault" : "today";
 let busy = false;
+let vaultEntries = null;
+let vaultEditId = null;
+let vaultShown = null;
+let vaultTimer = null;
 
 const SIGNS = { RUB: "₽", USD: "$", EUR: "€" };
 
@@ -152,7 +162,10 @@ async function call(body) {
     body: JSON.stringify({ initData: init, ...body }),
     signal: AbortSignal.timeout(20000),
   });
-  if (!answer.ok) throw new Error(answer.status === 401 ? "unauthorized" : "server");
+  if (!answer.ok) {
+    const code = await answer.json().catch(() => ({}));
+    throw new Error(code.error === "reopen_app" ? "reopen_app" : answer.status === 401 ? "unauthorized" : "server");
+  }
   return await answer.json();
 }
 
@@ -412,6 +425,83 @@ function calendarTab() {
   );
 }
 
+function clearVaultSecret() {
+  if (vaultTimer) clearTimeout(vaultTimer);
+  vaultTimer = null;
+  vaultShown = null;
+  const secret = document.getElementById("vault-secret");
+  if (secret) secret.textContent = "";
+}
+
+function vaultError(error) {
+  const message = String(error?.message) === "reopen_app"
+    ? "Для паролей открой приложение заново из чата с ботом."
+    : "Не удалось открыть хранилище. Попробуй ещё раз.";
+  const status = document.getElementById("status");
+  if (status) status.textContent = message;
+}
+
+async function loadVault() {
+  try {
+    const result = await call({ action: "vault_list" });
+    vaultEntries = result.entries;
+    if (tab === "vault") draw();
+  } catch (error) { vaultError(error); }
+}
+
+function vaultTab() {
+  const rows = vaultEntries === null
+    ? '<p class="dim">Загружаю список…</p>'
+    : vaultEntries.length === 0
+    ? '<p class="dim">Записей пока нет.</p>'
+    : vaultEntries.map(e => '<div class="item"><div class="body"><div class="title">' + esc(e.service) +
+      '</div><div class="small dim">' + esc(e.login || 'Без логина') +
+      '</div></div><button class="action" data-vault-open="' + Number(e.id) + '">Открыть</button></div>').join('');
+  return card('<p class="dim small">Пароли доступны только здесь. Бот не показывает их в чате.</p>' +
+    '<label class="vault-field">Найти сервис<input id="vault-search" type="search" placeholder="Название сервиса" autocomplete="off"></label>' +
+    '<div id="vault-list">' + rows + '</div>' +
+    '<div class="vault-actions"><button class="action" data-vault-add="1">Добавить пароль</button></div>') +
+    '<div id="vault-detail"></div>';
+}
+
+function vaultForm(entry) {
+  const edit = !!entry;
+  document.getElementById("vault-detail").innerHTML = card(
+    '<h2>' + (edit ? 'Изменить запись' : 'Новая запись') + '</h2>' +
+    '<label class="vault-field">Сервис<input id="vault-service" maxlength="120" autocomplete="off"></label>' +
+    '<label class="vault-field">Логин<input id="vault-login" maxlength="300" autocomplete="off"></label>' +
+    '<label class="vault-field">Пароль<input id="vault-password" type="password" maxlength="4096" autocomplete="new-password"></label>' +
+    '<label class="vault-field">Заметка<textarea id="vault-note" maxlength="2000"></textarea></label>' +
+    '<div class="vault-actions"><button class="action" data-vault-save="1">Сохранить</button>' +
+    '<button class="action" data-vault-cancel="1">Отмена</button></div>'
+  );
+  document.getElementById("vault-service").value = entry?.service || "";
+  document.getElementById("vault-login").value = entry?.login || "";
+  document.getElementById("vault-password").value = entry?.password || "";
+  document.getElementById("vault-note").value = entry?.note || "";
+  document.getElementById("vault-service").focus();
+}
+
+function showVaultEntry(id, entry) {
+  clearVaultSecret();
+  vaultShown = { id, ...entry };
+  document.getElementById("vault-detail").innerHTML = card(
+    '<h2>' + esc(entry.service) + '</h2><p class="small dim">' + esc(entry.login || 'Без логина') + '</p>' +
+    '<div id="vault-secret" class="vault-secret"></div>' +
+    (entry.note ? '<p class="small">' + esc(entry.note) + '</p>' : '') +
+    '<div class="vault-actions"><button class="action" data-vault-copy="1">Скопировать</button>' +
+    '<button class="action" data-vault-edit="1">Изменить</button>' +
+    '<button class="action" data-vault-delete="1">Удалить</button>' +
+    '<button class="action" data-vault-hide="1">Скрыть</button></div>'
+  );
+  document.getElementById("vault-secret").textContent = entry.password;
+  vaultTimer = setTimeout(() => {
+    clearVaultSecret();
+    const detail = document.getElementById("vault-detail");
+    if (detail) detail.innerHTML = '';
+  }, 30000);
+}
+
 const TABS = [
   ["today", "Сегодня", () => doingTab(true)],
   ["doing", "Дела", doingTab],
@@ -419,6 +509,7 @@ const TABS = [
   ["money", "Финансы", () => moneyTab() + '<details class="card"><summary>Расходы по категориям</summary>' + reportTab() + '</details>'],
   ["queue", "Сохранённое", () => queueTab() + (data.notes?.length ? card('<h2>Заметки</h2>' + data.notes.map(n =>
     '<details class="item"><summary>' + esc(n.title) + '</summary><p style="white-space:pre-wrap">' + esc(n.body || '') + '</p></details>').join('')) : '')],
+  ["vault", "Пароли", vaultTab],
 ];
 
 function draw() {
@@ -430,8 +521,8 @@ function draw() {
   const body = TABS.find(([key]) => key === tab)[2]();
   root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
     '<h2>' + TABS.find(([key]) => key === tab)[1] + '</h2><div id="status" role="status"></div>' + body +
-    (data.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
-    '<p class="small dim">Поиск — обычным вопросом боту в чате.</p>' + nav;
+    (tab !== "vault" && data.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
+    (tab !== "vault" ? '<p class="small dim">Поиск — обычным вопросом боту в чате.</p>' : '') + nav;
 }
 
 /** Действие с обновлением экрана и защитой от двойного нажатия. */
@@ -456,11 +547,80 @@ async function act(body, button) {
 
 root.addEventListener("click", async (event) => {
   if (busy) return;
-  if (event.target.closest('[data-refresh]')) { await load(); return; }
+  if (event.target.closest('[data-refresh]')) { clearVaultSecret(); await load(); return; }
   const tabButton = event.target.closest("[data-tab]");
-  if (tabButton) { tab = tabButton.dataset.tab; draw(); return; }
+  if (tabButton) {
+    clearVaultSecret();
+    tab = tabButton.dataset.tab;
+    draw();
+    if (tab === "vault") await loadVault();
+    return;
+  }
 
-  if (event.target.closest("[data-close]")) { tg?.close?.(); return; }
+  if (event.target.closest("[data-close]")) { clearVaultSecret(); tg?.close?.(); return; }
+
+  if (tab === "vault") {
+    if (event.target.closest('[data-vault-add]')) {
+      clearVaultSecret(); vaultEditId = null; vaultForm(null); return;
+    }
+    if (event.target.closest('[data-vault-cancel],[data-vault-hide]')) {
+      clearVaultSecret(); vaultEditId = null;
+      document.getElementById("vault-detail").innerHTML = ""; return;
+    }
+    const open = event.target.closest('[data-vault-open]');
+    if (open) {
+      busy = true;
+      try {
+        const result = await call({ action: "vault_reveal", id: Number(open.dataset.vaultOpen) });
+        showVaultEntry(Number(open.dataset.vaultOpen), result.entry);
+      } catch (error) { vaultError(error); }
+      finally { busy = false; }
+      return;
+    }
+    if (event.target.closest('[data-vault-copy]') && vaultShown) {
+      try { await navigator.clipboard.writeText(vaultShown.password); }
+      catch { vaultError(new Error("clipboard")); }
+      return;
+    }
+    if (event.target.closest('[data-vault-edit]') && vaultShown) {
+      const entry = vaultShown;
+      vaultEditId = entry.id;
+      vaultForm(entry);
+      vaultShown = null;
+      return;
+    }
+    if (event.target.closest('[data-vault-save]')) {
+      const service = document.getElementById("vault-service").value.trim();
+      const login = document.getElementById("vault-login").value.trim();
+      const password = document.getElementById("vault-password").value;
+      const note = document.getElementById("vault-note").value.trim();
+      if (!service || !password) {
+        document.getElementById("status").textContent = "Укажи сервис и пароль.";
+        return;
+      }
+      busy = true;
+      try {
+        await call({ action: vaultEditId ? "vault_update" : "vault_create",
+          ...(vaultEditId ? { id: vaultEditId } : {}), service, login, password, note });
+        clearVaultSecret(); vaultEditId = null;
+        document.getElementById("vault-password").value = "";
+        document.getElementById("vault-detail").innerHTML = "";
+        await loadVault();
+      } catch (error) { vaultError(error); }
+      finally { busy = false; }
+      return;
+    }
+    if (event.target.closest('[data-vault-delete]') && vaultShown) {
+      if (!confirm("Удалить этот пароль без возможности восстановления?")) return;
+      const id = vaultShown.id;
+      clearVaultSecret();
+      busy = true;
+      try { await call({ action: "vault_delete", id }); await loadVault(); }
+      catch (error) { vaultError(error); }
+      finally { busy = false; }
+      return;
+    }
+  }
 
   const shift = event.target.closest("[data-cal]");
   if (shift) { calShift += Number(shift.dataset.cal); calPick = null; draw(); return; }
@@ -528,11 +688,30 @@ root.addEventListener("click", async (event) => {
   }
 });
 
+root.addEventListener("input", (event) => {
+  if (event.target.id !== "vault-search") return;
+  const query = event.target.value.trim().toLocaleLowerCase("ru-RU");
+  document.querySelectorAll('[data-vault-open]').forEach((button) => {
+    const row = button.closest('.item');
+    const entry = vaultEntries?.find(e => Number(e.id) === Number(button.dataset.vaultOpen));
+    if (row) row.hidden = !!query && !String(entry?.service || "").toLocaleLowerCase("ru-RU").includes(query);
+  });
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    clearVaultSecret();
+    const detail = document.getElementById("vault-detail");
+    if (detail) detail.innerHTML = "";
+  }
+});
+window.addEventListener("pagehide", clearVaultSecret);
+
 async function load() {
   busy = true;
   try {
     data = await call({});
     draw();
+    if (tab === "vault") await loadVault();
   } catch (error) {
     root.innerHTML = '<div class="empty">' +
       (String(error.message) === "no-telegram"
