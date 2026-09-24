@@ -265,7 +265,9 @@ function doingTab(todayOnly = false) {
     out.push(card("<h2>События</h2>" + events.map((e) => {
       const at = new Date(e.starts_at);
       const when = at.toLocaleString("ru-RU", {
-        day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+        timeZone: data.timezone || "Europe/Moscow",
+        day: "numeric", month: "long", year: at.getUTCFullYear() === Number(data.today.slice(0, 4)) ? undefined : "numeric",
+        hour: "2-digit", minute: "2-digit",
       });
       return '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
         '</div><div class="small dim">' + when + "</div></div>" +
@@ -290,6 +292,14 @@ function doingTab(todayOnly = false) {
   if (rest.length) out.push(card("<h2>Дела</h2>" + rest.map(line).join("")));
   if (!todayOnly && data.projects?.length) out.push(card('<h2>Проекты</h2>' + data.projects.map(p =>
     '<details class="item"><summary>' + esc(p.name) + '</summary><p class="small dim">' + esc(p.about || 'Описание пока не добавлено') + '</p></details>').join('')));
+  if (!todayOnly && data.archivedEvents?.length) out.push(
+    '<details class="card"><summary>Архив событий · ' + data.archivedEvents.length + '</summary>' +
+    data.archivedEvents.map(e => '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
+      '</div><div class="small dim">' + esc(new Date(e.starts_at).toLocaleString('ru-RU', {
+        timeZone: data.timezone || 'Europe/Moscow', day: 'numeric', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })) + '</div></div></div>').join('') + '</details>'
+  );
   out.push(card(
     "<h2>Новое дело</h2>" +
     '<div class="add"><input id="task-title" placeholder="Что сделать" maxlength="200">' +
