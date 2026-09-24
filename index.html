@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Сорока</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://snruckyliflxzpzybozr.functions.supabase.co" crossorigin>
+<script defer src="./telegram-web-app.js?v=63"></script>
 <style>
   /*
    * Цвета берём у Telegram, а не выбираем свои: приложение открывается внутри
@@ -112,15 +113,15 @@
 <div id="root"><div class="empty">Загружаю…</div></div>
 
 <script>
-const tg = window.Telegram?.WebApp;
-tg?.ready();
-tg?.expand();
+let tg = null;
 
 const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
 const root = document.getElementById("root");
 let data = null;
 let tab = new URLSearchParams(location.search).get("tab") === "vault" ? "vault" : "today";
 let busy = false;
+let snapshotRequest = null;
+let snapshotError = "";
 let vaultEntries = null;
 let vaultEditId = null;
 let vaultShown = null;
@@ -156,12 +157,19 @@ async function call(body) {
   const init = tg?.initData || "";
   if (!init) throw new Error("no-telegram");
 
-  const answer = await fetch(API, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ initData: init, ...body }),
-    signal: AbortSignal.timeout(20000),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let answer;
+  try {
+    answer = await fetch(API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ initData: init, ...body }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!answer.ok) {
     const code = await answer.json().catch(() => ({}));
     throw new Error(code.error === "reopen_app" ? "reopen_app" : answer.status === 401 ? "unauthorized" : "server");
@@ -450,6 +458,7 @@ async function loadVault() {
 }
 
 function vaultTab() {
+  if (!tg) return card('<p class="dim">Подключаю Telegram…</p>');
   const rows = vaultEntries === null
     ? '<p class="dim">Загружаю список…</p>'
     : vaultEntries.length === 0
@@ -516,12 +525,16 @@ function draw() {
   // «Меню» закрывает приложение и возвращает в чат, где панель бота уже
   // открыта: внутри приложения своего меню нет и не нужно — оно в боте.
   const nav = '<nav>' + TABS.map(([key, name]) =>
-    '<button data-tab="' + key + '" aria-current="' + (tab === key) + '">' + name + "</button>"
+    '<button data-tab="' + key + '" aria-current="' + (tab === key) + '"' + (tg ? '' : ' disabled') + '>' + name + "</button>"
   ).join("") + "</nav>";
-  const body = TABS.find(([key]) => key === tab)[2]();
+  const body = tab === "vault" ? vaultTab() : data
+    ? TABS.find(([key]) => key === tab)[2]()
+    : card(snapshotError
+      ? '<p>' + esc(snapshotError) + '</p><button class="action" data-refresh="1">Повторить</button>'
+      : '<p class="dim">Загружаю данные…</p>');
   root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
     '<h2>' + TABS.find(([key]) => key === tab)[1] + '</h2><div id="status" role="status"></div>' + body +
-    (tab !== "vault" && data.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
+    (tab !== "vault" && data?.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
     (tab !== "vault" ? '<p class="small dim">Поиск — обычным вопросом боту в чате.</p>' : '') + nav;
 }
 
@@ -547,13 +560,19 @@ async function act(body, button) {
 
 root.addEventListener("click", async (event) => {
   if (busy) return;
-  if (event.target.closest('[data-refresh]')) { clearVaultSecret(); await load(); return; }
+  if (event.target.closest('[data-refresh]')) {
+    clearVaultSecret();
+    if (tab === "vault") { vaultEntries = null; draw(); await loadVault(); }
+    else await load();
+    return;
+  }
   const tabButton = event.target.closest("[data-tab]");
   if (tabButton) {
     clearVaultSecret();
     tab = tabButton.dataset.tab;
     draw();
     if (tab === "vault") await loadVault();
+    else if (!data) await load();
     return;
   }
 
@@ -706,28 +725,31 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", clearVaultSecret);
 
-async function load() {
-  busy = true;
-  try {
-    data = await call({});
-    draw();
-    if (tab === "vault") await loadVault();
-  } catch (error) {
-    root.innerHTML = '<div class="empty">' +
-      (String(error.message) === "no-telegram"
-        ? "Открой приложение из чата с ботом — кнопкой «Приложение»."
-        : String(error.message) === "unauthorized"
-        ? "Это приложение только для владельца бота."
-        : "Не удалось загрузить. Открой ещё раз.") +
-      // Одна техническая строка: «не работает» бывает не про права, а про
-      // отсутствие подписи или старую страницу из кеша клиента.
-      '<p><button class="action" data-refresh="1">Повторить</button></p>' +
-      "</div>";
-  } finally {
-    busy = false;
-  }
+function load() {
+  if (snapshotRequest) return snapshotRequest;
+  snapshotError = "";
+  snapshotRequest = call({}).then(result => {
+    data = result;
+    if (tab !== "vault") draw();
+  }).catch(error => {
+    snapshotError = String(error.message) === "no-telegram"
+      ? "Открой приложение из чата с ботом."
+      : String(error.message) === "unauthorized"
+      ? "Это приложение только для владельца бота."
+      : "Не удалось загрузить данные. Проверь соединение и повтори.";
+    if (tab !== "vault") draw();
+  }).finally(() => { snapshotRequest = null; });
+  return snapshotRequest;
 }
-load();
+draw();
+document.addEventListener("DOMContentLoaded", () => {
+  tg = window.Telegram?.WebApp;
+  tg?.ready();
+  tg?.expand();
+  draw();
+  if (tab === "vault") void loadVault();
+  else void load();
+});
 </script>
 </body>
 </html>
