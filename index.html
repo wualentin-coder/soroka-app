@@ -119,6 +119,8 @@ const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
 const root = document.getElementById("root");
 let data = null;
 let tab = new URLSearchParams(location.search).get("tab") === "vault" ? "vault" : "today";
+const requestedVaultId = Number(new URLSearchParams(location.search).get("id"));
+const vaultTargetId = Number.isSafeInteger(requestedVaultId) && requestedVaultId > 0 ? requestedVaultId : null;
 let busy = false;
 let snapshotRequest = null;
 let snapshotError = "";
@@ -459,6 +461,13 @@ async function loadVault() {
 
 function vaultTab() {
   if (!tg) return card('<p class="dim">Подключаю Telegram…</p>');
+  const target = vaultTargetId && vaultEntries?.find(e => Number(e.id) === vaultTargetId);
+  const selected = vaultTargetId && vaultEntries !== null
+    ? target
+      ? card('<h2>' + esc(target.service) + '</h2><p class="small dim">Запись найдена. Данные откроются только после нажатия.</p>' +
+        '<button class="action" data-vault-open="' + vaultTargetId + '">Показать</button>')
+      : card('<p class="dim">Запись не найдена.</p>')
+    : '';
   const rows = vaultEntries === null
     ? '<p class="dim">Загружаю список…</p>'
     : vaultEntries.length === 0
@@ -466,11 +475,10 @@ function vaultTab() {
     : vaultEntries.map(e => '<div class="item"><div class="body"><div class="title">' + esc(e.service) +
       '</div><div class="small dim">' + esc(e.login || 'Без логина') +
       '</div></div><button class="action" data-vault-open="' + Number(e.id) + '">Открыть</button></div>').join('');
-  return card('<p class="dim small">Пароли доступны только здесь. Бот не показывает их в чате.</p>' +
+  return '<div id="vault-detail">' + selected + '</div>' + card('<p class="dim small">Пароли доступны только здесь. Бот не показывает их в чате.</p>' +
     '<label class="vault-field">Найти сервис<input id="vault-search" type="search" placeholder="Название сервиса" autocomplete="off"></label>' +
     '<div id="vault-list">' + rows + '</div>' +
-    '<div class="vault-actions"><button class="action" data-vault-add="1">Добавить пароль</button></div>') +
-    '<div id="vault-detail"></div>';
+    '<div class="vault-actions"><button class="action" data-vault-add="1">Добавить пароль</button></div>');
 }
 
 function vaultForm(entry) {
@@ -481,6 +489,7 @@ function vaultForm(entry) {
     '<label class="vault-field">Логин<input id="vault-login" maxlength="300" autocomplete="off"></label>' +
     '<label class="vault-field">Пароль<input id="vault-password" type="password" maxlength="4096" autocomplete="new-password"></label>' +
     '<label class="vault-field">Заметка<textarea id="vault-note" maxlength="2000"></textarea></label>' +
+    '<p class="small dim">Название и заметка используются ИИ для поиска. Не добавляй сюда секреты.</p>' +
     '<div class="vault-actions"><button class="action" data-vault-save="1">Сохранить</button>' +
     '<button class="action" data-vault-cancel="1">Отмена</button></div>'
   );
@@ -498,7 +507,9 @@ function showVaultEntry(id, entry) {
     '<h2>' + esc(entry.service) + '</h2><p class="small dim">' + esc(entry.login || 'Без логина') + '</p>' +
     '<div id="vault-secret" class="vault-secret"></div>' +
     (entry.note ? '<p class="small">' + esc(entry.note) + '</p>' : '') +
-    '<div class="vault-actions"><button class="action" data-vault-copy="1">Скопировать</button>' +
+    '<div class="vault-actions">' + (entry.login
+      ? '<button class="action" data-vault-copy-login="1">Копировать логин</button>' : '') +
+    '<button class="action" data-vault-copy-password="1">Копировать пароль</button>' +
     '<button class="action" data-vault-edit="1">Изменить</button>' +
     '<button class="action" data-vault-delete="1">Удалить</button>' +
     '<button class="action" data-vault-hide="1">Скрыть</button></div>'
@@ -596,8 +607,13 @@ root.addEventListener("click", async (event) => {
       finally { busy = false; }
       return;
     }
-    if (event.target.closest('[data-vault-copy]') && vaultShown) {
-      try { await navigator.clipboard.writeText(vaultShown.password); }
+    const copyLogin = event.target.closest('[data-vault-copy-login]');
+    const copyPassword = event.target.closest('[data-vault-copy-password]');
+    if ((copyLogin || copyPassword) && vaultShown) {
+      try {
+        await navigator.clipboard.writeText(copyLogin ? vaultShown.login : vaultShown.password);
+        document.getElementById("status").textContent = copyLogin ? "Логин скопирован." : "Пароль скопирован.";
+      }
       catch { vaultError(new Error("clipboard")); }
       return;
     }
