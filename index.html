@@ -107,6 +107,18 @@
   .vault-field textarea { min-height:72px; resize:vertical; }
   .vault-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
   .vault-secret { overflow-wrap:anywhere; white-space:pre-wrap; user-select:text; }
+  .segment { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:10px; }
+  .segment button { flex:none; min-height:40px; padding:8px 12px; border:0; border-radius:9px; background:var(--card); color:var(--dim); }
+  .segment button[aria-current="true"] { background:var(--accent); color:#fff; }
+  .editor-field { display:block; margin:12px 0; color:var(--dim); font-size:13px; }
+  .editor-field input, .editor-field textarea { display:block; width:100%; min-height:44px; margin-top:4px; padding:10px 12px; border:1px solid var(--dim); border-radius:9px; background:var(--bg); color:var(--text); font:inherit; }
+  .editor-field textarea { min-height:160px; resize:vertical; }
+  .compact-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .compact-actions .action { flex:1 1 auto; }
+  .note-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+  header { flex-wrap:wrap; }
+  header > div { display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; }
+  header .action { min-height:40px; padding:8px 9px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -128,8 +140,22 @@ let vaultEntries = null;
 let vaultEditId = null;
 let vaultShown = null;
 let vaultTimer = null;
+let librarySection = "notes";
+let noteOpen = null;
+let searchOpen = false;
+let searchQuery = "";
+let searchHits = null;
+let settingsOpen = false;
+let settingsData = null;
+let linkEdit = null;
+let lists = null;
+let listEdit = null;
+let taskEdit = null;
 
 const SIGNS = { RUB: "₽", USD: "$", EUR: "€" };
+const KIND_LABELS = { note: 'Заметка', task: 'Дело', event: 'Событие', link: 'Материал',
+  list: 'Список', movie: 'Фильм', recipe: 'Рецепт', product: 'Товар', money: 'Финансы',
+  debt: 'Долг', payment: 'Платёж', shopping: 'Покупка' };
 
 function money(amount, currency) {
   const value = Number(amount || 0);
@@ -280,10 +306,39 @@ function reportTab() {
 }
 
 function doingTab(todayOnly = false) {
+  if (taskEdit) return card('<button class="action" data-task-back="1">К делам</button>' +
+    '<label class="editor-field">Дело<input id="edit-task-title" maxlength="200" value="' + esc(taskEdit.title) + '"></label>' +
+    '<label class="editor-field">Срок<input id="edit-task-due" type="date" value="' + esc(taskEdit.due_on || '') + '"></label>' +
+    '<label class="editor-field">Важность<select id="edit-task-priority" class="action">' +
+      [[1, 'Очень важно'], [2, 'Важно'], [3, 'Обычно'], [4, 'Низко'], [5, 'Когда-нибудь']].map(([n, label]) =>
+        '<option value="' + n + '"' + (Number(taskEdit.priority) === n ? ' selected' : '') + '>' + label + '</option>'
+      ).join('') + '</select></label><button class="action" data-task-save="1">Сохранить</button>');
   const out = [];
   const tasks = todayOnly ? data.tasks.filter(t => t.due_on && t.due_on <= data.today) : data.tasks;
   const events = todayOnly ? data.events.filter(e => new Date(e.starts_at).toLocaleDateString('en-CA', { timeZone: data.timezone || 'Europe/Moscow' }) === data.today) : data.events;
+  if (todayOnly) out.push(card('<h2>План на сегодня</h2><p class="small dim">' +
+    (tasks.length ? tasks.length + ' открытых дел' : 'Открытых дел нет') + '</p>' +
+    '<div class="add"><input id="task-title" placeholder="Что сделать сегодня" maxlength="200">' +
+    '<input id="task-due" type="date" value="' + data.today + '">' +
+    '<button data-task-add="1">Добавить</button></div>'));
 
+  const overdue = tasks.filter((t) => t.due_on && t.due_on < data.today);
+  const rest = tasks.filter((t) => !(t.due_on && t.due_on < data.today));
+
+  const line = (t) =>
+    '<div class="item"><button class="tick" aria-label="Завершить: ' + esc(t.title) + '" data-task="' + t.id + '">✓</button>' +
+    '<div class="body"><div class="title">' + esc(t.title) + "</div>" +
+    (t.due_on
+      ? '<div class="small ' + (t.due_on < data.today ? "danger" : "dim") + '">' +
+        new Date(t.due_on).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) + "</div>"
+      : "") +
+    (Number(t.priority) <= 2 ? '<div class="small dim">Важное</div>' : '') +
+    "</div>" +
+    '<button class="tick" data-task-edit="' + t.id + '" aria-label="Изменить дело">⋯</button>' +
+    '<button class="tick" data-task-del="' + t.id + '" aria-label="Удалить дело">×</button></div>';
+
+  if (overdue.length) out.push(card("<h2>⚠️ Просрочено</h2>" + overdue.map(line).join("")));
+  if (rest.length) out.push(card("<h2>" + (todayOnly ? "Сегодня" : "Дела") + "</h2>" + rest.map(line).join("")));
   if (events.length) {
     out.push(card("<h2>События</h2>" + events.map((e) => {
       const at = new Date(e.starts_at);
@@ -297,22 +352,6 @@ function doingTab(todayOnly = false) {
         '<button class="tick" data-event-del="' + e.id + '" aria-label="Удалить событие">×</button></div>';
     }).join("")));
   }
-
-  const overdue = tasks.filter((t) => t.due_on && t.due_on < data.today);
-  const rest = tasks.filter((t) => !(t.due_on && t.due_on < data.today));
-
-  const line = (t) =>
-    '<div class="item"><button class="tick" aria-label="Завершить: ' + esc(t.title) + '" data-task="' + t.id + '">✓</button>' +
-    '<div class="body"><div class="title">' + esc(t.title) + "</div>" +
-    (t.due_on
-      ? '<div class="small ' + (t.due_on < data.today ? "danger" : "dim") + '">' +
-        new Date(t.due_on).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) + "</div>"
-      : "") +
-    "</div>" +
-    '<button class="tick" data-task-del="' + t.id + '" aria-label="Удалить дело">×</button></div>';
-
-  if (overdue.length) out.push(card("<h2>⚠️ Просрочено</h2>" + overdue.map(line).join("")));
-  if (rest.length) out.push(card("<h2>Дела</h2>" + rest.map(line).join("")));
   if (!todayOnly && data.projects?.length) out.push(card('<h2>Проекты</h2>' + data.projects.map(p =>
     '<details class="item"><summary>' + esc(p.name) + '</summary><p class="small dim">' + esc(p.about || 'Описание пока не добавлено') + '</p></details>').join('')));
   if (!todayOnly && data.archivedEvents?.length) out.push(
@@ -323,23 +362,26 @@ function doingTab(todayOnly = false) {
         hour: '2-digit', minute: '2-digit',
       })) + '</div></div></div>').join('') + '</details>'
   );
-  out.push(card(
+  if (!todayOnly) out.push(card(
     "<h2>Новое дело</h2>" +
     '<div class="add"><input id="task-title" placeholder="Что сделать" maxlength="200">' +
-    '<input id="task-due" type="date"' + (todayOnly ? ' value="' + data.today + '"' : "") + ">" +
+    '<input id="task-due" type="date">' +
     '<button data-task-add="1">Добавить</button></div>'
   ));
   if (!out.length) out.push('<div class="empty">' + (todayOnly ? 'На сегодня дел нет' : 'Открытых дел нет') + "</div>");
   return out.join("");
 }
 
-function queueTab() {
-  if (!data.queue.length) return '<div class="empty">Материалов пока нет<br><span class="small">Пришли боту ссылку или файл.</span></div>';
+function queueTab(section = "all") {
+  const entries = (data.queue || []).filter(l => section === "all" ||
+    (section === "posts" ? l.kind === "tg_post" :
+      section === "files" ? l.kind === "file" : l.kind !== "tg_post" && l.kind !== "file"));
+  if (!entries.length) return '<div class="empty">Здесь пока пусто<br><span class="small">Пришли боту ссылку или файл.</span></div>';
 
   // Что можно открыть — открываем. Файл и пост живут в чате Telegram, и
   // страница туда не дотянется: у них кнопка «в чат», а отправляет бот.
-  const open = data.queue.filter((l) => safeLink(l.url));
-  const inChat = data.queue.filter((l) => !safeLink(l.url));
+  const open = entries.filter((l) => safeLink(l.url));
+  const inChat = entries.filter((l) => !safeLink(l.url));
 
   const row = (l) =>
     '<div class="item"><button class="tick" aria-label="Отметить просмотренным: ' + esc(l.title) + '" data-link="' + l.id + '">✓</button>' +
@@ -347,9 +389,11 @@ function queueTab() {
     (safeLink(l.url) ? '<a href="' + safeLink(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.title) + "</a>" : esc(l.title)) +
     "</div>" +
     '<div class="small dim">' +
-    [esc(l.topic), l.est_minutes ? Number(l.est_minutes) + " мин" : ""].filter(Boolean).join(" · ") +
+    [esc(l.topic), l.est_minutes ? Number(l.est_minutes) + " мин" : "",
+      ...(l.tags || []).map(tag => '#' + esc(tag))].filter(Boolean).join(" · ") +
     "</div></div>" +
     (safeLink(l.url) ? "" : '<button class="tick" data-send="' + l.id + '" aria-label="Прислать в чат">→</button>') +
+    '<button class="tick" data-link-edit="' + l.id + '" aria-label="Изменить материал">⋯</button>' +
     "</div>";
 
   const total = open.reduce((sum, l) => sum + (l.est_minutes || 0), 0);
@@ -363,6 +407,110 @@ function queueTab() {
       '<div class="small dim" style="margin-top:9px">Стрелка присылает файл или пост в чат с ботом.</div>'));
   }
   return out.join("");
+}
+
+function libraryTab() {
+  const sections = [["notes", "Заметки"], ["files", "Файлы"], ["posts", "Посты"], ["links", "Ссылки"], ["lists", "Списки"]];
+  const tabs = '<div class="segment">' + sections.map(([key, label]) =>
+    '<button data-library="' + key + '" aria-current="' + (librarySection === key) + '">' + label + '</button>'
+  ).join('') + '</div>';
+  if (librarySection === 'lists') return tabs + listsTab();
+  if (linkEdit) return tabs + card('<button class="action" data-link-back="1">К материалам</button>' +
+    '<label class="editor-field">Название<input id="link-title" maxlength="200" value="' + esc(linkEdit.title) + '"></label>' +
+    '<label class="editor-field">Метки через запятую<input id="link-tags" maxlength="500" value="' + esc((linkEdit.tags || []).join(', ')) + '"></label>' +
+    '<div class="compact-actions"><button class="action" data-link-save="' + linkEdit.id + '">Сохранить</button>' +
+    '<button class="action" data-link-delete="' + linkEdit.id + '">Удалить</button></div>');
+  if (librarySection !== "notes") return tabs + queueTab(librarySection);
+  if (noteOpen) {
+    const n = noteOpen.note;
+    return tabs + card(
+      '<button class="action" data-note-back="1">К заметкам</button>' +
+      '<label class="editor-field">Название<input id="note-title" maxlength="200" value="' + esc(n.title || '') + '"></label>' +
+      '<label class="editor-field">Текст<textarea id="note-body" maxlength="20000">' + esc(n.body || '') + '</textarea></label>' +
+      '<label class="editor-field">Метки через запятую<input id="note-tags" maxlength="500" value="' + esc((n.tags || []).join(', ')) + '"></label>' +
+      '<div class="compact-actions"><button class="action" data-note-save="' + n.id + '">Сохранить</button>' +
+      (n.id ? '<button class="action" data-note-delete="' + n.id + '">Удалить</button>' : '') + '</div>' +
+      (noteOpen.original ? '<details><summary>Исходное сообщение</summary><p class="note-text">' + esc(noteOpen.original) + '</p>' +
+        '<button class="action" data-note-original="1">Вставить в редактор</button></details>' : '') +
+      (noteOpen.revisions?.length ? '<details><summary>Предыдущие версии · ' + noteOpen.revisions.length + '</summary>' +
+        noteOpen.revisions.map(r => '<details class="item"><summary>' + esc(new Date(r.changed_at).toLocaleString('ru-RU')) +
+          '</summary><p class="note-text">' + esc(r.body) + '</p></details>').join('') + '</details>' : '')
+    );
+  }
+  const notes = data.notes || [];
+  return tabs + card('<div class="row"><h2>Заметки</h2><button class="action" data-note-new="1">Добавить</button></div>' +
+    (notes.length ? notes.map(n => '<button class="item action" data-note-open="' + n.id + '" style="display:block;width:100%;text-align:left">' +
+      '<span class="title">' + esc(n.title) + '</span></button>').join('') : '<p class="dim">Заметок пока нет.</p>'));
+}
+
+function listsTab() {
+  if (listEdit) {
+    const rows = listEdit.items.map((item, i) => '<div class="item">' +
+      '<input type="checkbox" data-list-check="' + i + '"' + (item.done ? ' checked' : '') + ' aria-label="Выполнено">' +
+      '<input class="action" data-list-text="' + i + '" value="' + esc(item.text) + '" maxlength="500" style="flex:1;min-width:0" aria-label="Элемент списка">' +
+      '<button class="tick" data-list-up="' + i + '" aria-label="Выше">↑</button>' +
+      '<button class="tick" data-list-down="' + i + '" aria-label="Ниже">↓</button>' +
+      '<button class="tick" data-list-remove="' + i + '" aria-label="Убрать">×</button></div>').join('');
+    return card('<button class="action" data-list-back="1">К спискам</button>' +
+      '<label class="editor-field">Название<input id="list-title" maxlength="200" value="' + esc(listEdit.title) + '"></label>' +
+      rows + '<div class="compact-actions"><button class="action" data-list-add="1">Добавить пункт</button>' +
+      '<button class="action" data-list-save="1">Сохранить</button>' +
+      (listEdit.id ? '<button class="action" data-list-delete="1">Удалить список</button>' : '') + '</div>');
+  }
+  if (!lists) return card('<p class="dim">Загружаю списки…</p>');
+  return card('<div class="row"><h2>Списки</h2><button class="action" data-list-new="1">Создать</button></div>' +
+    (lists.length ? lists.map(list => '<button class="item action" data-list-open="' + list.id +
+      '" style="display:block;width:100%;text-align:left">' + esc(list.title) +
+      ' <span class="small dim">· ' + (list.items || []).length + '</span></button>').join('') :
+      '<p class="dim">Списков пока нет.</p>'));
+}
+
+function readListForm() {
+  if (!listEdit) return;
+  listEdit.title = document.getElementById('list-title')?.value || '';
+  listEdit.items = listEdit.items.map((item, i) => ({
+    ...item,
+    text: document.querySelector('[data-list-text="' + i + '"]')?.value || '',
+    done: document.querySelector('[data-list-check="' + i + '"]')?.checked || false,
+  }));
+}
+
+function moveListItem(items, index, step) {
+  const next = index + step;
+  if (index < 0 || next < 0 || index >= items.length || next >= items.length) return items;
+  const moved = items.slice();
+  [moved[index], moved[next]] = [moved[next], moved[index]];
+  return moved;
+}
+
+function searchTab() {
+  return card('<label class="editor-field">Поиск по сохранённому<input id="global-search" type="search" value="' + esc(searchQuery) +
+    '" placeholder="Название, слово или метка" autocomplete="off"></label>' +
+    '<button class="action" data-search-run="1">Найти</button>') +
+    (searchHits === null ? '<p class="dim small">Поиск по заметкам, делам и материалам. Пароли отдельно.</p>' :
+      searchHits.length ? card('<h2>Результаты</h2>' + searchHits.map(h =>
+        '<div class="item"><div class="body"><div class="small dim">' + esc(KIND_LABELS[h.kind] || h.kind) + '</div><div class="title">' + esc(h.title) +
+        '</div>' + (h.detail ? '<p class="small dim">' + esc(h.detail) + '</p>' : '') + '</div>' +
+        (h.kind === 'note' ? '<button class="action" data-search-note="' + Number(h.id) + '">Открыть</button>' :
+          h.kind === 'link' ? '<button class="action" data-search-link="' + Number(h.id) + '">Открыть</button>' :
+          h.kind === 'list' ? '<button class="action" data-search-list="' + Number(h.id) + '">Открыть</button>' : '') + '</div>'
+      ).join('')) : '<div class="empty">Ничего не нашлось. Попробуй другие слова.</div>');
+}
+
+function settingsTab() {
+  if (!settingsData) return card('<p class="dim">Загружаю настройки…</p>');
+  const router = settingsData.openRouter || {};
+  const balance = router.available
+    ? '<div class="row"><span>Баланс аккаунта</span><span>' +
+      (router.accountBalance === null ? 'Недоступен для этого ключа' : '$' + Number(router.accountBalance).toFixed(2)) + '</span></div>' +
+      '<div class="row"><span>Остаток лимита ключа</span><span>' +
+      (router.keyRemaining === null ? 'Не задан' : '$' + Number(router.keyRemaining).toFixed(2)) + '</span></div>'
+    : '<p class="dim">Состояние OpenRouter сейчас недоступно.</p>';
+  return card('<h2>Контекст диалога</h2><p class="small dim">Сколько недавних сообщений учитывать. Большая история может увеличить стоимость ответа.</p>' +
+    '<label class="editor-field">История<select id="context-messages" class="action">' + [5, 10, 20].map(n =>
+      '<option value="' + n + '"' + (settingsData.contextMessages === n ? ' selected' : '') + '>' + n + ' сообщений</option>'
+    ).join('') + '</select></label><button class="action" data-settings-save="1">Сохранить</button>') +
+    card('<h2>OpenRouter</h2>' + balance + '<p class="small dim">Ключ хранится только на сервере. Данные обновляются не чаще раза в минуту.</p>');
 }
 
 
@@ -527,8 +675,7 @@ const TABS = [
   ["doing", "Дела", doingTab],
   ["calendar", "Календарь", calendarTab],
   ["money", "Финансы", () => moneyTab() + '<details class="card"><summary>Расходы по категориям</summary>' + reportTab() + '</details>'],
-  ["queue", "Сохранённое", () => queueTab() + (data.notes?.length ? card('<h2>Заметки</h2>' + data.notes.map(n =>
-    '<details class="item"><summary>' + esc(n.title) + '</summary><p style="white-space:pre-wrap">' + esc(n.body || '') + '</p></details>').join('')) : '')],
+  ["queue", "Сохранённое", libraryTab],
   ["vault", "Пароли", vaultTab],
 ];
 
@@ -538,15 +685,15 @@ function draw() {
   const nav = '<nav>' + TABS.map(([key, name]) =>
     '<button data-tab="' + key + '" aria-current="' + (tab === key) + '"' + (tg ? '' : ' disabled') + '>' + name + "</button>"
   ).join("") + "</nav>";
-  const body = tab === "vault" ? vaultTab() : data
+  const body = settingsOpen ? settingsTab() : searchOpen ? searchTab() : tab === "vault" ? vaultTab() : data
     ? TABS.find(([key]) => key === tab)[2]()
     : card(snapshotError
       ? '<p>' + esc(snapshotError) + '</p><button class="action" data-refresh="1">Повторить</button>'
       : '<p class="dim">Загружаю данные…</p>');
-  root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
-    '<h2>' + TABS.find(([key]) => key === tab)[1] + '</h2><div id="status" role="status"></div>' + body +
+  root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-search-toggle="1">Поиск</button> <button class="action" data-settings-toggle="1" aria-label="Настройки">⋯</button> <button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
+    '<h2>' + (settingsOpen ? 'Настройки' : searchOpen ? 'Поиск' : TABS.find(([key]) => key === tab)[1]) + '</h2><div id="status" role="status"></div>' + body +
     (tab !== "vault" && data?.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
-    (tab !== "vault" ? '<p class="small dim">Поиск — обычным вопросом боту в чате.</p>' : '') + nav;
+    nav;
 }
 
 /** Действие с обновлением экрана и защитой от двойного нажатия. */
@@ -569,8 +716,93 @@ async function act(body, button) {
   }
 }
 
+async function openNote(id) {
+  busy = true;
+  try {
+    noteOpen = await call({ action: "note_open", id });
+    librarySection = "notes";
+    tab = "queue";
+    searchOpen = false;
+    draw();
+  } catch {
+    document.getElementById("status").textContent = "Не удалось открыть заметку. Попробуй ещё раз.";
+  } finally { busy = false; }
+}
+
+async function openLink(id) {
+  busy = true;
+  try {
+    linkEdit = (await call({ action: 'link_open', id })).link;
+    librarySection = linkEdit.kind === 'tg_post' ? 'posts' : linkEdit.kind === 'file' ? 'files' : 'links';
+    tab = 'queue'; searchOpen = false; settingsOpen = false; draw();
+  } catch { document.getElementById('status').textContent = 'Не удалось открыть материал.'; }
+  finally { busy = false; }
+}
+
+async function loadLists() {
+  busy = true;
+  try { lists = (await call({ action: 'lists_list' })).lists || []; draw(); }
+  catch { document.getElementById('status').textContent = 'Не удалось загрузить списки.'; }
+  finally { busy = false; }
+}
+
+async function openListById(id) {
+  busy = true;
+  try {
+    const { list } = await call({ action: 'list_open', id });
+    listEdit = { ...list, items: (list.items || []).map(item => ({ ...item })) };
+    tab = 'queue'; librarySection = 'lists'; searchOpen = false; settingsOpen = false; draw();
+  } catch { document.getElementById('status').textContent = 'Не удалось открыть список.'; }
+  finally { busy = false; }
+}
+
 root.addEventListener("click", async (event) => {
   if (busy) return;
+  if (event.target.closest('[data-search-toggle]')) {
+    searchOpen = !searchOpen;
+    settingsOpen = false;
+    draw();
+    if (searchOpen) document.getElementById('global-search')?.focus();
+    return;
+  }
+  if (event.target.closest('[data-settings-toggle]')) {
+    settingsOpen = !settingsOpen;
+    searchOpen = false;
+    draw();
+    if (settingsOpen && !settingsData) {
+      busy = true;
+      try { settingsData = await call({ action: 'settings_get' }); draw(); }
+      catch { document.getElementById('status').textContent = 'Не удалось загрузить настройки.'; }
+      finally { busy = false; }
+    }
+    return;
+  }
+  if (event.target.closest('[data-settings-save]')) {
+    const contextMessages = Number(document.getElementById('context-messages')?.value);
+    busy = true;
+    try {
+      const result = await call({ action: 'settings_set', context_messages: contextMessages });
+      settingsData.contextMessages = result.contextMessages;
+      draw(); document.getElementById('status').textContent = 'Настройки сохранены.';
+    } catch { document.getElementById('status').textContent = 'Не удалось сохранить настройки.'; }
+    finally { busy = false; }
+    return;
+  }
+  if (event.target.closest('[data-search-run]')) {
+    searchQuery = document.getElementById('global-search')?.value.trim() || '';
+    if (searchQuery.length < 2) return;
+    busy = true;
+    try { searchHits = (await call({ action: 'search', query: searchQuery })).hits; draw(); }
+    catch { document.getElementById('status').textContent = 'Поиск не сработал. Повтори запрос.'; }
+    finally { busy = false; }
+    return;
+  }
+  const searchNote = event.target.closest('[data-search-note]');
+  if (searchNote) { await openNote(Number(searchNote.dataset.searchNote)); return; }
+  const searchLink = event.target.closest('[data-search-link]');
+  if (searchLink) { await openLink(Number(searchLink.dataset.searchLink)); return; }
+  const searchList = event.target.closest('[data-search-list]');
+  if (searchList) { await openListById(Number(searchList.dataset.searchList)); return; }
   if (event.target.closest('[data-refresh]')) {
     clearVaultSecret();
     if (tab === "vault") { vaultEntries = null; draw(); await loadVault(); }
@@ -580,6 +812,9 @@ root.addEventListener("click", async (event) => {
   const tabButton = event.target.closest("[data-tab]");
   if (tabButton) {
     clearVaultSecret();
+    searchOpen = false;
+    settingsOpen = false;
+    taskEdit = null;
     tab = tabButton.dataset.tab;
     draw();
     if (tab === "vault") await loadVault();
@@ -588,6 +823,137 @@ root.addEventListener("click", async (event) => {
   }
 
   if (event.target.closest("[data-close]")) { clearVaultSecret(); tg?.close?.(); return; }
+
+  const section = event.target.closest('[data-library]');
+  if (section) {
+    librarySection = section.dataset.library; noteOpen = null; linkEdit = null; listEdit = null; draw();
+    if (librarySection === 'lists' && lists === null) await loadLists();
+    return;
+  }
+  if (event.target.closest('[data-list-back]')) { listEdit = null; draw(); return; }
+  if (event.target.closest('[data-list-new]')) {
+    listEdit = { id: 0, title: '', items: [], version: 0 };
+    draw(); document.getElementById('list-title')?.focus(); return;
+  }
+  const openList = event.target.closest('[data-list-open]');
+  if (openList) {
+    const found = lists.find(list => Number(list.id) === Number(openList.dataset.listOpen));
+    if (!found) return;
+    listEdit = { ...found, items: (found.items || []).map(item => ({ ...item })) };
+    draw(); return;
+  }
+  if (event.target.closest('[data-list-add]')) {
+    readListForm(); listEdit.items.push({ text: '', done: false }); draw(); return;
+  }
+  const up = event.target.closest('[data-list-up]');
+  const down = event.target.closest('[data-list-down]');
+  const remove = event.target.closest('[data-list-remove]');
+  if (up || down || remove) {
+    readListForm();
+    const i = Number((up || down || remove).dataset[up ? 'listUp' : down ? 'listDown' : 'listRemove']);
+    if (remove) listEdit.items.splice(i, 1);
+    else listEdit.items = moveListItem(listEdit.items, i, up ? -1 : 1);
+    draw(); return;
+  }
+  if (event.target.closest('[data-list-save]')) {
+    readListForm();
+    const title = listEdit.title.trim();
+    const items = listEdit.items.map(item => ({ ...item, text: item.text.trim() })).filter(item => item.text);
+    if (!title) { document.getElementById('status').textContent = 'Укажи название списка.'; return; }
+    busy = true;
+    try {
+      const { list } = await call({ action: listEdit.id ? 'list_save' : 'list_create',
+        ...(listEdit.id ? { id: listEdit.id, version: listEdit.version } : {}), title, items });
+      lists = [list, ...(lists || []).filter(entry => Number(entry.id) !== Number(list.id))];
+      listEdit = null; draw(); document.getElementById('status').textContent = 'Список сохранён.';
+    } catch { document.getElementById('status').textContent = 'Не удалось сохранить список. Обнови его и попробуй снова.'; }
+    finally { busy = false; }
+    return;
+  }
+  if (event.target.closest('[data-list-delete]')) {
+    if (!confirm('Удалить список? Его можно восстановить из базы.')) return;
+    busy = true;
+    try {
+      const id = Number(listEdit.id);
+      await call({ action: 'list_delete', id, version: listEdit.version });
+      lists = (lists || []).filter(entry => Number(entry.id) !== id);
+      listEdit = null; draw();
+    } catch { document.getElementById('status').textContent = 'Не удалось удалить список.'; }
+    finally { busy = false; }
+    return;
+  }
+  if (event.target.closest('[data-link-back]')) { linkEdit = null; draw(); return; }
+  const editLink = event.target.closest('[data-link-edit]');
+  if (editLink) { await openLink(Number(editLink.dataset.linkEdit)); return; }
+  const saveLink = event.target.closest('[data-link-save]');
+  if (saveLink) {
+    const title = document.getElementById('link-title')?.value.trim();
+    const tags = (document.getElementById('link-tags')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!title) { document.getElementById('status').textContent = 'Укажи название.'; return; }
+    busy = true;
+    try {
+      const { link } = await call({ action: 'link_update', id: Number(saveLink.dataset.linkSave), title, tags });
+      data.queue = (data.queue || []).map(l => Number(l.id) === Number(link.id) ? { ...l, title: link.title, tags: link.tags } : l);
+      linkEdit = null; draw(); document.getElementById('status').textContent = 'Сохранено.';
+    } catch { document.getElementById('status').textContent = 'Не удалось сохранить материал.'; }
+    finally { busy = false; }
+    return;
+  }
+  const deleteLink = event.target.closest('[data-link-delete]');
+  if (deleteLink) {
+    if (!confirm('Удалить материал? Он останется доступен для восстановления в корзине.')) return;
+    busy = true;
+    try {
+      const id = Number(deleteLink.dataset.linkDelete);
+      await call({ action: 'link_delete', id });
+      data.queue = (data.queue || []).filter(l => Number(l.id) !== id);
+      linkEdit = null; draw();
+    } catch { document.getElementById('status').textContent = 'Не удалось удалить материал.'; }
+    finally { busy = false; }
+    return;
+  }
+  if (event.target.closest('[data-note-back]')) { noteOpen = null; draw(); return; }
+  if (event.target.closest('[data-note-new]')) {
+    noteOpen = { note: { id: 0, title: '', body: '', tags: [] }, original: null, revisions: [] };
+    draw(); document.getElementById('note-title')?.focus(); return;
+  }
+  const noteButton = event.target.closest('[data-note-open]');
+  if (noteButton) { await openNote(Number(noteButton.dataset.noteOpen)); return; }
+  if (event.target.closest('[data-note-original]') && noteOpen?.original) {
+    document.getElementById('note-body').value = noteOpen.original;
+    document.getElementById('status').textContent = 'Исходный текст вставлен. Нажми «Сохранить», чтобы применить.';
+    return;
+  }
+  const saveNote = event.target.closest('[data-note-save]');
+  if (saveNote) {
+    const id = Number(saveNote.dataset.noteSave);
+    const title = document.getElementById('note-title')?.value.trim();
+    const text = document.getElementById('note-body')?.value.trim();
+    const tags = (document.getElementById('note-tags')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!title || !text) { document.getElementById('status').textContent = 'Укажи название и текст.'; return; }
+    busy = true;
+    try {
+      const { note } = await call({ action: id ? 'note_save' : 'note_create', ...(id ? { id } : {}), title, text, tags });
+      data.notes = [note, ...(data.notes || []).filter(n => Number(n.id) !== Number(note.id))].slice(0, 40);
+      noteOpen = await call({ action: 'note_open', id: Number(note.id) });
+      draw(); document.getElementById('status').textContent = 'Сохранено.';
+    } catch { document.getElementById('status').textContent = 'Не удалось сохранить заметку. Попробуй ещё раз.'; }
+    finally { busy = false; }
+    return;
+  }
+  const deleteNote = event.target.closest('[data-note-delete]');
+  if (deleteNote) {
+    if (!confirm('Удалить заметку? Её можно восстановить из корзины бота.')) return;
+    busy = true;
+    try {
+      const id = Number(deleteNote.dataset.noteDelete);
+      await call({ action: 'note_delete', id });
+      data.notes = (data.notes || []).filter(n => Number(n.id) !== id);
+      noteOpen = null; draw();
+    } catch { document.getElementById('status').textContent = 'Не удалось удалить заметку.'; }
+    finally { busy = false; }
+    return;
+  }
 
   if (tab === "vault") {
     if (event.target.closest('[data-vault-add]')) {
@@ -688,6 +1054,26 @@ root.addEventListener("click", async (event) => {
 
   const dropTask = event.target.closest("[data-task-del]");
   if (dropTask) { await act({ action: "task_del", id: Number(dropTask.dataset.taskDel) }, dropTask); return; }
+
+  if (event.target.closest('[data-task-back]')) { taskEdit = null; draw(); return; }
+  const editTask = event.target.closest('[data-task-edit]');
+  if (editTask) {
+    taskEdit = data.tasks.find(t => Number(t.id) === Number(editTask.dataset.taskEdit));
+    draw(); return;
+  }
+  if (event.target.closest('[data-task-save]') && taskEdit) {
+    const title = document.getElementById('edit-task-title')?.value.trim();
+    const due_on = document.getElementById('edit-task-due')?.value || null;
+    const priority = Number(document.getElementById('edit-task-priority')?.value);
+    if (!title) { document.getElementById('status').textContent = 'Укажи название дела.'; return; }
+    busy = true;
+    try {
+      data = await call({ action: 'task_update', id: Number(taskEdit.id), title, due_on, priority });
+      taskEdit = null; draw(); document.getElementById('status').textContent = 'Сохранено.';
+    } catch { document.getElementById('status').textContent = 'Не удалось изменить дело.'; }
+    finally { busy = false; }
+    return;
+  }
 
   const dropEvent = event.target.closest("[data-event-del]");
   if (dropEvent) { await act({ action: "event_del", id: Number(dropEvent.dataset.eventDel) }, dropEvent); return; }
