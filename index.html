@@ -886,6 +886,7 @@ async function openListById(id) {
 root.addEventListener("click", async (event) => {
   if (busy) return;
   if (event.target.closest('[data-search-toggle]')) {
+    recordOpen = null;
     searchOpen = !searchOpen;
     settingsOpen = false;
     draw();
@@ -893,6 +894,7 @@ root.addEventListener("click", async (event) => {
     return;
   }
   if (event.target.closest('[data-settings-toggle]')) {
+    recordOpen = null;
     settingsOpen = !settingsOpen;
     searchOpen = false;
     draw();
@@ -997,6 +999,7 @@ root.addEventListener("click", async (event) => {
   const tabButton = event.target.closest("[data-tab]");
   if (tabButton) {
     clearVaultSecret();
+    recordOpen = null;
     searchOpen = false;
     settingsOpen = false;
     taskEdit = null;
