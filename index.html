@@ -145,17 +145,20 @@ let noteOpen = null;
 let searchOpen = false;
 let searchQuery = "";
 let searchHits = null;
+let searchPage = 0;
+let searchHasMore = false;
 let settingsOpen = false;
 let settingsData = null;
 let linkEdit = null;
 let lists = null;
 let listEdit = null;
 let taskEdit = null;
+let recordOpen = null;
 
 const SIGNS = { RUB: "₽", USD: "$", EUR: "€" };
 const KIND_LABELS = { note: 'Заметка', task: 'Дело', event: 'Событие', link: 'Материал',
   list: 'Список', movie: 'Фильм', recipe: 'Рецепт', product: 'Товар', money: 'Финансы',
-  debt: 'Долг', payment: 'Платёж', shopping: 'Покупка' };
+  debt: 'Долг', payment: 'Платёж', shopping: 'Покупка', project: 'Проект' };
 
 function money(amount, currency) {
   const value = Number(amount || 0);
@@ -349,11 +352,14 @@ function doingTab(todayOnly = false) {
       });
       return '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
         '</div><div class="small dim">' + when + "</div></div>" +
+        '<button class="tick" data-record-open="event:' + e.id + '" aria-label="Изменить событие">⋯</button>' +
         '<button class="tick" data-event-del="' + e.id + '" aria-label="Удалить событие">×</button></div>';
     }).join("")));
   }
   if (!todayOnly && data.projects?.length) out.push(card('<h2>Проекты</h2>' + data.projects.map(p =>
-    '<details class="item"><summary>' + esc(p.name) + '</summary><p class="small dim">' + esc(p.about || 'Описание пока не добавлено') + '</p></details>').join('')));
+    '<div class="item"><div class="body"><div class="title">' + esc(p.name) + '</div><p class="small dim">' +
+    esc(p.about || 'Описание пока не добавлено') + '</p></div>' +
+    '<button class="action" data-record-open="project:' + p.id + '">Открыть</button></div>').join('')));
   if (!todayOnly && data.archivedEvents?.length) out.push(
     '<details class="card"><summary>Архив событий · ' + data.archivedEvents.length + '</summary>' +
     data.archivedEvents.map(e => '<div class="item"><div class="body"><div class="title">' + esc(e.title) +
@@ -489,13 +495,133 @@ function searchTab() {
     '" placeholder="Название, слово или метка" autocomplete="off"></label>' +
     '<button class="action" data-search-run="1">Найти</button>') +
     (searchHits === null ? '<p class="dim small">Поиск по заметкам, делам и материалам. Пароли отдельно.</p>' :
-      searchHits.length ? card('<h2>Результаты</h2>' + searchHits.map(h =>
+      searchHits.length ? card('<h2>Результаты · страница ' + (searchPage + 1) + '</h2>' + searchHits.map(h =>
         '<div class="item"><div class="body"><div class="small dim">' + esc(KIND_LABELS[h.kind] || h.kind) + '</div><div class="title">' + esc(h.title) +
         '</div>' + (h.detail ? '<p class="small dim">' + esc(h.detail) + '</p>' : '') + '</div>' +
         (h.kind === 'note' ? '<button class="action" data-search-note="' + Number(h.id) + '">Открыть</button>' :
           h.kind === 'link' ? '<button class="action" data-search-link="' + Number(h.id) + '">Открыть</button>' :
-          h.kind === 'list' ? '<button class="action" data-search-list="' + Number(h.id) + '">Открыть</button>' : '') + '</div>'
-      ).join('')) : '<div class="empty">Ничего не нашлось. Попробуй другие слова.</div>');
+          h.kind === 'list' ? '<button class="action" data-search-list="' + Number(h.id) + '">Открыть</button>' :
+          '<button class="action" data-record-open="' + esc(h.kind) + ':' + Number(h.id) + '">Открыть</button>') + '</div>'
+      ).join('') + '<div class="compact-actions">' +
+        (searchPage ? '<button class="action" data-search-page="-1">Назад</button>' : '') +
+        (searchHasMore ? '<button class="action" data-search-page="1">Далее</button>' : '') +
+        '</div>') : '<div class="empty">Ничего не нашлось. Попробуй другие слова.</div>' +
+        (searchPage ? '<button class="action" data-search-page="-1">На предыдущую страницу</button>' : ''));
+}
+
+const RECORD_FIELDS = {
+  task: [
+    ['title', 'Дело', 'text'], ['due_on', 'Срок', 'date'],
+    ['priority', 'Важность', 'select', [['1','Очень важно'],['2','Важно'],['3','Обычно'],['4','Низко'],['5','Когда-нибудь']]],
+  ],
+  event: [
+    ['title', 'Название', 'text'], ['starts_at', 'Начало', 'datetime-local'],
+    ['ends_at', 'Окончание, если есть', 'datetime-local'], ['place', 'Место', 'text'],
+  ],
+  recipe: [
+    ['title', 'Название', 'text'], ['summary', 'Описание', 'textarea'],
+    ['servings', 'Порций', 'number'], ['minutes', 'Время, мин', 'number'],
+    ['ingredients', 'Ингредиенты', 'ingredients'], ['steps', 'Шаги, по одному на строке', 'lines'],
+    ['tags', 'Метки через запятую', 'tags'],
+  ],
+  movie: [
+    ['title', 'Название', 'text'], ['original_title', 'Оригинальное название', 'text'],
+    ['year', 'Год', 'number'], ['director', 'Режиссёр', 'text'],
+    ['why', 'Почему сохранил', 'textarea'],
+    ['status', 'Статус', 'select', [['wanted','Хочу посмотреть'],['watching','Смотрю'],['seen','Посмотрел'],['dropped','Не буду смотреть']]],
+    ['rating', 'Оценка от 1 до 10', 'number'], ['tags', 'Метки через запятую', 'tags'],
+  ],
+  product: [
+    ['title', 'Название', 'text'], ['note', 'Заметка', 'textarea'],
+    ['target_price', 'Желаемая цена', 'number'],
+    ['status', 'Статус', 'select', [['wanted','Хочу купить'],['bought','Куплено'],['dropped','Неактуально']]],
+    ['track', 'Следить за ценой', 'checkbox'], ['tags', 'Метки через запятую', 'tags'],
+  ],
+  debt: [
+    ['person', 'Кто должен', 'text'], ['amount', 'Сумма долга', 'number'],
+    ['paid', 'Уже возвращено', 'number'], ['due_on', 'Срок', 'date'],
+    ['note', 'Заметка', 'textarea'],
+  ],
+  payment: [
+    ['title', 'Название', 'text'], ['amount', 'Сумма', 'number'],
+    ['category', 'Категория', 'text'], ['next_on', 'Следующий платёж', 'date'],
+    ['active', 'Напоминать о платеже', 'checkbox'],
+  ],
+  shopping: [
+    ['title', 'Название', 'text'], ['qty', 'Количество', 'text'],
+    ['done', 'Куплено', 'checkbox'],
+  ],
+  money: [
+    ['amount', 'Сумма', 'number'], ['category', 'Категория', 'text'],
+    ['comment', 'Комментарий', 'textarea'], ['happened_on', 'Дата операции', 'date'],
+  ],
+  project: [
+    ['about', 'Описание', 'textarea'],
+    ['status', 'Статус', 'select', [['active','Активен'],['paused','На паузе'],['done','Завершён']]],
+  ],
+};
+
+function localDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('sv-SE', {
+    timeZone: data?.timezone || 'Europe/Moscow', year: 'numeric', month: '2-digit',
+    day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).replace(' ', 'T');
+}
+
+function recordForm() {
+  const { kind, record } = recordOpen;
+  const complexMoney = kind === 'money' && (record.origin !== 'manual' ||
+    !['income','expense'].includes(record.kind) || record.to_account_id);
+  const fields = (RECORD_FIELDS[kind] || []).map(([key, label, type, options]) => {
+    const value = key === 'done' ? !!record.done_at : record[key];
+    const inputValue = type === 'datetime-local' ? localDateTime(value)
+      : type === 'tags' ? (value || []).join(', ')
+      : type === 'lines' ? (value || []).join('\n')
+      : type === 'ingredients' ? (value || []).map(row =>
+        [row.name || '', row.qty || '', row.unit || ''].join(' | ')).join('\n')
+      : value ?? '';
+    if (type === 'checkbox') return '<label class="editor-field"><input data-record-field="' + key +
+      '" type="checkbox"' + (inputValue ? ' checked' : '') + '> ' + esc(label) + '</label>';
+    if (type === 'select') return '<label class="editor-field">' + esc(label) +
+      '<select class="action" data-record-field="' + key + '">' + options.map(([code, name]) =>
+        '<option value="' + esc(code) + '"' + (String(value) === code ? ' selected' : '') + '>' +
+        esc(name) + '</option>').join('') + '</select></label>';
+    if (['textarea','ingredients','lines','tags'].includes(type)) return '<label class="editor-field">' +
+      esc(label) + '<textarea data-record-field="' + key + '">' + esc(inputValue) +
+      '</textarea>' + (type === 'ingredients' ? '<span class="small dim">Один ингредиент на строке: название | количество | единица.</span>' : '') + '</label>';
+    return '<label class="editor-field">' + esc(label) + '<input data-record-field="' + key +
+      '" type="' + type + '"' + (type === 'number' ? ' step="any"' : '') +
+      ' value="' + esc(inputValue) + '"></label>';
+  }).join('');
+  const subtitle = kind === 'money' ? [record.kind === 'income' ? 'Доход' : record.kind === 'expense' ? 'Расход' : 'Перевод', record.currency].join(' · ')
+    : kind === 'debt' ? record.currency
+    : kind === 'payment' ? [record.currency, record.rule].filter(Boolean).join(' · ')
+    : kind === 'product' ? [record.store, record.url].filter(Boolean).join(' · ')
+    : kind === 'project' ? record.name
+    : '';
+  return card('<button class="action" data-record-back="1">Назад</button>' +
+    '<h2 style="margin-top:16px">' + esc(KIND_LABELS[kind] || kind) + '</h2>' +
+    (subtitle ? '<p class="small dim">' + esc(subtitle) + '</p>' : '') +
+    (complexMoney ? '<p>Перевод или распределение связано с несколькими суммами. Измени его в чате с ботом.</p>' :
+      fields + '<div class="compact-actions"><button class="action" data-record-save="1">Сохранить</button>' +
+      '<button class="action" data-record-delete="1">Удалить</button></div>'));
+}
+
+function readRecordForm() {
+  const changes = {};
+  for (const [key, , type] of RECORD_FIELDS[recordOpen.kind] || []) {
+    const field = root.querySelector('[data-record-field="' + key + '"]');
+    const value = type === 'checkbox' ? !!field?.checked : field?.value ?? '';
+    changes[key] = type === 'tags' ? value.split(',').map(tag => tag.trim()).filter(Boolean)
+      : type === 'lines' ? value.split('\n').map(line => line.trim()).filter(Boolean)
+      : type === 'ingredients' ? value.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+        const [name = '', qty = '', unit = ''] = line.split('|').map(part => part.trim());
+        return { name, qty, unit };
+      }) : value;
+  }
+  return changes;
 }
 
 function settingsTab() {
@@ -563,7 +689,7 @@ function calendarTab() {
     '<div class="item"><div class="body"><div class="title">' + esc(e.title) + "</div>" +
     '<div class="small dim">' + (e.task ? "дело" :
       new Date(e.starts_at).toLocaleTimeString("ru-RU", { timeZone: data.timezone || "Europe/Moscow", hour: "2-digit", minute: "2-digit" })) +
-    "</div></div></div>"
+    "</div></div>" + (e.task ? '' : '<button class="action" data-record-open="event:' + e.id + '">Открыть</button>') + '</div>'
   ).join("");
 
   return card(
@@ -686,13 +812,13 @@ function draw() {
   const nav = '<nav>' + TABS.map(([key, name]) =>
     '<button data-tab="' + key + '" aria-current="' + (tab === key) + '"' + (tg ? '' : ' disabled') + '>' + name + "</button>"
   ).join("") + "</nav>";
-  const body = settingsOpen ? settingsTab() : searchOpen ? searchTab() : tab === "vault" ? vaultTab() : data
+  const body = recordOpen ? recordForm() : settingsOpen ? settingsTab() : searchOpen ? searchTab() : tab === "vault" ? vaultTab() : data
     ? TABS.find(([key]) => key === tab)[2]()
     : card(snapshotError
       ? '<p>' + esc(snapshotError) + '</p><button class="action" data-refresh="1">Повторить</button>'
       : '<p class="dim">Загружаю данные…</p>');
   root.innerHTML = '<header><h1>Сорока</h1><div><button class="action" data-search-toggle="1">Поиск</button> <button class="action" data-settings-toggle="1" aria-label="Настройки">⋯</button> <button class="action" data-refresh="1" aria-label="Обновить данные">↻</button> <button class="action" data-close="1">В чат</button></div></header>' +
-    '<h2>' + (settingsOpen ? 'Настройки' : searchOpen ? 'Поиск' : TABS.find(([key]) => key === tab)[1]) + '</h2><div id="status" role="status"></div>' + body +
+    '<h2>' + (recordOpen ? KIND_LABELS[recordOpen.kind] || 'Запись' : settingsOpen ? 'Настройки' : searchOpen ? 'Поиск' : TABS.find(([key]) => key === tab)[1]) + '</h2><div id="status" role="status"></div>' + body +
     (tab !== "vault" && data?.inbox ? '<div class="notice">Неразобранное · ' + data.inbox + '<br><span class="small">Открой «Неразобранное» в чате, чтобы исправить записи.</span></div>' : '') +
     nav;
 }
@@ -792,9 +918,26 @@ root.addEventListener("click", async (event) => {
   if (event.target.closest('[data-search-run]')) {
     searchQuery = document.getElementById('global-search')?.value.trim() || '';
     if (searchQuery.length < 2) return;
+    searchPage = 0;
     busy = true;
-    try { searchHits = (await call({ action: 'search', query: searchQuery })).hits; draw(); }
+    try {
+      const result = await call({ action: 'search', query: searchQuery, page: 0 });
+      searchHits = result.hits; searchHasMore = result.hasMore; draw();
+    }
     catch { document.getElementById('status').textContent = 'Поиск не сработал. Повтори запрос.'; }
+    finally { busy = false; }
+    return;
+  }
+  const pageButton = event.target.closest('[data-search-page]');
+  if (pageButton) {
+    const page = searchPage + Number(pageButton.dataset.searchPage);
+    if (page < 0) return;
+    busy = true;
+    try {
+      const result = await call({ action: 'search', query: searchQuery, page });
+      searchHits = result.hits; searchPage = page; searchHasMore = result.hasMore; draw();
+      document.getElementById('global-search')?.scrollIntoView({ block: 'start' });
+    } catch { document.getElementById('status').textContent = 'Не удалось загрузить страницу. Повтори попытку.'; }
     finally { busy = false; }
     return;
   }
@@ -804,6 +947,47 @@ root.addEventListener("click", async (event) => {
   if (searchLink) { await openLink(Number(searchLink.dataset.searchLink)); return; }
   const searchList = event.target.closest('[data-search-list]');
   if (searchList) { await openListById(Number(searchList.dataset.searchList)); return; }
+  const recordButton = event.target.closest('[data-record-open]');
+  if (recordButton) {
+    const [kind, rawId] = String(recordButton.dataset.recordOpen).split(':');
+    const id = Number(rawId);
+    if (!RECORD_FIELDS[kind] || !Number.isSafeInteger(id) || id <= 0) return;
+    busy = true;
+    try {
+      const { record } = await call({ action: 'record_open', kind, id });
+      recordOpen = { kind, record }; draw();
+    } catch { document.getElementById('status').textContent = 'Не удалось открыть запись.'; }
+    finally { busy = false; }
+    return;
+  }
+  if (event.target.closest('[data-record-back]')) { recordOpen = null; draw(); return; }
+  if (event.target.closest('[data-record-save]') && recordOpen) {
+    const { kind, record } = recordOpen;
+    const changes = readRecordForm();
+    busy = true;
+    try {
+      const result = await call({ action: 'record_save', kind, id: Number(record.id), changes });
+      recordOpen = { kind, record: result.record };
+      if (searchHits) searchHits = searchHits.map(hit => hit.kind === kind && Number(hit.id) === Number(record.id)
+        ? { ...hit, title: result.record.title || result.record.person || result.record.name || hit.title } : hit);
+      draw(); document.getElementById('status').textContent = 'Сохранено.';
+      void load();
+    } catch { document.getElementById('status').textContent = 'Не удалось сохранить. Проверь поля и повтори.'; }
+    finally { busy = false; }
+    return;
+  }
+  if (event.target.closest('[data-record-delete]') && recordOpen) {
+    if (!confirm('Удалить запись? Её можно восстановить в корзине бота.')) return;
+    const { kind, record } = recordOpen;
+    busy = true;
+    try {
+      await call({ action: 'record_delete', kind, id: Number(record.id) });
+      if (searchHits) searchHits = searchHits.filter(hit => hit.kind !== kind || Number(hit.id) !== Number(record.id));
+      recordOpen = null; draw(); void load();
+    } catch { document.getElementById('status').textContent = 'Не удалось удалить запись.'; }
+    finally { busy = false; }
+    return;
+  }
   if (event.target.closest('[data-refresh]')) {
     clearVaultSecret();
     if (tab === "vault") { vaultEntries = null; draw(); await loadVault(); }
