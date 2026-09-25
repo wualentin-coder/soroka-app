@@ -433,8 +433,9 @@ function libraryTab() {
       (noteOpen.original ? '<details><summary>Исходное сообщение</summary><p class="note-text">' + esc(noteOpen.original) + '</p>' +
         '<button class="action" data-note-original="1">Вставить в редактор</button></details>' : '') +
       (noteOpen.revisions?.length ? '<details><summary>Предыдущие версии · ' + noteOpen.revisions.length + '</summary>' +
-        noteOpen.revisions.map(r => '<details class="item"><summary>' + esc(new Date(r.changed_at).toLocaleString('ru-RU')) +
-          '</summary><p class="note-text">' + esc(r.body) + '</p></details>').join('') + '</details>' : '')
+        noteOpen.revisions.map((r, i) => '<details class="item"><summary>' + esc(new Date(r.changed_at).toLocaleString('ru-RU')) +
+          '</summary><p class="note-text">' + esc(r.body) + '</p>' +
+          '<button class="action" data-note-revision="' + i + '">Вставить эту версию в редактор</button></details>').join('') + '</details>' : '')
     );
   }
   const notes = data.notes || [];
@@ -922,6 +923,16 @@ root.addEventListener("click", async (event) => {
   if (event.target.closest('[data-note-original]') && noteOpen?.original) {
     document.getElementById('note-body').value = noteOpen.original;
     document.getElementById('status').textContent = 'Исходный текст вставлен. Нажми «Сохранить», чтобы применить.';
+    return;
+  }
+  const revisionButton = event.target.closest('[data-note-revision]');
+  if (revisionButton && noteOpen?.revisions) {
+    const revision = noteOpen.revisions[Number(revisionButton.dataset.noteRevision)];
+    if (revision) {
+      document.getElementById('note-title').value = revision.title;
+      document.getElementById('note-body').value = revision.body;
+      document.getElementById('status').textContent = 'Версия вставлена. Нажми «Сохранить», чтобы применить.';
+    }
     return;
   }
   const saveNote = event.target.closest('[data-note-save]');
