@@ -580,7 +580,7 @@ function recordForm() {
       : type === 'tags' ? (value || []).join(', ')
       : type === 'lines' ? (value || []).join('\n')
       : type === 'ingredients' ? (value || []).map(row =>
-        [row.name || '', row.qty || '', row.unit || ''].join(' | ')).join('\n')
+        [row.name || '', row.qty || '', row.unit || '', row.group || ''].join(' | ')).join('\n')
       : value ?? '';
     if (type === 'checkbox') return '<label class="editor-field"><input data-record-field="' + key +
       '" type="checkbox"' + (inputValue ? ' checked' : '') + '> ' + esc(label) + '</label>';
@@ -590,7 +590,7 @@ function recordForm() {
         esc(name) + '</option>').join('') + '</select></label>';
     if (['textarea','ingredients','lines','tags'].includes(type)) return '<label class="editor-field">' +
       esc(label) + '<textarea data-record-field="' + key + '">' + esc(inputValue) +
-      '</textarea>' + (type === 'ingredients' ? '<span class="small dim">Один ингредиент на строке: название | количество | единица.</span>' : '') + '</label>';
+      '</textarea>' + (type === 'ingredients' ? '<span class="small dim">Один ингредиент на строке: название | количество | единица | часть блюда. Например: соль | 0,5 | ч. л. | Маринад.</span>' : '') + '</label>';
     return '<label class="editor-field">' + esc(label) + '<input data-record-field="' + key +
       '" type="' + type + '"' + (type === 'number' ? ' step="any"' : '') +
       ' value="' + esc(inputValue) + '"></label>';
@@ -617,8 +617,8 @@ function readRecordForm() {
     changes[key] = type === 'tags' ? value.split(',').map(tag => tag.trim()).filter(Boolean)
       : type === 'lines' ? value.split('\n').map(line => line.trim()).filter(Boolean)
       : type === 'ingredients' ? value.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
-        const [name = '', qty = '', unit = ''] = line.split('|').map(part => part.trim());
-        return { name, qty, unit };
+        const [name = '', qty = '', unit = '', group = ''] = line.split('|').map(part => part.trim());
+        return { name, qty, unit, group };
       }) : value;
   }
   return changes;
