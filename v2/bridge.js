@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=421fbdc790","integrity":null},{"src":"./movies.js?v=070f978bcf","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=cd12753665","integrity":null},{"src":"./more.js?v=9b76657ba8","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=dd79c29b82","integrity":null},{"src":"./app.js?v=8f8c8d3257","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d859993f8c","integrity":null},{"src":"./movies.js?v=4cec6bf8cb","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=b748135f8a","integrity":null},{"src":"./more.js?v=fddcab39cb","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=8f8c8d3257","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
