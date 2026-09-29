@@ -161,7 +161,13 @@ function extendedPage(page) {
   };
   return (pages[page] || renderMorePage)();
 }
+document.addEventListener("submit", event => {
+  if (event.target?.id !== "goal-deposit-form") return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  goalDepositApply(1);
+}, true);
 function renderExtendedSheet() {
+  if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
   if (ui.sheet.kind === "card-preview") return renderCardPreviewSheet();
   if (ui.sheet.kind === "saved-add-menu") return renderSavedAddMenuSheet();
   if (ui.sheet.kind === "saved") return renderSavedSheet();
