@@ -182,7 +182,7 @@ function renderAddressWorkspace() {
   const selected = items.find(item => item.id === ui.mapSelectedId);
   const categoryChips = `<div class="map-categories" aria-label="Категории адресов"><button class="map-category-chip ${!ui.mapCategory ? "active" : ""}" type="button" data-action="map-filter" data-category="" aria-pressed="${!ui.mapCategory}">Все <span>${savedItems("addresses").length}</span></button>${categories.filter(category => ui.mapCategory === category.id || savedItems("addresses").some(item => item.categoryId === category.id)).map(category => `<button class="map-category-chip ${ui.mapCategory === category.id ? "active" : ""}" type="button" data-action="map-filter" data-category="${esc(category.id)}" aria-pressed="${ui.mapCategory === category.id}" style="--map-color:${esc(category.color)}">${icon(category.icon || "pin", "icon-sm")}${esc(category.name)}<span>${savedItems("addresses").filter(item => item.categoryId === category.id).length}</span></button>`).join("")}<button class="map-manage-chip" type="button" data-action="map-manage-categories">${icon("settings", "icon-sm")}Разделы</button></div>`;
   const switcher = `<div class="map-view-switch" role="group" aria-label="Вид адресов"><button type="button" class="${ui.addressView === "list" ? "active" : ""}" data-action="map-view" data-view="list" aria-pressed="${ui.addressView === "list"}">${icon("note", "icon-sm")}Список</button><button type="button" class="${ui.addressView === "map" ? "active" : ""}" data-action="map-view" data-view="map" aria-pressed="${ui.addressView === "map"}">${icon("pin", "icon-sm")}Карта</button></div>`;
-  const map = `<div class="map-frame ${ui.mapPlacing ? "is-placing" : ""}"><div id="address-map" class="address-map" role="application" aria-label="Карта сохранённых адресов"></div><div class="map-empty-fallback" id="map-fallback" hidden>Карта не загрузилась. Адреса доступны в списке.</div>${ui.mapPlacing ? `<div class="map-place-hint">Нажмите на карте, чтобы поставить метку <button type="button" data-action="map-cancel-place">Отмена</button></div>` : ""}</div>${mapped.length ? `<div class="map-point-strip" aria-label="Метки на карте">${mapped.map(item => `<button type="button" class="${ui.mapSelectedId === item.id ? "active" : ""}" data-action="map-select-point" data-id="${esc(item.id)}" style="--map-color:${esc(mapCategory(item.categoryId)?.color || "#78beb8")}"><span></span>${esc(item.title)}</button>`).join("")}</div>` : ""}${selected ? renderMapPointCard(selected) : `<p class="map-caption">Нажмите на метку или выберите место под картой.</p>`}${items.length > mapped.length ? `<p class="section-note">${items.length - mapped.length} адресов пока без метки на карте. Координаты можно добавить при редактировании.</p>` : ""}`;
+  const map = `<div class="map-frame ${ui.mapPlacing ? "is-placing" : ""}"><div id="address-map" class="address-map" role="application" aria-label="Карта сохранённых адресов"></div><button class="map-locate" type="button" data-action="map-locate" aria-label="Где я">${icon("locate")}</button><div class="map-empty-fallback" id="map-fallback" hidden>Карта не загрузилась. Адреса доступны в списке.</div>${ui.mapPlacing ? `<div class="map-place-hint">Нажмите на карте, чтобы поставить метку <button type="button" data-action="map-cancel-place">Отмена</button></div>` : ""}</div>${mapped.length ? `<div class="map-point-strip" aria-label="Метки на карте">${mapped.map(item => `<button type="button" class="${ui.mapSelectedId === item.id ? "active" : ""}" data-action="map-select-point" data-id="${esc(item.id)}" style="--map-color:${esc(mapCategory(item.categoryId)?.color || "#78beb8")}"><span></span>${esc(item.title)}</button>`).join("")}</div>` : ""}${selected ? renderMapPointCard(selected) : `<p class="map-caption">Нажмите на метку или выберите место под картой.</p>`}${items.length > mapped.length ? `<p class="section-note">${items.length - mapped.length} адресов пока без метки на карте. Координаты можно добавить при редактировании.</p>` : ""}`;
   const list = `<div class="section-toolbar"><input id="saved-filter-input" class="filter-input" type="search" placeholder="Искать адрес…" value="${esc(ui.savedQuery)}" aria-label="Искать адрес"><span class="section-note">${items.length} ${word(items.length, "точка", "точки", "точек")}</span></div><div id="saved-results" class="saved-results">${items.length ? `<div class="record-list">${items.map(item => savedRecordCard(item, "addresses")).join("")}</div>` : emptyCard("Адресов нет", "Добавьте точку на карте или измените фильтр.")}</div>`;
   return `<div class="address-workspace">${categoryChips}<div class="map-toolbar">${switcher}<button class="map-place-button ${ui.mapPlacing ? "active" : ""}" type="button" data-action="map-place">${icon("pin", "icon-sm")}${ui.mapPlacing ? "Выберите место" : "Поставить метку"}</button></div>${ui.addressView === "map" ? map : list}<div class="map-source-note"><strong>Как адрес появится в приложении</strong><span>Геолокация, координаты или ссылка на Google Maps, Яндекс Карты и 2ГИС из Telegram.</span></div></div>`;
 }
@@ -220,6 +220,69 @@ function mountMiniMap() {
   const category = mapCategory(item.categoryId);
   L.marker(coordinates, { icon: L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker selected" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(category?.icon || "pin", "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] }) }).addTo(map);
 }
+/*
+ * Где я: точка и круг погрешности на карте. Сначала — геопозиция Telegram
+ * (она спрашивает разрешение один раз и помнит его), иначе — браузерная.
+ * Прошлая позиция рисуется сразу, чтобы карта не была пустой, пока ищем новую.
+ */
+const MY_POSITION_KEY = "soroka-my-position";
+let myMarker = null, myCircle = null, myWatch = 0;
+function cachedPosition() {
+  try { const p = JSON.parse(localStorage.getItem(MY_POSITION_KEY) || "null"); return p && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? p : null; } catch (_) { return null; }
+}
+/** Позиция: { lat, lng, acc } или null (не разрешили, нет сигнала). */
+function requestPosition() {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = value => { if (!done) { done = true; resolve(value); } };
+    setTimeout(() => finish(null), 12000);
+    const browser = () => {
+      if (!navigator.geolocation) return finish(null);
+      navigator.geolocation.getCurrentPosition(p => finish({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }), () => finish(null), { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 });
+    };
+    const tg = window.Telegram?.WebApp;
+    const lm = tg?.LocationManager;
+    if (!lm || (tg.isVersionAtLeast && !tg.isVersionAtLeast("8.0"))) return browser();
+    const ask = () => {
+      if (!lm.isLocationAvailable) return browser();
+      lm.getLocation(l => {
+        if (l) return finish({ lat: l.latitude, lng: l.longitude, acc: l.horizontal_accuracy || 60 });
+        // Отказали в Telegram — браузер тоже не поможет; пусть человек включит в настройках.
+        if (lm.isAccessRequested && !lm.isAccessGranted) return finish(null);
+        browser();
+      });
+    };
+    try { lm.isInited ? ask() : lm.init(ask); } catch (_) { browser(); }
+  });
+}
+function drawMyPosition(pos) {
+  if (!addressMap || !pos) return;
+  const at = [pos.lat, pos.lng];
+  const radius = Math.min(Math.max(Number(pos.acc) || 60, 20), 400);
+  if (myMarker) { myMarker.remove(); myMarker = null; }
+  if (myCircle) { myCircle.remove(); myCircle = null; }
+  myCircle = L.circle(at, { radius, color: "#2f80ed", weight: 1, opacity: .5, fillColor: "#2f80ed", fillOpacity: .13, interactive: false }).addTo(addressMap);
+  myMarker = L.marker(at, { icon: L.divIcon({ className: "me-shell", html: '<span class="me-dot"><i></i></span>', iconSize: [24, 24], iconAnchor: [12, 12] }), interactive: false, keyboard: false, zIndexOffset: 900 }).addTo(addressMap);
+}
+async function showMyPosition(centre) {
+  const map = addressMap;
+  const old = cachedPosition();
+  if (old) drawMyPosition(old);
+  const pos = await requestPosition();
+  if (!pos) {
+    if (centre) {
+      const lm = window.Telegram?.WebApp?.LocationManager;
+      if (lm && lm.isAccessRequested && !lm.isAccessGranted && lm.openSettings) { toast("Разрешите доступ к геопозиции в настройках"); lm.openSettings(); }
+      else toast("Не получилось определить, где вы");
+    }
+    return;
+  }
+  try { localStorage.setItem(MY_POSITION_KEY, JSON.stringify({ lat: pos.lat, lng: pos.lng, acc: pos.acc })); } catch (_) {}
+  if (map !== addressMap) return;
+  drawMyPosition(pos);
+  if (centre) addressMap.flyTo([pos.lat, pos.lng], Math.max(addressMap.getZoom(), 15), { duration: .9 });
+}
+
 function mountAddressMap() {
   mountMiniMap();
   const host = document.getElementById("address-map");
@@ -230,6 +293,8 @@ function mountAddressMap() {
   addressMap = L.map(host, { zoomControl: false }).setView(center, ui.mapZoom || 12);
   L.control.zoom({ position: "topright" }).addTo(addressMap);
   addBaseLayer(addressMap);
+  myMarker = null; myCircle = null;
+  void showMyPosition(false);
   items.forEach(item => {
     const category = mapCategory(item.categoryId);
     const markerIcon = L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker ${item.id === ui.mapSelectedId ? "selected" : ""}" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(category?.icon || "pin", "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] });
@@ -264,6 +329,7 @@ function selectMapPoint(recordId) {
   requestAnimationFrame(() => document.querySelector(".map-point-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
 function mapAction(action, control) {
+  if (action === "map-locate") { if (addressMap) { control.classList.add("busy"); showMyPosition(true).finally(() => control.classList.remove("busy")); } return true; }
   if (action === "map-view") { ui.addressView = control.dataset.view; ui.mapPlacing = false; render(); return true; }
   if (action === "map-filter") { ui.mapCategory = control.dataset.category || ""; ui.mapSelectedId = null; render(); return true; }
   if (action === "map-place") { ui.addressView = "map"; ui.mapPlacing = !ui.mapPlacing; ui.mapSelectedId = null; render(); return true; }
