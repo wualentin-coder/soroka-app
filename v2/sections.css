@@ -1058,3 +1058,150 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .taste-chip.top { background: var(--accent); color: #fff; }
 .reco-actions .small-button { min-height: 34px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
 .kpi-grid .kpi:nth-child(3):last-child { grid-column: 1 / -1; }
+
+/* ── Кино: строка оценок, значки на карточке, предложения ─────────────── */
+.movie-card-scores { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; padding-top: 10px; }
+.movie-card-scores .score { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; padding: 0 8px; border-radius: 8px; background: var(--surface-soft); color: var(--text); font-size: 11.5px; font-weight: 800; line-height: 1; }
+.movie-card-scores .score i { color: var(--muted); font-size: 9.5px; font-style: normal; font-weight: 800; letter-spacing: .02em; }
+.movie-card-scores .score.mine { background: color-mix(in srgb, #e2a83b 20%, transparent); color: #b9821a; }
+.movie-card-scores .score .icon { width: 11px; height: 11px; fill: currentColor; stroke: none; }
+.movie-card-scores + .movie-card-where { margin-top: 0; }
+.movie-card-description { flex: none; }
+.record-grid .movie-card-scores { display: none; }
+/* Значки «просмотрено» и «закладка» — в одной линии по центру верхней полосы карточки. */
+.record-card-shell .record-pin-toggle, .record-card-shell .record-seen { top: 8px; width: 34px; height: 34px; display: grid; place-items: center; }
+.record-card-shell .record-pin-toggle { right: 8px; border-radius: 11px; }
+.record-card-shell .record-seen { right: 42px; border-radius: 11px; color: var(--accent); pointer-events: none; animation: seen-in .38s cubic-bezier(.2, .9, .3, 1.3) both; }
+.record-card-shell .record-pin-toggle .icon, .record-card-shell .record-seen .icon { width: 17px; height: 17px; }
+.record-pin-toggle { transition: background .2s ease, color .25s ease, transform .2s ease; }
+.record-pin-toggle .icon { transition: fill .28s ease, transform .35s cubic-bezier(.3, 1.6, .5, 1); }
+.record-pin-toggle:hover { background: var(--surface-soft); }
+.record-pin-toggle.is-pinned { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.record-pin-toggle.pin-pop .icon { animation: pin-pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.record-pin-toggle.pin-pop::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: pin-ring .55s ease-out; pointer-events: none; }
+@keyframes pin-pop { 0% { transform: scale(.7) rotate(-14deg); } 55% { transform: scale(1.35) rotate(6deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes pin-ring { 0% { transform: scale(.4); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes seen-in { from { opacity: 0; transform: scale(.4) rotate(-20deg); } to { opacity: 1; transform: none; } }
+.movie-card-body { padding-right: 12px; }
+.movie-card-kicker { padding-right: 76px; }
+.movie-card-scores { flex-wrap: nowrap; }
+.movie-card-scores .score { padding: 0 7px; white-space: nowrap; }
+/* Кнопка «Подобрать»: плавная, с бегущей полоской и сменой подписи. */
+.reco-load { position: relative; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 0 16px 0 10px; overflow: hidden; border: 0; border-radius: 18px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 62%, #ffcf70)); color: #fff; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 32%, transparent); transition: transform .2s ease, box-shadow .3s ease, filter .3s ease; }
+.reco-load:active:not(:disabled) { transform: scale(.985); }
+.reco-load:disabled { cursor: progress; opacity: 1; }
+.reco-load-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, .18); }
+.reco-load-icon .icon { width: 22px; height: 22px; }
+.reco-load:not(.busy) .reco-load-icon .icon { animation: spark-turn 5s linear infinite; }
+.reco-load-text { display: grid; gap: 2px; min-width: 0; }
+.reco-load-text b { font-size: 15px; font-weight: 800; }
+.reco-load-text small { font-size: 12px; opacity: .86; transition: opacity .22s ease, transform .22s ease; }
+.reco-load-text small.swap { opacity: 0; transform: translateY(4px); }
+.reco-orbit { position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, .28); border-top-color: #fff; animation: live-spin .9s cubic-bezier(.45, .1, .55, .9) infinite; }
+.reco-load-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; opacity: 0; background: rgba(255, 255, 255, .22); }
+.reco-load.busy .reco-load-bar { opacity: 1; }
+.reco-load.busy .reco-load-bar::after { content: ""; display: block; width: 38%; height: 100%; border-radius: 3px; background: #fff; animation: splash-run 1.4s cubic-bezier(.4, 0, .2, 1) infinite; }
+.reco-load.busy { filter: saturate(.9); animation: reco-breathe 2.4s ease-in-out infinite; }
+@keyframes spark-turn { to { transform: rotate(360deg); } }
+@keyframes reco-breathe { 0%, 100% { box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 28%, transparent); } 50% { box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 50%, transparent); } }
+/* Пока ждём — на месте карточек мерцают заготовки. */
+.reco-skeleton { display: grid; grid-template-columns: 92px 1fr; gap: 15px; min-height: 140px; padding: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); animation: live-appear .4s ease both; }
+.reco-skeleton .sk-cover, .reco-skeleton .sk-lines i { position: relative; overflow: hidden; display: block; border-radius: 10px; background: var(--surface-soft); }
+.reco-skeleton .sk-cover { aspect-ratio: 2 / 3; }
+.reco-skeleton .sk-lines { display: grid; align-content: center; gap: 10px; }
+.reco-skeleton .sk-lines i { height: 12px; }
+.reco-skeleton .sk-lines i:nth-child(1) { width: 40%; }
+.reco-skeleton .sk-lines i:nth-child(2) { width: 85%; height: 18px; }
+.reco-skeleton .sk-lines i:nth-child(3) { width: 60%; }
+.reco-skeleton .sk-cover::after, .reco-skeleton .sk-lines i::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .28), transparent); animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+/* Карточка предложения со свайпом. */
+.reco-picks { display: grid; gap: 10px; }
+.reco-item { position: relative; overflow: hidden; border-radius: 16px; touch-action: pan-y; }
+.reco-swipe-content { position: relative; z-index: 1; transform: translateX(var(--dx, 0px)); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+.reco-item.dragging .reco-swipe-content { transition: none; }
+.reco-swipe-content .movie-card { width: 100%; }
+.reco-under { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; z-index: 0; color: #fff; font-size: 12px; font-weight: 800; }
+.reco-under-plans { left: 0; right: 0; gap: 8px; padding-left: 22px; background: #2e9d6b; opacity: .92; transition: background .2s ease; }
+.reco-under-plans .icon { width: 22px; height: 22px; transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+.reco-item.armed-plans .reco-under-plans { background: #1f8a58; }
+.reco-item.armed-plans .reco-under-plans .icon { transform: scale(1.3) rotate(90deg); }
+.reco-under-actions { right: 0; width: 176px; }
+.reco-act { flex: 1; display: grid; place-content: center; justify-items: center; gap: 5px; height: 100%; border: 0; color: #fff; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+.reco-act .icon { width: 20px; height: 20px; }
+.reco-act.seen { background: #328da3; }
+.reco-act.skip { background: #b07d2b; transition: flex .25s ease, background .25s ease; }
+.reco-item.armed-skip .reco-act.skip { flex: 6; background: #b0503f; }
+.reco-item.armed-skip .reco-act.seen { flex: 0; overflow: hidden; }
+.reco-item.armed-skip .reco-act.seen span, .reco-item.armed-skip .reco-act.seen .icon { display: none; }
+.reco-strip { border-radius: 16px; min-height: 64px; animation: live-appear .3s ease both; }
+/* Окно оценки: десять крупных звёзд. */
+.star-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0 16px; }
+.star.big { position: relative; display: grid; place-items: center; height: 62px; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); color: #e2a83b; cursor: pointer; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.star.big span .icon { width: 22px; height: 22px; fill: currentColor; stroke: none; }
+.star.big b { position: absolute; bottom: 5px; color: var(--text); font-size: 12px; font-weight: 800; }
+.star.big span { margin-top: -10px; }
+.star.big:active { transform: scale(.92); background: color-mix(in srgb, #e2a83b 24%, transparent); border-color: #e2a83b; }
+.reco-choices { display: grid; gap: 8px; margin-top: 12px; }
+.reco-choices button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.reco-links { display: flex; gap: 8px; margin: 8px 0; }
+.swipe-undo-buttons { display: inline-flex; align-items: center; gap: 2px; }
+.reco-block.reco-new { background: transparent; border: 0; padding: 0; }
+@media (prefers-reduced-motion: reduce) { .reco-load, .reco-load *, .reco-swipe-content, .record-pin-toggle *, .record-seen { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* ── Билет в списке — как на макете: бумажный, вырезы по углам и на перфорации ── */
+.record-card-shell[data-category="tickets"] { filter: drop-shadow(0 5px 9px rgba(0, 0, 0, .14)); }
+.ticket-card.ticket-paper {
+  --stub: 86px; --corner: 9px; --cut: 11px;
+  position: relative; flex-direction: row; align-items: stretch; min-height: 138px; padding: 0; border: 0; border-radius: 4px; overflow: hidden;
+  background: var(--surface-raised);
+  /* Вырезы: четыре угла и два полукруга на линии отрыва. Слои пересекаются — остаётся бумага с выемками. */
+  -webkit-mask:
+    radial-gradient(circle var(--corner) at 0 0, transparent 96%, #000) ,
+    radial-gradient(circle var(--corner) at 100% 0, transparent 96%, #000),
+    radial-gradient(circle var(--corner) at 0 100%, transparent 96%, #000),
+    radial-gradient(circle var(--corner) at 100% 100%, transparent 96%, #000),
+    radial-gradient(circle var(--cut) at calc(100% - var(--stub)) 0, transparent 96%, #000),
+    radial-gradient(circle var(--cut) at calc(100% - var(--stub)) 100%, transparent 96%, #000);
+  -webkit-mask-composite: source-in, source-in, source-in, source-in, source-in;
+  mask:
+    radial-gradient(circle var(--corner) at 0 0, transparent 96%, #000),
+    radial-gradient(circle var(--corner) at 100% 0, transparent 96%, #000),
+    radial-gradient(circle var(--corner) at 0 100%, transparent 96%, #000),
+    radial-gradient(circle var(--corner) at 100% 100%, transparent 96%, #000),
+    radial-gradient(circle var(--cut) at calc(100% - var(--stub)) 0, transparent 96%, #000),
+    radial-gradient(circle var(--cut) at calc(100% - var(--stub)) 100%, transparent 96%, #000);
+  mask-composite: intersect;
+}
+/* Пунктир перфорации — между вырезами, по центру линии отрыва. */
+.ticket-card.ticket-paper::before { content: ""; position: absolute; top: 14px; bottom: 14px; right: var(--stub); width: 0; border-left: 2px dashed color-mix(in srgb, var(--muted) 55%, transparent); pointer-events: none; }
+/* Серийный номер вдоль левого края — как на макете. */
+.ticket-serial { position: absolute; top: 0; bottom: 0; left: 0; display: grid; place-items: center; width: 26px; color: var(--subtle); font: 700 9.5px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; pointer-events: none; }
+.ticket-serial span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; max-height: 100%; overflow: hidden; }
+.ticket-main { flex: 1; min-width: 0; padding: 15px 14px 14px 32px; }
+.ticket-main strong { font-size: 16px; }
+.ticket-route { -webkit-line-clamp: 2; }
+.ticket-seats { padding-top: 6px; }
+.ticket-stub { width: var(--stub); grid-template-columns: 1fr; justify-items: stretch; align-items: stretch; padding: 16px 14px; border: 0; border-radius: 0; background: transparent; }
+.ticket-stub::before, .ticket-stub::after { content: none; }
+.ticket-stub-code { width: 100%; height: 100%; min-height: 100px; color: var(--text); }
+.ticket-stub.is-empty .ticket-stub-code { opacity: .2; }
+.record-card-shell[data-category="tickets"] .record-pin-toggle { right: calc(86px + 4px); top: 6px; }
+
+/* Платёж в валюте: рублёвый эквивалент под суммой. Сверка доходов и расходов. */
+.amount-rub { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 600; text-align: right; }
+.rules-reconcile { display: grid; gap: 10px; margin: 0 0 12px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.rules-reconcile-head { display: grid; gap: 4px; }
+.rules-reconcile-head strong { font-size: 14px; }
+.rules-reconcile-head small { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+
+/* ── Карта: «Где я» ─────────────────────────────────────────────────────── */
+.map-locate { position: absolute; right: 10px; bottom: 26px; z-index: 5; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--surface); color: #2f80ed; box-shadow: 0 3px 12px rgba(0, 0, 0, .25); cursor: pointer; transition: transform .2s ease, background .2s ease; }
+.map-locate .icon { width: 22px; height: 22px; }
+.map-locate:active { transform: scale(.9); }
+.map-locate.busy .icon { animation: live-spin 1s linear infinite; }
+.me-shell { background: transparent; border: 0; }
+.me-dot { position: relative; display: block; width: 24px; height: 24px; }
+.me-dot::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #2f80ed; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
+.me-dot i { position: absolute; inset: 0; border-radius: 50%; background: #2f80ed; opacity: .35; animation: me-pulse 2s ease-out infinite; }
+@keyframes me-pulse { 0% { transform: scale(.5); opacity: .5; } 100% { transform: scale(1.7); opacity: 0; } }
