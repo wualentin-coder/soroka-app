@@ -741,3 +741,46 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .saved-add-ai small { color: var(--subtle); font-size: 11px; font-weight: 600; }
 .saved-add-ai { border-color: var(--accent) !important; }
 .vault-back { margin: 2px 0 6px; }
+
+/* 29.09, четвёртый круг. */
+/* «Заметки» на главной «Сохранённого» — такого же размера, как остальные разделы. */
+.saved-section-card:first-child:not(.compact) { grid-column: auto; min-height: 0; }
+/* Свайп: чуть-чуть — «Изменить» и «Поделиться»; до конца — удалить. */
+.swipe-action.share { display: flex; right: 0; width: 76px; }
+.swipe-action.edit { right: 76px; width: 76px; }
+.swipe-action.delete { display: none; }
+.swipe-row.delete-armed .swipe-action.edit, .swipe-row.delete-armed .swipe-action.share { display: none; }
+.swipe-row.delete-armed .swipe-action.delete { display: flex; left: 0; right: 0; width: auto; flex-direction: row; justify-content: flex-end; gap: 8px; padding-right: 22px; font-size: 12px; }
+.swipe-row.is-deleted { min-height: 0 !important; }
+.swipe-undo { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 8px 0 16px; border-radius: 16px; background: var(--surface-soft); color: var(--muted); font-size: 13px; font-weight: 700; }
+.swipe-undo span { display: inline-flex; align-items: center; gap: 8px; }
+.swipe-undo button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--accent); font: inherit; font-weight: 800; }
+/* Палитры поверх основы (тёмной или светлой). */
+:root[data-palette="midnight"] { --page: #0b1020; --surface: #121a2e; --surface-raised: #17213a; --surface-soft: #1c2844; --line: #283655; --text: #eef2ff; --muted: #a3aecb; --subtle: #8793b3; }
+:root[data-palette="graphite"] { --page: #121212; --surface: #1c1c1e; --surface-raised: #232326; --surface-soft: #2a2a2d; --line: #38383c; --text: #f2f2f2; --muted: #a8a8ad; --subtle: #8e8e93; }
+:root[data-palette="sand"] { --page: #f6f1e8; --surface: #fffdf8; --surface-raised: #faf5ec; --surface-soft: #f1e9da; --line: #e6dccb; --text: #2b2418; --muted: #6f6454; --subtle: #7a6e5c; }
+:root[data-palette="mint"] { --page: #eef7f3; --surface: #ffffff; --surface-raised: #f5fbf8; --surface-soft: #e3f2ec; --line: #d3e8df; --text: #13302a; --muted: #4f6d65; --subtle: #5b7a71; }
+/* Акценты. */
+:root[data-accent="indigo"] { --accent: #8b93ff; --accent-strong: #7079f5; --accent-soft: rgba(139,147,255,.15); }
+:root[data-accent="pink"] { --accent: #f58bb8; --accent-strong: #ec6ea4; --accent-soft: rgba(245,139,184,.15); }
+:root[data-accent="red"] { --accent: #ff7b7b; --accent-strong: #f25f5f; --accent-soft: rgba(255,123,123,.15); }
+:root[data-accent="orange"] { --accent: #ffa35c; --accent-strong: #f48c3c; --accent-soft: rgba(255,163,92,.15); }
+:root[data-accent="amber"] { --accent: #f2c14e; --accent-strong: #e2ad2c; --accent-soft: rgba(242,193,78,.15); }
+:root[data-accent="green"] { --accent: #6fcf7f; --accent-strong: #52bb64; --accent-soft: rgba(111,207,127,.15); }
+:root[data-theme="light"][data-accent="indigo"] { --accent: #3f46c9; --accent-strong: #3f46c9; --accent-soft: rgba(63,70,201,.1); }
+:root[data-theme="light"][data-accent="pink"] { --accent: #b8336c; --accent-strong: #b8336c; --accent-soft: rgba(184,51,108,.1); }
+:root[data-theme="light"][data-accent="red"] { --accent: #c2383a; --accent-strong: #c2383a; --accent-soft: rgba(194,56,58,.1); }
+:root[data-theme="light"][data-accent="orange"] { --accent: #c25e12; --accent-strong: #c25e12; --accent-soft: rgba(194,94,18,.1); }
+:root[data-theme="light"][data-accent="amber"] { --accent: #9a6b00; --accent-strong: #9a6b00; --accent-soft: rgba(154,107,0,.1); }
+:root[data-theme="light"][data-accent="green"] { --accent: #1f8a3b; --accent-strong: #1f8a3b; --accent-soft: rgba(31,138,59,.1); }
+/* Настройки. */
+.settings-row-wide { flex-wrap: wrap; }
+.accent-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.accent-swatch { position: relative; cursor: pointer; }
+.accent-swatch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.accent-swatch span { display: block; width: 30px; height: 30px; border-radius: 50%; background: var(--swatch); box-shadow: inset 0 0 0 2px rgba(0,0,0,.08); }
+.accent-swatch input:checked + span { box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--swatch); }
+.accent-swatch input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 3px; }
+.settings-range { display: inline-flex; align-items: center; gap: 6px; }
+.settings-status { color: var(--muted); font-size: 13px; }
+.settings-status.ok { color: var(--accent); }
