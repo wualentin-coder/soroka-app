@@ -49,6 +49,25 @@ function financeTransfersPage() {
   return `<div class="section-heading"><h2>Переводы между счетами</h2><button class="text-action" type="button" data-action="finance-add" data-entity="transfer">Новый перевод ${icon("plus", "icon-sm")}</button></div><p class="section-note">Перевод меняет остатки двух счетов, но не считается доходом или расходом. Для разных валют укажите сумму зачисления вручную.</p>${data.finance.transfers.length ? `<div class="list-panel section">${data.finance.transfers.slice().reverse().map(t => { const from = accounts.find(x => x.id === t.fromId); const to = accounts.find(x => x.id === t.toId); return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transfer" data-id="${esc(t.id)}"><span class="list-icon">${icon("arrow")}</span><span class="list-copy"><strong>${esc(from?.name || "Счёт")} → ${esc(to?.name || "Счёт")}</strong><span>${esc(dateLabel(t.date))}${t.note ? ` · ${esc(t.note)}` : ""}</span></span><span class="amount">${demoMoney(t.amount, from?.currency)}</span></button>`; }).join("")}</div>` : emptyCard("Переводов пока нет", "Добавьте первый перевод между счетами.")}`;
 }
 function financeBudgetsPage() { return `<div class="section-heading"><h2>Бюджеты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="budget">Добавить ${icon("plus", "icon-sm")}</button></div>${data.finance.budgets.map(budgetCard).join("") || emptyCard("Бюджетов нет", "Добавьте лимит для категории.")}`; }
+/** Цель: нажали — отложить сумму. Настройка цели — ссылкой внизу окна. */
+function openGoalDeposit(recordId) { ui.sheet = { kind: "goal-deposit", id: recordId, justRendered: false }; render(); }
+function renderGoalDepositSheet() {
+  const goal = data.finance.goals.find(g => g.id === ui.sheet.id);
+  if (!goal) return "";
+  const progress = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0;
+  const left = Math.max(0, goal.target - goal.saved);
+  const chips = [500, 1000, 5000, 10000].map(n => `<button type="button" class="goal-chip" data-action="goal-deposit-chip" data-amount="${n}">+${n.toLocaleString("ru-RU")}</button>`).join("");
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet goal-deposit-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(goal.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="goal-deposit-progress"><strong>${demoMoney(goal.saved)}</strong><span>из ${demoMoney(goal.target)} · ${progress}%</span><div class="progress-track"><span style="width:${progress}%"></span></div><small>${left > 0 ? `Осталось ${demoMoney(left)}` : "Цель достигнута"}</small></div><form id="goal-deposit-form"><label class="field">Сколько отложить, ₽<input name="amount" type="number" inputmode="decimal" min="1" step="0.01" placeholder="0" required></label><div class="goal-chips">${chips}</div><p class="form-error" role="alert"></p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="goal-withdraw">Снять</button><button class="primary-button" type="submit">Отложить</button></div></form><button class="text-action goal-settings" type="button" data-action="finance-edit" data-entity="goal" data-id="${esc(goal.id)}">Настроить цель</button></section></div>`;
+}
+function goalDepositApply(sign) {
+  const goal = data.finance.goals.find(g => g.id === ui.sheet?.id);
+  const input = document.querySelector('#goal-deposit-form input[name="amount"]');
+  const amount = Math.round(Number(String(input?.value || "").replace(",", ".")) * 100) / 100;
+  if (!goal || !(amount > 0)) { const error = document.querySelector("#goal-deposit-form .form-error"); if (error) error.textContent = "Введите сумму"; return; }
+  goal.saved = Math.max(0, Math.round((Number(goal.saved || 0) + sign * amount) * 100) / 100);
+  const progress = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0;
+  ui.sheet = null; save(); toast(`${sign > 0 ? "Отложено" : "Снято"} ${demoMoney(amount)} · цель на ${progress}%`);
+}
 function goalCard(goal) {
   const progress = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0;
   return `<div class="budget-card"><div class="budget-top"><span>${esc(goal.title)}</span><span>${demoMoney(goal.saved)} / ${demoMoney(goal.target)}</span></div><div class="progress-track"><span style="width:${progress}%"></span></div><span class="budget-note">${progress}% накоплено${goal.note ? ` · ${esc(goal.note)}` : ""}</span><button class="text-action" type="button" data-action="finance-edit" data-entity="goal" data-id="${esc(goal.id)}">Настроить</button></div>`;
@@ -92,6 +111,8 @@ function renderFinanceSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${item ? "Изменить" : "Добавить"} ${labels[entity].toLowerCase()}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><form id="finance-form">${fields}<p class="form-error" role="alert"></p><div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="finance-delete">Удалить</button>` : ""}<button class="primary-button" type="submit">Сохранить</button></div></form></section></div>`;
 }
 function financeAction(action, control) {
+  if (action === "goal-deposit-chip" && ui.sheet?.kind === "goal-deposit") { const input = document.querySelector('#goal-deposit-form input[name="amount"]'); if (input) { input.value = String(Number(input.value || 0) + Number(control.dataset.amount)); } return true; }
+  if (action === "goal-withdraw" && ui.sheet?.kind === "goal-deposit") { goalDepositApply(-1); return true; }
   if (action === "finance-tab") { ui.financeTab = control.dataset.tab; ui.financeCategory = ""; render(); return true; }
   if (action === "finance-add") { openFinanceForm(control.dataset.entity, null, control.dataset.kind || "expense"); return true; }
   if (action === "finance-edit") { openFinanceForm(control.dataset.entity, control.dataset.id); return true; }
