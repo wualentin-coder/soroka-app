@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=b8093d2c9f","integrity":null},{"src":"./address-map.js?v=ba7e6c5a00","integrity":null},{"src":"./finance.js?v=cd4fdb5415","integrity":null},{"src":"./more.js?v=fe78e8138f","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=2a2966ccf2","integrity":null},{"src":"./app.js?v=f437f899e2","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=aa7049716b","integrity":null},{"src":"./address-map.js?v=58140c052a","integrity":null},{"src":"./finance.js?v=cd4fdb5415","integrity":null},{"src":"./more.js?v=fe78e8138f","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=2a2966ccf2","integrity":null},{"src":"./app.js?v=f437f899e2","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -412,6 +412,38 @@
     if (["tx", "debt", "payment"].includes(kind)) navigate("finance");
   }
 
+  // ------------------------------------------------------------ коды билетов
+
+  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function liveTicketCodes(item) {
+    const codes = Array.isArray(item.codes) ? item.codes : [];
+    const send = item.inChat ? '<button class="ghost-button live-code-send" type="button" data-action="saved-send">Прислать билет в чат</button>' : "";
+    if (!codes.length) {
+      const why = item.codesPending
+        ? "Бот распознаёт код с фото билета — через минуту он появится здесь."
+        : item.inChat
+          ? "На фото билета код не нашёлся (или билет в PDF). Вписать код можно через «Изменить»."
+          : "К билету не прикреплён файл. Пришлите фото билета боту — он найдёт код.";
+      return `<section class="ticket-code-block"><div class="ticket-code-heading"><strong>Код билета</strong></div><div class="ticket-code-placeholder"><span>${why}</span></div>${send}</section>`;
+    }
+    const kind = codes.every((c) => c.kind === "barcode") ? "Штрихкод" : "QR-код";
+    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div>` +
+      codes.map((c, i) => `<button type="button" class="live-code ${c.kind}" data-live-code="${i}" data-label="${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}" aria-label="Открыть код на весь экран">${c.svg || ""}<span>${codes.length > 1 ? `Билет ${i + 1} · ` : ""}${escape(c.text)}</span></button>`).join("") +
+      `<p class="section-note">Нажмите на код — он откроется на весь экран.</p>${send}</section>`;
+  }
+
+  /** Код на весь экран: белый фон, крупно — для турникета. */
+  function fullCode(button) {
+    const svg = button.querySelector("svg");
+    if (!svg) return;
+    const layer = document.createElement("div");
+    layer.className = "live-code-full";
+    layer.innerHTML = `<div class="live-code-full-art">${svg.outerHTML}</div><p>${escape(button.dataset.label || "")}</p><small>${escape(button.querySelector("span")?.textContent || "")}</small><button type="button">Закрыть</button>`;
+    layer.addEventListener("click", () => layer.remove());
+    document.body.appendChild(layer);
+  }
+
   // ------------------------------------------------------------ запуск
 
   function loadScript(entry) {
@@ -453,6 +485,13 @@
       // Карта (Leaflet) не должна валить всё приложение, если CDN недоступен.
       try { await loadScript(entry); } catch (error) { if (!entry.integrity) throw error; }
     }
+
+    // Коды билетов — настоящие, распознанные ботом с фото (вместо демо-картинки).
+    window.ticketCodeBlock = liveTicketCodes;
+    document.addEventListener("click", (event) => {
+      const code = event.target.closest && event.target.closest("[data-live-code]");
+      if (code) { event.preventDefault(); event.stopImmediatePropagation(); fullCode(code); }
+    }, true);
 
     // Какая страница открыта — в разметку: по ней CSS прячет «+», где он мешает.
     const paint = window.render;
