@@ -46,11 +46,11 @@ body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="
 .text-action { min-height: 36px; }
 
 /* Коды билетов: миниатюры в ряд, на весь экран — листаются свайпом. */
-.live-code-thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
-.live-code-thumb { display: grid; justify-items: center; gap: 6px; width: 92px; padding: 9px 9px 7px; border: 0; border-radius: 14px; background: #fff; cursor: zoom-in; }
-.live-code-thumb svg { width: 74px; height: 74px; }
-.live-code-thumb.barcode { width: 150px; }
-.live-code-thumb.barcode svg { width: 132px; height: 52px; }
+/* Коды растягиваются на всю ширину блока: один — во всю, два — пополам, три — по трети. */
+.live-code-thumbs { display: grid; grid-template-columns: repeat(var(--codes, 1), minmax(0, 1fr)); gap: 10px; }
+.live-code-thumb { display: grid; justify-items: center; gap: 6px; width: 100%; padding: 10px 10px 8px; border: 0; border-radius: 14px; background: #fff; cursor: zoom-in; }
+.live-code-thumb svg { width: 100%; max-width: 220px; height: auto; aspect-ratio: 1; }
+.live-code-thumb.barcode svg { aspect-ratio: auto; max-width: none; height: 64px; }
 .live-code-thumb span { font: 700 11px Manrope, system-ui, sans-serif; color: #333; }
 .live-code-send { margin-top: 10px; width: 100%; }
 .live-code-full { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: 1fr auto auto; gap: 12px; padding: max(18px, env(safe-area-inset-top)) 0 max(22px, env(safe-area-inset-bottom)); background: #fff; color: #111; }
@@ -66,3 +66,18 @@ body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="
 .live-code-dots i { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
 .live-code-dots i.on { background: #111; }
 .live-code-close { justify-self: center; min-height: 44px; padding: 0 26px; border: 1px solid #ccc; border-radius: 14px; background: #fff; color: #111; font: 700 15px Manrope, system-ui, sans-serif; }
+
+/* Ход разбора из «+». */
+@keyframes live-spin { to { transform: rotate(360deg); } }
+.live-spin { display: inline-block; width: 16px; height: 16px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -3px; animation: live-spin .8s linear infinite; }
+.live-spin.big { width: 34px; height: 34px; margin: 0; border-width: 3px; color: var(--accent); }
+.live-capture { display: grid; gap: 14px; }
+.live-capture-state { display: grid; justify-items: center; gap: 8px; padding: 10px 0 4px; text-align: center; }
+.live-capture-state strong { font-size: 17px; }
+.live-capture-state small { color: var(--muted); }
+.live-done { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 20px; }
+.live-capture-source { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-2, rgba(127,127,127,.1)); color: var(--muted); font-size: 13px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
+.live-capture-actions { display: grid; gap: 8px; }
+.live-capture-record { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; font: inherit; }
+.live-capture-record small { color: var(--accent); font-size: 11px; font-weight: 800; }
+.live-capture-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
