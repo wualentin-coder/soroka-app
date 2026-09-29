@@ -313,7 +313,8 @@ function render() {
   mountAddressMap();
   if (ui.sheet && !ui.sheet.justRendered) {
     const input = app.querySelector(ui.sheet.kind === "search" ? "#search-input" : ui.sheet.kind === "entry" ? '#entry-form input[name="title"]' : '.sheet [autofocus], .sheet input');
-    requestAnimationFrame(() => input?.focus());
+    // На телефоне фокус открыл бы клавиатуру поверх окна — ставим его только в поиске.
+    if (ui.sheet.kind === "search" || !window.matchMedia("(pointer: coarse)").matches) requestAnimationFrame(() => input?.focus());
     ui.sheet.justRendered = true;
   }
 }
