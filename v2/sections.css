@@ -1205,3 +1205,87 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .me-dot::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #2f80ed; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
 .me-dot i { position: absolute; inset: 0; border-radius: 50%; background: #2f80ed; opacity: .35; animation: me-pulse 2s ease-out infinite; }
 @keyframes me-pulse { 0% { transform: scale(.5); opacity: .5; } 100% { transform: scale(1.7); opacity: 0; } }
+
+/* ══ Свайпы: один набор правил поверх прежних ═══════════════════════════════
+   Влево — ровная полоса кнопок от правого края (без зазоров): настроить,
+   [не интересно — у фильмов], поделиться. Дальше порога — красный слой
+   «удалить» проявляется плавно по мере движения пальца. Вправо — только
+   зелёная «просмотрено», кнопки справа при этом не видны. */
+.swipe-row { --slot: 76px; --del: 0; }
+.swipe-row .swipe-action { position: absolute; top: 0; bottom: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: var(--slot); margin: 0; padding: 0; border: 0; border-radius: 0; color: #fff; font-size: 10px; font-weight: 800; opacity: 0; transition: opacity .22s ease; }
+.swipe-row .swipe-action .icon { width: 20px; height: 20px; transition: transform .25s cubic-bezier(.3, 1.5, .5, 1); }
+.swipe-row .swipe-action.share { display: flex; right: 0; background: #4b7996; }
+.swipe-row .swipe-action.edit { display: flex; right: var(--slot); background: #328da3; }
+.swipe-row .swipe-action.skip { display: none; }
+.swipe-row.swipe-movie .swipe-action.skip { display: flex; right: var(--slot); background: #b07d2b; }
+.swipe-row.swipe-movie .swipe-action.edit { right: calc(var(--slot) * 2); }
+/* Полоса кнопок видна только при свайпе влево; по мере «удаления» гаснет. */
+.swipe-row.dir-left .swipe-action:not(.delete), .swipe-row.is-open-left .swipe-action:not(.delete) { opacity: calc(1 - var(--del)); }
+.swipe-row.swiping .swipe-action { transition: none; }
+.swipe-row .swipe-action.delete { display: flex; left: 0; right: 0; width: auto; flex-direction: row; justify-content: flex-end; gap: 8px; padding-right: 26px; background: #d6404d; opacity: var(--del); pointer-events: none; font-size: 12px; }
+.swipe-row.dir-left .swipe-action.delete { z-index: 0; }
+.swipe-row.delete-armed .swipe-action.delete .icon { transform: scale(1.25); }
+.swipe-row.delete-armed .swipe-action.edit, .swipe-row.delete-armed .swipe-action.share, .swipe-row.delete-armed .swipe-action.skip { display: flex; }
+.swipe-row.swipe-movie.delete-armed .swipe-action.skip { display: flex; }
+.swipe-row.is-open-left { --swipe-x: calc(var(--slot) * -2); }
+.swipe-row.swipe-movie.is-open-left { --swipe-x: calc(var(--slot) * -3); }
+/* Вправо: зелёный слой во всю ширину, значок у левого края. */
+.swipe-row .swipe-right-indicator { left: 0; right: 0; width: auto; align-items: flex-start; padding-left: 38px; background: #177e80; opacity: 0; transition: opacity .2s ease, background .2s ease; }
+.swipe-row.dir-right .swipe-right-indicator { opacity: 1; }
+.swipe-row.swipe-armed .swipe-right-indicator { background: #1fa3a0; }
+.swipe-row.swipe-armed .swipe-right-indicator .icon { transform: scale(1.2); }
+.swipe-row .swipe-right-indicator .icon { transition: transform .25s cubic-bezier(.3, 1.5, .5, 1); }
+.swipe-row.dir-right .swipe-action { opacity: 0 !important; }
+/* Карточка едет плавно и чуть «пружинит» на отпускании. */
+.swipe-row .swipe-content { transition: transform .32s cubic-bezier(.22, .9, .3, 1.02); }
+.swipe-row.swiping .swipe-content { transition: none; }
+
+/* Предложения фильмов — тем же приёмом: красный «не интересно» проявляется плавно. */
+.reco-item { --del: 0; }
+.reco-under-actions { z-index: 0; }
+.reco-under-plans { opacity: 0; transition: opacity .2s ease, background .2s ease; }
+.reco-item.dir-right .reco-under-plans { opacity: .95; }
+.reco-under-actions { opacity: 0; transition: opacity .2s ease; }
+.reco-item.dir-left .reco-under-actions, .reco-item.open .reco-under-actions { opacity: 1; }
+.reco-item .reco-act.skip { transition: none; }
+.reco-item.armed-skip .reco-act.skip, .reco-item.armed-skip .reco-act.seen { flex: 1; }
+.reco-item .reco-under-del { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-right: 24px; background: #d6404d; color: #fff; font-size: 12px; font-weight: 800; opacity: var(--del); pointer-events: none; }
+.reco-item .reco-under-del .icon { width: 20px; height: 20px; }
+
+/* ══ Билет: компактный, с вырезами как на макете ═══════════════════════════ */
+.record-card-shell[data-category="tickets"] { filter: none; }
+.ticket-card.ticket-paper { --stub: 84px; min-height: 0; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); -webkit-mask: none; mask: none; overflow: hidden; }
+.ticket-card.ticket-paper::before { top: 12px; bottom: 12px; border-left: 2px dashed var(--line); }
+.ticket-serial { display: none; }
+/* Вырезы — кружки цвета страницы по углам и на линии отрыва, с обводкой карточки. */
+.ticket-paper .ticket-notch { position: absolute; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: var(--page); border: 1px solid var(--line); pointer-events: none; }
+.ticket-paper .ticket-notch.tl { top: -9px; left: -9px; }
+.ticket-paper .ticket-notch.bl { bottom: -9px; left: -9px; }
+.ticket-paper .ticket-notch.tr { top: -9px; right: -9px; }
+.ticket-paper .ticket-notch.br { bottom: -9px; right: -9px; }
+.ticket-paper .ticket-notch.pt { top: -11px; right: calc(var(--stub) - 11px); width: 22px; height: 22px; }
+.ticket-paper .ticket-notch.pb { bottom: -11px; right: calc(var(--stub) - 11px); width: 22px; height: 22px; }
+.ticket-main { gap: 4px; padding: 14px 12px 14px 18px; }
+.ticket-seats { margin-top: 6px; padding-top: 0; }
+.ticket-stub { padding: 14px 16px; }
+.ticket-stub-code { min-height: 72px; }
+/* Закладка — с отступом от края и от перфорации. */
+.record-card-shell[data-category="tickets"] .record-pin-toggle { top: 10px; right: calc(84px + 12px); }
+.record-card-shell[data-category="tickets"] .ticket-main { padding-right: 46px; }
+.swipe-row:has(.ticket-paper) .swipe-content { background: transparent; }
+
+/* ══ Предложение фильма: окно как у обычного фильма ═══════════════════════ */
+.reco-detail-sheet .movie-detail-hero { margin-top: 4px; }
+.reco-detail-sheet .reco-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.reco-detail-sheet .reco-links a { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.reco-detail-sheet .saved-view-actions { grid-template-columns: 1fr 1fr; position: sticky; bottom: 0; padding: 10px 0 max(6px, env(safe-area-inset-bottom)); background: var(--surface); }
+.reco-detail-sheet .saved-view-actions .primary-button { grid-column: 1 / -1; }
+.reco-detail-sheet .saved-view-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; white-space: nowrap; }
+
+/* Доходы и расходы на обзоре — нажимаются: там их можно поправить. */
+.kpi.kpi-button { display: grid; width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.kpi.kpi-button .kpi-hint { display: inline-flex; align-items: center; gap: 4px; }
+.kpi.kpi-button:active { background: var(--surface-soft); }
+/* Штрихкод не задаёт высоту карточки: он заполняет корешок, а высота — по тексту билета. */
+.ticket-paper .ticket-stub { position: relative; min-height: 104px; }
+.ticket-paper .ticket-stub-code { position: absolute; inset: 14px 16px; width: auto; height: auto; min-height: 0; }
