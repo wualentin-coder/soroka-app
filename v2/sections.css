@@ -730,3 +730,14 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .saved-switch { margin: -4px 0 12px; }
 .saved-switch button { min-height: 34px; padding: 0 11px; font-size: 12px; gap: 5px; }
 .saved-switch .tab-count { font-size: 11px; }
+
+/* 29.09, третий круг. */
+.notes-screen { max-width: none; margin: 0; }
+.movie-seen-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 12px; border-radius: 14px; background: var(--surface-2, rgba(127, 127, 127, .12)); }
+.movie-seen-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 800; }
+.movie-seen-tabs button span { color: var(--subtle); font-size: 12px; }
+.movie-seen-tabs button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.saved-add-ai span { display: grid; gap: 2px; text-align: left; }
+.saved-add-ai small { color: var(--subtle); font-size: 11px; font-weight: 600; }
+.saved-add-ai { border-color: var(--accent) !important; }
+.vault-back { margin: 2px 0 6px; }
