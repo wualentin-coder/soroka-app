@@ -555,7 +555,7 @@ function swipeDeleteFull(row) {
   const paint = window.render, say = window.toast;
   window.render = () => {}; window.toast = () => {};
   try { deleteSwipeCard(row); } finally { window.render = paint; window.toast = say; }
-  if (data.trash.length === before) { closeSwipeRows(); toast(type === "finance:account" ? "Счёт связан с операциями" : "Не удалось удалить"); return; }
+  if (data.trash.length === before) { closeSwipeRows(); toast(type === "finance:account" ? (savingsAccount()?.id === recordId ? "Накопительный счёт постоянный — удалить нельзя" : "Счёт связан с операциями") : "Не удалось удалить"); return; }
   row.classList.remove("is-open-left");
   row.classList.add("is-deleted");
   row.innerHTML = `<div class="swipe-undo"><span>${icon("trash", "icon-sm")}Удалено</span><button type="button" data-action="swipe-undo" data-undo-id="${esc(recordId)}">Вернуть</button></div>`;
@@ -564,6 +564,7 @@ function deleteSwipeCard(row) {
   const { swipeType: type, swipeId: recordId } = row.dataset;
   closeSwipeRows();
   if (type === "note" || type.startsWith("saved:")) { deleteSavedRecord(type === "note" ? "notes" : type.split(":")[1], recordId); return; }
+  if (type === "finance:account" && typeof savingsAccount === "function" && savingsAccount()?.id === recordId) { toast("Накопительный счёт постоянный — удалить нельзя"); return; }
   if (type === "vault") {
     if (!ui.vaultUnlocked || !window.confirm("Удалить тестовую учётную запись навсегда?")) return;
     data.vault = data.vault.filter(x => x.id !== recordId); ui.vaultShown = null; render(); toast("Удалено окончательно"); return;
