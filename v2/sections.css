@@ -1305,3 +1305,6 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .ticket-paper .ticket-route { -webkit-line-clamp: 1; line-clamp: 1; flex: none; }
 .ticket-paper .ticket-main strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: none; }
 .ticket-paper .ticket-stub-code { top: 22px; bottom: auto; left: 16px; right: auto; width: calc(100% - 32px); height: calc(100% - 44px); }
+/* Штрихкод — во всю высоту билета с отступами, на 20 % уже; меряется от карточки, а не от кнопки корешка. */
+.ticket-paper .ticket-stub { position: static; }
+.ticket-paper .ticket-stub-code { position: absolute; top: 18px; bottom: auto; height: calc(100% - 36px); width: 42px; left: auto; right: 21px; }
