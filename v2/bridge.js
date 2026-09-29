@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=9d0e6ad7de","integrity":null},{"src":"./address-map.js?v=40c93c54bd","integrity":null},{"src":"./finance.js?v=cea605f7a0","integrity":null},{"src":"./more.js?v=957909dbe2","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=3e8faa6cea","integrity":null},{"src":"./app.js?v=ced30dfa2f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=46e8a87904","integrity":null},{"src":"./address-map.js?v=127b787e95","integrity":null},{"src":"./finance.js?v=322191aba4","integrity":null},{"src":"./more.js?v=79e79cdb1e","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=3e8faa6cea","integrity":null},{"src":"./app.js?v=ced30dfa2f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -74,6 +74,7 @@
     invalid_amount: "Проверьте сумму",
     invalid_date: "Проверьте дату",
     too_many_deletes: "Слишком много удалений разом — ничего не удалил",
+    savings_account: "Накопительный счёт постоянный — переименовать можно, удалить нельзя",
   };
   const human = (code) => ERRORS[code] || "Не сохранилось — попробуйте ещё раз";
 
@@ -522,8 +523,9 @@
 
   /** Коды на весь экран: белый фон, крупно — для турникета; листаются свайпом. */
   function fullCode(button) {
+    // Корешок билета в списке знает свой билет сам; в карточке — открытая запись.
     const sheet = ui.sheet || {};
-    const item = (data.saved.tickets || []).find((t) => t.id === sheet.id);
+    const item = (data.saved.tickets || []).find((t) => t.id === (button.dataset.ticket || sheet.id));
     const codes = ((item && item.codes) || []).filter((c) => c.text);
     if (!codes.length) return;
     const start = Number(button.dataset.liveCode) || 0;
@@ -623,6 +625,15 @@
         return;
       }
       return shareInBrowser(type, recordId);
+    };
+
+    // Адреса ищет сервер бота: из браузера в России бесплатный геокодер
+    // отвечает через раз, а серверу — стабильно (Photon).
+    window.suggestAddresses = async (query, city) => ((await call({ action: "geocode_suggest", q: query, city }, 15000)) || {}).hits || [];
+    window.reverseGeocode = async (lat, lng) => {
+      const answer = await call({ action: "geocode_reverse", lat, lng }, 15000).catch(() => null);
+      const hit = answer && answer.hit;
+      return hit ? { street: [hit.street, hit.house].filter(Boolean).join(", ") || hit.name, city: hit.city } : null;
     };
 
     // Коды билетов — настоящие, распознанные ботом с фото (вместо демо-картинки).
