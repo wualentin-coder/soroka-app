@@ -52,7 +52,10 @@ const icons = {
   download: '<path d="M12 3v12m-4-4 4 4 4-4M4 20h16"/>',
   upload: '<path d="M12 21V9m-4 4 4-4 4 4M4 4h16"/>',
   pin: '<path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
-  ticket: '<path d="M3 5h18v5a2 2 0 0 0 0 4v5H3v-5a2 2 0 0 0 0-4V5Z"/><path d="M14 5v2m0 3v2m0 3v4"/>'
+  ticket: '<path d="M3 5h18v5a2 2 0 0 0 0 4v5H3v-5a2 2 0 0 0 0-4V5Z"/><path d="M14 5v2m0 3v2m0 3v4"/>',
+  thumbDown: '<path d="M17 14V3M21 12V5a2 2 0 0 0-2-2H7.4a2 2 0 0 0-1.9 1.4L3.1 12.3A2 2 0 0 0 5 15h4.6l-.8 4.2a2 2 0 0 0 2 2.3c.5 0 1-.2 1.3-.6L17 14"/>',
+  star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>',
+  spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>'
 };
 function icon(name, size = "") {
   return `<svg class="icon ${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.note}</svg>`;
@@ -243,7 +246,8 @@ function todayPage() {
   const tasks = `<section class="section"><div class="section-heading"><h2>Задачи на сегодня</h2><span class="count">${daily.length}</span></div><div class="task-stack">${daily.length ? daily.map(taskCard).join("") : emptyCard("План свободен", "Добавьте задачу кнопкой ниже или пришлите её боту обычным сообщением.")}</div></section>`;
   const events = `<section class="section"><div class="section-heading"><h2>В расписании</h2><span class="count">${meetings.length}</span></div>${meetings.length ? meetings.map(eventCard).join("") : emptyCard("Событий пока нет", "Можно добавить встречу на сегодня.")}</section>`;
   const aside = `<div class="side-card"><h3>Ближайшие дни</h3>${[1, 2, 3].map(n => { const day = offsetIso(n); const count = tasksOn(day).filter(t => !t.done).length + eventsOn(day).length; return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${count} ${word(count, "запись", "записи", "записей")}</b></div>`; }).join("")}<button class="text-action" type="button" data-action="navigate" data-page="upcoming">Открыть календарь ${icon("arrow", "icon-sm")}</button></div><div class="side-card"><h3>Быстрый ввод</h3><p class="side-note">Задачи удобно отправлять Сороке обычным текстом. Здесь можно проверить, как они выглядят в планировщике.</p></div>`;
-  return `${header("Сегодня", "Задачи, события и всё, что требует внимания", "Мой день")}<div class="content-grid"><div class="content-main">${hero}${overdue}${tasks}${events}</div><aside class="content-aside">${aside}</aside></div>`;
+  const tickets = typeof todayTicketsSection === "function" ? todayTicketsSection() : "";
+  return `${header("Сегодня", "Задачи, события и всё, что требует внимания", "Мой день")}<div class="content-grid"><div class="content-main">${hero}${overdue}${tasks}${events}${tickets}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
   const anchor = parseDate(ui.calendarAnchor);
