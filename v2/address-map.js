@@ -26,6 +26,34 @@ function renderMapPointCard(item) {
   const coords = mapPointCoordinates(item);
   return `<div class="map-point-card"><div class="map-point-card-top">${mapCategoryBadge(item.categoryId)}<span>${coords ? `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}` : "Без координат"}</span></div><h3>${esc(item.title)}</h3>${item.description ? `<p>${esc(item.description)}</p>` : ""}${item.address ? `<small>${esc(item.address)}</small>` : ""}<div class="map-point-actions"><button type="button" data-action="map-open-external" data-id="${esc(item.id)}">${icon("external", "icon-sm")}Открыть в картах</button><button type="button" data-action="map-edit-point" data-id="${esc(item.id)}">Изменить</button><button type="button" data-action="map-share-point" data-id="${esc(item.id)}">Поделиться</button><button class="danger" type="button" data-action="map-delete-point" data-id="${esc(item.id)}">Удалить</button></div></div>`;
 }
+/*
+ * Подложка — OpenFreeMap: бесплатно, без ключа и без лимитов (векторные плитки
+ * через MapLibre внутри карты Leaflet). CARTO с 2026 года просит ключ, а
+ * серверы OpenStreetMap приложениям нагружать нельзя — они только запасной путь.
+ * Библиотека (~0,8 МБ) грузится, только когда открыли карту.
+ */
+const VECTOR_MAPS = {
+  css: "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css",
+  js: "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js",
+  plugin: "https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"
+};
+let vectorMapsReady = null;
+function loadVectorMaps() {
+  if (vectorMapsReady) return vectorMapsReady;
+  const script = src => new Promise((resolve, reject) => { const tag = document.createElement("script"); tag.src = src; tag.onload = resolve; tag.onerror = reject; document.head.appendChild(tag); });
+  const css = document.createElement("link"); css.rel = "stylesheet"; css.href = VECTOR_MAPS.css; document.head.appendChild(css);
+  vectorMapsReady = script(VECTOR_MAPS.js).then(() => script(VECTOR_MAPS.plugin));
+  vectorMapsReady.catch(() => { vectorMapsReady = null; });
+  return vectorMapsReady;
+}
+function addBaseLayer(map) {
+  const light = document.documentElement.dataset.theme === "light";
+  const attribution = '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
+  const raster = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution }).addTo(map);
+  loadVectorMaps()
+    .then(() => { if (map === addressMap && L.maplibreGL) L.maplibreGL({ style: `https://tiles.openfreemap.org/styles/${light ? "positron" : "dark"}`, attribution }).addTo(map); else if (map === addressMap) raster(); })
+    .catch(() => { if (map === addressMap) raster(); });
+}
 function renderAddressWorkspace() {
   const categories = mapCategories();
   const items = mapPointItems();
@@ -58,7 +86,7 @@ function mountAddressMap() {
   const center = ui.mapCenter || [55.747, 37.621];
   addressMap = L.map(host, { zoomControl: false }).setView(center, ui.mapZoom || 12);
   L.control.zoom({ position: "topright" }).addTo(addressMap);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors' }).addTo(addressMap);
+  addBaseLayer(addressMap);
   items.forEach(item => {
     const category = mapCategory(item.categoryId);
     const markerIcon = L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker ${item.id === ui.mapSelectedId ? "selected" : ""}" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(category?.icon || "pin", "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] });
