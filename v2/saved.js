@@ -210,10 +210,11 @@ function savedRecordCardBody(item, category) {
     const when = `${item.eventDate ? shortDate(item.eventDate) : "Дата не указана"}${item.eventTime ? ` · ${item.eventTime}` : ""}`;
     const main = `<button class="ticket-main" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}"><span class="ticket-kicker">${icon("ticket", "icon-sm")}${esc(type)} · ${esc(when)}</span><strong>${esc(item.title)}</strong><span class="ticket-route">${esc(route || "Место не указано")}</span>${seats.length ? `<span class="ticket-seats">${seats.map(esc).join("<br>")}</span>` : ""}</button>`;
     const stub = `<button class="ticket-stub ${coded.length ? "" : "is-empty"}" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}" ${coded.length ? `data-live-code="0" data-ticket="${esc(item.id)}"` : ""} aria-label="${coded.length ? "Код билета на весь экран" : "Кода пока нет"}">${stubBarcode(coded[0]?.text || item.id)}</button>`;
-    return `<div class="record-card ticket-card ticket-paper">${main}${stub}</div>`;
+    const serial = coded[0]?.text || String(item.id).replace(/\D/g, "").padStart(8, "0");
+    return `<div class="record-card ticket-card ticket-paper"><span class="ticket-serial" aria-hidden="true"><span>${esc(serial)}</span></span>${main}${stub}</div>`;
   }
   if (category === "movies") {
-    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}${item.rating ? `<b class="movie-card-score">${icon("star", "icon-sm")}${item.rating}</b>` : ""}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
+    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${movieScoresLine(item)}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
   }
   if (category === "posts") {
     const image = (postInfo(item, "media") || []).find(entry => entry.type === "image" && safePostMediaSource(entry.src));
@@ -600,7 +601,7 @@ function savedAction(action, control) {
     ui.sheet.editSectionId = null;
     save(); render(); toast(category === "notes" ? "Папка удалена. Заметки остались в «Все»." : "Раздел удалён. Записи остались в «Все»."); return true;
   }
-  if (action === "saved-filter") { ui.savedFilter = control.dataset.filter; ui.savedLimit = 60; render(); return true; }
+  if (action === "saved-filter") { ui.savedFilter = control.dataset.filter; ui.savedLimit = 60; render(); if (ui.savedFilter === "reco" && typeof openMovieReco === "function") void openMovieReco(); return true; }
   if (action === "saved-more") { ui.savedLimit = (Number(ui.savedLimit) || 60) + 60; render(); return true; }
   if (action === "saved-view") { ui.savedView = control.dataset.view; render(); return true; }
   if (action === "saved-pins-toggle") { ui.savedPinsOpen = ui.savedPinsOpen === false; render(); return true; }
@@ -611,7 +612,19 @@ function savedAction(action, control) {
   if (action === "saved-open") { openSavedRecord(control.dataset.category, control.dataset.id); return true; }
   if (action === "ticket-row-add") { const box = document.querySelector("[data-ticket-rows]"); if (box) { box.insertAdjacentHTML("beforeend", ticketRowField({}, box.children.length)); renumberTicketRows(); box.lastElementChild?.querySelector("input")?.focus(); } return true; }
   if (action === "ticket-row-remove") { const row = control.closest("[data-ticket-row]"); const box = row?.parentElement; if (row && box) { if (box.children.length > 1) row.remove(); else row.querySelectorAll("input:not([type=hidden])").forEach(input => { input.value = ""; }); renumberTicketRows(); } return true; }
-  if (action === "saved-pin-card") { const target = savedItem(control.dataset.category, control.dataset.id); if (target) { target.pinned = !target.pinned; save(); render(); toast(target.pinned ? "Закреплено" : "Откреплено"); } return true; }
+  if (action === "saved-pin-card") {
+    const target = savedItem(control.dataset.category, control.dataset.id);
+    if (target) {
+      // Сначала закладка оживает на месте, потом список перестраивается (закреплённые — вверх).
+      target.pinned = !target.pinned;
+      control.classList.toggle("is-pinned", target.pinned);
+      control.setAttribute("aria-pressed", String(target.pinned));
+      control.classList.remove("pin-pop"); void control.offsetWidth; control.classList.add("pin-pop");
+      save();
+      setTimeout(() => { render(); toast(target.pinned ? "Закреплено" : "Откреплено"); }, 520);
+    }
+    return true;
+  }
   if (action === "note-cancel" && ui.sheet?.kind === "saved" && ui.sheet.category === "notes") { if (ui.sheet.id && ui.sheet.mode === "edit") ui.sheet.mode = "view"; else ui.sheet = null; render(); return true; }
   if (!ui.sheet || ui.sheet.kind !== "saved") return false;
   const item = ui.sheet.id ? savedItem(ui.sheet.category, ui.sheet.id) : null;
