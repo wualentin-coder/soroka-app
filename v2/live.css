@@ -1,0 +1,46 @@
+/*
+ * Рабочее приложение поверх прототипа: то, что есть только в живом режиме,
+ * и правки вёрстки узких экранов из аудита 29.09 (360 и 320 px). Сами
+ * файлы прототипа не трогаем — их продолжают рисовать отдельно.
+ */
+
+/* Заставка, пока грузятся данные бота. */
+.live-splash { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; text-align: center; color: var(--muted, #9aa7b2); font: 500 15px/1.4 Manrope, system-ui, sans-serif; background: var(--bg, #121b23); }
+.live-splash img { width: 64px; height: 64px; border-radius: 20px; }
+.live-splash button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--accent, #58d0cf); color: var(--accent-ink, #0c1a1f); font: 700 15px Manrope, system-ui, sans-serif; }
+
+/* Демо-подписи прототипа в рабочем приложении не нужны. */
+.capture-demo-note, .demo-badge, .sidebar-foot, [data-action="saved-summary"], [data-action="demo-compare"], [data-action="demo-components"], .demo-states { display: none !important; }
+
+/* 1. Лента вкладок выходила за экран на 5 px и сдвигала всю страницу. */
+html, body { overflow-x: clip; }
+@media (max-width: 375px) {
+  .subtabs { margin-left: -15px; margin-right: -15px; padding-left: 15px; padding-right: 15px; }
+}
+
+/* 2. Подписи нижнего меню шире колонки: «Предстоящие» налезала на соседку. */
+.mobile-nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.02em; }
+@media (max-width: 360px) { .mobile-nav button span { font-size: 9.5px; font-weight: 700; } }
+
+/* 3. «+» закрывал кнопки справа там, где добавлять нечего или есть свои кнопки. */
+body[data-page="more"] .fab, body[data-page="settings"] .fab, body[data-page="archive"] .fab,
+body[data-page="vault"] .fab, body[data-finance-tab="overview"][data-page="finance"] .fab { display: none; }
+body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="finance"] .main { padding-bottom: 150px; }
+
+/* 4. Плашка просрочки: подписи переносились на две строки. */
+.overdue-banner button, .overdue-banner .text-action { white-space: nowrap; }
+
+/* 5. Заголовок месяца не переносится. */
+.calendar-title, .month-title { white-space: nowrap; }
+@media (max-width: 360px) { .calendar-title, .month-title { font-size: 17px; } }
+
+/* 6. Двойной внутренний отступ у списков со свайпом съедал заголовок. */
+.list-panel:has(.swipe-row) { padding-left: 0; padding-right: 0; }
+
+/* 9–10. Два поля в ряд на телефоне обрезали значения («Основная карта ·», адрес). */
+@media (max-width: 420px) { .sheet .field-row { grid-template-columns: 1fr; } }
+
+/* 16. Кружок «выполнено» 25 px — меньше пальца; зона нажатия шире круга. */
+.task-check { position: relative; }
+.task-check::before { content: ""; position: absolute; inset: -9px; }
+.text-action { min-height: 36px; }
