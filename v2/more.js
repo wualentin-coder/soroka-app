@@ -198,9 +198,11 @@ function searchCatalog() {
   return catalog;
 }
 function searchMatches() {
+  // Удалённое лежит в корзине и в поиск не попадает, даже если экран ещё не обновился.
+  const removed = new Set((data.trash || []).map(entry => String(entry.item?.id)));
   const words = ui.searchQuery.trim().toLocaleLowerCase("ru-RU").split(/\s+/).filter(Boolean);
   return searchCatalog()
-    .filter(x => (ui.searchType === "all" || x.group === ui.searchType) && words.every(word => `${x.item.title} ${x.label} ${x.details}`.toLocaleLowerCase("ru-RU").includes(word)))
+    .filter(x => !removed.has(String(x.item.id)) && (ui.searchType === "all" || x.group === ui.searchType) && words.every(word => `${x.item.title} ${x.label} ${x.details}`.toLocaleLowerCase("ru-RU").includes(word)))
     .sort((a, b) => Number(Boolean(b.item.pinned)) - Number(Boolean(a.item.pinned)));
 }
 function searchResultRows() {
