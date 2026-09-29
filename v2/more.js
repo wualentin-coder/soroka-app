@@ -437,7 +437,7 @@ function renderInboxSheet() {
 function swipeDescriptor(node) {
   if (node.matches(".task-card")) return ["task", node.dataset.taskId];
   if (node.matches(".event-card")) return ["event", node.dataset.id];
-  if (node.matches(".record-card, .note-row")) return [`saved:${node.dataset.category}`, node.dataset.id];
+  if (node.matches(".record-card-shell, .record-card, .note-row")) return [`saved:${node.dataset.category}`, node.dataset.id];
   if (node.matches(".project-card")) return ["project", node.dataset.id];
   if (node.matches(".search-result")) return [node.dataset.type, node.dataset.id];
   if (node.matches(".finance-row-button")) {
@@ -464,9 +464,11 @@ function swipeDescriptor(node) {
   return null;
 }
 function installSwipeCards(root) {
-  const selector = ".task-card, .event-card, .record-card, .note-row, .finance-row-button, .project-card, .budget-card, .list-row, .search-result";
+  const selector = ".task-card, .event-card, .record-card-shell, .record-card, .note-row, .finance-row-button, .project-card, .budget-card, .list-row, .search-result";
   root.querySelectorAll(selector).forEach(node => {
     if (node.closest(".swipe-row") || node.closest(".sheet") && !node.matches(".search-result")) return;
+    // Карточку с закладкой свайпают целиком — вместе с закладкой.
+    if (node.matches(".record-card") && node.closest(".record-card-shell")) return;
     const descriptor = swipeDescriptor(node);
     if (!descriptor?.[0] || !descriptor?.[1]) return;
     const [type, recordId] = descriptor;
@@ -479,7 +481,7 @@ function installSwipeCards(root) {
     wrapper.dataset.swipeType = type;
     wrapper.dataset.swipeId = recordId;
     const movieSwipeHint = type === "saved:movies" ? `<span class="swipe-right-indicator" aria-hidden="true">${icon("check", "icon-sm")}<span>${movieIsViewed(savedItem("movies", recordId)) ? "В планы" : "Просмотрено"}</span></span>` : "";
-    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("note", "icon-sm")}<span>Настроить</span></button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share", "icon-sm")}<span>Поделиться</span></button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash", "icon-sm")}<span>Удалить</span></button><div class="swipe-content"></div>`;
+    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Изменить запись">${icon("note", "icon-sm")}<span>Изменить</span></button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share", "icon-sm")}<span>Поделиться</span></button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash", "icon-sm")}<span>Удалить</span></button><div class="swipe-content"></div>`;
     node.parentNode.insertBefore(wrapper, node);
     wrapper.querySelector(".swipe-content").appendChild(node);
   });
@@ -542,42 +544,66 @@ let swipeGesture = null;
 let swipeSuppressUntil = 0;
 let swipeSuppressRow = null;
 let swipeSuppressKey = "";
+// Свайп: две кнопки по 76 px (Изменить, Удалить). Палец захватывается, у края —
+// мягкий упор, открывается по расстоянию или быстрому взмаху.
+const SWIPE_OPEN = 152;
+const SWIPE_RIGHT = 112;
+function swipeResist(value, min, max) {
+  if (value < min) return min + (value - min) * 0.25;
+  if (value > max) return max + (value - max) * 0.25;
+  return value;
+}
 document.addEventListener("pointerdown", event => {
   const row = event.target.closest(".swipe-row");
-  if (!row || event.target.closest(".swipe-action, .task-drag-handle")) return;
+  if (!row || event.target.closest(".swipe-action, .task-drag-handle, .record-pin-toggle")) return;
   if (event.pointerType === "mouse" && event.button !== 0) return;
-  swipeGesture = { row, id: event.pointerId, x: event.clientX, y: event.clientY, base: row.classList.contains("is-open-left") ? -240 : 0, horizontal: false };
+  swipeGesture = { row, id: event.pointerId, x: event.clientX, y: event.clientY, t: event.timeStamp, lastX: event.clientX, lastT: event.timeStamp, speed: 0, base: row.classList.contains("is-open-left") ? -SWIPE_OPEN : 0, horizontal: false };
 });
 document.addEventListener("pointermove", event => {
   const gesture = swipeGesture;
   if (!gesture || gesture.id !== event.pointerId) return;
   const dx = event.clientX - gesture.x;
   const dy = event.clientY - gesture.y;
-  if (!gesture.horizontal && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.25) gesture.horizontal = true;
+  if (!gesture.horizontal) {
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { swipeGesture = null; return; }
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+      gesture.horizontal = true;
+      try { gesture.row.setPointerCapture(event.pointerId); } catch (_) {}
+    }
+  }
   if (!gesture.horizontal) return;
-  const distance = Math.max(-240, Math.min(gesture.row.classList.contains("swipe-movie") ? 112 : 0, gesture.base + dx));
+  const dt = Math.max(1, event.timeStamp - gesture.lastT);
+  gesture.speed = (event.clientX - gesture.lastX) / dt;
+  gesture.lastX = event.clientX; gesture.lastT = event.timeStamp;
+  const right = gesture.row.classList.contains("swipe-movie") && gesture.base === 0 ? SWIPE_RIGHT : 0;
+  const distance = swipeResist(gesture.base + dx, -SWIPE_OPEN, right);
   gesture.row.classList.add("swiping");
+  gesture.row.classList.toggle("swipe-armed", right > 0 && distance > 72);
   gesture.row.style.setProperty("--swipe-x", `${distance}px`);
 });
 document.addEventListener("pointerup", event => {
   const gesture = swipeGesture;
   if (!gesture || gesture.id !== event.pointerId) return;
   swipeGesture = null;
-  gesture.row.classList.remove("swiping");
+  gesture.row.classList.remove("swiping", "swipe-armed");
   gesture.row.style.removeProperty("--swipe-x");
   if (!gesture.horizontal) return;
   const distance = gesture.base + event.clientX - gesture.x;
-  swipeSuppressUntil = Date.now() + 500;
+  const flick = Math.abs(gesture.speed) > 0.45;
+  swipeSuppressUntil = Date.now() + 400;
   swipeSuppressRow = gesture.row;
   swipeSuppressKey = `${gesture.row.dataset.swipeType}:${gesture.row.dataset.swipeId}`;
-  if (gesture.row.classList.contains("swipe-movie") && gesture.base === 0 && distance > 78) {
+  if (gesture.row.classList.contains("swipe-movie") && gesture.base === 0 && (distance > 72 || (flick && gesture.speed > 0 && distance > 30))) {
     closeSwipeRows();
     toggleMovieViewed(savedItem("movies", gesture.row.dataset.swipeId));
     return;
   }
   closeSwipeRows(gesture.row);
-  gesture.row.classList.toggle("is-open-left", distance < -40);
-  gesture.row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = gesture.row.classList.contains("is-open-left") ? 0 : -1);
+  const open = gesture.base === 0
+    ? distance < -SWIPE_OPEN / 2.5 || (flick && gesture.speed < 0 && distance < -24)
+    : !(distance > -SWIPE_OPEN + 36 || (flick && gesture.speed > 0));
+  gesture.row.classList.toggle("is-open-left", open);
+  gesture.row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = open ? 0 : -1);
 });
 document.addEventListener("pointercancel", () => { if (swipeGesture) { swipeGesture.row.classList.remove("swiping"); swipeGesture.row.style.removeProperty("--swipe-x"); swipeGesture = null; } });
 document.addEventListener("click", event => {
@@ -598,7 +624,7 @@ document.addEventListener("click", event => {
     }
     const action = event.target.closest("[data-action]")?.dataset.action;
     const nativeViews = new Set(["saved-open", "project-open", "project-note", "project-saved"]);
-    const inlineActions = new Set(["toggle-task", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive"]);
+    const inlineActions = new Set(["toggle-task", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive", "saved-pin-card"]);
     const explicitSettings = event.target.closest('.budget-card [data-action="finance-edit"], .budget-card [data-action="vault-edit"]');
     if (!inlineActions.has(action) && !nativeViews.has(action) && !explicitSettings) {
       event.preventDefault(); event.stopImmediatePropagation();
