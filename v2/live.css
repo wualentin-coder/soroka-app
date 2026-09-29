@@ -81,3 +81,6 @@ body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="
 .live-capture-record { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; font: inherit; }
 .live-capture-record small { color: var(--accent); font-size: 11px; font-weight: 800; }
 .live-capture-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+
+/* Чек — фотографией боту в чат: в приложении его разобрать нечем. */
+[data-action="finance-receipt"] { display: none !important; }
