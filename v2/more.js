@@ -522,6 +522,8 @@ function closeSwipeRows(except = null) {
   document.querySelectorAll(".swipe-row.is-open-left").forEach(row => {
     if (row === except) return;
     row.classList.remove("is-open-left");
+    // Кнопки гаснут, пока карточка едет обратно, — а не пропадают разом.
+    setTimeout(() => { if (!row.classList.contains("is-open-left") && !row.classList.contains("swiping")) row.classList.remove("dir-left"); }, 280);
     row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = -1);
   });
 }
@@ -651,7 +653,14 @@ document.addEventListener("pointermove", event => {
   const right = gesture.row.classList.contains("swipe-seen") && gesture.base === 0 ? SWIPE_RIGHT : 0;
   const distance = swipeResist(gesture.base + dx, -gesture.row.clientWidth, right);
   gesture.row.classList.add("swiping");
-  gesture.row.classList.toggle("delete-armed", distance < swipeDeleteAt(gesture.row));
+  // Под карточкой видна только та сторона, куда её тянут.
+  gesture.row.classList.toggle("dir-right", distance > 0);
+  gesture.row.classList.toggle("dir-left", distance < 0);
+  // Красный слой проявляется постепенно: от раскрытых кнопок до порога удаления.
+  const deleteAt = swipeDeleteAt(gesture.row);
+  const del = Math.max(0, Math.min(1, (-distance - gesture.open) / (-deleteAt - gesture.open)));
+  gesture.row.style.setProperty("--del", del.toFixed(3));
+  gesture.row.classList.toggle("delete-armed", distance < deleteAt);
   gesture.row.classList.toggle("swipe-armed", right > 0 && distance > 72);
   gesture.row.style.setProperty("--swipe-x", `${distance}px`);
 });
@@ -660,8 +669,9 @@ document.addEventListener("pointerup", event => {
   if (!gesture || gesture.id !== event.pointerId) return;
   swipeGesture = null;
   const armedDelete = gesture.row.classList.contains("delete-armed");
-  gesture.row.classList.remove("swiping", "swipe-armed", "delete-armed");
+  gesture.row.classList.remove("swiping", "swipe-armed", "delete-armed", "dir-right");
   gesture.row.style.removeProperty("--swipe-x");
+  gesture.row.style.removeProperty("--del");
   if (!gesture.horizontal) return;
   const distance = gesture.base + event.clientX - gesture.x;
   const flick = Math.abs(gesture.speed) > 0.45;
@@ -684,7 +694,7 @@ document.addEventListener("pointerup", event => {
   gesture.row.classList.toggle("is-open-left", open);
   gesture.row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = open ? 0 : -1);
 });
-document.addEventListener("pointercancel", () => { if (swipeGesture) { swipeGesture.row.classList.remove("swiping"); swipeGesture.row.style.removeProperty("--swipe-x"); swipeGesture = null; } });
+document.addEventListener("pointercancel", () => { if (swipeGesture) { swipeGesture.row.classList.remove("swiping", "dir-right", "dir-left", "delete-armed", "swipe-armed"); swipeGesture.row.style.removeProperty("--swipe-x"); swipeGesture.row.style.removeProperty("--del"); swipeGesture = null; } });
 document.addEventListener("click", event => {
   if (event.target.closest(".swipe-action")) return;
   const row = event.target.closest(".swipe-row");
