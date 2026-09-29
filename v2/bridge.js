@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=85d2a173ed","integrity":null},{"src":"./address-map.js?v=58140c052a","integrity":null},{"src":"./finance.js?v=5b90f1a215","integrity":null},{"src":"./more.js?v=86288dab8a","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=d9fc7c51ca","integrity":null},{"src":"./app.js?v=0b2a6d14f1","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=219b4fb080","integrity":null},{"src":"./address-map.js?v=126e822953","integrity":null},{"src":"./finance.js?v=11ab62bdf4","integrity":null},{"src":"./more.js?v=104c67e8f4","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=d9fc7c51ca","integrity":null},{"src":"./app.js?v=96de2e3be1","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -252,7 +252,9 @@
     fresh.vault = keep.vault;
     data = fresh;
     remapUi(ids);
-    render();
+    // На экране строка «Удалено · Вернуть» — не перерисовываем, пока человек
+    // не уйдёт с экрана сам: иначе «Вернуть» исчезнет через секунду.
+    if (!document.querySelector(".swipe-undo")) render();
   }
 
   /** Номера, которые сервер выдал новым записям, — и в открытых окнах. */
@@ -565,7 +567,7 @@
     root.innerHTML = "";
     // Тема — у Telegram: светлый клиент открывает светлое приложение.
     try {
-      if (!localStorage.getItem("soroka-planner-theme") && tg.colorScheme) localStorage.setItem("soroka-planner-theme", tg.colorScheme);
+      if (!localStorage.getItem("soroka-planner-theme")) localStorage.setItem("soroka-planner-theme", "telegram");
     } catch (_) {}
     for (const entry of SCRIPTS) {
       // Карта (Leaflet) не должна валить всё приложение, если CDN недоступен.
