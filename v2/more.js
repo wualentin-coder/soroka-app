@@ -358,6 +358,7 @@ async function shareRecord(type, recordId) {
 function moreAction(action, control) {
   const itemId = control.dataset.id;
   if (captureAction(action, control)) return true;
+  if (action === "swipe-skip") { const row = control.closest(".swipe-row"); if (row) { closeSwipeRows(); swipeSkipQuiet(row, savedItem("movies", row.dataset.swipeId)); } return true; }
   if (["swipe-edit", "swipe-share", "swipe-delete"].includes(action)) { const row = control.closest(".swipe-row"); if (row) { if (action === "swipe-delete") deleteSwipeCard(row); else if (action === "swipe-share") void shareRecord(row.dataset.swipeType, row.dataset.swipeId); else openSwipeCard(row, "edit"); } return true; }
   if (action === "card-preview-settings" && ui.sheet?.kind === "card-preview") { const { type, recordId } = ui.sheet; openCardEditor(type, recordId); return true; }
   if (action === "card-preview-share" && ui.sheet?.kind === "card-preview") { void shareRecord(ui.sheet.type, ui.sheet.recordId); return true; }
@@ -512,7 +513,7 @@ function installSwipeCards(root) {
     const seenItem = ["saved:movies", "saved:notes", "saved:files", "saved:posts", "saved:links"].includes(type) ? savedItem(type.split(":")[1], recordId) : null;
     const seenNow = type === "saved:movies" ? movieIsViewed(seenItem) : Boolean(seenItem?.viewed);
     const movieSwipeHint = seenItem ? `<span class="swipe-right-indicator" aria-hidden="true">${icon(seenNow ? "eyeOff" : "eye", "icon-sm")}</span>` : "";
-    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("settings")}</button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share")}</button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash")}</button><div class="swipe-content"></div>`;
+    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("settings")}</button><button class="swipe-action skip" type="button" data-action="swipe-skip" tabindex="-1" aria-label="Не интересно">${icon("thumbDown")}</button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share")}</button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash")}</button><div class="swipe-content"></div>`;
     node.parentNode.insertBefore(wrapper, node);
     wrapper.querySelector(".swipe-content").appendChild(node);
   });
@@ -560,6 +561,29 @@ function swipeDeleteFull(row) {
   row.classList.add("is-deleted");
   row.innerHTML = `<div class="swipe-undo"><span>${icon("trash", "icon-sm")}Удалено</span><button type="button" data-action="swipe-undo" data-undo-id="${esc(recordId)}">Вернуть</button></div>`;
 }
+/**
+ * Фильм смахнули вправо («просмотрено») или влево («не интересно»): он уходит
+ * из списка, но строка остаётся полоской с «Вернуть» — как при удалении.
+ */
+function swipeMovieQuiet(row, change, label, iconName, undoAction) {
+  const recordId = row.dataset.swipeId;
+  const paint = window.render, say = window.toast;
+  window.render = () => {}; window.toast = () => {};
+  try { change(); } finally { window.render = paint; window.toast = say; }
+  row.classList.remove("is-open-left");
+  row.classList.add("is-deleted");
+  row.innerHTML = `<div class="swipe-undo"><span>${icon(iconName, "icon-sm")}${label}</span><button type="button" data-action="${undoAction}" data-undo-id="${esc(recordId)}">Вернуть</button></div>`;
+}
+function swipeSeenQuiet(row, item) {
+  if (!item) return;
+  const becameSeen = !movieIsViewed(item);
+  swipeMovieQuiet(row, () => toggleMovieViewed(item), becameSeen ? "Просмотрено" : "Снова в планах", becameSeen ? "eye" : "eyeOff", "swipe-seen-undo");
+}
+function swipeSkipQuiet(row, item) {
+  if (!item) return;
+  const becomes = !item.skipped;
+  swipeMovieQuiet(row, () => toggleMovieSkipped(item, true), becomes ? "Не интересно — учту в подборке" : "Вернул в планы", "thumbDown", "swipe-skip-undo");
+}
 function deleteSwipeCard(row) {
   const { swipeType: type, swipeId: recordId } = row.dataset;
   closeSwipeRows();
@@ -592,6 +616,8 @@ let swipeSuppressKey = "";
 // Свайп: две кнопки по 76 px (Изменить, Удалить). Палец захватывается, у края —
 // мягкий упор, открывается по расстоянию или быстрому взмаху.
 const SWIPE_OPEN = 132;
+/** Сколько тянуть, чтобы открыть кнопки: у фильма их три (настроить, «не интересно», поделиться). */
+const swipeOpenOf = row => row.classList.contains("swipe-movie") ? 208 : SWIPE_OPEN;
 const SWIPE_RIGHT = 112;
 /** Докуда тянуть, чтобы удалить: большая часть ширины карточки. */
 const swipeDeleteAt = row => -Math.max(SWIPE_OPEN + 70, Math.min(row.clientWidth * 0.62, 280));
@@ -604,7 +630,7 @@ document.addEventListener("pointerdown", event => {
   const row = event.target.closest(".swipe-row");
   if (!row || event.target.closest(".swipe-action, .task-drag-handle, .record-pin-toggle")) return;
   if (event.pointerType === "mouse" && event.button !== 0) return;
-  swipeGesture = { row, id: event.pointerId, x: event.clientX, y: event.clientY, t: event.timeStamp, lastX: event.clientX, lastT: event.timeStamp, speed: 0, base: row.classList.contains("is-open-left") ? -SWIPE_OPEN : 0, horizontal: false };
+  swipeGesture = { row, id: event.pointerId, x: event.clientX, y: event.clientY, t: event.timeStamp, lastX: event.clientX, lastT: event.timeStamp, speed: 0, base: row.classList.contains("is-open-left") ? -swipeOpenOf(row) : 0, open: swipeOpenOf(row), horizontal: false };
 });
 document.addEventListener("pointermove", event => {
   const gesture = swipeGesture;
@@ -646,15 +672,15 @@ document.addEventListener("pointerup", event => {
     closeSwipeRows();
     const [, category] = gesture.row.dataset.swipeType.split(":");
     const target = savedItem(category, gesture.row.dataset.swipeId);
-    if (category === "movies") toggleMovieViewed(target);
+    if (category === "movies") { swipeSeenQuiet(gesture.row, target); return; }
     else if (target) { target.viewed = !target.viewed; save(); render(); toast(target.viewed ? "Отмечено просмотренным" : "Отметка снята"); }
     return;
   }
   if (armedDelete && gesture.row.dataset.swipeType !== "vault") { swipeDeleteFull(gesture.row); return; }
   closeSwipeRows(gesture.row);
   const open = gesture.base === 0
-    ? distance < -SWIPE_OPEN / 2.5 || (flick && gesture.speed < 0 && distance < -24)
-    : !(distance > -SWIPE_OPEN + 36 || (flick && gesture.speed > 0));
+    ? distance < -gesture.open / 2.5 || (flick && gesture.speed < 0 && distance < -24)
+    : !(distance > -gesture.open + 36 || (flick && gesture.speed > 0));
   gesture.row.classList.toggle("is-open-left", open);
   gesture.row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = open ? 0 : -1);
 });
