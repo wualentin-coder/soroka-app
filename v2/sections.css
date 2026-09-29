@@ -1283,9 +1283,25 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .reco-detail-sheet .saved-view-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; white-space: nowrap; }
 
 /* Доходы и расходы на обзоре — нажимаются: там их можно поправить. */
-.kpi.kpi-button { display: grid; width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.kpi.kpi-button { display: grid; width: 100%; border-top: 0; border-left: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .kpi.kpi-button .kpi-hint { display: inline-flex; align-items: center; gap: 4px; }
 .kpi.kpi-button:active { background: var(--surface-soft); }
 /* Штрихкод не задаёт высоту карточки: он заполняет корешок, а высота — по тексту билета. */
 .ticket-paper .ticket-stub { position: relative; min-height: 104px; }
 .ticket-paper .ticket-stub-code { position: absolute; inset: 14px 16px; width: auto; height: auto; min-height: 0; }
+
+/* Плитки-кнопки доходов и расходов — с теми же разделителями, что и остальные. */
+.finance-summary .kpi.kpi-button { border-bottom: 1px solid var(--line); }
+.finance-summary .kpi.kpi-button:nth-child(odd) { border-right: 1px solid var(--line); }
+.finance-summary .kpi.kpi-button:nth-child(even) { border-right: 0; }
+/* Билеты одной высоты; вырезы — без обводки; штрихкод не заходит на вырезы. */
+.ticket-card.ticket-paper { height: 158px; }
+.ticket-paper .ticket-main { overflow: hidden; }
+.ticket-paper .ticket-seats { margin-top: auto; }
+.ticket-paper .ticket-notch { border: 0; }
+.ticket-paper .ticket-stub { min-height: 0; }
+.ticket-paper .ticket-stub-code { inset: 20px 16px; }
+.ticket-card.ticket-paper { height: 168px; }
+.ticket-paper .ticket-route { -webkit-line-clamp: 1; line-clamp: 1; flex: none; }
+.ticket-paper .ticket-main strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: none; }
+.ticket-paper .ticket-stub-code { top: 22px; bottom: auto; left: 16px; right: auto; width: calc(100% - 32px); height: calc(100% - 44px); }
