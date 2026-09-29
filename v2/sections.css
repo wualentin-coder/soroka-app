@@ -793,3 +793,40 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .goal-chip { min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); color: var(--text); font: inherit; font-weight: 800; }
 .goal-settings { margin-top: 10px; }
 .budget-card { cursor: pointer; }
+
+/* Списки — чек-лист. */
+.checklist { display: grid; gap: 4px; margin: 4px 0 8px; }
+.checklist-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.checklist-progress .progress-track { flex: 1; margin: 0; }
+.checklist-rows { display: grid; }
+.check-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--line); }
+.check-row .task-check { margin: 0 auto; }
+.check-text { min-height: 44px; padding: 10px 6px 10px 2px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; text-align: left; line-height: 1.3; }
+.check-row.done .check-text { color: var(--subtle); text-decoration: line-through; }
+.check-remove { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; color: var(--subtle); }
+.check-remove:hover, .check-remove:focus-visible { color: var(--warn); background: var(--warn-soft); }
+.check-row.editing input { min-width: 0; height: 40px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; outline: 0; }
+.check-add { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; min-height: 46px; }
+.check-add-icon { display: grid; place-items: center; color: var(--accent); }
+.check-add input { height: 42px; padding: 0 4px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; outline: 0; }
+.check-add input::placeholder { color: var(--subtle); }
+.checklist-done-head { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.list-card-preview { display: grid; gap: 3px; margin: 6px 0 2px; }
+.list-card-preview span { position: relative; padding-left: 16px; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-card-preview span::before { content: ""; position: absolute; left: 0; top: 50%; width: 9px; height: 9px; margin-top: -5px; border: 1.5px solid var(--subtle); border-radius: 50%; }
+.list-card-preview em { color: var(--subtle); font-size: 12px; font-style: normal; padding-left: 16px; }
+/* Главная «Сохранённого»: компактные карточки плотнее. */
+.saved-section-card.compact { min-height: 0; padding: 12px 12px 12px 14px; gap: 8px; }
+/* «Глазик»: свайп вправо и отметка на карточке. */
+.swipe-right-indicator { width: 96px; }
+.swipe-right-indicator .icon { width: 24px; height: 24px; }
+.record-seen { position: absolute; top: 15px; right: 44px; z-index: 2; color: var(--accent); pointer-events: none; }
+.record-seen .icon { width: 16px; height: 16px; }
+.note-row-seen { display: inline-flex; color: var(--accent); }
+.note-row-seen .icon { width: 14px; height: 14px; }
+/* Свайп влево — только значки. */
+.swipe-action.edit, .swipe-action.share, .swipe-action.delete { width: 66px; }
+.swipe-action.share { right: 0; }
+.swipe-action.edit { right: 66px; }
+.swipe-action .icon { width: 21px; height: 21px; }
+.swipe-row.is-open-left { --swipe-x: -132px; }
