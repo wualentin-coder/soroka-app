@@ -694,3 +694,13 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
   .kpi-value { font-size: 17px; }
   .more-grid { grid-template-columns: 1fr; }
 }
+
+/* Экран раздела «Сохранённого» — как «Заметки» (29.09: было 7 слоёв управления до первой записи). */
+.saved-section-heading { align-items: center; }
+.saved-section-heading h1 { font-size: clamp(30px, 8vw, 40px); }
+.saved-section-heading > span { margin-left: auto; padding-bottom: 0; }
+.saved-section-add { flex: none; }
+.saved-section-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin: 0 0 14px; }
+.saved-section-search .notes-search { margin: 0; }
+.saved-section-search select { width: auto; max-width: 46vw; min-height: var(--control-default); }
+.saved-section-screen .saved-subcategories { margin-bottom: 10px; }
