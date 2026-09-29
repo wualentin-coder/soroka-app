@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=9434f01a7b","integrity":null},{"src":"./movies.js?v=b4c9f51515","integrity":null},{"src":"./address-map.js?v=02bfe9223e","integrity":null},{"src":"./finance.js?v=22038a9bf0","integrity":null},{"src":"./more.js?v=a8f2482a1c","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=20e9841e6e","integrity":null},{"src":"./app.js?v=43399dd044","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=421fbdc790","integrity":null},{"src":"./movies.js?v=070f978bcf","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=cd12753665","integrity":null},{"src":"./more.js?v=9b76657ba8","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=dd79c29b82","integrity":null},{"src":"./app.js?v=8f8c8d3257","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -699,7 +699,8 @@
     };
 
     // Подборка фильмов: вкус считает приложение, новые названия — бот (до полуминуты).
-    window.sorokaRecommend = () => call({ action: "movie_recommend" }, 80000);
+    window.sorokaRecommend = () => call({ action: "movie_recommend" }, 30000);
+    window.sorokaRecoGet = () => call({ action: "movie_reco_get" }, 20000);
 
     // Адреса ищет сервер бота: из браузера в России бесплатный геокодер
     // отвечает через раз, а серверу — стабильно (Photon).
