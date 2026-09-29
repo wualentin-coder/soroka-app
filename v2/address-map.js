@@ -115,6 +115,7 @@ async function suggestAddresses(query, city) {
   return (found || []).map(hit => { const parts = addressParts(hit.address); return { label: [hit.name && hit.name !== parts.street ? hit.name : "", parts.street, parts.city].filter(Boolean).join(" · "), name: hit.name || "", street: hit.address?.road || "", house: hit.address?.house_number || "", city: parts.city, lat: Number(hit.lat), lng: Number(hit.lon) }; });
 }
 let addressHits = [];
+let addressHitsFor = "";
 let addressTimer = null;
 let addressAsked = 0;
 async function findAddress(form, now = false) {
@@ -124,20 +125,29 @@ async function findAddress(form, now = false) {
   if (streetPart(query).length < 3) { if (list) { list.hidden = true; list.innerHTML = ""; } if (now && state) state.textContent = "Впишите улицу и дом"; return; }
   const asked = ++addressAsked;
   if (state) state.textContent = "Ищу…";
-  const hits = await suggestAddresses(query, String(form.elements.city?.value || "").trim()).catch(() => []);
+  const hits = await suggestAddresses(query, "").catch(() => []);
   if (asked !== addressAsked || !document.body.contains(form)) return;
   addressHits = hits;
+  addressHitsFor = query;
   if (!hits.length) { list.hidden = true; list.innerHTML = ""; if (state) state.textContent = "Не нашёл — проверьте название улицы или поставьте метку на карте"; return; }
   list.innerHTML = hits.map((hit, i) => `<button type="button" class="address-suggest-row" data-address-hit="${i}">${icon(hit.name ? "bookmark" : "pin", "icon-sm")}<span><strong>${esc(hit.name || [hit.street, hit.house].filter(Boolean).join(", ") || hit.label)}</strong><small>${esc(hit.name ? [[hit.street, hit.house].filter(Boolean).join(", "), hit.city].filter(Boolean).join(" · ") : hit.city)}</small></span></button>`).join("");
   list.hidden = false;
   if (state) state.textContent = "Выберите адрес из списка";
 }
+/** Квартира из того, что человек напечатал: «кв. 107», «квартира 107» или второе число после дома. */
+function typedFlat(typed) {
+  const text = String(typed || "");
+  const named = text.match(/(?:кв\.?|квартира)\s*(\d+[а-яА-Я]?)/i);
+  if (named) return named[1];
+  const numbers = text.match(/\d+[а-яА-Я]?(?:\s*к\s*\d+)?/g) || [];
+  return numbers.length >= 2 ? numbers[1] : "";
+}
 function pickAddress(form, hit) {
   const typed = String(form.elements.address.value || "");
-  const flat = typed.slice(streetPart(typed).length).replace(/^\s*,?\s*/, "");
+  const flat = hit.flat || typedFlat(typed);
   const line = [hit.street, hit.house].filter(Boolean).join(", ") || hit.name || hit.label;
-  form.elements.address.value = [line, flat].filter(Boolean).join(", ");
-  if (hit.city) form.elements.city.value = hit.city;
+  form.elements.address.value = [line, flat ? `кв. ${flat}` : ""].filter(Boolean).join(", ");
+  if (form.elements.city) form.elements.city.value = hit.city || "";
   setFormValue(form, "lat", hit.lat.toFixed(6));
   setFormValue(form, "lng", hit.lng.toFixed(6));
   if (form.elements.title && !form.elements.title.value && hit.name) form.elements.title.value = hit.name;
@@ -158,7 +168,7 @@ document.addEventListener("click", event => {
 // Печатает адрес — подсказки через паузу; прежняя точка уже не про этот адрес.
 document.addEventListener("input", event => {
   const input = event.target;
-  if (!input?.form || !["address", "city"].includes(input.name) || !input.form.querySelector(".address-suggest")) return;
+  if (!input?.form || input.name !== "address" || !input.form.querySelector(".address-suggest")) return;
   const form = input.form;
   if (form.elements.lat) form.elements.lat.value = "";
   if (form.elements.lng) form.elements.lng.value = "";
