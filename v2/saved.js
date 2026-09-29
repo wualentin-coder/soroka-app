@@ -144,7 +144,7 @@ function movieCoverMarkup(item, context = "card") {
 }
 /** Карточка в списке — с закладкой поверх: закрепить, не открывая запись. */
 function savedRecordCard(item, category) {
-  return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon("bookmark", "icon-sm")}</button></div>`;
+  return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}${(category === "movies" ? movieIsViewed(item) : item.viewed) ? `<span class="record-seen" title="Просмотрено" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon("bookmark", "icon-sm")}</button></div>`;
 }
 function savedRecordCardBody(item, category) {
   if (category === "tickets") {
@@ -163,7 +163,7 @@ function savedRecordCardBody(item, category) {
   const status = category === "movies" ? item.status : category === "files" && (item.filePath || item.fileData) ? "Открыть файл" : item.viewed ? "Просмотрено" : category === "lists" ? `${(item.items || []).filter(x => x.done).length}/${(item.items || []).length} пунктов` : item.minutes ? `${item.minutes} мин` : "Сохранено";
   const extra = category === "products" ? demoMoney(item.price) : category === "recipes" ? `${item.servings || 1} порции` : category === "movies" ? String(item.year || "") : category === "addresses" ? item.city || item.address || "" : item.source || "";
   const description = category === "addresses" ? item.address : item.description;
-  return `<button class="record-card" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}"><span class="record-kicker">${category === "addresses" ? mapCategoryBadge(item.categoryId) : savedSectionBadge(category, item.categoryId)}</span><span class="record-title">${esc(item.title)}</span>${description ? `<span class="record-description">${esc(description)}</span>` : ""}<span class="record-meta"><span>${esc(status || "Сохранено")}</span>${extra ? `<span>${esc(extra)}</span>` : ""}</span></button>`;
+  return `<button class="record-card" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}"><span class="record-kicker">${category === "addresses" ? mapCategoryBadge(item.categoryId) : savedSectionBadge(category, item.categoryId)}</span><span class="record-title">${esc(item.title)}</span>${category === "lists" ? listPreview(item) : ""}${description ? `<span class="record-description">${esc(description)}</span>` : ""}<span class="record-meta"><span>${esc(status || "Сохранено")}</span>${extra ? `<span>${esc(extra)}</span>` : ""}</span></button>`;
 }
 function ticketCodeBlock(item) {
   const kind = item.codeType === "barcode" ? "barcode" : "qr";
@@ -184,7 +184,7 @@ function noteFolderId(item) {
 }
 function noteRow(item) {
   const folder = savedSection("notes", noteFolderId(item))?.name || "Без папки";
-  return `<button class="note-row" type="button" data-action="saved-open" data-category="notes" data-id="${esc(item.id)}"><span class="note-row-title">${esc(item.title || "Без названия")}</span><span class="note-row-preview">${esc(item.description || "Пустая заметка")}</span><span class="note-row-foot"><time>${esc(noteDateLabel(item))}</time><span>${esc(folder)}</span>${item.pinned ? `<span class="note-row-pin" aria-label="Закреплено">${icon("bookmark", "icon-sm")}</span>` : ""}</span></button>`;
+  return `<button class="note-row" type="button" data-action="saved-open" data-category="notes" data-id="${esc(item.id)}"><span class="note-row-title">${esc(item.title || "Без названия")}</span><span class="note-row-preview">${esc(item.description || "Пустая заметка")}</span><span class="note-row-foot"><time>${esc(noteDateLabel(item))}</time><span>${esc(folder)}</span>${item.viewed ? `<span class="note-row-seen" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}${item.pinned ? `<span class="note-row-pin" aria-label="Закреплено">${icon("bookmark", "icon-sm")}</span>` : ""}</span></button>`;
 }
 function renderNotesResults() {
   const items = savedVisibleItems().slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.updated || b.created || "").localeCompare(String(a.updated || a.created || "")));
@@ -256,6 +256,38 @@ function renderSavedSectionsSheet() {
 }
 function savedFormField(label, name, value, type = "text", extra = "") {
   return `<label class="field">${label}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
+}
+/** Перерисовать, не сбрасывая прокрутку окна: в длинном списке иначе прыгает наверх. */
+function renderKeepScroll(after) {
+  const scroll = document.querySelector(".sheet")?.scrollTop || 0;
+  render();
+  const sheet = document.querySelector(".sheet");
+  if (sheet) sheet.scrollTop = scroll;
+  if (after) after();
+}
+/**
+ * Список как чек-лист: отметить — кружком, изменить — нажать на текст, удалить —
+ * крестиком, добавить — поле внизу. Выполненные уходят вниз, их можно очистить.
+ */
+function renderChecklist(item) {
+  const items = item.items || [];
+  const open = items.filter(entry => !entry.done);
+  const done = items.filter(entry => entry.done);
+  const row = entry => ui.sheet.editItemId === entry.id
+    ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-label="Отметить">${icon("check", "icon-sm")}</button><input name="text" type="text" value="${esc(entry.text)}" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта"><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить пункт">${icon("trash", "icon-sm")}</button></form>`
+    : `<div class="check-row ${entry.done ? "done" : ""}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить: ${esc(entry.text)}">${icon("close", "icon-sm")}</button></div>`;
+  const percent = items.length ? Math.round(done.length / items.length * 100) : 0;
+  return `<div class="checklist"><div class="checklist-progress"><div class="progress-track"><span style="width:${percent}%"></span></div><span id="saved-list-progress">${done.length} из ${items.length}</span></div>` +
+    `<div class="checklist-rows">${open.map(row).join("")}</div>` +
+    `<form id="list-item-form" class="check-add"><span class="check-add-icon">${icon("plus", "icon-sm")}</span><input name="text" type="text" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></form>` +
+    (done.length ? `<div class="checklist-done-head"><span>Выполнено · ${done.length}</span><button class="text-action" type="button" data-action="list-clear-done">Очистить</button></div><div class="checklist-rows">${done.map(row).join("")}</div>` : "") +
+    `</div>`;
+}
+/** На карточке списка — первые невыполненные пункты, а не пустое место. */
+function listPreview(item) {
+  const open = (item.items || []).filter(entry => !entry.done);
+  if (!open.length) return "";
+  return `<span class="list-card-preview">${open.slice(0, 3).map(entry => `<span>${esc(entry.text)}</span>`).join("")}${open.length > 3 ? `<em>ещё ${open.length - 3}</em>` : ""}</span>`;
 }
 function renderListItems(item) {
   if (!item) return `<div class="detail-block"><p>Сначала сохраните список, затем добавьте пункты.</p></div>`;
@@ -367,7 +399,7 @@ function renderSavedViewSheet(item, category) {
     const imagePreview = preview || /^data:image\//i.test(fileUrl) ? `<a class="saved-file-preview" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Открыть файл ${esc(item.title)}"><img src="${esc(preview || fileUrl)}" alt="Первая страница: ${esc(item.title)}"></a>` : `<div class="saved-file-preview"><iframe src="${esc(fileUrl)}" title="Просмотр файла ${esc(item.title)}" loading="lazy"></iframe></div>`;
     details.push(fileUrl ? `${imagePreview}<a class="small-button saved-link-button" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer">Открыть файл ${icon("external", "icon-sm")}</a>` : `<div class="empty-card"><strong>Файл не прикреплён</strong>Добавьте PDF, изображение или TXT через «Изменить».</div>`);
   }
-  if (category === "lists") details.push(`<div class="detail-block"><div class="section-heading"><h3>Пункты списка</h3><span id="saved-list-progress" class="section-note">${(item.items || []).filter(entry => entry.done).length}/${(item.items || []).length} выполнено</span></div>${(item.items || []).map(entry => `<div class="saved-list-line ${entry.done ? "done" : ""}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="saved-list-text" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${esc(entry.text)}</button></div>`).join("") || `<p>Список пуст.</p>`}</div>`);
+  if (category === "lists") details.push(renderChecklist(item));
   if (category === "links" && item.url) details.push(`<a class="small-button saved-link-button" href="${esc(/^https?:\/\//i.test(item.url) ? item.url : "#")}" target="_blank" rel="noopener noreferrer">Открыть ссылку ${icon("external", "icon-sm")}</a>${item.summary ? `<div class="detail-block"><h3>Главное</h3><p class="saved-prose">${esc(item.summary)}</p></div>` : ""}`);
   if (category === "products") details.push(`<div class="saved-detail-table">${savedDetailLine("Цена", item.price ? demoMoney(item.price) : "")}${savedDetailLine("Магазин", item.store)}${savedDetailLine("Желаемая цена", item.targetPrice ? demoMoney(item.targetPrice) : "")}</div>`);
   if (category === "notes" && item.versions?.length) details.push(`<div class="detail-block"><h3>История заметки</h3>${item.versions.slice().reverse().slice(0, 3).map(v => `<div class="saved-version"><small>${esc(v.date || "Ранее")}</small><p>${esc(v.description || "")}</p></div>`).join("")}</div>`);
@@ -376,7 +408,7 @@ function renderSavedViewSheet(item, category) {
   const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span>${item.year ? `<small>${esc(item.year)}</small>` : ""}${item.director ? `<p class="movie-detail-director">Режиссёр<br><b>${esc(item.director)}</b></p>` : ""}${item.description ? `<p class="movie-detail-description">${esc(item.description)}</p>` : ""}${movieGenres.length ? `<div class="movie-detail-tags">${movieGenres.map(tag => `<span class="tag">${esc(tag)}</span>`).join("")}</div>` : ""}${movieRatings}</div></div>` : "";
   const topViewedAction = !["notes", "lists", "tickets", "addresses"].includes(category) ? `<button class="movie-watch-toggle icon-only ${item.viewed || category === "movies" && movieIsViewed(item) ? "is-viewed" : ""}" type="button" data-action="saved-viewed" aria-pressed="${category === "movies" ? movieIsViewed(item) : Boolean(item.viewed)}" aria-label="${category === "movies" ? movieIsViewed(item) ? "Вернуть фильм в планы" : "Отметить фильм просмотренным" : item.viewed ? "Снять отметку «просмотрено»" : "Отметить просмотренным"}">${icon("check", "icon-sm")}</button>` : "";
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
-  const metadata = category === "posts" ? "" : `<div class="detail-meta"><div><small>Источник</small><strong>${esc(item.source || "Добавлено вручную")}</strong></div><div><small>Создано</small><strong>${esc(item.created ? shortDate(item.created) : "Ранее")}</strong></div></div>`;
+  const metadata = ["posts", "lists"].includes(category) ? "" : `<div class="detail-meta"><div><small>Источник</small><strong>${esc(item.source || "Добавлено вручную")}</strong></div><div><small>Создано</small><strong>${esc(item.created ? shortDate(item.created) : "Ранее")}</strong></div></div>`;
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet ${category === "movies" ? "movie-view-sheet" : category === "posts" ? "post-view-sheet" : ""}" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item.title)}</h2>${topViewedAction}<button class="icon-button" type="button" data-action="saved-share" aria-label="Поделиться">${icon("share")}</button><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${icon(savedIcon(category), "icon-sm")}${esc(SAVED_NAMES[category])}${item.topic ? ` · ${esc(item.topic)}` : ""}</p>${movieHero}${!["movies", "posts"].includes(category) && item.description ? `<p class="saved-prose">${esc(item.description)}</p>` : ""}${!["movies", "posts"].includes(category) ? tags : ""}${details.join("")}${metadata}<div class="inline-actions saved-view-actions"><button class="primary-button" type="button" data-action="saved-edit">${icon("note")}Изменить</button><button type="button" class="danger" data-action="saved-delete">${icon("trash")}Удалить</button></div></section></div>`;
 }
 function renderPostBotPreviewSheet(item) {
@@ -488,7 +520,7 @@ function savedAction(action, control) {
     if (entry) {
       entry.done = !entry.done;
       save();
-      if (ui.sheet.mode === "view") {
+      if (ui.sheet.mode === "view") { renderKeepScroll(); } else if (false) {
         const line = control.closest(".saved-list-line");
         line?.classList.toggle("done", entry.done);
         const check = line?.querySelector(".task-check");
@@ -503,7 +535,9 @@ function savedAction(action, control) {
   }
   if (action === "list-edit" && item) { ui.sheet.editItemId = control.dataset.id; ui.sheet.justRendered = true; render(); document.querySelector('#list-item-form input')?.focus(); return true; }
   if (["list-up", "list-down"].includes(action) && item) { const index = item.items.findIndex(x => x.id === control.dataset.id); const target = index + (action === "list-up" ? -1 : 1); if (index >= 0 && target >= 0 && target < item.items.length) { [item.items[index], item.items[target]] = [item.items[target], item.items[index]]; save(); render(); } return true; }
-  if (action === "list-remove" && item) { item.items = item.items.filter(x => x.id !== control.dataset.id); save(); render(); return true; }
+  if (action === "list-remove" && item) { item.items = item.items.filter(x => x.id !== control.dataset.id); if (ui.sheet.editItemId === control.dataset.id) ui.sheet.editItemId = null; save(); renderKeepScroll(); return true; }
+  if (action === "list-item-edit" && item) { ui.sheet.editItemId = control.dataset.id; renderKeepScroll(() => { const input = document.querySelector("#list-edit-form input"); if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } }); return true; }
+  if (action === "list-clear-done" && item) { item.items = (item.items || []).filter(x => !x.done); save(); renderKeepScroll(); toast("Выполненные убраны"); return true; }
   return false;
 }
 function savedSubmit(event) {
@@ -618,11 +652,27 @@ function savedSubmit(event) {
     event.preventDefault();
     const list = savedItem("lists", ui.sheet.id);
     const text = String(new FormData(event.target).get("text") || "").trim();
+    // В просмотре поле внизу только добавляет — и остаётся в фокусе для следующего пункта.
+    if (list && text && ui.sheet.mode === "view") { list.items.push({ id: id(), text, done: false }); save(); renderKeepScroll(() => document.querySelector("#list-item-form input")?.focus()); return true; }
     if (list && text) { const existing = ui.sheet.editItemId ? list.items.find(x => x.id === ui.sheet.editItemId) : null; if (existing) existing.text = text; else list.items.push({ id: id(), text, done: false }); ui.sheet.editItemId = null; save(); render(); }
+    return true;
+  }
+  if (event.target.id === "list-edit-form" && ui.sheet?.kind === "saved") {
+    event.preventDefault();
+    const list = savedItem("lists", ui.sheet.id);
+    const entry = list?.items.find(x => x.id === event.target.dataset.id);
+    const text = String(new FormData(event.target).get("text") || "").trim();
+    if (entry && text && entry.text !== text) { entry.text = text; save(); }
+    ui.sheet.editItemId = null; renderKeepScroll();
     return true;
   }
   return false;
 }
+// Ушли из поля правки пункта — сохраняем, как в заметках телефона.
+document.addEventListener("focusout", event => {
+  const form = event.target?.closest?.("#list-edit-form");
+  if (form && !(event.relatedTarget && form.contains(event.relatedTarget))) setTimeout(() => { if (document.body.contains(form)) form.requestSubmit(); }, 0);
+});
 function savedInput(event) {
   if (event.target.id === "saved-pins-search") {
     const query = event.target.value.trim().toLocaleLowerCase("ru-RU");
