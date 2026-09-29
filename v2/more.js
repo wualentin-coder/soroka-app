@@ -217,7 +217,8 @@ function renderSearchSheetExt() {
 }
 function openSearchResult(type, recordId) {
   ui.sheet = null;
-  if (type === "task" || type === "event" || type === "metric" || type === "inbox" || type.startsWith("finance:")) { ui.sheet = { kind: "card-preview", type, recordId, justRendered: true }; render(); return; }
+  if (type === "finance:goal") { openGoalDeposit(recordId); return; }
+  if (type === "task" || type === "event" || type === "metric" || type === "inbox" || type.startsWith("finance:")) { openCardEditor(type, recordId); return; }
   if (type === "note") { openSavedRecord("notes", recordId); return; }
   if (type.startsWith("saved:")) { openSavedRecord(type.split(":")[1], recordId); return; }
   if (type === "project") { ui.projectId = recordId; navigate("projects"); return; }
@@ -520,7 +521,8 @@ function closeSwipeRows(except = null) {
 function openSwipeCard(row, mode = "view") {
   const { swipeType: type, swipeId: recordId } = row.dataset;
   closeSwipeRows();
-  if (mode === "view" && type !== "note" && !type.startsWith("saved:")) { ui.sheet = { kind: "card-preview", type, recordId, justRendered: true }; render(); return; }
+  // Окна «просмотр записи» нет: в нём не было ничего, чего не видно на карточке.
+  if (mode === "view" && type === "finance:goal") { openGoalDeposit(recordId); return; }
   openCardEditor(type, recordId, mode);
 }
 function openCardEditor(type, recordId, mode = "edit") {
