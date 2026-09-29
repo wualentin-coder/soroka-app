@@ -830,3 +830,49 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .swipe-action.edit { right: 66px; }
 .swipe-action .icon { width: 21px; height: 21px; }
 .swipe-row.is-open-left { --swipe-x: -132px; }
+
+/* Карта не выходит поверх окон: слои Leaflet (z-index 400) заперты в своём контейнере. */
+.address-map, .address-mini-map { position: relative; z-index: 0; isolation: isolate; overflow: hidden; }
+.address-map .leaflet-gl-layer, .address-mini-map .leaflet-gl-layer { pointer-events: none; }
+.address-mini-map-link { display: block; margin: 10px 0 8px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); }
+.address-mini-map { height: 180px; }
+.address-mini-map .map-marker-shell { pointer-events: none; }
+/* Сумма ползунком и вводом. */
+.amount-slider { display: grid; gap: 8px; }
+.amount-slider-row { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px; align-items: center; }
+.amount-slider-row input[type="range"] { width: 100%; accent-color: var(--accent); height: 28px; }
+.amount-slider-row input[type="number"] { min-height: var(--control-default); }
+.amount-slider-scale { display: flex; justify-content: space-between; color: var(--subtle); font-size: 11px; margin-top: -4px; }
+
+/* Окно тянется вниз за пальцем. */
+.sheet.sheet-dragging { transition: none !important; }
+/* Шапка окна записи: название и одинаковые значки. */
+.saved-view-sheet .sheet-head { align-items: flex-start; gap: 2px; }
+.saved-view-sheet .sheet-head h2 { flex: 1; min-width: 0; margin: 6px 6px 0 0; font-size: 19px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.saved-view-sheet .sheet-head .icon-button, .saved-view-sheet .sheet-head .movie-watch-toggle { flex: none; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--muted); }
+.saved-view-sheet .sheet-head .movie-watch-toggle.is-viewed { background: var(--accent-soft); color: var(--accent); }
+.saved-view-sheet .sheet-head .icon-button .icon, .saved-view-sheet .sheet-head .movie-watch-toggle .icon { width: 19px; height: 19px; }
+/* Фильм: постер и сведения по одной сетке. */
+.movie-detail-hero { grid-template-columns: 116px minmax(0, 1fr); gap: 14px; align-items: start; margin: 4px 0 14px; }
+.movie-detail-hero .movie-cover-detail { width: 116px; aspect-ratio: 2 / 3; height: auto; border-radius: 12px; }
+.movie-detail-intro { display: grid; gap: 6px; padding: 0; }
+.movie-detail-intro > .movie-detail-status { color: var(--accent); font-size: 12px; font-weight: 800; }
+.movie-detail-meta { color: var(--muted); font-size: 13px; font-weight: 700; }
+.movie-detail-director { display: grid; gap: 1px; }
+.movie-detail-director small { color: var(--subtle); font-size: 11px; }
+.movie-detail-director b { color: var(--text); font-size: 13px; font-weight: 800; }
+.movie-ratings { grid-template-columns: 1fr 1fr; gap: 6px; margin: 4px 0 0; padding: 0; }
+.movie-rating { justify-content: space-between; min-height: 40px; padding: 6px 9px; border-radius: 10px; }
+.movie-rating strong { font-size: 17px; }
+.movie-detail-description { margin: 0 0 12px; color: var(--text); font-size: 14px; line-height: 1.5; }
+.detail-meta-line { margin: 12px 0 14px; color: var(--subtle); font-size: 12px; }
+/* Адрес: улица и дом с поиском, координаты — спрятаны. */
+.address-find { display: grid; gap: 6px; }
+.address-find-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.address-find-row .small-button { display: inline-flex; align-items: center; gap: 6px; min-height: var(--control-default); }
+.address-find-state { color: var(--subtle); font-size: 12px; }
+.address-coords summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 700; padding: 6px 0; }
+
+/* Под постером: статус — акцентом, остальное — обычным цветом. */
+.movie-detail-intro > .movie-detail-meta { color: var(--muted); font-size: 13px; font-weight: 700; }
+.movie-detail-intro > .movie-detail-director { color: var(--text); font-size: 13px; }
