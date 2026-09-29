@@ -13,12 +13,14 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=89527991dd","integrity":null},{"src":"./address-map.js?v=58140c052a","integrity":null},{"src":"./finance.js?v=cd4fdb5415","integrity":null},{"src":"./more.js?v=422e51b5b0","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=2a2966ccf2","integrity":null},{"src":"./app.js?v=f437f899e2","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=85d2a173ed","integrity":null},{"src":"./address-map.js?v=58140c052a","integrity":null},{"src":"./finance.js?v=5b90f1a215","integrity":null},{"src":"./more.js?v=86288dab8a","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=d9fc7c51ca","integrity":null},{"src":"./app.js?v=0b2a6d14f1","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
   window.SOROKA_LIVE = true;
   try { tg && tg.ready(); tg && tg.expand(); } catch (_) {}
+  // Свайп вниз по карточкам не должен сворачивать приложение (Bot API 7.7+).
+  try { tg && tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (_) {}
 
   // ------------------------------------------------------------ запросы
 
@@ -355,17 +357,20 @@
     const form = event.target;
     if (!form || !form.id) return;
     if (form.id === "quick-capture-form") {
-      // «+» — как сообщение боту: разбирает он, отвечает карточкой в чате.
+      // «+» — как сообщение боту: разбирает он. Пока думает — видно, что думает;
+      // разобрал — видно, что завёл, и запись открывается отсюда же.
       event.preventDefault(); event.stopImmediatePropagation();
       const text = String(new FormData(form).get("text") || "").trim();
       if (!text) return;
       const button = form.querySelector("button[type=submit]");
-      if (button) button.disabled = true;
-      call({ action: "planner_capture", text }).then(() => {
+      if (button) { button.disabled = true; button.innerHTML = '<span class="live-spin"></span>Отправляю…'; }
+      call({ action: "planner_capture", text }).then((answer) => {
         ui.sheet = null; render();
-        say("Отправил боту — ответит в чате, запись появится здесь");
-        [6000, 15000, 30000].forEach((ms) => setTimeout(() => refresh(), ms));
-      }).catch(() => { if (button) button.disabled = false; say("Не отправилось — попробуйте ещё раз"); });
+        captureProgress(text, answer.item);
+      }).catch(() => {
+        if (button) { button.disabled = false; button.textContent = "Разобрать сообщение"; }
+        say("Не отправилось — попробуйте ещё раз");
+      });
       return;
     }
     if (form.id === "vault-form") {
@@ -380,6 +385,65 @@
       if (existing) body.id = Number(String(existing.id).slice(2));
       call(body).then(() => vault.list()).then(() => { ui.sheet = null; render(); say("Сохранено"); }).catch((e) => vault.fail(e));
     }
+  }
+
+  // ------------------------------------------------------------ ход разбора
+
+  const KIND_NAME = { task: "Дело", event: "Событие", note: "Заметка", link: "Материал", recipe: "Рецепт", movie: "Фильм",
+    product: "Товар", debt: "Долг", payment: "Платёж", tx: "Операция", place: "Адрес", metric: "Показатель", list: "Список" };
+
+  function captureProgress(text, item) {
+    const layer = document.createElement("div");
+    layer.className = "modal-backdrop live-capture-backdrop";
+    layer.innerHTML = `<section class="sheet live-capture" role="dialog" aria-modal="true" aria-live="polite"><div class="sheet-handle"></div>
+      <div class="live-capture-state"><span class="live-spin big"></span><strong>Бот разбирает сообщение…</strong><small>Обычно это несколько секунд</small></div>
+      <p class="live-capture-source">${escape(text)}</p><div class="live-capture-actions"><button type="button" class="ghost-button" data-close>Закрыть</button></div></section>`;
+    document.body.appendChild(layer);
+    let open = true;
+    const close = () => { open = false; layer.remove(); };
+    layer.addEventListener("click", (event) => {
+      if (event.target === layer || event.target.closest("[data-close]")) close();
+      const again = event.target.closest("[data-again]");
+      if (again) { close(); ui.sheet = { kind: "addmenu", justRendered: false }; render(); }
+      const ref = event.target.closest("[data-ref]");
+      if (ref) { close(); openRef(ref.dataset.ref); }
+    });
+    const started = Date.now();
+    const tick = async () => {
+      if (!open) return;
+      const status = await call({ action: "planner_capture_status", item }).catch(() => null);
+      if (status && status.done) {
+        await refresh(true);
+        if (!open) return;
+        const records = status.records || [];
+        layer.querySelector(".live-capture-state").innerHTML = records.length
+          ? `<span class="live-done">✓</span><strong>${records.length === 1 ? "Записал" : `Записал ${records.length}`}</strong>`
+          : `<span class="live-done">✓</span><strong>Бот ответил в чате</strong><small>Записей из этого сообщения не получилось</small>`;
+        layer.querySelector(".live-capture-actions").innerHTML =
+          records.map((r) => `<button type="button" class="live-capture-record" data-ref="${escape(r.ref)}"><small>${escape(KIND_NAME[r.kind] || "Запись")}</small><span>${escape(r.title || "Без названия")}</span></button>`).join("") +
+          `<div class="live-capture-buttons"><button type="button" class="ghost-button" data-close>Закрыть</button><button type="button" class="primary-button" data-again>Разобрать ещё</button></div>`;
+        return;
+      }
+      if (Date.now() - started > 90000) {
+        layer.querySelector(".live-capture-state").innerHTML = `<strong>Бот ещё думает</strong><small>Ответ придёт в чат, запись появится здесь сама</small>`;
+        return;
+      }
+      setTimeout(tick, 1500);
+    };
+    setTimeout(tick, 1200);
+  }
+
+  /** Открыть запись по ссылке «вид:номер». */
+  function openRef(ref) {
+    const [kind] = String(ref).split(":");
+    if (kind === "task") { navigate("tasks"); ui.sheet = { kind: "edit", type: "task", id: ref, justRendered: false }; render(); return; }
+    if (kind === "event") { navigate("upcoming"); ui.sheet = { kind: "edit", type: "event", id: ref, justRendered: false }; render(); return; }
+    if (kind === "note") { navigate("saved"); openSavedRecord("notes", ref); return; }
+    for (const key of Object.keys(data.saved)) {
+      if ((data.saved[key] || []).some((r) => r.id === ref)) { navigate("saved"); openSavedRecord(key, ref); return; }
+    }
+    if (kind === "metric") { navigate("metrics"); return; }
+    if (["tx", "debt", "payment"].includes(kind)) navigate("finance");
   }
 
   // ------------------------------------------------------------ ссылка из бота
@@ -429,7 +493,7 @@
     }
     const kind = codes.every((c) => c.kind === "barcode") ? "Штрихкод" : "QR-код";
     // Миниатюры: коды мелко в ряд; нажал — на весь экран, дальше листаешь.
-    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div><div class="live-code-thumbs">` +
+    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div><div class="live-code-thumbs" style="--codes:${Math.min(codes.length, 3)}">` +
       codes.map((c, i) => `<button type="button" class="live-code-thumb ${c.kind}" data-live-code="${i}" aria-label="Открыть код ${i + 1} на весь экран">${c.svg || ""}<span>${codes.length > 1 ? `Билет ${i + 1}` : "Открыть"}</span></button>`).join("") +
       `</div>${send}</section>`;
   }
