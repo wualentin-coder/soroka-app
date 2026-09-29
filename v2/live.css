@@ -84,3 +84,13 @@ body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="
 
 /* Чек — фотографией боту в чат: в приложении его разобрать нечем. */
 [data-action="finance-receipt"] { display: none !important; }
+
+/* Коды: под миниатюрой — ряд и место билета; нет картинки — номер текстом. */
+.live-code-thumb span { max-width: 100%; text-align: center; line-height: 1.3; }
+.live-code-text { font: 800 13px Manrope, system-ui, sans-serif; color: #111; letter-spacing: .04em; padding: 18px 0; }
+.live-code-slide figcaption span { font-weight: 700; font-size: 15px; }
+/* Окно «откройте заново» — поверх всего. */
+.live-reopen { z-index: 1200; }
+.live-reopen h2 { margin: 6px 0 8px; font-size: 19px; }
+/* Код и его вид — в строку и на телефоне: вид короткий, код длинный. */
+@media (max-width: 420px) { .sheet .field-row.ticket-row-code { grid-template-columns: minmax(0, 1fr) 118px; gap: 8px; } }
