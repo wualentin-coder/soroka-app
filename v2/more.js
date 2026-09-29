@@ -500,13 +500,17 @@ function installSwipeCards(root) {
     const wrapper = document.createElement("div");
     wrapper.className = "swipe-row";
     if (type === "saved:movies") wrapper.classList.add("swipe-movie");
+    // Свайп вправо — «просмотрено» (глазик) у заметок, файлов, постов, ссылок и фильмов.
+    if (["saved:movies", "saved:notes", "saved:files", "saved:posts", "saved:links"].includes(type)) wrapper.classList.add("swipe-seen");
     if (node.matches(".note-row")) wrapper.classList.add("swipe-note");
     if (node.matches(".budget-card, .project-card")) wrapper.classList.add("swipe-spaced");
     if (node.matches(".event-card")) wrapper.classList.add("swipe-event");
     wrapper.dataset.swipeType = type;
     wrapper.dataset.swipeId = recordId;
-    const movieSwipeHint = type === "saved:movies" ? `<span class="swipe-right-indicator" aria-hidden="true">${icon("check", "icon-sm")}<span>${movieIsViewed(savedItem("movies", recordId)) ? "В планы" : "Просмотрено"}</span></span>` : "";
-    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Изменить запись">${icon("note", "icon-sm")}<span>Изменить</span></button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share", "icon-sm")}<span>Поделиться</span></button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash", "icon-sm")}<span>Удалить</span></button><div class="swipe-content"></div>`;
+    const seenItem = ["saved:movies", "saved:notes", "saved:files", "saved:posts", "saved:links"].includes(type) ? savedItem(type.split(":")[1], recordId) : null;
+    const seenNow = type === "saved:movies" ? movieIsViewed(seenItem) : Boolean(seenItem?.viewed);
+    const movieSwipeHint = seenItem ? `<span class="swipe-right-indicator" aria-hidden="true">${icon(seenNow ? "eyeOff" : "eye", "icon-sm")}</span>` : "";
+    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("settings")}</button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share")}</button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash")}</button><div class="swipe-content"></div>`;
     node.parentNode.insertBefore(wrapper, node);
     wrapper.querySelector(".swipe-content").appendChild(node);
   });
@@ -584,7 +588,7 @@ let swipeSuppressRow = null;
 let swipeSuppressKey = "";
 // Свайп: две кнопки по 76 px (Изменить, Удалить). Палец захватывается, у края —
 // мягкий упор, открывается по расстоянию или быстрому взмаху.
-const SWIPE_OPEN = 152;
+const SWIPE_OPEN = 132;
 const SWIPE_RIGHT = 112;
 /** Докуда тянуть, чтобы удалить: большая часть ширины карточки. */
 const swipeDeleteAt = row => -Math.max(SWIPE_OPEN + 70, Math.min(row.clientWidth * 0.62, 280));
@@ -615,7 +619,7 @@ document.addEventListener("pointermove", event => {
   const dt = Math.max(1, event.timeStamp - gesture.lastT);
   gesture.speed = (event.clientX - gesture.lastX) / dt;
   gesture.lastX = event.clientX; gesture.lastT = event.timeStamp;
-  const right = gesture.row.classList.contains("swipe-movie") && gesture.base === 0 ? SWIPE_RIGHT : 0;
+  const right = gesture.row.classList.contains("swipe-seen") && gesture.base === 0 ? SWIPE_RIGHT : 0;
   const distance = swipeResist(gesture.base + dx, -gesture.row.clientWidth, right);
   gesture.row.classList.add("swiping");
   gesture.row.classList.toggle("delete-armed", distance < swipeDeleteAt(gesture.row));
@@ -635,9 +639,12 @@ document.addEventListener("pointerup", event => {
   swipeSuppressUntil = Date.now() + 400;
   swipeSuppressRow = gesture.row;
   swipeSuppressKey = `${gesture.row.dataset.swipeType}:${gesture.row.dataset.swipeId}`;
-  if (gesture.row.classList.contains("swipe-movie") && gesture.base === 0 && (distance > 72 || (flick && gesture.speed > 0 && distance > 30))) {
+  if (gesture.row.classList.contains("swipe-seen") && gesture.base === 0 && (distance > 72 || (flick && gesture.speed > 0 && distance > 30))) {
     closeSwipeRows();
-    toggleMovieViewed(savedItem("movies", gesture.row.dataset.swipeId));
+    const [, category] = gesture.row.dataset.swipeType.split(":");
+    const target = savedItem(category, gesture.row.dataset.swipeId);
+    if (category === "movies") toggleMovieViewed(target);
+    else if (target) { target.viewed = !target.viewed; save(); render(); toast(target.viewed ? "Отмечено просмотренным" : "Отметка снята"); }
     return;
   }
   if (armedDelete && gesture.row.dataset.swipeType !== "vault") { swipeDeleteFull(gesture.row); return; }
