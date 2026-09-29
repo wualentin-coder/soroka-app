@@ -876,3 +876,38 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 /* Под постером: статус — акцентом, остальное — обычным цветом. */
 .movie-detail-intro > .movie-detail-meta { color: var(--muted); font-size: 13px; font-weight: 700; }
 .movie-detail-intro > .movie-detail-director { color: var(--text); font-size: 13px; }
+
+/* Закладка в шапке карточки: закреплено — акцентом и залитой. */
+.sheet-pin-toggle.is-pinned { color: var(--accent); }
+.sheet-pin-toggle.is-pinned .icon { fill: currentColor; }
+
+/* Билеты в форме: у каждого место и код, удалить — значком. */
+.ticket-rows-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ticket-rows-head h3 { margin: 0; }
+.ticket-rows-head small { color: var(--subtle); font-size: 12px; }
+.ticket-rows { display: grid; gap: 10px; }
+.ticket-row { padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); }
+.ticket-row .field { margin-bottom: 8px; }
+.ticket-row .field:last-child, .ticket-row .field-row:last-of-type .field { margin-bottom: 0; }
+.ticket-row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.ticket-row-head strong { font-size: 13px; }
+.ticket-row-head .icon-button { width: 34px; height: 34px; min-height: 34px; color: var(--muted); }
+.field-row.ticket-row-code { grid-template-columns: minmax(0, 1fr) 124px; }
+.ticket-row-add { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; }
+
+/* Место проведения билета: адрес, мини-карта, «Открыть в картах». */
+.ticket-venue { margin: 14px 0; }
+.ticket-venue .saved-address { margin: 0 0 10px; grid-template-columns: 23px 1fr; }
+.ticket-venue .saved-address .icon { grid-row: auto; }
+
+/* «Доступно на счетах» — кнопка: откроет все счета. */
+.finance-hero-button { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.finance-hero-button:active { transform: scale(.995); }
+.finance-hero-more { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; color: var(--accent); font-size: 13px; font-weight: 700; }
+.accounts-total { display: grid; gap: 2px; margin: 4px 0 14px; }
+.accounts-total small { color: var(--muted); font-size: 12px; }
+.accounts-total strong { font-size: 26px; font-weight: 800; letter-spacing: -.04em; }
+.accounts-sheet .list-panel { margin-bottom: 14px; }
+.goal-account-note { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.goal-account-note b { color: var(--text); }
+.goal-account-note.warn { color: var(--warn); }
