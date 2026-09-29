@@ -22,11 +22,17 @@ function mapPointCoordinates(item) {
 }
 function mapExternalUrl(item) {
   const coords = mapPointCoordinates(item);
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords ? `${coords[0]},${coords[1]}` : `${item.title}, ${item.address || item.city || ""}`)}`;
+  const address = streetPart(item.address || "");
+  const text = [address || item.title, address && item.city && !address.includes(item.city) ? item.city : ""].filter(Boolean).join(", ");
+  return `https://yandex.ru/maps/?${coords ? `ll=${coords[1]},${coords[0]}&z=17&` : ""}text=${encodeURIComponent(text)}`;
+}
+/** Адрес без квартиры, подъезда и этажа — их на карте нет. */
+function streetPart(address) {
+  return String(address || "").replace(/,?\s*(кв\.?|квартира|подъезд|под\.|этаж|офис|оф\.)\s*[\wА-Яа-яЁё-]+.*$/i, "").trim();
 }
 function renderMapPointCard(item) {
   const coords = mapPointCoordinates(item);
-  return `<div class="map-point-card"><div class="map-point-card-top">${mapCategoryBadge(item.categoryId)}<span>${coords ? `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}` : "Без координат"}</span></div><h3>${esc(item.title)}</h3>${item.description ? `<p>${esc(item.description)}</p>` : ""}${item.address ? `<small>${esc(item.address)}</small>` : ""}<div class="map-point-actions"><button type="button" data-action="map-open-external" data-id="${esc(item.id)}">${icon("external", "icon-sm")}Открыть в картах</button><button type="button" data-action="map-edit-point" data-id="${esc(item.id)}">Изменить</button><button type="button" data-action="map-share-point" data-id="${esc(item.id)}">Поделиться</button><button class="danger" type="button" data-action="map-delete-point" data-id="${esc(item.id)}">Удалить</button></div></div>`;
+  return `<div class="map-point-card"><div class="map-point-card-top">${mapCategoryBadge(item.categoryId)}<span>${esc(item.city || (coords ? "" : "Нет на карте"))}</span></div><h3>${esc(item.title)}</h3>${item.description ? `<p>${esc(item.description)}</p>` : ""}${item.address ? `<small>${esc(item.address)}</small>` : ""}<div class="map-point-actions"><button type="button" data-action="map-open-external" data-id="${esc(item.id)}">${icon("external", "icon-sm")}Открыть в картах</button><button type="button" data-action="map-edit-point" data-id="${esc(item.id)}">Изменить</button><button type="button" data-action="map-share-point" data-id="${esc(item.id)}">Поделиться</button><button class="danger" type="button" data-action="map-delete-point" data-id="${esc(item.id)}">Удалить</button></div></div>`;
 }
 /*
  * Подложка — OpenFreeMap: бесплатно, без ключа и без лимитов (векторные плитки
@@ -53,8 +59,29 @@ function addBaseLayer(map, alive = () => map === addressMap) {
   const attribution = '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
   const raster = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution }).addTo(map);
   loadVectorMaps()
-    .then(() => { if (alive() && L.maplibreGL) L.maplibreGL({ style: `https://tiles.openfreemap.org/styles/${light ? "positron" : "dark"}`, attribution, interactive: false }).addTo(map); else if (alive()) raster(); })
+    .then(() => mapStyle(light))
+    .then(style => { if (alive() && L.maplibreGL) L.maplibreGL({ style, attribution, interactive: false }).addTo(map); else if (alive()) raster(); })
     .catch(() => { if (alive()) raster(); });
+}
+/**
+ * Стиль карты: светлая — liberty (организации со значками), тёмная — dark.
+ * В обоих стилях OpenFreeMap нет номеров домов, хотя в данных они есть, —
+ * добавляем слой; подписи — по-русски, а не «латиница + кириллица».
+ */
+const mapStyles = {};
+function mapStyle(light) {
+  const key = light ? "liberty" : "dark";
+  mapStyles[key] ||= fetch(`https://tiles.openfreemap.org/styles/${key}`).then(r => r.json()).then(style => {
+    for (const layer of style.layers) {
+      const field = layer.layout?.["text-field"];
+      if (field && JSON.stringify(field).includes("name")) layer.layout["text-field"] = ["coalesce", ["get", "name:ru"], ["get", "name"]];
+    }
+    const ink = light ? { "text-color": "#5d6670", "text-halo-color": "#ffffff", "text-halo-width": 1.2 } : { "text-color": "#b7c3cc", "text-halo-color": "#151d24", "text-halo-width": 1.2 };
+    style.layers.push({ id: "soroka-housenumber", type: "symbol", source: "openmaptiles", "source-layer": "housenumber", minzoom: 16, layout: { "text-field": ["get", "housenumber"], "text-font": ["Noto Sans Regular"], "text-size": 11 }, paint: ink });
+    if (!light) style.layers.push({ id: "soroka-poi", type: "symbol", source: "openmaptiles", "source-layer": "poi", minzoom: 16, filter: ["has", "name"], layout: { "text-field": ["coalesce", ["get", "name:ru"], ["get", "name"]], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-max-width": 9, "text-anchor": "top" }, paint: ink });
+    return style;
+  }).catch(error => { delete mapStyles[key]; throw error; });
+  return mapStyles[key];
 }
 /*
  * Адрес ↔ точка на карте: геокодер OpenStreetMap (Nominatim), бесплатно и без
@@ -79,26 +106,64 @@ async function forwardGeocode(query) {
   return found ? { lat: Number(found.lat), lng: Number(found.lon), ...addressParts(found.address) } : null;
 }
 function setFormValue(form, name, value) { const input = form?.elements?.[name]; if (input && value !== undefined && value !== null && value !== "") input.value = value; }
-async function geocodeAddressForm(button) {
-  const form = button.closest("form");
+/**
+ * Подсказки адреса: дома и организации. В прототипе — Nominatim из браузера;
+ * рабочее приложение подменяет на сервер бота (там Photon, он надёжнее).
+ */
+async function suggestAddresses(query, city) {
+  const found = await nominatim(`search?limit=6&q=${encodeURIComponent([streetPart(query), city].filter(Boolean).join(", "))}`).catch(() => []);
+  return (found || []).map(hit => { const parts = addressParts(hit.address); return { label: [hit.name && hit.name !== parts.street ? hit.name : "", parts.street, parts.city].filter(Boolean).join(" · "), name: hit.name || "", street: hit.address?.road || "", house: hit.address?.house_number || "", city: parts.city, lat: Number(hit.lat), lng: Number(hit.lon) }; });
+}
+let addressHits = [];
+let addressTimer = null;
+let addressAsked = 0;
+async function findAddress(form, now = false) {
   const state = form?.querySelector(".address-find-state");
-  const query = [form?.elements.address?.value, form?.elements.city?.value].map(x => String(x || "").trim()).filter(Boolean).join(", ");
-  if (!query) { if (state) state.textContent = "Впишите улицу и дом"; return; }
+  const list = form?.querySelector(".address-suggest");
+  const query = String(form?.elements.address?.value || "").trim();
+  if (streetPart(query).length < 3) { if (list) { list.hidden = true; list.innerHTML = ""; } if (now && state) state.textContent = "Впишите улицу и дом"; return; }
+  const asked = ++addressAsked;
   if (state) state.textContent = "Ищу…";
-  button.disabled = true;
-  const found = await forwardGeocode(query);
-  button.disabled = false;
-  if (!found) { if (state) state.textContent = "Не нашёл такой адрес — проверьте написание или поставьте метку на карте"; return; }
-  setFormValue(form, "lat", found.lat.toFixed(6));
-  setFormValue(form, "lng", found.lng.toFixed(6));
-  if (!form.elements.city?.value) setFormValue(form, "city", found.city);
-  if (state) state.textContent = `Нашёл: ${[found.street, found.city].filter(Boolean).join(", ") || "точка на карте"}`;
+  const hits = await suggestAddresses(query, String(form.elements.city?.value || "").trim()).catch(() => []);
+  if (asked !== addressAsked || !document.body.contains(form)) return;
+  addressHits = hits;
+  if (!hits.length) { list.hidden = true; list.innerHTML = ""; if (state) state.textContent = "Не нашёл — проверьте название улицы или поставьте метку на карте"; return; }
+  list.innerHTML = hits.map((hit, i) => `<button type="button" class="address-suggest-row" data-address-hit="${i}">${icon(hit.name ? "bookmark" : "pin", "icon-sm")}<span><strong>${esc(hit.name || [hit.street, hit.house].filter(Boolean).join(", ") || hit.label)}</strong><small>${esc(hit.name ? [[hit.street, hit.house].filter(Boolean).join(", "), hit.city].filter(Boolean).join(" · ") : hit.city)}</small></span></button>`).join("");
+  list.hidden = false;
+  if (state) state.textContent = "Выберите адрес из списка";
+}
+function pickAddress(form, hit) {
+  const typed = String(form.elements.address.value || "");
+  const flat = typed.slice(streetPart(typed).length).replace(/^\s*,?\s*/, "");
+  const line = [hit.street, hit.house].filter(Boolean).join(", ") || hit.name || hit.label;
+  form.elements.address.value = [line, flat].filter(Boolean).join(", ");
+  if (hit.city) form.elements.city.value = hit.city;
+  setFormValue(form, "lat", hit.lat.toFixed(6));
+  setFormValue(form, "lng", hit.lng.toFixed(6));
+  if (form.elements.title && !form.elements.title.value && hit.name) form.elements.title.value = hit.name;
+  const list = form.querySelector(".address-suggest");
+  if (list) { list.hidden = true; list.innerHTML = ""; }
+  const state = form.querySelector(".address-find-state");
+  if (state) state.textContent = `✓ На карте: ${[hit.name, line, hit.city].filter(Boolean).filter((x, i, all) => all.indexOf(x) === i).join(", ")}`;
 }
 document.addEventListener("click", event => {
   const button = event.target.closest?.('[data-action="address-geocode"]');
-  if (!button) return;
+  const hit = event.target.closest?.("[data-address-hit]");
+  if (!button && !hit) return;
   event.preventDefault(); event.stopImmediatePropagation();
-  void geocodeAddressForm(button);
+  const form = (button || hit).closest("form");
+  if (hit) pickAddress(form, addressHits[Number(hit.dataset.addressHit)]);
+  else void findAddress(form, true);
+}, true);
+// Печатает адрес — подсказки через паузу; прежняя точка уже не про этот адрес.
+document.addEventListener("input", event => {
+  const input = event.target;
+  if (!input?.form || !["address", "city"].includes(input.name) || !input.form.querySelector(".address-suggest")) return;
+  const form = input.form;
+  if (form.elements.lat) form.elements.lat.value = "";
+  if (form.elements.lng) form.elements.lng.value = "";
+  clearTimeout(addressTimer);
+  addressTimer = setTimeout(() => void findAddress(form), 650);
 }, true);
 function renderAddressWorkspace() {
   const categories = mapCategories();
@@ -139,7 +204,7 @@ function mountMiniMap() {
   const item = host.dataset.id ? savedItem("addresses", host.dataset.id) : { lat: host.dataset.lat, lng: host.dataset.lng };
   const coordinates = mapPointCoordinates(item);
   if (!coordinates) return;
-  const map = L.map(host, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, attributionControl: false }).setView(coordinates, 15);
+  const map = L.map(host, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, attributionControl: false }).setView(coordinates, 17);
   miniMap = map;
   addBaseLayer(map, () => map === miniMap);
   const category = mapCategory(item.categoryId);
