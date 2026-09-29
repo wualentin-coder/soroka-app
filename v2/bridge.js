@@ -457,17 +457,30 @@
     setTimeout(tick, 1200);
   }
 
-  /** Открыть запись по ссылке «вид:номер». */
+  /**
+   * Открыть запись по ссылке «вид:номер» — ту самую карточку, а не раздел.
+   * Событие с билетом открывается билетом: у него коды и места. Раньше здесь
+   * открывалось окно вида «edit», которого в приложении нет, — и кнопка из
+   * чата показывала просто главный экран.
+   */
   function openRef(ref) {
-    const [kind] = String(ref).split(":");
-    if (kind === "task") { navigate("tasks"); ui.sheet = { kind: "edit", type: "task", id: ref, justRendered: false }; render(); return; }
-    if (kind === "event") { navigate("upcoming"); ui.sheet = { kind: "edit", type: "event", id: ref, justRendered: false }; render(); return; }
+    const [kind, num] = String(ref).split(":");
+    const has = (list, id) => (list || []).some((r) => r.id === id);
+    if (kind === "event" && has(data.saved.tickets, `ticket:${num}`)) { navigate("saved"); openSavedRecord("tickets", `ticket:${num}`); return; }
+    if (kind === "task" && has(data.tasks, ref)) { navigate("tasks"); openEntry("task", undefined, ref); return; }
+    if (kind === "event" && has(data.events, ref)) { navigate("upcoming"); openEntry("event", undefined, ref); return; }
     if (kind === "note") { navigate("saved"); openSavedRecord("notes", ref); return; }
     for (const key of Object.keys(data.saved)) {
-      if ((data.saved[key] || []).some((r) => r.id === ref)) { navigate("saved"); openSavedRecord(key, ref); return; }
+      if (has(data.saved[key], ref)) { navigate("saved"); openSavedRecord(key, ref); return; }
     }
-    if (kind === "metric") { navigate("metrics"); return; }
-    if (["tx", "debt", "payment"].includes(kind)) navigate("finance");
+    const f = data.finance || {};
+    if (kind === "goal" && has(f.goals, ref)) { navigate("finance"); openGoalDeposit(ref); return; }
+    const entity = kind === "debt" ? "debt" : kind === "payment" ? "payment" : kind === "budget" ? "budget"
+      : kind === "tx" ? (has(f.transfers, ref) ? "transfer" : "transaction") : "";
+    if (entity && has(financeEntityList(entity), ref)) { navigate("finance"); openFinanceForm(entity, ref); return; }
+    if (kind === "metric") { navigate("metrics"); if (has(data.metrics, ref)) { ui.sheet = { kind: "metric", id: ref, justRendered: false }; render(); } return; }
+    if (kind === "project") { navigate("projects"); if (has(data.projects, ref)) { ui.sheet = { kind: "project", id: ref, justRendered: false }; render(); } return; }
+    if (["tx", "debt", "payment", "budget", "goal"].includes(kind)) navigate("finance");
   }
 
   // ------------------------------------------------------------ ссылка из бота
@@ -476,6 +489,7 @@
   const PAGE_KIND = {
     tasks: "task", events: "event", notes: "note", links: "link", recipes: "recipe", movies: "movie", goods: "product",
     debts: "debt", payments: "payment", money: "tx", shop: "list", projects: "project", lists: "list", tickets: "ticket",
+    places: "place", metrics: "metric", goals: "goal", budgets: "budget",
   };
   function openDeepLink() {
     const params = new URLSearchParams(location.search);
@@ -490,14 +504,8 @@
       if (to) navigate(to);
       return;
     }
-    const id = `${kind}:${rid}`;
-    if (kind === "task") { navigate("tasks"); ui.sheet = { kind: "edit", type: "task", id, justRendered: false }; render(); return; }
-    if (kind === "event") { navigate("upcoming"); ui.sheet = { kind: "edit", type: "event", id, justRendered: false }; render(); return; }
-    if (kind === "note") { navigate("saved"); openSavedRecord("notes", id); return; }
-    for (const key of Object.keys(data.saved)) {
-      if ((data.saved[key] || []).some((r) => r.id === id)) { navigate("saved"); openSavedRecord(key, id); return; }
-    }
-    if (["tx", "debt", "payment"].includes(kind)) navigate("finance");
+    // Билет из чата («Открыть в приложении» у события с билетом) — его карточка.
+    openRef(kind === "ticket" ? `event:${rid}` : `${kind}:${rid}`);
   }
 
   // ------------------------------------------------------------ коды билетов
