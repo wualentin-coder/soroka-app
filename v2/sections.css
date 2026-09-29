@@ -1308,3 +1308,57 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 /* Штрихкод — во всю высоту билета с отступами, на 20 % уже; меряется от карточки, а не от кнопки корешка. */
 .ticket-paper .ticket-stub { position: static; }
 .ticket-paper .ticket-stub-code { position: absolute; top: 18px; bottom: auto; height: calc(100% - 36px); width: 42px; left: auto; right: 21px; }
+
+/* ══ Билет v3: настоящие вырезы (маска), мягкая тень как на макете, контент по центру ══ */
+.record-card-shell[data-category="tickets"] { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .16)) drop-shadow(0 1px 2px rgba(0, 0, 0, .10)); }
+.ticket-card.ticket-paper {
+  --corner: 13.5px; --cut: 16.5px;
+  border: 0; border-radius: 0; background: var(--surface);
+  -webkit-mask:
+    radial-gradient(circle var(--corner) at 0 0, #0000 98%, #000) top left / 51% 51% no-repeat,
+    radial-gradient(circle var(--corner) at 0 100%, #0000 98%, #000) bottom left / 51% 51% no-repeat,
+    radial-gradient(circle var(--corner) at 100% 0, #0000 98%, #000) top right / calc(var(--stub) - var(--cut) - 1px) 51% no-repeat,
+    radial-gradient(circle var(--corner) at 100% 100%, #0000 98%, #000) bottom right / calc(var(--stub) - var(--cut) - 1px) 51% no-repeat,
+    radial-gradient(circle var(--cut) at 50% 0, #0000 98%, #000) calc(100% - var(--stub) + var(--cut) + 1px) top / calc(var(--cut) * 2 + 2px) 51% no-repeat,
+    radial-gradient(circle var(--cut) at 50% 100%, #0000 98%, #000) calc(100% - var(--stub) + var(--cut) + 1px) bottom / calc(var(--cut) * 2 + 2px) 51% no-repeat,
+    linear-gradient(#000 0 0) calc(51% - 1px) 0 / calc(100% - var(--stub) - var(--cut) - 51% + 2px) 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--corner) at 0 0, #0000 98%, #000) top left / 51% 51% no-repeat,
+    radial-gradient(circle var(--corner) at 0 100%, #0000 98%, #000) bottom left / 51% 51% no-repeat,
+    radial-gradient(circle var(--corner) at 100% 0, #0000 98%, #000) top right / calc(var(--stub) - var(--cut) - 1px) 51% no-repeat,
+    radial-gradient(circle var(--corner) at 100% 100%, #0000 98%, #000) bottom right / calc(var(--stub) - var(--cut) - 1px) 51% no-repeat,
+    radial-gradient(circle var(--cut) at 50% 0, #0000 98%, #000) calc(100% - var(--stub) + var(--cut) + 1px) top / calc(var(--cut) * 2 + 2px) 51% no-repeat,
+    radial-gradient(circle var(--cut) at 50% 100%, #0000 98%, #000) calc(100% - var(--stub) + var(--cut) + 1px) bottom / calc(var(--cut) * 2 + 2px) 51% no-repeat,
+    linear-gradient(#000 0 0) calc(51% - 1px) 0 / calc(100% - var(--stub) - var(--cut) - 51% + 2px) 100% no-repeat;
+}
+.ticket-paper .ticket-notch { display: none; }
+.ticket-card.ticket-paper::before { top: calc(var(--cut) + 4px); bottom: calc(var(--cut) + 4px); border-left: 2px dashed color-mix(in srgb, var(--muted) 45%, transparent); }
+.ticket-paper .ticket-main { justify-content: center; gap: 3px; padding: 16px 44px 16px 20px; }
+.ticket-paper .ticket-seats { margin-top: 6px; }
+.record-card-shell[data-category="tickets"] .record-pin-toggle { top: 12px; right: calc(84px + 8px); }
+.swipe-row:has(.ticket-paper) { overflow: visible; }
+/* Маска проще и надёжнее: прямоугольник, из которого вычтены шесть кругов. */
+.ticket-card.ticket-paper {
+  --hole-x: calc(100% - var(--stub));
+  -webkit-mask:
+    radial-gradient(circle var(--corner) at 0 0, #000 98%, #0000),
+    radial-gradient(circle var(--corner) at 0 100%, #000 98%, #0000),
+    radial-gradient(circle var(--corner) at 100% 0, #000 98%, #0000),
+    radial-gradient(circle var(--corner) at 100% 100%, #000 98%, #0000),
+    radial-gradient(circle var(--cut) at var(--hole-x) 0, #000 98%, #0000),
+    radial-gradient(circle var(--cut) at var(--hole-x) 100%, #000 98%, #0000),
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    radial-gradient(circle var(--corner) at 0 0, #000 98%, #0000),
+    radial-gradient(circle var(--corner) at 0 100%, #000 98%, #0000),
+    radial-gradient(circle var(--corner) at 100% 0, #000 98%, #0000),
+    radial-gradient(circle var(--corner) at 100% 100%, #000 98%, #0000),
+    radial-gradient(circle var(--cut) at var(--hole-x) 0, #000 98%, #0000),
+    radial-gradient(circle var(--cut) at var(--hole-x) 100%, #000 98%, #0000),
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.ticket-card.ticket-paper::before { right: calc(var(--stub) - 1px); }
+.record-list .swipe-row:has(.ticket-paper) + .swipe-row:has(.ticket-paper) { margin-top: 12px; }
+.record-list:has(.ticket-paper) { gap: 14px; }
