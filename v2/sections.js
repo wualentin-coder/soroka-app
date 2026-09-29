@@ -148,8 +148,8 @@ function demoMoney(amount, currency = "RUB") {
 function miniButton(label, action, extra = "") {
   return `<button class="small-button" type="button" data-action="${action}" ${extra}>${label}</button>`;
 }
-function cardSection(title, body, className = "") {
-  return `<section class="section ${className}"><div class="section-heading"><h2>${title}</h2></div>${body}</section>`;
+function cardSection(title, body, className = "", action = "") {
+  return `<section class="section ${className}"><div class="section-heading"><h2>${title}</h2>${action}</div>${body}</section>`;
 }
 
 function extendedPage(page) {
