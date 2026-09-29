@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=53bd403832","integrity":null},{"src":"./address-map.js?v=448e1ce6db","integrity":null},{"src":"./finance.js?v=2ce3dd37b1","integrity":null},{"src":"./more.js?v=957909dbe2","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=224af83b8c","integrity":null},{"src":"./app.js?v=ced30dfa2f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=9d0e6ad7de","integrity":null},{"src":"./address-map.js?v=40c93c54bd","integrity":null},{"src":"./finance.js?v=cea605f7a0","integrity":null},{"src":"./more.js?v=957909dbe2","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=3e8faa6cea","integrity":null},{"src":"./app.js?v=ced30dfa2f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -49,6 +49,23 @@
   }
 
   function say(message) { try { toast(message); } catch (_) {} }
+
+  /** Подпись Telegram старше недели — её не примет сервер, нужно открыть приложение заново. */
+  function staleInit() {
+    const at = Number(tg && tg.initDataUnsafe && tg.initDataUnsafe.auth_date) || 0;
+    return at > 0 && Date.now() / 1000 - at > 7 * 24 * 3600 - 600;
+  }
+  let reopenShown = false;
+  /** Сервер перестал узнавать приложение посреди работы: объяснить и дать закрыть. */
+  function askReopen() {
+    if (reopenShown) return;
+    reopenShown = true;
+    const layer = document.createElement("div");
+    layer.className = "modal-backdrop live-reopen";
+    layer.innerHTML = `<section class="sheet" role="alertdialog" aria-modal="true"><div class="sheet-handle"></div><h2>Откройте приложение заново</h2><p class="section-note">Приложение долго было открыто или свёрнуто, и Telegram перестал подтверждать, что это вы. Закройте его и откройте снова — правки, которые не сохранились, придётся повторить.</p><div class="sheet-actions"><button type="button" class="primary-button" data-reopen>Закрыть приложение</button></div></section>`;
+    layer.querySelector("[data-reopen]").addEventListener("click", () => { try { tg && tg.close(); } catch (_) {} });
+    document.body.appendChild(layer);
+  }
   const ERRORS = {
     reopen_app: "Откройте приложение заново из Telegram — доступ к паролям действует пять минут",
     complex_transaction: "Эту операцию бот завёл сам (перевод, сверка) — поправьте её словами в чате",
@@ -234,6 +251,7 @@
       if (answer.errors && answer.errors.length) say(human(answer.errors[0].error));
       if (late.length) again = true;
     } catch (error) {
+      if (error.status === 401) { askReopen(); return; }
       say(error.message === "no-telegram" ? "Откройте приложение из Telegram" : "Нет связи с ботом — правка не сохранилась");
       // Возвращаемся к тому, что есть на сервере: иначе экран врёт.
       await refresh(true);
@@ -273,7 +291,9 @@
       const snapshot = await call({ action: "planner_snapshot" });
       if (!force && (flying || diff(base, data).length)) return;
       adopt(snapshot, {}, []);
-    } catch (_) {}
+    } catch (error) {
+      if (error && error.status === 401) askReopen();
+    }
   }
 
   // ------------------------------------------------------------ перехваты
@@ -483,7 +503,7 @@
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function liveTicketCodes(item) {
-    const codes = Array.isArray(item.codes) ? item.codes : [];
+    const codes = (Array.isArray(item.codes) ? item.codes : []).filter((c) => c.text);
     const send = item.inChat ? '<button class="ghost-button live-code-send" type="button" data-action="saved-send">Прислать билет в чат</button>' : "";
     if (!codes.length) {
       const why = item.codesPending
@@ -496,7 +516,7 @@
     const kind = codes.every((c) => c.kind === "barcode") ? "Штрихкод" : "QR-код";
     // Миниатюры: коды мелко в ряд; нажал — на весь экран, дальше листаешь.
     return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div><div class="live-code-thumbs" style="--codes:${Math.min(codes.length, 3)}">` +
-      codes.map((c, i) => `<button type="button" class="live-code-thumb ${c.kind}" data-live-code="${i}" aria-label="Открыть код ${i + 1} на весь экран">${c.svg || ""}<span>${codes.length > 1 ? `Билет ${i + 1}` : "Открыть"}</span></button>`).join("") +
+      codes.map((c, i) => `<button type="button" class="live-code-thumb ${c.kind}" data-live-code="${i}" aria-label="Открыть код ${i + 1} на весь экран">${c.svg || `<b class="live-code-text">${escape(c.text)}</b>`}<span>${escape(c.seat || (codes.length > 1 ? `Билет ${i + 1}` : "Открыть"))}</span></button>`).join("") +
       `</div>${send}</section>`;
   }
 
@@ -504,12 +524,12 @@
   function fullCode(button) {
     const sheet = ui.sheet || {};
     const item = (data.saved.tickets || []).find((t) => t.id === sheet.id);
-    const codes = (item && item.codes) || [];
+    const codes = ((item && item.codes) || []).filter((c) => c.text);
     if (!codes.length) return;
     const start = Number(button.dataset.liveCode) || 0;
     const layer = document.createElement("div");
     layer.className = "live-code-full";
-    layer.innerHTML = `<div class="live-code-track">${codes.map((c, i) => `<figure class="live-code-slide"><div class="live-code-full-art ${c.kind}">${c.svg || ""}</div><figcaption><b>${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}</b><small>${escape(c.text)}</small></figcaption></figure>`).join("")}</div>` +
+    layer.innerHTML = `<div class="live-code-track">${codes.map((c, i) => `<figure class="live-code-slide"><div class="live-code-full-art ${c.kind}">${c.svg || ""}</div><figcaption><b>${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}</b>${c.seat ? `<span>${escape(c.seat)}</span>` : ""}<small>${escape(c.text)}</small></figcaption></figure>`).join("")}</div>` +
       `${codes.length > 1 ? `<div class="live-code-dots">${codes.map((_, i) => `<i data-dot="${i}"></i>`).join("")}</div>` : ""}<button type="button" class="live-code-close">Закрыть</button>`;
     document.body.appendChild(layer);
     const track = layer.querySelector(".live-code-track");
@@ -560,7 +580,9 @@
     try {
       snapshot = await call({ action: "planner_snapshot" }, 30000);
     } catch (error) {
-      splash(error.message === "unauthorized" ? "Это приложение открывается только владельцем бота." : "Бот не ответил. Проверьте связь.", true);
+      splash(error.message !== "unauthorized" ? "Бот не ответил. Проверьте связь."
+        : staleInit() ? "Telegram открыл старую копию приложения. Закройте его и откройте снова — кнопкой меню у поля ввода."
+        : "Это приложение открывается только владельцем бота.", error.message !== "unauthorized");
       return;
     }
     window.SOROKA_LIVE_DATA = prepare(snapshot);
@@ -588,7 +610,8 @@
           const when = [ticket.eventDate ? fullDate(ticket.eventDate) : "", ticket.eventTime].filter(Boolean).join(", ");
           text = [ticket.title, when, ticket.venue].filter(Boolean).join("\n");
         }
-        if (codes.length) text += `\n\n${codes.length > 1 ? "Коды билетов" : "Код билета"}: ${codes.map((c) => c.text).join(", ")}`;
+        const rows = codes.filter((c) => c.text || c.seat);
+        if (rows.length) text += "\n\n" + rows.map((c, i) => [rows.length > 1 ? `Билет ${i + 1}` : "Билет", c.seat, c.text && `код ${c.text}`].filter(Boolean).join(" · ")).join("\n");
         if (ticket && ticket.inChat) text += "\n\nФото билета — в чате с ботом («Прислать билет в чат»).";
       }
       const link = payload.url && /^https?:\/\//.test(payload.url) && !String(payload.url).startsWith(location.origin) ? payload.url : "";
