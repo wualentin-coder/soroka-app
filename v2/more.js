@@ -565,19 +565,19 @@ function swipeDeleteFull(row) {
  * Фильм смахнули вправо («просмотрено») или влево («не интересно»): он уходит
  * из списка, но строка остаётся полоской с «Вернуть» — как при удалении.
  */
-function swipeMovieQuiet(row, change, label, iconName, undoAction) {
+function swipeMovieQuiet(row, change, label, iconName, undoAction, extra = "") {
   const recordId = row.dataset.swipeId;
   const paint = window.render, say = window.toast;
   window.render = () => {}; window.toast = () => {};
   try { change(); } finally { window.render = paint; window.toast = say; }
   row.classList.remove("is-open-left");
   row.classList.add("is-deleted");
-  row.innerHTML = `<div class="swipe-undo"><span>${icon(iconName, "icon-sm")}${label}</span><button type="button" data-action="${undoAction}" data-undo-id="${esc(recordId)}">Вернуть</button></div>`;
+  row.innerHTML = `<div class="swipe-undo"><span>${icon(iconName, "icon-sm")}${label}</span><span class="swipe-undo-buttons">${extra}<button type="button" data-action="${undoAction}" data-undo-id="${esc(recordId)}">Вернуть</button></span></div>`;
 }
 function swipeSeenQuiet(row, item) {
   if (!item) return;
   const becameSeen = !movieIsViewed(item);
-  swipeMovieQuiet(row, () => toggleMovieViewed(item), becameSeen ? "Просмотрено" : "Снова в планах", becameSeen ? "eye" : "eyeOff", "swipe-seen-undo");
+  swipeMovieQuiet(row, () => toggleMovieViewed(item), becameSeen ? "Просмотрено" : "Снова в планах", becameSeen ? "eye" : "eyeOff", "swipe-seen-undo", becameSeen ? `<button type="button" data-action="movie-rate-open" data-id="${esc(item.id)}">Оценить</button>` : "");
 }
 function swipeSkipQuiet(row, item) {
   if (!item) return;
