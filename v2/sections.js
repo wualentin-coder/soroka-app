@@ -169,6 +169,7 @@ document.addEventListener("submit", event => {
 function renderExtendedSheet() {
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
   if (ui.sheet.kind === "movie-rate") return renderMovieRateSheet();
+  if (ui.sheet.kind === "finance-reconcile") return renderReconcileSheet();
   if (ui.sheet.kind === "reco-detail") return renderRecoDetailSheet();
   if (ui.sheet.kind === "finance-accounts") return renderAccountsSheet();
   if (ui.sheet.kind === "card-preview") return renderCardPreviewSheet();
