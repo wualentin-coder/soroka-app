@@ -39,7 +39,7 @@ const icons = {
   archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v12h14V8m-9 5h4"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9 2 2-2 2 1 1-2 2-2-2-2 2"/>',
   project: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>',
+  settings: '<path d="M10.3 2.6h3.4l.5 2.6a7.6 7.6 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.8a7.7 7.7 0 0 1 0 2.2l2 1.8-1.7 2.9-2.5-.9a7.6 7.6 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.6 7.6 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.8a7.7 7.7 0 0 1 0-2.2l-2-1.8 1.7-2.9 2.5.9a7.6 7.6 0 0 1 1.9-1.1Z"/><circle cx="12" cy="12" r="3"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6"/>',
   chart: '<path d="M3 20h18M5 17V9m5 8V5m5 12v-6m5 6V3"/>',
   eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="2.5"/>',
@@ -356,6 +356,59 @@ function openEntry(type = "task", date = ui.page === "upcoming" ? ui.selected : 
   render();
 }
 function closeSheet() { ui.sheet = null; render(); }
+/*
+ * Окно закрывается свайпом вниз, как в Telegram: тянешь за шапку или за
+ * содержимое, когда оно прокручено до верха. Отпустил далеко или быстро —
+ * окно уезжает вниз; недотянул — возвращается на место.
+ */
+let sheetDrag = null;
+document.addEventListener("touchstart", event => {
+  const sheet = event.target.closest?.(".sheet");
+  if (!sheet || event.touches.length !== 1) return;
+  if (event.target.closest("input, textarea, select, .live-code-track, .leaflet-container, .swipe-row")) return;
+  sheetDrag = { sheet, x: event.touches[0].clientX, y: event.touches[0].clientY, dy: 0, t: event.timeStamp, active: false };
+}, { passive: true });
+document.addEventListener("touchmove", event => {
+  const drag = sheetDrag;
+  if (!drag) return;
+  const dx = event.touches[0].clientX - drag.x;
+  const dy = event.touches[0].clientY - drag.y;
+  if (!drag.active) {
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { sheetDrag = null; return; }
+    if (dy < 10) { if (dy < -10) sheetDrag = null; return; }
+    if (drag.sheet.scrollTop > 0) { sheetDrag = null; return; }
+    drag.active = true;
+    drag.sheet.classList.add("sheet-dragging");
+  }
+  event.preventDefault();
+  drag.dy = Math.max(0, dy - 10);
+  drag.sheet.style.transform = `translateY(${drag.dy}px)`;
+  const backdrop = drag.sheet.parentElement;
+  if (backdrop?.classList.contains("modal-backdrop")) backdrop.style.backgroundColor = `rgba(2, 9, 13, ${Math.max(0.15, 0.68 - drag.dy / 700)})`;
+}, { passive: false });
+function sheetDragEnd(event) {
+  const drag = sheetDrag;
+  sheetDrag = null;
+  if (!drag?.active) return;
+  const speed = drag.dy / Math.max(1, event.timeStamp - drag.t);
+  drag.sheet.classList.remove("sheet-dragging");
+  drag.sheet.style.transition = "transform .2s ease";
+  const backdrop = drag.sheet.parentElement;
+  if (drag.dy > Math.min(160, drag.sheet.offsetHeight * 0.3) || speed > 0.7) {
+    drag.sheet.style.transform = "translateY(100%)";
+    setTimeout(() => {
+      // Окна моста (ход разбора) живут вне ui.sheet — их просто убираем.
+      if (backdrop && !backdrop.hasAttribute("data-action") && backdrop.parentElement === document.body) backdrop.remove();
+      else closeSheet();
+    }, 170);
+  } else {
+    drag.sheet.style.transform = "";
+    if (backdrop) backdrop.style.backgroundColor = "";
+    setTimeout(() => { drag.sheet.style.transition = ""; }, 220);
+  }
+}
+document.addEventListener("touchend", sheetDragEnd);
+document.addEventListener("touchcancel", sheetDragEnd);
 function monthStep(direction) {
   const month = parseDate(ui.month);
   month.setMonth(month.getMonth() + direction);
