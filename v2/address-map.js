@@ -135,7 +135,8 @@ let miniMap = null;
 function mountMiniMap() {
   const host = document.getElementById("address-mini-map");
   if (!host || !window.L) return;
-  const item = savedItem("addresses", host.dataset.id);
+  // Карточка адреса — по записи; билет передаёт точку места проведения сам.
+  const item = host.dataset.id ? savedItem("addresses", host.dataset.id) : { lat: host.dataset.lat, lng: host.dataset.lng };
   const coordinates = mapPointCoordinates(item);
   if (!coordinates) return;
   const map = L.map(host, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, attributionControl: false }).setView(coordinates, 15);
