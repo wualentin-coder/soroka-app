@@ -966,3 +966,95 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .goal-row .progress-track { height: 5px; }
 .goal-row .amount { display: grid; justify-items: end; gap: 2px; }
 .goal-row .amount small { color: var(--muted); font-size: 11px; font-weight: 600; }
+
+/* ── Фильмы: оценка звёздами, «не интересно», подборка ────────────────── */
+.stars { display: flex; gap: 2px; }
+.stars .star { flex: 1; display: grid; place-items: center; min-width: 0; height: 34px; padding: 0; border: 0; background: transparent; color: var(--line); cursor: pointer; }
+.stars.static .star { height: auto; cursor: default; }
+.stars .star .icon { width: 100%; max-width: 24px; height: 24px; fill: currentColor; stroke: none; }
+.stars .star.on { color: #e2a83b; }
+.stars .star:active { transform: scale(.88); }
+.movie-my-rating { display: grid; gap: 6px; margin: 12px 0; padding: 12px 12px 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); }
+.movie-my-rating-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.movie-my-rating-head strong { font-size: 13px; }
+.movie-my-rating-head span { color: var(--muted); font-size: 12px; font-weight: 700; }
+.movie-my-rating small { color: var(--subtle); font-size: 12px; line-height: 1.4; }
+.movie-skip { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
+.movie-card-score { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; color: #e2a83b; font-size: 12px; }
+.movie-card-score .icon { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+.movie-seen-tabs.three { grid-template-columns: repeat(3, 1fr); }
+.movie-seen-tabs.three button { padding: 0 4px; font-size: 12.5px; white-space: nowrap; }
+.saved-more { width: 100%; margin: 12px 0 4px; justify-content: center; }
+/* Смахнули влево: настроить, не интересно, поделиться. */
+.swipe-action.skip { display: none; }
+.swipe-movie .swipe-action.skip { display: flex; right: 76px; width: 76px; background: #b07d2b; flex-direction: column; gap: 4px; font-size: 10px; }
+.swipe-movie .swipe-action.edit { right: 152px; }
+.swipe-movie.is-open-left { --swipe-x: -228px; }
+.swipe-row.delete-armed .swipe-action.skip { display: none; }
+/* Подборка «Что смотреть». */
+.movie-reco { display: grid; gap: 14px; }
+.reco-block { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.reco-block h2 { margin: 0; font-size: 15px; }
+.reco-hint { color: var(--subtle); font-size: 12px; line-height: 1.4; }
+.taste-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.taste-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--surface-soft); font-size: 12.5px; font-weight: 700; }
+.taste-chip b { color: var(--accent); font-size: 12px; }
+.reco-list, .reco-picks { display: grid; gap: 8px; }
+.reco-row { display: grid; grid-template-columns: 44px 1fr 20px; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-raised); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.reco-row .movie-cover, .reco-row .movie-cover-fallback { width: 44px; height: 64px; border-radius: 8px; }
+.reco-row span { display: grid; gap: 2px; min-width: 0; }
+.reco-row strong { font-size: 13.5px; }
+.reco-row small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.reco-card { display: grid; grid-template-columns: 78px 1fr; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); }
+.reco-poster { width: 78px; height: 116px; border-radius: 10px; object-fit: cover; background: var(--surface-soft); }
+.reco-poster-empty { display: grid; place-items: center; color: var(--subtle); }
+.reco-body { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.reco-body strong { font-size: 14.5px; }
+.reco-body small { color: var(--muted); font-size: 12px; }
+.reco-body p { margin: 2px 0 0; color: var(--text); font-size: 12.5px; line-height: 1.4; }
+.reco-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.reco-actions .small-button { display: inline-flex; align-items: center; gap: 5px; }
+.reco-actions .small-button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.reco-load { width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; }
+
+/* Билеты на этой неделе — на экране «Сегодня». */
+.ticket-mini-list { display: grid; gap: 8px; }
+.ticket-mini { display: grid; grid-template-columns: 40px 1fr 20px; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ticket-mini-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-soft); color: var(--accent); }
+.ticket-mini-copy { display: grid; gap: 2px; min-width: 0; }
+.ticket-mini-copy strong { font-size: 14px; }
+.ticket-mini-copy small { color: var(--muted); font-size: 12px; }
+
+/* ── Финансы: платежи, кредиты, правила, курсы ─────────────────────────── */
+.payment-list, .credit-list { display: grid; gap: 10px; }
+.payment-card { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.payment-card.done { opacity: .72; }
+.payment-card .list-icon { grid-row: 1; }
+.payment-card .list-copy { display: grid; gap: 2px; min-width: 0; }
+.payment-card .list-copy strong { font-size: 14px; }
+.payment-card .list-copy span { color: var(--muted); font-size: 12px; }
+.payment-card .amount { font-weight: 800; white-space: nowrap; }
+.payment-card .payment-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--line); }
+.payment-card .payment-actions .mini-button, .payment-card .payment-actions button { min-height: 36px; padding: 0 14px; }
+.credit-card { display: grid; gap: 8px; padding: 6px 14px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.credit-card .finance-row { border: 0; padding-left: 0; padding-right: 0; background: transparent; }
+.credit-card .amount { display: grid; justify-items: end; gap: 1px; font-weight: 800; }
+.credit-card .amount small { color: var(--muted); font-size: 11px; font-weight: 600; }
+.credit-card .payment-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.credit-card .payment-actions small { color: var(--muted); font-size: 12px; }
+.rates-strip { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 10px 2px 4px; color: var(--muted); font-size: 12.5px; }
+.rates-strip b { color: var(--text); }
+.rates-strip small { margin-left: auto; color: var(--subtle); font-size: 11px; }
+.fx-total { display: block; margin-top: 2px; color: var(--text) !important; font-weight: 700; }
+.rules-auto { display: grid; grid-template-columns: 26px 1fr; align-items: start; gap: 12px; margin: 0 0 12px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); cursor: pointer; }
+.rules-auto.on { border-color: var(--accent); background: var(--surface-soft); }
+.rules-auto input { position: absolute; opacity: 0; pointer-events: none; }
+.rules-auto-box { display: grid; place-items: center; width: 26px; height: 26px; border: 2px solid var(--line); border-radius: 8px; color: transparent; }
+.rules-auto.on .rules-auto-box { border-color: var(--accent); background: var(--accent); color: #fff; }
+.rules-auto-copy { display: grid; gap: 3px; }
+.rules-auto-copy strong { font-size: 14px; }
+.rules-auto-copy small { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+
+.taste-chip.top { background: var(--accent); color: #fff; }
+.reco-actions .small-button { min-height: 34px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
+.kpi-grid .kpi:nth-child(3):last-child { grid-column: 1 / -1; }
