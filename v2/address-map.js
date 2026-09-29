@@ -16,6 +16,8 @@ function mapPointItems() {
 }
 function mapPointCoordinates(item) {
   const lat = Number(item?.lat), lng = Number(item?.lng);
+  // 0,0 — это пустые поля, а не точка в океане.
+  if (lat === 0 && lng === 0) return null;
   return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && item?.lat != null && item?.lng != null && item?.lat !== "" && item?.lng !== "" ? [lat, lng] : null;
 }
 function mapExternalUrl(item) {
@@ -46,14 +48,58 @@ function loadVectorMaps() {
   vectorMapsReady.catch(() => { vectorMapsReady = null; });
   return vectorMapsReady;
 }
-function addBaseLayer(map) {
+function addBaseLayer(map, alive = () => map === addressMap) {
   const light = document.documentElement.dataset.theme === "light";
   const attribution = '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
   const raster = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution }).addTo(map);
   loadVectorMaps()
-    .then(() => { if (map === addressMap && L.maplibreGL) L.maplibreGL({ style: `https://tiles.openfreemap.org/styles/${light ? "positron" : "dark"}`, attribution }).addTo(map); else if (map === addressMap) raster(); })
-    .catch(() => { if (map === addressMap) raster(); });
+    .then(() => { if (alive() && L.maplibreGL) L.maplibreGL({ style: `https://tiles.openfreemap.org/styles/${light ? "positron" : "dark"}`, attribution, interactive: false }).addTo(map); else if (alive()) raster(); })
+    .catch(() => { if (alive()) raster(); });
 }
+/*
+ * Адрес ↔ точка на карте: геокодер OpenStreetMap (Nominatim), бесплатно и без
+ * ключа. Поставил метку — подставятся улица, дом и город; вписал улицу и дом —
+ * «Найти» поставит метку.
+ */
+async function nominatim(path) {
+  const answer = await fetch(`https://nominatim.openstreetmap.org/${path}&format=jsonv2&addressdetails=1&accept-language=ru`, { headers: { accept: "application/json" } });
+  if (!answer.ok) throw new Error("geocoder");
+  return answer.json();
+}
+function addressParts(a = {}) {
+  const street = [a.road || a.pedestrian || a.footway || a.square || a.neighbourhood, a.house_number].filter(Boolean).join(", ");
+  return { street, city: a.city || a.town || a.village || a.municipality || "" };
+}
+async function reverseGeocode(lat, lng) {
+  const found = await nominatim(`reverse?lat=${lat}&lon=${lng}&zoom=18`).catch(() => null);
+  return found?.address ? addressParts(found.address) : null;
+}
+async function forwardGeocode(query) {
+  const [found] = await nominatim(`search?limit=1&q=${encodeURIComponent(query)}`).catch(() => []);
+  return found ? { lat: Number(found.lat), lng: Number(found.lon), ...addressParts(found.address) } : null;
+}
+function setFormValue(form, name, value) { const input = form?.elements?.[name]; if (input && value !== undefined && value !== null && value !== "") input.value = value; }
+async function geocodeAddressForm(button) {
+  const form = button.closest("form");
+  const state = form?.querySelector(".address-find-state");
+  const query = [form?.elements.address?.value, form?.elements.city?.value].map(x => String(x || "").trim()).filter(Boolean).join(", ");
+  if (!query) { if (state) state.textContent = "Впишите улицу и дом"; return; }
+  if (state) state.textContent = "Ищу…";
+  button.disabled = true;
+  const found = await forwardGeocode(query);
+  button.disabled = false;
+  if (!found) { if (state) state.textContent = "Не нашёл такой адрес — проверьте написание или поставьте метку на карте"; return; }
+  setFormValue(form, "lat", found.lat.toFixed(6));
+  setFormValue(form, "lng", found.lng.toFixed(6));
+  if (!form.elements.city?.value) setFormValue(form, "city", found.city);
+  if (state) state.textContent = `Нашёл: ${[found.street, found.city].filter(Boolean).join(", ") || "точка на карте"}`;
+}
+document.addEventListener("click", event => {
+  const button = event.target.closest?.('[data-action="address-geocode"]');
+  if (!button) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  void geocodeAddressForm(button);
+}, true);
 function renderAddressWorkspace() {
   const categories = mapCategories();
   const items = mapPointItems();
@@ -71,6 +117,7 @@ function renderMapCategoriesSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet map-categories-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Разделы адресов</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">Создавайте свои категории и назначайте им цвет и значок.</p><div class="map-category-list">${mapCategories().map(category => { const count = savedItems("addresses").filter(item => item.categoryId === category.id).length; return `<div class="map-category-row"><span class="map-category-symbol" style="--map-color:${esc(category.color)}">${icon(category.icon || "pin")}</span><span><strong>${esc(category.name)}</strong><small>${count} ${word(count, "место", "места", "мест")}</small></span><button type="button" data-action="map-category-edit" data-id="${esc(category.id)}" aria-label="Изменить ${esc(category.name)}">${icon("note", "icon-sm")}</button><button type="button" data-action="map-category-delete" data-id="${esc(category.id)}" aria-label="Удалить ${esc(category.name)}">${icon("trash", "icon-sm")}</button></div>`; }).join("")}</div><form id="map-category-form"><h3>${editing ? "Изменить раздел" : "Новый раздел"}</h3>${savedFormField("Название", "name", editing?.name || "", "text", 'maxlength="40" required autofocus')}<div class="field-row"><label class="field">Значок<select name="icon">${options.map(([value, label]) => `<option value="${value}" ${editing?.icon === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field">Цвет<input name="color" type="color" value="${esc(editing?.color || "#8dbbb4")}"></label></div><div class="sheet-actions">${editing ? `<button class="ghost-button" type="button" data-action="map-category-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${editing ? "Сохранить" : "Создать раздел"}</button></div></form></section></div>`;
 }
 function disposeAddressMap() {
+  if (miniMap) { miniMap.remove(); miniMap = null; }
   if (!addressMap) return;
   const center = addressMap.getCenter();
   ui.mapCenter = [center.lat, center.lng];
@@ -78,12 +125,32 @@ function disposeAddressMap() {
   addressMap.remove();
   addressMap = null;
 }
+/** Где открыть карту: у последней поставленной метки, а не в Москве. */
+function mapDefaultCenter() {
+  const last = savedItems("addresses").filter(item => mapPointCoordinates(item)).sort((a, b) => String(b.created || "").localeCompare(String(a.created || "")))[0];
+  return last ? mapPointCoordinates(last) : [55.747, 37.621];
+}
+let miniMap = null;
+/** Карта в карточке адреса: одна метка, без жестов — нажатие ведёт в «Открыть в картах». */
+function mountMiniMap() {
+  const host = document.getElementById("address-mini-map");
+  if (!host || !window.L) return;
+  const item = savedItem("addresses", host.dataset.id);
+  const coordinates = mapPointCoordinates(item);
+  if (!coordinates) return;
+  const map = L.map(host, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, attributionControl: false }).setView(coordinates, 15);
+  miniMap = map;
+  addBaseLayer(map, () => map === miniMap);
+  const category = mapCategory(item.categoryId);
+  L.marker(coordinates, { icon: L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker selected" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(category?.icon || "pin", "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] }) }).addTo(map);
+}
 function mountAddressMap() {
+  mountMiniMap();
   const host = document.getElementById("address-map");
   if (!host) return;
   if (!window.L) { document.getElementById("map-fallback").hidden = false; return; }
   const items = mapPointItems().filter(item => mapPointCoordinates(item));
-  const center = ui.mapCenter || [55.747, 37.621];
+  const center = ui.mapCenter || mapDefaultCenter();
   addressMap = L.map(host, { zoomControl: false }).setView(center, ui.mapZoom || 12);
   L.control.zoom({ position: "topright" }).addTo(addressMap);
   addBaseLayer(addressMap);
@@ -99,6 +166,15 @@ function mountAddressMap() {
     ui.mapPlacing = false;
     ui.sheet = { kind: "saved", category: "addresses", id: null, mode: "edit", draft: { lat: lat.toFixed(6), lng: lng.toFixed(6), categoryId: ui.mapCategory || "" }, justRendered: false };
     render();
+    void reverseGeocode(lat, lng).then(found => {
+      const form = document.getElementById("saved-form");
+      if (!found || !form) return;
+      if (!form.elements.address?.value) setFormValue(form, "address", found.street);
+      if (!form.elements.city?.value) setFormValue(form, "city", found.city);
+      if (!form.elements.title?.value && found.street) setFormValue(form, "title", found.street);
+      const state = form.querySelector(".address-find-state");
+      if (state) state.textContent = "Адрес подставлен по метке — поправьте, если нужно";
+    });
   });
 }
 function selectMapPoint(recordId) {
