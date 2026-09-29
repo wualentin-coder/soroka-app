@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=aa7049716b","integrity":null},{"src":"./address-map.js?v=58140c052a","integrity":null},{"src":"./finance.js?v=cd4fdb5415","integrity":null},{"src":"./more.js?v=fe78e8138f","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=2a2966ccf2","integrity":null},{"src":"./app.js?v=f437f899e2","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=89527991dd","integrity":null},{"src":"./address-map.js?v=58140c052a","integrity":null},{"src":"./finance.js?v=cd4fdb5415","integrity":null},{"src":"./more.js?v=422e51b5b0","integrity":null},{"src":"./capture.js?v=a468bd1004","integrity":null},{"src":"./sections.js?v=2a2966ccf2","integrity":null},{"src":"./app.js?v=f437f899e2","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -428,20 +428,42 @@
       return `<section class="ticket-code-block"><div class="ticket-code-heading"><strong>Код билета</strong></div><div class="ticket-code-placeholder"><span>${why}</span></div>${send}</section>`;
     }
     const kind = codes.every((c) => c.kind === "barcode") ? "Штрихкод" : "QR-код";
-    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div>` +
-      codes.map((c, i) => `<button type="button" class="live-code ${c.kind}" data-live-code="${i}" data-label="${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}" aria-label="Открыть код на весь экран">${c.svg || ""}<span>${codes.length > 1 ? `Билет ${i + 1} · ` : ""}${escape(c.text)}</span></button>`).join("") +
-      `<p class="section-note">Нажмите на код — он откроется на весь экран.</p>${send}</section>`;
+    // Миниатюры: коды мелко в ряд; нажал — на весь экран, дальше листаешь.
+    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div><div class="live-code-thumbs">` +
+      codes.map((c, i) => `<button type="button" class="live-code-thumb ${c.kind}" data-live-code="${i}" aria-label="Открыть код ${i + 1} на весь экран">${c.svg || ""}<span>${codes.length > 1 ? `Билет ${i + 1}` : "Открыть"}</span></button>`).join("") +
+      `</div>${send}</section>`;
   }
 
-  /** Код на весь экран: белый фон, крупно — для турникета. */
+  /** Коды на весь экран: белый фон, крупно — для турникета; листаются свайпом. */
   function fullCode(button) {
-    const svg = button.querySelector("svg");
-    if (!svg) return;
+    const sheet = ui.sheet || {};
+    const item = (data.saved.tickets || []).find((t) => t.id === sheet.id);
+    const codes = (item && item.codes) || [];
+    if (!codes.length) return;
+    const start = Number(button.dataset.liveCode) || 0;
     const layer = document.createElement("div");
     layer.className = "live-code-full";
-    layer.innerHTML = `<div class="live-code-full-art">${svg.outerHTML}</div><p>${escape(button.dataset.label || "")}</p><small>${escape(button.querySelector("span")?.textContent || "")}</small><button type="button">Закрыть</button>`;
-    layer.addEventListener("click", () => layer.remove());
+    layer.innerHTML = `<div class="live-code-track">${codes.map((c, i) => `<figure class="live-code-slide"><div class="live-code-full-art ${c.kind}">${c.svg || ""}</div><figcaption><b>${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}</b><small>${escape(c.text)}</small></figcaption></figure>`).join("")}</div>` +
+      `${codes.length > 1 ? `<div class="live-code-dots">${codes.map((_, i) => `<i data-dot="${i}"></i>`).join("")}</div>` : ""}<button type="button" class="live-code-close">Закрыть</button>`;
     document.body.appendChild(layer);
+    const track = layer.querySelector(".live-code-track");
+    const dots = [...layer.querySelectorAll("[data-dot]")];
+    const mark = () => {
+      const at = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+      dots.forEach((d, i) => d.classList.toggle("on", i === at));
+    };
+    track.scrollLeft = start * track.clientWidth;
+    mark();
+    track.addEventListener("scroll", () => requestAnimationFrame(mark), { passive: true });
+    const close = () => { layer.remove(); document.removeEventListener("keydown", keys, true); };
+    const keys = (event) => {
+      if (event.key === "Escape") close();
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        track.scrollBy({ left: (event.key === "ArrowRight" ? 1 : -1) * track.clientWidth, behavior: "smooth" });
+      }
+    };
+    document.addEventListener("keydown", keys, true);
+    layer.querySelector(".live-code-close").addEventListener("click", close);
   }
 
   // ------------------------------------------------------------ запуск
