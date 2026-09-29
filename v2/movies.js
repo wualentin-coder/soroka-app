@@ -115,6 +115,7 @@ function recoCard(p) {
   }
   return `<div class="reco-item" data-reco-key="${esc(key)}">
     <div class="reco-under reco-under-plans" aria-hidden="true">${icon("plus")}<span>В планы</span></div>
+    <div class="reco-under-del" aria-hidden="true">${icon("thumbDown")}<span>Не интересно</span></div>
     <div class="reco-under reco-under-actions"><button type="button" class="reco-act seen" data-action="reco-seen" data-key="${esc(key)}">${icon("eye")}<span>Смотрел</span></button><button type="button" class="reco-act skip" data-action="reco-skip" data-key="${esc(key)}">${icon("thumbDown")}<span>Не интересно</span></button></div>
     <div class="reco-swipe-content"><button type="button" class="record-card movie-card reco-card-v2" data-action="reco-open" data-key="${esc(key)}">${movieCoverMarkup(m)}<span class="movie-card-body"><span class="movie-card-kicker">Предложение</span><span class="movie-card-title">${esc(p.title)}</span><span class="movie-card-facts">${[p.year, p.genre].filter(Boolean).map(esc).join(" · ")}</span>${p.why ? `<span class="movie-card-description">${esc(p.why)}</span>` : ""}${movieScoresLine(m)}</span></button></div>
   </div>`;
@@ -278,8 +279,12 @@ function renderRecoDetailSheet() {
   const p = findPick(ui.sheet.pickKey);
   if (!p) return "";
   const m = pickAsMovie(p);
-  const links = [p.kpUrl ? `<a class="small-button" href="${esc(p.kpUrl)}" target="_blank" rel="noopener noreferrer">Кинопоиск ${icon("external", "icon-sm")}</a>` : "", p.imdbUrl ? `<a class="small-button" href="${esc(p.imdbUrl)}" target="_blank" rel="noopener noreferrer">IMDb ${icon("external", "icon-sm")}</a>` : ""].join("");
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet reco-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(p.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="movie-detail-hero">${movieCoverMarkup(m, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">Предложение</span><span class="movie-detail-meta">${[p.year, p.genre].filter(Boolean).map(esc).join(" · ")}</span>${movieScoresLine(m)}</div></div>${p.why ? `<p class="saved-prose movie-detail-description">${esc(p.why)}</p>` : ""}<div class="reco-links">${links}</div><div class="reco-choices"><button class="primary-button" type="button" data-action="reco-plans" data-key="${esc(pickKey(p))}">${icon("plus", "icon-sm")}В планы</button><button class="ghost-button" type="button" data-action="reco-seen" data-key="${esc(pickKey(p))}">${icon("eye", "icon-sm")}Смотрел</button><button class="ghost-button" type="button" data-action="reco-skip" data-key="${esc(pickKey(p))}">${icon("thumbDown", "icon-sm")}Не интересно</button></div></section></div>`;
+  const score = v => movieScore(v);
+  const kp = `<span class="movie-rating-label">Кинопоиск</span><strong>${esc(score(p.kpRating))}</strong>`;
+  const imdb = `<span class="movie-rating-label">IMDb</span><strong>${esc(score(p.imdbRating))}</strong>`;
+  const ratings = `<div class="movie-ratings">${p.kpUrl ? `<a class="movie-rating movie-rating-link" href="${esc(p.kpUrl)}" target="_blank" rel="noopener noreferrer">${kp}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${kp}</div>`}${p.imdbUrl ? `<a class="movie-rating movie-rating-link" href="${esc(p.imdbUrl)}" target="_blank" rel="noopener noreferrer">${imdb}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${imdb}</div>`}</div>`;
+  const key = esc(pickKey(p));
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet reco-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(p.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${icon("event", "icon-sm")}Фильмы · Предложение</p><div class="movie-detail-hero">${movieCoverMarkup(m, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">Предложение</span><span class="movie-detail-meta">${[p.year, p.genre].filter(Boolean).map(esc).join(" · ")}</span>${ratings}</div></div>${p.why ? `<p class="saved-prose movie-detail-description">${esc(p.why)}</p>` : ""}<div class="inline-actions saved-view-actions"><button class="primary-button" type="button" data-action="reco-plans" data-key="${key}">${icon("plus")}В планы</button><button type="button" data-action="reco-seen" data-key="${key}">${icon("eye")}Смотрел</button><button type="button" data-action="reco-skip" data-key="${key}">${icon("thumbDown")}Не интересно</button></div></section></div>`;
 }
 
 // ------------------------------------------------------------ жесты по карточкам предложений
@@ -289,7 +294,7 @@ let recoDrag = null;
 let recoSuppress = 0;
 
 function closeRecoRows(except = null) {
-  document.querySelectorAll(".reco-item.open").forEach(row => { if (row !== except) { row.classList.remove("open"); row.querySelector(".reco-swipe-content")?.style.removeProperty("--dx"); } });
+  document.querySelectorAll(".reco-item.open").forEach(row => { if (row !== except) { row.classList.remove("open"); row.querySelector(".reco-swipe-content")?.style.removeProperty("--dx"); setTimeout(() => row.classList.remove("dir-left"), 300); } });
 }
 
 document.addEventListener("pointerdown", event => {
@@ -316,6 +321,9 @@ document.addEventListener("pointermove", event => {
   const full = -Math.max(RECO_OPEN + 50, width * 0.6);
   drag.dx = x;
   drag.row.classList.add("dragging");
+  drag.row.classList.toggle("dir-right", x > 0);
+  drag.row.classList.toggle("dir-left", x < 0);
+  drag.row.style.setProperty("--del", Math.max(0, Math.min(1, (-x - RECO_OPEN) / (-full - RECO_OPEN))).toFixed(3));
   drag.row.classList.toggle("armed-plans", x > 78);
   drag.row.classList.toggle("armed-skip", x < full);
   drag.content.style.setProperty("--dx", `${x}px`);
@@ -332,7 +340,8 @@ document.addEventListener("pointerup", event => {
   const full = -Math.max(RECO_OPEN + 50, width * 0.6);
   const armedPlans = drag.row.classList.contains("armed-plans");
   const armedSkip = drag.row.classList.contains("armed-skip");
-  drag.row.classList.remove("armed-plans", "armed-skip");
+  drag.row.classList.remove("armed-plans", "armed-skip", "dir-right");
+  drag.row.style.removeProperty("--del");
   if (armedPlans) { drag.content.style.removeProperty("--dx"); deferPick(key, "plans"); return; }
   if (armedSkip || drag.dx < full) { deferPick(key, "skip"); return; }
   const open = drag.dx < -RECO_OPEN / 2.4;
