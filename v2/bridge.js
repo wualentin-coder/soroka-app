@@ -54,6 +54,7 @@
     empty_title: "Нужно название",
     invalid_amount: "Проверьте сумму",
     invalid_date: "Проверьте дату",
+    too_many_deletes: "Слишком много удалений разом — ничего не удалил",
   };
   const human = (code) => ERRORS[code] || "Не сохранилось — попробуйте ещё раз";
 
@@ -215,6 +216,13 @@
     if (flying) { again = true; return; }
     const changes = diff(base, data);
     if (!changes.length) return;
+    // Много удалений разом — почти наверняка сбой загрузки, а не решение
+    // человека: не отправляем, перечитываем с сервера.
+    if (changes.filter((c) => c.op === "delete").length > 12) {
+      say("Похоже на сбой загрузки — ничего не удалил, перечитываю данные");
+      await refresh(true);
+      return;
+    }
     flying = true;
     const sent = clone(data);
     try {
