@@ -72,6 +72,7 @@ function sortSavedItems(a, b, mode = ui.savedSort) {
   const pins = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
   if (pins) return pins;
   if (mode === "title") return a.title.localeCompare(b.title, "ru");
+  if (mode === "rating") return Number(b.rating || 0) - Number(a.rating || 0) || (b.created || "").localeCompare(a.created || "");
   if (mode === "time") return Number(b.minutes || 0) - Number(a.minutes || 0) || (b.created || "").localeCompare(a.created || "");
   return (b.created || "").localeCompare(a.created || "");
 }
@@ -81,16 +82,32 @@ function savedVisibleItems() {
     const sectionId = ui.savedCategory === "notes" ? noteFolderId(item) : item.categoryId;
     if (ui.savedCategory !== "addresses" && ui.savedSection === "__none__" && sectionId) return false;
     if (ui.savedCategory !== "addresses" && ui.savedSection && ui.savedSection !== "__none__" && sectionId !== ui.savedSection) return false;
+    if (ui.savedCategory === "tickets") {
+      // Просроченные (больше суток) живут на своей вкладке; при поиске видны все.
+      const past = ticketExpired(item);
+      if (ui.savedFilter === "expired") { if (!past) return false; }
+      else if (past && !q) return false;
+    }
+    if (ui.savedCategory === "movies") {
+      // «Не интересно» — только в своём фильтре; у просмотренных этой отметки нет.
+      if (ui.savedFilter === "skipped") { if (!item.skipped) return false; }
+      else if (item.skipped) return false;
+    }
     if (ui.savedFilter === "unread" && (ui.savedCategory === "movies" ? movieIsViewed(item) : item.viewed)) return false;
     if (ui.savedFilter === "pinned" && !item.pinned) return false;
     // Посмотренный фильм уходит из списка «хочу посмотреть» — он в «Показать → Просмотренные».
     const seen = ui.savedCategory === "movies" ? movieIsViewed(item) : item.viewed;
     if (ui.savedFilter === "viewed" && !seen) return false;
-    if (ui.savedCategory === "movies" && seen && !["viewed", "pinned"].includes(ui.savedFilter) && !q) return false;
+    if (ui.savedCategory === "movies" && seen && !["viewed", "pinned", "skipped"].includes(ui.savedFilter) && !q) return false;
     const sectionName = ui.savedCategory === "addresses" ? mapCategory(item.categoryId)?.name : savedSection(ui.savedCategory, sectionId)?.name;
     return !q || `${item.title} ${item.description || ""} ${item.topic || ""} ${item.address || ""} ${item.city || ""} ${item.origin || ""} ${item.destination || ""} ${item.venue || ""} ${item.reference || ""} ${sectionName || ""} ${(item.tags || []).join(" ")}`.toLocaleLowerCase("ru-RU").includes(q);
   });
   result.sort((a, b) => sortSavedItems(a, b));
+  // Билеты — по дате: ближайшие сверху, просроченные — недавние сверху.
+  if (ui.savedCategory === "tickets" && ui.savedSort !== "title") {
+    const at = t => ticketStart(t)?.getTime() ?? Infinity;
+    result.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || (ui.savedFilter === "expired" ? at(b) - at(a) : at(a) - at(b)));
+  }
   return result;
 }
 function movieCoverSource(item) {
@@ -98,6 +115,39 @@ function movieCoverSource(item) {
   if (item.coverData) return item.coverData;
   if (item.coverPath) return item.coverPath;
   return item.title?.trim().toLocaleLowerCase("ru-RU") === "патерсон" && Number(item.year) === 2016 ? "./assets/paterson-cover.webp" : "";
+}
+/** Начало события по билету, по местному времени; нет даты — нет и срока. */
+function ticketStart(item) {
+  if (!item?.eventDate) return null;
+  const at = new Date(`${item.eventDate}T${/^\d{2}:\d{2}$/.test(item.eventTime || "") ? item.eventTime : "00:00"}:00`);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+/** Просрочен: с начала прошло больше суток. Такие билеты сами уходят во вкладку «Просроченные». */
+function ticketExpired(item, now = Date.now()) {
+  const at = ticketStart(item);
+  return Boolean(at) && now - at.getTime() > 86400000;
+}
+function ticketTabs() {
+  const all = savedItems("tickets");
+  const past = all.filter(t => ticketExpired(t)).length;
+  const now = ui.savedFilter === "expired" ? "expired" : "all";
+  const tab = (filter, label, count) => `<button type="button" class="${filter === now ? "active" : ""}" data-action="saved-filter" data-filter="${filter}" aria-pressed="${filter === now}">${label}<span>${count}</span></button>`;
+  return `<div class="movie-seen-tabs" role="group" aria-label="Билеты">${tab("all", "Предстоящие", all.length - past)}${tab("expired", "Просроченные", past)}</div>`;
+}
+/** Билеты на ближайшую неделю — для экрана «Сегодня». */
+function todayTicketsSection() {
+  const now = Date.now();
+  const soon = savedItems("tickets").filter(t => { const at = ticketStart(t); return at && !ticketExpired(t, now) && at.getTime() - now <= 7 * 86400000; })
+    .sort((a, b) => ticketStart(a) - ticketStart(b));
+  if (!soon.length) return "";
+  const when = t => {
+    const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const days = Math.round((midnight(ticketStart(t)) - midnight(new Date())) / 86400000);
+    const day = days <= 0 ? "Сегодня" : days === 1 ? "Завтра" : `Через ${days} ${word(days, "день", "дня", "дней")}`;
+    return `${day}${t.eventTime ? ` · ${t.eventTime}` : ""}`;
+  };
+  const rows = soon.map(t => `<button type="button" class="ticket-mini" data-action="saved-open" data-category="tickets" data-id="${esc(t.id)}"><span class="ticket-mini-icon">${icon("ticket")}</span><span class="ticket-mini-copy"><strong>${esc(t.title)}</strong><small>${esc(when(t))}${t.seat ? ` · ${esc(t.seat.split(" · ")[0])}` : ""}</small></span>${icon("right", "icon-sm")}</button>`).join("");
+  return `<section class="section"><div class="section-heading"><h2>Билеты на этой неделе</h2><span class="count">${soon.length}</span></div><div class="ticket-mini-list">${rows}</div></section>`;
 }
 function movieIsViewed(item) { return item.status === "Посмотрел" || Boolean(item.viewed); }
 function movieDemoInfo(item) {
@@ -163,7 +213,7 @@ function savedRecordCardBody(item, category) {
     return `<div class="record-card ticket-card ticket-paper">${main}${stub}</div>`;
   }
   if (category === "movies") {
-    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
+    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}${item.rating ? `<b class="movie-card-score">${icon("star", "icon-sm")}${item.rating}</b>` : ""}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
   }
   if (category === "posts") {
     const image = (postInfo(item, "media") || []).find(entry => entry.type === "image" && safePostMediaSource(entry.src));
@@ -181,8 +231,12 @@ function ticketCodeBlock(item) {
   return `<section class="ticket-code-block"><div class="ticket-code-heading"><strong>Код билета</strong><span>${kind === "qr" ? "QR-код" : "Штрихкод"}</span></div>${value ? `<div class="ticket-code-preview ${kind}"><span class="ticket-code-art" aria-hidden="true"></span><code>${esc(value)}</code></div><p class="section-note">Код распознан из билета.</p>` : `<div class="ticket-code-placeholder">${icon("ticket")}<span>QR-код или штрихкод появится здесь после разбора билета</span></div><p class="section-note">При необходимости значение можно добавить вручную через «Изменить».</p>`}</section>`;
 }
 function renderSavedResults() {
-  const items = savedVisibleItems();
-  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${items.map(item => savedRecordCard(item, ui.savedCategory)).join("")}</div>` : emptyCard("Ничего не найдено", "Измените фильтр или добавьте новую запись.");
+  const all = savedVisibleItems();
+  // Сотни карточек разом тормозят телефон: показываем порциями.
+  const limit = Math.max(60, Number(ui.savedLimit) || 60);
+  const items = all.slice(0, limit);
+  const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
+  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${items.map(item => savedRecordCard(item, ui.savedCategory)).join("")}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
 }
 function noteDateLabel(item) {
   if (item.updated) return shortDate(localIso(new Date(item.updated)));
@@ -234,21 +288,28 @@ function renderSavedPage() {
   // выбирают на главной «Сохранённого».
   const category = ui.savedCategory;
   const show = ui.savedFilter === "all" ? ui.savedSort : ui.savedFilter;
-  const showOptions = [["newest", "Новые сначала"], ["title", "По названию"], ["time", "По времени"], ["unread", "Не просмотрено"], ["viewed", "Просмотренные"], ["pinned", "Закреплённые"]];
+  const showOptions = category === "tickets"
+    ? [["newest", "По дате"], ["title", "По названию"], ["pinned", "Закреплённые"]]
+    : category === "movies"
+    ? [["newest", "Новые сначала"], ["rating", "По моей оценке"], ["title", "По названию"], ["pinned", "Закреплённые"], ["skipped", "Не интересно"]]
+    : [["newest", "Новые сначала"], ["title", "По названию"], ["time", "По времени"], ["unread", "Не просмотрено"], ["viewed", "Просмотренные"], ["pinned", "Закреплённые"]];
   const toolbar = `<div class="saved-section-search"><label class="notes-search">${icon("search", "icon-sm")}<input id="saved-filter-input" type="search" value="${esc(ui.savedQuery)}" placeholder="Искать в разделе" aria-label="Искать в разделе"></label><select id="saved-show" class="filter-input" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select></div>`;
   const heading = `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button>${category === "addresses" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
   const hint = category === "movies" && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
-  const seenTabs = category === "movies" ? movieSeenTabs() : "";
-  const main = category === "addresses" ? renderAddressWorkspace() : `${seenTabs}${renderSavedSectionChips(category)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
+  const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
+  const main = category === "addresses" ? renderAddressWorkspace()
+    : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
+    : `${seenTabs}${renderSavedSectionChips(category)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
   return `<div class="saved-section-screen">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
 }
 /** Фильмы: что посмотреть и что уже посмотрено — две вкладки, а не пункт в меню. */
 function movieSeenTabs() {
-  const all = savedItems("movies");
+  const all = savedItems("movies").filter(m => !m.skipped);
   const seen = all.filter(movieIsViewed).length;
-  const tab = (filter, label, count) => `<button type="button" class="${(filter === "viewed") === (ui.savedFilter === "viewed") ? "active" : ""}" data-action="saved-filter" data-filter="${filter}" aria-pressed="${(filter === "viewed") === (ui.savedFilter === "viewed")}">${label}<span>${count}</span></button>`;
-  return `<div class="movie-seen-tabs" role="group" aria-label="Фильмы">${tab("all", "Хочу посмотреть", all.length - seen)}${tab("viewed", "Просмотренные", seen)}</div>`;
+  const now = ui.savedFilter === "viewed" ? "viewed" : ui.savedFilter === "reco" ? "reco" : "all";
+  const tab = (filter, label, count) => `<button type="button" class="${filter === now ? "active" : ""}" data-action="saved-filter" data-filter="${filter}" aria-pressed="${filter === now}">${label}${count === "" ? "" : `<span>${count}</span>`}</button>`;
+  return `<div class="movie-seen-tabs three" role="group" aria-label="Фильмы">${tab("all", "В планах", all.length - seen)}${tab("viewed", "Просмотрено", seen)}${tab("reco", "Что смотреть", "")}</div>`;
 }
 /** Подсказка про свайп — один раз: дальше она только занимает место. */
 function savedHintSeen() {
@@ -309,6 +370,13 @@ function savedFileUrl(item) {
   if (/^data:(application\/pdf|image\/(png|jpeg|webp)|text\/plain)(;charset=[^;,]+)?;base64,/i.test(item.fileData || "")) return item.fileData;
   if (["./demo-files/project-brief.pdf", "./demo-files/coffee-guide.pdf"].includes(item.filePath)) return item.filePath;
   return "";
+}
+/** Файл из чата: HTML-страницу, картинку и текст можно открыть здесь же, остальное — прислать в чат. */
+function liveFileCard(item) {
+  const name = String(item.fileName || item.title || "");
+  const kind = /\.(html?|xhtml)$/i.test(name) ? "page" : /\.(png|jpe?g|webp|gif)$/i.test(name) || item.fileType === "photo" ? "image" : /\.(txt|md|csv|json|log)$/i.test(name) ? "text" : "";
+  const label = { page: "Открыть страницу", image: "Открыть картинку", text: "Открыть текст" }[kind];
+  return `<div class="live-file-card"><span class="live-file-name">${icon("archive")}<strong>${esc(name)}</strong></span>${kind ? `<button class="primary-button" type="button" data-action="file-open">${icon("external", "icon-sm")}${label}</button>` : `<p class="section-note">Такой файл в приложении не открывается.</p>`}<button class="ghost-button" type="button" data-action="saved-send">${icon("arrow", "icon-sm")}Прислать в чат</button></div>`;
 }
 function savedPreviewUrl(item) {
   return ["./demo-files/project-brief-preview.png", "./demo-files/coffee-guide-preview.png"].includes(item.previewPath) ? item.previewPath : "";
@@ -415,7 +483,7 @@ function renderSavedViewSheet(item, category) {
     const kinopoiskUrl = movieInfo(item, "kinopoiskUrl");
     const kinopoisk = `<span class="movie-rating-label">Кинопоиск</span><strong>${esc(movieScore(movieInfo(item, "kinopoiskRating")))}</strong>`;
     movieRatings = `<div class="movie-ratings">${kinopoiskUrl && /^https?:\/\//i.test(kinopoiskUrl) ? `<a class="movie-rating movie-rating-link" href="${esc(kinopoiskUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Открыть фильм на Кинопоиске, оценка ${esc(movieScore(movieInfo(item, "kinopoiskRating")))}">${kinopoisk}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${kinopoisk}</div>`}<div class="movie-rating"><span class="movie-rating-label">IMDb</span><strong>${esc(movieScore(movieInfo(item, "imdbRating")))}</strong></div></div>`;
-    const extraFacts = `${savedDetailLine("Оригинальное название", item.originalTitle && item.originalTitle !== item.title ? item.originalTitle : "")}${savedDetailLine("Где смотреть", item.where === "Кинопоиск" && kinopoiskUrl ? "" : item.where)}${savedDetailLine("Моя оценка", item.rating ? `${item.rating}/10` : "")}${savedDetailLine("Почему сохранил", item.reason)}`;
+    const extraFacts = `${savedDetailLine("Оригинальное название", item.originalTitle && item.originalTitle !== item.title ? item.originalTitle : "")}${savedDetailLine("Где смотреть", item.where === "Кинопоиск" && kinopoiskUrl ? "" : item.where)}${savedDetailLine("Почему сохранил", item.reason)}`;
     if (extraFacts) details.push(`<div class="saved-detail-table movie-extra-facts">${extraFacts}</div>`);
   }
   if (category === "posts") {
@@ -438,7 +506,7 @@ function renderSavedViewSheet(item, category) {
   if (category === "files") {
     const preview = savedPreviewUrl(item);
     const imagePreview = preview || /^data:image\//i.test(fileUrl) ? `<a class="saved-file-preview" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Открыть файл ${esc(item.title)}"><img src="${esc(preview || fileUrl)}" alt="Первая страница: ${esc(item.title)}"></a>` : `<div class="saved-file-preview"><iframe src="${esc(fileUrl)}" title="Просмотр файла ${esc(item.title)}" loading="lazy"></iframe></div>`;
-    details.push(fileUrl ? `${imagePreview}<a class="small-button saved-link-button" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer">Открыть файл ${icon("external", "icon-sm")}</a>` : `<div class="empty-card"><strong>Файл не прикреплён</strong>Добавьте PDF, изображение или TXT через «Изменить».</div>`);
+    details.push(fileUrl ? `${imagePreview}<a class="small-button saved-link-button" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer">Открыть файл ${icon("external", "icon-sm")}</a>` : window.SOROKA_LIVE && item.inChat ? liveFileCard(item) : `<div class="empty-card"><strong>Файл не прикреплён</strong>Добавьте PDF, изображение или TXT через «Изменить».</div>`);
   }
   if (category === "lists") details.push(renderChecklist(item));
   if (category === "links" && item.url) details.push(`<a class="small-button saved-link-button" href="${esc(/^https?:\/\//i.test(item.url) ? item.url : "#")}" target="_blank" rel="noopener noreferrer">Открыть ссылку ${icon("external", "icon-sm")}</a>${item.summary ? `<div class="detail-block"><h3>Главное</h3><p class="saved-prose">${esc(item.summary)}</p></div>` : ""}`);
@@ -448,7 +516,7 @@ function renderSavedViewSheet(item, category) {
   const movieGenres = category === "movies" ? [item.genre, ...(item.tags || [])].filter((value, index, all) => value && all.findIndex(other => String(other).toLocaleLowerCase("ru-RU") === String(value).toLocaleLowerCase("ru-RU")) === index) : [];
   // Фильм: постер слева, справа статус, год и жанр, режиссёр, оценки; описание —
   // во всю ширину под ними. Всё по одной сетке, без плавающих подписей.
-  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}</div></div>${item.description ? `<p class="saved-prose movie-detail-description">${esc(item.description)}</p>` : ""}` : "";
+  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}</div></div>${movieRatingBlock(item)}${item.description ? `<p class="saved-prose movie-detail-description">${esc(item.description)}</p>` : ""}` : "";
   // В шапке — закладка: закрепить карточку. «Просмотрено» — свайпом вправо по карточке списка.
   const topViewedAction = `<button class="icon-button sheet-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}">${icon("bookmark", "icon-sm")}</button>`;
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
@@ -491,7 +559,7 @@ function renderSavedSheet() {
   }
   if (category === "links") extra += `${savedFormField("Ссылка", "url", value("url"), "url", 'placeholder="https://…"')}<label class="field">Конспект / главное<textarea name="summary" placeholder="Появится после пересказа ботом">${esc(value("summary"))}</textarea></label>`;
   if (category === "recipes") extra += `<div class="field-row">${savedFormField("Порции", "servings", value("servings") || 4, "number", 'min="1" max="20"')}${savedFormField("Время, мин", "minutes", value("minutes"), "number", 'min="0"')}</div><label class="field">Ингредиенты, каждый с новой строки<textarea name="ingredients">${esc((item?.ingredients || []).map(x => recipeIngredientLine(x, 1)).join("\n"))}</textarea></label><label class="field">Шаги, каждый с новой строки<textarea name="steps">${esc((item?.steps || []).join("\n"))}</textarea></label>`;
-  if (category === "movies") extra += `<div class="movie-cover-editor">${movieCoverMarkup(item || { title: value("title"), year: value("year") }, "editor")}<div><label class="field">Обложка фильма<input name="coverAttachment" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="section-note">JPG, PNG или WebP до 1,5 МБ. Обложка хранится только в этом браузере.</p>${item && movieCoverSource(item) ? `<label class="movie-cover-remove"><input name="removeCover" type="checkbox" value="true">Убрать обложку</label>` : ""}</div></div><div class="field-row">${savedFormField("Год", "year", value("year"), "number", 'min="1880"')}${savedFormField("Режиссёр", "director", value("director"))}</div><div class="field-row">${savedFormField("Оригинальное название", "originalTitle", value("originalTitle"))}${savedFormField("Жанр", "genre", value("genre"))}</div><div class="field-row">${savedFormField("Где смотреть", "where", value("where"))}<label class="field">Статус<select name="status">${["Хочу посмотреть", "Смотрю", "Посмотрел"].map(status => `<option ${value("status") === status ? "selected" : ""}>${status}</option>`).join("")}</select></label></div>${savedFormField("Ссылка на Кинопоиск", "kinopoiskUrl", item ? movieInfo(item, "kinopoiskUrl") || "" : "", "url", 'placeholder="https://www.kinopoisk.ru/film/…"')}<div class="field-row">${savedFormField("Оценка Кинопоиска", "kinopoiskRating", item ? movieInfo(item, "kinopoiskRating") ?? "" : "", "number", 'min="0" max="10" step="0.1"')}${savedFormField("Оценка IMDb", "imdbRating", item ? movieInfo(item, "imdbRating") ?? "" : "", "number", 'min="0" max="10" step="0.1"')}</div><div class="field-row">${savedFormField("Моя оценка 1–10", "rating", value("rating") || "", "number", 'min="1" max="10"')}${savedFormField("Почему сохранил", "reason", value("reason"))}</div>`;
+  if (category === "movies") extra += `<div class="movie-cover-editor">${movieCoverMarkup(item || { title: value("title"), year: value("year") }, "editor")}<div><label class="field">Обложка фильма<input name="coverAttachment" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="section-note">JPG, PNG или WebP до 1,5 МБ. Обложка хранится только в этом браузере.</p>${item && movieCoverSource(item) ? `<label class="movie-cover-remove"><input name="removeCover" type="checkbox" value="true">Убрать обложку</label>` : ""}</div></div><div class="field-row">${savedFormField("Год", "year", value("year"), "number", 'min="1880"')}${savedFormField("Режиссёр", "director", value("director"))}</div><div class="field-row">${savedFormField("Оригинальное название", "originalTitle", value("originalTitle"))}${savedFormField("Жанр", "genre", value("genre"))}</div><div class="field-row">${savedFormField("Где смотреть", "where", value("where"))}<label class="field">Статус<select name="status">${["Хочу посмотреть", "Смотрю", "Посмотрел"].map(status => `<option ${value("status") === status ? "selected" : ""}>${status}</option>`).join("")}</select></label></div>${savedFormField("Ссылка на Кинопоиск", "kinopoiskUrl", item ? movieInfo(item, "kinopoiskUrl") || "" : "", "url", 'placeholder="https://www.kinopoisk.ru/film/…"')}<div class="field-row">${savedFormField("Оценка Кинопоиска", "kinopoiskRating", item ? movieInfo(item, "kinopoiskRating") ?? "" : "", "number", 'min="0" max="10" step="0.1"')}${savedFormField("Оценка IMDb", "imdbRating", item ? movieInfo(item, "imdbRating") ?? "" : "", "number", 'min="0" max="10" step="0.1"')}</div><div class="field-row"><div class="field"><span>Моя оценка</span>${starsRow(value("rating") || 0, true, "Моя оценка", "movie-rate-form")}<input type="hidden" name="rating" value="${esc(value("rating") || 0)}"></div>${savedFormField("Почему сохранил", "reason", value("reason"))}</div>`;
   if (category === "products") extra += `<div class="field-row">${savedFormField("Цена, ₽", "price", value("price"), "number", 'min="0"')}${savedFormField("Магазин", "store", value("store"))}</div>${savedFormField("Желаемая цена, ₽", "targetPrice", value("targetPrice"), "number", 'min="0"')}`;
   if (category === "tickets") { const ticketType = value("ticketType") || "event"; extra += `<label class="field">Тип билета<select name="ticketType">${[["event","Мероприятие"],["train","Поезд"],["flight","Самолёт"]].map(([key,label]) => `<option value="${key}" ${ticketType === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><div class="field-row">${savedFormField("Дата", "eventDate", value("eventDate"), "date")}${savedFormField("Время", "eventTime", value("eventTime"), "time")}</div><div data-ticket-use="event" ${ticketType !== "event" ? "hidden" : ""}>${savedFormField("Место проведения", "venue", value("venue"))}</div><div data-ticket-use="travel" ${ticketType === "event" ? "hidden" : ""}><div class="field-row">${savedFormField("Откуда", "origin", value("origin"))}${savedFormField("Куда", "destination", value("destination"))}</div>${savedFormField("Рейс / перевозчик", "carrier", value("carrier"))}</div>${window.SOROKA_LIVE ? "" : savedFormField("Номер бронирования", "reference", value("reference"))}<div class="ticket-code-editor"><div class="ticket-rows-head"><h3>Билеты</h3><small>Место и код у каждого свои</small></div><div class="ticket-rows" data-ticket-rows>${(ticketRows(item).length ? ticketRows(item) : [{}]).map((row, index) => ticketRowField(row, index)).join("")}</div><button class="small-button ticket-row-add" type="button" data-action="ticket-row-add">${icon("plus", "icon-sm")}Ещё билет</button></div>${window.SOROKA_LIVE ? `<p class="section-note">Фото или PDF билета пришлите боту в чат — он прикрепит файл и найдёт коды.</p>` : `<label class="field">Прикрепить билет<input name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"></label><p class="section-note">PDF или изображение до 2 МБ. Файл хранится только в этом браузере.</p>`}`; }
   if (category === "addresses") extra += `<label class="field">Раздел<select name="categoryId"><option value="">Без категории</option>${mapCategories().map(section => `<option value="${esc(section.id)}" ${value("categoryId") === section.id ? "selected" : ""}>${esc(section.name)}</option>`).join("")}</select></label><div class="field address-find"><span>Адрес</span><input name="address" type="text" value="${esc([value("address"), value("city") && !String(value("address")).includes(value("city")) ? value("city") : ""].filter(Boolean).join(", "))}" placeholder="Чистая 5 107" autocomplete="off" spellcheck="false" enterkeyhint="done"><div class="address-suggest" role="listbox" hidden></div><small class="address-find-state" aria-live="polite">${mapPointCoordinates({ lat: value("lat"), lng: value("lng") }) ? "✓ Адрес на карте" : "Улица, дом и квартира — дальше подскажу"}</small></div><input type="hidden" name="city" value="${esc(value("city"))}"><input type="hidden" name="lat" value="${esc(value("lat"))}"><input type="hidden" name="lng" value="${esc(value("lng"))}">`;
@@ -532,7 +600,8 @@ function savedAction(action, control) {
     ui.sheet.editSectionId = null;
     save(); render(); toast(category === "notes" ? "Папка удалена. Заметки остались в «Все»." : "Раздел удалён. Записи остались в «Все»."); return true;
   }
-  if (action === "saved-filter") { ui.savedFilter = control.dataset.filter; render(); return true; }
+  if (action === "saved-filter") { ui.savedFilter = control.dataset.filter; ui.savedLimit = 60; render(); return true; }
+  if (action === "saved-more") { ui.savedLimit = (Number(ui.savedLimit) || 60) + 60; render(); return true; }
   if (action === "saved-view") { ui.savedView = control.dataset.view; render(); return true; }
   if (action === "saved-pins-toggle") { ui.savedPinsOpen = ui.savedPinsOpen === false; render(); return true; }
   if (action === "saved-new") { ui.sheet = { kind: "saved-add-menu" }; render(); return true; }
@@ -773,8 +842,8 @@ function savedChange(event) {
   }
   if (event.target.id === "saved-show") {
     const value = event.target.value;
-    if (["unread", "viewed", "pinned"].includes(value)) ui.savedFilter = value;
-    else { ui.savedFilter = "all"; ui.savedSort = value; }
+    if (["unread", "viewed", "pinned", "skipped"].includes(value)) ui.savedFilter = value;
+    else { ui.savedFilter = ui.savedCategory === "tickets" && ui.savedFilter === "expired" ? "expired" : "all"; ui.savedSort = value; }
     render(); return true;
   }
   if (event.target.id !== "saved-sort") return false;
