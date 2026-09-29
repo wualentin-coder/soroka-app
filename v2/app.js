@@ -373,7 +373,7 @@ document.addEventListener("click", event => {
   }
   const action = control.dataset.action;
   if (action === "backdrop") { if (event.target === control) closeSheet(); return; }
-  if (action === "navigate") { if (control.dataset.page === "saved") ui.savedCategory = "overview"; navigate(control.dataset.page); return; }
+  if (action === "navigate") { if (control.dataset.page === "saved") ui.savedCategory = "overview"; if (control.dataset.page === "finance") { ui.financeTab = "overview"; ui.financeCategory = ""; } navigate(control.dataset.page); return; }
   if (action === "search") { ui.sheet = { kind: "search", justRendered: false }; ui.menu = false; render(); return; }
   if (action === "menu") { ui.menu = !ui.menu; render(); return; }
   if (action === "theme") {
