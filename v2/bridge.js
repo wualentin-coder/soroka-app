@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=219b4fb080","integrity":null},{"src":"./address-map.js?v=126e822953","integrity":null},{"src":"./finance.js?v=11ab62bdf4","integrity":null},{"src":"./more.js?v=104c67e8f4","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=d9fc7c51ca","integrity":null},{"src":"./app.js?v=96de2e3be1","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=219b4fb080","integrity":null},{"src":"./address-map.js?v=126e822953","integrity":null},{"src":"./finance.js?v=88cd194e35","integrity":null},{"src":"./more.js?v=f507afe849","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=224af83b8c","integrity":null},{"src":"./app.js?v=96de2e3be1","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -573,6 +573,34 @@
       // Карта (Leaflet) не должна валить всё приложение, если CDN недоступен.
       try { await loadScript(entry); } catch (error) { if (!entry.integrity) throw error; }
     }
+
+    // «Поделиться» — меню Telegram «Переслать в чат»: системное меню браузера
+    // внутри Telegram обычно недоступно, а копирование молча не срабатывает.
+    const shareInBrowser = window.shareRecord;
+    window.shareRecord = async function (type, recordId) {
+      const payload = sharePayload(type, recordId);
+      if (!payload) { say("Запись не найдена"); return; }
+      let text = payload.text || payload.title || "";
+      if (type === "saved:tickets") {
+        const ticket = (data.saved.tickets || []).find((t) => t.id === recordId);
+        const codes = (ticket && ticket.codes) || [];
+        if (ticket) {
+          const when = [ticket.eventDate ? fullDate(ticket.eventDate) : "", ticket.eventTime].filter(Boolean).join(", ");
+          text = [ticket.title, when, ticket.venue].filter(Boolean).join("\n");
+        }
+        if (codes.length) text += `\n\n${codes.length > 1 ? "Коды билетов" : "Код билета"}: ${codes.map((c) => c.text).join(", ")}`;
+        if (ticket && ticket.inChat) text += "\n\nФото билета — в чате с ботом («Прислать билет в чат»).";
+      }
+      const link = payload.url && /^https?:\/\//.test(payload.url) && !String(payload.url).startsWith(location.origin) ? payload.url : "";
+      if (tg && tg.openTelegramLink) {
+        try { closeSwipeRows(); } catch (_) {}
+        tg.openTelegramLink(link
+          ? `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
+          : `https://t.me/share/url?url=${encodeURIComponent(text)}`);
+        return;
+      }
+      return shareInBrowser(type, recordId);
+    };
 
     // Коды билетов — настоящие, распознанные ботом с фото (вместо демо-картинки).
     window.ticketCodeBlock = liveTicketCodes;
