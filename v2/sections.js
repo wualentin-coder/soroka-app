@@ -168,6 +168,8 @@ document.addEventListener("submit", event => {
 }, true);
 function renderExtendedSheet() {
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
+  if (ui.sheet.kind === "movie-rate") return renderMovieRateSheet();
+  if (ui.sheet.kind === "reco-detail") return renderRecoDetailSheet();
   if (ui.sheet.kind === "finance-accounts") return renderAccountsSheet();
   if (ui.sheet.kind === "card-preview") return renderCardPreviewSheet();
   if (ui.sheet.kind === "saved-add-menu") return renderSavedAddMenuSheet();
