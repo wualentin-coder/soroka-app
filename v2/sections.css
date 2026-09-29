@@ -784,3 +784,12 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .settings-range { display: inline-flex; align-items: center; gap: 6px; }
 .settings-status { color: var(--muted); font-size: 13px; }
 .settings-status.ok { color: var(--accent); }
+
+/* Пополнение цели накопления. */
+.goal-deposit-progress { display: grid; gap: 6px; margin: 4px 0 16px; }
+.goal-deposit-progress strong { font-size: 28px; font-weight: 800; }
+.goal-deposit-progress span, .goal-deposit-progress small { color: var(--muted); font-size: 13px; }
+.goal-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.goal-chip { min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); color: var(--text); font: inherit; font-weight: 800; }
+.goal-settings { margin-top: 10px; }
+.budget-card { cursor: pointer; }
