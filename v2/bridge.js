@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=b8ad42ddb8","integrity":null},{"src":"./address-map.js?v=02bfe9223e","integrity":null},{"src":"./finance.js?v=03d9f50317","integrity":null},{"src":"./more.js?v=79e79cdb1e","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=3e8faa6cea","integrity":null},{"src":"./app.js?v=ced30dfa2f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=9434f01a7b","integrity":null},{"src":"./movies.js?v=b4c9f51515","integrity":null},{"src":"./address-map.js?v=02bfe9223e","integrity":null},{"src":"./finance.js?v=22038a9bf0","integrity":null},{"src":"./more.js?v=a8f2482a1c","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=20e9841e6e","integrity":null},{"src":"./app.js?v=43399dd044","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -332,11 +332,73 @@
     fail(error) { say(human(error.message)); },
   };
 
+  // ------------------------------------------------------------ файлы из чата
+
+  const STORE_KEY = "soroka-html-file:";
+
+  /**
+   * Страница живёт в песочнице без доступа к приложению: чужой скрипт не видит
+   * ни данных бота, ни подписи Telegram. Но у песочницы нет своего хранилища,
+   * а страницы вроде трекера курса хранят прогресс в localStorage — поэтому
+   * внутрь подкладывается «хранилище» и присылает изменения родителю, а тот
+   * запоминает их отдельно для каждого файла.
+   */
+  function storageShim(saved) {
+    return `<script>(function(){var s=${JSON.stringify(saved).replace(/</g, "\u003c")};function mk(track){var api={getItem:function(k){k=String(k);return Object.prototype.hasOwnProperty.call(s,k)?s[k]:null},setItem:function(k,v){s[String(k)]=String(v);if(track)parent.postMessage({soroka:"storage",data:s},"*")},removeItem:function(k){delete s[String(k)];if(track)parent.postMessage({soroka:"storage",data:s},"*")},clear:function(){s={};if(track)parent.postMessage({soroka:"storage",data:s},"*")},key:function(i){return Object.keys(s)[i]||null}};Object.defineProperty(api,"length",{get:function(){return Object.keys(s).length}});return api}try{Object.defineProperty(window,"localStorage",{value:mk(true),configurable:true});Object.defineProperty(window,"sessionStorage",{value:mk(false),configurable:true})}catch(e){}})();<\/script>`;
+  }
+
+  async function openFile(item) {
+    if (!item) return;
+    const layer = document.createElement("div");
+    layer.className = "live-file";
+    layer.innerHTML = `<header><strong>${escape(item.title)}</strong><button type="button" class="live-file-close" aria-label="Закрыть">Закрыть</button></header><div class="live-file-body"><div class="live-file-wait"><span class="live-spin big"></span><small>Открываю файл…</small></div></div>`;
+    document.body.appendChild(layer);
+    let channel = null;
+    const close = () => { layer.remove(); if (channel) window.removeEventListener("message", channel); };
+    layer.querySelector(".live-file-close").addEventListener("click", close);
+    const body = layer.querySelector(".live-file-body");
+    try {
+      const file = await call({ action: "file_open", ref: String(item.id) }, 40000);
+      if (file.kind === "html") {
+        const key = STORE_KEY + item.id;
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(key) || "{}") || {}; } catch (_) {}
+        const frame = document.createElement("iframe");
+        // Без allow-same-origin: страница чужая, приложению она не родная.
+        frame.setAttribute("sandbox", "allow-scripts allow-forms allow-modals allow-popups allow-downloads");
+        frame.title = item.title;
+        const shim = storageShim(saved);
+        const html = /<head[^>]*>/i.test(file.html) ? file.html.replace(/<head[^>]*>/i, (m) => m + shim) : shim + file.html;
+        frame.srcdoc = html;
+        body.innerHTML = "";
+        body.appendChild(frame);
+        channel = (event) => {
+          if (event.source !== frame.contentWindow || !event.data || event.data.soroka !== "storage") return;
+          try {
+            const text = JSON.stringify(event.data.data || {});
+            if (text.length < 1_000_000) localStorage.setItem(key, text);
+          } catch (_) {}
+        };
+        window.addEventListener("message", channel);
+      } else if (file.kind === "image") {
+        body.innerHTML = `<img class="live-file-image" alt="${escape(item.title)}" src="data:${escape(file.mime)};base64,${file.base64}">`;
+      } else if (file.kind === "text") {
+        body.innerHTML = `<pre class="live-file-text">${escape(file.text)}</pre>`;
+      } else {
+        body.innerHTML = `<div class="live-file-wait"><small>${escape(file.reason || "Этот файл здесь не открыть.")}</small><button type="button" class="primary-button" data-file-send>Прислать в чат</button></div>`;
+        body.querySelector("[data-file-send]").addEventListener("click", () => { close(); sendToChat(String(item.id)); });
+      }
+    } catch (error) {
+      body.innerHTML = `<div class="live-file-wait"><small>${error.status === 404 ? "Файл не найден." : "Не получилось открыть файл — проверьте связь."}</small></div>`;
+    }
+  }
+
   function intercept(event) {
     const control = event.target.closest && event.target.closest("[data-action]");
     if (!control) return;
     const action = control.dataset.action;
     const stop = () => { event.preventDefault(); event.stopImmediatePropagation(); };
+    if (action === "file-open") { stop(); openFile(sheetItem()); return; }
 
     if (action === "reset") { stop(); ui.menu = false; render(); refresh(true).then(() => say("Обновлено")); return; }
     if (action === "return-chat") { stop(); try { tg && tg.close(); } catch (_) {} return; }
@@ -510,7 +572,7 @@
 
   // ------------------------------------------------------------ коды билетов
 
-  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "\u003c": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function liveTicketCodes(item) {
     const codes = (Array.isArray(item.codes) ? item.codes : []).filter((c) => c.text);
@@ -576,7 +638,7 @@
   }
 
   function splash(text, retry) {
-    root.innerHTML = `<div class="live-splash"><img src="./assets/soroka-avatar.png" alt=""><p>${text}</p>${retry ? '<button type="button" id="live-retry">Попробовать ещё раз</button>' : ""}</div>`;
+    root.innerHTML = `<div class="live-splash"><div class="splash-mark"><img src="./assets/soroka-avatar.png" alt=""></div>${retry ? "" : '<div class="splash-bar"></div>'}<p class="${retry ? "" : "dots"}">${text}</p>${retry ? '<button type="button" id="live-retry">Попробовать ещё раз</button>' : ""}</div>`;
     const button = document.getElementById("live-retry");
     if (button) button.onclick = () => location.reload();
   }
@@ -586,7 +648,7 @@
       splash("Откройте приложение из Telegram — кнопкой «Приложение» в меню бота.");
       return;
     }
-    splash("Загружаю…");
+    splash("Загружаю");
     let snapshot;
     try {
       snapshot = await call({ action: "planner_snapshot" }, 30000);
@@ -636,6 +698,9 @@
       return shareInBrowser(type, recordId);
     };
 
+    // Подборка фильмов: вкус считает приложение, новые названия — бот (до полуминуты).
+    window.sorokaRecommend = () => call({ action: "movie_recommend" }, 80000);
+
     // Адреса ищет сервер бота: из браузера в России бесплатный геокодер
     // отвечает через раз, а серверу — стабильно (Photon).
     window.suggestAddresses = async (query, city) => ((await call({ action: "geocode_suggest", q: query, city }, 15000)) || {}).hits || [];
@@ -660,6 +725,8 @@
       document.body.dataset.financeTab = ui.financeTab || "";
     };
     render();
+    root.classList.add("live-enter");
+    setTimeout(() => root.classList.remove("live-enter"), 700);
 
     const original = window.save;
     window.save = function () {
