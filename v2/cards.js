@@ -16,7 +16,14 @@ const LOYALTY_BRANDS = {
   perekrestok: { name: "Перекрёсток", program: "Клуб Перекрёсток" },
   custom: { name: "", program: "Скидочная карта" },
 };
-const LOYALTY_COLORS = ["#2f6fdb", "#7b4bd6", "#d6406a", "#e08a1e", "#1f9d8a", "#3b4452"];
+const LOYALTY_COLORS = ["#2f6fdb", "#7b4bd6", "#d6406a", "#e08a1e", "#1f9d8a", "#3b4452", "#e53935", "#43a047", "#fdd835", "#8d6e63", "#9fb6f5", "#f3f4f6"];
+/** Светлая карта — тёмный текст (иначе белое на жёлтом или голубом не читается). */
+function loyaltyInk(color) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color || "");
+  if (!m) return "";
+  const [r, g, b] = m.slice(1).map(v => parseInt(v, 16));
+  return (r * 299 + g * 587 + b * 114) / 1000 > 170 ? "#16202a" : "";
+}
 
 function loyaltyBrand(item) { return LOYALTY_BRANDS[item?.brand] ? item.brand : "custom"; }
 function loyaltyNumber(number) { return String(number || "").replace(/\s+/g, "").replace(/(.{4})(?=.)/g, "$1 "); }
@@ -28,15 +35,23 @@ function loyaltyFace(item, size = "") {
   const name = brand === "custom" ? item.title || "Карта" : info.name;
   const tail = String(item.number || "").replace(/\s+/g, "").slice(-4);
   const color = brand === "custom" ? (/^#[0-9a-f]{6}$/i.test(item.color || "") ? item.color : LOYALTY_COLORS[0]) : "";
+  const accent = brand === "custom" && /^#[0-9a-f]{6}$/i.test(item.accent || "") ? item.accent : "";
+  const ink = color ? loyaltyInk(accent ? mixHex(color, accent) : color) : "";
+  const style = [color && `--card-color:${color}`, accent && `--card-accent:${accent}`, ink && `color:${ink}`].filter(Boolean).join(";");
   const mark = {
     magnit: `<span class="lw lw-magnit"><i></i>магнит</span>`,
     pyaterochka: `<span class="lw lw-pyat"><b>5</b>Пятёрочка</span>`,
     perekrestok: `<span class="lw lw-perek"><i></i>ПЕРЕКРЁСТОК</span>`,
     custom: `<span class="lw lw-custom">${esc(name)}</span>`,
   }[brand];
-  return `<div class="loyalty-card brand-${brand} ${size}" ${color ? `style="--card-color:${esc(color)}"` : ""}>${mark}<span class="loyalty-program">${esc(brand === "custom" ? info.program : item.title && item.title !== info.name ? item.title : info.program)}</span>${tail ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}</div>`;
+  return `<div class="loyalty-card brand-${brand} ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" ${style ? `style="${esc(style)}"` : ""}>${mark}<span class="loyalty-program">${esc(brand === "custom" ? info.program : item.title && item.title !== info.name ? item.title : info.program)}</span>${tail ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}</div>`;
 }
 
+function mixHex(a, b) {
+  const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const [x, y] = [p(a), p(b)];
+  return "#" + x.map((v, i) => Math.round((v + y[i]) / 2).toString(16).padStart(2, "0")).join("");
+}
 function loyaltyCode(item, big = false) {
   if (item.svg) return `<div class="loyalty-code ${big ? "big" : ""} ${item.format === "QRCode" ? "qr" : "bar"}">${item.svg}<span>${esc(loyaltyNumber(item.number))}</span></div>`;
   if (!item.number) return `<div class="loyalty-code empty"><span>Номер карты не указан</span></div>`;
@@ -71,7 +86,8 @@ function renderLoyaltyForm(item) {
     <label class="field">Номер карты<input name="number" type="text" inputmode="numeric" autocomplete="off" maxlength="64" value="${esc(v.number || "")}" placeholder="Цифры под штрихкодом"></label>
     <details class="loyalty-advanced" ${v.code ? "open" : ""}><summary>В коде не то, что напечатано?</summary><label class="field">Что зашито в коде<input name="code" type="text" autocomplete="off" maxlength="300" value="${esc(v.code || "")}" placeholder="Пусто — сам номер карты"></label><p class="section-note">Например, у «Магнита» в QR перед номером стоит буква E. Если касса не читает код — впишите сюда то, что показывает сканер.</p></details>
     <label class="field">Вид кода<select name="format">${[["EAN13", "Штрихкод EAN-13 (13 цифр)"], ["Code128", "Штрихкод Code 128"], ["QRCode", "QR-код"]].map(([key, label]) => `<option value="${key}" ${v.format === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>
-    ${brand === "custom" ? `<div class="field"><span>Цвет</span><div class="loyalty-colors">${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="color" value="${c}" ${(v.color || LOYALTY_COLORS[0]) === c ? "checked" : ""}><i></i></label>`).join("")}</div></div>` : ""}
+    ${brand === "custom" ? `<div class="field"><span>Цвет карты</span><div class="loyalty-colors">${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="color" value="${c}" ${(v.color || LOYALTY_COLORS[0]) === c ? "checked" : ""}><i></i></label>`).join("")}<label class="loyalty-color-own" title="Свой цвет"><input type="color" name="colorOwn" value="${esc(/^#[0-9a-f]{6}$/i.test(v.color || "") ? v.color : "#2f6fdb")}"><i>${icon("plus", "icon-sm")}</i></label></div></div>
+    <div class="field"><span>Второй цвет — переход</span><div class="loyalty-colors"><label style="--c:transparent" class="loyalty-color-none" title="Без перехода"><input type="radio" name="accent" value="" ${v.accent ? "" : "checked"}><i>—</i></label>${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="accent" value="${c}" ${v.accent === c ? "checked" : ""}><i></i></label>`).join("")}</div></div>` : ""}
     <label class="field">Заметка<textarea name="description" rows="2" placeholder="Необязательно">${esc(v.description || "")}</textarea></label>
     <div class="sheet-actions">${item ? `<button type="button" class="ghost-button" data-action="loyalty-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить карту"}</button></div></form></section></div>`;
 }
@@ -91,7 +107,10 @@ function loyaltySubmit(event) {
   item.number = number;
   item.code = code;
   item.format = String(form.get("format") || "EAN13");
-  item.color = String(form.get("color") || "");
+  // Свой цвет из пипетки — если его меняли, он важнее кружков палитры.
+  const own = String(form.get("colorOwn") || "");
+  item.color = event.target.dataset.ownColor === "1" && /^#[0-9a-f]{6}$/i.test(own) ? own : String(form.get("color") || "");
+  item.accent = String(form.get("accent") || "");
   item.description = String(form.get("description") || "").trim();
   if (!existing) { data.saved.cards = data.saved.cards || []; data.saved.cards.push(item); }
   // Из формы — обратно в кошелёк, карта раскрыта.
@@ -190,7 +209,10 @@ function onLoyaltyPosition(pos) {
   // Два совпадения подряд — иначе одиночный скачок GPS вытащил бы карту зря.
   for (const cardId of [...loyaltyNear.hits.keys()]) if (!now.has(cardId)) { loyaltyNear.hits.delete(cardId); loyaltyNear.dismissed.delete(cardId); }
   for (const cardId of now) loyaltyNear.hits.set(cardId, (loyaltyNear.hits.get(cardId) || 0) + 1);
-  const ready = [...loyaltyNear.hits.entries()].filter(([cardId, n]) => n >= 2 && !loyaltyNear.dismissed.has(cardId)).map(([cardId]) => cardId);
+  // Уверенное место (погрешность вдвое меньше радиуса) — сразу; иначе ждём второе совпадение.
+  const sure = new Set(loyaltyMatches({ ...pos, acc: (Number(pos.acc) || 999) * 2 }).map(card => card.id));
+  const ready = [...loyaltyNear.hits.entries()].filter(([cardId, n]) => (n >= 2 || sure.has(cardId)) && !loyaltyNear.dismissed.has(cardId)).map(([cardId]) => cardId);
+  try { localStorage.setItem("soroka-loyalty-last", JSON.stringify({ lat: pos.lat, lng: pos.lng, acc: pos.acc, at: Date.now() })); } catch (_) {}
   if (ready.join() !== loyaltyNear.shown.join()) { loyaltyNear.shown = ready; drawLoyaltyPeek(); }
 }
 function drawLoyaltyPeek() {
@@ -223,20 +245,31 @@ function watchLoyaltyPlaces() {
   if (!want) { if (loyaltyNear.watch !== null) { navigator.geolocation?.clearWatch(loyaltyNear.watch); loyaltyNear.watch = null; } clearTimeout(loyaltyNear.timer); return; }
   // Приложение телефона и браузер: слежение браузера — точное и непрерывное.
   if (!window.Telegram?.WebApp?.initData && navigator.geolocation) {
+    // Сразу — последнее известное телефону место (мгновенно), потом точное слежение.
+    if (loyaltyNear.watch === null) navigator.geolocation.getCurrentPosition(p => onLoyaltyPosition({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }), () => {}, { enableHighAccuracy: false, maximumAge: 120000, timeout: 4000 });
     if (loyaltyNear.watch === null) loyaltyNear.watch = navigator.geolocation.watchPosition(p => onLoyaltyPosition({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }), () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
     return;
   }
   // Telegram: геопозиция по запросу — спрашиваем каждые 12 секунд, пока приложение открыто.
   clearTimeout(loyaltyNear.timer);
+  loyaltyNear.started = Date.now();
   const tick = async () => {
     if (document.hidden) return;
     onLoyaltyPosition(await requestPosition());
-    loyaltyNear.timer = setTimeout(tick, 12000);
+    // Первую минуту — чаще: карта нужна, пока стоите у кассы.
+    loyaltyNear.timer = setTimeout(tick, Date.now() - loyaltyNear.started < 60000 ? 5000 : 12000);
   };
   tick();
 }
 document.addEventListener("visibilitychange", () => setTimeout(watchLoyaltyPlaces, 300));
-setTimeout(watchLoyaltyPlaces, 2500);
+// Открыли приложение в том же магазине, где были минуту назад, — карта сразу, по прошлому месту.
+setTimeout(() => {
+  try {
+    const last = JSON.parse(localStorage.getItem("soroka-loyalty-last") || "null");
+    if (last && Date.now() - last.at < 3 * 60000) { onLoyaltyPosition(last); onLoyaltyPosition(last); }
+  } catch (_) {}
+  watchLoyaltyPlaces();
+}, 400);
 
 // ------------------------------------------------------------ действия
 
@@ -292,6 +325,12 @@ function loyaltyAction(action, control) {
   return false;
 }
 function loyaltyInput(event) {
+  if (event.target.name === "colorOwn") {
+    const form = event.target.form;
+    form.dataset.ownColor = "1";
+    form.querySelectorAll('input[name="color"]').forEach(r => { r.checked = false; });
+    return true;
+  }
   const label = event.target.dataset?.pointLabel;
   if (label === undefined || ui.sheet?.kind !== "loyalty-places") return false;
   const p = ui.sheet.points[Number(label)];
