@@ -36,7 +36,8 @@ const SAVED_SECTION_DESCRIPTIONS = {
   links: "Статьи и сайты",
   lists: "Покупки и чек-листы",
   products: "Товары и желания",
-  tickets: "Поездки и мероприятия"
+  tickets: "Поездки и мероприятия",
+  cards: "Скидочные карты магазинов"
 };
 function savedSectionCard(category, compact = false) {
   const items = savedItems(category);
@@ -247,6 +248,7 @@ function savedRecordCardBody(item, category) {
   if (category === "movies") {
     return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${movieScoresLine(item)}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
   }
+  if (category === "cards") return `<button class="record-card loyalty-record" type="button" data-action="saved-open" data-category="cards" data-id="${esc(item.id)}" aria-label="${esc(item.title)}">${loyaltyFace(item)}</button>`;
   if (category === "posts") {
     const image = (postInfo(item, "media") || []).find(entry => entry.type === "image" && safePostMediaSource(entry.src));
     const mediaCount = (postInfo(item, "media") || []).length;
