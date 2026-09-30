@@ -34,7 +34,8 @@ function setMovieRating(item, n) {
   const next = Number(item.rating) === n ? 0 : n;
   item.rating = next;
   // Оценка — значит, посмотрел.
-  if (next && !movieIsViewed(item)) { item.statusBeforeViewed = item.status || "Хочу посмотреть"; item.status = "Посмотрел"; item.viewed = true; }
+  if (next && !movieIsViewed(item)) { item.statusBeforeViewed = item.status || "Хочу посмотреть"; item.status = "Посмотрел"; item.viewed = true; item.viewedByRating = true; }
+  if (!next && item.viewedByRating) { item.status = item.statusBeforeViewed || "Хочу посмотреть"; item.viewed = false; item.viewedByRating = false; }
   if (next && item.skipped) item.skipped = false;
   save();
   render();
