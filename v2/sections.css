@@ -1659,3 +1659,5 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .wallet > .wallet-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .wallet-card.is-dragging { position: relative; z-index: 30; filter: drop-shadow(0 16px 28px rgba(0, 0, 0, .3)); }
 .wallet.is-sorting > .wallet-card:not(.is-dragging) { opacity: .85; }
+.wallet.no-intro > .wallet-card { animation: none; }
+.wallet-card.is-dragging { transition: none; }
