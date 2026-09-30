@@ -1503,3 +1503,108 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 /* Подсписок — во всю ширину карточки, от левого края кружка задачи. */
 .task-sub { padding-left: 0; }
 .task-sub .task-checklist { margin-left: -6px; }
+
+/* ══ Скидочные карты ═════════════════════════════════════════════════════════
+   Карта — пропорций банковской (1.586), цвета сети; своя — любого цвета. Логотипы
+   сетей не копируем: только их цвета и название, собранные заново. */
+.loyalty-card { --card-color: #2f6fdb; position: relative; display: block; width: 100%; aspect-ratio: 1.586; overflow: hidden; border-radius: 16px; padding: 16px 18px; box-sizing: border-box; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--card-color) 88%, #fff) 0%, var(--card-color) 55%, color-mix(in srgb, var(--card-color) 70%, #000) 100%); box-shadow: 0 8px 22px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255, 255, 255, .25); text-align: left; isolation: isolate; }
+.loyalty-card::after { content: ""; position: absolute; right: -30%; top: -40%; width: 90%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .18), transparent 65%); z-index: -1; }
+.loyalty-card .lw { display: inline-flex; align-items: center; gap: 8px; font-weight: 900; letter-spacing: -.01em; line-height: 1; }
+.loyalty-program { position: absolute; left: 18px; bottom: 16px; font-size: 12px; font-weight: 700; opacity: .88; }
+.loyalty-tail { position: absolute; right: 18px; bottom: 16px; font-size: 13px; font-weight: 800; letter-spacing: .06em; font-variant-numeric: tabular-nums; opacity: .92; }
+.loyalty-geo { position: absolute; right: 14px; top: 14px; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; border-radius: 999px; background: rgba(0, 0, 0, .22); font-size: 11px; font-weight: 800; }
+.loyalty-geo .icon { width: 12px; height: 12px; }
+
+/* Магнит: красный, строчная надпись и ромбик-«магнит». */
+.loyalty-card.brand-magnit { background: linear-gradient(140deg, #f23a3f 0%, #d8121c 55%, #a70912 100%); }
+.lw-magnit { font-size: 26px; text-transform: lowercase; }
+.lw-magnit i { width: 22px; height: 22px; border-radius: 6px 6px 11px 11px; border: 5px solid #fff; border-top-width: 9px; box-sizing: border-box; }
+/* Пятёрочка: красный сверху, зелёная полоса снизу, круглая «5». */
+.loyalty-card.brand-pyaterochka { background: linear-gradient(180deg, #e3262b 0 64%, #2e9d3a 64% 100%); }
+.loyalty-card.brand-pyaterochka::after { background: radial-gradient(circle, rgba(255, 220, 80, .28), transparent 65%); }
+.lw-pyat { font-size: 23px; }
+.lw-pyat b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #ffd23f; color: #d11f24; font-size: 19px; font-weight: 900; }
+/* Перекрёсток: зелёный, прописные, знак-перекрестье. */
+.loyalty-card.brand-perekrestok { background: linear-gradient(135deg, #1aa35a 0%, #0b7d3e 60%, #06592b 100%); }
+.lw-perek { font-size: 17px; letter-spacing: .04em; }
+.lw-perek i { position: relative; width: 20px; height: 20px; }
+.lw-perek i::before, .lw-perek i::after { content: ""; position: absolute; inset: 7px 0; border-radius: 3px; background: #ffd23f; }
+.lw-perek i::after { inset: 0 7px; background: #fff; }
+.lw-custom { font-size: 22px; }
+
+.loyalty-card.mini { padding: 8px 10px; border-radius: 9px; box-shadow: none; }
+.loyalty-card.mini .lw { font-size: 11px; gap: 4px; }
+.loyalty-card.mini .lw i, .loyalty-card.mini .lw b { transform: scale(.55); transform-origin: left center; margin-right: -8px; }
+.loyalty-card.mini .loyalty-program, .loyalty-card.mini .loyalty-tail, .loyalty-card.mini .loyalty-geo { display: none; }
+.loyalty-card.large { margin: 6px 0 14px; }
+
+/* Список: карты целиком, как в кошельке. */
+.record-card.loyalty-record { display: block; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.record-card-shell[data-category="cards"] .record-pin-toggle { top: 8px; right: 52px; color: rgba(255, 255, 255, .85); }
+.record-card-shell[data-category="cards"] .record-pin-toggle.is-pinned { color: #fff; }
+.swipe-row:has(.loyalty-record) .swipe-content { background: transparent; }
+
+/* Код в окне карты и на весь экран. */
+.loyalty-code-button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.loyalty-code { display: grid; justify-items: center; gap: 8px; padding: 16px 14px 12px; border-radius: 14px; background: #fff; color: #111; }
+.loyalty-code svg { width: 100%; max-width: 420px; height: 86px; }
+.loyalty-code.qr svg { width: 170px; height: 170px; }
+.loyalty-code span { font: 700 15px/1 Manrope, system-ui, sans-serif; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.loyalty-code.empty { padding: 22px 14px; background: var(--surface-soft); color: var(--text); }
+.loyalty-code.empty small { color: var(--muted); font-size: 12px; }
+.loyalty-code.big svg { height: auto; aspect-ratio: 3.2; max-width: none; }
+.loyalty-code.big.qr svg { width: min(78vw, 360px); height: auto; aspect-ratio: 1; }
+.loyalty-where { margin-top: 16px; }
+.loyalty-where-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.loyalty-where-head h3 { margin: 0; font-size: 14px; }
+.loyalty-places { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.loyalty-places li { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 13px; }
+.loyalty-places li .icon { color: var(--accent); }
+.loyalty-places small { color: var(--muted); font-weight: 700; }
+
+/* Форма: выбор сети — маленькими картами. */
+.loyalty-picks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.loyalty-pick { display: grid; gap: 5px; padding: 4px; border: 2px solid transparent; border-radius: 13px; background: none; color: var(--text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.loyalty-pick.on { border-color: var(--accent); }
+.loyalty-colors { display: flex; gap: 10px; margin-top: 6px; }
+.loyalty-colors label { position: relative; width: 30px; height: 30px; cursor: pointer; }
+.loyalty-colors input { position: absolute; opacity: 0; }
+.loyalty-colors i { position: absolute; inset: 0; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--surface), 0 0 0 2px transparent; transition: box-shadow .15s ease; }
+.loyalty-colors input:checked + i { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--c); }
+
+/* Точки на карте. */
+.loyalty-map-wrap { position: relative; height: 300px; margin: 10px 0 6px; overflow: hidden; border-radius: 16px; }
+#loyalty-map { position: absolute; inset: 0; }
+.loyalty-marker { display: grid; place-items: center; width: 26px; height: 26px; border: 2px solid #fff; border-radius: 50%; background: #e0662a; color: #fff; font: 800 12px/1 Manrope, system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, .3); }
+.loyalty-marker-shell { background: none; border: 0; }
+.loyalty-accuracy { min-height: 16px; margin: 0 2px 8px; color: var(--muted); font-size: 12px; }
+.loyalty-points { display: grid; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+.loyalty-points li { display: grid; grid-template-columns: 24px minmax(0, 1fr) 76px 36px; align-items: center; gap: 8px; }
+.loyalty-points input, .loyalty-points select { min-height: 38px; margin: 0; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+.loyalty-point-dot { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #e0662a; color: #fff; font-size: 11px; font-weight: 800; }
+.loyalty-points-empty { display: block !important; color: var(--muted); font-size: 13px; }
+
+/* Рядом: карты выезжают краем над нижним баром, стопкой — как Wallet. */
+#loyalty-peek { position: fixed; z-index: 9; left: 12px; right: 12px; bottom: calc(64px + env(safe-area-inset-bottom)); height: var(--peek-h, 62px); overflow: hidden; border-radius: 16px 16px 0 0; animation: peek-in .45s cubic-bezier(.2, .9, .3, 1.1); }
+#loyalty-peek.leaving { animation: peek-out .22s ease forwards; }
+@keyframes peek-in { from { transform: translateY(110%); } }
+@keyframes peek-out { to { transform: translateY(110%); opacity: 0; } }
+.loyalty-peek-card { position: absolute; left: 0; right: 0; top: calc(var(--i) * 42px); padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 -4px 14px rgba(0, 0, 0, .22)); transition: transform .2s ease; }
+.loyalty-peek-card:active { transform: translateY(-6px); }
+.loyalty-peek-card .loyalty-card { border-radius: 16px 16px 0 0; }
+.loyalty-peek-hide { position: absolute; z-index: 5; right: 10px; top: 12px; display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--surface-raised); color: var(--muted); box-shadow: 0 2px 8px rgba(0, 0, 0, .18); cursor: pointer; }
+html.kb-open #loyalty-peek, html.composer-open #loyalty-peek { display: none; }
+
+/* Код на весь экран: белый фон, крупно, для сканера на кассе. */
+.loyalty-full { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto 1fr auto; gap: 18px; padding: max(22px, calc(var(--tg-top, 0px) + 10px)) 18px max(22px, env(safe-area-inset-bottom)); background: #fff; color: #111; animation: composer-fade .2s ease; }
+.loyalty-full-top { display: flex; align-items: center; gap: 12px; }
+.loyalty-full-top .loyalty-card { width: 64px; flex: 0 0 64px; }
+.loyalty-full-top b { font: 800 18px Manrope, system-ui, sans-serif; }
+.loyalty-full .loyalty-code { align-self: center; padding: 0; background: none; }
+.loyalty-full .loyalty-code span { font-size: 20px; }
+.loyalty-full-close { justify-self: center; min-height: 46px; padding: 0 28px; border: 1px solid #ccc; border-radius: 14px; background: #fff; color: #111; font: 700 15px Manrope, system-ui, sans-serif; }
+
+html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + var(--peek-h, 62px)); transition: bottom .3s ease; }
+.loyalty-peek-hide { background: rgba(0, 0, 0, .28); color: #fff; box-shadow: none; }
+#loyalty-peek .loyalty-geo { display: none; }
+.loyalty-map-wrap .map-locate { z-index: 500; bottom: 28px; }
