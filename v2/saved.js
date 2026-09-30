@@ -953,7 +953,7 @@ function savedChange(event) {
 
   document.addEventListener("pointerdown", event => {
     if (event.button > 0) return;
-    const tile = event.target.closest?.("[data-order-group] > .saved-section-card, [data-list-order] > .check-row");
+    const tile = event.target.closest?.("[data-order-group] > .saved-section-card, [data-order-group] > .wallet-card, [data-list-order] > .check-row");
     if (tile) {
       const x = event.clientX, y = event.clientY;
       press = { tile, x, y, timer: setTimeout(() => startDrag(tile, x, y), 380) };
@@ -984,7 +984,7 @@ function savedChange(event) {
       // Пока соседи доезжают на новые места, под пальцем «чужая» плитка — не меняем.
       if (Date.now() < (drag.lock || 0)) return;
       tile.style.pointerEvents = "none";
-      const over = document.elementFromPoint(event.clientX, event.clientY)?.closest(".saved-section-card, .check-row");
+      const over = document.elementFromPoint(event.clientX, event.clientY)?.closest(".saved-section-card, .wallet-card, .check-row");
       tile.style.pointerEvents = "";
       if (!over || over === tile || over.parentElement !== grid) return;
       // FLIP: соседи переезжают плавно, плитка под пальцем остаётся под пальцем.
