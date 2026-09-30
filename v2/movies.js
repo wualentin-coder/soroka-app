@@ -411,3 +411,67 @@ function movieAction(action, control) {
   }
   return false;
 }
+
+/*
+ * «Моя оценка» в карточке фильма — слайдер из десяти звёзд: провёл пальцем —
+ * звёзды зажигаются следом, отпустил — оценка сохранилась. Нажатие на текущую
+ * оценку снимает её.
+ */
+function starSlider(item) {
+  const value = Number(item.rating) || 0;
+  const stars = Array.from({ length: 10 }, (_, i) => `<span class="star ${i < value ? "on" : ""}">${icon("star", "icon-sm")}</span>`).join("");
+  return `<div class="star-slider" role="slider" tabindex="0" aria-label="Моя оценка" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${value}" aria-valuetext="${value ? `${value} из 10` : "не оценён"}" data-value="${value}">${stars}</div>`;
+}
+
+(function installStarSlider() {
+  let drag = null;
+  const valueAt = (box, x) => {
+    const r = box.getBoundingClientRect();
+    return Math.max(1, Math.min(10, Math.ceil(((x - r.left) / r.width) * 10)));
+  };
+  const paint = (box, n) => {
+    box.querySelectorAll(".star").forEach((star, i) => star.classList.toggle("on", i < n));
+    box.setAttribute("aria-valuenow", String(n));
+  };
+  const movie = () => ui.sheet?.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
+  const commit = (n, tap) => {
+    const item = movie();
+    if (!item) return;
+    // Нажатие на ту же оценку — снять; протяжка — поставить ровно ту, где отпустил.
+    if (!tap && Number(item.rating) === n) return;
+    setMovieRating(item, n);
+  };
+  document.addEventListener("pointerdown", event => {
+    const box = event.target.closest?.(".star-slider");
+    if (!box || event.button > 0) return;
+    event.preventDefault();
+    drag = { box, x: event.clientX, moved: false, n: valueAt(box, event.clientX) };
+    box.classList.add("is-sliding");
+    paint(box, drag.n);
+    try { box.setPointerCapture(event.pointerId); } catch (_) {}
+  });
+  document.addEventListener("pointermove", event => {
+    if (!drag) return;
+    if (Math.abs(event.clientX - drag.x) > 4) drag.moved = true;
+    const n = valueAt(drag.box, event.clientX);
+    if (n !== drag.n) { drag.n = n; paint(drag.box, n); try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (_) {} }
+  });
+  const end = () => {
+    if (!drag) return;
+    const { box, n, moved } = drag;
+    drag = null;
+    box.classList.remove("is-sliding");
+    commit(n, !moved);
+  };
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", () => { if (drag) { paint(drag.box, Number(drag.box.dataset.value) || 0); drag.box.classList.remove("is-sliding"); drag = null; } });
+  document.addEventListener("keydown", event => {
+    const box = event.target.closest?.(".star-slider");
+    if (!box || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    const now = Number(box.dataset.value) || 0;
+    const n = Math.max(1, Math.min(10, now + (event.key === "ArrowRight" ? 1 : -1)));
+    const item = movie();
+    if (item && n !== now) setMovieRating(item, n);
+  });
+})();
