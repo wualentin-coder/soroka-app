@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d1ab27c440","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=a83cd620ac","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=2077e190d1","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d1ab27c440","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=2077e190d1","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -233,6 +233,17 @@
   // ------------------------------------------------------------ отправка
 
   let base = null;        // последнее, что знаем о сервере
+  let warming = false;    // открыты на снимке из прошлого запуска, свежий ещё идёт
+  const SNAP_KEY = "soroka-snapshot-v1";
+  function keepSnapshot(snapshot) {
+    setTimeout(() => { try { localStorage.setItem(SNAP_KEY, JSON.stringify({ at: Date.now(), snapshot })); } catch (_) {} }, 0);
+  }
+  function lastSnapshot() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SNAP_KEY) || "null");
+      return saved && Date.now() - saved.at < 3 * 86400000 ? saved.snapshot : null;
+    } catch (_) { return null; }
+  }
   let flying = false;
   let again = false;
   let timer = null;
@@ -244,6 +255,8 @@
 
   async function push() {
     if (!base) return;
+    // Открылись на прошлом снимке — правки ждут свежего, чтобы не спорить со старым.
+    if (warming) { again = true; return; }
     if (flying) { again = true; return; }
     const changes = diff(base, data);
     if (!changes.length) return;
@@ -277,6 +290,7 @@
   function adopt(snapshot, ids, late) {
     const keep = data;
     const fresh = hydrateExtra(prepare(snapshot, keep), seed());
+    keepSnapshot(snapshot);
     base = clone(fresh);
     if (late && late.length) applyChanges(fresh, late, ids);
     fresh.vault = keep.vault;
@@ -552,6 +566,8 @@
     if (kind === "task" && has(data.tasks, ref)) { navigate("tasks"); openEntry("task", undefined, ref); return; }
     if (kind === "event" && has(data.events, ref)) { navigate("upcoming"); openEntry("event", undefined, ref); return; }
     if (kind === "note") { navigate("saved"); openSavedRecord("notes", ref); return; }
+    // Скидочная карта — раскрытой в кошельке, с кодом.
+    if (kind === "card") { navigate("saved"); ui.savedCategory = "cards"; ui.walletOpen = ref; ui.sheet = null; render(); return; }
     for (const key of Object.keys(data.saved)) {
       if (has(data.saved[key], ref)) { navigate("saved"); openSavedRecord(key, ref); return; }
     }
@@ -571,7 +587,7 @@
   const PAGE_KIND = {
     tasks: "task", events: "event", notes: "note", links: "link", recipes: "recipe", movies: "movie", goods: "product",
     debts: "debt", payments: "payment", money: "tx", shop: "list", projects: "project", lists: "list", tickets: "ticket",
-    places: "place", metrics: "metric", goals: "goal", budgets: "budget",
+    places: "place", metrics: "metric", goals: "goal", budgets: "budget", cards: "card",
   };
   function openDeepLink() {
     const params = new URLSearchParams(location.search);
@@ -713,15 +729,27 @@
       return;
     }
     splash("Загружаю");
+    // Скрипты приложения — сразу, параллельно с данными (раньше ждали снимок).
+    for (const entry of SCRIPTS) {
+      const link = document.createElement("link");
+      link.rel = "preload"; link.as = "script"; link.href = entry.src;
+      if (entry.integrity) { link.integrity = entry.integrity; link.crossOrigin = "anonymous"; }
+      document.head.appendChild(link);
+    }
+    // Прошлый снимок есть — открываемся сразу на нём, свежий подхватим следом.
+    const freshSnapshot = call({ action: "planner_snapshot" }, 30000);
+    const cachedSnapshot = lastSnapshot();
     let snapshot;
     try {
-      snapshot = await call({ action: "planner_snapshot" }, 30000);
+      if (cachedSnapshot) { snapshot = cachedSnapshot; warming = true; freshSnapshot.catch(() => null); }
+      else { snapshot = await freshSnapshot; keepSnapshot(snapshot); }
     } catch (error) {
       splash(error.message !== "unauthorized" ? "Бот не ответил. Проверьте связь."
         : staleInit() ? "Telegram открыл старую копию приложения. Закройте его и откройте снова — кнопкой меню у поля ввода."
         : "Это приложение открывается только владельцем бота.", error.message !== "unauthorized");
       return;
     }
+    try { performance.mark("soroka-data"); } catch (_) {}
     window.SOROKA_LIVE_DATA = prepare(snapshot);
     root.innerHTML = "";
     // Тема — у Telegram: светлый клиент открывает светлое приложение.
@@ -795,7 +823,9 @@
       topTitle();
     };
     if (tg && tg.onEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach((name) => { try { tg.onEvent(name, topTitle); } catch (_) {} });
+    try { performance.mark("soroka-scripts"); } catch (_) {}
     render();
+    try { performance.mark("soroka-ready"); } catch (_) {}
     root.classList.add("live-enter");
     setTimeout(() => root.classList.remove("live-enter"), 700);
 
@@ -809,7 +839,22 @@
     document.addEventListener("click", intercept, true);
     document.addEventListener("submit", interceptSubmit, true);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
-    setTimeout(() => { base = clone(data); openDeepLink(); }, 0);
+    setTimeout(() => {
+      base = clone(data);
+      openDeepLink();
+      if (!warming) return;
+      freshSnapshot.then((snapshot) => {
+        // Правки, сделанные за эти секунды, ложатся поверх свежего снимка.
+        const late = diff(base, data);
+        warming = false;
+        adopt(snapshot, {}, late);
+        if (late.length) schedule(50);
+      }).catch((error) => {
+        warming = false;
+        if (error && error.status === 401) askReopen();
+        else say("Нет связи с ботом — показываю данные прошлого раза");
+      });
+    }, 0);
   }
 
   // ------------------------------------------------------------ «+»: ввод и поиск сразу
