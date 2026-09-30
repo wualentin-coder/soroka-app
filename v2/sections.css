@@ -1665,3 +1665,12 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .loyalty-advanced { margin: 2px 0 12px; }
 .loyalty-advanced summary { color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .loyalty-advanced .field { margin-top: 8px; }
+
+/* Своя карта: переход из основного цвета во второй; на светлой — тёмный текст. */
+.loyalty-card.brand-custom.has-accent { background: linear-gradient(160deg, var(--card-color) 0%, var(--card-accent) 100%); }
+.loyalty-card.is-light .loyalty-geo { background: rgba(0, 0, 0, .1); }
+.loyalty-card.is-light { box-shadow: 0 8px 22px rgba(0, 0, 0, .12), inset 0 0 0 1px rgba(0, 0, 0, .06); }
+.loyalty-colors { flex-wrap: wrap; }
+.loyalty-color-own i { display: grid; place-items: center; background: conic-gradient(#e53935, #fdd835, #43a047, #2f6fdb, #7b4bd6, #e53935) !important; color: #fff; }
+.loyalty-color-own input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.loyalty-color-none i { display: grid; place-items: center; border: 1px dashed var(--line); background: transparent !important; color: var(--muted); font-style: normal; font-weight: 800; }
