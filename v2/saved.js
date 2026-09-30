@@ -37,7 +37,7 @@ const SAVED_SECTION_DESCRIPTIONS = {
   lists: "Покупки и чек-листы",
   products: "Товары и желания",
   tickets: "Поездки и мероприятия",
-  cards: "Скидочные карты магазинов"
+  cards: "Скидочные карты"
 };
 function savedSectionCard(category, compact = false) {
   const items = savedItems(category);
@@ -348,6 +348,7 @@ function renderSavedPage() {
   const hint = category === "movies" && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
   const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
   const main = category === "addresses" ? renderAddressWorkspace()
+    : category === "cards" ? renderWallet()
     : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
     : `${seenTabs}${renderSavedSectionChips(category, sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
