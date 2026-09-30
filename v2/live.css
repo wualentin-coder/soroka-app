@@ -204,3 +204,7 @@ html.tg-fs .saved-section-heading { display: none; }
 /* Без большого названия надзаголовок стоит в одну линию с поиском и меню. */
 html.tg-fs .page-header { align-items: center; margin-top: 0; }
 html.tg-fs .page-header .eyebrow { margin: 0; line-height: 36px; }
+/* Приложение телефона: шестерёнка настроек телефона слева в полосе названия. */
+.tg-title-side { position: absolute; left: 14px; top: 50%; display: grid; place-items: center; width: 38px; height: 38px; margin-top: -19px; border: 0; border-radius: 50%; background: var(--surface-soft); color: var(--muted); pointer-events: auto; cursor: pointer; }
+.tg-title-side .icon { width: 19px; height: 19px; }
+html.in-android .tg-title span:empty { display: none; }
