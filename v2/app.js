@@ -16,6 +16,7 @@ const icons = {
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
   inbox: '<path d="M4 4h16l2 11v5H2v-5L4 4Z"/><path d="M2 15h6l2 3h4l2-3h6"/>',
   list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/>',
+  card: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6 15h4"/>',
   rows: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   overview: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
@@ -356,6 +357,7 @@ function searchSheet() {
 }
 function render() {
   disposeAddressMap();
+  if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
   document.documentElement.dataset.theme = themeTone();
   document.documentElement.dataset.palette = ui.theme;
   document.documentElement.dataset.accent = data.settings.accent || "teal";
@@ -370,6 +372,7 @@ function render() {
   if (selectedSavedTab) savedTabs.scrollLeft = selectedSavedTab.offsetLeft - savedTabs.offsetLeft - (savedTabs.clientWidth - selectedSavedTab.offsetWidth) / 2;
   installSwipeCards(app);
   mountAddressMap();
+  if (typeof mountLoyaltyMap === "function") { mountLoyaltyMap(); drawLoyaltyPeek(); }
   if (ui.sheet && !ui.sheet.justRendered) {
     const input = app.querySelector(ui.sheet.kind === "search" ? "#search-input" : ui.sheet.kind === "entry" ? '#entry-form input[name="title"]' : '.sheet [autofocus], .sheet input');
     // На телефоне фокус открыл бы клавиатуру поверх окна — ставим его только в поиске.
