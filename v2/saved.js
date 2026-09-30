@@ -342,7 +342,7 @@ function renderSavedPage() {
   // Поиск — в «+» (он ищет и добавляет), а «Показать» стоит в одном ряду с папками.
   const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
   const toolbar = "";
-  const heading = `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button>${category === "addresses" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
+  const heading = `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><span class="notes-topline-actions"><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
   const hint = category === "movies" && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
   const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
   const main = category === "addresses" ? renderAddressWorkspace()
@@ -394,10 +394,12 @@ function renderChecklist(item) {
   const done = items.filter(entry => entry.done);
   const row = entry => ui.sheet.editItemId === entry.id
     ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-label="Отметить">${icon("check", "icon-sm")}</button><input name="text" type="text" value="${esc(entry.text)}" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта"><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить пункт">${icon("trash", "icon-sm")}</button></form>`
-    : `<div class="check-row ${entry.done ? "done" : ""}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить: ${esc(entry.text)}">${icon("close", "icon-sm")}</button></div>`;
+    : `<div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить: ${esc(entry.text)}">${icon("close", "icon-sm")}</button></div>`;
   const percent = items.length ? Math.round(done.length / items.length * 100) : 0;
+  const inToday = (data.tasks || []).some(task => task.listRef === item.id && !task.done);
   return `<div class="checklist"><div class="checklist-progress"><div class="progress-track"><span style="width:${percent}%"></span></div><span id="saved-list-progress">${done.length} из ${items.length}</span></div>` +
-    `<div class="checklist-rows">${open.map(row).join("")}</div>` +
+    `<button type="button" class="list-to-today ${inToday ? "is-on" : ""}" data-action="list-to-today">${icon("today", "icon-sm")}${inToday ? "В задачах на сегодня" : "Добавить в задачи на сегодня"}</button>` +
+    `<div class="checklist-rows" data-list-order="${esc(item.id)}">${open.map(row).join("")}</div>` +
     `<form id="list-item-form" class="check-add"><span class="check-add-icon">${icon("plus", "icon-sm")}</span><input name="text" type="text" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></form>` +
     (done.length ? `<div class="checklist-done-head"><span>Выполнено · ${done.length}</span><button class="text-action" type="button" data-action="list-clear-done">Очистить</button></div><div class="checklist-rows">${done.map(row).join("")}</div>` : "") +
     `</div>`;
@@ -564,7 +566,7 @@ function renderSavedViewSheet(item, category) {
   const movieGenres = category === "movies" ? [item.genre, ...(item.tags || [])].filter((value, index, all) => value && all.findIndex(other => String(other).toLocaleLowerCase("ru-RU") === String(value).toLocaleLowerCase("ru-RU")) === index) : [];
   // Фильм: постер слева, справа статус, год и жанр, режиссёр, оценки; описание —
   // во всю ширину под ними. Всё по одной сетке, без плавающих подписей.
-  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}${starSlider(item)}</div></div>${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot ? `<section class="movie-plot"><h3>Описание</h3><p>${esc(item.plot)}</p></section>` : ""}` : "";
+  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}${starSlider(item)}</div></div>${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
   // В шапке — закладка: закрепить карточку. «Просмотрено» — свайпом вправо по карточке списка.
   const topViewedAction = `<button class="icon-button sheet-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}">${icon("bookmark", "icon-sm")}</button>`;
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
@@ -659,6 +661,19 @@ function savedAction(action, control) {
   if (action === "saved-open") { openSavedRecord(control.dataset.category, control.dataset.id); return true; }
   if (action === "ticket-row-add") { const box = document.querySelector("[data-ticket-rows]"); if (box) { box.insertAdjacentHTML("beforeend", ticketRowField({}, box.children.length)); renumberTicketRows(); box.lastElementChild?.querySelector("input")?.focus(); } return true; }
   if (action === "ticket-row-remove") { const row = control.closest("[data-ticket-row]"); const box = row?.parentElement; if (row && box) { if (box.children.length > 1) row.remove(); else row.querySelectorAll("input:not([type=hidden])").forEach(input => { input.value = ""; }); renumberTicketRows(); } return true; }
+  if (action === "list-to-today" && ui.sheet?.kind === "saved") {
+    const list = savedItem("lists", ui.sheet.id);
+    if (!list) return true;
+    const already = (data.tasks || []).find(task => task.listRef === list.id && !task.done);
+    if (already) { already.due = todayIso(); toast("Список уже в задачах на сегодня"); save(); render(); return true; }
+    // Список целиком — одной задачей: пункты внутри, все отмечены — задача закрыта.
+    data.tasks.push({ id: id(), title: list.title, description: "", due: todayIso(), time: "", priority: "medium", project: "", done: false, listRef: list.id,
+      checklist: (list.items || []).map(entry => ({ text: entry.text, done: Boolean(entry.done) })) });
+    save(); render();
+    toast("Список добавлен в задачи на сегодня");
+    return true;
+  }
+  if (action === "saved-search") { ui.sheet = { kind: "search", justRendered: false }; render(); return true; }
   if (action === "saved-layout") { data.settings.savedLayout = data.settings.savedLayout === "list" ? "tiles" : "list"; save(); render(); return true; }
   if (action === "saved-pin-card") {
     const target = savedItem(control.dataset.category, control.dataset.id);
@@ -935,7 +950,7 @@ function savedChange(event) {
 
   document.addEventListener("pointerdown", event => {
     if (event.button > 0) return;
-    const tile = event.target.closest?.("[data-order-group] > .saved-section-card");
+    const tile = event.target.closest?.("[data-order-group] > .saved-section-card, [data-list-order] > .check-row");
     if (tile) {
       const x = event.clientX, y = event.clientY;
       press = { tile, x, y, timer: setTimeout(() => startDrag(tile, x, y), 380) };
@@ -966,7 +981,7 @@ function savedChange(event) {
       // Пока соседи доезжают на новые места, под пальцем «чужая» плитка — не меняем.
       if (Date.now() < (drag.lock || 0)) return;
       tile.style.pointerEvents = "none";
-      const over = document.elementFromPoint(event.clientX, event.clientY)?.closest(".saved-section-card");
+      const over = document.elementFromPoint(event.clientX, event.clientY)?.closest(".saved-section-card, .check-row");
       tile.style.pointerEvents = "";
       if (!over || over === tile || over.parentElement !== grid) return;
       // FLIP: соседи переезжают плавно, плитка под пальцем остаётся под пальцем.
@@ -1013,7 +1028,14 @@ function savedChange(event) {
       tile.classList.remove("is-dragging");
       grid.classList.remove("is-sorting");
       const order = [...grid.children].map(card => card.dataset.orderKey).filter(Boolean);
-      data.settings.savedOrder = { ...(data.settings.savedOrder || {}), [grid.dataset.orderGroup]: order };
+      if (grid.dataset.listOrder) {
+        // Пункты списка: новый порядок открытых, выполненные — как были, внизу.
+        const list = savedItem("lists", grid.dataset.listOrder);
+        if (list) {
+          const byId = new Map((list.items || []).map(entry => [entry.id, entry]));
+          list.items = [...order.map(key => byId.get(key)).filter(Boolean), ...(list.items || []).filter(entry => !order.includes(entry.id))];
+        }
+      } else data.settings.savedOrder = { ...(data.settings.savedOrder || {}), [grid.dataset.orderGroup]: order };
       save();
       return;
     }
