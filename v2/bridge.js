@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d7a5f7ce7b","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=4ab4e8167f","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=ad3f25a66c","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d815bf99f1","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=fb16448b60","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -409,7 +409,7 @@
     const action = control.dataset.action;
     const stop = () => { event.preventDefault(); event.stopImmediatePropagation(); };
     if (action === "file-open") { stop(); openFile(sheetItem()); return; }
-    if (action === "universal-add" || action === "saved-new") { stop(); openComposer(); return; }
+    if (action === "universal-add" || action === "saved-new" || action === "saved-search") { stop(); openComposer(); return; }
     if (action === "ticket-code-kind" && !control.closest(".live-code-full")) {
       stop();
       const item = (data.saved.tickets || []).find((t) => t.id === control.dataset.ticket);
@@ -939,10 +939,28 @@
   function composeManual(ctx, text) {
     if (ctx === "plan") { openEntry("task"); prefill(text); return; }
     if (ctx === "finance") { openFinanceForm("transaction", null, "expense"); return; }
-    if (ctx === "any") { ui.sheet = { kind: "addmenu", draft: text, justRendered: false }; render(); return; }
+    if (ctx === "any") { pickManual(text); return; }
     if (ctx === "addresses" || ctx === "lists") { ui.sheet = { kind: "saved-add-menu" }; render(); return; }
     openSavedRecord(ctx);
     prefill(text);
+  }
+  const MANUAL_CHOICES = [["task", "Задача", "check"], ["event", "Событие", "calendar"], ["note", "Заметка", "note"], ["list", "Список", "list"],
+    ["expense", "Расход", "wallet"], ["income", "Доход", "wallet"], ["link", "Ссылка", "link"], ["recipe", "Рецепт", "recipe"],
+    ["movie", "Фильм", "event"], ["address", "Адрес", "pin"], ["ticket", "Билет", "ticket"], ["password", "Пароль", "key"]];
+  /** «Вручную» без контекста: что создать — плитками в том же окне, без старого меню. */
+  function pickManual(text) {
+    openComposer();
+    const c = composer;
+    c.found = [{}];
+    c.results.innerHTML = `<p class="composer-caption">Что создать</p><div class="composer-choices">${MANUAL_CHOICES.map(([key, label, symbol]) => `<button type="button" data-choice="${key}">${icon(symbol)}<span>${label}</span></button>`).join("")}</div>`;
+    c.results.addEventListener("click", (event) => {
+      const pick = event.target.closest("[data-choice]");
+      if (!pick) return;
+      closeComposer();
+      openChoice(pick.dataset.choice);
+      prefill(text);
+    });
+    c.field.value = text || "";
   }
   function prefill(text) {
     if (!text) return;
@@ -1029,6 +1047,39 @@
    * начинается ниже этой полосы, а не под кнопками.
    */
   let titleBar = null;
+  function pinnedEntries() {
+    const hidden = new Set((data.settings && data.settings.pinsHidden) || []);
+    return Object.keys(data.saved || {}).flatMap((category) => (data.saved[category] || [])
+      .filter((item) => item.pinned && !hidden.has(item.id)).map((item) => ({ category, item })));
+  }
+  function showPinned() {
+    try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred("light"); } catch (_) {}
+    if (ui.page === "saved" && !ui.savedCategory && !ui.sheet) {
+      ui.savedPinsOpen = true;
+      render();
+      const panel = root.querySelector(".saved-pinned-panel");
+      if (panel) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        panel.classList.remove("pins-pulse"); void panel.offsetWidth; panel.classList.add("pins-pulse");
+      }
+      return;
+    }
+    const old = document.querySelector(".pins-drop");
+    if (old) { old.classList.add("closing"); setTimeout(() => old.remove(), 180); return; }
+    const pins = pinnedEntries();
+    const layer = document.createElement("div");
+    layer.className = "pins-drop";
+    layer.innerHTML = `<div class="pins-drop-scrim"></div><section class="pins-drop-card" role="dialog" aria-label="Закреплённое"><header>${icon("bookmark", "icon-sm")}<strong>Закреплённое</strong><small>${pins.length}</small></header>` +
+      (pins.length ? pins.map(({ category, item }, i) => `<button type="button" data-pin="${i}" style="--i:${i}"><b>${escape(item.title)}</b><small>${escape((typeof SAVED_NAMES !== "undefined" && SAVED_NAMES[category]) || "")}</small>${icon("right", "icon-sm")}</button>`).join("")
+        : `<p>Закрепите карточку в любом разделе — она появится здесь.</p>`) + `</section>`;
+    document.body.appendChild(layer);
+    const close = () => { layer.classList.add("closing"); setTimeout(() => layer.remove(), 180); };
+    layer.addEventListener("click", (event) => {
+      const pick = event.target.closest("[data-pin]");
+      if (pick) { const { category, item } = pins[Number(pick.dataset.pin)]; layer.remove(); navigate("saved"); openSavedRecord(category, item.id); return; }
+      if (event.target.closest(".pins-drop-scrim")) close();
+    });
+  }
   function topTitle() {
     const full = Boolean(inTelegram && tg.isFullscreen);
     document.documentElement.classList.toggle("tg-fs", full);
@@ -1036,8 +1087,8 @@
     if (!titleBar) {
       titleBar = document.createElement("div");
       titleBar.className = "tg-title";
-      titleBar.setAttribute("aria-hidden", "true");
-      titleBar.innerHTML = "<span></span>";
+      titleBar.innerHTML = '<span role="button" tabindex="0" aria-label="Закреплённое"></span>';
+      titleBar.firstChild.addEventListener("click", showPinned);
       document.body.appendChild(titleBar);
     }
     const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
