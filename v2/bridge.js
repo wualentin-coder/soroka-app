@@ -634,6 +634,12 @@
     return true;
   }
 
+  /** Штрихкод на весь экран — повёрнутым вдоль экрана: так он во всю высоту, сканеру проще. */
+  function fullArt(c) {
+    const svg = c.svg || "";
+    return c.kind === "barcode" ? svg.replace("<svg ", '<svg preserveAspectRatio="none" ') : svg;
+  }
+
   /** Коды на весь экран: белый фон, крупно — для турникета; листаются свайпом. */
   function fullCode(button) {
     // Корешок билета в списке знает свой билет сам; в карточке — открытая запись.
@@ -644,7 +650,7 @@
     const start = Number(button.dataset.liveCode) || 0;
     const layer = document.createElement("div");
     layer.className = "live-code-full";
-    layer.innerHTML = `<div class="live-code-track">${codes.map((c, i) => `<figure class="live-code-slide"><div class="live-code-full-art ${c.kind}">${c.svg || ""}</div><figcaption><b>${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}</b>${c.seat ? `<span>${escape(c.seat)}</span>` : ""}<small>${escape(c.text)}</small></figcaption></figure>`).join("")}</div>` +
+    layer.innerHTML = `<div class="live-code-track">${codes.map((c, i) => `<figure class="live-code-slide"><div class="live-code-full-art ${c.kind}">${fullArt(c)}</div><figcaption><b>${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}</b>${c.seat ? `<span>${escape(c.seat)}</span>` : ""}<small>${escape(c.text)}</small></figcaption></figure>`).join("")}</div>` +
       `${codes.length > 1 ? `<div class="live-code-dots">${codes.map((_, i) => `<i data-dot="${i}"></i>`).join("")}</div>` : ""}<div class="live-code-kind">${kindSwitch(item)}</div><button type="button" class="live-code-close">Закрыть</button>`;
     document.body.appendChild(layer);
     // Переключатель вида прямо у турникета: картинки меняются на месте.
@@ -654,7 +660,7 @@
       event.preventDefault(); event.stopImmediatePropagation();
       if (!flipCodes(item, pick.dataset.kind)) return;
       const shown = item.codes.filter((c) => c.text);
-      layer.querySelectorAll(".live-code-full-art").forEach((art, i) => { art.className = `live-code-full-art ${shown[i].kind}`; art.innerHTML = shown[i].svg || ""; });
+      layer.querySelectorAll(".live-code-full-art").forEach((art, i) => { art.className = `live-code-full-art ${shown[i].kind}`; art.innerHTML = fullArt(shown[i]); });
       layer.querySelector(".live-code-kind").innerHTML = kindSwitch(item);
       render();
     }, true);
