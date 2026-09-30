@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d815bf99f1","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=fb16448b60","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d815bf99f1","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=fb16448b60","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1080,8 +1080,27 @@
       if (event.target.closest(".pins-drop-scrim")) close();
     });
   }
+  // Приложение телефона: во весь экран, как Telegram в полноэкранном режиме, —
+  // та же плашка с названием, а слева шестерёнка настроек телефона.
+  const androidApp = !inTelegram && Boolean(deviceKey());
+  if (androidApp) {
+    document.documentElement.style.setProperty("--tg-safe-area-inset-top", "0px");
+    document.documentElement.style.setProperty("--tg-content-safe-area-inset-top", "54px");
+  }
+  let barsColor = "";
+  function paintBars() {
+    if (!androidApp || !android.bars) return;
+    const rgb = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
+    if (!rgb) return;
+    const hex = "#" + rgb.slice(0, 3).map((n) => Number(n).toString(16).padStart(2, "0")).join("");
+    if (hex === barsColor) return;
+    barsColor = hex;
+    const light = (Number(rgb[0]) * 299 + Number(rgb[1]) * 587 + Number(rgb[2]) * 114) / 1000 > 150;
+    try { android.bars(hex, light); } catch (_) {}
+  }
   function topTitle() {
-    const full = Boolean(inTelegram && tg.isFullscreen);
+    paintBars();
+    const full = Boolean(inTelegram && tg.isFullscreen) || androidApp;
     document.documentElement.classList.toggle("tg-fs", full);
     if (!full) { if (titleBar) titleBar.hidden = true; return; }
     if (!titleBar) {
@@ -1089,13 +1108,22 @@
       titleBar.className = "tg-title";
       titleBar.innerHTML = '<span role="button" tabindex="0" aria-label="Закреплённое"></span>';
       titleBar.firstChild.addEventListener("click", showPinned);
+      if (androidApp) {
+        const gear = document.createElement("button");
+        gear.type = "button";
+        gear.className = "tg-title-side";
+        gear.setAttribute("aria-label", "Настройки телефона");
+        gear.innerHTML = icon("settings");
+        gear.addEventListener("click", () => { try { android.settings(); } catch (_) {} });
+        titleBar.appendChild(gear);
+      }
       document.body.appendChild(titleBar);
     }
     const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
     const text = heading ? heading.textContent.trim() : "";
     const pill = titleBar.firstChild;
     pill.textContent = text;
-    titleBar.hidden = !text;
+    titleBar.hidden = !text && !androidApp;
     // Слово целиком: не влезает — шрифт чуть меньше, а не «Предсто…».
     let size = 14;
     pill.style.fontSize = size + "px";
