@@ -1608,3 +1608,37 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .loyalty-peek-hide { background: rgba(0, 0, 0, .28); color: #fff; box-shadow: none; }
 #loyalty-peek .loyalty-geo { display: none; }
 .loyalty-map-wrap .map-locate { z-index: 500; bottom: 28px; }
+
+/* ══ «Карты» как кошелёк ═════════════════════════════════════════════════════
+   Карта 1.586:1 — её высота 63% ширины; соседняя наезжает, оставляя полосу 58px. */
+.wallet { display: flex; flex-direction: column; padding: 4px 0 20px; }
+.wallet-card { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; transition: transform .25s cubic-bezier(.2, .9, .3, 1); }
+.wallet > .wallet-card + .wallet-card, .wallet-rest > .wallet-card + .wallet-card { margin-top: calc(-63.05% + 58px); }
+.wallet-card .loyalty-card { box-shadow: 0 -6px 18px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.wallet > .wallet-card { animation: wallet-in .4s cubic-bezier(.2, .9, .3, 1) backwards; animation-delay: calc(var(--i) * 45ms); }
+@keyframes wallet-in { from { opacity: 0; transform: translateY(26px); } }
+.wallet > .wallet-card:active { transform: translateY(-8px); }
+.wallet.is-open .wallet-focus { animation: wallet-rise .35s cubic-bezier(.2, .9, .3, 1); }
+@keyframes wallet-rise { from { transform: translateY(40px); opacity: .6; } }
+.wallet-code { margin-top: 14px; }
+.wallet-code .loyalty-code { box-shadow: 0 1px 0 var(--line), 0 6px 18px rgba(0, 0, 0, .06); }
+.wallet-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.wallet-actions button { display: grid; justify-items: center; gap: 5px; padding: 10px 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.wallet-actions .icon { width: 19px; height: 19px; color: var(--accent); }
+.wallet-actions .on .icon { fill: currentColor; }
+.wallet-actions .danger .icon { color: #d6404d; }
+.wallet-actions .danger.confirm { border-color: #d6404d; background: #d6404d; color: #fff; }
+.wallet-actions .danger.confirm .icon { color: #fff; }
+.wallet-note { margin: 12px 2px 0; color: var(--muted); font-size: 13px; }
+/* Остальные карты — плотной стопкой внизу, видны только края. */
+.wallet-rest { display: flex; flex-direction: column; margin-top: 22px; animation: wallet-in .35s ease; }
+.wallet-rest > .wallet-card + .wallet-card { margin-top: calc(-63.05% + 30px); }
+.wallet-rest .loyalty-program, .wallet-rest .loyalty-tail { display: none; }
+.wallet-empty { display: grid; justify-items: center; gap: 14px; padding: 12px 0 24px; text-align: center; }
+.wallet-empty .loyalty-card { max-width: 300px; opacity: .55; }
+.wallet-empty p { max-width: 320px; margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+/* В кошельке ни сортировки, ни числа в шапке. */
+.saved-section-screen:has(.wallet, .wallet-empty) .saved-sort-row, .saved-section-screen:has(.wallet, .wallet-empty) .saved-subcategories { display: none; }
+/* Лицо карты: название крупнее, номер — внизу справа, как у настоящих. */
+.loyalty-card .lw { font-size: clamp(18px, 6.2vw, 26px); }
+.loyalty-card .lw-perek { font-size: clamp(14px, 4.6vw, 18px); }
