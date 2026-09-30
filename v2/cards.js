@@ -191,6 +191,7 @@ function onLoyaltyPosition(pos) {
   if (ready.join() !== loyaltyNear.shown.join()) { loyaltyNear.shown = ready; drawLoyaltyPeek(); }
 }
 function drawLoyaltyPeek() {
+  if (ui.page !== "saved" || ui.savedCategory !== "cards") walletIntroDone = false;
   let peek = document.getElementById("loyalty-peek");
   const cards = loyaltyNear.shown.map(cardId => savedItem("cards", cardId)).filter(Boolean);
   const root = document.documentElement;
@@ -310,6 +311,7 @@ function loyaltyChange(event) {
  * код и действия, остальные сжимаются в стопку внизу. Нажали ещё раз — назад.
  */
 /** Порядок — как человек разложил перетаскиванием; новые — в конец. */
+let walletIntroDone = false;
 function walletCards() {
   const order = (data.settings.savedOrder || {}).cards || [];
   const rank = card => { const at = order.indexOf(card.id); return at < 0 ? 1e6 + (Date.parse(card.created) || 0) / 1e10 : at; };
@@ -322,7 +324,10 @@ function renderWallet() {
   }
   const open = cards.find(card => card.id === ui.walletOpen);
   if (!open) {
-    return `<div class="wallet" data-order-group="cards">${cards.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" data-order-key="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>`;
+    // Карты въезжают только при входе в раздел — не при каждой перерисовке.
+    const intro = !walletIntroDone;
+    walletIntroDone = true;
+    return `<div class="wallet ${intro ? "" : "no-intro"}" data-order-group="cards">${cards.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" data-order-key="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>`;
   }
   const rest = cards.filter(card => card !== open);
   const places = (open.places || []).length;
