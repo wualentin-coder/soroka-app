@@ -1054,7 +1054,7 @@
   }
   function showPinned() {
     try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred("light"); } catch (_) {}
-    if (ui.page === "saved" && !ui.savedCategory && !ui.sheet) {
+    if (ui.page === "saved" && (!ui.savedCategory || ui.savedCategory === "overview") && !ui.sheet) {
       ui.savedPinsOpen = true;
       render();
       const panel = root.querySelector(".saved-pinned-panel");
