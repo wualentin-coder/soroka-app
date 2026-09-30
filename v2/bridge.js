@@ -13,11 +13,17 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d859993f8c","integrity":null},{"src":"./movies.js?v=4cec6bf8cb","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=fddcab39cb","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=8f8c8d3257","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=2e19c730a8","integrity":null},{"src":"./movies.js?v=a3eacdecbd","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=1bae5fd1c4","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=ade31c6818","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
   window.SOROKA_LIVE = true;
+  // Приложение телефона (Android) открывает это же окно без Telegram — на
+  // случай, если Telegram заблокируют. Входит оно ключом устройства.
+  const android = window.SorokaAndroid;
+  function deviceKey() { try { return (android && android.deviceKey && String(android.deviceKey())) || ""; } catch (_) { return ""; } }
+  const inTelegram = Boolean(tg && tg.initData);
+  if (!inTelegram && deviceKey()) document.documentElement.classList.add("in-android");
   try { tg && tg.ready(); tg && tg.expand(); } catch (_) {}
   // Свайп вниз по карточкам не должен сворачивать приложение (Bot API 7.7+).
   try { tg && tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (_) {}
@@ -26,14 +32,15 @@
 
   async function call(body, timeout = 20000) {
     const init = tg && tg.initData;
-    if (!init) throw new Error("no-telegram");
+    const device = init ? "" : deviceKey();
+    if (!init && !device) throw new Error("no-telegram");
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
       const answer = await fetch(API, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ initData: init, ...body }),
+        body: JSON.stringify(init ? { initData: init, ...body } : { device, ...body }),
         signal: controller.signal,
       });
       const json = await answer.json().catch(() => ({}));
@@ -48,6 +55,9 @@
     }
   }
 
+  function closeApp() {
+    try { if (inTelegram) tg.close(); else if (android && android.close) android.close(); } catch (_) {}
+  }
   function say(message) { try { toast(message); } catch (_) {} }
 
   /** Подпись Telegram старше недели — её не примет сервер, нужно открыть приложение заново. */
@@ -63,7 +73,7 @@
     const layer = document.createElement("div");
     layer.className = "modal-backdrop live-reopen";
     layer.innerHTML = `<section class="sheet" role="alertdialog" aria-modal="true"><div class="sheet-handle"></div><h2>Откройте приложение заново</h2><p class="section-note">Приложение долго было открыто или свёрнуто, и Telegram перестал подтверждать, что это вы. Закройте его и откройте снова — правки, которые не сохранились, придётся повторить.</p><div class="sheet-actions"><button type="button" class="primary-button" data-reopen>Закрыть приложение</button></div></section>`;
-    layer.querySelector("[data-reopen]").addEventListener("click", () => { try { tg && tg.close(); } catch (_) {} });
+    layer.querySelector("[data-reopen]").addEventListener("click", closeApp);
     document.body.appendChild(layer);
   }
   const ERRORS = {
@@ -311,7 +321,7 @@
     try {
       await call({ action: "planner_send", ref });
       say("Прислал в чат");
-      setTimeout(() => { try { tg && tg.close(); } catch (_) {} }, 600);
+      if (inTelegram) setTimeout(closeApp, 600);
     } catch (error) {
       say(error.message === "no_file" ? "У записи нет файла" : "Не удалось прислать");
     }
@@ -399,9 +409,16 @@
     const action = control.dataset.action;
     const stop = () => { event.preventDefault(); event.stopImmediatePropagation(); };
     if (action === "file-open") { stop(); openFile(sheetItem()); return; }
+    if (action === "ticket-code-kind" && !control.closest(".live-code-full")) {
+      stop();
+      const item = (data.saved.tickets || []).find((t) => t.id === control.dataset.ticket);
+      if (flipCodes(item, control.dataset.kind)) render();
+      return;
+    }
 
     if (action === "reset") { stop(); ui.menu = false; render(); refresh(true).then(() => say("Обновлено")); return; }
-    if (action === "return-chat") { stop(); try { tg && tg.close(); } catch (_) {} return; }
+    if (action === "return-chat") { stop(); closeApp(); return; }
+    if (action === "android-settings") { stop(); ui.menu = false; render(); try { android.settings(); } catch (_) {} return; }
     if (action === "saved-send") {
       stop();
       const item = sheetItem();
@@ -586,10 +603,35 @@
       return `<section class="ticket-code-block"><div class="ticket-code-heading"><strong>Код билета</strong></div><div class="ticket-code-placeholder"><span>${why}</span></div>${send}</section>`;
     }
     const kind = codes.every((c) => c.kind === "barcode") ? "Штрихкод" : "QR-код";
+    const flip = kindSwitch(item) || `<span>${kind}</span>`;
     // Миниатюры: коды мелко в ряд; нажал — на весь экран, дальше листаешь.
-    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong><span>${kind}</span></div><div class="live-code-thumbs" style="--codes:${Math.min(codes.length, 3)}">` +
+    return `<section class="ticket-code-block live-codes"><div class="ticket-code-heading"><strong>${codes.length > 1 ? `Коды · ${codes.length} билета` : "Код билета"}</strong>${flip}</div><div class="live-code-thumbs" style="--codes:${Math.min(codes.length, 3)}">` +
       codes.map((c, i) => `<button type="button" class="live-code-thumb ${c.kind}" data-live-code="${i}" aria-label="Открыть код ${i + 1} на весь экран">${c.svg || `<b class="live-code-text">${escape(c.text)}</b>`}<span>${escape(c.seat || (codes.length > 1 ? `Билет ${i + 1}` : "Открыть"))}</span></button>`).join("") +
       `</div>${send}</section>`;
+  }
+
+  /*
+   * QR ↔ штрихкод одной кнопкой. Сервер присылает у кода и другой вид (alt),
+   * поэтому картинка меняется сразу, а выбор сохраняется правкой билета.
+   */
+  function kindSwitch(item) {
+    const codes = ((item && item.codes) || []).filter((c) => c.text);
+    if (!codes.length || !codes.every((c) => c.alt)) return "";
+    const now = codes[0].kind;
+    return `<div class="code-kind-switch" role="group" aria-label="Вид кода">${[["qr", "QR"], ["barcode", "Штрихкод"]].map(([key, label]) => `<button type="button" class="${now === key ? "on" : ""}" data-action="ticket-code-kind" data-kind="${key}" data-ticket="${escape(item.id)}" aria-pressed="${now === key}">${label}</button>`).join("")}</div>`;
+  }
+  function flipCodes(item, kind) {
+    if (!item || !Array.isArray(item.codes)) return false;
+    let changed = false;
+    item.codes = item.codes.map((c) => {
+      if (!c.text || !c.alt || c.kind === kind) return c;
+      changed = true;
+      return { ...c, kind, svg: c.alt, alt: c.svg, format: "" };
+    });
+    if (!changed) return false;
+    item.codeType = item.codes[0] ? item.codes[0].kind : "";
+    save();
+    return true;
   }
 
   /** Коды на весь экран: белый фон, крупно — для турникета; листаются свайпом. */
@@ -603,8 +645,19 @@
     const layer = document.createElement("div");
     layer.className = "live-code-full";
     layer.innerHTML = `<div class="live-code-track">${codes.map((c, i) => `<figure class="live-code-slide"><div class="live-code-full-art ${c.kind}">${c.svg || ""}</div><figcaption><b>${escape(codes.length > 1 ? `Билет ${i + 1} из ${codes.length}` : item.title)}</b>${c.seat ? `<span>${escape(c.seat)}</span>` : ""}<small>${escape(c.text)}</small></figcaption></figure>`).join("")}</div>` +
-      `${codes.length > 1 ? `<div class="live-code-dots">${codes.map((_, i) => `<i data-dot="${i}"></i>`).join("")}</div>` : ""}<button type="button" class="live-code-close">Закрыть</button>`;
+      `${codes.length > 1 ? `<div class="live-code-dots">${codes.map((_, i) => `<i data-dot="${i}"></i>`).join("")}</div>` : ""}<div class="live-code-kind">${kindSwitch(item)}</div><button type="button" class="live-code-close">Закрыть</button>`;
     document.body.appendChild(layer);
+    // Переключатель вида прямо у турникета: картинки меняются на месте.
+    layer.addEventListener("click", (event) => {
+      const pick = event.target.closest && event.target.closest('[data-action="ticket-code-kind"]');
+      if (!pick) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!flipCodes(item, pick.dataset.kind)) return;
+      const shown = item.codes.filter((c) => c.text);
+      layer.querySelectorAll(".live-code-full-art").forEach((art, i) => { art.className = `live-code-full-art ${shown[i].kind}`; art.innerHTML = shown[i].svg || ""; });
+      layer.querySelector(".live-code-kind").innerHTML = kindSwitch(item);
+      render();
+    }, true);
     const track = layer.querySelector(".live-code-track");
     const dots = [...layer.querySelectorAll("[data-dot]")];
     const mark = () => {
@@ -644,7 +697,7 @@
   }
 
   async function boot() {
-    if (!(tg && tg.initData)) {
+    if (!inTelegram && !deviceKey()) {
       splash("Откройте приложение из Telegram — кнопкой «Приложение» в меню бота.");
       return;
     }
@@ -688,7 +741,11 @@
         if (ticket && ticket.inChat) text += "\n\nФото билета — в чате с ботом («Прислать билет в чат»).";
       }
       const link = payload.url && /^https?:\/\//.test(payload.url) && !String(payload.url).startsWith(location.origin) ? payload.url : "";
-      if (tg && tg.openTelegramLink) {
+      if (!inTelegram && android && android.share) {
+        android.share([text, link].filter(Boolean).join("\n\n"));
+        return;
+      }
+      if (inTelegram && tg.openTelegramLink) {
         try { closeSwipeRows(); } catch (_) {}
         tg.openTelegramLink(link
           ? `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
@@ -724,7 +781,9 @@
       paint();
       document.body.dataset.page = ui.page;
       document.body.dataset.financeTab = ui.financeTab || "";
+      topTitle();
     };
+    if (tg && tg.onEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach((name) => { try { tg.onEvent(name, topTitle); } catch (_) {} });
     render();
     root.classList.add("live-enter");
     setTimeout(() => root.classList.remove("live-enter"), 700);
@@ -740,6 +799,29 @@
     document.addEventListener("submit", interceptSubmit, true);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
     setTimeout(() => { base = clone(data); openDeepLink(); }, 0);
+  }
+
+  /*
+   * Полноэкранный Telegram: сверху его кнопки «Закрыть» и «⋯». Между ними —
+   * название раздела такой же «таблеткой», но в акцентном цвете; страница
+   * начинается ниже этой полосы, а не под кнопками.
+   */
+  let titleBar = null;
+  function topTitle() {
+    const full = Boolean(inTelegram && tg.isFullscreen);
+    document.documentElement.classList.toggle("tg-fs", full);
+    if (!full) { if (titleBar) titleBar.hidden = true; return; }
+    if (!titleBar) {
+      titleBar = document.createElement("div");
+      titleBar.className = "tg-title";
+      titleBar.setAttribute("aria-hidden", "true");
+      titleBar.innerHTML = "<span></span>";
+      document.body.appendChild(titleBar);
+    }
+    const heading = root.querySelector(".main .page-header h1");
+    const text = heading ? heading.textContent.trim() : "";
+    titleBar.firstChild.textContent = text;
+    titleBar.hidden = !text;
   }
 
   boot();
