@@ -310,14 +310,14 @@ function savedChipPool(category) {
   const seen = ui.savedFilter === "viewed";
   return items.filter(item => !item.skipped && movieIsViewed(item) === seen);
 }
-function renderSavedSectionChips(category) {
+function renderSavedSectionChips(category, tail = "") {
   const sections = savedSections(category);
   const pool = savedChipPool(category);
   const unassigned = pool.filter(item => !item.categoryId).length;
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
   // Папки видны всегда, когда хоть одна не пуста: по ним и ходят внутри раздела.
-  if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return "";
-  return `<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}</div>`;
+  if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return tail ? `<div class="saved-sort-row">${tail}</div>` : "";
+  return `<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${tail}</div>`;
 }
 /** Разделы лентой — только непустые (и открытый), открытый — по центру. */
 function savedSwitch() {
@@ -339,13 +339,15 @@ function renderSavedPage() {
     : category === "movies"
     ? [["newest", "Новые сначала"], ["rating", "По моей оценке"], ["title", "По названию"], ["pinned", "Закреплённые"], ["skipped", "Не интересно"]]
     : [["newest", "Новые сначала"], ["title", "По названию"], ["time", "По времени"], ["unread", "Не просмотрено"], ["viewed", "Просмотренные"], ["pinned", "Закреплённые"]];
-  const toolbar = `<div class="saved-section-search"><label class="notes-search">${icon("search", "icon-sm")}<input id="saved-filter-input" type="search" value="${esc(ui.savedQuery)}" placeholder="Искать в разделе" aria-label="Искать в разделе"></label><select id="saved-show" class="filter-input" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select></div>`;
+  // Поиск — в «+» (он ищет и добавляет), а «Показать» стоит в одном ряду с папками.
+  const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
+  const toolbar = "";
   const heading = `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button>${category === "addresses" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
   const hint = category === "movies" && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
   const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
   const main = category === "addresses" ? renderAddressWorkspace()
     : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
-    : `${seenTabs}${renderSavedSectionChips(category)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
+    : `${seenTabs}${renderSavedSectionChips(category, sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
   return `<div class="saved-section-screen">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
 }
@@ -355,7 +357,7 @@ function movieSeenTabs() {
   const seen = all.filter(movieIsViewed).length;
   const now = ui.savedFilter === "viewed" ? "viewed" : ui.savedFilter === "reco" ? "reco" : "all";
   const tab = (filter, label, count) => `<button type="button" class="${filter === now ? "active" : ""}" data-action="saved-filter" data-filter="${filter}" aria-pressed="${filter === now}">${label}${count === "" ? "" : `<span>${count}</span>`}</button>`;
-  return `<div class="movie-seen-tabs three" role="group" aria-label="Фильмы">${tab("all", "В планах", all.length - seen)}${tab("viewed", "Просмотрено", seen)}${tab("reco", "Что смотреть", "")}</div>`;
+  return `<div class="movie-seen-tabs three" role="group" aria-label="Фильмы">${tab("all", "В планах", "")}${tab("viewed", "Просмотрено", "")}${tab("reco", "Что смотреть", "")}</div>`;
 }
 /** Подсказка про свайп — один раз: дальше она только занимает место. */
 function savedHintSeen() {
