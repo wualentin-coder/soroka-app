@@ -119,3 +119,7 @@ html.tg-fs .live-splash { padding-top: var(--tg-top); }
 /* Название уже в «таблетке» сверху — на странице его не повторяем. */
 html.tg-fs .page-header h1, html.tg-fs .page-header .page-subtitle, html.tg-fs .saved-section-heading h1 { display: none; }
 html.tg-fs .page-header { margin-bottom: 16px; align-items: center; }
+
+/* Штрихкод на весь экран — повёрнут вдоль экрана, во всю высоту. */
+.live-code-full-art.barcode { position: relative; width: min(36vw, 170px); height: min(58dvh, 560px); }
+.live-code-full-art.barcode svg { position: absolute; left: 50%; top: 50%; width: min(58dvh, 560px); height: min(36vw, 170px); transform: translate(-50%, -50%) rotate(90deg); }
