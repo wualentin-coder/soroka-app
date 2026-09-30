@@ -173,3 +173,31 @@ html.kb-open .sheet { max-height: calc(var(--vvh, 100dvh) - 12px); }
 .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s ease; }
 .switch input:checked + span { background: var(--accent); }
 .switch input:checked + span::after { transform: translateX(18px); }
+
+/* ══ Плашка сверху → «Закреплённое» ══════════════════════════════════════════ */
+.tg-title span { pointer-events: auto; cursor: pointer; transition: transform .15s ease; }
+.tg-title span:active { transform: scale(.94); }
+.pins-drop { position: fixed; inset: 0; z-index: 55; }
+.pins-drop-scrim { position: absolute; inset: 0; background: rgba(8, 14, 20, .35); animation: composer-fade .18s ease; }
+.pins-drop-card { position: absolute; top: calc(var(--tg-top, 0px) + 6px); left: 50%; width: min(92vw, 420px); max-height: 60dvh; overflow-y: auto; padding: 8px; border-radius: 20px; background: var(--surface-raised); box-shadow: 0 18px 44px rgba(0, 0, 0, .3); transform-origin: top center; transform: translateX(-50%); animation: pins-drop .26s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes pins-drop { from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(.6, .3); } }
+.pins-drop.closing .pins-drop-card { animation: pins-lift .18s ease forwards; }
+.pins-drop.closing .pins-drop-scrim { opacity: 0; transition: opacity .18s ease; }
+@keyframes pins-lift { to { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.8, .5); } }
+.pins-drop-card header { display: flex; align-items: center; gap: 8px; padding: 8px 10px 10px; color: var(--accent); }
+.pins-drop-card header strong { color: var(--text); font-size: 15px; }
+.pins-drop-card header small { color: var(--muted); font-weight: 800; }
+.pins-drop-card > button { display: grid; grid-template-columns: minmax(0, 1fr) 16px; align-items: center; gap: 2px 10px; width: 100%; padding: 10px 12px; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--text); text-align: left; cursor: pointer; animation: pins-row .3s ease backwards; animation-delay: calc(var(--i) * 35ms + 60ms); }
+@keyframes pins-row { from { opacity: 0; transform: translateY(-6px); } }
+.pins-drop-card > button b { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.pins-drop-card > button small { grid-row: 2; color: var(--muted); font-size: 11.5px; }
+.pins-drop-card > button > .icon { grid-row: 1 / 3; grid-column: 2; color: var(--subtle); }
+.pins-drop-card p { margin: 6px 12px 12px; color: var(--muted); font-size: 13px; }
+.saved-pinned-panel.pins-pulse { animation: pins-pulse .9s ease; }
+@keyframes pins-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); transform: scale(1); } 30% { transform: scale(1.015); } 100% { box-shadow: 0 0 0 14px transparent; transform: scale(1); } }
+/* «Вручную» без раздела: плитки выбора в поле ввода. */
+.composer-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 6px; }
+.composer-choices button { display: grid; justify-items: center; gap: 5px; padding: 10px 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+.composer-choices .icon { width: 20px; height: 20px; color: var(--accent); }
+/* В полноэкранном Telegram название — в плашке; строку с числом и «+» не оставляем. */
+html.tg-fs .saved-section-heading { display: none; }
