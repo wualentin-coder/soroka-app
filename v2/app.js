@@ -15,6 +15,7 @@ const icons = {
   today: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
   inbox: '<path d="M4 4h16l2 11v5H2v-5L4 4Z"/><path d="M2 15h6l2 3h4l2-3h6"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/>',
   rows: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   overview: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
@@ -231,14 +232,21 @@ function checklistProgress(task) {
 }
 function checklistBlock(task) {
   const list = task.checklist || [];
-  if (!list.length || task.done) return "";
-  return `<ul class="task-checklist">${list.map((c, i) => `<li><button type="button" class="task-checklist-item ${c.done ? "done" : ""}" data-action="task-check-item" data-id="${esc(task.id)}" data-index="${i}" aria-pressed="${Boolean(c.done)}"><span class="task-checklist-box">${c.done ? icon("check", "icon-sm") : ""}</span><span>${esc(c.text)}</span></button></li>`).join("")}</ul>`;
+  if (!list.length) return "";
+  const open = (ui.openChecklists || []).includes(task.id);
+  const head = `<button type="button" class="task-checklist-toggle ${open ? "open" : ""}" data-action="task-checklist-toggle" data-id="${esc(task.id)}" aria-expanded="${open}">${icon(task.listRef ? "list" : "check", "icon-sm")}<span>${task.listRef ? "Список" : "Подзадачи"} · ${list.filter(c => c.done).length} из ${list.length}</span>${icon("down", "icon-sm")}</button>`;
+  if (!open) return `<div class="task-sub">${head}</div>`;
+  return `<div class="task-sub">${head}<ul class="task-checklist">${list.map((c, i) => `<li><button type="button" class="task-checklist-item ${c.done ? "done" : ""}" data-action="task-check-item" data-id="${esc(task.id)}" data-index="${i}" aria-pressed="${Boolean(c.done)}"><span class="task-checklist-box">${c.done ? icon("check", "icon-sm") : ""}</span><span>${esc(c.text)}</span></button></li>`).join("")}</ul></div>`;
 }
 function toggleChecklistItem(recordId, index) {
   const task = data.tasks.find(item => item.id === recordId);
   const row = task?.checklist?.[index];
   if (!row) return;
   row.done = !row.done;
+  // Список из «Сохранённого» — отметка и в нём самом.
+  const list = task.listRef ? (data.saved.lists || []).find(item => item.id === task.listRef) : null;
+  const same = list?.items?.find(entry => entry.text === row.text);
+  if (same) same.done = row.done;
   const all = task.checklist.every(c => c.done);
   if (all && !task.done) { task.done = true; toast("Все пункты отмечены — задача закрыта"); }
   else if (!all && task.done) task.done = false;
@@ -254,7 +262,7 @@ function taskCard(task) {
   const completesOnTap = ui.page === "today" || ui.page === "upcoming";
   const mainLabel = completesOnTap ? `${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${task.title}` : `Открыть задачу: ${task.title}`;
   const dragHandle = ui.page === "upcoming" ? `<span class="task-drag-handle" draggable="true" role="img" aria-label="Перетащить задачу на другой день" title="Перетащить на другой день">${icon("grip", "icon-sm")}</span>` : "";
-  return `<article class="task-card ${late ? "overdue" : ""} ${task.done ? "is-done" : ""}" data-task-id="${esc(task.id)}"><button class="task-check ${task.done ? "checked" : ""}" type="button" data-action="toggle-task" data-id="${esc(task.id)}" aria-label="${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${esc(task.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="edit" data-type="task" data-id="${esc(task.id)}" aria-label="${esc(mainLabel)}"><span class="task-title">${esc(task.title)}</span><span class="task-meta">${date}${time}${project}${noDate}${checklistProgress(task)}</span></button>${checklistBlock(task)}<span class="task-card-trailing"><i class="priority-marker ${esc(task.priority)}" aria-hidden="true"></i>${dragHandle}</span></article>`;
+  return `<article class="task-card ${late ? "overdue" : ""} ${task.done ? "is-done" : ""}" data-task-id="${esc(task.id)}"><button class="task-check ${task.done ? "checked" : ""}" type="button" data-action="toggle-task" data-id="${esc(task.id)}" aria-label="${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${esc(task.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="edit" data-type="task" data-id="${esc(task.id)}" aria-label="${esc(mainLabel)}"><span class="task-title">${esc(task.title)}</span><span class="task-meta">${date}${time}${project}${noDate}</span></button>${checklistBlock(task)}<span class="task-card-trailing"><i class="priority-marker ${esc(task.priority)}" aria-hidden="true"></i>${dragHandle}</span></article>`;
 }
 function eventCard(event) {
   return `<button class="event-card" type="button" data-action="edit" data-type="event" data-id="${esc(event.id)}"><span class="event-time">${esc(event.time || "Весь день")}</span><i class="event-rule" aria-hidden="true"></i><span class="event-info"><span class="event-title">${esc(event.title)}</span>${event.description ? `<span class="event-place">${esc(event.description)}</span>` : ""}</span></button>`;
@@ -490,6 +498,7 @@ document.addEventListener("click", event => {
   }
   if (action === "toggle-task") { toggleTask(control.dataset.id); return; }
   if (action === "task-check-item") { toggleChecklistItem(control.dataset.id, Number(control.dataset.index)); return; }
+  if (action === "task-checklist-toggle") { const openIds = new Set(ui.openChecklists || []); openIds.has(control.dataset.id) ? openIds.delete(control.dataset.id) : openIds.add(control.dataset.id); ui.openChecklists = [...openIds]; render(); return; }
   if (action === "move-overdue") {
     const late = overdueTasks();
     late.forEach(task => { task.due = todayIso(); });
