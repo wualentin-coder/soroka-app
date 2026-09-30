@@ -442,29 +442,36 @@ function starSlider(item) {
     if (!tap && Number(item.rating) === n) return;
     setMovieRating(item, n);
   };
+  // Оценка ставится только намеренно: коротким нажатием на месте или протяжкой
+  // вбок. Палец пошёл вверх-вниз (листаете или смахиваете карточку) — ничего не
+  // ставим: раньше звезда ловилась при сворачивании окна, и фильм «улетал» в просмотренные.
   document.addEventListener("pointerdown", event => {
     const box = event.target.closest?.(".star-slider");
     if (!box || event.button > 0) return;
-    event.preventDefault();
-    drag = { box, x: event.clientX, moved: false, n: valueAt(box, event.clientX) };
-    box.classList.add("is-sliding");
-    paint(box, drag.n);
-    try { box.setPointerCapture(event.pointerId); } catch (_) {}
+    drag = { box, id: event.pointerId, x: event.clientX, y: event.clientY, at: Date.now(), sliding: false, n: valueAt(box, event.clientX) };
   });
   document.addEventListener("pointermove", event => {
-    if (!drag) return;
-    if (Math.abs(event.clientX - drag.x) > 4) drag.moved = true;
+    if (!drag || event.pointerId !== drag.id) return;
+    const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+    if (!drag.sliding) {
+      if (Math.abs(dy) > 8 && Math.abs(dy) >= Math.abs(dx)) { drag = null; return; }
+      if (Math.abs(dx) < 10) return;
+      drag.sliding = true;
+      drag.box.classList.add("is-sliding");
+      try { drag.box.setPointerCapture(event.pointerId); } catch (_) {}
+    }
     const n = valueAt(drag.box, event.clientX);
-    if (n !== drag.n) { drag.n = n; paint(drag.box, n); try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (_) {} }
+    if (n !== drag.n || !drag.painted) { drag.n = n; drag.painted = true; paint(drag.box, n); try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (_) {} }
   });
-  const end = () => {
-    if (!drag) return;
-    const { box, n, moved } = drag;
+  document.addEventListener("pointerup", event => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const { box, n, sliding, x, y, at } = drag;
     drag = null;
     box.classList.remove("is-sliding");
-    commit(n, !moved);
-  };
-  document.addEventListener("pointerup", end);
+    if (sliding) { commit(n, false); return; }
+    const still = Math.abs(event.clientX - x) < 8 && Math.abs(event.clientY - y) < 8 && Date.now() - at < 600;
+    if (still) commit(valueAt(box, event.clientX), true);
+  });
   document.addEventListener("pointercancel", () => { if (drag) { paint(drag.box, Number(drag.box.dataset.value) || 0); drag.box.classList.remove("is-sliding"); drag = null; } });
   document.addEventListener("keydown", event => {
     const box = event.target.closest?.(".star-slider");
