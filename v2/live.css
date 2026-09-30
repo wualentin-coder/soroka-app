@@ -214,3 +214,4 @@ html.in-android .tg-title span:empty { display: none; }
 .head-pill:active { transform: translate(-50%, -50%) scale(.94); }
 html.in-android .main { padding-top: 12px; }
 html.in-android .page-header { min-height: 40px; }
+.live-splash-error { max-width: 300px; margin-top: 8px; color: var(--muted, #888); font-size: 11px; word-break: break-word; text-align: center; }
