@@ -15,6 +15,7 @@ const icons = {
   today: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
   inbox: '<path d="M4 4h16l2 11v5H2v-5L4 4Z"/><path d="M2 15h6l2 3h4l2-3h6"/>',
+  rows: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   overview: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
   more: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
@@ -217,7 +218,7 @@ function brand() {
   return `<img class="brand-mark" src="./assets/soroka-avatar.png" alt=""><div><span class="brand-name">СОРОКА</span><span class="brand-label">личное пространство</span></div>`;
 }
 function header(title, subtitle, eyebrow) {
-  return `<header class="page-header"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1><p class="page-subtitle">${subtitle}</p></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu"><button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button></div>` : ""}</div></div></header>`;
+  return `<header class="page-header"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1><p class="page-subtitle">${subtitle}</p></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu"><button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
 }
 function taskCard(task) {
   const late = !task.done && task.due && task.due < todayIso();
