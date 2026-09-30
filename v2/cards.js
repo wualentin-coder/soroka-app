@@ -91,7 +91,8 @@ function loyaltySubmit(event) {
   item.color = String(form.get("color") || "");
   item.description = String(form.get("description") || "").trim();
   if (!existing) { data.saved.cards = data.saved.cards || []; data.saved.cards.push(item); }
-  ui.sheet = { kind: "saved", category: "cards", id: item.id, mode: "view", justRendered: false };
+  // Из формы — обратно в кошелёк, карта раскрыта.
+  ui.sheet = null; ui.walletOpen = item.id; ui.savedCategory = "cards";
   save(); render();
   toast(existing ? "Карта сохранена" : "Карта добавлена");
   return true;
@@ -236,6 +237,7 @@ setTimeout(watchLoyaltyPlaces, 2500);
 // ------------------------------------------------------------ действия
 
 function loyaltyAction(action, control) {
+  if (walletAction(action, control)) return true;
   if (action === "loyalty-full") { openLoyaltyFull(savedItem("cards", control.dataset.id)); return true; }
   if (action === "loyalty-brand") {
     const form = document.getElementById("loyalty-form");
@@ -250,7 +252,7 @@ function loyaltyAction(action, control) {
     if (f) { for (const [name, value] of Object.entries(ui.sheet.draftCard)) { const input = f.elements[name]; if (input && typeof value === "string" && input.type !== "radio" && name !== "brand") input.value = value; } f.elements.brand.value = brand; }
     return true;
   }
-  if (action === "loyalty-cancel") { ui.sheet.mode = "view"; render(); return true; }
+  if (action === "loyalty-cancel") { ui.sheet = null; render(); return true; }
   if (action === "loyalty-places") {
     const item = savedItem("cards", control.dataset.id);
     ui.sheet = { kind: "loyalty-places", id: item.id, points: (item.places || []).map(p => ({ ...p })), justRendered: false };
@@ -278,7 +280,7 @@ function loyaltyAction(action, control) {
     const item = savedItem("cards", ui.sheet.id);
     document.querySelectorAll("[data-point-label]").forEach(input => { const p = ui.sheet.points[Number(input.dataset.pointLabel)]; if (p) p.label = input.value.trim(); });
     if (item) item.places = ui.sheet.points;
-    ui.sheet = { kind: "saved", category: "cards", id: item?.id, mode: "view", justRendered: false };
+    ui.sheet = null; ui.walletOpen = item?.id || null;
     save(); render(); watchLoyaltyPlaces();
     toast(item?.places?.length ? `Точек: ${item.places.length} — карта будет выезжать рядом` : "Точки убраны");
     return true;
@@ -298,4 +300,57 @@ function loyaltyChange(event) {
   const p = ui.sheet.points[Number(radius)];
   if (p) { p.radius = Number(event.target.value); drawLoyaltyPoints(); }
   return true;
+}
+
+// ------------------------------------------------------------ кошелёк
+
+/*
+ * Раздел «Карты» — как кошелёк: карты лежат стопкой, у каждой видна полоса с
+ * названием, последняя — целиком. Нажали — карта поднимается наверх, под ней
+ * код и действия, остальные сжимаются в стопку внизу. Нажали ещё раз — назад.
+ */
+function walletCards() {
+  return savedItems("cards").slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(a.created || "").localeCompare(String(b.created || "")));
+}
+function renderWallet() {
+  const cards = walletCards();
+  if (!cards.length) {
+    return `<div class="wallet-empty">${loyaltyFace({ brand: "custom", title: "Ваша карта", number: "", places: [] })}<p>Добавьте скидочную карту — номер под штрихкодом, и она всегда будет под рукой. Отметьте магазины на карте, и рядом с ними она выедет сама.</p><button type="button" class="primary-button" data-action="saved-new">${icon("plus")}Добавить карту</button></div>`;
+  }
+  const open = cards.find(card => card.id === ui.walletOpen);
+  if (!open) {
+    return `<div class="wallet">${cards.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>`;
+  }
+  const rest = cards.filter(card => card !== open);
+  const places = (open.places || []).length;
+  const confirm = ui.walletDelete === open.id;
+  return `<div class="wallet is-open">
+    <div class="wallet-focus">
+      <button type="button" class="wallet-card wallet-card-open" data-action="wallet-close" aria-label="Свернуть">${loyaltyFace(open)}</button>
+      <button type="button" class="loyalty-code-button wallet-code" data-action="loyalty-full" data-id="${esc(open.id)}" aria-label="Код на весь экран">${loyaltyCode(open)}</button>
+      <div class="wallet-actions">
+        <button type="button" data-action="loyalty-places" data-id="${esc(open.id)}">${icon("pin")}<span>${places ? `Точки · ${places}` : "Где всплывает"}</span></button>
+        <button type="button" data-action="wallet-pin" data-id="${esc(open.id)}" class="${open.pinned ? "on" : ""}">${icon("bookmark")}<span>${open.pinned ? "Первая" : "Наверх"}</span></button>
+        <button type="button" data-action="wallet-edit" data-id="${esc(open.id)}">${icon("note")}<span>Изменить</span></button>
+        <button type="button" data-action="wallet-delete" data-id="${esc(open.id)}" class="danger ${confirm ? "confirm" : ""}">${icon("trash")}<span>${confirm ? "Точно удалить?" : "Удалить"}</span></button>
+      </div>
+      ${open.description ? `<p class="wallet-note">${esc(open.description)}</p>` : ""}
+    </div>
+    ${rest.length ? `<div class="wallet-rest">${rest.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>` : ""}
+  </div>`;
+}
+function walletAction(action, control) {
+  if (action === "wallet-open") { ui.walletOpen = control.dataset.id; ui.walletDelete = null; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
+  if (action === "wallet-close") { ui.walletOpen = null; ui.walletDelete = null; render(); return true; }
+  if (action === "wallet-edit") { openSavedRecord("cards", control.dataset.id, "edit"); return true; }
+  if (action === "wallet-pin") { const card = savedItem("cards", control.dataset.id); if (card) { card.pinned = !card.pinned; save(); render(); } return true; }
+  if (action === "wallet-delete") {
+    // Удаление — вторым нажатием: карта с кассы не должна пропасть от случайного касания.
+    if (ui.walletDelete !== control.dataset.id) { ui.walletDelete = control.dataset.id; render(); setTimeout(() => { if (ui.walletDelete === control.dataset.id) { ui.walletDelete = null; render(); } }, 3500); return true; }
+    data.saved.cards = savedItems("cards").filter(card => card.id !== control.dataset.id);
+    ui.walletOpen = null; ui.walletDelete = null;
+    save(); render(); toast("Карта удалена");
+    return true;
+  }
+  return false;
 }
