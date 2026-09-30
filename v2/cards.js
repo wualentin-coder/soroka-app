@@ -309,8 +309,11 @@ function loyaltyChange(event) {
  * названием, последняя — целиком. Нажали — карта поднимается наверх, под ней
  * код и действия, остальные сжимаются в стопку внизу. Нажали ещё раз — назад.
  */
+/** Порядок — как человек разложил перетаскиванием; новые — в конец. */
 function walletCards() {
-  return savedItems("cards").slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(a.created || "").localeCompare(String(b.created || "")));
+  const order = (data.settings.savedOrder || {}).cards || [];
+  const rank = card => { const at = order.indexOf(card.id); return at < 0 ? 1e6 + (Date.parse(card.created) || 0) / 1e10 : at; };
+  return savedItems("cards").slice().sort((a, b) => rank(a) - rank(b));
 }
 function renderWallet() {
   const cards = walletCards();
@@ -319,7 +322,7 @@ function renderWallet() {
   }
   const open = cards.find(card => card.id === ui.walletOpen);
   if (!open) {
-    return `<div class="wallet">${cards.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>`;
+    return `<div class="wallet" data-order-group="cards">${cards.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" data-order-key="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>`;
   }
   const rest = cards.filter(card => card !== open);
   const places = (open.places || []).length;
@@ -328,11 +331,10 @@ function renderWallet() {
     <div class="wallet-focus">
       <button type="button" class="wallet-card wallet-card-open" data-action="wallet-close" aria-label="Свернуть">${loyaltyFace(open)}</button>
       <button type="button" class="loyalty-code-button wallet-code" data-action="loyalty-full" data-id="${esc(open.id)}" aria-label="Код на весь экран">${loyaltyCode(open)}</button>
-      <div class="wallet-actions">
-        <button type="button" data-action="loyalty-places" data-id="${esc(open.id)}">${icon("pin")}<span>${places ? `Точки · ${places}` : "Где всплывает"}</span></button>
-        <button type="button" data-action="wallet-pin" data-id="${esc(open.id)}" class="${open.pinned ? "on" : ""}">${icon("bookmark")}<span>${open.pinned ? "Первая" : "Наверх"}</span></button>
-        <button type="button" data-action="wallet-edit" data-id="${esc(open.id)}">${icon("note")}<span>Изменить</span></button>
-        <button type="button" data-action="wallet-delete" data-id="${esc(open.id)}" class="danger ${confirm ? "confirm" : ""}">${icon("trash")}<span>${confirm ? "Точно удалить?" : "Удалить"}</span></button>
+      <div class="wallet-actions" role="group" aria-label="Действия с картой">
+        <button type="button" data-action="loyalty-places" data-id="${esc(open.id)}">${icon("pin", "icon-sm")}<span>${places ? `Точки · ${places}` : "Где всплывает"}</span></button>
+        <button type="button" data-action="wallet-edit" data-id="${esc(open.id)}">${icon("note", "icon-sm")}<span>Изменить</span></button>
+        <button type="button" data-action="wallet-delete" data-id="${esc(open.id)}" class="danger ${confirm ? "confirm" : ""}" aria-label="Удалить карту">${icon("trash", "icon-sm")}${confirm ? "<span>Удалить?</span>" : ""}</button>
       </div>
       ${open.description ? `<p class="wallet-note">${esc(open.description)}</p>` : ""}
     </div>
