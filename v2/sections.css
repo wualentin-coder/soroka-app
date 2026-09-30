@@ -1443,3 +1443,5 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .saved-view-actions .movie-skip-square { display: grid; place-items: center; min-width: 0; padding: 0; border: 1px solid color-mix(in srgb, #d6404d 45%, var(--line)); border-radius: 13px; background: color-mix(in srgb, #d6404d 12%, var(--surface)); color: #d6404d; }
 .saved-view-actions .movie-skip-square.is-on { background: #d6404d; color: #fff; }
 .movie-skip-square .icon { width: 19px; height: 19px; }
+
+.post-bubble-text.is-empty { color: var(--muted); font-style: italic; font-size: 13px; }
