@@ -967,7 +967,7 @@ function savedChange(event) {
     press = null;
     const grid = tile.parentElement;
     const rect = tile.getBoundingClientRect();
-    drag = { tile, grid, x, y, left: rect.left, top: rect.top };
+    drag = { tile, grid, x, y, left: rect.left, top: rect.top, stack: grid.classList.contains("wallet"), from: [...grid.children].indexOf(tile), to: [...grid.children].indexOf(tile) };
     tile.classList.add("is-dragging");
     grid.classList.add("is-sorting");
     haptic();
@@ -976,6 +976,28 @@ function savedChange(event) {
   document.addEventListener("pointermove", event => {
     if (press) {
       if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 8) { clearTimeout(press.timer); press = null; }
+      return;
+    }
+    if (drag && drag.stack) {
+      // Стопка карт: разметку не трогаем — карта едет за пальцем, соседи
+      // раздвигаются на одну полосу; место считается по сдвигу, а не по тому,
+      // чья полоса под пальцем (у наложенных карт это давало прыжки).
+      const { tile, grid } = drag;
+      const cards = [...grid.children];
+      const step = 58;
+      const dy = event.clientY - drag.y;
+      tile.style.transform = `translateY(${dy}px) scale(1.02)`;
+      const to = Math.max(0, Math.min(cards.length - 1, Math.round(drag.from + dy / step)));
+      if (to !== drag.to) {
+        drag.to = to;
+        try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (_) {}
+        cards.forEach((card, j) => {
+          if (card === tile) return;
+          const shift = drag.from < j && j <= to ? -step : to <= j && j < drag.from ? step : 0;
+          card.style.transition = "transform .22s cubic-bezier(.2,.8,.3,1)";
+          card.style.transform = shift ? `translateY(${shift}px)` : "";
+        });
+      }
       return;
     }
     if (drag) {
@@ -1021,6 +1043,23 @@ function savedChange(event) {
 
   function finish() {
     if (press) { clearTimeout(press.timer); press = null; }
+    if (drag && drag.stack) {
+      const { tile, grid, from, to } = drag;
+      drag = null;
+      swallowClick = true;
+      setTimeout(() => { swallowClick = false; }, 400);
+      tile.classList.remove("is-dragging");
+      grid.classList.remove("is-sorting");
+      const order = [...grid.children].map(card => card.dataset.orderKey);
+      const [moved] = order.splice(from, 1);
+      order.splice(to, 0, moved);
+      if (to !== from) {
+        data.settings.savedOrder = { ...(data.settings.savedOrder || {}), [grid.dataset.orderGroup]: order };
+        save();
+      }
+      render();
+      return;
+    }
     if (drag) {
       const { tile, grid } = drag;
       drag = null;
