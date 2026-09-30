@@ -1445,3 +1445,8 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .movie-skip-square .icon { width: 19px; height: 19px; }
 
 .post-bubble-text.is-empty { color: var(--muted); font-style: italic; font-size: 13px; }
+
+/* Фильмы: влево — только «не интересно» и «поделиться», до конца — удалить. */
+.swipe-row.swipe-movie .swipe-action.edit { display: none !important; }
+.swipe-row.swipe-movie .swipe-action.skip { right: var(--slot); }
+.swipe-row.swipe-movie.is-open-left { --swipe-x: calc(var(--slot) * -2); }
