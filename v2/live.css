@@ -201,3 +201,6 @@ html.kb-open .sheet { max-height: calc(var(--vvh, 100dvh) - 12px); }
 .composer-choices .icon { width: 20px; height: 20px; color: var(--accent); }
 /* В полноэкранном Telegram название — в плашке; строку с числом и «+» не оставляем. */
 html.tg-fs .saved-section-heading { display: none; }
+/* Без большого названия надзаголовок стоит в одну линию с поиском и меню. */
+html.tg-fs .page-header { align-items: center; margin-top: 0; }
+html.tg-fs .page-header .eyebrow { margin: 0; line-height: 36px; }
