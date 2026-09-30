@@ -123,3 +123,53 @@ html.tg-fs .page-header { margin-bottom: 16px; align-items: center; }
 /* Штрихкод на весь экран — повёрнут вдоль экрана, во всю высоту. */
 .live-code-full-art.barcode { position: relative; width: min(36vw, 170px); height: min(58dvh, 560px); }
 .live-code-full-art.barcode svg { position: absolute; left: 50%; top: 50%; width: min(58dvh, 560px); height: min(36vw, 170px); transform: translate(-50%, -50%) rotate(90deg); }
+
+/* ══ «+»: поле ввода внизу, над клавиатурой; найденное — над полем ════════════ */
+.composer-layer { position: fixed; inset: 0; z-index: 60; }
+.composer-scrim { position: absolute; inset: 0; background: rgba(8, 14, 20, .42); animation: composer-fade .18s ease; }
+.composer { position: absolute; left: 0; right: 0; bottom: var(--kb, 0px); display: flex; flex-direction: column; max-height: calc(var(--vvh, 100dvh) - 24px); padding: 10px 12px max(10px, env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: var(--surface-raised); box-shadow: 0 -10px 34px rgba(0, 0, 0, .22); animation: composer-rise .24s cubic-bezier(.2, .9, .3, 1); }
+html.kb-open .composer { padding-bottom: 10px; }
+@keyframes composer-rise { from { transform: translateY(24px); opacity: 0; } }
+@keyframes composer-fade { from { opacity: 0; } }
+.composer-results { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.composer-results:empty { display: none; }
+.composer-caption { display: flex; align-items: center; gap: 8px; margin: 2px 4px 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.composer-hit { display: grid; grid-template-columns: auto minmax(0, 1fr) 16px; align-items: center; gap: 10px; width: 100%; min-height: 52px; margin: 0 0 6px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; }
+.composer-hit img { width: 30px; height: 44px; border-radius: 6px; object-fit: cover; }
+.composer-hit span { display: grid; gap: 2px; min-width: 0; }
+.composer-hit b { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.composer-hit small { color: var(--muted); font-size: 11.5px; }
+.composer-hit > .icon { color: var(--subtle); }
+.composer-manual-row { grid-template-columns: minmax(0, 1fr) 16px; }
+.composer-movie { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 4px 12px; margin: 0 0 8px; padding: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.composer-movie > img, .composer-movie-blank { grid-row: 1 / 3; width: 58px; height: 86px; border-radius: 9px; object-fit: cover; background: var(--surface-soft); }
+.composer-movie > div { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.composer-movie b { font-size: 15px; line-height: 1.25; }
+.composer-movie small { color: var(--muted); font-size: 12px; }
+.composer-movie p { margin: 4px 0 0; color: var(--text); font-size: 13px; line-height: 1.4; }
+.composer-movie > button { grid-column: 2; justify-self: start; min-height: 36px; padding: 0 16px; font-size: 13px; }
+.composer-head { display: flex; align-items: center; gap: 8px; margin: 4px 2px 8px; }
+.composer-chip { padding: 5px 11px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 12px; font-weight: 800; }
+.composer-off { color: var(--muted); font-size: 12px; font-weight: 700; }
+.composer-manual { margin-left: auto; padding: 5px 4px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.composer-row { display: flex; align-items: flex-end; gap: 8px; }
+.composer-row textarea { flex: 1; min-height: 46px; max-height: 140px; margin: 0; padding: 12px 16px; border: 1px solid var(--line); border-radius: 23px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; line-height: 1.35; resize: none; outline: none; }
+.composer-row textarea:focus { border-color: var(--accent); }
+.composer-send { flex: 0 0 46px; display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; transition: opacity .15s ease, transform .15s ease; }
+.composer-send:disabled { opacity: .4; }
+.composer-send:not(:disabled):active { transform: scale(.92); }
+.composer-send .icon { width: 20px; height: 20px; }
+html.composer-open .mobile-nav, html.composer-open .fab { visibility: hidden; }
+
+/* ══ Клавиатура: нижний бар и «+» прячутся, окна встают над ней ═══════════════ */
+html.kb-open .mobile-nav, html.kb-open .fab { display: none; }
+html.kb-open .modal-backdrop { padding-bottom: var(--kb, 0px); }
+html.kb-open .sheet { max-height: calc(var(--vvh, 100dvh) - 12px); }
+
+/* Переключатель в настройках. */
+.switch { position: relative; display: inline-block; width: 46px; height: 28px; flex: 0 0 auto; }
+.switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--line); transition: background .2s ease; pointer-events: none; }
+.switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s ease; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { transform: translateX(18px); }
