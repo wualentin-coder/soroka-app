@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=2e19c730a8","integrity":null},{"src":"./movies.js?v=a3eacdecbd","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=1bae5fd1c4","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=ade31c6818","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=f534d98d8a","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=1bae5fd1c4","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=ade31c6818","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -818,10 +818,15 @@
       titleBar.innerHTML = "<span></span>";
       document.body.appendChild(titleBar);
     }
-    const heading = root.querySelector(".main .page-header h1");
+    const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
     const text = heading ? heading.textContent.trim() : "";
-    titleBar.firstChild.textContent = text;
+    const pill = titleBar.firstChild;
+    pill.textContent = text;
     titleBar.hidden = !text;
+    // Слово целиком: не влезает — шрифт чуть меньше, а не «Предсто…».
+    let size = 14;
+    pill.style.fontSize = size + "px";
+    while (text && size > 10 && pill.scrollWidth > pill.clientWidth + 1) { size -= 0.5; pill.style.fontSize = size + "px"; }
   }
 
   boot();
