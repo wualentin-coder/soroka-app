@@ -220,6 +220,31 @@ function brand() {
 function header(title, subtitle, eyebrow) {
   return `<header class="page-header"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1><p class="page-subtitle">${subtitle}</p></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu"><button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
 }
+/*
+ * Чек-лист в задаче: пункты отмечаются прямо в карточке. Все отмечены —
+ * задача закрывается сама; закрыть раньше можно обычной галочкой задачи.
+ */
+function checklistProgress(task) {
+  const list = task.checklist || [];
+  if (!list.length) return "";
+  return `<span class="task-checklist-count">${icon("check", "icon-sm")}${list.filter(c => c.done).length}/${list.length}</span>`;
+}
+function checklistBlock(task) {
+  const list = task.checklist || [];
+  if (!list.length || task.done) return "";
+  return `<ul class="task-checklist">${list.map((c, i) => `<li><button type="button" class="task-checklist-item ${c.done ? "done" : ""}" data-action="task-check-item" data-id="${esc(task.id)}" data-index="${i}" aria-pressed="${Boolean(c.done)}"><span class="task-checklist-box">${c.done ? icon("check", "icon-sm") : ""}</span><span>${esc(c.text)}</span></button></li>`).join("")}</ul>`;
+}
+function toggleChecklistItem(recordId, index) {
+  const task = data.tasks.find(item => item.id === recordId);
+  const row = task?.checklist?.[index];
+  if (!row) return;
+  row.done = !row.done;
+  const all = task.checklist.every(c => c.done);
+  if (all && !task.done) { task.done = true; toast("Все пункты отмечены — задача закрыта"); }
+  else if (!all && task.done) task.done = false;
+  save();
+  render();
+}
 function taskCard(task) {
   const late = !task.done && task.due && task.due < todayIso();
   const date = task.due && (late || !isTodayPage()) ? `<span class="${late ? "late" : ""}">${icon("calendar", "icon-sm")}${esc(dateLabel(task.due))}</span>` : "";
@@ -229,7 +254,7 @@ function taskCard(task) {
   const completesOnTap = ui.page === "today" || ui.page === "upcoming";
   const mainLabel = completesOnTap ? `${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${task.title}` : `Открыть задачу: ${task.title}`;
   const dragHandle = ui.page === "upcoming" ? `<span class="task-drag-handle" draggable="true" role="img" aria-label="Перетащить задачу на другой день" title="Перетащить на другой день">${icon("grip", "icon-sm")}</span>` : "";
-  return `<article class="task-card ${late ? "overdue" : ""} ${task.done ? "is-done" : ""}" data-task-id="${esc(task.id)}"><button class="task-check ${task.done ? "checked" : ""}" type="button" data-action="toggle-task" data-id="${esc(task.id)}" aria-label="${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${esc(task.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="edit" data-type="task" data-id="${esc(task.id)}" aria-label="${esc(mainLabel)}"><span class="task-title">${esc(task.title)}</span><span class="task-meta">${date}${time}${project}${noDate}</span></button><span class="task-card-trailing"><i class="priority-marker ${esc(task.priority)}" aria-hidden="true"></i>${dragHandle}</span></article>`;
+  return `<article class="task-card ${late ? "overdue" : ""} ${task.done ? "is-done" : ""}" data-task-id="${esc(task.id)}"><button class="task-check ${task.done ? "checked" : ""}" type="button" data-action="toggle-task" data-id="${esc(task.id)}" aria-label="${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${esc(task.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="edit" data-type="task" data-id="${esc(task.id)}" aria-label="${esc(mainLabel)}"><span class="task-title">${esc(task.title)}</span><span class="task-meta">${date}${time}${project}${noDate}${checklistProgress(task)}</span></button>${checklistBlock(task)}<span class="task-card-trailing"><i class="priority-marker ${esc(task.priority)}" aria-hidden="true"></i>${dragHandle}</span></article>`;
 }
 function eventCard(event) {
   return `<button class="event-card" type="button" data-action="edit" data-type="event" data-id="${esc(event.id)}"><span class="event-time">${esc(event.time || "Весь день")}</span><i class="event-rule" aria-hidden="true"></i><span class="event-info"><span class="event-title">${esc(event.title)}</span>${event.description ? `<span class="event-place">${esc(event.description)}</span>` : ""}</span></button>`;
@@ -305,7 +330,7 @@ function entrySheet() {
   const dateFields = sheet.type !== "note" ? `<div class="field-row"><label class="field">Дата<input name="due" type="date" value="${esc(defaultDue)}" ${sheet.type === "event" ? "required" : ""}></label><label class="field">Время<input name="time" type="time" value="${esc(field("time"))}"></label></div>` : "";
   const taskFields = sheet.type === "task" ? `<div class="field-row"><label class="field">Важность<select name="priority"><option value="high" ${field("priority") === "high" ? "selected" : ""}>Очень важно</option><option value="medium" ${!field("priority") || field("priority") === "medium" ? "selected" : ""}>Обычно</option><option value="low" ${field("priority") === "low" ? "selected" : ""}>Когда-нибудь</option></select></label><label class="field">Проект<select name="project">${data.projects.map(p => `<option value="${esc(p.name)}" ${field("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>` : "";
   const reminderFields = sheet.type !== "note" ? `<div class="entry-reminders"><h3>Повтор и напоминания</h3><label class="field">Повторять ${sheet.type === "event" ? "событие" : "задачу"}<select name="repeat">${[["none","Не повторять"],["daily","Каждый день"],["weekdays","По будням"],["weekly","Каждую неделю"],["monthly","Каждый месяц"],["yearly","Каждый год"]].map(([key,label]) => `<option value="${key}" ${String(field("repeat") || "none") === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><div class="field-row"><label class="field">Напомнить<select name="remindBefore">${[["none","Не напоминать"],["at","В момент начала"],["5m","За 5 минут"],["15m","За 15 минут"],["1h","За 1 час"],["1d","За 1 день"]].map(([key,label]) => `<option value="${key}" ${String(field("remindBefore") || "none") === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field">Повтор уведомления<select name="reminderRepeat">${[["none","Без повтора"],["5m","Каждые 5 минут"],["15m","Каждые 15 минут"],["1h","Каждый час"]].map(([key,label]) => `<option value="${key}" ${String(field("reminderRepeat") || "none") === key ? "selected" : ""}>${label}</option>`).join("")}</select></label></div></div>` : "";
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><label class="field">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${dateFields}${taskFields}${reminderFields}<div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">Удалить</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><label class="field">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${dateFields}${taskFields}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}<div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">Удалить</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
 }
 function searchSheet() {
   return renderSearchSheetExt();
@@ -464,6 +489,7 @@ document.addEventListener("click", event => {
     ui.sheet = null; save(); toast("Запись в корзине"); return;
   }
   if (action === "toggle-task") { toggleTask(control.dataset.id); return; }
+  if (action === "task-check-item") { toggleChecklistItem(control.dataset.id, Number(control.dataset.index)); return; }
   if (action === "move-overdue") {
     const late = overdueTasks();
     late.forEach(task => { task.due = todayIso(); });
@@ -500,7 +526,12 @@ document.addEventListener("submit", event => {
   item.title = title;
   item.description = String(form.get("description") || "").trim();
   if (type !== "note") { item.due = String(form.get("due") || (type === "event" ? todayIso() : "")); item.time = String(form.get("time") || ""); item.repeat = String(form.get("repeat") || "none"); item.remindBefore = String(form.get("remindBefore") || "none"); item.reminderRepeat = String(form.get("reminderRepeat") || "none"); }
-  if (type === "task") { item.priority = String(form.get("priority") || "medium"); item.project = String(form.get("project") || "Личное"); if (!existing) item.done = false; }
+  if (type === "task") {
+    item.priority = String(form.get("priority") || "medium"); item.project = String(form.get("project") || "Личное"); if (!existing) item.done = false;
+    const before = item.checklist || [];
+    item.checklist = String(form.get("checklist") || "").split("\n").map(line => line.trim()).filter(Boolean).slice(0, 60)
+      .map(text => ({ text, done: Boolean(before.find(c => c.text === text)?.done) }));
+  }
   if (!existing) data[key].push(item);
   if (ui.page === "upcoming" && item.due) { ui.selected = item.due; ui.month = item.due.slice(0, 7) + "-01"; ui.calendarAnchor = item.due; }
   ui.sheet = null;
