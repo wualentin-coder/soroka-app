@@ -152,7 +152,7 @@ ${row("Вечерняя сводка", "Итоги дня", `<input data-setting
 ${row("Тихие часы", "Бот не беспокоит, кроме срочного", `<span class="settings-range"><input data-setting="quietFrom" type="time" value="${esc(s.quietFrom || "23:00")}" aria-label="С"><span>–</span><input data-setting="quietTo" type="time" value="${esc(s.quietTo || "08:00")}" aria-label="До"></span>`)}
 ${row("Google Календарь", s.gcal ? "События уходят в календарь сами" : "Подключается в боте: команда /calendar", `<b class="settings-status ${s.gcal ? "ok" : ""}">${s.gcal ? "Подключён" : "Не подключён"}</b>`)}
 </div></section>
-<section class="settings-group"><h2>Модели ИИ</h2><div class="side-card">${routerRows}</div><p class="section-note">Бот разбирает сообщения моделями OpenRouter; пополнить — openrouter.ai.</p></section>
+<section class="settings-group"><h2>Модели ИИ</h2><div class="list-panel">${row("Ввод без ИИ", s.manualOnly ? "«+» открывает обычные формы" : router && Number(router.left) <= 0 ? "Деньги на OpenRouter кончились — ввод сейчас ручной" : "«+» разбирает текст и ищет фильмы моделью", `<label class="switch"><input type="checkbox" data-setting="manualOnly" ${s.manualOnly ? "checked" : ""}><span></span></label>`)}</div><div class="side-card">${routerRows}</div><p class="section-note">Бот разбирает сообщения моделями OpenRouter; пополнить — openrouter.ai.</p></section>
 <section class="settings-group"><h2>Данные</h2><div class="inline-actions"><button type="button" data-action="export-json">${icon("download")}Экспорт JSON</button><button type="button" data-action="export-csv">${icon("download")}Экспорт CSV</button>${window.SOROKA_LIVE ? `<button type="button" data-action="reset">${icon("reset")}Обновить данные</button>` : ""}</div><p class="section-note">Экспорт — всё, кроме паролей.</p></section>
 </div><aside class="content-aside"><div class="side-card"><h3>Личные данные</h3><p class="side-note">Записи живут в базе бота и доступны только вам. Пароли — в зашифрованном хранилище и в экспорт не попадают.</p></div></aside></div>`;
 }
@@ -454,6 +454,7 @@ function moreChange(event) {
   if (setting === "overview-block") { const key = event.target.dataset.key; data.settings.overviewHidden = event.target.checked ? data.settings.overviewHidden.filter(x => x !== key) : [...new Set([...data.settings.overviewHidden, key])]; }
   else if (setting === "theme") { ui.theme = event.target.value; try { localStorage.setItem(THEME_KEY, ui.theme); } catch (_) {} }
   else if (setting === "gcal") data.settings.gcal = event.target.checked;
+  else if (setting === "manualOnly") data.settings.manualOnly = event.target.checked;
   else data.settings[setting] = event.target.value;
   save(); render(); return true;
 }
@@ -707,13 +708,13 @@ document.addEventListener("click", event => {
   }
   if (row && event.target.closest(".swipe-content")) {
     if (event.target.closest(".task-drag-handle")) { event.preventDefault(); event.stopImmediatePropagation(); return; }
-    if ((ui.page === "today" || ui.page === "upcoming") && row.dataset.swipeType === "task" && event.target.closest(".task-card") && !event.target.closest(".task-check, .task-drag-handle")) {
+    if ((ui.page === "today" || ui.page === "upcoming") && row.dataset.swipeType === "task" && event.target.closest(".task-card") && !event.target.closest(".task-check, .task-drag-handle, .task-checklist")) {
       event.preventDefault(); event.stopImmediatePropagation();
       toggleTask(row.dataset.swipeId); return;
     }
     const action = event.target.closest("[data-action]")?.dataset.action;
     const nativeViews = new Set(["saved-open", "project-open", "project-note", "project-saved"]);
-    const inlineActions = new Set(["toggle-task", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive", "saved-pin-card"]);
+    const inlineActions = new Set(["toggle-task", "task-check-item", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive", "saved-pin-card"]);
     const explicitSettings = event.target.closest('.budget-card [data-action="finance-edit"], .budget-card [data-action="vault-edit"]');
     if (!inlineActions.has(action) && !nativeViews.has(action) && !explicitSettings) {
       event.preventDefault(); event.stopImmediatePropagation();
