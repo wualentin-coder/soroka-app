@@ -708,13 +708,13 @@ document.addEventListener("click", event => {
   }
   if (row && event.target.closest(".swipe-content")) {
     if (event.target.closest(".task-drag-handle")) { event.preventDefault(); event.stopImmediatePropagation(); return; }
-    if ((ui.page === "today" || ui.page === "upcoming") && row.dataset.swipeType === "task" && event.target.closest(".task-card") && !event.target.closest(".task-check, .task-drag-handle, .task-checklist")) {
+    if ((ui.page === "today" || ui.page === "upcoming") && row.dataset.swipeType === "task" && event.target.closest(".task-card") && !event.target.closest(".task-check, .task-drag-handle, .task-sub")) {
       event.preventDefault(); event.stopImmediatePropagation();
       toggleTask(row.dataset.swipeId); return;
     }
     const action = event.target.closest("[data-action]")?.dataset.action;
     const nativeViews = new Set(["saved-open", "project-open", "project-note", "project-saved"]);
-    const inlineActions = new Set(["toggle-task", "task-check-item", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive", "saved-pin-card"]);
+    const inlineActions = new Set(["toggle-task", "task-check-item", "task-checklist-toggle", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive", "saved-pin-card"]);
     const explicitSettings = event.target.closest('.budget-card [data-action="finance-edit"], .budget-card [data-action="vault-edit"]');
     if (!inlineActions.has(action) && !nativeViews.has(action) && !explicitSettings) {
       event.preventDefault(); event.stopImmediatePropagation();
