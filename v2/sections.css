@@ -1497,3 +1497,6 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 
 .notes-topline-actions { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
 .saved-search-button { width: 36px; height: 36px; color: var(--muted); }
+
+/* Звёзды: вертикальный жест — прокрутка/сворачивание, а не оценка. */
+.movie-view-sheet .star-slider, .star-slider { touch-action: pan-y; }
