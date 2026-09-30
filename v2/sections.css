@@ -1642,3 +1642,20 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 /* Лицо карты: название крупнее, номер — внизу справа, как у настоящих. */
 .loyalty-card .lw { font-size: clamp(18px, 6.2vw, 26px); }
 .loyalty-card .lw-perek { font-size: clamp(14px, 4.6vw, 18px); }
+
+/* Действия под картой — одна строка-сегмент в стиле приложения, без плиток. */
+.wallet-actions { display: flex; gap: 0; margin-top: 12px; padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.wallet-actions button { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 0 10px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.wallet-actions button:hover, .wallet-actions button:active { background: var(--surface-soft); }
+.wallet-actions button + button { position: relative; }
+.wallet-actions button + button::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
+.wallet-actions .icon { width: 17px; height: 17px; color: var(--accent); }
+.wallet-actions .danger { flex: 0 0 52px; color: #d6404d; }
+.wallet-actions .danger .icon { color: #d6404d; }
+.wallet-actions .danger.confirm { flex: 0 0 auto; background: #d6404d; color: #fff; }
+.wallet-actions .danger.confirm::before, .wallet-actions .danger.confirm + button::before { display: none; }
+.wallet-actions .danger.confirm .icon { color: #fff; }
+/* Перетаскивание карт в стопке. */
+.wallet > .wallet-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.wallet-card.is-dragging { position: relative; z-index: 30; filter: drop-shadow(0 16px 28px rgba(0, 0, 0, .3)); }
+.wallet.is-sorting > .wallet-card:not(.is-dragging) { opacity: .85; }
