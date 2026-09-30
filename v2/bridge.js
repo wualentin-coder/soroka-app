@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=45a98c12be","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=080d81d0b7","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=2077e190d1","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=68cb8e0a8a","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=b25b3f9993","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=2077e190d1","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1082,12 +1082,25 @@
       if (event.target.closest(".pins-drop-scrim")) close();
     });
   }
-  // Приложение телефона: во весь экран, как Telegram в полноэкранном режиме, —
-  // та же плашка с названием, а слева шестерёнка настроек телефона.
+  // Приложение телефона: кнопок Telegram сверху нет, поэтому отдельной полосы
+  // тоже нет — плашка с названием встаёт в строку заголовка страницы, между
+  // надзаголовком и кнопками; настройки телефона — в меню «⋮».
   const androidApp = !inTelegram && Boolean(deviceKey());
   if (androidApp) {
     document.documentElement.style.setProperty("--tg-safe-area-inset-top", "0px");
-    document.documentElement.style.setProperty("--tg-content-safe-area-inset-top", "54px");
+    document.documentElement.style.setProperty("--tg-content-safe-area-inset-top", "0px");
+  }
+  function headPill(text) {
+    const row = root.querySelector(".main .page-header, .main .notes-topline");
+    if (!row || !text) return;
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "head-pill";
+    pill.textContent = text;
+    pill.setAttribute("aria-label", `${text} — закреплённое`);
+    pill.addEventListener("click", showPinned);
+    row.classList.add("has-pill");
+    row.appendChild(pill);
   }
   let barsColor = "";
   function paintBars() {
@@ -1105,20 +1118,16 @@
     const full = Boolean(inTelegram && tg.isFullscreen) || androidApp;
     document.documentElement.classList.toggle("tg-fs", full);
     if (!full) { if (titleBar) titleBar.hidden = true; return; }
+    if (androidApp) {
+      const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
+      headPill(heading ? heading.textContent.trim() : "");
+      return;
+    }
     if (!titleBar) {
       titleBar = document.createElement("div");
       titleBar.className = "tg-title";
       titleBar.innerHTML = '<span role="button" tabindex="0" aria-label="Закреплённое"></span>';
       titleBar.firstChild.addEventListener("click", showPinned);
-      if (androidApp) {
-        const gear = document.createElement("button");
-        gear.type = "button";
-        gear.className = "tg-title-side";
-        gear.setAttribute("aria-label", "Настройки телефона");
-        gear.innerHTML = icon("settings");
-        gear.addEventListener("click", () => { try { android.settings(); } catch (_) {} });
-        titleBar.appendChild(gear);
-      }
       document.body.appendChild(titleBar);
     }
     const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
