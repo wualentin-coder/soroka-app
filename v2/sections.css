@@ -1475,3 +1475,25 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .task-checklist-item.done > span:last-child { color: var(--muted); text-decoration: line-through; }
 .task-checklist-box .icon { width: 12px; height: 12px; }
 .task-checklist-count { display: inline-flex; align-items: center; gap: 3px; }
+
+/* Подзадачи и список в задаче — свёрнуты строкой, раскрываются. */
+.task-sub { flex: 1 0 100%; order: 5; padding: 0 0 2px 44px; }
+.task-sub .task-checklist { padding-left: 0; }
+.task-checklist-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.task-checklist-toggle > .icon:last-child { transition: transform .2s ease; }
+.task-checklist-toggle.open > .icon:last-child { transform: rotate(180deg); }
+.task-card:has(.task-sub) { flex-wrap: wrap; }
+.task-sub .task-checklist { margin-top: 6px; animation: sub-open .2s ease; }
+@keyframes sub-open { from { opacity: 0; transform: translateY(-4px); } }
+/* Список → задачи на сегодня. */
+.list-to-today { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 10px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.list-to-today.is-on { border-color: var(--accent); color: var(--accent); }
+/* Пункты списка перетаскиваются долгим нажатием. */
+[data-list-order] > .check-row { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.check-row.is-dragging { position: relative; z-index: 20; border-radius: 12px; background: var(--surface-raised); box-shadow: 0 10px 26px rgba(0, 0, 0, .25); }
+
+.movie-plot .movie-cast { margin-top: 10px; color: var(--text); font-size: 13.5px; line-height: 1.5; }
+.movie-plot .movie-cast span { display: block; margin-bottom: 2px; color: var(--muted); font-size: 12px; font-weight: 800; }
+
+.notes-topline-actions { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.saved-search-button { width: 36px; height: 36px; color: var(--muted); }
