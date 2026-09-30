@@ -751,6 +751,7 @@
     }
     try { performance.mark("soroka-data"); } catch (_) {}
     window.SOROKA_LIVE_DATA = prepare(snapshot);
+    try { sessionStorage.removeItem("soroka-boot-retry"); } catch (_) {}
     root.innerHTML = "";
     // Тема — у Telegram: светлый клиент открывает светлое приложение.
     try {
@@ -1188,7 +1189,31 @@
 
   // Загрузка не должна висеть молча: что бы ни сломалось — сказать и дать повторить.
   boot().catch((error) => {
+    const why = String((error && (error.stack || error.message)) || error).slice(0, 300);
+    try { if (android && android.log) android.log(why); } catch (_) {}
+    // Первый сбой — сбрасываем данные прошлого запуска и пробуем заново один раз:
+    // испорченный сохранённый снимок не должен запирать приложение.
+    let tried = false;
+    try { tried = sessionStorage.getItem("soroka-boot-retry") === "1"; } catch (_) {}
+    if (!tried) {
+      try { sessionStorage.setItem("soroka-boot-retry", "1"); localStorage.removeItem(SNAP_KEY); } catch (_) {}
+      location.reload();
+      return;
+    }
     splash("Не получилось открыть приложение. Проверьте связь и попробуйте ещё раз.", true);
-    try { if (android && android.log) android.log(String(error && error.message || error)); } catch (_) {}
+    const box = root.querySelector(".live-splash");
+    if (box) {
+      const note = document.createElement("small");
+      note.className = "live-splash-error";
+      note.textContent = why.split("\n")[0];
+      box.appendChild(note);
+      if (androidApp && android.settings) {
+        const gear = document.createElement("button");
+        gear.type = "button"; gear.textContent = "Настройки телефона";
+        gear.addEventListener("click", () => { try { android.settings(); } catch (_) {} });
+        box.appendChild(gear);
+      }
+    }
+    try { sessionStorage.removeItem("soroka-boot-retry"); } catch (_) {}
   });
 })();
