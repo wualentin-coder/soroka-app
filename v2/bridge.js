@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=f534d98d8a","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=7919f65d13","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=ade31c6818","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d7a5f7ce7b","integrity":null},{"src":"./movies.js?v=ea75541c78","integrity":null},{"src":"./address-map.js?v=d55e0ae860","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=4ab4e8167f","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=ad3f25a66c","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -409,6 +409,7 @@
     const action = control.dataset.action;
     const stop = () => { event.preventDefault(); event.stopImmediatePropagation(); };
     if (action === "file-open") { stop(); openFile(sheetItem()); return; }
+    if (action === "universal-add" || action === "saved-new") { stop(); openComposer(); return; }
     if (action === "ticket-code-kind" && !control.closest(".live-code-full")) {
       stop();
       const item = (data.saved.tickets || []).find((t) => t.id === control.dataset.ticket);
@@ -507,7 +508,7 @@
     layer.addEventListener("click", (event) => {
       if (event.target === layer || event.target.closest("[data-close]")) close();
       const again = event.target.closest("[data-again]");
-      if (again) { close(); ui.sheet = { kind: "addmenu", justRendered: false }; render(); }
+      if (again) { close(); openComposer(); }
       const ref = event.target.closest("[data-ref]");
       if (ref) { close(); openRef(ref.dataset.ref); }
     });
@@ -691,7 +692,9 @@
       const s = document.createElement("script");
       s.src = entry.src; s.async = false;
       if (entry.integrity) { s.integrity = entry.integrity; s.crossOrigin = "anonymous"; }
-      s.onload = resolve; s.onerror = () => reject(new Error("script " + entry.src));
+      const slow = setTimeout(() => reject(new Error("timeout " + entry.src)), 20000);
+      s.onload = () => { clearTimeout(slow); resolve(); };
+      s.onerror = () => { clearTimeout(slow); reject(new Error("script " + entry.src)); };
       document.body.appendChild(s);
     });
   }
@@ -807,6 +810,219 @@
     setTimeout(() => { base = clone(data); openDeepLink(); }, 0);
   }
 
+  // ------------------------------------------------------------ «+»: ввод и поиск сразу
+
+  /*
+   * «+» — одно поле внизу, как строка сообщения: над ним сразу находится уже
+   * сохранённое (набрали «Бо…» — вот «Борат»), а отправка добавляет новое с
+   * пониманием, где вы: в «Фильмах» модель ищет фильм по названию или описанию,
+   * в «Постах» текст сохраняется постом и т. д. Поле держится над клавиатурой.
+   * Без ИИ (кончились деньги на OpenRouter или выключено в настройках) —
+   * отправка открывает обычную форму.
+   */
+  const COMPOSE = {
+    movies: { label: "Фильм", placeholder: "Название или о чём фильм", hint: "" },
+    posts: { label: "Пост", placeholder: "Текст поста или ссылка t.me", hint: "Сохрани как пост: " },
+    links: { label: "Ссылка", placeholder: "Ссылка или что сохранить", hint: "Сохрани ссылку: " },
+    recipes: { label: "Рецепт", placeholder: "Ссылка на рецепт или сам рецепт", hint: "Сохрани рецепт: " },
+    notes: { label: "Заметка", placeholder: "Текст заметки", hint: "Заметка: ", manual: true },
+    files: { label: "Файл", placeholder: "Что за файл — сам файл пришлите боту", hint: "Сохрани в файлы: " },
+    lists: { label: "Список", placeholder: "Например: купить молоко, хлеб, сыр", hint: "Список: ", manual: true },
+    products: { label: "Товар", placeholder: "Ссылка на товар или название", hint: "Сохрани товар: " },
+    addresses: { label: "Адрес", placeholder: "Адрес или место", hint: "Сохрани адрес: ", manual: true },
+    tickets: { label: "Билет", placeholder: "Фото или PDF билета пришлите боту", hint: "Билет: ", manual: true },
+    plan: { label: "Запись", placeholder: "Что угодно: завтра в 12 забрать заказ, кофе 350 ₽", hint: "", manual: true },
+    finance: { label: "Деньги", placeholder: "Кофе 350 ₽ или зарплата 80 000", hint: "", manual: true },
+    any: { label: "Сорока", placeholder: "Напишите как боту", hint: "", manual: true },
+  };
+  const norm = (s) => String(s || "").toLocaleLowerCase("ru-RU").replace(/ё/g, "е");
+  function composeContext() {
+    if (ui.page === "saved" && ui.savedCategory && COMPOSE[ui.savedCategory]) return ui.savedCategory;
+    if (["today", "upcoming", "tasks"].includes(ui.page)) return "plan";
+    if (ui.page === "finance") return "finance";
+    return "any";
+  }
+  function aiOff() {
+    const router = data.settings && data.settings.openRouter;
+    return Boolean(data.settings && data.settings.manualOnly) || Boolean(router && Number(router.left) <= 0);
+  }
+  /** Уже сохранённое, что похоже на набранное: в разделе — его записи, в плане — дела и события. */
+  function composeMatches(ctx, query) {
+    const q = norm(query).trim();
+    if (q.length < 2) return [];
+    const hit = (...values) => values.some((v) => norm(v).includes(q));
+    if (ctx === "plan") {
+      return [...(data.tasks || []).map((x) => ({ kind: "task", x })), ...(data.events || []).map((x) => ({ kind: "event", x }))]
+        .filter(({ x }) => hit(x.title)).slice(0, 6)
+        .map(({ kind, x }) => ({ ref: x.id, open: () => openRef(x.id), title: x.title, meta: `${kind === "task" ? "Дело" : "Событие"}${x.due ? " · " + x.due.split("-").reverse().slice(0, 2).join(".") : ""}` }));
+    }
+    const list = (data.saved && data.saved[ctx]) || [];
+    // Сначала названия, начинающиеся с набранного, потом — где слово с него начинается;
+    // описание — только с трёх букв и не у фильмов («Бо» в описании — не «Борат»).
+    const starts = (v) => norm(v).startsWith(q) ? 0 : norm(v).split(/[^a-zа-я0-9]+/).some((w) => w.startsWith(q)) ? 1 : 9;
+    const rank = (x) => Math.min(starts(x.title), starts(x.originalTitle), ctx !== "movies" && q.length >= 3 && hit(x.title, x.description) ? 2 : 9);
+    return list.map((x) => [rank(x), x]).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0]).map(([, x]) => x).slice(0, 6).map((x) => ({
+      title: x.title, cover: ctx === "movies" ? x.coverPath : "",
+      meta: ctx === "movies" ? [x.year, x.status].filter(Boolean).join(" · ") : (x.topic || x.source || ""),
+      open: () => { navigate("saved"); openSavedRecord(ctx, x.id); },
+    }));
+  }
+
+  let composer = null;
+  function openComposer() {
+    closeComposer();
+    const ctx = composeContext();
+    const conf = COMPOSE[ctx];
+    const off = aiOff();
+    const layer = document.createElement("div");
+    layer.className = "composer-layer";
+    layer.innerHTML = `<div class="composer-scrim" data-close></div>
+      <section class="composer" role="dialog" aria-label="Добавить: ${escape(conf.label)}">
+        <div class="composer-results" aria-live="polite"></div>
+        <div class="composer-head"><span class="composer-chip">${escape(conf.label)}</span>${off ? '<span class="composer-off">без ИИ</span>' : ""}${conf.manual || off ? '<button type="button" class="composer-manual" data-manual>Вручную</button>' : ""}</div>
+        <form class="composer-row"><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="submit" class="composer-send" aria-label="${off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
+      </section>`;
+    document.body.appendChild(layer);
+    document.documentElement.classList.add("composer-open");
+    const field = layer.querySelector("textarea");
+    const send = layer.querySelector(".composer-send");
+    const results = layer.querySelector(".composer-results");
+    composer = { layer, ctx, conf, field, results, off, found: [] };
+    const grow = () => { field.style.height = "auto"; field.style.height = Math.min(field.scrollHeight, 140) + "px"; };
+    const show = () => {
+      const text = field.value;
+      send.disabled = !text.trim();
+      grow();
+      if (composer.found.length) return;
+      const hits = composeMatches(ctx, text);
+      results.innerHTML = hits.length ? `<p class="composer-caption">Уже есть</p>` + hits.map((h, i) => `<button type="button" class="composer-hit" data-hit="${i}">${h.cover ? `<img src="${escape(h.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span><b>${escape(h.title)}</b>${h.meta ? `<small>${escape(h.meta)}</small>` : ""}</span>${icon("right", "icon-sm")}</button>`).join("") : "";
+      composer.hits = hits;
+    };
+    field.addEventListener("input", () => { if (composer.found.length) { composer.found = []; } show(); });
+    field.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey && !/Android|iPhone|iPad/.test(navigator.userAgent)) { event.preventDefault(); layer.querySelector("form").requestSubmit(); }
+      if (event.key === "Escape") closeComposer();
+    });
+    layer.addEventListener("click", (event) => {
+      if (event.target.closest("[data-close]")) { closeComposer(); return; }
+      if (event.target.closest("[data-manual]")) { const text = field.value.trim(); closeComposer(); composeManual(ctx, text); return; }
+      const hit = event.target.closest("[data-hit]");
+      if (hit) { const h = composer.hits[Number(hit.dataset.hit)]; closeComposer(); h.open(); return; }
+      const add = event.target.closest("[data-add]");
+      if (add) { addFoundMovie(Number(add.dataset.add)); return; }
+      const own = event.target.closest("[data-own]");
+      if (own) { const id = `movie:${own.dataset.own}`; closeComposer(); navigate("saved"); openSavedRecord("movies", id); }
+    });
+    layer.querySelector("form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const text = field.value.trim();
+      if (!text) return;
+      if (off) { closeComposer(); composeManual(ctx, text); return; }
+      if (ctx === "movies") { findMovie(text); return; }
+      send.disabled = true;
+      send.innerHTML = '<span class="live-spin"></span>';
+      call({ action: "planner_capture", text: (conf.hint || "") + text }).then((answer) => {
+        closeComposer();
+        captureProgress(text, answer.item);
+      }).catch(() => { send.disabled = false; send.innerHTML = icon("arrow"); say("Не отправилось — попробуйте ещё раз"); });
+    });
+    setTimeout(() => field.focus(), 60);
+    show();
+  }
+  function closeComposer() {
+    if (!composer) return;
+    composer.layer.remove();
+    composer = null;
+    document.documentElement.classList.remove("composer-open");
+  }
+  /** Обычная форма раздела — для того, что без ИИ не угадать (адрес на карте, билет с кодами). */
+  function composeManual(ctx, text) {
+    if (ctx === "plan") { openEntry("task"); prefill(text); return; }
+    if (ctx === "finance") { openFinanceForm("transaction", null, "expense"); return; }
+    if (ctx === "any") { ui.sheet = { kind: "addmenu", draft: text, justRendered: false }; render(); return; }
+    if (ctx === "addresses" || ctx === "lists") { ui.sheet = { kind: "saved-add-menu" }; render(); return; }
+    openSavedRecord(ctx);
+    prefill(text);
+  }
+  function prefill(text) {
+    if (!text) return;
+    setTimeout(() => { const input = document.querySelector('.sheet form input[name="title"]'); if (input && !input.value) input.value = text.slice(0, 120); }, 30);
+  }
+
+  /** Фильм по названию или описанию: модель предлагает, IMDb подтверждает. */
+  function findMovie(text) {
+    const c = composer;
+    const send = c.layer.querySelector(".composer-send");
+    send.disabled = true;
+    send.innerHTML = '<span class="live-spin"></span>';
+    c.results.innerHTML = `<p class="composer-caption composer-wait"><span class="live-spin"></span>Ищу «${escape(text.slice(0, 60))}»…</p>`;
+    call({ action: "movie_find", query: text }, 40000).then((answer) => {
+      if (composer !== c) return;
+      send.disabled = false; send.innerHTML = icon("arrow");
+      c.found = answer.found || [];
+      if (!c.found.length) { c.results.innerHTML = `<p class="composer-caption">${escape(answer.note || "Не нашёл.")}</p><button type="button" class="composer-hit composer-manual-row" data-manual><span><b>Добавить вручную</b><small>${escape(text.slice(0, 60))}</small></span>${icon("right", "icon-sm")}</button>`; return; }
+      c.results.innerHTML = `<p class="composer-caption">${c.found.length > 1 ? "Нашёл — выберите" : "Нашёл"}</p>` + c.found.map((f, i) => {
+        const facts = [f.year, f.genre, f.kind === "series" ? "сериал" : ""].filter(Boolean).join(" · ");
+        const scores = [f.kpRating ? `КП ${String(f.kpRating).replace(".", ",")}` : "", f.imdbRating ? `IMDb ${String(f.imdbRating).replace(".", ",")}` : ""].filter(Boolean).join(" · ");
+        return `<article class="composer-movie">${f.poster ? `<img src="${escape(f.poster)}" alt="" loading="lazy" onerror="this.remove()">` : '<span class="composer-movie-blank"></span>'}<div><b>${escape(f.title)}</b>${f.originalTitle && f.originalTitle !== f.title ? `<small>${escape(f.originalTitle)}</small>` : ""}<small>${escape(facts)}${scores ? ` · ${escape(scores)}` : ""}</small>${f.why ? `<p>${escape(f.why)}</p>` : ""}</div>${f.existing ? `<button type="button" class="ghost-button" data-own="${f.existing}">Уже есть — открыть</button>` : `<button type="button" class="primary-button" data-add="${i}">В планы</button>`}</article>`;
+      }).join("");
+    }).catch(() => {
+      if (composer !== c) return;
+      send.disabled = false; send.innerHTML = icon("arrow");
+      c.results.innerHTML = `<p class="composer-caption">Поиск не ответил — попробуйте ещё раз.</p>`;
+    });
+  }
+  /** Найденный фильм — в «В планах»; такой уже есть — открыть его, а не заводить второй. */
+  function addFoundMovie(index) {
+    const c = composer;
+    const f = c && c.found[index];
+    if (!f) return;
+    const key = (s) => norm(s).replace(/[^a-zа-я0-9]+/g, " ").trim();
+    const twin = (data.saved.movies || []).find((m) => (key(m.title) === key(f.title) || (f.originalTitle && key(m.originalTitle) === key(f.originalTitle))) && (!m.year || !f.year || Math.abs(Number(m.year) - Number(f.year)) <= 1));
+    closeComposer();
+    navigate("saved");
+    if (twin) { openSavedRecord("movies", twin.id); say("Этот фильм уже есть"); return; }
+    data.saved.movies.push({
+      id: id(), title: f.title, description: f.why || "", topic: f.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: f.genre || "", year: f.year || undefined,
+      originalTitle: f.originalTitle || "", status: "Хочу посмотреть", viewed: false, rating: 0, skipped: false,
+      kinopoiskUrl: f.kpUrl || "", imdbUrl: f.imdbUrl || "", kinopoiskRating: f.kpRating ?? "", imdbRating: f.imdbRating ?? "",
+      coverPath: f.poster || "", source: "Поиск", created: new Date().toISOString(), pinned: false,
+    });
+    ui.savedCategory = "movies"; ui.savedFilter = "all";
+    save();
+    render();
+    say(`«${f.title}» — в планах`);
+  }
+
+  // ------------------------------------------------------------ клавиатура
+
+  /*
+   * Клавиатура: нижний бар и «+» прячутся, а окна и поле ввода встают над ней
+   * (--kb — сколько экрана она заняла, --vvh — сколько осталось видно). На
+   * Android окно само сжимается, на iOS — нет, поэтому считаем по visualViewport.
+   */
+  (function watchKeyboard() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    let tallest = vv.height;
+    const update = () => {
+      tallest = Math.max(tallest, vv.height);
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && document.activeElement.type !== "checkbox";
+      const open = typing && (kb > 80 || vv.height < tallest - 150);
+      const root = document.documentElement;
+      root.style.setProperty("--kb", `${Math.round(kb)}px`);
+      root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      root.classList.toggle("kb-open", Boolean(open));
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    window.addEventListener("orientationchange", () => { tallest = 0; setTimeout(update, 300); });
+    document.addEventListener("focusin", () => setTimeout(update, 250));
+    document.addEventListener("focusout", () => setTimeout(update, 250));
+    update();
+  })();
+
   /*
    * Полноэкранный Telegram: сверху его кнопки «Закрыть» и «⋯». Между ними —
    * название раздела такой же «таблеткой», но в акцентном цвете; страница
@@ -835,5 +1051,9 @@
     while (text && size > 10 && pill.scrollWidth > pill.clientWidth + 1) { size -= 0.5; pill.style.fontSize = size + "px"; }
   }
 
-  boot();
+  // Загрузка не должна висеть молча: что бы ни сломалось — сказать и дать повторить.
+  boot().catch((error) => {
+    splash("Не получилось открыть приложение. Проверьте связь и попробуйте ещё раз.", true);
+    try { if (android && android.log) android.log(String(error && error.message || error)); } catch (_) {}
+  });
 })();
