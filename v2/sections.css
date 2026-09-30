@@ -1450,3 +1450,12 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .swipe-row.swipe-movie .swipe-action.edit { display: none !important; }
 .swipe-row.swipe-movie .swipe-action.skip { right: var(--slot); }
 .swipe-row.swipe-movie.is-open-left { --swipe-x: calc(var(--slot) * -2); }
+
+/* Звёзды — во всю ширину колонки, как блоки оценок; цвета — акцент приложения. */
+.movie-view-sheet .star-slider { width: 100%; box-sizing: border-box; min-height: 40px; margin-top: 6px; padding: 6px 9px; border-radius: 10px; background: var(--surface-raised); gap: 0; }
+.star-slider .star { color: var(--subtle); }
+.star-slider .star.on { color: var(--accent); }
+/* «Не интересно» — такой же спокойной кнопкой, как «Удалить». */
+.saved-view-actions .movie-skip-square { border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.saved-view-actions .movie-skip-square.is-on { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.movie-view-sheet .detail-meta-line { display: none; }
