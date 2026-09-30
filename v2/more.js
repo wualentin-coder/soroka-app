@@ -619,7 +619,7 @@ let swipeSuppressKey = "";
 // мягкий упор, открывается по расстоянию или быстрому взмаху.
 const SWIPE_OPEN = 132;
 /** Сколько тянуть, чтобы открыть кнопки: у фильма их три (настроить, «не интересно», поделиться). */
-const swipeOpenOf = row => row.classList.contains("swipe-movie") ? 208 : SWIPE_OPEN;
+const swipeOpenOf = () => SWIPE_OPEN;
 const SWIPE_RIGHT = 112;
 /** Докуда тянуть, чтобы удалить: большая часть ширины карточки. */
 const swipeDeleteAt = row => -Math.max(SWIPE_OPEN + 70, Math.min(row.clientWidth * 0.62, 280));
