@@ -1500,3 +1500,6 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 
 /* Звёзды: вертикальный жест — прокрутка/сворачивание, а не оценка. */
 .movie-view-sheet .star-slider, .star-slider { touch-action: pan-y; }
+/* Подсписок — во всю ширину карточки, от левого края кружка задачи. */
+.task-sub { padding-left: 0; }
+.task-sub .task-checklist { margin-left: -6px; }
