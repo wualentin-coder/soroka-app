@@ -4,7 +4,8 @@ const SAVED_CATEGORIES = [
   ["posts", "Посты", "inbox"], ["links", "Ссылки", "link"],
   ["lists", "Списки", "check"], ["recipes", "Рецепты", "bookmark"],
   ["movies", "Фильмы", "event"], ["products", "Товары", "wallet"],
-  ["addresses", "Адреса", "pin"], ["tickets", "Билеты", "ticket"]
+  ["addresses", "Адреса", "pin"], ["tickets", "Билеты", "ticket"],
+  ["cards", "Карты", "card"]
 ];
 const SAVED_NAMES = Object.fromEntries(SAVED_CATEGORIES.map(([key, label]) => [key, label]));
 
@@ -174,6 +175,8 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "finance-accounts") return renderAccountsSheet();
   if (ui.sheet.kind === "card-preview") return renderCardPreviewSheet();
   if (ui.sheet.kind === "saved-add-menu") return renderSavedAddMenuSheet();
+  if (ui.sheet.kind === "saved" && ui.sheet.category === "cards") return renderLoyaltySheet();
+  if (ui.sheet.kind === "loyalty-places") return renderLoyaltyPlacesSheet();
   if (ui.sheet.kind === "saved") return renderSavedSheet();
   if (ui.sheet.kind === "saved-sections") return renderSavedSectionsSheet();
   if (ui.sheet.kind === "map-categories") return renderMapCategoriesSheet();
@@ -188,14 +191,14 @@ function renderExtendedSheet() {
   return renderAddMenu();
 }
 function handleExtendedAction(action, control, event) {
-  return movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
+  return loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
-  return mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
+  return loyaltySubmit(event) || mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
 }
 function handleExtendedInput(event) {
-  return savedInput(event) || financeInput(event) || moreInput(event);
+  return loyaltyInput(event) || savedInput(event) || financeInput(event) || moreInput(event);
 }
 function handleExtendedChange(event) {
-  return savedChange(event) || financeChange(event) || moreChange(event);
+  return loyaltyChange(event) || savedChange(event) || financeChange(event) || moreChange(event);
 }
