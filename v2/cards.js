@@ -69,6 +69,7 @@ function renderLoyaltyForm(item) {
     <form id="loyalty-form"><div class="loyalty-picks">${brands}</div><input type="hidden" name="brand" value="${esc(brand)}">
     <label class="field">Название<input name="title" type="text" maxlength="80" value="${esc(v.title || (brand === "custom" ? "" : LOYALTY_BRANDS[brand].name))}" placeholder="Например, Лента" required></label>
     <label class="field">Номер карты<input name="number" type="text" inputmode="numeric" autocomplete="off" maxlength="64" value="${esc(v.number || "")}" placeholder="Цифры под штрихкодом"></label>
+    <details class="loyalty-advanced" ${v.code ? "open" : ""}><summary>В коде не то, что напечатано?</summary><label class="field">Что зашито в коде<input name="code" type="text" autocomplete="off" maxlength="300" value="${esc(v.code || "")}" placeholder="Пусто — сам номер карты"></label><p class="section-note">Например, у «Магнита» в QR перед номером стоит буква E. Если касса не читает код — впишите сюда то, что показывает сканер.</p></details>
     <label class="field">Вид кода<select name="format">${[["EAN13", "Штрихкод EAN-13 (13 цифр)"], ["Code128", "Штрихкод Code 128"], ["QRCode", "QR-код"]].map(([key, label]) => `<option value="${key}" ${v.format === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>
     ${brand === "custom" ? `<div class="field"><span>Цвет</span><div class="loyalty-colors">${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="color" value="${c}" ${(v.color || LOYALTY_COLORS[0]) === c ? "checked" : ""}><i></i></label>`).join("")}</div></div>` : ""}
     <label class="field">Заметка<textarea name="description" rows="2" placeholder="Необязательно">${esc(v.description || "")}</textarea></label>
@@ -85,8 +86,10 @@ function loyaltySubmit(event) {
   item.title = String(form.get("title") || "").trim() || LOYALTY_BRANDS[item.brand]?.name || "Карта";
   const number = String(form.get("number") || "").replace(/\s+/g, "");
   // Номер поменялся — старую картинку кода не показываем, новую пришлёт сервер.
-  if (number !== item.number || String(form.get("format")) !== item.format) item.svg = "";
+  const code = String(form.get("code") || "").trim();
+  if (number !== item.number || code !== (item.code || "") || String(form.get("format")) !== item.format) item.svg = "";
   item.number = number;
+  item.code = code;
   item.format = String(form.get("format") || "EAN13");
   item.color = String(form.get("color") || "");
   item.description = String(form.get("description") || "").trim();
