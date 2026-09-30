@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d815bf99f1","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=af25cdf16c","integrity":null},{"src":"./app.js?v=be234d69e6","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=6216970497","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=d108105c20","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=2077e190d1","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -409,6 +409,8 @@
     const action = control.dataset.action;
     const stop = () => { event.preventDefault(); event.stopImmediatePropagation(); };
     if (action === "file-open") { stop(); openFile(sheetItem()); return; }
+    // Карты — сразу форма: номер карты модели угадывать нечего.
+    if (action === "saved-new" && ui.page === "saved" && ui.savedCategory === "cards") { stop(); openSavedRecord("cards"); return; }
     if (action === "universal-add" || action === "saved-new" || action === "saved-search") { stop(); openComposer(); return; }
     if (action === "ticket-code-kind" && !control.closest(".live-code-full")) {
       stop();
