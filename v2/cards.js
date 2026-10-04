@@ -144,6 +144,7 @@ function renderLoyaltyPlacesSheet() {
     <p class="section-note">Нажмите на карту у входа в магазин. Точнее всего — «Я здесь», стоя внутри: точка совпадёт с тем, где телефон видит этот магазин.</p>
     <div class="loyalty-map-wrap"><div id="loyalty-map"></div><button type="button" class="map-locate" data-action="loyalty-here" aria-label="Поставить точку здесь">${icon("locate")}</button></div>
     <p class="loyalty-accuracy" id="loyalty-accuracy"></p>
+    <button type="button" class="loyalty-auto ${ui.sheet.finding ? "busy" : ""}" data-action="loyalty-find-stores" ${ui.sheet.finding ? "disabled" : ""}>${ui.sheet.finding ? '<span class="live-spin"></span>Ищу магазины рядом…' : `${icon("search", "icon-sm")}Найти магазины «${esc(item?.title || "сети")}» рядом`}</button>
     <ul class="loyalty-points">${points.map((p, i) => `<li><span class="loyalty-point-dot">${i + 1}</span><input type="text" data-point-label="${i}" value="${esc(p.label || "")}" placeholder="Точка ${i + 1}" maxlength="80"><select data-point-radius="${i}" aria-label="Радиус">${[25, 40, 60, 100].map(r => `<option value="${r}" ${Math.round(p.radius || 40) === r ? "selected" : ""}>${r} м</option>`).join("")}</select><button type="button" class="icon-button" data-action="loyalty-point-remove" data-index="${i}" aria-label="Убрать точку">${icon("trash", "icon-sm")}</button></li>`).join("") || `<li class="loyalty-points-empty">Точек пока нет</li>`}</ul>
     <div class="sheet-actions"><button type="button" class="ghost-button" data-action="close-sheet">Отмена</button><button type="button" class="primary-button" data-action="loyalty-places-save">Сохранить точки</button></div></section></div>`;
 }
@@ -309,8 +310,11 @@ function loyaltyAction(action, control) {
     ui.sheet = { kind: "loyalty-places", id: item.id, points: (item.places || []).map(p => ({ ...p })), justRendered: false };
     ui.loyaltyView = null;
     render();
+    // Точек нет — сразу ищем магазины сети рядом; поправить можно руками.
+    if (!(item.places || []).length) void findCardStores(true);
     return true;
   }
+  if (action === "loyalty-find-stores") { void findCardStores(false); return true; }
   if (action === "loyalty-here") {
     const note = document.getElementById("loyalty-accuracy");
     if (note) note.textContent = "Определяю, где вы…";
@@ -415,4 +419,24 @@ function walletAction(action, control) {
     return true;
   }
   return false;
+}
+
+/** Магазины сети рядом из OpenStreetMap — добавляются к точкам, ручные остаются. */
+async function findCardStores(quiet) {
+  const sheet = ui.sheet;
+  const item = savedItem("cards", sheet?.id);
+  if (!item || typeof window.sorokaCardStores !== "function") { if (!quiet) toast("Поиск магазинов работает в приложении бота"); return; }
+  sheet.finding = true; renderKeepLoyalty();
+  try {
+    const pos = await requestPosition();
+    if (!pos) { if (!quiet) toast("Нужна геопозиция, чтобы искать рядом"); return; }
+    const answer = await window.sorokaCardStores(item.title, pos.lat, pos.lng);
+    const points = sheet.points || [];
+    const far = s => points.every(p => distanceM(p, s) > 40);
+    const fresh = (answer.stores || []).filter(far).map(s => ({ lat: +s.lat.toFixed(6), lng: +s.lng.toFixed(6), radius: 40, label: String(s.label || "").slice(0, 80) }));
+    sheet.points = [...points, ...fresh];
+    if (ui.sheet === sheet) { ui.loyaltyView = null; }
+    toast(fresh.length ? `Нашёл магазинов: ${fresh.length} — проверьте и сохраните` : "Рядом магазинов этой сети не нашёл");
+  } catch (_) { if (!quiet) toast("Поиск не ответил — попробуйте ещё раз"); }
+  finally { sheet.finding = false; if (ui.sheet === sheet) renderKeepLoyalty(); }
 }
