@@ -273,3 +273,26 @@ html.in-android .page-header { min-height: 40px; }
 .composer-layer.has-text .composer-row .composer-send { animation: send-pop .28s cubic-bezier(.22, 1, .36, 1); }
 @keyframes send-pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 .composer-attach-row:not([hidden]) { padding: 0 4px 8px; }
+
+/* ══ Аудит 05.10 ══ */
+/* На телефоне «наведение» залипает на карточке под пальцем — красная рамка у первой карточки после перехода. */
+@media (hover: none) { .record-card:hover { border-color: var(--line); } }
+/* Подборка фильмов из одного поста — общий тонкий контур акцентного цвета. */
+.movie-collection { display: grid; gap: inherit; padding: 8px; margin: 2px -9px; border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); border-radius: 20px; }
+.record-list .movie-collection { gap: 9px; }
+.movie-collection-head { display: flex; align-items: center; gap: 6px; padding: 2px 6px 0; color: var(--accent); font-size: 12px; font-weight: 700; }
+.movie-collection-head span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.movie-collection-head b { font-weight: 700; opacity: .8; }
+/* Операции: значок в цвете категории. */
+.tx-icon { color: var(--cat, var(--accent)); background: color-mix(in srgb, var(--cat, var(--accent)) 14%, transparent); }
+/* Пустая метка раздела не оставляет пустую строку. */
+.record-kicker:empty { display: none; }
+/* Файл из чата: имя сверху, кнопки — строкой под ним. */
+.live-file-card { display: grid; gap: 10px; margin: 12px 0; }
+.live-file-name { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); }
+.live-file-name strong { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.live-file-card .primary-button, .live-file-card .ghost-button { width: 100%; justify-content: center; }
+/* Дни рождения на «Плане». */
+.birthday-soon { display: grid; gap: 8px; }
+/* Цвета акцента — одной строкой с прокруткой, а не «один зелёный на второй строке». */
+.accent-swatches, .settings-accents { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
