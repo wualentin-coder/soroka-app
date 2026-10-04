@@ -239,3 +239,15 @@ html.in-android .page-header { min-height: 40px; }
 @media (prefers-color-scheme: dark) { .live-file { background: var(--bg, #141414); } }
 .live-file { color: var(--ink, #1d1d1f); }
 @media (prefers-color-scheme: dark) { .live-file { color: #f2f2f2; } }
+/* Рецепт из интернета: без постера — одна колонка, кнопка под текстом. */
+.composer-recipe { grid-template-columns: minmax(0, 1fr); }
+.composer-recipe .composer-movie-acts, .composer-recipe .composer-movie-done { justify-self: start; align-self: start; grid-column: 1; }
+.composer-recipe .composer-movie-acts button { min-height: 38px; padding: 0 18px; font-size: 14px; }
+.composer-recipe details { margin-top: 6px; font-size: 13px; }
+.composer-recipe details summary { cursor: pointer; color: var(--accent, #c4383d); font-weight: 600; list-style: none; font-size: 13px; }
+.composer-recipe details summary::-webkit-details-marker { display: none; }
+.composer-recipe details p { margin: 6px 0 0; color: var(--muted); }
+.composer-movie-acts { grid-column: 2; justify-self: start; display: flex; gap: 8px; }
+
+.composer-mic { flex: none; align-self: flex-end; width: 44px; height: 44px; border: 0; border-radius: 50%; background: color-mix(in srgb, currentColor 7%, transparent); color: inherit; display: grid; place-items: center; cursor: pointer; margin-right: 6px; }
+.composer-mic svg { width: 22px; height: 22px; }
