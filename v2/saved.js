@@ -212,6 +212,10 @@ function safePostMediaSource(source) { return /^(https?:\/\/|\.\/assets\/|data:(
 function renderPostMedia(item, compact = false) {
   const media = (postInfo(item, "media") || []).filter(entry => safePostMediaSource(entry.src));
   if (!media.length) return "";
+  // Несколько картинок — каруселью: листаются пальцем, точки внизу.
+  if (media.length > 1 && media.every(entry => entry.type !== "video")) {
+    return `<section class="post-carousel" aria-label="Картинки поста"><div class="post-carousel-track">${media.map((entry, i) => `<figure><img src="${esc(entry.src)}" alt="${esc(entry.alt || "")}" loading="${i ? "lazy" : "eager"}" referrerpolicy="no-referrer"></figure>`).join("")}</div><div class="post-carousel-dots">${media.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div><span class="post-carousel-count">1 / ${media.length}</span></section>`;
+  }
   return `<section class="post-media-block" aria-label="Медиа поста"><div class="post-media-head"><strong>Медиа из поста</strong><span>${media.length} ${media.length === 1 ? "вложение" : media.length < 5 ? "вложения" : "вложений"}</span></div><div class="post-media-gallery ${compact ? "is-compact" : ""}">${media.map((entry, index) => `<figure class="post-media-item">${entry.type === "video" ? `<video controls playsinline preload="metadata" src="${esc(entry.src)}" ${entry.poster && safePostMediaSource(entry.poster) ? `poster="${esc(entry.poster)}"` : ""} aria-label="Видео ${index + 1} из поста"></video>` : `<a href="${esc(entry.src)}" target="_blank" rel="noopener noreferrer" aria-label="Открыть изображение ${index + 1}"><img src="${esc(entry.src)}" alt="${esc(entry.alt || `Изображение ${index + 1} из поста`)}" loading="lazy" onerror="this.closest('figure').remove()"></a>`}${entry.caption ? `<figcaption>${esc(entry.caption)}</figcaption>` : ""}</figure>`).join("")}</div></section>`;
 }
 function movieCoverMarkup(item, context = "card") {
@@ -1147,3 +1151,14 @@ function addressChips(item) {
   const parts = [["Подъезд", item.entrance], ["Этаж", item.floor], ["Кв.", item.apartment], ["Домофон", item.intercom]].filter(([, v]) => v);
   return parts.length ? `<div class="address-chips">${parts.map(([label, v]) => `<span><small>${label}</small><b>${esc(v)}</b></span>`).join("")}</div>` : "";
 }
+
+// Карусель: точки и счётчик следуют за прокруткой.
+document.addEventListener("scroll", event => {
+  const track = event.target;
+  if (!track.classList?.contains("post-carousel-track")) return;
+  const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  const box = track.closest(".post-carousel");
+  box.querySelectorAll(".post-carousel-dots i").forEach((dot, j) => dot.classList.toggle("on", i === j));
+  const count = box.querySelector(".post-carousel-count");
+  if (count) count.textContent = `${i + 1} / ${track.children.length}`;
+}, true);
