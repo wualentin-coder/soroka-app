@@ -2191,3 +2191,11 @@ body.page-anim .content-main > :nth-child(n+6) { animation-delay: .17s; }
 .calendar-card.cal-dragging .calendar-handle span { transform: scaleX(calc(1 + var(--cal-p, 0) * .4)); }
 body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * { animation: none !important; }
 .calendar-card { touch-action: pan-x pan-y; }
+
+/* ══ Карты: дизайн по названию, настоящие логотипы ══════════════════════════ */
+.lw-chain.is-real .lw-logo { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+.lw-logo img { width: 26px; height: 26px; display: block; }
+.loyalty-card.mini .lw-logo img { width: 14px; height: 14px; }
+.loyalty-preview { max-width: 320px; margin: 4px auto 6px; }
+.loyalty-preview .loyalty-card { transition: background .35s ease; }
+.loyalty-auto-note { margin: 0 0 8px; text-align: center; }
