@@ -2229,3 +2229,5 @@ body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * {
 .wallet-under button.danger { width: 106px; background: #e5484d; color: #fff; }
 .wallet-under button.danger.confirm { background: #b8191f; }
 .wallet-swipe-hint { margin: 8px 0 0; text-align: center; font-size: 12px; opacity: .5; }
+.wallet-under.left { right: auto; }
+.wallet-under.right { left: auto; }
