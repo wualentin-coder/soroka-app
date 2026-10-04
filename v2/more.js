@@ -141,7 +141,7 @@ function renderSettingsPage() {
 <section class="settings-group"><h2>Внешний вид</h2><div class="list-panel">
 ${row("Тема", "Фон и карточки", select("theme", ui.theme, Object.entries(THEMES).filter(([key]) => key !== "telegram" || window.SOROKA_LIVE).map(([key, t]) => [key, t.label])))}
 <div class="settings-row settings-row-wide"><div><strong>Акцент</strong><span>Цвет кнопок и выделения</span></div>${accents}</div>
-${row("Плотность", "Размер карточек", select("density", s.density, [["comfortable", "Комфортная"], ["compact", "Компактная"]]))}
+${row("Плотность", "Размер карточек", select("density", s.density, [["spacious", "Просторная"], ["comfortable", "Обычная"], ["compact", "Компактная"]]))}
 ${row("Стартовый экран", "Что открывать первым", select("startPage", s.startPage, [["today", "Сегодня"], ["overview", "Обзор"], ["saved", "Сохранённое"], ["finance", "Финансы"]]))}
 </div></section>
 <section class="settings-group"><h2>Главный экран</h2><div class="list-panel">${overviewBlockSettings()}</div></section>
