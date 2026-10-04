@@ -2012,3 +2012,29 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .note-sheet .note-plain { padding: 6px 18px 0; }
 .note-sheet .note-format { margin: 0; padding-left: 10px; padding-right: 10px; }
 .note-sheet .note-improve-menu, .note-sheet .note-undo { margin-left: 14px; margin-right: 14px; }
+
+/* ══ Карты: знак сети, код прямо на карте, мини-карты ══════════════════════ */
+.loyalty-card.brand-chain { background: linear-gradient(150deg, color-mix(in srgb, var(--card-color) 82%, #fff) 0%, var(--card-color) 55%, color-mix(in srgb, var(--card-color) 78%, #000) 100%); }
+.loyalty-card.brand-chain.has-accent { background: linear-gradient(160deg, var(--card-color) 0%, var(--card-accent) 100%); }
+.lw-chain { font-size: clamp(17px, 5.6vw, 23px); letter-spacing: .01em; }
+.lw-logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(255, 255, 255, .16); flex: none; }
+.loyalty-card.is-light .lw-logo { background: rgba(0, 0, 0, .07); }
+.lw-logo svg { width: 24px; height: 24px; }
+.loyalty-card.mini .lw-logo { width: 18px; height: 18px; border-radius: 5px; transform: none; margin: 0; }
+.loyalty-card.mini .lw-logo svg { width: 13px; height: 13px; }
+/* Открытая карта: код на белой плашке прямо на карте, как в кошельке телефона. */
+.loyalty-card.open { aspect-ratio: auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding-bottom: 16px; }
+.loyalty-card.open .loyalty-program { position: static; order: 2; }
+.loyalty-card.open .loyalty-tail { display: none; }
+.loyalty-plate { position: relative; z-index: 1; order: 3; display: block; margin-top: 8px; padding: 14px 12px 10px; border-radius: 12px; background: #fff; color: #111; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+.loyalty-plate .loyalty-code { background: none; box-shadow: none !important; padding: 0; margin: 0; }
+.loyalty-plate .loyalty-code svg { display: block; width: 100%; max-height: 92px; }
+.loyalty-plate .loyalty-code.qr svg { width: 150px; max-height: none; margin: 0 auto; }
+.loyalty-plate .loyalty-code span { display: block; text-align: center; margin-top: 6px; font-size: 14px; letter-spacing: .08em; font-variant-numeric: tabular-nums; color: #111; }
+.wallet-card-open { cursor: pointer; }
+/* Остальные карты под открытой — полосками с названием, не наползают на кнопку «+». */
+.wallet-rest { padding-bottom: 90px; }
+.wallet-rest > .wallet-card + .wallet-card { margin-top: calc(-63.05% + 46px); }
+.wallet-rest .loyalty-card { padding-top: 12px; }
+.wallet > .wallet-card.is-swiping { position: relative; z-index: 3; }
+.wallet > .wallet-card.is-swiping::after { content: "Изменить ›"; position: absolute; right: -96px; top: 18px; font-weight: 700; color: var(--accent, #c4383d); opacity: var(--swipe, 0); }
