@@ -398,12 +398,12 @@ function renderWallet() {
   const confirm = ui.walletDelete === open.id;
   return `<div class="wallet is-open">
     <div class="wallet-focus">
-      <div class="wallet-card wallet-card-open" data-action="wallet-close" role="button" tabindex="0" aria-label="Свернуть">${loyaltyFace(open, "open")}</div>
-      <div class="wallet-actions" role="group" aria-label="Действия с картой">
-        <button type="button" data-action="loyalty-places" data-id="${esc(open.id)}">${icon("pin", "icon-sm")}<span>${places ? `Точки · ${places}` : "Где всплывает"}</span></button>
-        <button type="button" data-action="wallet-edit" data-id="${esc(open.id)}">${icon("note", "icon-sm")}<span>Изменить</span></button>
-        <button type="button" data-action="wallet-delete" data-id="${esc(open.id)}" class="danger ${confirm ? "confirm" : ""}" aria-label="Удалить карту">${icon("trash", "icon-sm")}${confirm ? "<span>Удалить?</span>" : ""}</button>
+      <div class="wallet-swipe" data-swipe-card="${esc(open.id)}" style="--snap:${ui.walletSnap?.id === open.id ? ui.walletSnap.x : 0}px;--sx:${ui.walletSnap?.id === open.id ? ui.walletSnap.x : 0}">
+        <div class="wallet-under left"><button type="button" data-action="loyalty-places" data-id="${esc(open.id)}">${icon("pin")}<span>${places ? `Точки · ${places}` : "Где всплывает"}</span></button><button type="button" data-action="wallet-edit" data-id="${esc(open.id)}">${icon("note")}<span>Изменить</span></button></div>
+        <div class="wallet-under right"><button type="button" data-action="wallet-delete" data-id="${esc(open.id)}" class="danger ${confirm ? "confirm" : ""}">${icon("trash")}<span>${confirm ? "Точно удалить?" : "Удалить"}</span></button></div>
+        <div class="wallet-card wallet-card-open" data-action="wallet-close" role="button" tabindex="0" aria-label="Свернуть">${loyaltyFace(open, "open")}</div>
       </div>
+      <p class="wallet-swipe-hint">Свайп вправо — точки и правка · влево — удалить</p>
       ${open.description ? `<p class="wallet-note">${esc(open.description)}</p>` : ""}
     </div>
     ${rest.length ? `<div class="wallet-rest">${rest.map((card, i) => `<button type="button" class="wallet-card" data-action="wallet-open" data-id="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("")}</div>` : ""}
