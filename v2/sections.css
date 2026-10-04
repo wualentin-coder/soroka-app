@@ -2199,3 +2199,20 @@ body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * {
 .loyalty-preview { max-width: 320px; margin: 4px auto 6px; }
 .loyalty-preview .loyalty-card { transition: background .35s ease; }
 .loyalty-auto-note { margin: 0 0 8px; text-align: center; }
+
+/* ══ Открытая карта — обычного размера, код сжат внутрь (а не карта растянута под код) ══ */
+.loyalty-card.open { aspect-ratio: 1.586; display: block; padding-bottom: 0; }
+.loyalty-card.open .loyalty-program { position: absolute; left: 18px; top: 52px; font-size: 11px; opacity: .8; }
+.loyalty-card.open .loyalty-plate { position: absolute; left: 12px; right: 12px; bottom: 12px; top: 46%; margin: 0; padding: 8px 10px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.loyalty-card.open .loyalty-plate .loyalty-code { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 0; }
+.loyalty-card.open .loyalty-plate .loyalty-code svg { flex: 1; min-height: 0; width: 100%; max-height: none; height: auto; }
+.loyalty-card.open .loyalty-plate .loyalty-code.qr svg { width: auto; height: 100%; aspect-ratio: 1; }
+.loyalty-card.open .loyalty-plate .loyalty-code span { flex: none; margin-top: 3px; font-size: 12px; }
+.loyalty-card.open .loyalty-plate .loyalty-code.qr { flex-direction: row; gap: 12px; }
+.loyalty-card.open .loyalty-plate .loyalty-code.qr span { font-size: 12px; writing-mode: horizontal-tb; }
+
+.loyalty-badge { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 15px; background: linear-gradient(150deg, color-mix(in srgb, var(--card-color) 80%, #fff), var(--card-color)); box-shadow: 0 3px 10px rgba(0, 0, 0, .18); }
+.loyalty-badge-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; }
+.loyalty-badge-mark.on-white { background: #fff; }
+.loyalty-badge-mark img, .loyalty-badge-mark svg { width: 28px; height: 28px; object-fit: contain; }
+.loyalty-badge-mark b { font-size: 24px; font-weight: 900; }
