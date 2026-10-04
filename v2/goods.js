@@ -45,7 +45,8 @@ function productPrice(item) {
 function productCard(item) {
   const off = productDiscount(item);
   const target = Number(item.targetPrice) > 0 ? `<span class="product-target">${icon("bell", "icon-sm")}жду ${rub(item.targetPrice)}</span>` : "";
-  return `<button class="record-card product-card" type="button" data-action="saved-open" data-category="products" data-id="${esc(item.id)}">${productImage(item)}<span class="product-body">${productPrice(item)}<span class="product-title">${esc(item.title)}</span><span class="product-meta">${productStoreName(item) ? `<span>${esc(productStoreName(item))}</span>` : ""}${target}</span></span>${item.viewed ? `<span class="recipe-cooked" title="Куплено">${icon("check", "icon-sm")}</span>` : ""}</button>`;
+  // Как карточка на маркетплейсе: фото во всю ширину, цена со скидкой одной строкой, название — двумя.
+  return `<button class="record-card product-card" type="button" data-action="saved-open" data-category="products" data-id="${esc(item.id)}">${productImage(item)}<span class="product-body">${productPrice(item)}<span class="product-title">${esc(item.title)}</span>${target || productStoreName(item) ? `<span class="product-meta">${target || `<span>${esc(productStoreName(item))}</span>`}</span>` : ""}</span>${item.viewed ? `<span class="recipe-cooked" title="Куплено">${icon("check", "icon-sm")}</span>` : ""}</button>`;
 }
 
 /** Подробности товара: фото, цена со скидкой, ссылки на карточку и на магазин. */
@@ -60,5 +61,25 @@ function productDetails(item) {
     Number(item.targetPrice) > 0 ? savedDetailLine("Жду цену", rub(item.targetPrice)) : "",
     item.tracked ? savedDetailLine("Слежу за ценой", "раз в сутки") : "",
   ].join("");
-  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${off ? `<span class="product-save">выгода ${rub(productOldPrice(item) - Number(item.price))}</span>` : ""}</div>${links ? `<div class="product-links">${links}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
+  const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}">${icon("reset", "icon-sm")}Обновить цену и фото</button>` : "";
+  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${off ? `<span class="product-save">выгода ${rub(productOldPrice(item) - Number(item.price))}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
 }
+
+// «Обновить цену и фото»: сервер снимает их сейчас (магазины с защитой — через поиск).
+document.addEventListener("click", async event => {
+  const button = event.target.closest?.("[data-product-refresh]");
+  if (!button) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  if (typeof window.sorokaProductRefresh !== "function") { toast("Работает в приложении бота"); return; }
+  const item = savedItem("products", button.dataset.productRefresh);
+  button.disabled = true;
+  button.innerHTML = '<span class="live-spin"></span>Смотрю цену…';
+  try {
+    const answer = await window.sorokaProductRefresh(item.id);
+    if (answer.price) { item.price = answer.price; item.maxPrice = Math.max(Number(item.maxPrice) || 0, answer.price); }
+    if (answer.oldPrice !== undefined) item.oldPrice = answer.oldPrice || undefined;
+    if (answer.image) item.image = answer.image;
+    render();
+    toast(answer.price ? `Цена: ${rub(answer.price)}` : "Цену снять не удалось — магазин не отвечает");
+  } catch (_) { button.disabled = false; button.textContent = "Обновить цену и фото"; toast("Не получилось — попробуйте ещё раз"); }
+}, true);
