@@ -2,8 +2,8 @@
 const SAVED_CATEGORIES = [
   ["notes", "Заметки", "note"], ["files", "Файлы", "archive"],
   ["posts", "Посты", "inbox"], ["links", "Ссылки", "link"],
-  ["lists", "Списки", "check"], ["recipes", "Рецепты", "bookmark"],
-  ["movies", "Фильмы", "event"], ["products", "Товары", "wallet"],
+  ["lists", "Списки", "check"], ["recipes", "Рецепты", "bowl"],
+  ["movies", "Фильмы", "film"], ["products", "Товары", "wallet"],
   ["addresses", "Адреса", "pin"], ["tickets", "Билеты", "ticket"],
   ["cards", "Карты", "card"]
 ];
@@ -144,7 +144,9 @@ function hydrateExtra(value, fresh) {
 
 function demoMoney(amount, currency = "RUB") {
   const symbol = { RUB: "₽", USD: "$", EUR: "€" }[currency] || currency;
-  return `${Number(amount || 0).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} ${symbol}`;
+  const n = Number(amount || 0);
+  const fraction = Math.round(Math.abs(n) * 100) % 100 !== 0;
+  return `${n.toLocaleString("ru-RU", { minimumFractionDigits: fraction ? 2 : 0, maximumFractionDigits: 2 })} ${symbol}`;
 }
 function miniButton(label, action, extra = "") {
   return `<button class="small-button" type="button" data-action="${action}" ${extra}>${label}</button>`;
