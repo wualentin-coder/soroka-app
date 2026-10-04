@@ -144,9 +144,9 @@ function renderSettingsPage() {
 ${row("Тема", "Фон и карточки", select("theme", ui.theme, Object.entries(THEMES).filter(([key]) => key !== "telegram" || window.SOROKA_LIVE).map(([key, t]) => [key, t.label])))}
 <div class="settings-row settings-row-wide"><div><strong>Акцент</strong><span>Цвет кнопок и выделения</span></div>${accents}</div>
 ${row("Плотность", "Размер карточек", select("density", s.density, [["spacious", "Просторная"], ["comfortable", "Обычная"], ["compact", "Компактная"]]))}
-${row("Стартовый экран", "Что открывать первым", select("startPage", s.startPage, [["today", "План"], ["overview", "Обзор"], ["saved", "Сохранённое"], ["finance", "Финансы"]]))}
+${row("Стартовый экран", "Что открывать первым", select("startPage", s.startPage, [["today", "План"], ["saved", "Сохранённое"], ["finance", "Финансы"]]))}
 </div></section>
-<section class="settings-group"><h2>Экран «Обзор»</h2><div class="list-panel">${overviewBlockSettings()}</div></section>
+
 <section class="settings-group"><h2>Бот</h2><div class="list-panel">
 ${row("Контекст диалога", "Сколько последних сообщений бот учитывает", select("context", s.context, [[5, "5"], [10, "10"], [20, "20"]]))}
 ${row("Утренняя сводка", "Когда бот присылает план дня", `<input data-setting="digest" type="time" value="${esc(s.digest || "08:30")}">`)}
@@ -176,7 +176,7 @@ function renderCompareSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet compare-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Две темы рядом</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="theme-comparison"><div class="theme-phone dark"><small>ТЁМНАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div><div class="theme-phone light"><small>СВЕТЛАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div></div></section></div>`;
 }
 function renderMorePage() {
-  const items = [["overview", "Обзор", "Сводка дня", "overview"], ["inbox", "Входящие", "Нужны решения", "inbox"], ["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["metrics", "Показатели", "График измерений", "chart"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
+  const items = [["inbox", "Входящие", "Нужны решения", "inbox"], ["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["metrics", "Показатели", "График измерений", "chart"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
   return `${header("Ещё", "Разделы и действия", "Пространство")}<div class="more-grid">${items.map(([page, label, detail, symbol]) => `<button class="more-tile" type="button" data-action="${page === "search" ? "search" : page === "add" ? "universal-add" : "navigate"}" ${page === "search" || page === "add" ? "" : `data-page="${page}"`}>${icon(symbol)}<span><strong>${label}</strong><small>${detail}</small></span></button>`).join("")}</div><section class="section"><div class="overview-intro"><span class="mini-heading">Связь с ботом</span><p>Текст, голосовые, фото, файлы, видео и пересланные посты бот разложит по разделам сам.</p><div class="inline-actions"><button type="button" data-action="return-chat">${icon("arrow")}Вернуться в чат</button><button type="button" data-action="demo-refresh">${icon("reset")}Обновить</button></div></div></section>`;
 }
 
