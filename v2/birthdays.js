@@ -43,6 +43,13 @@ function birthdayRow(b) {
   return `<button type="button" class="birthday-row ${b.days === 0 ? "today" : soon ? "soon" : ""}" data-action="birthday-open" data-id="${esc(b.e.id)}"><span class="birthday-avatar" style="--h:${hue}">${b.days === 0 ? "🎉" : esc(b.name.charAt(0).toUpperCase())}</span><span class="birthday-copy"><b>${esc(b.name)}</b><small>${b.day} ${MONTHS_GEN[b.month]}${b.e.repeat === "yearly" ? "" : " · без повтора"}</small></span>${birthdayWhen(b) ? `<span class="birthday-when">${birthdayWhen(b)}</span>` : ""}</button>`;
 }
 
+/** Дни рождения на неделю вперёд — для «Плана». */
+function todayBirthdaysSection() {
+  const soon = birthdays().filter(b => b.days <= 7);
+  if (!soon.length) return "";
+  return `<section class="section"><div class="section-heading"><h2>Дни рождения</h2><span class="count">${soon.length}</span></div><div class="birthday-soon">${soon.map(birthdayRow).join("")}</div></section>`;
+}
+
 function renderBirthdaysPage() {
   const list = birthdays();
   const view = ui.birthdayView || "near";
