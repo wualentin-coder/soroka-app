@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d6f3b51c4c","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=aa7c71ef73","integrity":null},{"src":"./goods.js?v=0415a05558","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=b16d94d082","integrity":null},{"src":"./cards.js?v=a0deac14b4","integrity":null},{"src":"./card-swipe.js?v=fa96e2c296","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=59daa3467f","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=876e7d5372","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=ebf7ef1b9c","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=b2cf732bb2","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=aa7c71ef73","integrity":null},{"src":"./goods.js?v=0415a05558","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=b16d94d082","integrity":null},{"src":"./cards.js?v=a0deac14b4","integrity":null},{"src":"./card-swipe.js?v=fa96e2c296","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=b43084a460","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=fc880ab4ee","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=ebf7ef1b9c","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -753,7 +753,7 @@
   }
 
   function splash(text, retry) {
-    root.innerHTML = `<div class="live-splash"><div class="splash-mark"><img src="./assets/soroka-avatar.png" alt=""></div>${retry ? "" : '<div class="splash-bar"></div>'}<p class="${retry ? "" : "dots"}">${text}</p>${retry ? '<button type="button" id="live-retry">Попробовать ещё раз</button>' : ""}</div>`;
+    root.innerHTML = `<div class="live-splash"><div class="splash-mark"><img src="./assets/flow-logo.svg" alt=""></div>${retry ? "" : '<div class="splash-bar"></div>'}<p class="${retry ? "" : "dots"}">${text}</p>${retry ? '<button type="button" id="live-retry">Попробовать ещё раз</button>' : ""}</div>`;
     const button = document.getElementById("live-retry");
     if (button) button.onclick = () => location.reload();
   }
@@ -924,7 +924,7 @@
     tickets: { label: "Билет", placeholder: "Фото или PDF билета пришлите боту", hint: "Билет: ", manual: true },
     plan: { label: "Запись", placeholder: "Что угодно: завтра в 12 забрать заказ, кофе 350 ₽", hint: "", manual: true },
     finance: { label: "Деньги", placeholder: "Кофе 350 ₽ или зарплата 80 000", hint: "", manual: true },
-    any: { label: "Сорока", placeholder: "Напишите как боту", hint: "", manual: true },
+    any: { label: "Flow", placeholder: "Напишите как боту", hint: "", manual: true },
   };
   const norm = (s) => String(s || "").toLocaleLowerCase("ru-RU").replace(/ё/g, "е");
   function composeContext() {
