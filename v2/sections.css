@@ -1925,3 +1925,14 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .site-face i:nth-child(3) { top: 30px; width: 50%; }
 .site-face b { font-size: 34px; color: #fff; font-weight: 800; }
 .site-name { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ══ Карусель картинок поста ══════════════════════════════════════════════ */
+.post-carousel { position: relative; margin: 8px 0 12px; }
+.post-carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: 16px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.post-carousel-track::-webkit-scrollbar { display: none; }
+.post-carousel-track figure { flex: 0 0 100%; margin: 0; scroll-snap-align: center; background: #000; display: grid; place-items: center; aspect-ratio: 4 / 5; }
+.post-carousel-track img { width: 100%; height: 100%; object-fit: contain; }
+.post-carousel-dots { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+.post-carousel-dots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .2; transition: all .2s; }
+.post-carousel-dots i.on { opacity: .8; width: 16px; border-radius: 3px; }
+.post-carousel-count { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 600; }
