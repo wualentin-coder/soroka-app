@@ -1701,3 +1701,12 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .pay-task .pay-task-sum { margin-left: auto; padding-right: 10px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pay-task .task-meta .icon { width: 13px; height: 13px; }
 .rule-goal-pct { color: var(--accent); font-size: 15px; }
+
+/* ══ «План»: календарь сверху, свайпы ══════════════════════════════════════════ */
+.plan-main .calendar-card { margin-bottom: 18px; touch-action: pan-y; }
+.plan-day-back { margin: 0 0 6px; }
+.plan-day-back .text-action { display: inline-flex; align-items: center; gap: 4px; }
+.swipe-row .swipe-later-hint { gap: 8px; flex-direction: row; justify-content: flex-start; background: #4b7996; }
+.swipe-row.swipe-armed .swipe-later-hint { background: #3f8fc4; }
+.swipe-later-hint b { font-size: 12px; }
+.mobile-nav { grid-template-columns: repeat(4, 1fr); }
