@@ -222,3 +222,6 @@ html.in-android .page-header { min-height: 40px; }
 .edge-hint.is-top { top: calc(var(--tg-top, 0px) + 10px); transform: translate(-50%, calc((var(--k) - 1) * 30px)) scale(calc(.85 + var(--k) * .15)); }
 .edge-hint.is-bottom { bottom: calc(80px + env(safe-area-inset-bottom)); transform: translate(-50%, calc((1 - var(--k)) * 30px)) scale(calc(.85 + var(--k) * .15)); }
 .edge-hint.ready { background: var(--accent); color: var(--accent-ink); }
+.composer-movie-acts { display: grid; gap: 6px; align-self: center; }
+.composer-movie-acts button { white-space: nowrap; }
+.composer-movie-done { display: inline-flex; align-items: center; gap: 4px; align-self: center; color: #2fa96a; font-weight: 600; font-size: 14px; white-space: nowrap; animation: review-in .3s ease-out; }
