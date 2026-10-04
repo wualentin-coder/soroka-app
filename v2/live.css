@@ -215,3 +215,10 @@ html.in-android .tg-title span:empty { display: none; }
 html.in-android .main { padding-top: 12px; }
 html.in-android .page-header { min-height: 40px; }
 .live-splash-error { max-width: 300px; margin-top: 8px; color: var(--muted, #888); font-size: 11px; word-break: break-word; text-align: center; }
+
+/* Жесты на краях: значок «Закреплённое» сверху и «Поиск» снизу наливается по мере движения. */
+.edge-hint { position: fixed; z-index: 45; left: 50%; display: none; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: var(--surface-raised); color: var(--muted); font: 800 13px Manrope, system-ui, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); opacity: var(--k, 0); pointer-events: none; transition: background .15s ease, color .15s ease; }
+.edge-hint.on { display: inline-flex; }
+.edge-hint.is-top { top: calc(var(--tg-top, 0px) + 10px); transform: translate(-50%, calc((var(--k) - 1) * 30px)) scale(calc(.85 + var(--k) * .15)); }
+.edge-hint.is-bottom { bottom: calc(80px + env(safe-area-inset-bottom)); transform: translate(-50%, calc((1 - var(--k)) * 30px)) scale(calc(.85 + var(--k) * .15)); }
+.edge-hint.ready { background: var(--accent); color: var(--accent-ink); }
