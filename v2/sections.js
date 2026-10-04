@@ -171,6 +171,7 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
   if (ui.sheet.kind === "movie-rate") return renderMovieRateSheet();
   if (ui.sheet.kind === "movie-run") return renderMovieRunSheet();
+  if (ui.sheet.kind === "cook") return renderCookSheet();
   if (ui.sheet.kind === "finance-reconcile") return renderReconcileSheet();
   if (ui.sheet.kind === "reco-detail") return renderRecoDetailSheet();
   if (ui.sheet.kind === "finance-accounts") return renderAccountsSheet();
@@ -192,7 +193,7 @@ function renderExtendedSheet() {
   return renderAddMenu();
 }
 function handleExtendedAction(action, control, event) {
-  return noteAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
+  return noteAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
   return loyaltySubmit(event) || mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
