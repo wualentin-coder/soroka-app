@@ -225,3 +225,17 @@ html.in-android .page-header { min-height: 40px; }
 .composer-movie-acts { display: grid; gap: 6px; align-self: center; }
 .composer-movie-acts button { white-space: nowrap; }
 .composer-movie-done { display: inline-flex; align-items: center; gap: 4px; align-self: center; color: #2fa96a; font-weight: 600; font-size: 14px; white-space: nowrap; animation: review-in .3s ease-out; }
+
+/* Файл из чата и мини-сайт — на весь экран поверх приложения. */
+.live-file { position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; background: var(--bg, #fbf8f3); animation: review-in .25s ease-out; }
+.live-file > header { display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 0px) + 8px) 14px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+.live-file > header strong { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.live-file-close { border: 0; padding: 8px 14px; border-radius: 14px; background: color-mix(in srgb, currentColor 8%, transparent); color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.live-file-body { position: relative; flex: 1; min-height: 0; display: flex; overflow: auto; }
+.live-file-body iframe { flex: 1; width: 100%; height: 100%; border: 0; background: #fff; }
+.live-file-wait { margin: auto; display: grid; justify-items: center; gap: 10px; padding: 24px; text-align: center; }
+.live-file-image { max-width: 100%; margin: auto; object-fit: contain; }
+.live-file-text { margin: 0; padding: 16px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
+@media (prefers-color-scheme: dark) { .live-file { background: var(--bg, #141414); } }
+.live-file { color: var(--ink, #1d1d1f); }
+@media (prefers-color-scheme: dark) { .live-file { color: #f2f2f2; } }
