@@ -1936,3 +1936,79 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .post-carousel-dots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .2; transition: all .2s; }
 .post-carousel-dots i.on { opacity: .8; width: 16px; border-radius: 3px; }
 .post-carousel-count { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 600; }
+
+.product-card .product-image { border-radius: 14px; margin: 6px 6px 0; width: auto; }
+.product-price { gap: 4px 6px; }
+.product-price b { color: inherit; }
+.product-price b.sale { color: #e5266b; }
+.product-price s { font-size: 13px; opacity: .55; }
+.product-price em { font-style: normal; font-size: 13px; font-weight: 700; color: #e5266b; }
+.product-card .product-title { color: #3870c9; }
+@media (prefers-color-scheme: dark) { .product-card .product-title { color: #7fa9ec; } }
+/* ══ «План»: календарь и «сегодня» одной компактной карточкой ═══════════════ */
+.plan-main .calendar-card.with-summary { padding: 12px 14px 6px; }
+.calendar-card.with-summary .calendar-top { gap: 8px; margin-bottom: 4px; padding-bottom: 6px; }
+.calendar-card.with-summary .calendar-expand-title { font-size: 18px; }
+.plan-summary { margin-left: auto; font-size: 13px; color: var(--muted, #777); white-space: nowrap; border: 0; background: none; font-family: inherit; padding: 0; }
+.plan-summary b { color: var(--text, inherit); font-size: 15px; }
+.plan-summary.is-link { color: var(--accent, #c4383d); font-weight: 600; cursor: pointer; }
+.calendar-card.with-summary .calendar-controls button { width: 30px; height: 30px; }
+.calendar-card.with-summary:not(.expanded) .calendar-toolbar, .calendar-card.with-summary:not(.expanded) .calendar-legend { display: none; }
+.calendar-card.with-summary:not(.expanded) .calendar-weekdays { margin: 0; font-size: 11px; }
+.calendar-card.with-summary:not(.expanded) .calendar-grid { gap: 2px; }
+.calendar-card.with-summary:not(.expanded) .calendar-grid > * { min-height: 34px; height: 38px; padding: 2px 0; border-radius: 11px; }
+.plan-progress { height: 3px; border-radius: 2px; background: color-mix(in srgb, currentColor 10%, transparent); overflow: hidden; margin: 8px 2px 2px; }
+.plan-progress span { display: block; height: 100%; background: var(--accent, #c4383d); transition: width .4s; }
+.calendar-card.with-summary .calendar-handle { margin-top: 2px; }
+
+/* ══ Заметка: оформленный текст, который правится сразу ══════════════════════ */
+.note-rich { position: relative; min-height: 45vh; outline: 0; font-size: 16px; line-height: 1.55; padding: 4px 0 40px; word-break: break-word; }
+.note-rich.is-empty::before { content: "Начните писать…"; position: absolute; top: 4px; left: 0; opacity: .4; pointer-events: none; }
+.note-rich p { margin: 0 0 4px; min-height: 1.55em; }
+.note-rich h3 { font-size: 21px; margin: 16px 0 6px; line-height: 1.25; }
+.note-rich h4 { font-size: 18px; margin: 14px 0 4px; }
+.note-rich h5 { font-size: 16px; margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .03em; opacity: .75; }
+.note-rich ul, .note-rich ol { margin: 4px 0 8px; padding-left: 24px; }
+.note-rich li { margin: 3px 0; }
+.note-rich ul.checks { list-style: none; padding-left: 0; }
+.note-rich ul.checks > li { position: relative; padding-left: 32px; min-height: 24px; }
+.note-rich ul.checks > li::before { content: ""; position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid color-mix(in srgb, currentColor 35%, transparent); cursor: pointer; transition: all .15s; }
+.note-rich ul.checks > li[data-done="1"]::before { background: var(--accent, #c4383d) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E") center / 12px no-repeat; border-color: var(--accent, #c4383d); }
+.note-rich ul.checks > li[data-done="1"] { opacity: .5; text-decoration: line-through; }
+.note-rich table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 14px; display: block; overflow-x: auto; }
+.note-rich th, .note-rich td { border: 1px solid color-mix(in srgb, currentColor 14%, transparent); padding: 7px 9px; text-align: left; vertical-align: top; min-width: 60px; }
+.note-rich th { background: color-mix(in srgb, currentColor 6%, transparent); font-weight: 600; }
+.note-format { position: sticky; bottom: 0; display: flex; gap: 4px; padding: 8px 4px calc(env(safe-area-inset-bottom) + 8px); margin: 0 -4px; background: var(--surface, #fff); border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); z-index: 2; }
+.note-format button { flex: 1; height: 38px; border: 0; border-radius: 10px; background: color-mix(in srgb, currentColor 6%, transparent); color: inherit; font: inherit; font-size: 15px; cursor: pointer; }
+.note-format button:active { background: color-mix(in srgb, currentColor 14%, transparent); }
+@media (prefers-color-scheme: dark) { .note-format { background: var(--surface, #1c1c1e); } }
+
+.what-cook-webblock { display: grid; gap: 10px; margin-top: 8px; }
+.what-cook-webblock h3 { margin: 6px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+.what-cook-web[disabled] { opacity: .7; }
+.web-recipe { display: grid; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--surface, #fff); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.web-recipe small { opacity: .6; font-size: 12px; }
+.web-recipe p { margin: 2px 0; font-size: 14px; }
+.web-recipe details summary { cursor: pointer; color: var(--accent, #c4383d); font-weight: 600; font-size: 13px; list-style: none; }
+.web-recipe .primary-button { justify-self: start; margin-top: 6px; min-height: 38px; padding: 0 16px; }
+
+.note-format button[data-note-voice] { color: var(--accent, #c4383d); }
+.voice-bar { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 14px); z-index: 900; display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; border-radius: 22px; background: #1f1f23; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.3); animation: review-in .2s ease-out; }
+.voice-bar small { flex: 1; opacity: .7; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.voice-bar.busy { justify-content: center; }
+.voice-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff3b3b; animation: pulse .8s ease-in-out infinite alternate; }
+.voice-level { width: 46px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.15); overflow: hidden; }
+.voice-level i { display: block; height: 100%; width: calc(var(--level, 0) * 100%); background: #ff6b6b; transition: width .1s; }
+.voice-time { font-variant-numeric: tabular-nums; font-size: 14px; }
+.voice-cancel { border: 0; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.voice-done { border: 0; height: 38px; padding: 0 18px; border-radius: 19px; background: #ff3b3b; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+
+.task-stack.is-sorting { user-select: none; -webkit-user-select: none; }
+.task-dragging { position: relative; z-index: 5; box-shadow: 0 14px 30px rgba(0,0,0,.18); border-radius: 18px; transition: none !important; }
+.note-rich li[data-indent="1"] { margin-left: 22px; }
+.note-rich li[data-indent="2"] { margin-left: 44px; }
+.note-rich li[data-indent="3"], .note-rich li[data-indent="4"] { margin-left: 66px; }
+.calendar-card.with-summary .calendar-expand-title { white-space: nowrap; font-size: 17px; }
+.note-sheet .note-plain { padding: 6px 18px 0; }
+.note-sheet .note-format { margin: 0; padding-left: 10px; padding-right: 10px; }
+.note-sheet .note-improve-menu, .note-sheet .note-undo { margin-left: 14px; margin-right: 14px; }
