@@ -1821,7 +1821,7 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .what-cook-have { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, currentColor 6%, transparent); }
 .what-cook-have input { flex: 1; border: 0; background: transparent; font: inherit; font-size: 15px; color: inherit; outline: 0; min-width: 0; }
 .what-cook-surprise[disabled] { opacity: .5; }
-.cook-screen { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; background: var(--bg, #fbf8f3); color: var(--ink, #1d1d1f); padding: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 0px) + 8px) 18px calc(env(safe-area-inset-bottom) + 16px); animation: review-in .3s ease-out; }
+.cook-screen { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; background: var(--page); color: var(--text); padding: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 0px) + 8px) 18px calc(env(safe-area-inset-bottom) + 16px); animation: review-in .3s ease-out; }
 .cook-top { display: flex; align-items: center; gap: 10px; font-weight: 600; }
 .cook-top span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .7; }
 .cook-dots { display: flex; gap: 4px; margin: 10px 0 6px; }
@@ -1840,7 +1840,7 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .cook-uses { display: flex; flex-wrap: wrap; gap: 8px; }
 .cook-uses span { padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, currentColor 7%, transparent); font-size: 15px; }
 .cook-timer { position: relative; justify-self: center; display: grid; place-items: center; align-content: center; width: 168px; height: 168px; border: 0; border-radius: 50%; background: conic-gradient(#e07a1f calc(var(--p, 0) * 360deg), color-mix(in srgb, currentColor 9%, transparent) 0); color: inherit; font: inherit; cursor: pointer; }
-.cook-timer::before { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: var(--bg, #fbf8f3); }
+.cook-timer::before { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: var(--page); }
 .cook-timer > * { position: relative; }
 .cook-ring { display: none; }
 .cook-time { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -1851,15 +1851,15 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .cook-ingredients { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .cook-ingredients button { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 10px 2px; font: inherit; font-size: 17px; color: inherit; text-align: left; cursor: pointer; border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
 .cook-ingredients i { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid color-mix(in srgb, currentColor 35%, transparent); transition: all .2s; }
-.cook-ingredients button.done i { background: #2fa96a; border-color: #2fa96a; box-shadow: inset 0 0 0 3px var(--bg, #fbf8f3); }
+.cook-ingredients button.done i { background: #2fa96a; border-color: #2fa96a; box-shadow: inset 0 0 0 3px var(--page); }
 .cook-ingredients button.done span { opacity: .45; text-decoration: line-through; }
 .cook-finish { justify-items: center; text-align: center; }
 .cook-finish > svg { width: 56px; height: 56px; color: #2fa96a; }
 .cook-nav { display: flex; gap: 10px; padding-top: 10px; }
 .cook-nav button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 54px; font-size: 16px; border-radius: 16px; }
 .cook-nav .primary-button { flex: 1; }
-:root:not([data-theme="light"]) .cook-screen { background: var(--bg, #141414); color: var(--ink, #f2f2f2); }
-:root:not([data-theme="light"]) .cook-timer::before { background: var(--bg, #141414); }
+:root:not([data-theme="light"]) .cook-screen { background: var(--page); color: var(--text); }
+:root:not([data-theme="light"]) .cook-timer::before { background: var(--page); }
 :root:not([data-theme="light"]) .cook-chip { background: #4a2d10; color: #ffd29a; }
 .saved-results.recipe-grid { display: block; }
 .saved-results.recipe-grid > .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -2231,3 +2231,20 @@ body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * {
 .wallet-swipe-hint { margin: 8px 0 0; text-align: center; font-size: 12px; opacity: .5; }
 .wallet-under.left { right: auto; }
 .wallet-under.right { left: auto; }
+
+/* ══ Свайпы везде как у карт: плитки со скруглением, цветная только «Удалить» ══ */
+.swipe-row .swipe-content { border-radius: inherit; }
+.swipe-row:not(.dir-left):not(.is-open-left):not(.delete-armed) .swipe-action { opacity: 0; }
+.swipe-row .swipe-action:not(.delete) {
+  width: calc(var(--slot) - 6px); border-radius: inherit;
+  background: var(--surface-soft) !important;
+  color: var(--text, inherit) !important;
+  font-weight: 600;
+}
+.swipe-row .swipe-action:not(.delete):active { background: color-mix(in srgb, var(--text) 10%, var(--surface-soft)) !important; }
+.swipe-row .swipe-action.delete { border-radius: inherit; background: #e5484d; }
+.swipe-row.delete-armed .swipe-action.delete { background: #d93036; }
+/* Вправо (просмотрено, на завтра): тоже нейтрально, значок — акцентом. */
+.swipe-row .swipe-right-indicator { border-radius: inherit; background: var(--surface-soft) !important; color: var(--accent) !important; }
+.swipe-row.swipe-armed .swipe-right-indicator { background: var(--accent-soft) !important; }
+.swipe-row .swipe-later-hint b { color: var(--text); }
