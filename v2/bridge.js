@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=a1815c25ae","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=38983b7ee7","integrity":null},{"src":"./app.js?v=6e4ebc9cb0","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=ee4364933b","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=3bca418083","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=9cb5d0261b","integrity":null},{"src":"./app.js?v=2f554272de","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -887,7 +887,7 @@
     movies: { label: "Фильм", placeholder: "Название или о чём фильм", hint: "" },
     posts: { label: "Пост", placeholder: "Текст поста или ссылка t.me", hint: "Сохрани как пост: " },
     links: { label: "Ссылка", placeholder: "Ссылка или что сохранить", hint: "Сохрани ссылку: " },
-    recipes: { label: "Рецепт", placeholder: "Ссылка на рецепт или сам рецепт", hint: "Сохрани рецепт: " },
+    recipes: { label: "Рецепт", placeholder: "Блюдо, продукты или ссылка на рецепт", hint: "Сохрани рецепт: " },
     notes: { label: "Заметка", placeholder: "Текст заметки", hint: "Заметка: ", manual: true },
     files: { label: "Файл", placeholder: "Что за файл — сам файл пришлите боту", hint: "Сохрани в файлы: " },
     lists: { label: "Список", placeholder: "Например: купить молоко, хлеб, сыр", hint: "Список: ", manual: true },
@@ -923,7 +923,8 @@
     // Сначала названия, начинающиеся с набранного, потом — где слово с него начинается;
     // описание — только с трёх букв и не у фильмов («Бо» в описании — не «Борат»).
     const starts = (v) => norm(v).startsWith(q) ? 0 : norm(v).split(/[^a-zа-я0-9]+/).some((w) => w.startsWith(q)) ? 1 : 9;
-    const rank = (x) => Math.min(starts(x.title), starts(x.originalTitle), ctx !== "movies" && q.length >= 3 && hit(x.title, x.description) ? 2 : 9);
+    const rank = (x) => Math.min(starts(x.title), starts(x.originalTitle), ctx !== "movies" && q.length >= 3 && hit(x.title, x.description) ? 2 : 9,
+      ctx === "recipes" && q.length >= 3 && hit(...(x.ingredients || [])) ? 3 : 9);
     return list.map((x) => [rank(x), x]).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0]).map(([, x]) => x).slice(0, 6).map((x) => ({
       title: x.title, cover: ctx === "movies" ? x.coverPath : "",
       meta: ctx === "movies" ? [x.year, x.status].filter(Boolean).join(" · ") : (x.topic || x.source || ""),
@@ -971,6 +972,8 @@
       if (event.target.closest("[data-manual]")) { const text = field.value.trim(); closeComposer(); composeManual(ctx, text); return; }
       const hit = event.target.closest("[data-hit]");
       if (hit) { const h = composer.hits[Number(hit.dataset.hit)]; closeComposer(); h.open(); return; }
+      const keep = event.target.closest("[data-recipe]");
+      if (keep) { saveFoundRecipe(Number(keep.dataset.recipe), keep); return; }
       const add = event.target.closest("[data-add]");
       if (add) { addFoundMovie(Number(add.dataset.add), add.dataset.mode || "plans", add); return; }
       const own = event.target.closest("[data-own]");
@@ -982,6 +985,8 @@
       if (!text) return;
       if (off) { closeComposer(); composeManual(ctx, text); return; }
       if (ctx === "movies") { findMovie(text); return; }
+      // Рецепт: ссылку или целый рецепт разбирает бот; название или продукты — ищем в интернете.
+      if (ctx === "recipes" && !/https?:\/\//.test(text) && text.length < 160) { findRecipe(text); return; }
       send.disabled = true;
       send.innerHTML = '<span class="live-spin"></span>';
       call({ action: "planner_capture", text: (conf.hint || "") + text }).then((answer) => {
@@ -1052,6 +1057,44 @@
       send.disabled = false; send.innerHTML = icon("arrow");
       c.results.innerHTML = `<p class="composer-caption">Поиск не ответил — попробуйте ещё раз.</p>`;
     });
+  }
+  /** Рецепт из интернета: до трёх настоящих рецептов целиком, сохранить — в «Рецепты». */
+  function findRecipe(text) {
+    const c = composer;
+    const send = c.layer.querySelector(".composer-send");
+    send.disabled = true;
+    send.innerHTML = '<span class="live-spin"></span>';
+    c.results.innerHTML = `<p class="composer-caption composer-wait"><span class="live-spin"></span>Ищу рецепт «${escape(text.slice(0, 60))}»…</p>`;
+    call({ action: "recipe_find", query: text }, 60000).then((answer) => {
+      if (composer !== c) return;
+      send.disabled = false; send.innerHTML = icon("arrow");
+      c.found = answer.found || [];
+      if (!c.found.length) { c.results.innerHTML = `<p class="composer-caption">${escape(answer.note || "Не нашёл.")}</p><button type="button" class="composer-hit composer-manual-row" data-manual><span><b>Добавить вручную</b><small>${escape(text.slice(0, 60))}</small></span>${icon("right", "icon-sm")}</button>`; return; }
+      c.results.innerHTML = `<p class="composer-caption">Нашёл в интернете</p>` + c.found.map((r, i) => {
+        const facts = [r.minutes ? `${r.minutes} мин` : "", r.servings ? `${r.servings} порц.` : "", `${r.ingredients.length} ингр.`].filter(Boolean).join(" · ");
+        let host = ""; try { host = r.source ? new URL(r.source).hostname.replace(/^www\./, "") : ""; } catch (_) {}
+        return `<article class="composer-movie composer-recipe"><div><b>${escape(r.title)}</b><small>${escape(facts)}${host ? ` · ${escape(host)}` : ""}</small>${r.summary ? `<p>${escape(r.summary)}</p>` : ""}<details><summary>Ингредиенты</summary><p>${r.ingredients.map(escape).join("<br>")}</p></details></div><span class="composer-movie-acts"><button type="button" class="primary-button" data-recipe="${i}">Сохранить</button></span></article>`;
+      }).join("");
+    }).catch(() => {
+      if (composer !== c) return;
+      send.disabled = false; send.innerHTML = icon("arrow");
+      c.results.innerHTML = `<p class="composer-caption">Поиск не ответил — попробуйте ещё раз.</p>`;
+    });
+  }
+  function saveFoundRecipe(index, button) {
+    const c = composer;
+    const r = c && c.found[index];
+    if (!r || r.saved) return;
+    r.saved = true;
+    data.saved.recipes.push({
+      id: id(), title: r.title, description: r.summary || "", topic: "", tags: [], minutes: r.minutes || undefined, servings: r.servings || 2,
+      ingredients: r.ingredients, steps: r.steps, source: "Из интернета", url: r.source || "", viewed: false, pinned: false, created: new Date().toISOString(),
+    });
+    save();
+    if (ui.page === "saved") render();
+    const row = button.closest(".composer-movie-acts");
+    if (row) row.outerHTML = `<span class="composer-movie-done">${icon("check", "icon-sm")}Сохранено</span>`;
+    say(`«${r.title}» — в рецептах. Шаги для готовки подготовлю за пару минут`);
   }
   /**
    * Найденный фильм — в «В планах» (поиск остаётся открытым: можно добавить ещё)
