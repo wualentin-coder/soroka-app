@@ -157,7 +157,7 @@ function save() {
 }
 let data = load();
 const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more"];
-function currentPage() { const name = location.hash.slice(1); return validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; }
+function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 const ui = {
   page: currentPage(),
   selected: todayIso(),
@@ -214,7 +214,6 @@ const navigation = [
   ["projects", "Проекты", "project"],
   ["vault", "Пароли", "key"],
   ["metrics", "Показатели", "chart"],
-  ["overview", "Обзор", "overview"],
   ["archive", "Архив", "archive"],
   ["settings", "Настройки", "settings"],
   ["more", "Все разделы", "more"]
@@ -302,8 +301,8 @@ function todayPage() {
   // Платежи, срок которых настал (или прошёл), — тоже дела на сегодня.
   const duePays = (data.finance?.payments || []).filter(p => p.status !== "confirmed" && p.nextOn && p.nextOn <= today);
   const payCards = duePays.map(p => `<article class="task-card pay-task ${p.nextOn < today ? "overdue" : ""}"><button class="task-check" type="button" data-action="payment-confirm" data-id="${esc(p.id)}" aria-label="Оплачено: ${esc(p.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="finance-open-payments"><span class="task-title">${esc(p.title)}</span><span class="task-meta"><span>${icon("wallet", "icon-sm")}Платёж${p.nextOn < today ? ` · с ${esc(dateLabel(p.nextOn))}` : ""}</span></span></button><span class="pay-task-sum">${demoMoney(p.amount, p.currency || "RUB")}</span></article>`).join("");
-  const tasks = `<section class="section"><div class="section-heading"><h2>Задачи на сегодня</h2><span class="count">${daily.length + duePays.length}</span></div><div class="task-stack">${payCards}${daily.length ? daily.map(taskCard).join("") : duePays.length ? "" : emptyCard("План свободен", "Добавьте задачу кнопкой ниже или пришлите её боту обычным сообщением.")}</div></section>`;
-  const events = `<section class="section"><div class="section-heading"><h2>В расписании</h2><span class="count">${meetings.length}</span></div>${meetings.length ? meetings.map(eventCard).join("") : emptyCard("Событий пока нет", "Можно добавить встречу на сегодня.")}</section>`;
+  const tasks = !daily.length && !duePays.length ? "" : `<section class="section"><div class="section-heading"><h2>Задачи на сегодня</h2><span class="count">${daily.length + duePays.length}</span></div><div class="task-stack">${payCards}${daily.length ? daily.map(taskCard).join("") : duePays.length ? "" : emptyCard("План свободен", "Добавьте задачу кнопкой ниже или пришлите её боту обычным сообщением.")}</div></section>`;
+  const events = !meetings.length ? "" : `<section class="section"><div class="section-heading"><h2>В расписании</h2><span class="count">${meetings.length}</span></div>${meetings.length ? meetings.map(eventCard).join("") : emptyCard("Событий пока нет", "Можно добавить встречу на сегодня.")}</section>`;
   const aside = `<div class="side-card"><h3>Ближайшие дни</h3>${[1, 2, 3].map(n => { const day = offsetIso(n); const count = tasksOn(day).filter(t => !t.done).length + eventsOn(day).length; return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${count} ${word(count, "запись", "записи", "записей")}</b></div>`; }).join("")}<button class="text-action" type="button" data-action="navigate" data-page="upcoming">Открыть календарь ${icon("arrow", "icon-sm")}</button></div><div class="side-card"><h3>Быстрый ввод</h3><p class="side-note">Задачи удобно отправлять боту обычным текстом. </p></div>`;
   const tickets = typeof todayTicketsSection === "function" ? todayTicketsSection() : "";
   // «Сегодня» и «Предстоящие» — одна вкладка: календарь сверху, под ним день.
@@ -317,7 +316,15 @@ function todayPage() {
   const cal = calendarCard(summary, isToday && daily.length ? percentage : null);
   // Ближайшие дни рождения — на неделю вперёд: о них вспоминают заранее, а не в день.
   const birthdaysSoon = typeof todayBirthdaysSection === "function" ? todayBirthdaysSection() : "";
-  const body = isToday ? `${overdue}${tasks}${events}${birthdaysSoon}${tickets}` : dayAgenda(ui.selected);
+  // Ни дел, ни встреч — одна короткая строка вместо двух пустых карточек.
+  const free = !tasks && !events ? `<p class="plan-free">${icon("check", "icon-sm")}На сегодня ни дел, ни встреч</p>` : "";
+  // Из бывшего «Обзора» — деньги и «продолжить»: коротко, внизу дня.
+  const glance = typeof rubBalance === "function" ? (() => {
+    const pending = (data.finance?.payments || []).filter(p => p.status === "pending" && p.nextOn).sort((a, b) => a.nextOn.localeCompare(b.nextOn));
+    const last = ui.lastOpened;
+    return `<section class="section plan-glance"><button type="button" class="glance-tile" data-action="navigate" data-page="finance"><small>Доступно</small><strong>${demoMoney(rubBalance())}</strong>${pending[0] ? `<span>${esc(pending[0].title)} · ${esc(dateLabel(pending[0].nextOn))}</span>` : `<span>Платежи оплачены</span>`}</button>${last?.title ? `<button type="button" class="glance-tile" data-action="overview-continue"><small>Продолжить</small><strong>${esc(last.title)}</strong><span>Последняя открытая запись</span></button>` : ""}</section>`;
+  })() : "";
+  const body = isToday ? `${overdue}${tasks}${events}${free}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
@@ -432,8 +439,8 @@ function toggleTask(recordId) {
 }
 function navigate(page) {
   if (!validPages.includes(page)) return;
-  // «Предстоящие» теперь внутри «Плана».
-  if (page === "upcoming") page = "today";
+  // «Предстоящие» и «Обзор» теперь внутри «Плана».
+  if (page === "upcoming" || page === "overview") page = "today";
   if (page === "today" && ui.page !== "today") { ui.selected = todayIso(); ui.calendarAnchor = ui.selected; ui.month = ui.selected.slice(0, 7) + "-01"; }
   ui.page = page;
   ui.menu = false;
