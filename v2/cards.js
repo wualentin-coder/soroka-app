@@ -30,6 +30,19 @@ function loyaltyNumber(number) { return String(number || "").replace(/\s+/g, "")
 
 /** Лицо карты: цвета и надпись сети (своя — для остальных). */
 function loyaltyFace(item, size = "") {
+  // Известная сеть — её знак и цвет (свой цвет карты важнее), без нарисованного шаблона.
+  const chain = chainOf(item);
+  if (chain) {
+    const own = /^#[0-9a-f]{6}$/i.test(item.color || "") ? item.color : "";
+    const color = own || chain.color;
+    const accent = own && /^#[0-9a-f]{6}$/i.test(item.accent || "") ? item.accent : "";
+    const ink = own ? loyaltyInk(accent ? mixHex(color, accent) : color) : chain.ink === "#fff" ? "" : chain.ink;
+    const style = [`--card-color:${color}`, accent && `--card-accent:${accent}`, ink && `color:${ink}`].filter(Boolean).join(";");
+    const tail = String(item.number || "").replace(/\s+/g, "").slice(-4);
+    const program = item.title && !chain.re.test(item.title) ? item.title : LOYALTY_BRANDS[loyaltyBrand(item)].program;
+    const plate = size === "open" ? `<span class="loyalty-plate" data-action="loyalty-full" data-id="${esc(item.id)}" role="button" aria-label="Код на весь экран">${loyaltyCode(item)}</span>` : "";
+    return `<div class="loyalty-card brand-chain brand-custom ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" style="${esc(style)}"><span class="lw lw-chain"><span class="lw-logo">${chain.svg}</span>${esc(chain.word)}</span><span class="loyalty-program">${esc(program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
+  }
   const brand = loyaltyBrand(item);
   const info = LOYALTY_BRANDS[brand];
   const name = brand === "custom" ? item.title || "Карта" : info.name;
@@ -44,7 +57,8 @@ function loyaltyFace(item, size = "") {
     perekrestok: `<span class="lw lw-perek"><i></i>ПЕРЕКРЁСТОК</span>`,
     custom: `<span class="lw lw-custom">${esc(name)}</span>`,
   }[brand];
-  return `<div class="loyalty-card brand-${brand} ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" ${style ? `style="${esc(style)}"` : ""}>${mark}<span class="loyalty-program">${esc(brand === "custom" ? info.program : item.title && item.title !== info.name ? item.title : info.program)}</span>${tail ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}</div>`;
+  const plate = size === "open" ? `<span class="loyalty-plate" data-action="loyalty-full" data-id="${esc(item.id)}" role="button" aria-label="Код на весь экран">${loyaltyCode(item)}</span>` : "";
+  return `<div class="loyalty-card brand-${brand} ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" ${style ? `style="${esc(style)}"` : ""}>${mark}<span class="loyalty-program">${esc(brand === "custom" ? info.program : item.title && item.title !== info.name ? item.title : info.program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
 }
 
 function mixHex(a, b) {
@@ -376,8 +390,7 @@ function renderWallet() {
   const confirm = ui.walletDelete === open.id;
   return `<div class="wallet is-open">
     <div class="wallet-focus">
-      <button type="button" class="wallet-card wallet-card-open" data-action="wallet-close" aria-label="Свернуть">${loyaltyFace(open)}</button>
-      <button type="button" class="loyalty-code-button wallet-code" data-action="loyalty-full" data-id="${esc(open.id)}" aria-label="Код на весь экран">${loyaltyCode(open)}</button>
+      <div class="wallet-card wallet-card-open" data-action="wallet-close" role="button" tabindex="0" aria-label="Свернуть">${loyaltyFace(open, "open")}</div>
       <div class="wallet-actions" role="group" aria-label="Действия с картой">
         <button type="button" data-action="loyalty-places" data-id="${esc(open.id)}">${icon("pin", "icon-sm")}<span>${places ? `Точки · ${places}` : "Где всплывает"}</span></button>
         <button type="button" data-action="wallet-edit" data-id="${esc(open.id)}">${icon("note", "icon-sm")}<span>Изменить</span></button>
