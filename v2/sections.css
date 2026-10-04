@@ -2095,3 +2095,67 @@ body.page-anim .page-header, body.page-anim .header { animation: rise-in .3s eas
 /* Окна — с пружинкой, затемнение — плавно. */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* ══ Заметка: блоки не сжимаются друг на друга, таблица — как раньше, аккуратная ══ */
+.note-sheet .note-plain { flex: 1 0 auto; min-height: auto; }
+.note-sheet .note-plain > * { flex-shrink: 0; }
+.note-rich table { display: table; width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0; font-size: 14px; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); border-radius: 14px; overflow: hidden; }
+.note-rich th, .note-rich td { border: 0; border-bottom: 1px solid color-mix(in srgb, currentColor 9%, transparent); padding: 9px 12px; text-align: left; vertical-align: top; min-width: 0; }
+.note-rich tr:last-child > td { border-bottom: 0; }
+.note-rich th { background: color-mix(in srgb, currentColor 6%, transparent); font-weight: 650; white-space: nowrap; }
+.note-rich td + td, .note-rich th + th { border-left: 1px solid color-mix(in srgb, currentColor 6%, transparent); }
+.note-rich td { word-break: break-word; }
+.note-rich th { white-space: normal; }
+
+/* Индикатор загрузки в кнопках-плашках — кружок, а не растянутый овал. */
+.movie-run-start > .live-spin, .loyalty-auto > .live-spin { flex: none; display: inline-block; width: 20px; height: 20px; margin: 0; border-radius: 50%; }
+.what-cook-web.busy { background: linear-gradient(100deg, #ffb52e1c 0%, #ffb52e33 40%, #ffb52e1c 80%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* ══ Карта рядом — язычком у левого края (вместо стопки снизу) ═════════════ */
+#loyalty-peek { left: 0; right: auto; top: 46%; bottom: auto; height: auto; overflow: visible; border-radius: 0; display: grid; gap: 8px; animation: peek-side-in .5s cubic-bezier(.22, 1, .36, 1) both; touch-action: pan-y; }
+#loyalty-peek.leaving { animation: peek-side-out .25s cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes peek-side-in { from { transform: translateX(-110%); } to { transform: none; } }
+@keyframes peek-side-out { to { transform: translateX(-110%); opacity: 0; } }
+.peek-tab { position: relative; display: grid; justify-items: center; gap: 3px; width: 54px; padding: 10px 6px 9px 8px; border: 0; border-radius: 0 18px 18px 0; background: linear-gradient(160deg, color-mix(in srgb, var(--card-color) 82%, #fff), var(--card-color)); box-shadow: 4px 6px 18px rgba(0, 0, 0, .22), inset -1px 0 0 rgba(255, 255, 255, .25); cursor: pointer; transition: transform .25s cubic-bezier(.22, 1, .36, 1), width .25s cubic-bezier(.22, 1, .36, 1); animation: peek-side-in .5s cubic-bezier(.22, 1, .36, 1) both; animation-delay: calc(var(--i) * 70ms); }
+.peek-tab:active { transform: translateX(5px); }
+.peek-tab b { font-size: 22px; font-weight: 900; line-height: 1; }
+.peek-logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: rgba(255, 255, 255, .18); }
+.peek-logo svg { width: 22px; height: 22px; }
+.peek-tab small { max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; font-weight: 700; opacity: .9; }
+html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom)); }
+
+/* ══ Анимации v2: одна кривая на всё, мягкие и короткие ═════════════════════ */
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-in: cubic-bezier(.4, 0, 1, 1); }
+@keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+body.page-anim .content-main > *, body.page-anim .notes-heading, body.page-anim .page-header, body.page-anim .header { animation: rise-in .42s var(--ease-out) both; }
+body.page-anim .content-main > :nth-child(2) { animation-delay: .035s; }
+body.page-anim .content-main > :nth-child(3) { animation-delay: .07s; }
+body.page-anim .content-main > :nth-child(4) { animation-delay: .105s; }
+body.page-anim .content-main > :nth-child(5) { animation-delay: .14s; }
+body.page-anim .content-main > :nth-child(n+6) { animation-delay: .17s; }
+
+/* Окна: затемнение проявляется, лист выезжает с мягким торможением. */
+@keyframes backdrop-in { from { background-color: rgba(2, 9, 13, 0); } }
+@keyframes backdrop-out { to { background-color: rgba(2, 9, 13, 0); } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sheet-down { to { transform: translateY(100%); } }
+@keyframes sheet-pop { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sheet-fade { to { opacity: 0; transform: translateY(10px) scale(.98); } }
+.modal-backdrop.sheet-enter { animation: backdrop-in .32s ease-out both; }
+.modal-backdrop.sheet-enter > .sheet { animation: sheet-up .42s var(--ease-out) both; }
+.modal-backdrop.sheet-leave { animation: backdrop-out .2s ease-in forwards; pointer-events: none; }
+.modal-backdrop.sheet-leave > .sheet { animation: sheet-down .2s var(--ease-in) forwards; }
+@media (min-width: 761px) {
+  .modal-backdrop.sheet-enter > .sheet { animation: sheet-pop .3s var(--ease-out) both; }
+  .modal-backdrop.sheet-leave > .sheet { animation: sheet-fade .18s var(--ease-in) forwards; }
+}
+
+/* «+», карточки, свайпы, календарь — та же кривая. */
+.composer { animation-timing-function: cubic-bezier(.22, 1, .36, 1) !important; animation-duration: .36s !important; }
+.swipe-content, .reco-swipe-content { transition-timing-function: cubic-bezier(.22, 1, .36, 1) !important; }
+.task-card, .record-card, .saved-section-card, .event-card, .birthday-row, .site-card, .recipe-card, .product-card, .primary-button, .ghost-button, .movie-run-start { transition: transform .22s var(--ease-out), box-shadow .25s ease, background-color .25s ease, opacity .25s ease; }
+.calendar-card.expanded .calendar-grid { animation: calendar-open .32s var(--ease-out) both; }
+.toast { transition: opacity .25s ease; }
+.note-improve-menu, .voice-bar, .composer-movie-done { animation-timing-function: cubic-bezier(.22, 1, .36, 1) !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
