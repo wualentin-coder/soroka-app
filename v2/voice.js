@@ -47,10 +47,12 @@ function wavBase64(chunks, rate) {
 async function startVoice(onText, label = "Говорите…") {
   if (voice) return;
   if (!voiceSupported()) { toast("Голос работает в приложении бота"); return; }
+  // Звук создаём сразу по нажатию: на Android, созданный позже, он «спит» и молчит.
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
-  catch (_) { toast("Нет доступа к микрофону — разрешите его в настройках"); return; }
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  catch (error) { ctx.close().catch(() => {}); try { window.SorokaAndroid?.log?.(`Микрофон: ${error?.name} ${error?.message}`); } catch (_) {} toast(error?.name === "NotAllowedError" ? "Нет доступа к микрофону — разрешите его в настройках" : "Микрофон не включился — попробуйте ещё раз"); return; }
+  try { await ctx.resume(); } catch (_) {}
   const source = ctx.createMediaStreamSource(stream);
   const node = ctx.createScriptProcessor(4096, 1, 1);
   const chunks = [];
