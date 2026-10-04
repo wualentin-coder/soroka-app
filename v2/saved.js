@@ -252,6 +252,7 @@ function savedRecordCardBody(item, category) {
   if (category === "movies") {
     return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${movieScoresLine(item)}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
   }
+  if (category === "recipes") return recipeCard(item);
   if (category === "cards") return `<button class="record-card loyalty-record" type="button" data-action="saved-open" data-category="cards" data-id="${esc(item.id)}" aria-label="${esc(item.title)}">${loyaltyFace(item)}</button>`;
   if (category === "posts") {
     const image = (postInfo(item, "media") || []).find(entry => entry.type === "image" && safePostMediaSource(entry.src));
@@ -356,6 +357,8 @@ function renderSavedPage() {
   const main = category === "addresses" ? renderAddressWorkspace()
     : category === "cards" ? renderWallet()
     : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
+    : category === "recipes" && ui.savedFilter === "whatcook" ? `${recipeTabs()}${renderWhatToCook()}`
+    : category === "recipes" ? `${recipeTabs()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results recipe-grid">${renderSavedResults()}</div>`
     : category === "movies" && ui.savedFilter === "viewed" ? `${seenTabs}${movieSeenFilters()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
     : `${seenTabs}${renderSavedSectionChips(category, sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
@@ -534,7 +537,7 @@ function renderSavedViewSheet(item, category) {
   if (category === "recipes") {
     const portions = recipePortions(item);
     const factor = portions / Math.max(1, Number(item.servings) || 1);
-    details.push(`<div class="saved-facts"><span>${icon("clock", "icon-sm")}${esc(item.minutes || 0)} мин</span><span id="recipe-fact-portions">${portions} порц.</span></div>`);
+    details.push(recipeHero(item));
     details.push(`<div class="detail-block"><div class="section-heading"><h3>Ингредиенты</h3></div><div class="recipe-portions"><button type="button" data-action="recipe-portion-step" data-step="-1" aria-label="Уменьшить количество порций" ${portions === 1 ? "disabled" : ""}>−</button><label for="recipe-portions">Порций<input id="recipe-portions" type="number" inputmode="numeric" min="1" max="20" step="1" value="${portions}"></label><button type="button" data-action="recipe-portion-step" data-step="1" aria-label="Увеличить количество порций" ${portions === 20 ? "disabled" : ""}>+</button></div><p id="recipe-scale-caption" class="recipe-scale-caption">${factor === 1 ? "Количество ингредиентов для исходного рецепта" : `Количество пересчитано с ${item.servings || 1} на ${portions} порций`}</p>${(item.ingredients || []).length ? `<ul id="recipe-ingredients" class="saved-bullets">${item.ingredients.map((x, i) => `<li data-ingredient-index="${i}">${esc(recipeIngredientLine(x, factor))}</li>`).join("")}</ul>` : `<p>Ингредиенты ещё не добавлены.</p>`}</div>`);
     details.push(`<div class="detail-block"><h3>Приготовление</h3>${(item.steps || []).length ? `<ol class="saved-steps">${item.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : `<p>Шаги ещё не добавлены.</p>`}</div>`);
     details.push(`<div class="detail-block"><h3>Список покупок</h3><p>Добавим ингредиенты на выбранное число порций.</p><button class="small-button" type="button" data-action="recipe-shopping" ${(item.ingredients || []).length ? "" : "disabled"}>Создать список</button></div>`);
