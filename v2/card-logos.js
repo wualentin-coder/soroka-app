@@ -31,6 +31,13 @@ const CHAIN_LOGOS = [
     svg: `<svg viewBox="0 0 24 24"><path fill="#111" d="M12 7c2-2 6-2 7.5 1.5S19 18 15.5 20c-1.5.8-2.5 0-3.5 0s-2 .8-3.5 0C5 18 3 12 4.5 8.5S10 5 12 7z"/><path fill="#111" d="M12 6c0-2 1.5-3.5 3.5-3.5C15.5 4.5 14 6 12 6z"/></svg>` },
 ];
 
+/** Настоящие логотипы (SVG из Википедии) — знак для плашки и целиком; у остальных сетей — рисованный знак. */
+const REAL_LOGOS = { "пят": "pyaterochka", "магнит": "magnit", "перекр": "perekrestok", "лента": "lenta", "fix": "fixprice" };
+CHAIN_LOGOS.forEach(chain => {
+  const key = Object.entries(REAL_LOGOS).find(([part]) => chain.re.source.toLowerCase().includes(part))?.[1];
+  if (key) { chain.real = key; chain.svg = `<img src="./assets/emblem-${key}.svg" alt="">`; }
+});
+
 /** Сеть по бренду или названию карты. */
 function chainOf(item) {
   const text = `${item?.brand === "magnit" ? "магнит" : item?.brand === "pyaterochka" ? "пятёрочка" : item?.brand === "perekrestok" ? "перекрёсток" : ""} ${item?.title || ""}`;
