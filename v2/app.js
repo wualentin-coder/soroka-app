@@ -392,6 +392,7 @@ function render() {
   document.documentElement.dataset.accent = data.settings.accent || "teal";
   document.body.classList.toggle("modal-open", Boolean(ui.sheet));
   document.body.classList.toggle("density-compact", data.settings.density === "compact");
+  document.body.classList.toggle("density-spacious", data.settings.density === "spacious");
   const page = ui.demoState !== "normal" && ui.page !== "settings" ? renderDemoStatePage() : ui.page === "today" ? todayPage() : ui.page === "upcoming" ? upcomingPage() : extendedPage(ui.page);
   const sidebar = `<div class="sidebar-caption">План</div><nav class="sidebar-nav" aria-label="План">${navigation.slice(0, 3).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Пространство</div><nav class="sidebar-nav" aria-label="Разделы">${navigation.slice(3, 9).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Другое</div><nav class="sidebar-nav" aria-label="Другое">${navigation.slice(9).map(item => navItem(item)).join("")}</nav>`;
   const sheet = ui.sheet ? ui.sheet.kind === "search" ? searchSheet() : ui.sheet.kind === "entry" ? entrySheet() : renderExtendedSheet() : "";
