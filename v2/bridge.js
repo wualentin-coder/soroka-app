@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d1ab27c440","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=f95b9872d4","integrity":null},{"src":"./more.js?v=bb3273ba52","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=f64d0a562c","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d1ab27c440","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=a30bdec62f","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=545f813263","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -234,6 +234,7 @@
 
   let base = null;        // последнее, что знаем о сервере
   let warming = false;    // открыты на снимке из прошлого запуска, свежий ещё идёт
+  let heldRender = false; // свежие данные пришли при открытой форме — перерисуем после неё
   const SNAP_KEY = "soroka-snapshot-v1";
   function keepSnapshot(snapshot) {
     setTimeout(() => { try { localStorage.setItem(SNAP_KEY, JSON.stringify({ at: Date.now(), snapshot })); } catch (_) {} }, 0);
@@ -298,6 +299,10 @@
     remapUi(ids);
     // На экране строка «Удалено · Вернуть» — не перерисовываем, пока человек
     // не уйдёт с экрана сам: иначе «Вернуть» исчезнет через секунду.
+    // Открыта форма (кредит, платёж, заметка) — не перерисовываем: иначе всё,
+    // что человек успел ввести, сбрасывается к старым значениям. Новые данные
+    // покажутся, когда форму закроют.
+    if (document.querySelector(".sheet form, .composer")) { heldRender = true; return; }
     if (!document.querySelector(".swipe-undo")) render();
   }
 
@@ -818,6 +823,7 @@
     // Какая страница открыта — в разметку: по ней CSS прячет «+», где он мешает.
     const paint = window.render;
     window.render = function () {
+      heldRender = false;
       paint();
       document.body.dataset.page = ui.page;
       document.body.dataset.financeTab = ui.financeTab || "";
@@ -840,6 +846,8 @@
     document.addEventListener("click", intercept, true);
     document.addEventListener("submit", interceptSubmit, true);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+    // Форму закрыли, а свежие данные ждали — показываем.
+    setInterval(() => { if (heldRender && !document.querySelector(".sheet form, .composer")) render(); }, 700);
     setTimeout(() => {
       base = clone(data);
       openDeepLink();
