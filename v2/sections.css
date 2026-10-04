@@ -1674,3 +1674,30 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .loyalty-color-own i { display: grid; place-items: center; background: conic-gradient(#e53935, #fdd835, #43a047, #2f6fdb, #7b4bd6, #e53935) !important; color: #fff; }
 .loyalty-color-own input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .loyalty-color-none i { display: grid; place-items: center; border: 1px dashed var(--line); background: transparent !important; color: var(--muted); font-style: normal; font-weight: 800; }
+
+/* ══ Финансы: категории — полоса долей и строки ═══════════════════════════════ */
+.cat-card { padding: 14px 14px 6px; }
+.cat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.cat-head span { color: var(--muted); font-size: 12px; font-weight: 700; }
+.cat-head strong { font-size: 20px; }
+.cat-bar { display: flex; gap: 2px; height: 10px; overflow: hidden; margin-bottom: 8px; border-radius: 999px; background: var(--surface-soft); }
+.cat-bar i { min-width: 3px; }
+.cat-list { display: grid; }
+.cat-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto 14px; align-items: center; gap: 10px; min-height: 44px; padding: 0 2px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.cat-row:first-child { border-top: 0; }
+.cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; }
+.cat-name { overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.cat-share { color: var(--muted); font-size: 12px; font-weight: 700; }
+.cat-sum { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cat-row > .icon { color: var(--subtle); }
+.tx-kinds { margin-bottom: 12px; }
+.tx-total { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 10px; }
+.tx-total span { color: var(--muted); font-size: 13px; font-weight: 700; }
+.tx-total strong { font-size: 22px; }
+.tx-total strong.income { color: var(--good, #1f9d8a); }
+.tx-cats { margin-bottom: 12px; }
+.tx-cats .map-category-chip { gap: 6px; }
+.payment-card.late .list-copy span { color: #d6404d; }
+.pay-task .pay-task-sum { margin-left: auto; padding-right: 10px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pay-task .task-meta .icon { width: 13px; height: 13px; }
+.rule-goal-pct { color: var(--accent); font-size: 15px; }
