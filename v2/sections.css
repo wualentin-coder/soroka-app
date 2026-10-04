@@ -1757,3 +1757,41 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .note-plain .note-title-input { resize: none; overflow: hidden; line-height: 1.25; font-family: inherit; }
 .note-plain .note-body-input { overflow: hidden; min-height: 40vh; flex: none; }
 .note-sheet { overflow-y: auto; }
+
+/* ══ Фильмы: просмотрено, отзыв, оценка подряд ═══════════════════════════════ */
+.movie-seen-filters { margin: 4px 0 8px; }
+.movie-run-start { display: flex; align-items: center; gap: 12px; width: 100%; margin: 4px 0 12px; padding: 12px 14px; border: 0; border-radius: 16px; background: linear-gradient(135deg, #ffb52e22, #ff7a1a1c); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.movie-run-start > svg:first-child { color: #f5a300; }
+.movie-run-start span { display: grid; flex: 1; gap: 2px; }
+.movie-run-start small { opacity: .65; font-size: 12px; }
+.movie-review { display: grid; gap: 8px; margin: 12px 0 4px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, currentColor 5%, transparent); }
+.movie-review.invite { animation: review-in .5s ease-out; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #f5a300 50%, transparent); }
+@keyframes review-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.movie-review label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
+.movie-review textarea { border: 0; background: transparent; resize: vertical; font: inherit; font-weight: 400; font-size: 15px; color: inherit; outline: 0; padding: 0; min-height: 44px; }
+.movie-rewatch { justify-self: start; display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 7px 12px; border-radius: 14px; background: color-mix(in srgb, currentColor 8%, transparent); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+.movie-rewatch.on { background: #3f8fc4; color: #fff; }
+.movie-run-progress { height: 4px; border-radius: 2px; background: color-mix(in srgb, currentColor 10%, transparent); overflow: hidden; margin: 0 0 14px; }
+.movie-run-progress i { display: block; height: 100%; background: #f5a300; transition: width .3s; }
+.movie-run-card { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; }
+.movie-run-card .movie-cover { width: 84px; flex: none; }
+.movie-run-card div { display: grid; gap: 4px; min-width: 0; }
+.movie-run-card b { font-size: 19px; line-height: 1.2; }
+.movie-run-card span, .movie-run-card small { opacity: .65; font-size: 13px; }
+.run-pad { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 12px; }
+.run-star { aspect-ratio: 1; border: 0; border-radius: 10px; background: color-mix(in srgb, currentColor 7%, transparent); color: inherit; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; transition: background .15s, transform .15s; }
+.run-star.lit { background: #ffd77a; color: #6b4a00; }
+.run-star.on { background: #f5a300; color: #fff; transform: scale(1.08); }
+.movie-run-form textarea { width: 100%; box-sizing: border-box; border: 0; border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, currentColor 5%, transparent); font: inherit; font-size: 15px; color: inherit; resize: none; outline: 0; }
+.movie-run-actions { display: flex; gap: 8px; margin-top: 12px; }
+.movie-run-actions .primary-button { flex: 1; }
+.movie-run-actions .ghost-button.on { background: #3f8fc4; color: #fff; }
+.movie-run-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.movie-run-done { display: grid; justify-items: center; gap: 8px; padding: 18px 0; text-align: center; }
+.movie-run-done > svg { width: 40px; height: 40px; color: #2fa96a; }
+
+.reco-filter { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; flex-wrap: wrap; }
+.reco-kind { display: inline-flex; padding: 3px; border-radius: 14px; background: color-mix(in srgb, currentColor 7%, transparent); }
+.reco-kind button { border: 0; background: transparent; padding: 7px 12px; border-radius: 11px; font: inherit; font-size: 14px; color: inherit; cursor: pointer; }
+.reco-kind button.active { background: var(--surface, #fff); box-shadow: 0 1px 4px rgba(0,0,0,.12); font-weight: 600; }
+.reco-filter select { width: auto; flex: 1; min-width: 0; }
