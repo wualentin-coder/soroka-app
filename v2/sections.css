@@ -2041,3 +2041,57 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 
 .loyalty-auto { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; margin: 4px 0 8px; border: 0; border-radius: 14px; background: color-mix(in srgb, var(--accent, #c4383d) 12%, transparent); color: var(--accent, #c4383d); font: inherit; font-weight: 600; cursor: pointer; }
 .loyalty-auto[disabled] { opacity: .75; }
+
+/* ══ Компактные формы правки: поля плотнее, парные — в одну строку ═══════════ */
+.sheet form:not(.note-plain) { gap: 10px; }
+.sheet form:not(.note-plain) .field { gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted, #6b7280); margin: 0; }
+.sheet form:not(.note-plain) .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.sheet form:not(.note-plain) .field select { min-height: 42px; padding: 8px 12px; font-size: 15px; font-weight: 400; color: var(--text, inherit); border-radius: 12px; }
+.sheet form:not(.note-plain) .field textarea { min-height: 58px; padding: 8px 12px; font-size: 15px; font-weight: 400; color: var(--text, inherit); border-radius: 12px; }
+.sheet form:not(.note-plain) .field-row { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important; gap: 8px !important; }
+.sheet form:not(.note-plain) .field-row.address-parts { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.sheet form:not(.note-plain) input[name="title"] { font-size: 17px; font-weight: 600; }
+.sheet .sheet-head h2 { font-size: 20px; }
+.sheet .eyebrow { margin-bottom: 2px; }
+.sheet .entry-reminders { margin-top: 2px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, currentColor 4%, transparent); }
+.sheet .entry-reminders h3 { font-size: 13px; margin: 0 0 8px; }
+.sheet .sheet-actions { position: sticky; bottom: 0; padding: 10px 0 calc(env(safe-area-inset-bottom) + 6px); background: var(--surface, #fff); margin-top: 4px; }
+
+/* ══ Плотность интерфейса: просторная · обычная · компактная ══════════════════ */
+body.density-compact { font-size: 14px; }
+body.density-compact .page-header h1, body.density-compact .header h1 { font-size: 26px; }
+body.density-compact .section { margin-top: 14px; }
+body.density-compact .section-heading { margin-bottom: 6px; }
+body.density-compact .section-heading h2 { font-size: 17px; }
+body.density-compact .task-stack, body.density-compact .record-list { gap: 6px; }
+body.density-compact .task-card { padding: 8px 12px; border-radius: 14px; }
+body.density-compact .event-card { padding: 8px 12px; }
+body.density-compact .record-card { padding: 8px 12px; }
+body.density-compact .saved-section-card { padding: 10px 12px; min-height: 0; }
+body.density-compact .recipe-grid, body.density-compact .saved-results.recipe-grid > .record-list { gap: 8px; }
+body.density-compact .recipe-card-body, body.density-compact .product-body { padding: 6px 10px 9px; }
+body.density-compact .movie-card { padding: 6px; }
+body.density-compact .content-main { gap: 10px; }
+body.density-compact .calendar-card { padding: 10px 12px; }
+body.density-spacious { font-size: 16px; }
+body.density-spacious .section { margin-top: 30px; }
+body.density-spacious .task-stack, body.density-spacious .record-list { gap: 14px; }
+body.density-spacious .task-card, body.density-spacious .record-card { padding-top: 16px; padding-bottom: 16px; }
+body.density-spacious .section-heading h2 { font-size: 21px; }
+
+/* ══ Анимации ═══════════════════════════════════════════════════════════════ */
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+body.page-anim .content-main > *, body.page-anim .saved-section-screen .content-main > *, body.page-anim .saved-overview-grid > *, body.page-anim .notes-heading { animation: rise-in .38s cubic-bezier(.2, .8, .3, 1) both; }
+body.page-anim .content-main > :nth-child(2) { animation-delay: .04s; }
+body.page-anim .content-main > :nth-child(3) { animation-delay: .08s; }
+body.page-anim .content-main > :nth-child(4) { animation-delay: .12s; }
+body.page-anim .content-main > :nth-child(5) { animation-delay: .16s; }
+body.page-anim .content-main > :nth-child(n+6) { animation-delay: .2s; }
+body.page-anim .page-header, body.page-anim .header { animation: rise-in .3s ease-out both; }
+/* Нажатие: карточки и кнопки чуть «утапливаются». */
+.task-card, .record-card, .saved-section-card, .event-card, .birthday-row, .site-card, .recipe-card, .product-card, .primary-button, .ghost-button, .movie-run-start, .mobile-nav a, .mobile-nav button { transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease; }
+.task-card:active, .record-card:active, .saved-section-card:active, .event-card:active, .birthday-row:active, .site-card:active, .primary-button:active, .ghost-button:active, .movie-run-start:active { transform: scale(.975); }
+.mobile-nav button:active, .mobile-nav a:active { transform: scale(.92); }
+/* Окна — с пружинкой, затемнение — плавно. */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
