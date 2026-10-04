@@ -2038,3 +2038,6 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .wallet-rest .loyalty-card { padding-top: 12px; }
 .wallet > .wallet-card.is-swiping { position: relative; z-index: 3; }
 .wallet > .wallet-card.is-swiping::after { content: "Изменить ›"; position: absolute; right: -96px; top: 18px; font-weight: 700; color: var(--accent, #c4383d); opacity: var(--swipe, 0); }
+
+.loyalty-auto { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; margin: 4px 0 8px; border: 0; border-radius: 14px; background: color-mix(in srgb, var(--accent, #c4383d) 12%, transparent); color: var(--accent, #c4383d); font: inherit; font-weight: 600; cursor: pointer; }
+.loyalty-auto[disabled] { opacity: .75; }
