@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=ee4364933b","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=3bca418083","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=9cb5d0261b","integrity":null},{"src":"./app.js?v=2f554272de","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=748786ec44","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=3bca418083","integrity":null},{"src":"./goods.js?v=55a0048862","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=4a852ffce3","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -383,6 +383,16 @@
     return `<script>(function(){var s=${JSON.stringify(saved).replace(/</g, "\u003c")};function mk(track){var api={getItem:function(k){k=String(k);return Object.prototype.hasOwnProperty.call(s,k)?s[k]:null},setItem:function(k,v){s[String(k)]=String(v);if(track)parent.postMessage({soroka:"storage",data:s},"*")},removeItem:function(k){delete s[String(k)];if(track)parent.postMessage({soroka:"storage",data:s},"*")},clear:function(){s={};if(track)parent.postMessage({soroka:"storage",data:s},"*")},key:function(i){return Object.keys(s)[i]||null}};Object.defineProperty(api,"length",{get:function(){return Object.keys(s).length}});return api}try{Object.defineProperty(window,"localStorage",{value:mk(true),configurable:true});Object.defineProperty(window,"sessionStorage",{value:mk(false),configurable:true})}catch(e){}})();<\/script>`;
   }
 
+  window.sorokaOpenFile = (item) => openFile(item);
+  /** Мини-сайт с телефона: файл уходит в чат с ботом и становится записью «Файлы». */
+  window.sorokaUploadSite = async (name, html) => {
+    const answer = await call({ action: "site_upload", name, html }, 60000);
+    if (!answer.id) throw new Error("upload");
+    (data.saved.files = data.saved.files || []).unshift({ id: answer.id, title: answer.title, description: "", topic: "", tags: [], source: "Из приложения", inChat: true, viewed: false, pinned: false, created: new Date().toISOString() });
+    if (base && base.saved && Array.isArray(base.saved.files)) base.saved.files.unshift(JSON.parse(JSON.stringify(data.saved.files[0])));
+    try { localStorage.setItem("soroka-site:" + answer.id, JSON.stringify({ kind: "html", name: answer.title, html })); } catch (_) {}
+    return answer;
+  };
   async function openFile(item) {
     if (!item) return;
     const layer = document.createElement("div");
@@ -394,7 +404,16 @@
     layer.querySelector(".live-file-close").addEventListener("click", close);
     const body = layer.querySelector(".live-file-body");
     try {
-      const file = await call({ action: "file_open", ref: String(item.id) }, 40000);
+      // Мини-сайт открываем из копии на телефоне сразу, а свежую версию тянем в фоне.
+      const CACHE = "soroka-site:" + item.id;
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(CACHE) || "null"); } catch (_) {}
+      const fresh = call({ action: "file_open", ref: String(item.id) }, 40000).then((f) => {
+        if (f && f.kind === "html" && f.html.length < 2_500_000) { try { localStorage.setItem(CACHE, JSON.stringify(f)); } catch (_) {} }
+        return f;
+      });
+      const file = cached && cached.kind === "html" ? cached : await fresh;
+      fresh.catch(() => null);
       if (file.kind === "html") {
         const key = STORE_KEY + item.id;
         let saved = {};
@@ -887,6 +906,7 @@
     movies: { label: "Фильм", placeholder: "Название или о чём фильм", hint: "" },
     posts: { label: "Пост", placeholder: "Текст поста или ссылка t.me", hint: "Сохрани как пост: " },
     links: { label: "Ссылка", placeholder: "Ссылка или что сохранить", hint: "Сохрани ссылку: " },
+    birthdays: { label: "День рождения", placeholder: "Кто и когда: Маша, 12 марта", hint: "Запиши день рождения, повтор каждый год: " },
     recipes: { label: "Рецепт", placeholder: "Блюдо, продукты или ссылка на рецепт", hint: "Сохрани рецепт: " },
     notes: { label: "Заметка", placeholder: "Текст заметки", hint: "Заметка: ", manual: true },
     files: { label: "Файл", placeholder: "Что за файл — сам файл пришлите боту", hint: "Сохрани в файлы: " },
@@ -924,10 +944,13 @@
     // описание — только с трёх букв и не у фильмов («Бо» в описании — не «Борат»).
     const starts = (v) => norm(v).startsWith(q) ? 0 : norm(v).split(/[^a-zа-я0-9]+/).some((w) => w.startsWith(q)) ? 1 : 9;
     const rank = (x) => Math.min(starts(x.title), starts(x.originalTitle), ctx !== "movies" && q.length >= 3 && hit(x.title, x.description) ? 2 : 9,
+      ctx === "addresses" && hit(x.address) ? 2 : 9,
       ctx === "recipes" && q.length >= 3 && hit(...(x.ingredients || [])) ? 3 : 9);
     return list.map((x) => [rank(x), x]).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0]).map(([, x]) => x).slice(0, 6).map((x) => ({
       title: x.title, cover: ctx === "movies" ? x.coverPath : "",
-      meta: ctx === "movies" ? [x.year, x.status].filter(Boolean).join(" · ") : (x.topic || x.source || ""),
+      meta: ctx === "movies" ? [x.year, x.status].filter(Boolean).join(" · ")
+        : ctx === "addresses" ? [x.address, ...(typeof addressParts === "function" ? addressParts(x) : [])].filter(Boolean).join(" · ")
+        : (x.topic || x.source || ""),
       open: () => { navigate("saved"); openSavedRecord(ctx, x.id); },
     }));
   }
