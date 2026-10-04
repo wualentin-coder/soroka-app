@@ -143,8 +143,10 @@ function cookGo(next) {
 function recipeAction(action, control) {
   if (action === "cook-start" && ui.sheet?.kind === "saved") {
     const id = ui.sheet.id;
+    // Порции, выбранные в рецепте, — и в готовке, и по возвращении к рецепту.
+    const portions = ui.sheet.portions;
     cookTimers.clear();
-    ui.sheet = { kind: "cook", id, step: -1, have: {}, back: { kind: "saved", category: "recipes", id, mode: "view", justRendered: true } };
+    ui.sheet = { kind: "cook", id, step: -1, have: {}, portions, back: { kind: "saved", category: "recipes", id, mode: "view", justRendered: true, portions } };
     render(); runCookTick(); void keepAwake(true);
     return true;
   }
