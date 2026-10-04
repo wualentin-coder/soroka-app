@@ -1858,7 +1858,9 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .cook-nav { display: flex; gap: 10px; padding-top: 10px; }
 .cook-nav button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 54px; font-size: 16px; border-radius: 16px; }
 .cook-nav .primary-button { flex: 1; }
-@media (prefers-color-scheme: dark) { .cook-screen { background: var(--bg, #141414); color: var(--ink, #f2f2f2); } .cook-timer::before { background: var(--bg, #141414); } .cook-chip { background: #4a2d10; color: #ffd29a; } }
+:root:not([data-theme="light"]) .cook-screen { background: var(--bg, #141414); color: var(--ink, #f2f2f2); }
+:root:not([data-theme="light"]) .cook-timer::before { background: var(--bg, #141414); }
+:root:not([data-theme="light"]) .cook-chip { background: #4a2d10; color: #ffd29a; }
 .saved-results.recipe-grid { display: block; }
 .saved-results.recipe-grid > .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .saved-results.recipe-grid > .record-list > * { margin: 0 !important; min-width: 0; }
@@ -1913,7 +1915,8 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .birthday-row.soon .birthday-when { background: #fde7cc; color: #8a4a08; }
 .birthday-row.today { background: linear-gradient(135deg, #fff1d6, #ffe0ec); }
 .birthday-row.today .birthday-when { background: #f0336a; color: #fff; font-weight: 700; }
-@media (prefers-color-scheme: dark) { .birthday-row.today { background: linear-gradient(135deg, #4a3510, #4a1b2c); } .birthday-row.soon .birthday-when { background: #4a2d10; color: #ffd29a; } }
+:root:not([data-theme="light"]) .birthday-row.today { background: linear-gradient(135deg, #4a3510, #4a1b2c); }
+:root:not([data-theme="light"]) .birthday-row.soon .birthday-when { background: #4a2d10; color: #ffd29a; }
 
 /* ══ Мини-сайты ═════════════════════════════════════════════════════════════ */
 .site-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px; margin-top: 6px; }
@@ -1944,7 +1947,7 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .product-price s { font-size: 13px; opacity: .55; }
 .product-price em { font-style: normal; font-size: 13px; font-weight: 700; color: #e5266b; }
 .product-card .product-title { color: #3870c9; }
-@media (prefers-color-scheme: dark) { .product-card .product-title { color: #7fa9ec; } }
+:root:not([data-theme="light"]) .product-card .product-title { color: #7fa9ec; }
 /* ══ «План»: календарь и «сегодня» одной компактной карточкой ═══════════════ */
 .plan-main .calendar-card.with-summary { padding: 12px 14px 6px; }
 .calendar-card.with-summary .calendar-top { gap: 8px; margin-bottom: 4px; padding-bottom: 6px; }
@@ -1981,7 +1984,7 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .note-format { position: sticky; bottom: 0; display: flex; gap: 4px; padding: 8px 4px calc(env(safe-area-inset-bottom) + 8px); margin: 0 -4px; background: var(--surface, #fff); border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); z-index: 2; }
 .note-format button { flex: 1; height: 38px; border: 0; border-radius: 10px; background: color-mix(in srgb, currentColor 6%, transparent); color: inherit; font: inherit; font-size: 15px; cursor: pointer; }
 .note-format button:active { background: color-mix(in srgb, currentColor 14%, transparent); }
-@media (prefers-color-scheme: dark) { .note-format { background: var(--surface, #1c1c1e); } }
+:root:not([data-theme="light"]) .note-format { background: var(--surface, #1c1c1e); }
 
 .what-cook-webblock { display: grid; gap: 10px; margin-top: 8px; }
 .what-cook-webblock h3 { margin: 6px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
@@ -2165,4 +2168,5 @@ body.page-anim .content-main > :nth-child(n+6) { animation-delay: .17s; }
 .record-card-shell[data-category="products"] .record-pin-toggle { top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #1d1d1f; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
 .record-card-shell[data-category="products"] .record-pin-toggle.is-pinned { color: #f1117e; }
 .record-card-shell[data-category="products"] .record-pin-toggle.is-pinned svg { fill: currentColor; }
-@media (prefers-color-scheme: dark) { .product-card .product-title { color: #eef0f3 !important; } .product-card .product-image { background: #26282c; } }
+:root:not([data-theme="light"]) .product-card .product-title { color: #eef0f3 !important; }
+:root:not([data-theme="light"]) .product-card .product-image { background: #26282c; }
