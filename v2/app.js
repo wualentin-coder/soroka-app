@@ -443,7 +443,7 @@ document.addEventListener("touchstart", event => {
   const sheet = event.target.closest?.(".sheet");
   if (!sheet || event.touches.length !== 1) return;
   if (event.target.closest("input, textarea, select, .live-code-track, .leaflet-container, .swipe-row")) return;
-  sheetDrag = { sheet, x: event.touches[0].clientX, y: event.touches[0].clientY, dy: 0, t: event.timeStamp, active: false };
+  sheetDrag = { sheet, target: event.target, x: event.touches[0].clientX, y: event.touches[0].clientY, dy: 0, t: event.timeStamp, active: false };
 }, { passive: true });
 document.addEventListener("touchmove", event => {
   const drag = sheetDrag;
@@ -453,7 +453,11 @@ document.addEventListener("touchmove", event => {
   if (!drag.active) {
     if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { sheetDrag = null; return; }
     if (dy < 10) { if (dy < -10) sheetDrag = null; return; }
-    if (drag.sheet.scrollTop > 0) { sheetDrag = null; return; }
+    // Прокручено не только само окно, но и любой блок внутри него (текст
+    // заметки) — тогда жест вниз — это прокрутка вверх, а не «закрыть».
+    for (let node = drag.target; node && node !== drag.sheet.parentElement; node = node.parentElement) {
+      if (node.scrollTop > 0) { sheetDrag = null; return; }
+    }
     drag.active = true;
     drag.sheet.classList.add("sheet-dragging");
   }
