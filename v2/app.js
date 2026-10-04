@@ -210,7 +210,7 @@ const navigation = [
   ["settings", "Настройки", "settings"],
   ["more", "Все разделы", "more"]
 ];
-const mobileNavigation = [navigation[0], navigation[1], navigation[3], navigation[4], ["more", "Ещё", "more"]];
+const mobileNavigation = [["today", "План", "today"], navigation[3], navigation[4], ["more", "Ещё", "more"]];
 function navItem([page, label, symbol], mobile = false) {
   const active = ui.page === page || (page === "more" && mobile && !mobileNavigation.slice(0, 4).some(([name]) => name === ui.page));
   const count = page === "inbox" && data.inbox.length && !mobile ? `<span class="nav-count">${data.inbox.length}</span>` : "";
@@ -297,7 +297,13 @@ function todayPage() {
   const events = `<section class="section"><div class="section-heading"><h2>В расписании</h2><span class="count">${meetings.length}</span></div>${meetings.length ? meetings.map(eventCard).join("") : emptyCard("Событий пока нет", "Можно добавить встречу на сегодня.")}</section>`;
   const aside = `<div class="side-card"><h3>Ближайшие дни</h3>${[1, 2, 3].map(n => { const day = offsetIso(n); const count = tasksOn(day).filter(t => !t.done).length + eventsOn(day).length; return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${count} ${word(count, "запись", "записи", "записей")}</b></div>`; }).join("")}<button class="text-action" type="button" data-action="navigate" data-page="upcoming">Открыть календарь ${icon("arrow", "icon-sm")}</button></div><div class="side-card"><h3>Быстрый ввод</h3><p class="side-note">Задачи удобно отправлять Сороке обычным текстом. Здесь можно проверить, как они выглядят в планировщике.</p></div>`;
   const tickets = typeof todayTicketsSection === "function" ? todayTicketsSection() : "";
-  return `${header("Сегодня", "Задачи, события и всё, что требует внимания", "Мой день")}<div class="content-grid"><div class="content-main">${hero}${overdue}${tasks}${events}${tickets}</div><aside class="content-aside">${aside}</aside></div>`;
+  // «Сегодня» и «Предстоящие» — одна вкладка: календарь сверху, под ним день.
+  // Сегодня — как раньше (итог, просроченное, дела, расписание); другой день — его дела.
+  const cal = calendarCard();
+  const body = ui.selected && ui.selected !== today
+    ? `<div class="plan-day-back"><button type="button" class="text-action" data-action="calendar-today">${icon("left", "icon-sm")}К сегодня</button></div>${dayAgenda(ui.selected)}`
+    : `${hero}${overdue}${tasks}${events}${tickets}`;
+  return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
   // Месяц — столько недель, сколько нужно (5 или 6): раньше всегда было 35 дней,
@@ -321,12 +327,20 @@ function calendarDay(date) {
   const eventCount = eventsOn(value).length;
   return `<button type="button" class="calendar-day ${cls}" data-action="select-day" data-date="${value}" aria-label="${esc(fullDate(value))}, ${taskCount} ${word(taskCount, "задача", "задачи", "задач")}, ${eventCount} ${word(eventCount, "событие", "события", "событий")}" ${value === ui.selected ? 'aria-pressed="true"' : ""}><span>${date.getDate()}</span>${dots}</button>`;
 }
+function calendarCard() {
+  return `<div class="calendar-card ${ui.calendarExpanded ? "expanded" : ""}" data-calendar-swipe><div class="calendar-top"><button class="calendar-expand-title" type="button" data-action="calendar-expand" aria-expanded="${ui.calendarExpanded}" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь">${esc(monthName(ui.month))}${icon(ui.calendarExpanded ? "up" : "down", "icon-sm")}</button><div class="calendar-controls"><button type="button" data-action="month-prev" aria-label="Предыдущий месяц">${icon("left")}</button><button type="button" data-action="month-next" aria-label="Следующий месяц">${icon("right")}</button></div></div><div class="calendar-toolbar"><div class="segmented"><button type="button" data-action="calendar-mode" data-mode="week" class="${!ui.calendarExpanded ? "active" : ""}">Неделя</button><button type="button" data-action="calendar-mode" data-mode="month" class="${ui.calendarExpanded ? "active" : ""}">Месяц</button></div><button type="button" class="text-action" data-action="calendar-today">К сегодня</button></div><div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="calendar-grid">${calendarDays().map(calendarDay).join("")}</div><div class="calendar-legend"><span><i></i>Задачи</span><span><i class="event-dot"></i>События</span></div><button type="button" class="calendar-handle" data-action="calendar-expand" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь жестом"><span></span></button></div>`;
+}
+function dayAgenda(day) {
+  const tasks = tasksOn(day);
+  const events = eventsOn(day);
+  return `<section class="date-agenda"><div class="section-heading"><h2>${esc(fullDate(day))}</h2><button class="text-action" type="button" data-action="add" data-type="task">Добавить ${icon("plus", "icon-sm")}</button></div>${tasks.length || events.length ? `${events.length ? `<div class="agenda-group-label">События</div>${events.map(eventCard).join("")}` : ""}${tasks.length ? `<div class="agenda-group-label">Задачи</div><div class="task-stack">${tasks.map(taskCard).join("")}</div>` : ""}` : emptyCard("Здесь пока свободно", "Выберите другую дату или добавьте задачу на этот день.")}</section>`;
+}
 function upcomingPage() {
   const late = overdueTasks();
   const tasks = tasksOn(ui.selected);
   const events = eventsOn(ui.selected);
-  const cal = `<div class="calendar-card ${ui.calendarExpanded ? "expanded" : ""}" data-calendar-swipe><div class="calendar-top"><button class="calendar-expand-title" type="button" data-action="calendar-expand" aria-expanded="${ui.calendarExpanded}" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь">${esc(monthName(ui.month))}${icon(ui.calendarExpanded ? "up" : "down", "icon-sm")}</button><div class="calendar-controls"><button type="button" data-action="month-prev" aria-label="Предыдущий месяц">${icon("left")}</button><button type="button" data-action="month-next" aria-label="Следующий месяц">${icon("right")}</button></div></div><div class="calendar-toolbar"><div class="segmented"><button type="button" data-action="calendar-mode" data-mode="week" class="${!ui.calendarExpanded ? "active" : ""}">Неделя</button><button type="button" data-action="calendar-mode" data-mode="month" class="${ui.calendarExpanded ? "active" : ""}">Месяц</button></div><button type="button" class="text-action" data-action="calendar-today">К сегодня</button></div><div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="calendar-grid">${calendarDays().map(calendarDay).join("")}</div><div class="calendar-legend"><span><i></i>Задачи</span><span><i class="event-dot"></i>События</span></div><button type="button" class="calendar-handle" data-action="calendar-expand" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь жестом"><span></span></button></div>`;
-  const agenda = `<section class="date-agenda"><div class="section-heading"><h2>${esc(fullDate(ui.selected))}</h2><button class="text-action" type="button" data-action="add" data-type="task">Добавить ${icon("plus", "icon-sm")}</button></div>${tasks.length || events.length ? `${events.length ? `<div class="agenda-group-label">События</div>${events.map(eventCard).join("")}` : ""}${tasks.length ? `<div class="agenda-group-label">Задачи</div><div class="task-stack">${tasks.map(taskCard).join("")}</div>` : ""}` : emptyCard("Здесь пока свободно", "Выберите другую дату или добавьте задачу на этот день.")}</section>`;
+  const cal = calendarCard();
+  const agenda = dayAgenda(ui.selected);
   const banner = late.length ? `<div class="overdue-banner"><span>${late.length} ${word(late.length, "просроченная задача", "просроченные задачи", "просроченных задач")}</span><button type="button" data-action="move-overdue">Перенести на сегодня</button></div>` : "";
   const aside = `<div class="side-card"><h3>План на неделю</h3>${Array.from({ length: 7 }, (_, i) => { const day = offsetIso(i); return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${tasksOn(day).filter(t => !t.done).length + eventsOn(day).length}</b></div>`; }).join("")}</div>`;
   return `${header("Предстоящие", "Выберите день и посмотрите его задачи и события", "Планировщик")}<div class="content-grid"><div class="content-main">${banner ? `${banner}<div style="height:13px"></div>` : ""}${cal}${agenda}</div><aside class="content-aside">${aside}</aside></div>`;
@@ -402,6 +416,9 @@ function toggleTask(recordId) {
 }
 function navigate(page) {
   if (!validPages.includes(page)) return;
+  // «Предстоящие» теперь внутри «Плана».
+  if (page === "upcoming") page = "today";
+  if (page === "today" && ui.page !== "today") { ui.selected = todayIso(); ui.calendarAnchor = ui.selected; ui.month = ui.selected.slice(0, 7) + "-01"; }
   ui.page = page;
   ui.menu = false;
   ui.sheet = null;
@@ -530,7 +547,7 @@ document.addEventListener("click", event => {
   if (action === "month-prev") { monthStep(-1); return; }
   if (action === "month-next") { monthStep(1); return; }
   if (action === "calendar-mode") { ui.mode = control.dataset.mode; ui.calendarExpanded = ui.mode === "month"; if (!ui.calendarExpanded) ui.calendarAnchor = ui.selected; render(); return; }
-  if (action === "calendar-expand") { if (suppressCalendarClick) { suppressCalendarClick = false; return; } ui.calendarExpanded = !ui.calendarExpanded; ui.mode = ui.calendarExpanded ? "month" : "week"; if (!ui.calendarExpanded) ui.calendarAnchor = ui.selected; render(); return; }
+  if (action === "calendar-expand") { if (suppressCalendarClick) { suppressCalendarClick = false; return; } animateCalendar(() => { ui.calendarExpanded = !ui.calendarExpanded; ui.mode = ui.calendarExpanded ? "month" : "week"; if (!ui.calendarExpanded) ui.calendarAnchor = ui.selected; render(); }); return; }
   if (action === "calendar-today") { ui.selected = todayIso(); ui.month = todayIso().slice(0, 7) + "-01"; ui.calendarAnchor = ui.selected; render(); return; }
   if (action === "select-day") { ui.selected = control.dataset.date; ui.month = ui.selected.slice(0, 7) + "-01"; if (!ui.calendarExpanded) ui.calendarAnchor = ui.selected; render(); return; }
   if (action === "inbox-task") {
@@ -609,3 +626,53 @@ document.addEventListener("drop", event => {
   if (task) { task.due = day.dataset.date; ui.selected = task.due; ui.calendarAnchor = task.due; ui.month = task.due.slice(0, 7) + "-01"; save(); toast("Задача перенесена на выбранный день"); }
 });
 render();
+
+/*
+ * Календарь «Плана»: раскрытие неделя ↔ месяц плавно (высота едет, а не
+ * прыгает), свайп влево-вправо — следующая/прошлая неделя или месяц.
+ */
+function animateCalendar(change) {
+  const before = document.querySelector(".calendar-card")?.offsetHeight || 0;
+  change();
+  const card = document.querySelector(".calendar-card");
+  if (!card || !before) return;
+  const after = card.offsetHeight;
+  if (Math.abs(after - before) < 2) return;
+  card.animate([{ height: `${before}px` }, { height: `${after}px` }], { duration: 300, easing: "cubic-bezier(.2,.8,.3,1)" });
+  card.querySelector(".calendar-grid")?.animate([{ opacity: .3 }, { opacity: 1 }], { duration: 300 });
+}
+function stepCalendar(dir) {
+  if (ui.calendarExpanded) { monthStep(dir); }
+  else {
+    const anchor = parseDate(ui.calendarAnchor || ui.selected || todayIso());
+    ui.calendarAnchor = localIso(shiftDay(anchor, dir * 7));
+    ui.month = ui.calendarAnchor.slice(0, 7) + "-01";
+    render();
+  }
+  const grid = document.querySelector(".calendar-grid");
+  grid?.animate([{ transform: `translateX(${dir * 36}px)`, opacity: .2 }, { transform: "none", opacity: 1 }], { duration: 260, easing: "cubic-bezier(.2,.8,.3,1)" });
+}
+let calendarSwipe = null;
+document.addEventListener("pointerdown", event => {
+  const card = event.target.closest(".calendar-card");
+  if (!card || event.target.closest(".calendar-handle")) return;
+  calendarSwipe = { x: event.clientX, y: event.clientY, id: event.pointerId };
+});
+document.addEventListener("pointerup", event => {
+  if (!calendarSwipe || calendarSwipe.id !== event.pointerId) return;
+  const dx = event.clientX - calendarSwipe.x, dy = event.clientY - calendarSwipe.y;
+  calendarSwipe = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+    suppressCalendarClick = true; setTimeout(() => { suppressCalendarClick = false; }, 350);
+    swipeSuppressCalendar = Date.now() + 350;
+    stepCalendar(dx < 0 ? 1 : -1);
+  } else if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.4 && event.target.closest(".calendar-card")) {
+    // Вниз по календарю — раскрыть месяц, вверх — свернуть в неделю.
+    const expanded = dy > 0;
+    if (ui.calendarExpanded !== expanded) { swipeSuppressCalendar = Date.now() + 350; animateCalendar(() => { ui.calendarExpanded = expanded; ui.mode = expanded ? "month" : "week"; render(); }); }
+  }
+});
+let swipeSuppressCalendar = 0;
+document.addEventListener("click", event => {
+  if (Date.now() < swipeSuppressCalendar && event.target.closest(".calendar-card")) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, true);
