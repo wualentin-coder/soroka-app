@@ -41,7 +41,7 @@ function loyaltyFace(item, size = "") {
     const tail = String(item.number || "").replace(/\s+/g, "").slice(-4);
     const program = item.title && !chain.re.test(item.title) ? item.title : LOYALTY_BRANDS[loyaltyBrand(item)].program;
     const plate = size === "open" ? `<span class="loyalty-plate" data-action="loyalty-full" data-id="${esc(item.id)}" role="button" aria-label="Код на весь экран">${loyaltyCode(item)}</span>` : "";
-    return `<div class="loyalty-card brand-chain brand-custom ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" style="${esc(style)}"><span class="lw lw-chain"><span class="lw-logo">${chain.svg}</span>${esc(chain.word)}</span><span class="loyalty-program">${esc(program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
+    return `<div class="loyalty-card brand-chain brand-custom ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" style="${esc(style)}"><span class="lw lw-chain ${chain.real ? "is-real" : ""}"><span class="lw-logo">${chain.svg}</span>${esc(chain.word)}</span><span class="loyalty-program">${esc(program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
   }
   const brand = loyaltyBrand(item);
   const info = LOYALTY_BRANDS[brand];
@@ -95,12 +95,12 @@ function renderLoyaltyForm(item) {
   const brand = loyaltyBrand(v);
   const brands = Object.entries(LOYALTY_BRANDS).map(([key, b]) => `<button type="button" class="loyalty-pick ${brand === key ? "on" : ""}" data-action="loyalty-brand" data-brand="${key}">${loyaltyFace({ ...v, brand: key, title: key === "custom" ? (v.brand === "custom" ? v.title : "") || "Своя" : "", number: "", places: [] }, "mini")}<span>${key === "custom" ? "Другая" : esc(b.name)}</span></button>`).join("");
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet loyalty-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${item ? "Изменить карту" : "Новая карта"}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>
-    <form id="loyalty-form"><div class="loyalty-picks">${brands}</div><input type="hidden" name="brand" value="${esc(brand)}">
+    <form id="loyalty-form"><div class="loyalty-preview" id="loyalty-preview">${loyaltyFace({ ...v, brand: "custom", places: [] })}</div><p class="section-note loyalty-auto-note">Дизайн подставится сам по названию: «Пятёрочка», «Магнит», «Лента»… Для других сетей выберите цвет ниже.</p><input type="hidden" name="brand" value="custom">
     <label class="field">Название<input name="title" type="text" maxlength="80" value="${esc(v.title || (brand === "custom" ? "" : LOYALTY_BRANDS[brand].name))}" placeholder="Например, Лента" required></label>
     <label class="field">Номер карты<input name="number" type="text" inputmode="numeric" autocomplete="off" maxlength="64" value="${esc(v.number || "")}" placeholder="Цифры под штрихкодом"></label>
     <details class="loyalty-advanced" ${v.code ? "open" : ""}><summary>В коде не то, что напечатано?</summary><label class="field">Что зашито в коде<input name="code" type="text" autocomplete="off" maxlength="300" value="${esc(v.code || "")}" placeholder="Пусто — сам номер карты"></label><p class="section-note">Например, у «Магнита» в QR перед номером стоит буква E. Если касса не читает код — впишите сюда то, что показывает сканер.</p></details>
     <label class="field">Вид кода<select name="format">${[["EAN13", "Штрихкод EAN-13 (13 цифр)"], ["Code128", "Штрихкод Code 128"], ["QRCode", "QR-код"]].map(([key, label]) => `<option value="${key}" ${v.format === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>
-    ${brand === "custom" ? `<div class="field"><span>Цвет карты</span><div class="loyalty-colors">${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="color" value="${c}" ${(v.color || LOYALTY_COLORS[0]) === c ? "checked" : ""}><i></i></label>`).join("")}<label class="loyalty-color-own" title="Свой цвет"><input type="color" name="colorOwn" value="${esc(/^#[0-9a-f]{6}$/i.test(v.color || "") ? v.color : "#2f6fdb")}"><i>${icon("plus", "icon-sm")}</i></label></div></div>
+    ${true ? `<div class="field"><span>Цвет карты</span><div class="loyalty-colors">${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="color" value="${c}" ${(v.color || LOYALTY_COLORS[0]) === c ? "checked" : ""}><i></i></label>`).join("")}<label class="loyalty-color-own" title="Свой цвет"><input type="color" name="colorOwn" value="${esc(/^#[0-9a-f]{6}$/i.test(v.color || "") ? v.color : "#2f6fdb")}"><i>${icon("plus", "icon-sm")}</i></label></div></div>
     <div class="field"><span>Второй цвет — переход</span><div class="loyalty-colors"><label style="--c:transparent" class="loyalty-color-none" title="Без перехода"><input type="radio" name="accent" value="" ${v.accent ? "" : "checked"}><i>—</i></label>${LOYALTY_COLORS.map(c => `<label style="--c:${c}"><input type="radio" name="accent" value="${c}" ${v.accent === c ? "checked" : ""}><i></i></label>`).join("")}</div></div>` : ""}
     <label class="field">Заметка<textarea name="description" rows="2" placeholder="Необязательно">${esc(v.description || "")}</textarea></label>
     <div class="sheet-actions">${item ? `<button type="button" class="ghost-button" data-action="loyalty-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить карту"}</button></div></form></section></div>`;
@@ -123,8 +123,11 @@ function loyaltySubmit(event) {
   item.format = String(form.get("format") || "EAN13");
   // Свой цвет из пипетки — если его меняли, он важнее кружков палитры.
   const own = String(form.get("colorOwn") || "");
+  const before = { color: existing?.color || "", accent: existing?.accent || "" };
   item.color = event.target.dataset.ownColor === "1" && /^#[0-9a-f]{6}$/i.test(own) ? own : String(form.get("color") || "");
   item.accent = String(form.get("accent") || "");
+  // Цвет не трогали: у известной сети — её фирменный (или прежний свой), а не первый кружок палитры.
+  if (!event.target.dataset.colorTouched && chainOf(item)) { item.color = before.color; item.accent = before.accent; }
   item.description = String(form.get("description") || "").trim();
   if (!existing) { data.saved.cards = data.saved.cards || []; data.saved.cards.push(item); }
   // Из формы — обратно в кошелёк, карта раскрыта.
@@ -442,3 +445,18 @@ async function findCardStores(quiet) {
   } catch (_) { if (!quiet) toast("Поиск не ответил — попробуйте ещё раз"); }
   finally { sheet.finding = false; if (ui.sheet === sheet) renderKeepLoyalty(); }
 }
+
+document.addEventListener("input", event => {
+  const form = event.target.closest?.("#loyalty-form");
+  if (!form) return;
+  const preview = document.getElementById("loyalty-preview");
+  if (!preview) return;
+  const f = new FormData(form);
+  const own = String(f.get("colorOwn") || "");
+  const picked = String(f.get("color") || "");
+  const item = { brand: "custom", title: String(f.get("title") || ""), number: String(f.get("number") || ""), color: event.target.name === "colorOwn" ? own : picked, accent: String(f.get("accent") || ""), places: [] };
+  // Цвет не трогали — у известной сети её фирменный цвет.
+  if (!form.dataset.colorTouched && typeof chainOf === "function" && chainOf(item)) item.color = "";
+  preview.innerHTML = loyaltyFace(item);
+});
+document.addEventListener("change", event => { if (event.target.closest?.("#loyalty-form") && ["color", "colorOwn", "accent"].includes(event.target.name)) event.target.form.dataset.colorTouched = "1"; }, true);
