@@ -680,11 +680,8 @@ document.addEventListener("pointerup", event => {
     suppressCalendarClick = true; setTimeout(() => { suppressCalendarClick = false; }, 350);
     swipeSuppressCalendar = Date.now() + 350;
     stepCalendar(dx < 0 ? 1 : -1);
-  } else if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.4 && event.target.closest(".calendar-card")) {
-    // Вниз по календарю — раскрыть месяц, вверх — свернуть в неделю.
-    const expanded = dy > 0;
-    if (ui.calendarExpanded !== expanded) { swipeSuppressCalendar = Date.now() + 350; animateCalendar(() => { ui.calendarExpanded = expanded; ui.mode = expanded ? "month" : "week"; render(); }); }
   }
+  // Вверх-вниз календарь раскрывается за пальцем — это calendar-drag.js.
 });
 let swipeSuppressCalendar = 0;
 document.addEventListener("click", event => {
