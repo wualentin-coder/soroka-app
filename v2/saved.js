@@ -66,7 +66,8 @@ function renderSavedOverview() {
   const secondary = savedOrdered(others, "other").map(key => card(key, true)).join("");
   const hidden = new Set(data.settings.pinsHidden || []);
   const pinned = SAVED_CATEGORIES.flatMap(([category]) => savedItems(category).filter(item => item.pinned && !hidden.has(item.id)).map(item => ({ category, item }))).sort((a, b) => String(b.item.updated || b.item.created || "").localeCompare(String(a.item.updated || a.item.created || "")));
-  const open = ui.savedPinsOpen !== false;
+  // «Закреплённое» по умолчанию свёрнуто — раскрывается нажатием или жестом вниз.
+  const open = ui.savedPinsOpen === true;
   const query = String(ui.savedPinsQuery || "").toLocaleLowerCase("ru-RU");
   const pinRows = pinned.length ? pinned.map(({ category, item }) => `<div class="saved-pin-swipe" data-pin-id="${esc(item.id)}"><span class="saved-pin-hide" aria-hidden="true">${icon("close", "icon-sm")}Скрыть</span><button class="saved-pin-row" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}" data-search="${esc(`${item.title} ${SAVED_NAMES[category]} ${item.topic || ""}`.toLocaleLowerCase("ru-RU"))}" ${query && !`${item.title} ${SAVED_NAMES[category]} ${item.topic || ""}`.toLocaleLowerCase("ru-RU").includes(query) ? "hidden" : ""}><span class="saved-pin-icon">${icon(savedIcon(category), "icon-sm")}</span><span><strong>${esc(item.title)}</strong><small>${esc(SAVED_NAMES[category])}${item.topic ? ` · ${esc(item.topic)}` : ""}</small></span>${icon("right", "icon-sm")}</button></div>`).join("") : `<p class="saved-pins-empty">Закрепите нужную карточку в любом разделе, и она появится здесь.</p>`;
   const pinSearch = pinned.length > 3 ? `<label class="saved-pins-search">${icon("search", "icon-sm")}<input id="saved-pins-search" type="search" value="${esc(ui.savedPinsQuery || "")}" placeholder="Найти закреплённое" aria-label="Найти закреплённое"></label>` : "";
@@ -656,7 +657,7 @@ function savedAction(action, control) {
   if (action === "saved-filter") { ui.savedFilter = control.dataset.filter; ui.savedLimit = 60; render(); if (ui.savedFilter === "reco" && typeof openMovieReco === "function") void openMovieReco(); return true; }
   if (action === "saved-more") { ui.savedLimit = (Number(ui.savedLimit) || 60) + 60; render(); return true; }
   if (action === "saved-view") { ui.savedView = control.dataset.view; render(); return true; }
-  if (action === "saved-pins-toggle") { ui.savedPinsOpen = ui.savedPinsOpen === false; render(); return true; }
+  if (action === "saved-pins-toggle") { ui.savedPinsOpen = !ui.savedPinsOpen; render(); return true; }
   if (action === "saved-new") { ui.sheet = { kind: "saved-add-menu" }; render(); return true; }
   if (action === "saved-add-record" && ui.sheet?.kind === "saved-add-menu") { openSavedRecord(control.dataset.category); return true; }
   if (action === "saved-add-manage" && ui.sheet?.kind === "saved-add-menu") { ui.sheet = { kind: ui.savedCategory === "addresses" ? "map-categories" : "saved-sections", category: ui.savedCategory }; render(); return true; }
