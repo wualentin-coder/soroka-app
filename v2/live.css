@@ -236,9 +236,9 @@ html.in-android .page-header { min-height: 40px; }
 .live-file-wait { margin: auto; display: grid; justify-items: center; gap: 10px; padding: 24px; text-align: center; }
 .live-file-image { max-width: 100%; margin: auto; object-fit: contain; }
 .live-file-text { margin: 0; padding: 16px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
-@media (prefers-color-scheme: dark) { .live-file { background: var(--bg, #141414); } }
+:root:not([data-theme="light"]) .live-file { background: var(--bg, #141414); }
 .live-file { color: var(--ink, #1d1d1f); }
-@media (prefers-color-scheme: dark) { .live-file { color: #f2f2f2; } }
+:root:not([data-theme="light"]) .live-file { color: #f2f2f2; }
 /* Рецепт из интернета: без постера — одна колонка, кнопка под текстом. */
 .composer-recipe { grid-template-columns: minmax(0, 1fr); }
 .composer-recipe .composer-movie-acts, .composer-recipe .composer-movie-done { justify-self: start; align-self: start; grid-column: 1; }
