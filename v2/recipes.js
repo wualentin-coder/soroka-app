@@ -150,6 +150,8 @@ function recipeAction(action, control) {
   }
   if (ui.sheet?.kind !== "cook") {
     if (action === "recipe-surprise") { const pool = whatToCook(); if (!pool.length) { toast("Под фильтры ничего нет"); return true; } const pick = pool[Math.floor(Math.random() * pool.length)]; openSavedRecord("recipes", pick.id); return true; }
+    if (action === "cook-web") { void findCookWeb(); return true; }
+    if (action === "cook-web-save") { saveWebRecipe(Number(control.dataset.index)); return true; }
     if (action === "cook-filter") { const f = cookFilter(); const key = control.dataset.key, value = control.dataset.value; f[key] = f[key] === value ? "" : value; render(); return true; }
     return false;
   }
@@ -227,7 +229,8 @@ function renderWhatToCook() {
     <label class="what-cook-have">${icon("search", "icon-sm")}<input id="cook-have" type="text" value="${esc(f.have)}" placeholder="Что есть дома: курица, рис, сыр" autocomplete="off"></label>
     <div class="map-categories what-cook-chips">${chip("time", "20", "До 20 мин")}${chip("time", "40", "До 40 мин")}${chip("difficulty", "легко", "Легко")}${chip("difficulty", "средне", "Средне")}${meals.map(m => chip("meal", m, MEAL_NAMES[m] || m)).join("")}</div>
     <button type="button" class="movie-run-start what-cook-surprise" data-action="recipe-surprise" ${list.length ? "" : "disabled"}>${icon("spark", "icon-sm")}<span><b>Удиви меня</b><small>${list.length ? `Случайный из ${list.length} подходящих` : "Под фильтры ничего нет"}</small></span>${icon("right", "icon-sm")}</button>
-    <div class="recipe-grid">${list.map(recipeCard).join("") || `<p class="section-note">Ничего не нашлось — ослабьте фильтры или найдите новый рецепт через «+».</p>`}</div>
+    <div class="recipe-grid">${list.map(recipeCard).join("") || `<p class="section-note">У вас под эти фильтры ничего нет — поищем в интернете.</p>`}</div>
+    ${renderWebCook()}
   </div>`;
 }
 
@@ -240,3 +243,38 @@ document.addEventListener("input", event => {
   const field = document.getElementById("cook-have");
   if (field) { field.focus(); try { field.setSelectionRange(at, at); } catch (_) {} }
 });
+
+// ------------------------------------------------------------ «Что приготовить» в интернете
+
+/** Запрос из фильтров: продукты, тип блюда, время и сложность — словами. */
+function cookWebQuery() {
+  const f = cookFilter();
+  return [f.have.trim() ? `что приготовить из: ${f.have.trim()}` : "что приготовить", f.meal ? (MEAL_NAMES[f.meal] || f.meal).toLowerCase() : "", f.time ? `до ${f.time} минут` : "", f.difficulty ? `${f.difficulty} в приготовлении` : ""].filter(Boolean).join(", ");
+}
+
+function renderWebCook() {
+  const web = ui.cookWeb || {};
+  const ready = typeof window.sorokaFindRecipes === "function";
+  const button = `<button type="button" class="movie-run-start what-cook-web ${web.loading ? "busy" : ""}" data-action="cook-web" ${web.loading || !ready ? "disabled" : ""}>${web.loading ? '<span class="live-spin"></span>' : icon("search", "icon-sm")}<span><b>${web.loading ? "Ищу в интернете…" : "Найти в интернете"}</b><small>${ready ? esc(cookWebQuery()) : "Работает в приложении бота"}</small></span>${icon("right", "icon-sm")}</button>`;
+  const found = (web.found || []).map((r, i) => `<article class="web-recipe"><b>${esc(r.title)}</b><small>${[r.minutes ? `${r.minutes} мин` : "", r.servings ? `${r.servings} порц.` : "", `${r.ingredients.length} ингр.`].filter(Boolean).join(" · ")}</small>${r.summary ? `<p>${esc(r.summary)}</p>` : ""}<details><summary>Ингредиенты</summary><p>${r.ingredients.map(esc).join("<br>")}</p></details>${r.saved ? `<span class="composer-movie-done">${icon("check", "icon-sm")}Сохранено</span>` : `<button type="button" class="primary-button" data-action="cook-web-save" data-index="${i}">Сохранить в рецепты</button>`}</article>`).join("");
+  return `<section class="what-cook-webblock"><h3>Из интернета</h3>${button}${web.note ? `<p class="section-note">${esc(web.note)}</p>` : ""}${found}</section>`;
+}
+
+async function findCookWeb() {
+  ui.cookWeb = { loading: true, found: [] };
+  render();
+  try {
+    const answer = await window.sorokaFindRecipes(cookWebQuery());
+    ui.cookWeb = { loading: false, found: answer.found || [], note: answer.note || "" };
+  } catch (_) { ui.cookWeb = { loading: false, found: [], note: "Поиск не ответил — попробуйте ещё раз." }; }
+  if (ui.savedCategory === "recipes") render();
+}
+
+function saveWebRecipe(index) {
+  const r = ui.cookWeb?.found?.[index];
+  if (!r || r.saved) return;
+  r.saved = true;
+  data.saved.recipes.push({ id: id(), title: r.title, description: r.summary || "", topic: "", tags: [], minutes: r.minutes || undefined, servings: r.servings || 2, ingredients: r.ingredients, steps: r.steps, source: "Из интернета", url: r.source || "", viewed: false, pinned: false, created: new Date().toISOString() });
+  save(); render();
+  toast(`«${r.title}» — в рецептах. Шаги для готовки подготовлю за пару минут`);
+}
