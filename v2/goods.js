@@ -46,7 +46,7 @@ function productCard(item) {
   const off = productDiscount(item);
   const target = Number(item.targetPrice) > 0 ? `<span class="product-target">${icon("bell", "icon-sm")}жду ${rub(item.targetPrice)}</span>` : "";
   // Как карточка на маркетплейсе: фото во всю ширину, цена со скидкой одной строкой, название — двумя.
-  return `<button class="record-card product-card" type="button" data-action="saved-open" data-category="products" data-id="${esc(item.id)}">${productImage(item)}<span class="product-body">${productPrice(item)}<span class="product-title">${esc(item.title)}</span>${target || productStoreName(item) ? `<span class="product-meta">${target || `<span>${esc(productStoreName(item))}</span>`}</span>` : ""}</span>${item.viewed ? `<span class="recipe-cooked" title="Куплено">${icon("check", "icon-sm")}</span>` : ""}</button>`;
+  return `<button class="record-card product-card" type="button" data-action="saved-open" data-category="products" data-id="${esc(item.id)}">${productImage(item)}<span class="product-body">${productPrice(item)}<span class="product-title">${esc(item.title)}</span>${target || productStoreName(item) ? `<span class="product-meta">${productStoreName(item) ? `<span>${esc(productStoreName(item))}</span>` : ""}${target}</span>` : ""}</span>${item.viewed ? `<span class="recipe-cooked" title="Куплено">${icon("check", "icon-sm")}</span>` : ""}</button>`;
 }
 
 /** Подробности товара: фото, цена со скидкой, ссылки на карточку и на магазин. */
