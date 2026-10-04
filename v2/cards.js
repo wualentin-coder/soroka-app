@@ -242,17 +242,32 @@ function drawLoyaltyPeek() {
   }
   if (!peek) { peek = document.createElement("div"); peek.id = "loyalty-peek"; document.body.appendChild(peek); }
   peek.classList.remove("leaving");
-  // Видны края: у каждой карты полоска с названием, у верхней — чуть больше.
+  // Сбоку, у левого края: по язычку на карту — знак сети в её цвете.
+  // Нажал — код на весь экран; смахнул влево — язычки уходят до следующего магазина.
   const n = Math.min(cards.length, 4);
   peek.style.setProperty("--n", n);
-  root.style.setProperty("--peek-h", `${62 + (n - 1) * 42}px`);
   root.classList.add("loyalty-peek-on");
-  peek.innerHTML = cards.slice(0, 4).map((card, i) => `<button type="button" class="loyalty-peek-card" data-peek="${esc(card.id)}" style="--i:${i}" aria-label="Открыть карту ${esc(card.title)}">${loyaltyFace(card)}</button>`).join("") +
-    `<button type="button" class="loyalty-peek-hide" aria-label="Скрыть">${icon("down", "icon-sm")}</button>`;
+  // Перерисовываем язычки, только когда сменились карты: иначе анимация повторялась бы при каждом обновлении.
+  const key = cards.slice(0, 4).map(card => `${card.id}:${card.color || ""}`).join("|");
+  if (peek.dataset.key === key) return;
+  peek.dataset.key = key;
+  peek.innerHTML = cards.slice(0, 4).map((card, i) => {
+    const chain = typeof chainOf === "function" ? chainOf(card) : null;
+    const color = /^#[0-9a-f]{6}$/i.test(card.color || "") ? card.color : chain?.color || "#2f6fdb";
+    const mark = chain ? `<span class="peek-logo">${chain.svg}</span>` : `<b>${esc(String(card.title || "?").trim().charAt(0).toUpperCase())}</b>`;
+    return `<button type="button" class="peek-tab" data-peek="${esc(card.id)}" style="--i:${i};--card-color:${color};color:${loyaltyInk(color) || "#fff"}" aria-label="Открыть карту ${esc(card.title)}">${mark}<small>${esc(card.title)}</small></button>`;
+  }).join("");
+  let start = null;
+  peek.onpointerdown = event => { start = { x: event.clientX, y: event.clientY }; };
+  peek.onpointerup = event => {
+    const dx = start ? event.clientX - start.x : 0;
+    start = null;
+    if (dx < -30) { peek.dataset.swiped = "1"; loyaltyNear.shown.forEach(cardId => loyaltyNear.dismissed.add(cardId)); loyaltyNear.shown = []; drawLoyaltyPeek(); }
+  };
   peek.onclick = event => {
+    if (peek.dataset.swiped) { delete peek.dataset.swiped; return; }
     const pick = event.target.closest("[data-peek]");
-    if (pick) { openLoyaltyFull(savedItem("cards", pick.dataset.peek)); return; }
-    if (event.target.closest(".loyalty-peek-hide")) { loyaltyNear.shown.forEach(cardId => loyaltyNear.dismissed.add(cardId)); loyaltyNear.shown = []; drawLoyaltyPeek(); }
+    if (pick) openLoyaltyFull(savedItem("cards", pick.dataset.peek));
   };
 }
 function watchLoyaltyPlaces() {
