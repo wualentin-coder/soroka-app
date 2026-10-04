@@ -1865,3 +1865,63 @@ html.loyalty-peek-on .fab { bottom: calc(79px + env(safe-area-inset-bottom) + va
 .cook-nav .ghost-button { background: color-mix(in srgb, currentColor 9%, transparent); color: inherit; border: 0; }
 .cook-nav .ghost-button[disabled] { opacity: .35; }
 .what-cook .recipe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* ══ Товары: как в маркетплейсе ═════════════════════════════════════════════ */
+.saved-results.recipe-grid > .record-list .product-card, .product-card { position: relative; display: flex !important; flex-direction: column; align-items: stretch; padding: 0 !important; overflow: hidden; text-align: left; border-radius: 18px; min-width: 0; width: 100%; }
+.product-image { display: block; width: 100%; aspect-ratio: 1; background: #fff; overflow: hidden; }
+.product-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.product-image.blank { display: grid; place-items: center; background: color-mix(in srgb, currentColor 5%, transparent); color: color-mix(in srgb, currentColor 30%, transparent); }
+.product-image.blank svg { width: 40px; height: 40px; }
+.product-image.hero { aspect-ratio: 4 / 3; border-radius: 18px; }
+.product-off { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 8px; background: #f0336a; color: #fff; font-weight: 800; font-size: 13px; }
+.product-off.big { top: 12px; left: 12px; font-size: 16px; padding: 5px 10px; }
+.product-hero { position: relative; margin-bottom: 10px; }
+.product-body { display: grid; gap: 4px; padding: 8px 12px 12px; min-width: 0; }
+.product-price { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.product-price b { font-size: 18px; font-weight: 800; }
+.product-price b.sale { color: #f0336a; }
+.product-price s { font-size: 13px; opacity: .5; }
+.product-price.none { font-size: 13px; opacity: .55; }
+.product-title { font-size: 14px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.product-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; opacity: .65; }
+.product-target { display: inline-flex; align-items: center; gap: 3px; color: #3f8fc4; opacity: 1; }
+.product-price-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.product-price-line .product-price b { font-size: 28px; }
+.product-price-line .product-price s { font-size: 16px; }
+.product-save { padding: 3px 8px; border-radius: 8px; background: #ffe3ec; color: #c41b4f; font-size: 13px; font-weight: 700; }
+.product-links { display: grid; gap: 8px; margin-bottom: 12px; }
+.product-open { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border-radius: 14px; text-decoration: none; }
+
+/* ══ Адрес: подъезд, этаж, квартира, домофон ══════════════════════════════════ */
+.address-parts { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 6px !important; }
+.address-parts .field { min-width: 0; font-size: 12px; }
+.address-parts input { min-width: 0; text-align: center; }
+.address-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.address-chips span { display: grid; gap: 1px; padding: 6px 12px; border-radius: 12px; background: color-mix(in srgb, currentColor 6%, transparent); text-align: center; min-width: 56px; }
+.address-chips small { font-size: 11px; opacity: .6; }
+.address-chips b { font-size: 16px; }
+
+/* ══ Дни рождения ═══════════════════════════════════════════════════════════ */
+.birthday-list { display: grid; gap: 14px; margin-top: 8px; }
+.birthday-month h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+.birthday-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; margin-bottom: 6px; border: 0; border-radius: 16px; background: var(--surface, #fff); color: inherit; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.birthday-avatar { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: hsl(var(--h) 60% 86%); color: hsl(var(--h) 45% 32%); font-weight: 800; font-size: 18px; }
+.birthday-copy { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.birthday-copy b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.birthday-copy small { opacity: .6; }
+.birthday-when { flex: none; padding: 4px 10px; border-radius: 12px; background: color-mix(in srgb, currentColor 7%, transparent); font-size: 13px; }
+.birthday-row.soon .birthday-when { background: #fde7cc; color: #8a4a08; }
+.birthday-row.today { background: linear-gradient(135deg, #fff1d6, #ffe0ec); }
+.birthday-row.today .birthday-when { background: #f0336a; color: #fff; font-weight: 700; }
+@media (prefers-color-scheme: dark) { .birthday-row.today { background: linear-gradient(135deg, #4a3510, #4a1b2c); } .birthday-row.soon .birthday-when { background: #4a2d10; color: #ffd29a; } }
+
+/* ══ Мини-сайты ═════════════════════════════════════════════════════════════ */
+.site-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px; margin-top: 6px; }
+.site-card { display: grid; gap: 8px; justify-items: center; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; padding: 0; }
+.site-face { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 3 / 4; border-radius: 16px; overflow: hidden; background: linear-gradient(160deg, hsl(var(--h) 55% 22%), hsl(calc(var(--h) + 40) 60% 12%)); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+.site-face i { position: absolute; left: 10px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.22); }
+.site-face i:nth-child(1) { top: 12px; width: 40%; background: hsl(var(--h) 80% 70%); }
+.site-face i:nth-child(2) { top: 22px; width: 62%; }
+.site-face i:nth-child(3) { top: 30px; width: 50%; }
+.site-face b { font-size: 34px; color: #fff; font-weight: 800; }
+.site-name { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
