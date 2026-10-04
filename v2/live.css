@@ -258,3 +258,18 @@ html.in-android .page-header { min-height: 40px; }
 .composer-attach img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
 .composer-attach b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .composer-attach button { border: 0; background: none; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px; }
+
+/* ══ «+» как поле мессенджера: одна пилюля — скрепка, текст, микрофон/отправить ══ */
+.composer-row { align-items: flex-end; gap: 0; padding: 4px; border: 1px solid var(--line); border-radius: 26px; background: var(--surface); transition: border-color .2s ease, box-shadow .2s ease; }
+.composer-row:focus-within { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+.composer-row textarea { border: 0 !important; background: transparent !important; padding: 11px 8px !important; min-height: 44px; box-shadow: none !important; outline: 0; }
+.composer-row .composer-clip { width: 42px; height: 44px; margin: 0; border-radius: 50%; color: var(--muted); transition: color .2s ease, background-color .2s ease; }
+.composer-row .composer-clip:active { background: color-mix(in srgb, currentColor 10%, transparent); }
+.composer-row .composer-mic, .composer-row .composer-send { flex: 0 0 44px; width: 44px; height: 44px; margin: 0; border-radius: 50%; transition: transform .28s cubic-bezier(.22, 1, .36, 1), opacity .2s ease; }
+.composer-row .composer-mic { background: transparent; color: var(--muted); }
+.composer-row .composer-mic:active { background: color-mix(in srgb, currentColor 10%, transparent); }
+.composer-layer:not(.has-text) .composer-row .composer-send { display: none; }
+.composer-layer.has-text .composer-row .composer-mic { display: none; }
+.composer-layer.has-text .composer-row .composer-send { animation: send-pop .28s cubic-bezier(.22, 1, .36, 1); }
+@keyframes send-pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+.composer-attach-row:not([hidden]) { padding: 0 4px 8px; }
