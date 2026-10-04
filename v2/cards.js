@@ -41,7 +41,7 @@ function loyaltyFace(item, size = "") {
     const tail = String(item.number || "").replace(/\s+/g, "").slice(-4);
     const program = item.title && !chain.re.test(item.title) ? item.title : LOYALTY_BRANDS[loyaltyBrand(item)].program;
     const plate = size === "open" ? `<span class="loyalty-plate" data-action="loyalty-full" data-id="${esc(item.id)}" role="button" aria-label="Код на весь экран">${loyaltyCode(item)}</span>` : "";
-    return `<div class="loyalty-card brand-chain brand-custom ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" style="${esc(style)}"><span class="lw lw-chain ${chain.real ? "is-real" : ""}"><span class="lw-logo">${chain.svg}</span>${esc(chain.word)}</span><span class="loyalty-program">${esc(program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
+    return `<div class="loyalty-card brand-chain brand-custom ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" style="${esc(style)}"><span class="lw lw-chain ${chain.real || item.logo ? "is-real" : ""}"><span class="lw-logo">${chain.real ? chain.svg : item.logo ? `<img src="${esc(item.logo)}" alt="">` : chain.svg}</span>${esc(chain.word)}</span><span class="loyalty-program">${esc(program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
   }
   const brand = loyaltyBrand(item);
   const info = LOYALTY_BRANDS[brand];
@@ -55,7 +55,8 @@ function loyaltyFace(item, size = "") {
     magnit: `<span class="lw lw-magnit"><i></i>магнит</span>`,
     pyaterochka: `<span class="lw lw-pyat"><b>5</b>Пятёрочка</span>`,
     perekrestok: `<span class="lw lw-perek"><i></i>ПЕРЕКРЁСТОК</span>`,
-    custom: `<span class="lw lw-custom">${esc(name)}</span>`,
+    // Своя карта: логотип, найденный по названию (если нашёлся), и название.
+    custom: item.logo ? `<span class="lw lw-chain is-real"><span class="lw-logo"><img src="${esc(item.logo)}" alt=""></span>${esc(name)}</span>` : `<span class="lw lw-custom">${esc(name)}</span>`,
   }[brand];
   const plate = size === "open" ? `<span class="loyalty-plate" data-action="loyalty-full" data-id="${esc(item.id)}" role="button" aria-label="Код на весь экран">${loyaltyCode(item)}</span>` : "";
   return `<div class="loyalty-card brand-${brand} ${size} ${accent ? "has-accent" : ""} ${ink ? "is-light" : ""}" ${style ? `style="${esc(style)}"` : ""}>${mark}<span class="loyalty-program">${esc(brand === "custom" ? info.program : item.title && item.title !== info.name ? item.title : info.program)}</span>${tail && !plate ? `<span class="loyalty-tail">•••• ${esc(tail)}</span>` : ""}${(item.places || []).length ? `<span class="loyalty-geo" title="Всплывает рядом">${icon("pin", "icon-sm")}${item.places.length}</span>` : ""}${plate}</div>`;
@@ -194,7 +195,7 @@ function openLoyaltyFull(item) {
   if (!item) return;
   const layer = document.createElement("div");
   layer.className = "loyalty-full";
-  layer.innerHTML = `<div class="loyalty-full-top">${loyaltyFace(item, "mini")}<b>${esc(item.title)}</b></div>${loyaltyCode(item, true)}<button type="button" class="loyalty-full-close">Закрыть</button>`;
+  layer.innerHTML = `<div class="loyalty-full-top">${loyaltyBadge(item)}<b>${esc(item.title)}</b></div>${loyaltyCode(item, true)}<button type="button" class="loyalty-full-close">Закрыть</button>`;
   document.body.appendChild(layer);
   // Сканеру на кассе нужен яркий экран: на телефоне поднимаем яркость, пока код открыт.
   try { window.SorokaAndroid?.brightness?.(1); } catch (_) {}
@@ -460,3 +461,12 @@ document.addEventListener("input", event => {
   preview.innerHTML = loyaltyFace(item);
 });
 document.addEventListener("change", event => { if (event.target.closest?.("#loyalty-form") && ["color", "colorOwn", "accent"].includes(event.target.name)) event.target.form.dataset.colorTouched = "1"; }, true);
+
+/** Значок карты: квадрат её цвета со знаком сети (или найденным логотипом, или первой буквой). */
+function loyaltyBadge(item) {
+  const chain = typeof chainOf === "function" ? chainOf(item) : null;
+  const color = /^#[0-9a-f]{6}$/i.test(item.color || "") ? item.color : chain?.color || "#2f6fdb";
+  const mark = chain?.real ? chain.svg : item.logo ? `<img src="${esc(item.logo)}" alt="">` : chain ? chain.svg : `<b>${esc(String(item.title || "?").trim().charAt(0).toUpperCase())}</b>`;
+  const white = chain?.real || item.logo;
+  return `<span class="loyalty-badge" style="--card-color:${esc(color)};color:${loyaltyInk(color) || "#fff"}"><span class="loyalty-badge-mark ${white ? "on-white" : ""}">${mark}</span></span>`;
+}
