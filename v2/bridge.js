@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=27e9d06d06","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=58c1444663","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=1b2c00a695","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=c9f28e1539","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=abcc0a638e","integrity":null},{"src":"./app.js?v=6e4ebc9cb0","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -54,6 +54,13 @@
       clearTimeout(timer);
     }
   }
+
+  // «Улучшить» в заметке: модель оформляет текст в выбранном стиле.
+  window.sorokaImproveNote = (text, style) =>
+    call({ action: "note_improve", text, style }, 70000).then((answer) => {
+      if (!answer.text) throw new Error("no_answer");
+      return answer.text;
+    });
 
   function closeApp() {
     try { if (inTelegram) tg.close(); else if (android && android.close) android.close(); } catch (_) {}
