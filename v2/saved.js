@@ -248,8 +248,13 @@ function postTime(created) {
  * Фильмы из одной подборки (пост, рилс, карусель) идут подряд под общим
  * контуром: видно, что они пришли вместе, и откуда.
  */
+/** Галочка «Подборки»: фильмы из одного поста — под общим контуром. */
+function movieCollectionsToggle() {
+  const on = data.settings.movieCollections !== false;
+  return `<label class="collections-toggle"><input type="checkbox" data-action="movie-collections" ${on ? "checked" : ""}>Показывать подборки</label>`;
+}
 function savedCardsGrouped(items, category) {
-  if (category !== "movies") return items.map(item => savedRecordCard(item, category)).join("");
+  if (category !== "movies" || data.settings.movieCollections === false) return items.map(item => savedRecordCard(item, category)).join("");
   // Фильмы подборки, добавленные в разное время, собираем к первому из них — одной группой.
   const members = new Map();
   for (const item of items) if (item.collection) members.set(item.collection.id, [...(members.get(item.collection.id) || []), item]);
@@ -325,7 +330,8 @@ function renderSavedResults() {
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
   const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
-  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
+  const toggle = ui.savedCategory === "movies" && all.some(item => item.collection) ? movieCollectionsToggle() : "";
+  return items.length ? `${toggle}<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
 }
 function noteDateLabel(item) {
   if (item.updated) return shortDate(localIso(new Date(item.updated)));
@@ -1210,3 +1216,11 @@ document.addEventListener("scroll", event => {
   const count = box.querySelector(".post-carousel-count");
   if (count) count.textContent = `${i + 1} / ${track.children.length}`;
 }, true);
+
+document.addEventListener("change", event => {
+  if (!event.target.matches?.("[data-action='movie-collections']")) return;
+  data.settings.movieCollections = event.target.checked;
+  save();
+  const results = document.getElementById("saved-results");
+  if (results) results.innerHTML = renderSavedResults(); else render();
+});
