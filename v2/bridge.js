@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d1ab27c440","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=a30bdec62f","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=545f813263","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=27e9d06d06","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=58c1444663","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=bfd1772300","integrity":null},{"src":"./app.js?v=1b2c00a695","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1167,6 +1167,46 @@
     const light = (Number(rgb[0]) * 299 + Number(rgb[1]) * 587 + Number(rgb[2]) * 114) / 1000 > 150;
     try { android.bars(hex, light); } catch (_) {}
   }
+  /*
+   * Жесты на краях страницы: в самом верху потянуть вниз — «Закреплённое»,
+   * в самом низу потянуть вверх — поиск. Над страницей виден значок, который
+   * наливается по мере движения, — понятно, что сейчас откроется.
+   */
+  (function edgeGestures() {
+    let pull = null;
+    const hint = document.createElement("div");
+    hint.className = "edge-hint";
+    document.body.appendChild(hint);
+    const busy = () => ui.sheet || document.querySelector(".composer, .pins-drop, .loyalty-full, .live-code-full");
+    document.addEventListener("touchstart", (event) => {
+      if (event.touches.length !== 1 || busy() || event.target.closest(".swipe-row, .calendar-card, .wallet, input, textarea, .leaflet-container")) { pull = null; return; }
+      const top = window.scrollY <= 0;
+      const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (!top && !bottom) { pull = null; return; }
+      pull = { y: event.touches[0].clientY, x: event.touches[0].clientX, top, bottom, dy: 0 };
+    }, { passive: true });
+    document.addEventListener("touchmove", (event) => {
+      if (!pull) return;
+      const dy = event.touches[0].clientY - pull.y, dx = event.touches[0].clientX - pull.x;
+      if (Math.abs(dx) > Math.abs(dy)) { pull = null; hint.className = "edge-hint"; return; }
+      pull.dy = dy;
+      const down = pull.top && dy > 10, up = pull.bottom && dy < -10;
+      if (!down && !up) { hint.className = "edge-hint"; return; }
+      const k = Math.min(1, Math.abs(dy) / 90);
+      hint.className = `edge-hint on ${down ? "is-top" : "is-bottom"} ${k >= 1 ? "ready" : ""}`;
+      hint.style.setProperty("--k", k.toFixed(3));
+      hint.innerHTML = down ? `${icon("bookmark", "icon-sm")}<span>Закреплённое</span>` : `${icon("search", "icon-sm")}<span>Поиск</span>`;
+    }, { passive: true });
+    document.addEventListener("touchend", () => {
+      if (!pull) return;
+      const { dy, top, bottom } = pull;
+      pull = null;
+      hint.className = "edge-hint";
+      if (top && dy > 90) showPinned();
+      else if (bottom && dy < -90) openComposer();
+    });
+  })();
+
   function topTitle() {
     paintBars();
     const full = Boolean(inTelegram && tg.isFullscreen) || androidApp;
