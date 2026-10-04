@@ -297,10 +297,14 @@ function todayPage() {
   return `${header("Сегодня", "Задачи, события и всё, что требует внимания", "Мой день")}<div class="content-grid"><div class="content-main">${hero}${overdue}${tasks}${events}${tickets}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
-  const anchor = parseDate(ui.calendarAnchor);
+  // Месяц — столько недель, сколько нужно (5 или 6): раньше всегда было 35 дней,
+  // и у месяцев, начавшихся в субботу или воскресенье, последние числа пропадали
+  // (август 2027 — без 30 и 31).
+  const anchor = parseDate(ui.calendarExpanded ? `${ui.month.slice(0, 7)}-01` : ui.calendarAnchor);
   const mondayOffset = (anchor.getDay() + 6) % 7;
   const start = shiftDay(anchor, -mondayOffset);
-  const count = ui.calendarExpanded ? 35 : 7;
+  const daysInMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate();
+  const count = ui.calendarExpanded ? Math.ceil((mondayOffset + daysInMonth) / 7) * 7 : 7;
   return Array.from({ length: count }, (_, index) => shiftDay(start, index));
 }
 function calendarDay(date) {
