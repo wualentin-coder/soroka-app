@@ -15,7 +15,7 @@ function savedSection(category, sectionId) {
 }
 function savedSectionBadge(category, sectionId) {
   const section = savedSection(category, sectionId);
-  return section ? `<span class="map-category-badge" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}</span>` : `<span class="map-category-badge">${icon(savedIcon(category), "icon-sm")}Без раздела</span>`;
+  return section ? `<span class="map-category-badge" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}</span>` : "";
 }
 function savedCount() {
   return SAVED_CATEGORIES.reduce((sum, [key]) => sum + savedItems(key).length, 0);
@@ -62,7 +62,8 @@ function renderSavedOverview() {
   const list = data.settings.savedLayout === "list";
   const card = (key, compact) => key === "birthdays" ? birthdayTile() : key === "sites" ? sitesTile() : ["vault", "projects"].includes(key) ? savedExtraCard(key) : savedSectionCard(key, compact);
   // Какие плитки в «Основных» — решает человек: перетащил плитку в «Ещё» или обратно.
-  const all = [...SAVED_CATEGORIES.map(([key]) => key), "birthdays", "sites", "projects", "vault"];
+  // Пустые «Проекты» — плитка с нулём, ведущая на пустой экран: не показываем, пока проектов нет.
+  const all = [...SAVED_CATEGORIES.map(([key]) => key), "birthdays", "sites", ...((data.projects || []).length ? ["projects"] : []), "vault"];
   const chosen = ((data.settings.savedOrder || {}).main || []).filter(key => all.includes(key));
   const mainKeys = chosen.length ? chosen : SAVED_PRIMARY;
   const primary = savedOrdered(mainKeys, "main").map(key => card(key, list)).join("");
@@ -128,6 +129,11 @@ function savedVisibleItems() {
     return !q || `${item.title} ${item.description || ""} ${item.topic || ""} ${item.address || ""} ${item.city || ""} ${addressParts(item).join(" ")} ${item.origin || ""} ${item.destination || ""} ${item.venue || ""} ${item.reference || ""} ${sectionName || ""} ${(item.tags || []).join(" ")}`.toLocaleLowerCase("ru-RU").includes(q);
   });
   result.sort((a, b) => sortSavedItems(a, b));
+  // Готовые списки (все пункты отмечены) — вниз: сверху то, что ещё нужно купить или сделать.
+  if (ui.savedCategory === "lists") {
+    const finished = list => (list.items || []).length > 0 && (list.items || []).every(x => x.done);
+    result.sort((a, b) => Number(finished(a)) - Number(finished(b)));
+  }
   // Просмотренные фильмы — по дате просмотра, свежие сверху.
   if (ui.savedCategory === "movies" && ui.savedFilter === "viewed" && ["newest", "seen"].includes(ui.savedSort)) result.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.seenAt || "").localeCompare(String(a.seenAt || "")) || (b.created || "").localeCompare(a.created || ""));
   // Билеты — по дате: ближайшие сверху, просроченные — недавние сверху.
@@ -176,6 +182,7 @@ function todayTicketsSection() {
   const rows = soon.map(t => `<button type="button" class="ticket-mini" data-action="saved-open" data-category="tickets" data-id="${esc(t.id)}"><span class="ticket-mini-icon">${icon("ticket")}</span><span class="ticket-mini-copy"><strong>${esc(t.title)}</strong><small>${esc(when(t))}${t.seat ? ` · ${esc(t.seat.split(" · ")[0])}` : ""}</small></span>${icon("right", "icon-sm")}</button>`).join("");
   return `<section class="section"><div class="section-heading"><h2>Билеты на этой неделе</h2><span class="count">${soon.length}</span></div><div class="ticket-mini-list">${rows}</div></section>`;
 }
+function movieBlurbEmpty(text) { return /^(фильм|сериал|мультфильм)\s+\d{4}\s+года\.?$|^входит в (?:подборку|список)|^в посте представлен/i.test(String(text).trim()); }
 function movieIsViewed(item) { return item.status === "Посмотрел" || Boolean(item.viewed); }
 function movieDemoInfo(item) {
   return item.title?.trim().toLocaleLowerCase("ru-RU") === "патерсон" && Number(item.year) === 2016
@@ -221,7 +228,7 @@ function renderPostMedia(item, compact = false) {
 function movieCoverMarkup(item, context = "card") {
   const source = movieCoverSource(item);
   const demoCover = source === "./assets/paterson-cover.webp";
-  return `<span class="movie-cover movie-cover-${context} ${source ? "has-image" : "is-empty"}">${source ? `<img src="${esc(source)}" alt="Обложка фильма «${esc(item.title)}»" loading="lazy">` : `<span class="movie-cover-fallback"><small>СОРОКА · КИНО</small><strong>${esc(item.title || "Без названия")}</strong><em>${item.year ? esc(item.year) : ""}</em></span>`}${demoCover ? `<span class="movie-cover-caption">${esc(item.title)}</span>` : ""}</span>`;
+  return `<span class="movie-cover movie-cover-${context} ${source ? "has-image" : "is-empty"}">${source ? `<img src="${esc(source)}" alt="Обложка фильма «${esc(item.title)}»" loading="lazy">` : `<span class="movie-cover-fallback"><small>FLOW · КИНО</small><strong>${esc(item.title || "Без названия")}</strong><em>${item.year ? esc(item.year) : ""}</em></span>`}${demoCover ? `<span class="movie-cover-caption">${esc(item.title)}</span>` : ""}</span>`;
 }
 /** Карточка в списке — с закладкой поверх: закрепить, не открывая запись. */
 /** Сторона хвостика у поста: «случайно», но у одного поста всегда одна. */
@@ -236,6 +243,24 @@ function postTime(created) {
   const today = new Date();
   if (at.toDateString() === today.toDateString()) return at.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   return at.toLocaleDateString("ru-RU", { day: "numeric", month: "short", ...(at.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}) }).replace(".", "");
+}
+/**
+ * Фильмы из одной подборки (пост, рилс, карусель) идут подряд под общим
+ * контуром: видно, что они пришли вместе, и откуда.
+ */
+function savedCardsGrouped(items, category) {
+  if (category !== "movies") return items.map(item => savedRecordCard(item, category)).join("");
+  let html = "";
+  for (let i = 0; i < items.length;) {
+    const c = items[i].collection;
+    let j = i + 1;
+    while (c && j < items.length && items[j].collection?.id === c.id) j++;
+    if (c && j - i >= 2) {
+      html += `<section class="movie-collection" aria-label="Подборка"><header class="movie-collection-head">${icon("list", "icon-sm")}<span>${esc(c.title || "Подборка")}</span><b>${j - i}</b></header>${items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
+    } else html += items.slice(i, j).map(item => savedRecordCard(item, category)).join("");
+    i = j;
+  }
+  return html;
 }
 function savedRecordCard(item, category) {
   return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}${(category === "movies" ? movieIsViewed(item) : item.viewed) ? `<span class="record-seen" title="Просмотрено" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon(category === "products" ? "heart" : "bookmark", "icon-sm")}</button></div>`;
@@ -252,13 +277,13 @@ function savedRecordCardBody(item, category) {
     const coded = rows.filter(row => row.text);
     const seats = rows.map(row => row.seat).filter(Boolean);
     const when = `${item.eventDate ? shortDate(item.eventDate) : "Дата не указана"}${item.eventTime ? ` · ${item.eventTime}` : ""}`;
-    const main = `<button class="ticket-main" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}"><span class="ticket-kicker">${icon("ticket", "icon-sm")}${esc(type)} · ${esc(when)}</span><strong>${esc(item.title)}</strong><span class="ticket-route">${esc(route || "Место не указано")}</span>${seats.length ? `<span class="ticket-seats">${seats.map(esc).join("<br>")}</span>` : ""}</button>`;
+    const main = `<button class="ticket-main" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}"><span class="ticket-kicker">${icon("ticket", "icon-sm")}${esc(type)} · ${esc(when)}</span><strong>${esc(item.title)}</strong>${route ? `<span class="ticket-route">${esc(route)}</span>` : ""}${seats.length ? `<span class="ticket-seats">${seats.map(esc).join("<br>")}</span>` : ""}</button>`;
     const stub = `<button class="ticket-stub ${coded.length ? "" : "is-empty"}" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}" ${coded.length ? `data-live-code="0" data-ticket="${esc(item.id)}"` : ""} aria-label="${coded.length ? "Код билета на весь экран" : "Кода пока нет"}">${stubBarcode(coded[0]?.text || item.id)}</button>`;
     const notches = ["tl", "bl", "tr", "br", "pt", "pb"].map(n => `<i class="ticket-notch ${n}" aria-hidden="true"></i>`).join("");
     return `<div class="record-card ticket-card ticket-paper">${notches}${main}${stub}</div>`;
   }
   if (category === "movies") {
-    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${movieScoresLine(item)}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
+    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description && !movieBlurbEmpty(item.description) ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${movieScoresLine(item)}${item.where ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
   }
   if (category === "recipes") return recipeCard(item);
   if (category === "products") return productCard(item);
@@ -273,10 +298,10 @@ function savedRecordCardBody(item, category) {
     const meta = `<span class="post-bubble-meta">${item.viewed ? `<span class="post-bubble-eye">${icon("eye", "icon-sm")}</span>` : ""}${mediaCount ? `<span>${mediaCount} ${mediaCount === 1 ? "вложение" : mediaCount < 5 ? "вложения" : "вложений"}</span>` : ""}<time>${esc(postTime(item.created))}</time><span class="post-bubble-checks ${item.viewed ? "is-read" : ""}" aria-label="${item.viewed ? "Просмотрено" : "Не просмотрено"}">${checks}</span></span>`;
     return `<button class="record-card post-card post-bubble tail-${side} ${image ? "has-media" : ""}" type="button" data-action="saved-open" data-category="posts" data-id="${esc(item.id)}"><strong class="post-bubble-title">${esc(item.title)}</strong>${image ? `<span class="post-card-image"><img src="${esc(image.src)}" alt="" loading="lazy" onerror="this.parentElement.remove()"></span>` : ""}${(() => { const text = item.description || String(postInfo(item, "body") || "").trim(); return text ? `<span class="post-bubble-text">${esc(text)}</span>` : `<span class="post-bubble-text is-empty">${/t\.me\//.test(item.url || "") ? "Telegram не показывает этот пост вне приложения — откройте его в канале." : "Без текста — только вложение, оно в чате с ботом."}</span>`; })()}${meta}</button>`;
   }
-  const status = category === "movies" ? item.status : category === "files" && (item.filePath || item.fileData) ? "Открыть файл" : item.viewed ? "Просмотрено" : category === "lists" ? `${(item.items || []).filter(x => x.done).length}/${(item.items || []).length} пунктов` : item.minutes ? `${item.minutes} мин` : "Сохранено";
-  const extra = category === "products" ? demoMoney(item.price) : category === "recipes" ? `${item.servings || 1} порции` : category === "movies" ? String(item.year || "") : category === "addresses" ? item.city || item.address || "" : item.source || "";
+  const status = category === "movies" ? item.status : category === "files" && (item.filePath || item.fileData) ? "Открыть файл" : item.viewed ? "Просмотрено" : category === "lists" ? `${(item.items || []).filter(x => x.done).length}/${(item.items || []).length} пунктов` : item.minutes ? `${item.minutes} мин` : "";
+  const extra = category === "products" ? demoMoney(item.price) : category === "recipes" ? `${item.servings || 1} порции` : category === "movies" ? String(item.year || "") : category === "addresses" ? item.city || "" : /^(Из чата|Сохранено)$/.test(item.source || "") ? "" : item.source || "";
   const description = category === "addresses" ? item.address : item.description;
-  return `<button class="record-card" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}"><span class="record-kicker">${category === "addresses" ? mapCategoryBadge(item.categoryId) : savedSectionBadge(category, item.categoryId)}</span><span class="record-title">${esc(item.title)}</span>${category === "lists" ? listPreview(item) : ""}${description ? `<span class="record-description">${esc(description)}</span>` : ""}<span class="record-meta"><span>${esc(status || "Сохранено")}</span>${extra ? `<span>${esc(extra)}</span>` : ""}</span></button>`;
+  return `<button class="record-card" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}"><span class="record-kicker">${category === "addresses" ? mapCategoryBadge(item.categoryId) : savedSectionBadge(category, item.categoryId)}</span><span class="record-title">${esc(item.title)}</span>${category === "lists" ? listPreview(item) : ""}${description ? `<span class="record-description">${esc(description)}</span>` : ""}${status || extra ? `<span class="record-meta">${status ? `<span>${esc(status)}</span>` : ""}${extra ? `<span>${esc(extra)}</span>` : ""}</span>` : ""}</button>`;
 }
 function ticketCodeBlock(item) {
   const kind = item.codeType === "barcode" ? "barcode" : "qr";
@@ -289,7 +314,7 @@ function renderSavedResults() {
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
   const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
-  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${items.map(item => savedRecordCard(item, ui.savedCategory)).join("")}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
+  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
 }
 function noteDateLabel(item) {
   if (item.updated) return shortDate(localIso(new Date(item.updated)));
@@ -299,9 +324,19 @@ function noteFolderId(item) {
   if (savedSection("notes", item.categoryId)) return item.categoryId;
   return savedSections("notes").find(section => section.name.toLocaleLowerCase("ru-RU") === String(item.topic || "").toLocaleLowerCase("ru-RU"))?.id || "";
 }
+/** Текст заметки без markdown — для превью в списке. Первая строка, равная названию, не повторяется. */
+function notePlain(text, title = "") {
+  const lines = String(text || "").split("\n")
+    .filter(line => !/^\s*\|?\s*:?-{3,}/.test(line))
+    .map(line => line.replace(/^\s*#{1,6}\s*/, "").replace(/^\s*[-*+]\s+\[[ xX]\]\s*/, "").replace(/^\s*[-*+]\s+/, "").replace(/^\s*\d+[.)]\s+/, "").replace(/^\s*>\s?/, "")
+      .replace(/\|/g, " ").replace(/\*\*|__|~~|`/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s{2,}/g, " ").trim())
+    .filter(Boolean);
+  if (lines[0] && lines[0].toLowerCase() === String(title).trim().toLowerCase()) lines.shift();
+  return lines.join(" · ").slice(0, 220);
+}
 function noteRow(item) {
   const folder = savedSection("notes", noteFolderId(item))?.name || "Без папки";
-  return `<button class="note-row" type="button" data-action="saved-open" data-category="notes" data-id="${esc(item.id)}"><span class="note-row-title">${esc(item.title || "Без названия")}</span><span class="note-row-preview">${esc(item.description || "Пустая заметка")}</span><span class="note-row-foot"><time>${esc(noteDateLabel(item))}</time><span>${esc(folder)}</span>${item.viewed ? `<span class="note-row-seen" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}${item.pinned ? `<span class="note-row-pin" aria-label="Закреплено">${icon("bookmark", "icon-sm")}</span>` : ""}</span></button>`;
+  return `<button class="note-row" type="button" data-action="saved-open" data-category="notes" data-id="${esc(item.id)}"><span class="note-row-title">${esc(item.title || "Без названия")}</span><span class="note-row-preview">${esc(notePlain(item.description, item.title) || "Пустая заметка")}</span><span class="note-row-foot"><time>${esc(noteDateLabel(item))}</time><span>${esc(folder)}</span>${item.viewed ? `<span class="note-row-seen" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}${item.pinned ? `<span class="note-row-pin" aria-label="Закреплено">${icon("bookmark", "icon-sm")}</span>` : ""}</span></button>`;
 }
 function renderNotesResults() {
   const items = savedVisibleItems().slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.updated || b.created || "").localeCompare(String(a.updated || a.created || "")));
@@ -321,6 +356,8 @@ function renderNotesPage() {
 /** Записи открытой вкладки: у фильмов папки «Кино / Сериалы» считаются внутри «В планах» или «Просмотрено». */
 function savedChipPool(category) {
   const items = savedItems(category);
+  // Счётчики папок — по открытой вкладке: под «Предстоящие 3» стояло «Все 5».
+  if (category === "tickets") { const now = Date.now(); const expired = ui.savedFilter === "expired"; return items.filter(item => ticketExpired(item, now) === expired); }
   if (category !== "movies") return items;
   if (ui.savedFilter === "skipped") return items.filter(item => item.skipped);
   const seen = ui.savedFilter === "viewed";
