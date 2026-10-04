@@ -43,6 +43,8 @@ const icons = {
   reset: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/>',
   event: '<path d="M4 20h16M6 20V7l6-4 6 4v13M9 12h6M9 16h6"/>',
   arrow: '<path d="M4 12h16m-7-7 7 7-7 7"/>',
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  bowl: '<path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/>',
   bookmark: '<path d="M5 4h14v17l-7-5-7 5V4Z"/>',
   archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v12h14V8m-9 5h4"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9 2 2-2 2 1 1-2 2-2-2-2 2"/>',
@@ -93,7 +95,8 @@ function shortDate(value) {
   return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(parseDate(value));
 }
 function monthName(value) {
-  return new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(parseDate(value));
+  const text = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(parseDate(value)).replace(/\s*г\.?$/, "");
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 function dateLabel(value) {
   if (!value) return "Без даты";
@@ -226,7 +229,7 @@ function brand() {
   return `<img class="brand-mark" src="./assets/flow-logo.svg" alt=""><div><span class="brand-name">FLOW</span><span class="brand-label">личное пространство</span></div>`;
 }
 function header(title, subtitle, eyebrow) {
-  return `<header class="page-header"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1><p class="page-subtitle">${subtitle}</p></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu"><button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
+  return `<header class="page-header"><div><h1>${title}</h1></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu"><button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
 }
 /*
  * Чек-лист в задаче: пункты отмечаются прямо в карточке. Все отмечены —
@@ -301,17 +304,20 @@ function todayPage() {
   const payCards = duePays.map(p => `<article class="task-card pay-task ${p.nextOn < today ? "overdue" : ""}"><button class="task-check" type="button" data-action="payment-confirm" data-id="${esc(p.id)}" aria-label="Оплачено: ${esc(p.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="finance-open-payments"><span class="task-title">${esc(p.title)}</span><span class="task-meta"><span>${icon("wallet", "icon-sm")}Платёж${p.nextOn < today ? ` · с ${esc(dateLabel(p.nextOn))}` : ""}</span></span></button><span class="pay-task-sum">${demoMoney(p.amount, p.currency || "RUB")}</span></article>`).join("");
   const tasks = `<section class="section"><div class="section-heading"><h2>Задачи на сегодня</h2><span class="count">${daily.length + duePays.length}</span></div><div class="task-stack">${payCards}${daily.length ? daily.map(taskCard).join("") : duePays.length ? "" : emptyCard("План свободен", "Добавьте задачу кнопкой ниже или пришлите её боту обычным сообщением.")}</div></section>`;
   const events = `<section class="section"><div class="section-heading"><h2>В расписании</h2><span class="count">${meetings.length}</span></div>${meetings.length ? meetings.map(eventCard).join("") : emptyCard("Событий пока нет", "Можно добавить встречу на сегодня.")}</section>`;
-  const aside = `<div class="side-card"><h3>Ближайшие дни</h3>${[1, 2, 3].map(n => { const day = offsetIso(n); const count = tasksOn(day).filter(t => !t.done).length + eventsOn(day).length; return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${count} ${word(count, "запись", "записи", "записей")}</b></div>`; }).join("")}<button class="text-action" type="button" data-action="navigate" data-page="upcoming">Открыть календарь ${icon("arrow", "icon-sm")}</button></div><div class="side-card"><h3>Быстрый ввод</h3><p class="side-note">Задачи удобно отправлять боту обычным текстом. Здесь можно проверить, как они выглядят в планировщике.</p></div>`;
+  const aside = `<div class="side-card"><h3>Ближайшие дни</h3>${[1, 2, 3].map(n => { const day = offsetIso(n); const count = tasksOn(day).filter(t => !t.done).length + eventsOn(day).length; return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${count} ${word(count, "запись", "записи", "записей")}</b></div>`; }).join("")}<button class="text-action" type="button" data-action="navigate" data-page="upcoming">Открыть календарь ${icon("arrow", "icon-sm")}</button></div><div class="side-card"><h3>Быстрый ввод</h3><p class="side-note">Задачи удобно отправлять боту обычным текстом. </p></div>`;
   const tickets = typeof todayTicketsSection === "function" ? todayTicketsSection() : "";
   // «Сегодня» и «Предстоящие» — одна вкладка: календарь сверху, под ним день.
   // Сегодня — как раньше (итог, просроченное, дела, расписание); другой день — его дела.
   // Календарь и «сегодня» — одна карточка: сколько дел и сколько сделано — в её шапке.
   const isToday = !ui.selected || ui.selected === today;
   const summary = isToday
-    ? `<span class="plan-summary"><b>${pending.length}</b> ${word(pending.length, "дело", "дела", "дел")} · ${percentage}%</span>`
+    ? `<span class="plan-summary"><b>${pending.length}</b> ${word(pending.length, "дело", "дела", "дел")}${done ? ` · ${done} сделано` : ""}</span>`
     : `<button type="button" class="plan-summary is-link" data-action="calendar-today">К сегодня</button>`;
-  const cal = calendarCard(summary, isToday ? percentage : null);
-  const body = isToday ? `${overdue}${tasks}${events}${tickets}` : dayAgenda(ui.selected);
+  // Пустой день — без полосы прогресса: «100%» при нуле дел только путает.
+  const cal = calendarCard(summary, isToday && daily.length ? percentage : null);
+  // Ближайшие дни рождения — на неделю вперёд: о них вспоминают заранее, а не в день.
+  const birthdaysSoon = typeof todayBirthdaysSection === "function" ? todayBirthdaysSection() : "";
+  const body = isToday ? `${overdue}${tasks}${events}${birthdaysSoon}${tickets}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
