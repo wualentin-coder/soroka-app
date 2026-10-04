@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d6f3b51c4c","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=3bca418083","integrity":null},{"src":"./goods.js?v=55a0048862","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=4a852ffce3","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d6f3b51c4c","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=aa7c71ef73","integrity":null},{"src":"./goods.js?v=0415a05558","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=f3a570c085","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=46d73878f1","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -384,6 +384,8 @@
   }
 
   window.sorokaOpenFile = (item) => openFile(item);
+  window.sorokaHear = (audio) => call({ action: "voice_text", audio, format: "wav" }, 70000);
+  window.sorokaFindRecipes = (query) => call({ action: "recipe_find", query }, 60000);
   /** Мини-сайт с телефона: файл уходит в чат с ботом и становится записью «Файлы». */
   window.sorokaUploadSite = async (name, html) => {
     const answer = await call({ action: "site_upload", name, html }, 60000);
@@ -967,7 +969,7 @@
       <section class="composer" role="dialog" aria-label="Добавить: ${escape(conf.label)}">
         <div class="composer-results" aria-live="polite"></div>
         <div class="composer-head"><span class="composer-chip">${escape(conf.label)}</span>${off ? '<span class="composer-off">без ИИ</span>' : ""}${conf.manual || off ? '<button type="button" class="composer-manual" data-manual>Вручную</button>' : ""}</div>
-        <form class="composer-row"><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="submit" class="composer-send" aria-label="${off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
+        <form class="composer-row"><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="button" class="composer-mic" data-mic aria-label="Надиктовать">${icon("mic")}</button><button type="submit" class="composer-send" aria-label="${off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
       </section>`;
     document.body.appendChild(layer);
     document.documentElement.classList.add("composer-open");
@@ -992,6 +994,16 @@
     });
     layer.addEventListener("click", (event) => {
       if (event.target.closest("[data-close]")) { closeComposer(); return; }
+      // Микрофон: надиктовал — текст встаёт в поле, дальше как с набранным.
+      if (event.target.closest("[data-mic]")) {
+        if (typeof startVoice === "function") void startVoice((text) => {
+          if (!composer) return;
+          field.value = (field.value.trim() ? field.value.trim() + " " : "") + text;
+          field.dispatchEvent(new Event("input", { bubbles: true }));
+          field.focus();
+        });
+        return;
+      }
       if (event.target.closest("[data-manual]")) { const text = field.value.trim(); closeComposer(); composeManual(ctx, text); return; }
       const hit = event.target.closest("[data-hit]");
       if (hit) { const h = composer.hits[Number(hit.dataset.hit)]; closeComposer(); h.open(); return; }
