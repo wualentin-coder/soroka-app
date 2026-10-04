@@ -250,6 +250,17 @@ function postTime(created) {
  */
 function savedCardsGrouped(items, category) {
   if (category !== "movies") return items.map(item => savedRecordCard(item, category)).join("");
+  // Фильмы подборки, добавленные в разное время, собираем к первому из них — одной группой.
+  const members = new Map();
+  for (const item of items) if (item.collection) members.set(item.collection.id, [...(members.get(item.collection.id) || []), item]);
+  const placed = new Set();
+  items = items.flatMap(item => {
+    const c = item.collection;
+    if (!c || (members.get(c.id) || []).length < 2) return [item];
+    if (placed.has(c.id)) return [];
+    placed.add(c.id);
+    return members.get(c.id);
+  });
   let html = "";
   for (let i = 0; i < items.length;) {
     const c = items[i].collection;
