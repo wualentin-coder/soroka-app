@@ -2170,3 +2170,24 @@ body.page-anim .content-main > :nth-child(n+6) { animation-delay: .17s; }
 .record-card-shell[data-category="products"] .record-pin-toggle.is-pinned svg { fill: currentColor; }
 :root:not([data-theme="light"]) .product-card .product-title { color: #eef0f3 !important; }
 :root:not([data-theme="light"]) .product-card .product-image { background: #26282c; }
+
+/* ══ Расход OpenRouter по пунктам ═══════════════════════════════════════════ */
+.router-items { margin-top: 6px; border-radius: 12px; background: color-mix(in srgb, currentColor 4%, transparent); padding: 2px 10px; }
+.router-items summary { cursor: pointer; list-style: none; padding: 8px 0; font-weight: 600; font-size: 13px; display: flex; justify-content: space-between; align-items: baseline; }
+.router-items summary::-webkit-details-marker { display: none; }
+.router-items summary::after { content: "›"; transform: rotate(90deg); transition: transform .25s cubic-bezier(.22, 1, .36, 1); opacity: .5; }
+.router-items[open] summary::after { transform: rotate(-90deg); }
+.router-items summary small { font-weight: 400; opacity: .55; margin-left: auto; margin-right: 8px; }
+.router-item { display: grid; grid-template-columns: minmax(0, 1fr) 64px 64px; gap: 6px; align-items: baseline; padding: 6px 0; border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); font-size: 13px; }
+.router-item span { display: grid; min-width: 0; }
+.router-item small { opacity: .5; font-size: 11px; }
+.router-item b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.router-items[open] .router-item { animation: rise-in .3s cubic-bezier(.22, 1, .36, 1) both; }
+
+/* ══ Календарь за пальцем ═══════════════════════════════════════════════════ */
+.calendar-card.cal-dragging .calendar-grid { overflow: hidden; align-content: start; }
+.calendar-card.cal-dragging .calendar-grid > * { transform: translateY(var(--cal-shift, 0px)); transition: transform var(--cal-dur, 0ms) cubic-bezier(.22, 1, .36, 1); }
+.calendar-card.cal-dragging .calendar-toolbar, .calendar-card.cal-dragging .calendar-legend { display: none; }
+.calendar-card.cal-dragging .calendar-handle span { transform: scaleX(calc(1 + var(--cal-p, 0) * .4)); }
+body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * { animation: none !important; }
+.calendar-card { touch-action: pan-x pan-y; }
