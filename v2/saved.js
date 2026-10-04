@@ -118,11 +118,14 @@ function savedVisibleItems() {
     // Посмотренный фильм уходит из списка «хочу посмотреть» — он в «Показать → Просмотренные».
     const seen = ui.savedCategory === "movies" ? movieIsViewed(item) : item.viewed;
     if (ui.savedFilter === "viewed" && !seen) return false;
-    if (ui.savedCategory === "movies" && seen && !["viewed", "pinned", "skipped"].includes(ui.savedFilter) && !q) return false;
+    if (ui.savedCategory === "movies" && seen && !item.rewatch && !["viewed", "pinned", "skipped"].includes(ui.savedFilter) && !q) return false;
+    if (ui.savedCategory === "movies" && ui.savedFilter === "viewed" && !movieSeenMatch(item)) return false;
     const sectionName = ui.savedCategory === "addresses" ? mapCategory(item.categoryId)?.name : savedSection(ui.savedCategory, sectionId)?.name;
     return !q || `${item.title} ${item.description || ""} ${item.topic || ""} ${item.address || ""} ${item.city || ""} ${item.origin || ""} ${item.destination || ""} ${item.venue || ""} ${item.reference || ""} ${sectionName || ""} ${(item.tags || []).join(" ")}`.toLocaleLowerCase("ru-RU").includes(q);
   });
   result.sort((a, b) => sortSavedItems(a, b));
+  // Просмотренные фильмы — по дате просмотра, свежие сверху.
+  if (ui.savedCategory === "movies" && ui.savedFilter === "viewed" && ["newest", "seen"].includes(ui.savedSort)) result.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.seenAt || "").localeCompare(String(a.seenAt || "")) || (b.created || "").localeCompare(a.created || ""));
   // Билеты — по дате: ближайшие сверху, просроченные — недавние сверху.
   if (ui.savedCategory === "tickets" && ui.savedSort !== "title") {
     const at = t => ticketStart(t)?.getTime() ?? Infinity;
@@ -336,11 +339,13 @@ function renderSavedPage() {
   // сортировки и вида. Лента всех разделов и второй заголовок убраны: раздел
   // выбирают на главной «Сохранённого».
   const category = ui.savedCategory;
-  const show = ui.savedFilter === "all" ? ui.savedSort : ui.savedFilter;
+  const show = ui.savedFilter === "all" || (category === "movies" && ui.savedFilter === "viewed") ? ui.savedSort : ui.savedFilter;
   const showOptions = category === "tickets"
     ? [["newest", "По дате"], ["title", "По названию"], ["pinned", "Закреплённые"]]
     : category === "movies"
-    ? [["newest", "Новые сначала"], ["rating", "По моей оценке"], ["title", "По названию"], ["pinned", "Закреплённые"], ["skipped", "Не интересно"]]
+    ? ui.savedFilter === "viewed"
+      ? [["newest", "По дате просмотра"], ["rating", "По моей оценке"], ["title", "По названию"]]
+      : [["newest", "Новые сначала"], ["rating", "По моей оценке"], ["title", "По названию"], ["pinned", "Закреплённые"], ["skipped", "Не интересно"]]
     : [["newest", "Новые сначала"], ["title", "По названию"], ["time", "По времени"], ["unread", "Не просмотрено"], ["viewed", "Просмотренные"], ["pinned", "Закреплённые"]];
   // Поиск — в «+» (он ищет и добавляет), а «Показать» стоит в одном ряду с папками.
   const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
@@ -351,6 +356,7 @@ function renderSavedPage() {
   const main = category === "addresses" ? renderAddressWorkspace()
     : category === "cards" ? renderWallet()
     : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
+    : category === "movies" && ui.savedFilter === "viewed" ? `${seenTabs}${movieSeenFilters()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
     : `${seenTabs}${renderSavedSectionChips(category, sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
   return `<div class="saved-section-screen">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
@@ -570,7 +576,7 @@ function renderSavedViewSheet(item, category) {
   const movieGenres = category === "movies" ? [item.genre, ...(item.tags || [])].filter((value, index, all) => value && all.findIndex(other => String(other).toLocaleLowerCase("ru-RU") === String(value).toLocaleLowerCase("ru-RU")) === index) : [];
   // Фильм: постер слева, справа статус, год и жанр, режиссёр, оценки; описание —
   // во всю ширину под ними. Всё по одной сетке, без плавающих подписей.
-  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}${starSlider(item)}</div></div>${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
+  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}${starSlider(item)}</div></div>${movieReviewBlock(item)}${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
   // В шапке — закладка: закрепить карточку. «Просмотрено» — свайпом вправо по карточке списка.
   const topViewedAction = `<button class="icon-button sheet-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}">${icon("bookmark", "icon-sm")}</button>`;
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
@@ -913,7 +919,7 @@ function savedChange(event) {
   if (event.target.id === "saved-show") {
     const value = event.target.value;
     if (["unread", "viewed", "pinned", "skipped"].includes(value)) ui.savedFilter = value;
-    else { ui.savedFilter = ui.savedCategory === "tickets" && ui.savedFilter === "expired" ? "expired" : "all"; ui.savedSort = value; }
+    else { ui.savedFilter = (ui.savedCategory === "tickets" && ui.savedFilter === "expired") || (ui.savedCategory === "movies" && ui.savedFilter === "viewed") ? ui.savedFilter : "all"; ui.savedSort = value; }
     render(); return true;
   }
   if (event.target.id !== "saved-sort") return false;
