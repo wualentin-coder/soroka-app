@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d6f3b51c4c","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=aa7c71ef73","integrity":null},{"src":"./goods.js?v=0415a05558","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=b16d94d082","integrity":null},{"src":"./cards.js?v=4bae85785b","integrity":null},{"src":"./card-swipe.js?v=fa96e2c296","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=f3a570c085","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=46d73878f1","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=d6f3b51c4c","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=aa7c71ef73","integrity":null},{"src":"./goods.js?v=0415a05558","integrity":null},{"src":"./birthdays.js?v=ad550e6be0","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=b16d94d082","integrity":null},{"src":"./cards.js?v=a25e625005","integrity":null},{"src":"./card-swipe.js?v=fa96e2c296","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=8dfbf752a1","integrity":null},{"src":"./app.js?v=04183282dc","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=46d73878f1","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -384,6 +384,7 @@
   }
 
   window.sorokaOpenFile = (item) => openFile(item);
+  window.sorokaCardStores = (title, lat, lng) => call({ action: "card_stores", title, lat, lng }, 30000);
   window.sorokaHear = (audio) => call({ action: "voice_text", audio, format: "wav" }, 70000);
   window.sorokaFindRecipes = (query) => call({ action: "recipe_find", query }, 60000);
   /** Мини-сайт с телефона: файл уходит в чат с ботом и становится записью «Файлы». */
@@ -592,6 +593,7 @@
    * открывалось окно вида «edit», которого в приложении нет, — и кнопка из
    * чата показывала просто главный экран.
    */
+  window.sorokaOpenRef = (ref) => openRef(ref);
   function openRef(ref) {
     const [kind, num] = String(ref).split(":");
     const has = (list, id) => (list || []).some((r) => r.id === id);
@@ -861,6 +863,10 @@
     try { performance.mark("soroka-scripts"); } catch (_) {}
     render();
     try { performance.mark("soroka-ready"); } catch (_) {}
+    // Открыли через «Поделиться» — сразу «+» с присланным.
+    setTimeout(() => window.sorokaTakeShared && window.sorokaTakeShared(), 400);
+    // С язычка карты у края экрана (Android): открыть эту карту с кодом.
+    try { const open = new URLSearchParams(location.search).get("open"); if (open && /^card:\d+$/.test(open)) setTimeout(() => openRef(open), 300); } catch (_) {}
     root.classList.add("live-enter");
     setTimeout(() => root.classList.remove("live-enter"), 700);
 
@@ -958,7 +964,7 @@
   }
 
   let composer = null;
-  function openComposer() {
+  function openComposer(preset = null) {
     closeComposer();
     const ctx = composeContext();
     const conf = COMPOSE[ctx];
@@ -969,18 +975,49 @@
       <section class="composer" role="dialog" aria-label="Добавить: ${escape(conf.label)}">
         <div class="composer-results" aria-live="polite"></div>
         <div class="composer-head"><span class="composer-chip">${escape(conf.label)}</span>${off ? '<span class="composer-off">без ИИ</span>' : ""}${conf.manual || off ? '<button type="button" class="composer-manual" data-manual>Вручную</button>' : ""}</div>
-        <form class="composer-row"><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="button" class="composer-mic" data-mic aria-label="Надиктовать">${icon("mic")}</button><button type="submit" class="composer-send" aria-label="${off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
+        <div class="composer-attach-row" hidden></div>
+        <form class="composer-row"><button type="button" class="composer-clip" data-clip aria-label="Прикрепить фото или файл">${icon("clip")}</button><input type="file" class="composer-file" accept="image/*,application/pdf,text/plain" hidden><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="button" class="composer-mic" data-mic aria-label="Надиктовать">${icon("mic")}</button><button type="submit" class="composer-send" aria-label="${off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
       </section>`;
     document.body.appendChild(layer);
     document.documentElement.classList.add("composer-open");
     const field = layer.querySelector("textarea");
     const send = layer.querySelector(".composer-send");
     const results = layer.querySelector(".composer-results");
-    composer = { layer, ctx, conf, field, results, off, found: [] };
+    composer = { layer, ctx, conf, field, results, off, found: [], file: null };
+    const attachRow = layer.querySelector(".composer-attach-row");
+    // Вложение: фото уменьшаем до 1600 px (JPEG) — быстрее уходит и читается так же.
+    const attach = async (file) => {
+      if (!file) return;
+      if (file.size > 10_000_000) { say("Файл больше 10 МБ — такой не отправить"); return; }
+      let data, mime = file.type || "application/octet-stream", name = file.name || "file";
+      if (/^image\//.test(mime)) {
+        const img = await createImageBitmap(file).catch(() => null);
+        if (img) {
+          const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * k); canvas.height = Math.round(img.height * k);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          data = canvas.toDataURL("image/jpeg", 0.86).split(",")[1];
+          mime = "image/jpeg"; name = name.replace(/\.\w+$/, "") + ".jpg";
+        }
+      }
+      if (!data) {
+        const buf = new Uint8Array(await file.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+        data = btoa(bin);
+      }
+      composer.file = { name, mime, data };
+      attachRow.hidden = false;
+      attachRow.innerHTML = `<span class="composer-attach">${/^image\//.test(mime) ? `<img src="data:${mime};base64,${data}" alt="">` : icon("note", "icon-sm")}<b>${escape(name)}</b><button type="button" data-unclip aria-label="Убрать">×</button></span>`;
+      send.disabled = false;
+    };
+    composer.attach = attach;
+    layer.querySelector(".composer-file").addEventListener("change", (event) => { void attach(event.target.files[0]); event.target.value = ""; });
     const grow = () => { field.style.height = "auto"; field.style.height = Math.min(field.scrollHeight, 140) + "px"; };
     const show = () => {
       const text = field.value;
-      send.disabled = !text.trim();
+      send.disabled = !text.trim() && !composer.file;
       grow();
       if (composer.found.length) return;
       const hits = composeMatches(ctx, text);
@@ -994,6 +1031,8 @@
     });
     layer.addEventListener("click", (event) => {
       if (event.target.closest("[data-close]")) { closeComposer(); return; }
+      if (event.target.closest("[data-clip]")) { layer.querySelector(".composer-file").click(); return; }
+      if (event.target.closest("[data-unclip]")) { composer.file = null; attachRow.hidden = true; attachRow.innerHTML = ""; show(); return; }
       // Микрофон: надиктовал — текст встаёт в поле, дальше как с набранным.
       if (event.target.closest("[data-mic]")) {
         if (typeof startVoice === "function") void startVoice((text) => {
@@ -1017,21 +1056,39 @@
     layer.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
       const text = field.value.trim();
-      if (!text) return;
-      if (off) { closeComposer(); composeManual(ctx, text); return; }
-      if (ctx === "movies") { findMovie(text); return; }
+      const file = composer.file;
+      if (!text && !file) return;
+      if (off && !file) { closeComposer(); composeManual(ctx, text); return; }
+      if (ctx === "movies" && !file) { findMovie(text); return; }
       // Рецепт: ссылку или целый рецепт разбирает бот; название или продукты — ищем в интернете.
-      if (ctx === "recipes" && !/https?:\/\//.test(text) && text.length < 160) { findRecipe(text); return; }
+      if (ctx === "recipes" && !file && !/https?:\/\//.test(text) && text.length < 160) { findRecipe(text); return; }
       send.disabled = true;
       send.innerHTML = '<span class="live-spin"></span>';
-      call({ action: "planner_capture", text: (conf.hint || "") + text }).then((answer) => {
+      call({ action: "planner_capture", text: text ? (conf.hint || "") + text : file ? (conf.hint || "") : "", ...(file ? { file } : {}) }, file ? 60000 : 20000).then((answer) => {
         closeComposer();
-        captureProgress(text, answer.item);
+        captureProgress(text || (file ? `Файл: ${file.name}` : ""), answer.item);
       }).catch(() => { send.disabled = false; send.innerHTML = icon("arrow"); say("Не отправилось — попробуйте ещё раз"); });
     });
+    if (preset) {
+      if (preset.text) field.value = preset.text;
+      if (preset.file) { composer.file = preset.file; attachRow.hidden = false; attachRow.innerHTML = `<span class="composer-attach">${/^image\//.test(preset.file.mime) ? `<img src="data:${preset.file.mime};base64,${preset.file.data}" alt="">` : icon("note", "icon-sm")}<b>${escape(preset.file.name)}</b><button type="button" data-unclip aria-label="Убрать">×</button></span>`; }
+    }
     setTimeout(() => field.focus(), 60);
     show();
   }
+  // «Поделиться» на Android: присланное в Magpie открывается в «+» — текст в поле, фото вложением.
+  function takeShared() {
+    try {
+      const raw = android && android.takeShared ? android.takeShared() : "";
+      if (!raw) return;
+      const shared = JSON.parse(raw);
+      if (!shared || (!shared.text && !shared.file)) return;
+      navigate("today");
+      openComposer({ text: shared.text || "", file: shared.file || null });
+    } catch (_) {}
+  }
+  window.addEventListener("soroka-shared", takeShared);
+  window.sorokaTakeShared = takeShared;
   function closeComposer() {
     if (!composer) return;
     composer.layer.remove();
