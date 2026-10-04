@@ -517,7 +517,10 @@ function installSwipeCards(root) {
     const seenNow = type === "saved:movies" ? movieIsViewed(seenItem) : Boolean(seenItem?.viewed);
     const movieSwipeHint = seenItem ? `<span class="swipe-right-indicator" aria-hidden="true">${icon(seenNow ? "eyeOff" : "eye", "icon-sm")}</span>`
       : type === "task" || type === "event" ? `<span class="swipe-right-indicator swipe-later-hint" aria-hidden="true">${icon("clock", "icon-sm")}<b>На завтра</b></span>` : "";
-    wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("settings")}</button><button class="swipe-action skip" type="button" data-action="swipe-skip" tabindex="-1" aria-label="Не интересно">${icon("thumbDown")}</button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share")}</button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash")}</button><div class="swipe-content"></div>`;
+    const editButton = type === "saved:notes"
+      ? `<button class="swipe-action edit improve" type="button" data-action="swipe-improve" tabindex="-1" aria-label="Улучшить заметку">${icon("spark")}</button>`
+      : `<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("settings")}</button>`;
+    wrapper.innerHTML = `${movieSwipeHint}${editButton}<button class="swipe-action skip" type="button" data-action="swipe-skip" tabindex="-1" aria-label="Не интересно">${icon("thumbDown")}</button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share")}</button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash")}</button><div class="swipe-content"></div>`;
     node.parentNode.insertBefore(wrapper, node);
     wrapper.querySelector(".swipe-content").appendChild(node);
   });
