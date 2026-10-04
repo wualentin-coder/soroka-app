@@ -296,3 +296,8 @@ html.in-android .page-header { min-height: 40px; }
 .birthday-soon { display: grid; gap: 8px; }
 /* Цвета акцента — одной строкой с прокруткой, а не «один зелёный на второй строке». */
 .accent-swatches, .settings-accents { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+/* Фильтры поиска — одной строкой с прокруткой, а не три ряда. */
+.search-filters { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+.search-filters > * { flex: 0 0 auto; }
+/* Миникарта адреса, пока грузятся тайлы, — не пустой бежевый прямоугольник. */
+.address-mini-map { background: repeating-linear-gradient(45deg, var(--surface-soft) 0 12px, color-mix(in srgb, var(--line) 50%, var(--surface-soft)) 12px 24px); }
