@@ -54,6 +54,7 @@ async function startVoice(onText, label = "Говорите…") {
   const source = ctx.createMediaStreamSource(stream);
   const node = ctx.createScriptProcessor(4096, 1, 1);
   const chunks = [];
+  let loudest = 0;
   const bar = document.createElement("div");
   bar.className = "voice-bar";
   bar.innerHTML = `<span class="voice-dot"></span><span class="voice-level"><i></i></span><b class="voice-time">0:00</b><small>${esc(label)}</small><button type="button" class="voice-cancel" aria-label="Отменить">${icon("close", "icon-sm")}</button><button type="button" class="voice-done">Готово</button>`;
@@ -64,6 +65,7 @@ async function startVoice(onText, label = "Говорите…") {
     chunks.push(new Float32Array(data));
     let peak = 0;
     for (let i = 0; i < data.length; i += 16) peak = Math.max(peak, Math.abs(data[i]));
+    loudest = Math.max(loudest, peak);
     bar.style.setProperty("--level", Math.min(1, peak * 2.5).toFixed(2));
   };
   source.connect(node); node.connect(ctx.destination);
@@ -82,6 +84,8 @@ async function startVoice(onText, label = "Говорите…") {
     const rate = ctx.sampleRate;
     ctx.close().catch(() => {});
     if (!keep || !chunks.length) { bar.remove(); return; }
+    // Тишину не отправляем: модель на пустой записи может «услышать» что-нибудь своё.
+    if (loudest < 0.03) { bar.remove(); toast("Ничего не слышно — проверьте микрофон"); return; }
     bar.classList.add("busy");
     bar.innerHTML = `<span class="live-spin"></span><small>Расшифровываю…</small>`;
     try {
