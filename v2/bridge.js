@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=c9f28e1539","integrity":null},{"src":"./movies.js?v=a4ab4fbc79","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=abcc0a638e","integrity":null},{"src":"./app.js?v=6e4ebc9cb0","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=a1815c25ae","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./cards.js?v=da416c2cd2","integrity":null},{"src":"./address-map.js?v=3d6d1ceed6","integrity":null},{"src":"./finance.js?v=26f86e3a17","integrity":null},{"src":"./more.js?v=fc3195ee18","integrity":null},{"src":"./capture.js?v=2ea89f646c","integrity":null},{"src":"./sections.js?v=38983b7ee7","integrity":null},{"src":"./app.js?v=6e4ebc9cb0","integrity":null},{"src":"./notes.js?v=3eaf4f2563","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -808,7 +808,7 @@
     };
 
     // Подборка фильмов: вкус считает приложение, новые названия — бот (до полуминуты).
-    window.sorokaRecommend = () => call({ action: "movie_recommend" }, 30000);
+    window.sorokaRecommend = (filter = {}) => call({ action: "movie_recommend", ...filter }, 30000);
     window.sorokaRecoGet = () => call({ action: "movie_reco_get" }, 20000);
 
     // Адреса ищет сервер бота: из браузера в России бесплатный геокодер
@@ -972,7 +972,7 @@
       const hit = event.target.closest("[data-hit]");
       if (hit) { const h = composer.hits[Number(hit.dataset.hit)]; closeComposer(); h.open(); return; }
       const add = event.target.closest("[data-add]");
-      if (add) { addFoundMovie(Number(add.dataset.add)); return; }
+      if (add) { addFoundMovie(Number(add.dataset.add), add.dataset.mode || "plans", add); return; }
       const own = event.target.closest("[data-own]");
       if (own) { const id = `movie:${own.dataset.own}`; closeComposer(); navigate("saved"); openSavedRecord("movies", id); }
     });
@@ -1045,7 +1045,7 @@
       c.results.innerHTML = `<p class="composer-caption">${c.found.length > 1 ? "Нашёл — выберите" : "Нашёл"}</p>` + c.found.map((f, i) => {
         const facts = [f.year, f.genre, f.kind === "series" ? "сериал" : ""].filter(Boolean).join(" · ");
         const scores = [f.kpRating ? `КП ${String(f.kpRating).replace(".", ",")}` : "", f.imdbRating ? `IMDb ${String(f.imdbRating).replace(".", ",")}` : ""].filter(Boolean).join(" · ");
-        return `<article class="composer-movie">${f.poster ? `<img src="${escape(f.poster)}" alt="" loading="lazy" onerror="this.remove()">` : '<span class="composer-movie-blank"></span>'}<div><b>${escape(f.title)}</b>${f.originalTitle && f.originalTitle !== f.title ? `<small>${escape(f.originalTitle)}</small>` : ""}<small>${escape(facts)}${scores ? ` · ${escape(scores)}` : ""}</small>${f.why ? `<p>${escape(f.why)}</p>` : ""}</div>${f.existing ? `<button type="button" class="ghost-button" data-own="${f.existing}">Уже есть — открыть</button>` : `<button type="button" class="primary-button" data-add="${i}">В планы</button>`}</article>`;
+        return `<article class="composer-movie">${f.poster ? `<img src="${escape(f.poster)}" alt="" loading="lazy" onerror="this.remove()">` : '<span class="composer-movie-blank"></span>'}<div><b>${escape(f.title)}</b>${f.originalTitle && f.originalTitle !== f.title ? `<small>${escape(f.originalTitle)}</small>` : ""}<small>${escape(facts)}${scores ? ` · ${escape(scores)}` : ""}</small>${f.why ? `<p>${escape(f.why)}</p>` : ""}</div>${f.existing ? `<button type="button" class="ghost-button" data-own="${f.existing}">Уже есть — открыть</button>` : `<span class="composer-movie-acts"><button type="button" class="primary-button" data-add="${i}">В планы</button><button type="button" class="ghost-button" data-add="${i}" data-mode="seen">Смотрел</button></span>`}</article>`;
       }).join("");
     }).catch(() => {
       if (composer !== c) return;
@@ -1053,25 +1053,35 @@
       c.results.innerHTML = `<p class="composer-caption">Поиск не ответил — попробуйте ещё раз.</p>`;
     });
   }
-  /** Найденный фильм — в «В планах»; такой уже есть — открыть его, а не заводить второй. */
-  function addFoundMovie(index) {
+  /**
+   * Найденный фильм — в «В планах» (поиск остаётся открытым: можно добавить ещё)
+   * или «Смотрел» — тогда открываем его карточку: оценка и пара слов.
+   * Такой уже есть — открыть его, а не заводить второй.
+   */
+  function addFoundMovie(index, mode = "plans", button = null) {
     const c = composer;
     const f = c && c.found[index];
     if (!f) return;
     const key = (s) => norm(s).replace(/[^a-zа-я0-9]+/g, " ").trim();
     const twin = (data.saved.movies || []).find((m) => (key(m.title) === key(f.title) || (f.originalTitle && key(m.originalTitle) === key(f.originalTitle))) && (!m.year || !f.year || Math.abs(Number(m.year) - Number(f.year)) <= 1));
-    closeComposer();
-    navigate("saved");
+    const seen = mode === "seen";
+    if (twin || seen) { closeComposer(); navigate("saved"); }
     if (twin) { openSavedRecord("movies", twin.id); say("Этот фильм уже есть"); return; }
+    const movieId = id();
     data.saved.movies.push({
-      id: id(), title: f.title, description: f.why || "", topic: f.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: f.genre || "", year: f.year || undefined,
-      originalTitle: f.originalTitle || "", status: "Хочу посмотреть", viewed: false, rating: 0, skipped: false,
+      id: movieId, title: f.title, description: f.why || "", topic: f.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: f.genre || "", year: f.year || undefined,
+      originalTitle: f.originalTitle || "", status: seen ? "Посмотрел" : "Хочу посмотреть", viewed: seen, rating: 0, skipped: false,
+      seenAt: seen ? new Date().toISOString().slice(0, 10) : "",
       kinopoiskUrl: f.kpUrl || "", imdbUrl: f.imdbUrl || "", kinopoiskRating: f.kpRating ?? "", imdbRating: f.imdbRating ?? "",
       coverPath: f.poster || "", source: "Поиск", created: new Date().toISOString(), pinned: false,
     });
-    ui.savedCategory = "movies"; ui.savedFilter = "all";
+    ui.savedCategory = "movies";
     save();
-    render();
+    if (seen) { ui.savedFilter = "viewed"; openSavedRecord("movies", movieId); say("Поставьте оценку — и пару слов, если хочется"); return; }
+    if (ui.page === "saved") { ui.savedFilter = "all"; render(); }
+    f.existing = true;
+    const row = button && button.closest(".composer-movie-acts");
+    if (row) row.outerHTML = `<span class="composer-movie-done">${icon("check", "icon-sm")}В планах</span>`;
     say(`«${f.title}» — в планах`);
   }
 
