@@ -509,11 +509,14 @@ function installSwipeCards(root) {
     if (node.matches(".note-row")) wrapper.classList.add("swipe-note");
     if (node.matches(".budget-card, .project-card")) wrapper.classList.add("swipe-spaced");
     if (node.matches(".event-card")) wrapper.classList.add("swipe-event");
+    // Дела и события: свайп вправо — отложить на завтра.
+    if (type === "task" || type === "event") wrapper.classList.add("swipe-seen", "swipe-later");
     wrapper.dataset.swipeType = type;
     wrapper.dataset.swipeId = recordId;
     const seenItem = ["saved:movies", "saved:notes", "saved:files", "saved:posts", "saved:links"].includes(type) ? savedItem(type.split(":")[1], recordId) : null;
     const seenNow = type === "saved:movies" ? movieIsViewed(seenItem) : Boolean(seenItem?.viewed);
-    const movieSwipeHint = seenItem ? `<span class="swipe-right-indicator" aria-hidden="true">${icon(seenNow ? "eyeOff" : "eye", "icon-sm")}</span>` : "";
+    const movieSwipeHint = seenItem ? `<span class="swipe-right-indicator" aria-hidden="true">${icon(seenNow ? "eyeOff" : "eye", "icon-sm")}</span>`
+      : type === "task" || type === "event" ? `<span class="swipe-right-indicator swipe-later-hint" aria-hidden="true">${icon("clock", "icon-sm")}<b>На завтра</b></span>` : "";
     wrapper.innerHTML = `${movieSwipeHint}<button class="swipe-action edit" type="button" data-action="swipe-edit" tabindex="-1" aria-label="Настроить запись">${icon("settings")}</button><button class="swipe-action skip" type="button" data-action="swipe-skip" tabindex="-1" aria-label="Не интересно">${icon("thumbDown")}</button><button class="swipe-action share" type="button" data-action="swipe-share" tabindex="-1" aria-label="Поделиться записью">${icon("share")}</button><button class="swipe-action delete" type="button" data-action="swipe-delete" tabindex="-1" aria-label="Удалить запись">${icon("trash")}</button><div class="swipe-content"></div>`;
     node.parentNode.insertBefore(wrapper, node);
     wrapper.querySelector(".swipe-content").appendChild(node);
@@ -679,6 +682,11 @@ document.addEventListener("pointerup", event => {
   swipeSuppressUntil = Date.now() + 400;
   swipeSuppressRow = gesture.row;
   swipeSuppressKey = `${gesture.row.dataset.swipeType}:${gesture.row.dataset.swipeId}`;
+  if (gesture.row.classList.contains("swipe-later") && gesture.base === 0 && (distance > 72 || (flick && gesture.speed > 0 && distance > 30))) {
+    closeSwipeRows();
+    postponeRecord(gesture.row.dataset.swipeType, gesture.row.dataset.swipeId);
+    return;
+  }
   if (gesture.row.classList.contains("swipe-seen") && gesture.base === 0 && (distance > 72 || (flick && gesture.speed > 0 && distance > 30))) {
     closeSwipeRows();
     const [, category] = gesture.row.dataset.swipeType.split(":");
@@ -724,3 +732,16 @@ document.addEventListener("click", event => {
   closeSwipeRows();
 }, true);
 document.addEventListener("visibilitychange", () => { if (document.hidden && ui.vaultShown) hideVaultSecret(); });
+
+/** Отложить дело или событие на завтра (просроченное — тоже на завтра, а не на день после срока). */
+function postponeRecord(type, recordId) {
+  const list = type === "task" ? data.tasks : data.events;
+  const item = list.find(x => x.id === recordId);
+  if (!item) return;
+  const before = item.due;
+  const tomorrow = offsetIso(1);
+  item.due = !item.due || item.due < tomorrow ? tomorrow : localIso(shiftDay(parseDate(item.due), 1));
+  save(); render();
+  toast(`${type === "task" ? "Дело" : "Событие"} — на ${dateLabel(item.due).toLowerCase()}`);
+  void before;
+}
