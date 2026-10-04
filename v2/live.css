@@ -5,7 +5,7 @@
  */
 
 /* Заставка, пока грузятся данные бота. */
-.live-splash { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; text-align: center; color: var(--muted, #9aa7b2); font: 500 15px/1.4 Manrope, system-ui, sans-serif; background: var(--bg, #121b23); }
+.live-splash { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; text-align: center; color: var(--muted, #9aa7b2); font: 500 15px/1.4 Manrope, system-ui, sans-serif; background: var(--page); }
 .live-splash img { width: 64px; height: 64px; border-radius: 20px; }
 .live-splash button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--accent, #58d0cf); color: var(--accent-ink, #0c1a1f); font: 700 15px Manrope, system-ui, sans-serif; }
 
@@ -227,7 +227,7 @@ html.in-android .page-header { min-height: 40px; }
 .composer-movie-done { display: inline-flex; align-items: center; gap: 4px; align-self: center; color: #2fa96a; font-weight: 600; font-size: 14px; white-space: nowrap; animation: review-in .3s ease-out; }
 
 /* Файл из чата и мини-сайт — на весь экран поверх приложения. */
-.live-file { position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; background: var(--bg, #fbf8f3); animation: review-in .25s ease-out; }
+.live-file { position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; background: var(--page); animation: review-in .25s ease-out; }
 .live-file > header { display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top) + var(--tg-content-safe-area-inset-top, 0px) + 8px) 14px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
 .live-file > header strong { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
 .live-file-close { border: 0; padding: 8px 14px; border-radius: 14px; background: color-mix(in srgb, currentColor 8%, transparent); color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
@@ -236,8 +236,8 @@ html.in-android .page-header { min-height: 40px; }
 .live-file-wait { margin: auto; display: grid; justify-items: center; gap: 10px; padding: 24px; text-align: center; }
 .live-file-image { max-width: 100%; margin: auto; object-fit: contain; }
 .live-file-text { margin: 0; padding: 16px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
-:root:not([data-theme="light"]) .live-file { background: var(--bg, #141414); }
-.live-file { color: var(--ink, #1d1d1f); }
+:root:not([data-theme="light"]) .live-file { background: var(--page); }
+.live-file { color: var(--text); }
 :root:not([data-theme="light"]) .live-file { color: #f2f2f2; }
 /* Рецепт из интернета: без постера — одна колонка, кнопка под текстом. */
 .composer-recipe { grid-template-columns: minmax(0, 1fr); }
