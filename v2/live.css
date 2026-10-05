@@ -337,3 +337,10 @@ html.in-android .page-header { min-height: 40px; }
 /* Действия под формой — на всю ширину поровну, без пустоты справа. */
 .inline-actions.form-extra { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .inline-actions.form-extra > button { width: 100%; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Цель, привязанная к товару, — в карточке товара. */
+.product-goal { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 10px; margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); }
+.product-goal small { display: block; color: var(--muted); font-size: 12px; font-weight: 600; }
+.product-goal strong { font-size: 15px; }
+.product-goal > span { color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.product-goal .progress-track { grid-column: 1 / -1; }
