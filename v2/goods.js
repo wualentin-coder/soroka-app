@@ -13,7 +13,8 @@ const rub = value => `${Math.round(Number(value)).toLocaleString("ru-RU")} ₽`;
  */
 function productStart(item) {
   const price = Number(item.price), start = Number(item.startPrice);
-  return price > 0 && start > 0 && Math.abs(price - start) >= Math.max(1, start * 0.005) ? start : 0;
+  // Показываем всегда, как на карточке маркетплейса: цена не менялась — «0%».
+  return price > 0 && start > 0 ? start : 0;
 }
 /** Изменение от стартовой цены в процентах: меньше нуля — подешевел, больше — подорожал. */
 function productChange(item) {
@@ -25,7 +26,7 @@ function productDiscount(item) {
   const change = productChange(item);
   return change < 0 ? -change : 0;
 }
-const signedPercent = n => `${n < 0 ? "−" : "+"}${Math.abs(n) || "<1"}%`;
+const signedPercent = n => n === 0 ? "0%" : `${n < 0 ? "−" : "+"}${Math.abs(n)}%`;
 
 /** Ссылка на магазин: из названия-адреса или из домена ссылки на товар. */
 function productStoreUrl(item) {
@@ -50,7 +51,7 @@ function productPrice(item) {
   if (!Number(item.price)) return `<span class="product-price none">Цена не снята</span>`;
   // Как на Ozon: текущая — акцентом, стартовая — зачёркнута, рядом — насколько изменилась.
   const start = productStart(item), change = productChange(item);
-  return `<span class="product-price"><b class="now">${rub(item.price)}</b>${start ? `<s>${rub(start)}</s><em class="${change < 0 ? "down" : "up"}">${signedPercent(change)}</em>` : ""}</span>`;
+  return `<span class="product-price"><b class="now">${rub(item.price)}</b>${start ? `<s>${rub(start)}</s><em class="${change < 0 ? "down" : change > 0 ? "up" : "same"}">${signedPercent(change)}</em>` : ""}</span>`;
 }
 
 function productCard(item) {
@@ -73,7 +74,7 @@ function productDetails(item) {
     item.tracked ? savedDetailLine("Слежу за ценой", "раз в сутки") : "",
   ].join("");
   const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}">${icon("reset", "icon-sm")}Обновить цену и фото</button>` : "";
-  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${productChange(item) < 0 ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : `дороже на ${rub(Number(item.price) - productStart(item))}`}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
+  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${Number(item.price) < productStart(item) ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : Number(item.price) > productStart(item) ? `дороже на ${rub(Number(item.price) - productStart(item))}` : "цена не менялась"}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
 }
 
 // «Обновить цену и фото»: сервер снимает их сейчас (магазины с защитой — через поиск).
