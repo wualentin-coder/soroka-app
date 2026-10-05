@@ -71,10 +71,12 @@ function productDetails(item) {
   ].join("");
   const rows = [
     Number(item.targetPrice) > 0 ? savedDetailLine("Жду цену", rub(item.targetPrice)) : "",
-    item.tracked ? savedDetailLine("Слежу за ценой", "раз в сутки") : "",
+    item.tracked ? savedDetailLine("Слежу за ценой", { 1: "каждый день", 3: "раз в 3 дня", 7: "раз в неделю" }[Number(item.checkDays) || 1] || "каждый день") : "",
   ].join("");
+  const goal = (data.finance?.goals || []).find(g => g.id === item.goalId);
+  const goalBlock = goal ? (() => { const pct = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0; return `<div class="product-goal"><div><small>Цель</small><strong>${esc(goal.title)}</strong></div><span>${rub(goal.saved)} из ${rub(goal.target)}</span><div class="progress-track"><span style="width:${pct}%"></span></div></div>`; })() : "";
   const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}">${icon("reset", "icon-sm")}Обновить цену и фото</button>` : "";
-  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${Number(item.price) < productStart(item) ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : Number(item.price) > productStart(item) ? `дороже на ${rub(Number(item.price) - productStart(item))}` : "цена не менялась"}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
+  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${Number(item.price) < productStart(item) ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : Number(item.price) > productStart(item) ? `дороже на ${rub(Number(item.price) - productStart(item))}` : "цена не менялась"}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${goalBlock}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
 }
 
 // «Обновить цену и фото»: сервер снимает их сейчас (магазины с защитой — через поиск).
