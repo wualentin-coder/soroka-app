@@ -278,9 +278,12 @@ html.in-android .page-header { min-height: 40px; }
 /* На телефоне «наведение» залипает на карточке под пальцем — красная рамка у первой карточки после перехода. */
 @media (hover: none) { .record-card:hover { border-color: var(--line); } }
 /* Подборка фильмов из одного поста — общий тонкий контур акцентного цвета. */
-.movie-collection { display: grid; gap: inherit; padding: 8px; margin: 2px -9px; border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); border-radius: 20px; }
+/* minmax(0,1fr): без него длинная строка карточки растягивала блок шире экрана. */
+.movie-collection { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; padding: 6px; border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); border-radius: 20px; }
+.movie-collection > * { min-width: 0; }
+.movie-collection.is-folded { padding: 2px 6px; }
 .record-list .movie-collection { gap: 9px; }
-.movie-collection-head { display: flex; align-items: center; gap: 6px; padding: 2px 6px 0; color: var(--accent); font-size: 12px; font-weight: 700; }
+.movie-collection-head { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 34px; padding: 4px 6px; border: 0; background: none; color: var(--accent); font: inherit; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
 .movie-collection-head span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .movie-collection-head b { font-weight: 700; opacity: .8; }
 /* Операции: значок в цвете категории. */
@@ -308,6 +311,3 @@ html.in-android .page-header { min-height: 40px; }
 .glance-tile small { color: var(--muted); font-size: 12px; font-weight: 600; }
 .glance-tile strong { font-size: 17px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .glance-tile span { color: var(--muted); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-/* Галочка «Показывать подборки» в фильмах. */
-.collections-toggle { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
-.collections-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
