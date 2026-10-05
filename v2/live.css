@@ -311,3 +311,11 @@ html.in-android .page-header { min-height: 40px; }
 .glance-tile small { color: var(--muted); font-size: 12px; font-weight: 600; }
 .glance-tile strong { font-size: 17px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .glance-tile span { color: var(--muted); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Заголовок подборки: свернуть — по названию, переименовать — карандаш. */
+.movie-collection-bar { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.movie-collection-bar .movie-collection-head { flex: 1; min-width: 0; }
+.movie-collection-rename { flex: 0 0 34px; height: 34px; border: 0; border-radius: 10px; background: none; color: var(--muted); cursor: pointer; }
+.movie-collection-rename:active { background: color-mix(in srgb, currentColor 10%, transparent); }
+.movie-collection-bar.is-renaming .movie-collection-head, .movie-collection-bar.is-renaming .movie-collection-rename { display: none; }
+.movie-collection-input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--accent); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; }
