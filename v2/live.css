@@ -344,3 +344,18 @@ html.in-android .page-header { min-height: 40px; }
 .product-goal strong { font-size: 15px; }
 .product-goal > span { color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .product-goal .progress-track { grid-column: 1 / -1; }
+/* Кнопки с иконкой: иконка и текст — одной строкой по центру. У части кнопок
+   (файл: «Открыть страницу», «Прислать в чат») иконка вставала над текстом. */
+.primary-button, .ghost-button, .small-button, .danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.primary-button > svg, .ghost-button > svg, .small-button > svg { flex: 0 0 auto; }
+.sheet-actions > .primary-button, .sheet-actions > .ghost-button, .live-file-card > button, .product-links > a, .product-links > button { width: 100%; }
+/* Один порядок кнопок везде: удалить — слева, главное действие — справа. */
+.saved-view-actions .danger { order: -1; }
+.saved-view-actions .primary-button { order: 2; }
+.saved-view-actions.has-skip { grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1.4fr); }
+.sheet-actions:has(> .danger-button) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; }
+/* Пустой ряд дополнительных действий не оставляет отступ. */
+.inline-actions.form-extra:empty { display: none; }
+/* «+» не закрывает низ последней карты и последней карточки списка. */
+.saved-results, .notes-results { padding-bottom: 88px; }
+.saved-view-actions:not(.has-skip) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
