@@ -262,18 +262,20 @@ function savedCardsGrouped(items, category) {
     placed.add(c.id);
     return members.get(c.id);
   });
-  let html = "";
+  // Свёрнутые подборки уходят в конец списка: не интересны сейчас — не мешают.
+  let html = "", folded = "";
   for (let i = 0; i < items.length;) {
     const c = items[i].collection;
     let j = i + 1;
     while (c && j < items.length && items[j].collection?.id === c.id) j++;
     if (c && j - i >= 2) {
-      const folded = (data.settings.collapsedCollections || []).includes(c.id);
-      html += `<section class="movie-collection ${folded ? "is-folded" : ""}" aria-label="Подборка"><button type="button" class="movie-collection-head" data-collection-toggle="${esc(c.id)}" aria-expanded="${!folded}">${icon("list", "icon-sm")}<span>${esc(c.title || "Подборка")}</span><b>${j - i}</b>${icon(folded ? "down" : "up", "icon-sm")}</button>${folded ? "" : items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
+      const isFolded = (data.settings.collapsedCollections || []).map(Number).includes(Number(c.id));
+      const block = `<section class="movie-collection ${isFolded ? "is-folded" : ""}" aria-label="Подборка"><button type="button" class="movie-collection-head" data-collection-toggle="${esc(c.id)}" aria-expanded="${!isFolded}">${icon("list", "icon-sm")}<span>${esc(c.title || "Подборка")}</span><b>${j - i}</b>${icon(isFolded ? "down" : "up", "icon-sm")}</button>${isFolded ? "" : items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
+      if (isFolded) folded += block; else html += block;
     } else html += items.slice(i, j).map(item => savedRecordCard(item, category)).join("");
     i = j;
   }
-  return html;
+  return html + folded;
 }
 function savedRecordCard(item, category) {
   return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}${(category === "movies" ? movieIsViewed(item) : item.viewed) ? `<span class="record-seen" title="Просмотрено" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon(category === "products" ? "heart" : "bookmark", "icon-sm")}</button></div>`;
@@ -322,7 +324,12 @@ function ticketCodeBlock(item) {
   return `<section class="ticket-code-block"><div class="ticket-code-heading"><strong>Код билета</strong><span>${kind === "qr" ? "QR-код" : "Штрихкод"}</span></div>${value ? `<div class="ticket-code-preview ${kind}"><span class="ticket-code-art" aria-hidden="true"></span><code>${esc(value)}</code></div><p class="section-note">Код распознан из билета.</p>` : `<div class="ticket-code-placeholder">${icon("ticket")}<span>QR-код или штрихкод появится здесь после разбора билета</span></div><p class="section-note">При необходимости значение можно добавить вручную через «Изменить».</p>`}</section>`;
 }
 function renderSavedResults() {
-  const all = savedVisibleItems();
+  let all = savedVisibleItems();
+  // Фильмы свёрнутых подборок — в самый конец, ещё до разбивки на порции.
+  if (ui.savedCategory === "movies") {
+    const folded = new Set((data.settings.collapsedCollections || []).map(Number));
+    if (folded.size) all = [...all.filter(item => !folded.has(Number(item.collection?.id))), ...all.filter(item => folded.has(Number(item.collection?.id)))];
+  }
   // Сотни карточек разом тормозят телефон: показываем порциями.
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
