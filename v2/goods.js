@@ -6,17 +6,26 @@
 
 const rub = value => `${Math.round(Number(value)).toLocaleString("ru-RU")} ₽`;
 
-/** Начальная цена: цена до скидки со страницы, иначе самая высокая, что видели. */
-function productOldPrice(item) {
-  const price = Number(item.price);
-  const sane = v => Number(v) > price * 1.01 && Number(v) <= price * 5;
-  const old = sane(item.oldPrice) ? Number(item.oldPrice) : sane(item.maxPrice) ? Number(item.maxPrice) : 0;
-  return old;
+/**
+ * Стартовая цена — та, по которой товар продавался, когда его сохранили
+ * (первая из истории цен). Зачёркнутая цена магазина сюда не идёт: важно, как
+ * цена изменилась для меня, а не «скидка» витрины.
+ */
+function productStart(item) {
+  const price = Number(item.price), start = Number(item.startPrice);
+  return price > 0 && start > 0 && Math.abs(price - start) >= Math.max(1, start * 0.005) ? start : 0;
 }
+/** Изменение от стартовой цены в процентах: меньше нуля — подешевел, больше — подорожал. */
+function productChange(item) {
+  const start = productStart(item);
+  return start ? Math.round((Number(item.price) - start) / start * 100) : 0;
+}
+/** Скидка от стартовой цены — для плашки на фото (только если подешевел). */
 function productDiscount(item) {
-  const price = Number(item.price), old = productOldPrice(item);
-  return price > 0 && old > price ? Math.round((1 - price / old) * 100) : 0;
+  const change = productChange(item);
+  return change < 0 ? -change : 0;
 }
+const signedPercent = n => `${n < 0 ? "−" : "+"}${Math.abs(n) || "<1"}%`;
 
 /** Ссылка на магазин: из названия-адреса или из домена ссылки на товар. */
 function productStoreUrl(item) {
@@ -38,9 +47,10 @@ function productImage(item, size = "card") {
 }
 
 function productPrice(item) {
-  const off = productDiscount(item);
   if (!Number(item.price)) return `<span class="product-price none">Цена не снята</span>`;
-  return `<span class="product-price"><b class="${off ? "sale" : ""}">${rub(item.price)}</b>${off ? `<s>${rub(productOldPrice(item))}</s><em>−${off}%</em>` : ""}</span>`;
+  // Как на Ozon: текущая — акцентом, стартовая — зачёркнута, рядом — насколько изменилась.
+  const start = productStart(item), change = productChange(item);
+  return `<span class="product-price"><b class="now">${rub(item.price)}</b>${start ? `<s>${rub(start)}</s><em class="${change < 0 ? "down" : "up"}">${signedPercent(change)}</em>` : ""}</span>`;
 }
 
 function productCard(item) {
@@ -63,7 +73,7 @@ function productDetails(item) {
     item.tracked ? savedDetailLine("Слежу за ценой", "раз в сутки") : "",
   ].join("");
   const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}">${icon("reset", "icon-sm")}Обновить цену и фото</button>` : "";
-  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${off ? `<span class="product-save">выгода ${rub(productOldPrice(item) - Number(item.price))}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
+  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${productChange(item) < 0 ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : `дороже на ${rub(Number(item.price) - productStart(item))}`}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
 }
 
 // «Обновить цену и фото»: сервер снимает их сейчас (магазины с защитой — через поиск).
