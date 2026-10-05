@@ -9,7 +9,8 @@ const rub = value => `${Math.round(Number(value)).toLocaleString("ru-RU")} ₽`;
 /** Начальная цена: цена до скидки со страницы, иначе самая высокая, что видели. */
 function productOldPrice(item) {
   const price = Number(item.price);
-  const old = Number(item.oldPrice) > price ? Number(item.oldPrice) : Number(item.maxPrice) > price * 1.01 ? Number(item.maxPrice) : 0;
+  const sane = v => Number(v) > price * 1.01 && Number(v) <= price * 5;
+  const old = sane(item.oldPrice) ? Number(item.oldPrice) : sane(item.maxPrice) ? Number(item.maxPrice) : 0;
   return old;
 }
 function productDiscount(item) {
