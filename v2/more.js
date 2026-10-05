@@ -471,6 +471,17 @@ function swipeDescriptor(node) {
   if (node.matches(".record-card-shell, .record-card, .note-row")) return [`saved:${node.dataset.category}`, node.dataset.id];
   if (node.matches(".project-card")) return ["project", node.dataset.id];
   if (node.matches(".search-result")) return [node.dataset.type, node.dataset.id];
+  // Кредит — свайпается вся карточка (строка, прогресс, кнопки), а не одна верхняя строка.
+  if (node.matches(".credit-card")) {
+    const edit = node.querySelector('[data-action="finance-edit"][data-entity="debt"]');
+    return edit ? ["finance:debt", edit.dataset.id] : null;
+  }
+  // Платёж: правка — сам платёж. Платёж кредита («из Долгов») не свайпается: удаление стёрло бы кредит.
+  if (node.matches(".payment-card")) {
+    const edit = node.querySelector('[data-action="finance-edit"][data-entity="payment"]');
+    return edit ? ["finance:payment", edit.dataset.id] : null;
+  }
+  if (node.matches(".goal-row")) return ["finance:goal", node.dataset.id];
   if (node.matches(".finance-row-button")) {
     const action = node.dataset.action;
     if (action === "finance-edit") return [`finance:${node.dataset.entity}`, node.dataset.id];
@@ -495,11 +506,12 @@ function swipeDescriptor(node) {
   return null;
 }
 function installSwipeCards(root) {
-  const selector = ".task-card, .event-card, .record-card-shell, .record-card, .note-row, .finance-row-button, .project-card, .budget-card, .list-row, .search-result";
+  const selector = ".task-card, .event-card, .record-card-shell, .record-card, .note-row, .credit-card, .payment-card, .finance-row-button, .project-card, .budget-card, .list-row, .search-result";
   root.querySelectorAll(selector).forEach(node => {
     if (node.closest(".swipe-row") || node.closest(".sheet") && !node.matches(".search-result")) return;
     // Карточку с закладкой свайпают целиком — вместе с закладкой.
     if (node.matches(".record-card") && node.closest(".record-card-shell")) return;
+    if (node.matches(".finance-row-button") && node.closest(".credit-card")) return;
     const descriptor = swipeDescriptor(node);
     if (!descriptor?.[0] || !descriptor?.[1]) return;
     const [type, recordId] = descriptor;
@@ -509,7 +521,7 @@ function installSwipeCards(root) {
     // Свайп вправо — «просмотрено» (глазик) у заметок, файлов, постов, ссылок и фильмов.
     if (["saved:movies", "saved:notes", "saved:files", "saved:posts", "saved:links"].includes(type)) wrapper.classList.add("swipe-seen");
     if (node.matches(".note-row")) wrapper.classList.add("swipe-note");
-    if (node.matches(".budget-card, .project-card")) wrapper.classList.add("swipe-spaced");
+    if (node.matches(".budget-card, .project-card, .credit-card, .payment-card")) wrapper.classList.add("swipe-spaced");
     if (node.matches(".event-card")) wrapper.classList.add("swipe-event");
     // Дела и события: свайп вправо — отложить на завтра.
     if (type === "task" || type === "event") wrapper.classList.add("swipe-seen", "swipe-later");
