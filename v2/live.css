@@ -332,3 +332,8 @@ html.in-android .page-header { min-height: 40px; }
 .product-card .product-price b { font-size: 17px; flex: 0 0 auto; }
 .product-card .product-price s, .product-card .product-price em { font-size: 12px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: clip; }
 .product-price em.same, .product-card .product-price em.same { color: var(--muted); }
+/* Кнопка «Обновить цену и фото»: значок и текст одной строкой. */
+.product-links .product-refresh { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; }
+/* Действия под формой — на всю ширину поровну, без пустоты справа. */
+.inline-actions.form-extra { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.inline-actions.form-extra > button { width: 100%; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
