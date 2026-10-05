@@ -106,7 +106,8 @@ function savedVisibleItems() {
   const result = savedItems().filter(item => {
     const sectionId = ui.savedCategory === "notes" ? noteFolderId(item) : item.categoryId;
     if (ui.savedCategory !== "addresses" && ui.savedSection === "__none__" && sectionId) return false;
-    if (ui.savedCategory !== "addresses" && ui.savedSection && ui.savedSection !== "__none__" && sectionId !== ui.savedSection) return false;
+    if (ui.savedSection === "__collections__") { if (!item.collection) return false; }
+    else if (ui.savedCategory !== "addresses" && ui.savedSection && ui.savedSection !== "__none__" && sectionId !== ui.savedSection) return false;
     if (ui.savedCategory === "tickets") {
       // Просроченные (больше суток) живут на своей вкладке; при поиске видны все.
       const past = ticketExpired(item);
@@ -248,13 +249,8 @@ function postTime(created) {
  * Фильмы из одной подборки (пост, рилс, карусель) идут подряд под общим
  * контуром: видно, что они пришли вместе, и откуда.
  */
-/** Галочка «Подборки»: фильмы из одного поста — под общим контуром. */
-function movieCollectionsToggle() {
-  const on = data.settings.movieCollections !== false;
-  return `<label class="collections-toggle"><input type="checkbox" data-action="movie-collections" ${on ? "checked" : ""}>Показывать подборки</label>`;
-}
 function savedCardsGrouped(items, category) {
-  if (category !== "movies" || data.settings.movieCollections === false) return items.map(item => savedRecordCard(item, category)).join("");
+  if (category !== "movies") return items.map(item => savedRecordCard(item, category)).join("");
   // Фильмы подборки, добавленные в разное время, собираем к первому из них — одной группой.
   const members = new Map();
   for (const item of items) if (item.collection) members.set(item.collection.id, [...(members.get(item.collection.id) || []), item]);
@@ -272,7 +268,8 @@ function savedCardsGrouped(items, category) {
     let j = i + 1;
     while (c && j < items.length && items[j].collection?.id === c.id) j++;
     if (c && j - i >= 2) {
-      html += `<section class="movie-collection" aria-label="Подборка"><header class="movie-collection-head">${icon("list", "icon-sm")}<span>${esc(c.title || "Подборка")}</span><b>${j - i}</b></header>${items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
+      const folded = (data.settings.collapsedCollections || []).includes(c.id);
+      html += `<section class="movie-collection ${folded ? "is-folded" : ""}" aria-label="Подборка"><button type="button" class="movie-collection-head" data-collection-toggle="${esc(c.id)}" aria-expanded="${!folded}">${icon("list", "icon-sm")}<span>${esc(c.title || "Подборка")}</span><b>${j - i}</b>${icon(folded ? "down" : "up", "icon-sm")}</button>${folded ? "" : items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
     } else html += items.slice(i, j).map(item => savedRecordCard(item, category)).join("");
     i = j;
   }
@@ -330,8 +327,7 @@ function renderSavedResults() {
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
   const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
-  const toggle = ui.savedCategory === "movies" && all.some(item => item.collection) ? movieCollectionsToggle() : "";
-  return items.length ? `${toggle}<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
+  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
 }
 function noteDateLabel(item) {
   if (item.updated) return shortDate(localIso(new Date(item.updated)));
@@ -387,7 +383,7 @@ function renderSavedSectionChips(category, tail = "") {
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
   // Папки видны всегда, когда хоть одна не пуста: по ним и ходят внутри раздела.
   if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return tail ? `<div class="saved-sort-row">${tail}</div>` : "";
-  return `<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${tail}</div>`;
+  return `<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${(() => { const n = category === "movies" ? pool.filter(item => item.collection).length : 0; return n ? `<button class="map-category-chip ${ui.savedSection === "__collections__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__collections__" aria-pressed="${ui.savedSection === "__collections__"}">${icon("list", "icon-sm")}Подборки<span>${n}</span></button>` : ""; })()}${tail}</div>`;
 }
 /** Разделы лентой — только непустые (и открытый), открытый — по центру. */
 function savedSwitch() {
@@ -1217,10 +1213,16 @@ document.addEventListener("scroll", event => {
   if (count) count.textContent = `${i + 1} / ${track.children.length}`;
 }, true);
 
-document.addEventListener("change", event => {
-  if (!event.target.matches?.("[data-action='movie-collections']")) return;
-  data.settings.movieCollections = event.target.checked;
+// Свернуть или развернуть подборку — запоминается, пока не развернёшь снова.
+document.addEventListener("click", event => {
+  const head = event.target.closest?.("[data-collection-toggle]");
+  if (!head) return;
+  event.preventDefault(); event.stopPropagation();
+  const id = Number(head.dataset.collectionToggle);
+  const list = new Set(data.settings.collapsedCollections || []);
+  list.has(id) ? list.delete(id) : list.add(id);
+  data.settings.collapsedCollections = [...list];
   save();
   const results = document.getElementById("saved-results");
   if (results) results.innerHTML = renderSavedResults(); else render();
-});
+}, true);
