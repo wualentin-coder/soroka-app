@@ -331,3 +331,4 @@ html.in-android .page-header { min-height: 40px; }
 .product-card .product-price { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; gap: 5px; }
 .product-card .product-price b { font-size: 17px; flex: 0 0 auto; }
 .product-card .product-price s, .product-card .product-price em { font-size: 12px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: clip; }
+.product-price em.same, .product-card .product-price em.same { color: var(--muted); }
