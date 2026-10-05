@@ -250,7 +250,7 @@ function postTime(created) {
  * контуром: видно, что они пришли вместе, и откуда.
  */
 function savedCardsGrouped(items, category) {
-  if (category !== "movies") return items.map(item => savedRecordCard(item, category)).join("");
+  if (category !== "movies" || data.settings.movieCollections === false) return items.map(item => savedRecordCard(item, category)).join("");
   // Фильмы подборки, добавленные в разное время, собираем к первому из них — одной группой.
   const members = new Map();
   for (const item of items) if (item.collection) members.set(item.collection.id, [...(members.get(item.collection.id) || []), item]);
@@ -270,7 +270,8 @@ function savedCardsGrouped(items, category) {
     while (c && j < items.length && items[j].collection?.id === c.id) j++;
     if (c && j - i >= 2) {
       const isFolded = (data.settings.collapsedCollections || []).map(Number).includes(Number(c.id));
-      const block = `<section class="movie-collection ${isFolded ? "is-folded" : ""}" aria-label="Подборка"><button type="button" class="movie-collection-head" data-collection-toggle="${esc(c.id)}" aria-expanded="${!isFolded}">${icon("list", "icon-sm")}<span>${esc(c.title || "Подборка")}</span><b>${j - i}</b>${icon(isFolded ? "down" : "up", "icon-sm")}</button>${isFolded ? "" : items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
+      const name = (data.settings.collectionNames || {})[c.id] || c.title || "Подборка";
+      const block = `<section class="movie-collection ${isFolded ? "is-folded" : ""}" aria-label="Подборка"><div class="movie-collection-bar"><button type="button" class="movie-collection-head" data-collection-toggle="${esc(c.id)}" aria-expanded="${!isFolded}">${icon("list", "icon-sm")}<span class="movie-collection-name">${esc(name)}</span><b>${j - i}</b>${icon(isFolded ? "down" : "up", "icon-sm")}</button><button type="button" class="movie-collection-rename" data-collection-rename="${esc(c.id)}" aria-label="Переименовать подборку">${icon("pen", "icon-sm")}</button></div>${isFolded ? "" : items.slice(i, j).map(item => savedRecordCard(item, category)).join("")}</section>`;
       if (isFolded) folded += block; else html += block;
     } else html += items.slice(i, j).map(item => savedRecordCard(item, category)).join("");
     i = j;
@@ -326,7 +327,7 @@ function ticketCodeBlock(item) {
 function renderSavedResults() {
   let all = savedVisibleItems();
   // Фильмы свёрнутых подборок — в самый конец, ещё до разбивки на порции.
-  if (ui.savedCategory === "movies") {
+  if (ui.savedCategory === "movies" && data.settings.movieCollections !== false) {
     const folded = new Set((data.settings.collapsedCollections || []).map(Number));
     if (folded.size) all = [...all.filter(item => !folded.has(Number(item.collection?.id))), ...all.filter(item => folded.has(Number(item.collection?.id)))];
   }
@@ -390,7 +391,7 @@ function renderSavedSectionChips(category, tail = "") {
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
   // Папки видны всегда, когда хоть одна не пуста: по ним и ходят внутри раздела.
   if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return tail ? `<div class="saved-sort-row">${tail}</div>` : "";
-  return `<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${(() => { const n = category === "movies" ? pool.filter(item => item.collection).length : 0; return n ? `<button class="map-category-chip ${ui.savedSection === "__collections__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__collections__" aria-pressed="${ui.savedSection === "__collections__"}">${icon("list", "icon-sm")}Подборки<span>${n}</span></button>` : ""; })()}${tail}</div>`;
+  return `<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${(() => { const n = category === "movies" ? pool.filter(item => item.collection).length : 0; const on = data.settings.movieCollections !== false; return n ? `<button class="map-category-chip collections-chip ${on ? "active" : ""}" type="button" data-collections-chip aria-pressed="${on}">${icon("list", "icon-sm")}Подборки<span>${n}</span></button>` : ""; })()}${tail}</div>`;
 }
 /** Разделы лентой — только непустые (и открытый), открытый — по центру. */
 function savedSwitch() {
@@ -1220,6 +1221,46 @@ document.addEventListener("scroll", event => {
   if (count) count.textContent = `${i + 1} / ${track.children.length}`;
 }, true);
 
+function refreshSavedResults() {
+  const results = document.getElementById("saved-results");
+  if (results) results.innerHTML = renderSavedResults(); else render();
+}
+// Чип «Подборки»: показать или убрать контуры подборок.
+document.addEventListener("click", event => {
+  if (!event.target.closest?.("[data-collections-chip]")) return;
+  event.preventDefault(); event.stopPropagation();
+  data.settings.movieCollections = data.settings.movieCollections === false;
+  save(); render();
+}, true);
+// Переименовать подборку: название меняется прямо в заголовке, Enter — сохранить, Esc — отменить.
+document.addEventListener("click", event => {
+  const pen = event.target.closest?.("[data-collection-rename]");
+  if (!pen) return;
+  event.preventDefault(); event.stopPropagation();
+  const id = pen.dataset.collectionRename;
+  const label = pen.closest(".movie-collection-bar")?.querySelector(".movie-collection-name");
+  if (!label) return;
+  const input = document.createElement("input");
+  input.className = "movie-collection-input"; input.value = label.textContent; input.maxLength = 80;
+  input.setAttribute("aria-label", "Название подборки");
+  const bar = pen.closest(".movie-collection-bar");
+  bar.classList.add("is-renaming");
+  bar.prepend(input); input.focus(); input.select();
+  let done = false;
+  const finish = keep => {
+    if (done) return; done = true;
+    const value = input.value.trim();
+    if (keep) {
+      const names = { ...(data.settings.collectionNames || {}) };
+      if (value) names[id] = value; else delete names[id];
+      data.settings.collectionNames = names;
+      save();
+    }
+    refreshSavedResults();
+  };
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); finish(true); } if (e.key === "Escape") finish(false); });
+  input.addEventListener("blur", () => finish(true));
+}, true);
 // Свернуть или развернуть подборку — запоминается, пока не развернёшь снова.
 document.addEventListener("click", event => {
   const head = event.target.closest?.("[data-collection-toggle]");
