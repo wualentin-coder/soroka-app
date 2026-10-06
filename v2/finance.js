@@ -184,7 +184,7 @@ function accountGroups() {
 function splitCandidates() {
   const from = new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10);
   return data.finance.transactions
-    .filter(t => t.kind === "income" && !t.split && !isReconcile(t) && (t.currency || "RUB") === "RUB" && t.date >= from && Number(t.amount) > 0)
+    .filter(t => t.kind === "income" && !t.split && !isReconcile(t) && (t.currency || "RUB") === "RUB" && t.date >= from && Number(t.amount) > 0 && !(data.settings?.splitSkipped || []).includes(t.id))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 function splitBanner() {
@@ -194,35 +194,38 @@ function splitBanner() {
   const sum = list.reduce((s, t) => s + Number(t.amount), 0);
   return `<div class="split-banner"><span><strong>Не распределено ${demoMoney(sum)}</strong><small>${list.length} ${word(list.length, "доход", "дохода", "доходов")} за последние недели</small></span><button class="primary-button" type="button" data-action="income-split">Распределить</button></div>`;
 }
-function localSplit(total) {
-  const must = (data.finance.payments || []).reduce((s, p) => s + (paymentRub(p) || 0) / (p.repeat === "yearly" ? 12 : 1), 0);
-  const free = Math.max(0, Math.round((total - must) * 100) / 100);
-  const shares = data.finance.rules.map(r => ({ name: r.name, percent: Number(r.percent), amount: Math.floor(free * Number(r.percent)) / 100, account: null }));
-  return { total, obligations: Math.round(must), free, shares, rest: Math.round((free - shares.reduce((s, x) => s + x.amount, 0)) * 100) / 100 };
+/** Раскладка по долям: проценты — от того, что осталось после обязательных платежей. */
+function splitPlan(total, base) {
+  const free = Math.max(0, Math.round((total - (base.obligations || 0)) * 100) / 100);
+  const shares = base.shares.map(s => ({ ...s, amount: Math.floor(free * Number(s.percent)) / 100 }));
+  return { total, obligations: base.obligations || 0, shares };
 }
+function localSplitBase() {
+  const must = (data.finance.payments || []).reduce((s, p) => s + (paymentRub(p) || 0) / (p.repeat === "yearly" ? 12 : 1), 0);
+  return { obligations: Math.round(must * 100) / 100, shares: data.finance.rules.map(r => ({ name: r.name, percent: Number(r.percent), account: null })) };
+}
+/** Доли и вычет берём у сервера один раз при открытии; галочки дальше считаются на месте. */
 function loadSplitPreview() {
   const sheet = ui.sheet;
-  if (!sheet || sheet.kind !== "income-split") return;
-  const ids = sheet.ids.slice();
-  const total = splitCandidates().filter(t => ids.includes(t.id)).reduce((s, t) => s + Number(t.amount), 0);
-  if (!ids.length) { sheet.preview = null; render(); return; }
-  if (!window.sorokaIncomeSplit) { sheet.preview = localSplit(total); render(); return; }
-  sheet.preview = "loading";
-  window.sorokaIncomeSplit(ids, false).then(answer => {
-    if (ui.sheet !== sheet || sheet.ids.join() !== ids.join()) return;
-    sheet.preview = answer; render();
-  }).catch(() => { if (ui.sheet === sheet) { sheet.preview = localSplit(total); render(); } });
+  if (!sheet || sheet.kind !== "income-split" || sheet.base) return;
+  sheet.base = localSplitBase();
+  if (!window.sorokaIncomeSplit) return;
+  window.sorokaIncomeSplit(sheet.ids, false).then(answer => {
+    if (ui.sheet !== sheet || !answer.shares) return;
+    sheet.base = { obligations: answer.obligations || 0, shares: answer.shares };
+    render();
+  }).catch(() => {});
 }
 function renderIncomeSplitSheet() {
   const sheet = ui.sheet;
   const list = splitCandidates();
-  const rows = list.map(t => `<button type="button" class="split-pick ${sheet.ids.includes(t.id) ? "is-on" : ""}" data-action="income-split-toggle" data-id="${esc(t.id)}" aria-pressed="${sheet.ids.includes(t.id)}"><span class="split-check">${sheet.ids.includes(t.id) ? icon("check", "icon-sm") : ""}</span><span class="list-copy"><strong>${esc(financeTitle(t.title))}</strong><span>${esc(dateLabel(t.date))}</span></span><span class="amount income">+${demoMoney(t.amount)}</span></button>`).join("");
-  const p = sheet.preview;
-  const plan = p === "loading" ? `<p class="section-note">Считаю…</p>`
-    : !p || !p.shares ? `<p class="section-note">Отметьте доходы, которые разложить.</p>`
-    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.obligations ? `<div class="side-row"><span>Обязательные платежи в месяц</span><b>−${demoMoney(p.obligations)}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${s.percent}%${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
+  const rows = list.map(t => `<div class="split-line"><button type="button" class="split-pick ${sheet.ids.includes(t.id) ? "is-on" : ""}" data-action="income-split-toggle" data-id="${esc(t.id)}" aria-pressed="${sheet.ids.includes(t.id)}"><span class="split-check">${sheet.ids.includes(t.id) ? icon("check", "icon-sm") : ""}</span><span class="list-copy"><strong>${esc(financeTitle(t.title))}</strong><span>${esc(dateLabel(t.date))}</span></span><span class="amount income">+${demoMoney(t.amount)}</span></button><button type="button" class="split-skip" data-action="income-split-skip" data-id="${esc(t.id)}" aria-label="Убрать из распределения">${icon("close", "icon-sm")}</button></div>`).join("");
+  const total = list.filter(t => sheet.ids.includes(t.id)).reduce((s, t) => s + Number(t.amount), 0);
+  const p = total > 0 && sheet.base ? splitPlan(total, sheet.base) : null;
+  const plan = !p ? `<p class="section-note">Отметьте доходы, которые разложить.</p>`
+    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.obligations ? `<div class="side-row"><span>Обязательные платежи в месяц</span><b>−${demoMoney(p.obligations)}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${String(s.percent).replace(".", ",")} %${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
   const moving = p && p.shares ? p.shares.reduce((s, x) => s + x.amount, 0) : 0;
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet split-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Распределить доходы</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="list-panel">${rows || `<div class="empty-card"><strong>Нечего распределять</strong>Все доходы уже разложены.</div>`}</div>${plan}<p class="section-note">Доли — из раздела «Правила»${data.settings?.rulesAuto ? ", сейчас считаются по вашим тратам" : ""}. На каждый счёт уйдёт перевод с того счёта, куда пришёл доход.</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="income-split-rules">Правила</button><button class="primary-button" type="button" data-action="income-split-apply" ${moving > 0 && !sheet.busy ? "" : "disabled"}>${sheet.busy ? "Распределяю…" : moving > 0 ? `Отложить ${demoMoney(moving)}` : "Распределить"}</button></div></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet split-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Распределить доходы</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="list-panel">${rows || `<div class="empty-card"><strong>Нечего распределять</strong>Все доходы уже разложены.</div>`}</div>${plan}<p class="section-note">Появится дело с пунктом на каждый счёт. Переведите деньги в банке и отметьте пункт — перевод запишется в финансы. ✕ — доход не раскладывать (например, перевод от друга).</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="income-split-rules">Правила</button><button class="primary-button" type="button" data-action="income-split-apply" ${moving > 0 && !sheet.busy ? "" : "disabled"}>${sheet.busy ? "Создаю дело…" : moving > 0 ? `В дела: ${demoMoney(moving)}` : "Распределить"}</button></div></section></div>`;
 }
 function renderAccountsSheet() {
   const rub = spendAccounts().filter(a => a.currency === "RUB");
@@ -331,8 +334,8 @@ function financeRulesPage() {
   const income = data.finance.transactions.filter(t => t.kind === "income" && t.currency === "RUB").sort((a, b) => b.date.localeCompare(a.date))[0];
   const auto = Boolean(data.settings?.rulesAuto);
   const info = data.finance.rulesAuto;
-  const toggle = `<label class="rules-auto ${auto ? "on" : ""}"><input type="checkbox" ${auto ? "checked" : ""} data-action="rules-auto" aria-label="Считать проценты автоматически"><span class="rules-auto-box">${icon("check", "icon-sm")}</span><span class="rules-auto-copy"><strong>Считать автоматически</strong><small>${info ? esc(info.explain) : "Проценты подберутся по вашим доходам и тратам за три месяца."}</small></span></label>`;
-  const rows = data.finance.rules.map((r, i) => `<div class="settings-row"><div><strong>${esc(r.name)}</strong><span>${auto ? "Считается по вашим тратам" : "Доля от поступления"}</span></div><label class="field rule-field"><input name="rule-${i}" type="number" min="0" max="100" value="${r.percent}" ${auto ? "readonly" : "required"}> %</label></div>`).join("");
+  const toggle = `<label class="rules-auto ${auto ? "on" : ""}"><input type="checkbox" ${auto ? "checked" : ""} data-action="rules-auto" aria-label="Умное распределение"><span class="rules-auto-box">${icon("check", "icon-sm")}</span><span class="rules-auto-copy"><strong>Умное распределение</strong><small>${info ? esc(info.explain) : "Как советуют консультанты: сначала откладывать, подушка на 3–6 месяцев, потом цели и инвестиции."}</small></span></label>`;
+  const rows = data.finance.rules.map((r, i) => `<div class="settings-row"><div><strong>${esc(r.name)}</strong><span>${auto ? "Подобрано автоматически" : "Доля от поступления"}</span></div><label class="field rule-field"><input name="rule-${i}" type="number" min="0" max="100" value="${r.percent}" ${auto ? "readonly" : "required"}> %</label></div>`).join("");
   const total = data.finance.rules.reduce((sum, r) => sum + Number(r.percent || 0), 0);
   const reconcile = reconcileForm();
   // Цели: сколько откладывать на каждую, чтобы успеть к сроку (считает сервер).
@@ -427,15 +430,23 @@ function financeAction(action, control) {
   if (action === "rules-auto") {
     data.settings.rulesAuto = !data.settings.rulesAuto;
     save();
-    toast(data.settings.rulesAuto ? "Проценты считаются по вашим тратам" : "Проценты — как вы задали");
+    toast(data.settings.rulesAuto ? "Доли подбираются автоматически" : "Доли — как вы задали");
     return true;
   }
   if (action === "goal-open") { openGoalDeposit(control.dataset.id); return true; }
-  if (action === "income-split") { ui.sheet = { kind: "income-split", ids: splitCandidates().map(t => t.id), preview: null, justRendered: false }; render(); loadSplitPreview(); return true; }
+  if (action === "income-split") { ui.sheet = { kind: "income-split", ids: splitCandidates().map(t => t.id), base: null, justRendered: false }; loadSplitPreview(); render(); return true; }
   if (action === "income-split-toggle") {
     const id = control.dataset.id, ids = ui.sheet.ids;
     ui.sheet.ids = ids.includes(id) ? ids.filter(x => x !== id) : ids.concat(id);
-    loadSplitPreview(); return true;
+    render(); return true;
+  }
+  if (action === "income-split-skip") {
+    const id = control.dataset.id;
+    data.settings.splitSkipped = (data.settings.splitSkipped || []).concat(id);
+    ui.sheet.ids = ui.sheet.ids.filter(x => x !== id);
+    save(); render();
+    toast("Доход не будет распределяться");
+    return true;
   }
   if (action === "income-split-rules") { ui.sheet = null; ui.financeTab = "rules"; render(); return true; }
   if (action === "income-split-apply") {
@@ -444,7 +455,7 @@ function financeAction(action, control) {
     sheet.busy = true; render();
     window.sorokaIncomeSplit(sheet.ids, true).then(answer => {
       if (ui.sheet === sheet) ui.sheet = null;
-      toast(answer.made ? `Отложил ${demoMoney((answer.shares || []).reduce((s, x) => s + x.amount, 0))} · ${answer.made} ${word(answer.made, "перевод", "перевода", "переводов")}` : answer.note || "Нечего распределять");
+      toast(answer.made ? `В делах: «${answer.title}» — отмечайте пункты, когда переведёте` : answer.note || "Нечего распределять");
       render();
     }).catch(() => { sheet.busy = false; toast("Не получилось — проверьте связь"); render(); });
     return true;
