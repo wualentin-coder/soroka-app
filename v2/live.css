@@ -588,3 +588,14 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 .amount-step { min-height: 38px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
 .amount-step:active { background: var(--accent-soft, var(--surface-soft)); border-color: var(--accent); }
 .goal-deposit-sheet .goal-chip { font-variant-numeric: tabular-nums; }
+
+/* Настройки: раздел «Телефон» (Android) */
+.phone-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 0; }
+.phone-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.phone-chips .map-category-chip { min-height: 32px; }
+.phone-fix { white-space: nowrap; }
+.phone-log { display: grid; gap: 6px; max-height: 320px; overflow: auto; padding: 4px 14px 12px; }
+.phone-log-row { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 8px; font-size: 12px; line-height: 1.4; }
+.phone-log-row small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.phone-log-row.bad span { color: var(--danger, #c0392b); }
+.phone-log-row.ok span { color: var(--text); }
