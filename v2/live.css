@@ -579,3 +579,12 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 .subtabs[aria-label="Разделы финансов"], .subtabs.tx-kinds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; overflow: visible; }
 .subtabs[aria-label="Разделы финансов"] button, .subtabs.tx-kinds button { width: 100%; min-width: 0; padding-left: 4px; padding-right: 4px; justify-content: center; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .swipe-row .swipe-later-hint { align-items: center; }
+/* Сумма: поле и кнопки «+1000 +100 +10 +1» вместо ползунка */
+.amount-steps { display: grid; gap: 8px; }
+.amount-input-row { position: relative; }
+.amount-input-row input { width: 100%; padding-right: 44px; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.amount-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.amount-step-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.amount-step { min-height: 38px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
+.amount-step:active { background: var(--accent-soft, var(--surface-soft)); border-color: var(--accent); }
+.goal-deposit-sheet .goal-chip { font-variant-numeric: tabular-nums; }
