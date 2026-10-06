@@ -378,3 +378,17 @@ html.in-android .page-header { min-height: 40px; }
 .utility-bills { display: grid; gap: 8px; padding: 0 10px 10px; }
 .utility-bills .payment-card { box-shadow: none; }
 body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-bottom)); }
+/* Распределение дохода */
+.split-banner { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 12px 12px 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.split-banner > span { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.split-banner small { color: var(--muted); font-size: 12px; }
+.split-banner button { flex: none; min-height: 38px; padding: 0 16px; }
+.split-pick { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.split-pick:last-child { border-bottom: 0; }
+.split-check { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line); display: grid; place-items: center; color: #fff; }
+.split-pick.is-on .split-check { background: var(--accent); border-color: var(--accent); }
+.split-pick:not(.is-on) .list-copy, .split-pick:not(.is-on) .amount { opacity: .55; }
+.split-plan { margin-top: 14px; }
+.split-plan small { color: var(--muted); }
+.split-rest { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+.split-sheet .sheet-actions .primary-button { white-space: nowrap; flex: 1.6; }
