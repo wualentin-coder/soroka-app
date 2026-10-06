@@ -214,7 +214,6 @@ const navigation = [
   ["inbox", "Входящие", "inbox"],
   ["projects", "Проекты", "project"],
   ["vault", "Пароли", "key"],
-  ["metrics", "Показатели", "chart"],
   ["archive", "Архив", "archive"],
   ["settings", "Настройки", "settings"],
   ["more", "Все разделы", "more"]
