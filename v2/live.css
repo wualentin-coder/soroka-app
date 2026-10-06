@@ -478,6 +478,54 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .movie-my-rating .star-value { min-width: 44px; text-align: right; font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
 .movie-my-rating .star-value small { font-size: 12px; font-weight: 600; color: var(--muted); }
 .movie-view-sheet .movie-summary { margin: 0 0 4px; }
+/* Сериал: сезоны чипами, серии — только выбранного сезона */
+.series-track { display: grid; gap: 10px; margin: 0 0 14px; padding: 12px; border-radius: 14px; background: var(--surface-soft); }
+.series-track.empty { grid-template-columns: 1fr auto; align-items: center; }
+.series-track.empty span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.series-track.empty .ghost-button { min-height: 34px; padding: 0 12px; }
+.series-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.series-head h3 { margin: 0; font-size: 14px; }
+.series-head small { color: var(--muted); font-size: 12px; }
+.series-next { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.series-done { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: 13px; font-weight: 700; }
+.season-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px; padding: 0 2px; }
+.season-chips::-webkit-scrollbar { display: none; }
+.season-chip { position: relative; flex: none; display: grid; justify-items: center; gap: 0; min-width: 48px; padding: 5px 8px 7px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; overflow: hidden; }
+.season-chip b { font-size: 13px; }
+.season-chip small { font-size: 10px; color: var(--muted); }
+.season-chip i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); }
+.season-chip.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.season-chip.done small { color: var(--accent); font-weight: 800; }
+.season-chip.add { min-width: 40px; place-items: center; color: var(--muted); }
+.season-eps { display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 4px; }
+.season-eps .ep { height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer; padding: 0; }
+.season-eps .ep.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.season-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.season-tools .text-action { font-size: 12px; padding: 0; }
+.season-tools .text-action.muted { color: var(--muted); }
+.season-count { display: inline-flex; align-items: center; gap: 6px; }
+.season-count b { color: var(--text); min-width: 18px; text-align: center; }
+.season-count button { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
+/* Карточка фильма: одна сетка, без рамок в рамках */
+.movie-view-sheet .movie-detail-hero { grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 6px 0 14px; }
+.movie-view-sheet .movie-detail-hero .movie-cover-detail { width: 112px; border-radius: 12px; }
+.movie-view-sheet .movie-detail-intro { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.movie-view-sheet .movie-detail-status { font-size: 12px; font-weight: 800; color: var(--accent); }
+.movie-view-sheet .movie-detail-meta { font-size: 13px; color: var(--muted); font-weight: 600; }
+.movie-view-sheet .movie-detail-director small { font-size: 11px; color: var(--muted); }
+.movie-view-sheet .movie-detail-director b { font-size: 14px; }
+.movie-view-sheet .movie-ratings { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: auto 0 0; padding: 0; }
+.movie-view-sheet .movie-rating { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 0; padding: 8px 10px; border: 0; border-radius: 12px; background: var(--surface-soft); position: relative; }
+.movie-view-sheet .movie-rating-label { flex: none; font-size: 11px; font-weight: 700; color: var(--muted); }
+.movie-view-sheet .movie-rating strong { font-size: 18px; font-weight: 800; line-height: 1.1; }
+.movie-view-sheet .movie-rating .icon { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; }
+.movie-my-rating { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 4px; align-items: center; margin: 0 0 14px; padding: 10px 14px 12px; border-radius: 14px; background: var(--surface-soft); }
+.movie-my-label { grid-column: 1 / -1; font-size: 11px; font-weight: 700; color: var(--muted); }
+.movie-view-sheet .movie-my-rating .star-slider { margin: 0; padding: 0; min-height: 30px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.movie-my-rating .star-slider .star .icon { max-width: 26px; }
+.movie-my-rating .star-value { min-width: 44px; text-align: right; font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.movie-my-rating .star-value small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.movie-view-sheet .movie-summary { margin: 0 0 4px; }
 /* Сериал: сезоны и серии */
 .series-track { display: grid; gap: 10px; margin: 0 0 14px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; }
 .series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
