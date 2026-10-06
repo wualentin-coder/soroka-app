@@ -420,3 +420,31 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .rule-total { margin: 0 0 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 .rule-total small { color: var(--muted); font-size: 12px; }
 .rules-sliders .primary-button { width: 100%; } .rules-sliders [data-rules-left] { margin: 8px 2px 12px; }
+
+/* Умное распределение — схема */
+.smart-card { margin: 12px 0; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); display: grid; gap: 18px; }
+.smart-step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+.smart-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.smart-body { display: grid; gap: 6px; min-width: 0; }
+.smart-body > small, .smart-note { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.smart-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-soft); }
+.smart-bar i { display: block; height: 100%; }
+.smart-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.smart-keys { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.smart-key, .smart-row span { display: inline-flex; align-items: center; gap: 6px; }
+.smart-key i, .smart-row span i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+.smart-ladder { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.smart-ladder div { border: 1px solid var(--line); border-radius: 10px; padding: 6px 2px; text-align: center; display: grid; gap: 2px; }
+.smart-ladder b { font-size: 14px; }
+.smart-ladder small { font-size: 10px; color: var(--muted); line-height: 1.2; }
+.smart-ladder .on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.smart-ladder .on small { color: rgba(255,255,255,.85); }
+.smart-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; font-size: 13px; }
+.smart-row small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; padding-left: 16px; }
+.smart-cushion { display: grid; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.smart-track { position: relative; height: 10px; border-radius: 5px; background: var(--surface-soft); }
+.smart-track i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 5px; background: var(--accent); }
+.smart-track em { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); opacity: .35; transform: translateX(-1px); }
+.smart-cushion .smart-scale span:nth-child(2) { transform: translateX(-30%); }
+.smart-more { width: 100%; margin: 8px 0; }
+.smart-off { margin: 0; font-size: 12px; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: var(--surface-soft); }
