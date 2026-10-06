@@ -611,3 +611,18 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 .phone-app-row small { grid-column: 1; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .phone-app-row .icon { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--accent); }
 .phone-sub .phone-chips { display: contents; }
+
+/* «Телефон»: выбранное одной строкой, список — в окне */
+.phone-pick-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 0 14px 12px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.phone-pick-line span { min-width: 0; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.phone-pick-line b { flex: none; font-size: 13px; color: var(--accent); }
+.phone-bank-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 6px 14px; border-bottom: 1px solid var(--line); }
+.phone-bank-row:last-child { border-bottom: 0; }
+.phone-bank-row span { font-weight: 600; }
+.phone-add-box { margin-top: 14px; }
+.phone-add-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.phone-add-form input { min-height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; }
+.phone-add-form .primary-button { min-height: 46px; padding: 0 18px; }
+.phone-add-app { width: 100%; min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.phone-panel .phone-pick-line { padding: 0 0 12px; border-bottom: 1px solid var(--line); }
+.phone-panel .settings-row:has(+ .phone-pick-line), .phone-panel .settings-row:has(+ .phone-sub + .phone-pick-line) { border-bottom: 0; padding-bottom: 4px; }
