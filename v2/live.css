@@ -392,3 +392,9 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .split-plan small { color: var(--muted); }
 .split-rest { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
 .split-sheet .sheet-actions .primary-button { white-space: nowrap; flex: 1.6; }
+.split-line { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); }
+.split-line:last-child { border-bottom: 0; }
+.split-line .split-pick { border-bottom: 0; flex: 1; min-width: 0; padding-right: 6px; }
+.split-skip { flex: none; width: 40px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.split-skip:active { color: var(--text); }
+.split-pick .split-check { border-color: var(--muted); }
