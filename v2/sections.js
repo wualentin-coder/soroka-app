@@ -179,6 +179,7 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "finance-accounts") return renderAccountsSheet();
   if (ui.sheet.kind === "income-split") return renderIncomeSplitSheet();
   if (ui.sheet.kind === "split-rules") return renderSplitRulesSheet();
+  if (ui.sheet.kind === "phone-apps") return renderPhoneAppsSheet();
   if (ui.sheet.kind === "card-preview") return renderCardPreviewSheet();
   if (ui.sheet.kind === "saved-add-menu") return renderSavedAddMenuSheet();
   if (ui.sheet.kind === "saved" && ui.sheet.category === "cards") return renderLoyaltySheet();
