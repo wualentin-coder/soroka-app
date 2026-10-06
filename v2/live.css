@@ -398,3 +398,13 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .split-skip { flex: none; width: 40px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
 .split-skip:active { color: var(--text); }
 .split-pick .split-check { border-color: var(--muted); }
+/* Счёт постоянных расходов в «Платежах» */
+.fixed-card { margin: 14px 0; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); display: grid; gap: 10px; }
+.fixed-card.is-short { border-color: var(--accent); }
+.fixed-head { display: grid; gap: 4px; }
+.fixed-head span:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.fixed-head small { color: var(--muted); font-size: 13px; }
+.fixed-head strong { font-size: 20px; }
+.fixed-note { font-size: 13px; color: var(--muted); }
+.fixed-card.is-short .fixed-note { color: var(--accent); font-weight: 600; }
+.fixed-card .section-note { margin: 0; }
