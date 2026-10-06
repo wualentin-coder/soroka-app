@@ -458,3 +458,26 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 /* Рамка вокруг карточки — только при навигации с клавиатуры, не после клика мышью. */
 .swipe-row .swipe-content:focus-within { outline: none; }
 .swipe-row .swipe-content:has(:focus-visible) { outline: 1px solid var(--accent); outline-offset: -2px; }
+/* Моя оценка фильма — под постером на всю ширину, цифра рядом */
+.movie-my-rating { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 10px; margin: 0 0 12px; }
+.movie-my-rating .star-slider { margin: 0; min-height: 44px; }
+.movie-my-rating .star-slider .star .icon { max-width: 24px; }
+.movie-my-rating .star-value { display: grid; place-items: center; height: 44px; border-radius: 12px; background: var(--surface-soft); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--accent); }
+
+/* Сериал: сезоны и серии */
+.series-track { display: grid; gap: 10px; margin: 0 0 14px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; }
+.series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.series-head h3 { margin: 0; font-size: 14px; }
+.series-head small { color: var(--muted); font-size: 12px; }
+.season { display: grid; gap: 6px; }
+.season-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.season-title { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--text); font: inherit; font-weight: 700; padding: 4px 0; cursor: pointer; }
+.season-title small { color: var(--muted); font-weight: 500; }
+.season-title.on { color: var(--accent); }
+.season-count { display: inline-flex; gap: 4px; }
+.season-count button { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 16px; cursor: pointer; }
+.season-eps { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 5px; }
+.season-eps .ep { height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.season-eps .ep.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.series-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.series-actions .ghost-button { min-height: 36px; padding: 0 14px; }
