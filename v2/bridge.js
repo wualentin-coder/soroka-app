@@ -576,7 +576,28 @@
   }
 
   window.sorokaOpenFile = (item) => openFile(item);
-  window.sorokaProductRefresh = (ref) => call({ action: "product_refresh", ref }, 70000);
+  window.sorokaProductRefresh = async (ref) => {
+    const answer = await call({ action: "product_refresh", ref }, 70000);
+    if (answer.price || !android || !android.pagePrice) return answer;
+    // Сервер цену не снял (магазин закрыт для роботов) — открываем страницу
+    // на телефоне, как в браузере, и отдаём цену серверу.
+    const item = (data.saved.products || []).find((p) => p.id === ref);
+    if (!item || !/^https?:\/\//.test(item.url || "")) return answer;
+    const seen = await pagePrice(item.url).catch(() => null);
+    if (!seen || !(seen.price > 0)) return answer;
+    const saved = await call({ action: "product_price_set", ref, price: seen.price, old: seen.old || 0 }, 20000).catch(() => null);
+    return { ...answer, price: saved?.price ?? seen.price, oldPrice: saved?.oldPrice ?? null };
+  };
+  const priceWaits = {};
+  window.__sorokaPriceReply = (id, json) => { const w = priceWaits[id]; if (!w) return; delete priceWaits[id]; try { w(JSON.parse(json)); } catch (_) { w(null); } };
+  function pagePrice(url) {
+    return new Promise((done) => {
+      const id = "p" + Date.now().toString(36);
+      priceWaits[id] = done;
+      setTimeout(() => { if (priceWaits[id]) { delete priceWaits[id]; done(null); } }, 40000);
+      try { android.pagePrice(id, url); } catch (_) { delete priceWaits[id]; done(null); }
+    });
+  }
   window.sorokaCardStores = (title, lat, lng) => call({ action: "card_stores", title, lat, lng }, 30000);
   window.sorokaHear = (audio) => call({ action: "voice_text", audio, format: "wav" }, 70000);
   window.sorokaFindRecipes = (query) => call({ action: "recipe_find", query }, 60000);
