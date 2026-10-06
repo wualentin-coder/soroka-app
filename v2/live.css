@@ -448,3 +448,9 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .smart-cushion .smart-scale span:nth-child(2) { transform: translateX(-30%); }
 .smart-more { width: 100%; margin: 8px 0; }
 .smart-off { margin: 0; font-size: 12px; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: var(--surface-soft); }
+
+.smart-choose { display: grid; gap: 6px; margin-top: 6px; padding: 10px 12px; border-radius: 12px; background: var(--surface-soft); }
+.smart-choose input[type=range] { width: 100%; accent-color: var(--accent); }
+.smart-choose-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.smart-choose-foot small { color: var(--muted); font-size: 12px; }
+.smart-choose .rule-slider-head b { color: var(--accent); }
