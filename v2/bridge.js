@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=ee17753e87","integrity":null},{"src":"./more.js?v=e09bfdd060","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=876c31fb8e","integrity":null},{"src":"./app.js?v=4c02988b6c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=bdeea093c5","integrity":null},{"src":"./more.js?v=e09bfdd060","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=876c31fb8e","integrity":null},{"src":"./app.js?v=4c02988b6c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -918,7 +918,12 @@
       document.head.appendChild(link);
     }
     // Прошлый снимок есть — открываемся сразу на нём, свежий подхватим следом.
+    const bootAt = Date.now();
     const freshSnapshot = call({ action: "planner_snapshot" }, 30000);
+    // Android: итог первой загрузки — в журнал приложения (оттуда он уходит
+    // на сервер), чтобы «нет связи» было видно с причиной.
+    freshSnapshot.then(() => { try { android && android.log && android.log(`снимок: ok ${Date.now() - bootAt} мс${useNative ? " через сеть приложения" : ""}`); } catch (_) {} },
+      (error) => { try { android && android.log && android.log(`снимок: ${(error && (error.name === "AbortError" ? "timeout" : error.message)) || error} ${Date.now() - bootAt} мс`); } catch (_) {} });
     const cachedSnapshot = lastSnapshot();
     let snapshot;
     try {
