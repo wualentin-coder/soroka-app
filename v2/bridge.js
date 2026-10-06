@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=ce0697713c","integrity":null},{"src":"./movies.js?v=c55c3774ee","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=54cac784fe","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=fe93002929","integrity":null},{"src":"./app.js?v=d2390e24aa","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=ce0697713c","integrity":null},{"src":"./movies.js?v=c55c3774ee","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=9ade10c8b4","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=4132209f9c","integrity":null},{"src":"./app.js?v=d2390e24aa","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -63,7 +63,10 @@
     const device = init ? "" : deviceKey();
     if (!init && !device) throw new Error("no-telegram");
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
+    // В Android-приложении окно ждёт не дольше 20 секунд: зависший запрос
+    // (сеть режет большие ответы) повторяется сетью самого приложения.
+    const canNative = !init && android && android.api;
+    const timer = setTimeout(() => controller.abort(), canNative ? Math.min(timeout, 20000) : timeout);
     const started = Date.now();
     // Снимок по частям: отпечатки того, что уже есть, — в ответ только изменившееся.
     if (DELTA.has(body.action) && lastFull && lastFull.__hashes) body = { ...body, have: lastFull.__hashes };
@@ -78,8 +81,9 @@
       }).catch((error) => {
         // Сеть окна не пускает (а уведомления с телефона доходят) — повторяем
         // запрос сетью Android-приложения и дальше ходим так же.
-        if (!init && android && android.api && !(error && error.name === "AbortError")) {
+        if (canNative) {
           useNative = true;
+          try { android.log(`связь: ${body.action} ${error && error.name === "AbortError" ? "зависло" : "ошибка"} — повторяю сетью приложения`); } catch (_) {}
           return nativeFetch(payload, timeout);
         }
         throw error;
