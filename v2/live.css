@@ -377,3 +377,4 @@ html.in-android .page-header { min-height: 40px; }
 .utility-head .amount { font-weight: 800; }
 .utility-bills { display: grid; gap: 8px; padding: 0 10px 10px; }
 .utility-bills .payment-card { box-shadow: none; }
+body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-bottom)); }
