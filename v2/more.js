@@ -689,6 +689,35 @@ document.addEventListener("pointermove", event => {
   gesture.row.classList.toggle("swipe-armed", right > 0 && distance > 72);
   gesture.row.style.setProperty("--swipe-x", `${distance}px`);
 });
+/*
+ * Застрявшие строки: на телефоне жест иногда перехватывает Telegram или
+ * система (свайп «назад»), и «палец отпущен» не приходит — строка оставалась
+ * сдвинутой с «На завтра» под ней. Любое новое касание или прокрутка
+ * возвращают на место всё, что сдвинуто не текущим жестом.
+ */
+function resetStaleSwipes(except = null) {
+  document.querySelectorAll(".swipe-row.swiping, .swipe-row.dir-right, .swipe-row[style*='--swipe-x']").forEach(row => {
+    if (row === except) return;
+    row.classList.remove("swiping", "dir-right", "swipe-armed", "delete-armed");
+    if (!row.classList.contains("is-open-left")) row.classList.remove("dir-left");
+    row.style.removeProperty("--swipe-x"); row.style.removeProperty("--del");
+  });
+}
+document.addEventListener("pointerdown", event => {
+  // Новое касание при «висящем» жесте — значит, старый так и не закончился.
+  if (swipeGesture && swipeGesture.id !== event.pointerId) cancelSwipeGesture();
+  resetStaleSwipes(swipeGesture?.row);
+}, true);
+window.addEventListener("scroll", () => { if (!swipeGesture) resetStaleSwipes(); }, { passive: true, capture: true });
+// Касание закончилось, а pointerup не пришёл — завершаем жест по последней точке.
+["touchend", "touchcancel"].forEach(type => document.addEventListener(type, () => {
+  const gesture = swipeGesture;
+  if (!gesture) return;
+  setTimeout(() => {
+    if (swipeGesture !== gesture) return;
+    document.dispatchEvent(new PointerEvent("pointerup", { pointerId: gesture.id, clientX: gesture.lastX, clientY: gesture.y, bubbles: true }));
+  }, 60);
+}, { passive: true }));
 document.addEventListener("pointerup", event => {
   const gesture = swipeGesture;
   if (!gesture || gesture.id !== event.pointerId) return;
