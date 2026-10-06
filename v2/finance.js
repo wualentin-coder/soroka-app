@@ -228,7 +228,7 @@ function paymentDate(p) {
 function paymentRow(p) {
   const late = p.status !== "confirmed" && p.nextOn && p.nextOn < todayIso();
   const facts = [paymentDate(p), p.category, p.endsOn ? `до ${dateLabel(p.endsOn)}${p.endsOn.slice(0, 4) !== todayIso().slice(0, 4) ? ` ${p.endsOn.slice(0, 4)}` : ""}` : "", p.locked ? "из «Долгов»" : ""].filter(Boolean).join(" · ");
-  return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span><span class="list-copy"><strong>${esc(p.title)}</strong><span>${esc(facts)}${p.status === "confirmed" ? " · оплачено" : ""}</span></span><span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}${p.locked ? miniButton("В долгах", "finance-edit", `data-entity="debt" data-id="${esc(p.creditId)}"`) : miniButton("Настроить", "finance-edit", `data-entity="payment" data-id="${esc(p.id)}"`)}</div></article>`;
+  return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span><span class="list-copy"><strong>${esc(financeTitle(p.title))}</strong><span>${esc(facts)}${p.status === "confirmed" ? " · оплачено" : ""}</span></span><span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}${p.locked ? miniButton("В долгах", "finance-edit", `data-entity="debt" data-id="${esc(p.creditId)}"`) : miniButton("Настроить", "finance-edit", `data-entity="payment" data-id="${esc(p.id)}"`)}</div></article>`;
 }
 function financePaymentsPage() {
   const known = data.finance.payments.map(paymentRub);
@@ -236,7 +236,24 @@ function financePaymentsPage() {
   const monthly = data.finance.payments.reduce((sum, p, i) => sum + (known[i] || 0) / (p.repeat === "yearly" ? 12 : 1), 0);
   const gaps = known.some(v => v === null);
   const list = data.finance.payments.slice().sort((a, b) => String(a.nextOn || "9").localeCompare(String(b.nextOn || "9")));
-  return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}</span></div><div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${list.map(paymentRow).join("")}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
+  return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}</span></div><div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${paymentsGrouped(list)}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
+}
+/**
+ * Коммуналка — одной карточкой: счета приходят каждый месяц на разные суммы
+ * (свет, газ, управляющая компания), и считать удобно их сумму, а не каждый
+ * по отдельности. Внутри — сами счета, их можно отметить по одному.
+ */
+function paymentsGrouped(list) {
+  const utility = p => !p.locked && /^жил/i.test(p.category || "");
+  const bills = list.filter(utility);
+  if (bills.length < 2) return list.map(paymentRow).join("");
+  const sum = bills.reduce((s, p) => s + (paymentRub(p) || 0), 0);
+  const left = bills.filter(p => p.status !== "confirmed");
+  const open = ui.utilitiesOpen ?? true;
+  const card = `<section class="utility-group ${open ? "is-open" : ""}"><button type="button" class="utility-head" data-action="utilities-toggle" aria-expanded="${open}"><span class="list-icon">${icon("calendar")}</span><span class="list-copy"><strong>Коммуналка</strong><span>${bills.length} ${word(bills.length, "счёт", "счёта", "счетов")}${left.length ? ` · не оплачено ${left.length}` : " · всё оплачено"}</span></span><span class="amount">${demoMoney(sum)}</span>${icon(open ? "up" : "down", "icon-sm")}</button>${open ? `<div class="utility-bills">${bills.map(paymentRow).join("")}</div>` : ""}</section>`;
+  // Карточка встаёт на место самого раннего счёта.
+  const first = list.indexOf(bills[0]);
+  return list.map((p, i) => i === first ? card : utility(p) ? "" : paymentRow(p)).join("");
 }
 function creditRow(d) {
   const left = Math.max(0, d.amount - d.paid);
@@ -367,6 +384,7 @@ function financeAction(action, control) {
   }
   if (action === "goal-open") { openGoalDeposit(control.dataset.id); return true; }
   if (action === "finance-accounts") { ui.sheet = { kind: "finance-accounts", justRendered: false }; render(); return true; }
+  if (action === "utilities-toggle") { ui.utilitiesOpen = !(ui.utilitiesOpen ?? true); render(); return true; }
   if (action === "finance-tab") { ui.financeTab = control.dataset.tab; ui.financeCategory = ""; ui.financeKind = ""; render(); return true; }
   if (action === "finance-kind") { ui.financeKind = control.dataset.kind || ""; ui.financeCategory = ""; ui.financeTab = "transactions"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "finance-add") { openFinanceForm(control.dataset.entity, null, control.dataset.kind || "expense"); return true; }
