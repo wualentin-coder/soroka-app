@@ -735,6 +735,8 @@ document.addEventListener("pointerdown", event => {
   const row = event.target.closest(".swipe-row");
   if (!row || event.target.closest(".swipe-action, .task-drag-handle, .record-pin-toggle")) return;
   if (event.pointerType === "mouse" && event.button !== 0) return;
+  // Жест от самого края экрана — листание страниц, а не свайп строки.
+  if (event.pointerType === "touch" && (event.clientX < 28 || event.clientX > window.innerWidth - 28)) return;
   swipeGesture = { row, id: event.pointerId, x: event.clientX, y: event.clientY, t: event.timeStamp, lastX: event.clientX, lastT: event.timeStamp, speed: 0, base: row.classList.contains("is-open-left") ? -swipeOpenOf(row) : 0, open: swipeOpenOf(row), horizontal: false };
 });
 document.addEventListener("pointermove", event => {
