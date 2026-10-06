@@ -99,7 +99,7 @@ function financeTransactionsPage() {
   const chips = cats.length > 1 ? `<div class="map-categories tx-cats"><button class="map-category-chip ${!ui.financeCategory ? "active" : ""}" type="button" data-action="finance-clear-category">Все</button>${cats.map(([name, v]) => `<button class="map-category-chip ${ui.financeCategory === name ? "active" : ""}" type="button" data-action="finance-category" data-category="${esc(name)}" style="--map-color:${categoryColor(name)}"><i class="cat-dot" style="background:${categoryColor(name)}"></i>${esc(name)}<span>${ruMoney(v)}</span></button>`).join("")}</div>` : "";
   const kinds = financeKindTabs(kind);
   const head = kind ? `<div class="tx-total"><span>${kind === "income" ? "Доходы" : "Расходы"} · ${esc(thisMonthName())}${ui.financeCategory ? ` · ${esc(ui.financeCategory)}` : ""}</span><strong class="${kind === "income" ? "income" : ""}">${kind === "income" ? "+" : "−"}${demoMoney(total)}</strong></div>` : "";
-  return `${kinds}${head}${chips}<div class="section-heading"><h2>${ui.financeCategory ? esc(ui.financeCategory) : "Операции месяца"}</h2><button class="text-action" type="button" data-action="finance-add" data-entity="transaction" data-kind="${kind === "income" ? "income" : "expense"}">Добавить ${icon("plus", "icon-sm")}</button></div>${items.length || (!kind && monthTransfers().length) ? financeDays(items, !kind && !ui.financeCategory) : `<div class="list-panel"><div class="empty-card"><strong>Операций нет</strong>Выберите другую категорию или добавьте запись.</div></div>`}<div class="inline-actions">${window.SOROKA_LIVE ? "" : `<button type="button" data-action="finance-receipt">${icon("upload")}Проверить чек</button>`}<button type="button" data-action="finance-export">${icon("download")}CSV</button></div>`;
+  return `${kinds}${head}${kind === "income" ? splitBanner() : ""}${chips}<div class="section-heading"><h2>${ui.financeCategory ? esc(ui.financeCategory) : "Операции месяца"}</h2><button class="text-action" type="button" data-action="finance-add" data-entity="transaction" data-kind="${kind === "income" ? "income" : "expense"}">Добавить ${icon("plus", "icon-sm")}</button></div>${items.length || (!kind && monthTransfers().length) ? financeDays(items, !kind && !ui.financeCategory) : `<div class="list-panel"><div class="empty-card"><strong>Операций нет</strong>Выберите другую категорию или добавьте запись.</div></div>`}<div class="inline-actions">${window.SOROKA_LIVE ? "" : `<button type="button" data-action="finance-receipt">${icon("upload")}Проверить чек</button>`}<button type="button" data-action="finance-export">${icon("download")}CSV</button></div>`;
 }
 function monthTransfers() { return data.finance.transfers.filter(t => t.date?.startsWith(todayIso().slice(0, 7))); }
 /** День словами: «Сегодня», «Вчера», «4 октября». */
@@ -176,6 +176,54 @@ function accountGroups() {
   return `<div class="list-panel">${spendAccounts().map(accountRow).join("") || emptyCard("Счетов пока нет", "Добавьте первый счёт.")}</div><div class="accounts-group-head"><h3>Цели</h3><button class="text-action" type="button" data-action="finance-add" data-entity="goal">Новая цель ${icon("plus", "icon-sm")}</button></div><div class="list-panel">${data.finance.goals.map(goalRow).join("") || emptyCard("Целей пока нет", "У каждой цели будет свой счёт.")}</div>`;
 }
 /** Окно «Все счета»: остатки, нажатие — настройки счёта или пополнение цели. */
+/*
+ * «Распределить доходы»: нераспределённые доходы за 40 дней раскладываются
+ * по правилам («Правила» в финансах) одной суммой. Обязательные платежи
+ * вычитаются один раз, остаток остаётся на жизнь.
+ */
+function splitCandidates() {
+  const from = new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10);
+  return data.finance.transactions
+    .filter(t => t.kind === "income" && !t.split && !isReconcile(t) && (t.currency || "RUB") === "RUB" && t.date >= from && Number(t.amount) > 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+function splitBanner() {
+  const list = splitCandidates();
+  if (!data.finance.rules.length) return `<div class="split-banner"><span><strong>Распределение</strong><small>Задайте правила — куда откладывать часть дохода</small></span><button class="ghost-button" type="button" data-action="finance-tab" data-tab="rules">Правила</button></div>`;
+  if (!list.length) return `<p class="section-note">Все доходы за последние недели распределены.</p>`;
+  const sum = list.reduce((s, t) => s + Number(t.amount), 0);
+  return `<div class="split-banner"><span><strong>Не распределено ${demoMoney(sum)}</strong><small>${list.length} ${word(list.length, "доход", "дохода", "доходов")} за последние недели</small></span><button class="primary-button" type="button" data-action="income-split">Распределить</button></div>`;
+}
+function localSplit(total) {
+  const must = (data.finance.payments || []).reduce((s, p) => s + (paymentRub(p) || 0) / (p.repeat === "yearly" ? 12 : 1), 0);
+  const free = Math.max(0, Math.round((total - must) * 100) / 100);
+  const shares = data.finance.rules.map(r => ({ name: r.name, percent: Number(r.percent), amount: Math.floor(free * Number(r.percent)) / 100, account: null }));
+  return { total, obligations: Math.round(must), free, shares, rest: Math.round((free - shares.reduce((s, x) => s + x.amount, 0)) * 100) / 100 };
+}
+function loadSplitPreview() {
+  const sheet = ui.sheet;
+  if (!sheet || sheet.kind !== "income-split") return;
+  const ids = sheet.ids.slice();
+  const total = splitCandidates().filter(t => ids.includes(t.id)).reduce((s, t) => s + Number(t.amount), 0);
+  if (!ids.length) { sheet.preview = null; render(); return; }
+  if (!window.sorokaIncomeSplit) { sheet.preview = localSplit(total); render(); return; }
+  sheet.preview = "loading";
+  window.sorokaIncomeSplit(ids, false).then(answer => {
+    if (ui.sheet !== sheet || sheet.ids.join() !== ids.join()) return;
+    sheet.preview = answer; render();
+  }).catch(() => { if (ui.sheet === sheet) { sheet.preview = localSplit(total); render(); } });
+}
+function renderIncomeSplitSheet() {
+  const sheet = ui.sheet;
+  const list = splitCandidates();
+  const rows = list.map(t => `<button type="button" class="split-pick ${sheet.ids.includes(t.id) ? "is-on" : ""}" data-action="income-split-toggle" data-id="${esc(t.id)}" aria-pressed="${sheet.ids.includes(t.id)}"><span class="split-check">${sheet.ids.includes(t.id) ? icon("check", "icon-sm") : ""}</span><span class="list-copy"><strong>${esc(financeTitle(t.title))}</strong><span>${esc(dateLabel(t.date))}</span></span><span class="amount income">+${demoMoney(t.amount)}</span></button>`).join("");
+  const p = sheet.preview;
+  const plan = p === "loading" ? `<p class="section-note">Считаю…</p>`
+    : !p || !p.shares ? `<p class="section-note">Отметьте доходы, которые разложить.</p>`
+    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.obligations ? `<div class="side-row"><span>Обязательные платежи в месяц</span><b>−${demoMoney(p.obligations)}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${s.percent}%${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
+  const moving = p && p.shares ? p.shares.reduce((s, x) => s + x.amount, 0) : 0;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet split-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Распределить доходы</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="list-panel">${rows || `<div class="empty-card"><strong>Нечего распределять</strong>Все доходы уже разложены.</div>`}</div>${plan}<p class="section-note">Доли — из раздела «Правила»${data.settings?.rulesAuto ? ", сейчас считаются по вашим тратам" : ""}. На каждый счёт уйдёт перевод с того счёта, куда пришёл доход.</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="income-split-rules">Правила</button><button class="primary-button" type="button" data-action="income-split-apply" ${moving > 0 && !sheet.busy ? "" : "disabled"}>${sheet.busy ? "Распределяю…" : moving > 0 ? `Отложить ${demoMoney(moving)}` : "Распределить"}</button></div></section></div>`;
+}
 function renderAccountsSheet() {
   const rub = spendAccounts().filter(a => a.currency === "RUB");
 
@@ -383,6 +431,24 @@ function financeAction(action, control) {
     return true;
   }
   if (action === "goal-open") { openGoalDeposit(control.dataset.id); return true; }
+  if (action === "income-split") { ui.sheet = { kind: "income-split", ids: splitCandidates().map(t => t.id), preview: null, justRendered: false }; render(); loadSplitPreview(); return true; }
+  if (action === "income-split-toggle") {
+    const id = control.dataset.id, ids = ui.sheet.ids;
+    ui.sheet.ids = ids.includes(id) ? ids.filter(x => x !== id) : ids.concat(id);
+    loadSplitPreview(); return true;
+  }
+  if (action === "income-split-rules") { ui.sheet = null; ui.financeTab = "rules"; render(); return true; }
+  if (action === "income-split-apply") {
+    const sheet = ui.sheet;
+    if (!window.sorokaIncomeSplit) { ui.sheet = null; toast("Распределил (демо)"); render(); return true; }
+    sheet.busy = true; render();
+    window.sorokaIncomeSplit(sheet.ids, true).then(answer => {
+      if (ui.sheet === sheet) ui.sheet = null;
+      toast(answer.made ? `Отложил ${demoMoney((answer.shares || []).reduce((s, x) => s + x.amount, 0))} · ${answer.made} ${word(answer.made, "перевод", "перевода", "переводов")}` : answer.note || "Нечего распределять");
+      render();
+    }).catch(() => { sheet.busy = false; toast("Не получилось — проверьте связь"); render(); });
+    return true;
+  }
   if (action === "finance-accounts") { ui.sheet = { kind: "finance-accounts", justRendered: false }; render(); return true; }
   if (action === "utilities-toggle") { ui.utilitiesOpen = !(ui.utilitiesOpen ?? true); render(); return true; }
   if (action === "finance-tab") { ui.financeTab = control.dataset.tab; ui.financeCategory = ""; ui.financeKind = ""; render(); return true; }
