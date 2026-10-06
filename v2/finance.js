@@ -34,7 +34,7 @@ function ratesStrip() {
 function financeTabs() { return `<div class="subtabs" role="tablist" aria-label="Разделы финансов">${FINANCE_TABS.map(([key, label]) => `<button type="button" role="tab" aria-selected="${ui.financeTab === key}" class="${ui.financeTab === key ? "active" : ""}" data-action="finance-tab" data-tab="${key}">${label}</button>`).join("")}</div>`; }
 function financeTransactionRow(item) {
   const account = data.finance.accounts.find(a => a.id === item.accountId);
-  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transaction" data-id="${esc(item.id)}"><span class="list-icon tx-icon" style="--cat:${isReconcile(item) ? "var(--muted)" : categoryColor(item.category)}">${icon(isReconcile(item) ? "reset" : item.kind === "income" ? "download" : "wallet")}</span><span class="list-copy"><strong>${esc(isReconcile(item) ? "Сверка остатка" : item.title)}</strong><span>${esc(isReconcile(item) ? "поправка счёта" : item.category)} · ${esc(dateLabel(item.date))}${account ? ` · ${esc(account.name)}` : ""}</span></span><span class="amount ${item.kind === "income" ? "income" : ""}">${item.kind === "income" ? "+" : "−"}${demoMoney(item.amount, item.currency)}</span></button>`;
+  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transaction" data-id="${esc(item.id)}"><span class="list-icon tx-icon" style="--cat:${isReconcile(item) ? "var(--muted)" : categoryColor(item.category)}">${icon(isReconcile(item) ? "reset" : item.kind === "income" ? "download" : "wallet")}</span><span class="list-copy"><strong>${esc(isReconcile(item) ? "Сверка остатка" : financeTitle(item.title))}</strong><span>${esc(isReconcile(item) ? "поправка счёта" : item.category)}${account ? ` · ${esc(account.name)}` : ""}</span></span><span class="amount ${item.kind === "income" ? "income" : ""}">${item.kind === "income" ? "+" : "−"}${demoMoney(item.amount, item.currency)}</span></button>`;
 }
 function budgetCard(item) {
   const spent = categorySpent(item.category);
@@ -99,7 +99,37 @@ function financeTransactionsPage() {
   const chips = cats.length > 1 ? `<div class="map-categories tx-cats"><button class="map-category-chip ${!ui.financeCategory ? "active" : ""}" type="button" data-action="finance-clear-category">Все</button>${cats.map(([name, v]) => `<button class="map-category-chip ${ui.financeCategory === name ? "active" : ""}" type="button" data-action="finance-category" data-category="${esc(name)}" style="--map-color:${categoryColor(name)}"><i class="cat-dot" style="background:${categoryColor(name)}"></i>${esc(name)}<span>${ruMoney(v)}</span></button>`).join("")}</div>` : "";
   const kinds = financeKindTabs(kind);
   const head = kind ? `<div class="tx-total"><span>${kind === "income" ? "Доходы" : "Расходы"} · ${esc(thisMonthName())}${ui.financeCategory ? ` · ${esc(ui.financeCategory)}` : ""}</span><strong class="${kind === "income" ? "income" : ""}">${kind === "income" ? "+" : "−"}${demoMoney(total)}</strong></div>` : "";
-  return `${kinds}${head}${chips}<div class="section-heading"><h2>${ui.financeCategory ? esc(ui.financeCategory) : "Операции месяца"}</h2><button class="text-action" type="button" data-action="finance-add" data-entity="transaction" data-kind="${kind === "income" ? "income" : "expense"}">Добавить ${icon("plus", "icon-sm")}</button></div><div class="list-panel">${items.length ? items.map(financeTransactionRow).join("") : `<div class="empty-card"><strong>Операций нет</strong>Выберите другую категорию или добавьте запись.</div>`}</div><div class="inline-actions">${window.SOROKA_LIVE ? "" : `<button type="button" data-action="finance-receipt">${icon("upload")}Проверить чек</button>`}<button type="button" data-action="finance-export">${icon("download")}CSV</button></div>`;
+  return `${kinds}${head}${chips}<div class="section-heading"><h2>${ui.financeCategory ? esc(ui.financeCategory) : "Операции месяца"}</h2><button class="text-action" type="button" data-action="finance-add" data-entity="transaction" data-kind="${kind === "income" ? "income" : "expense"}">Добавить ${icon("plus", "icon-sm")}</button></div>${items.length || (!kind && monthTransfers().length) ? financeDays(items, !kind && !ui.financeCategory) : `<div class="list-panel"><div class="empty-card"><strong>Операций нет</strong>Выберите другую категорию или добавьте запись.</div></div>`}<div class="inline-actions">${window.SOROKA_LIVE ? "" : `<button type="button" data-action="finance-receipt">${icon("upload")}Проверить чек</button>`}<button type="button" data-action="finance-export">${icon("download")}CSV</button></div>`;
+}
+function monthTransfers() { return data.finance.transfers.filter(t => t.date?.startsWith(todayIso().slice(0, 7))); }
+/** День словами: «Сегодня», «Вчера», «4 октября». */
+function financeDayLabel(date) {
+  const today = todayIso();
+  if (date === today) return "Сегодня";
+  if (date === offsetIso(-1)) return "Вчера";
+  return new Date(date + "T12:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+}
+function financeTransferRow(t) {
+  const from = data.finance.accounts.find(a => a.id === t.fromId), to = data.finance.accounts.find(a => a.id === t.toId);
+  const title = t.note || "Перевод";
+  const route = `${from?.name || "вне учёта"} → ${to?.name || "вне учёта"}`;
+  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transfer" data-id="${esc(t.id)}"><span class="list-icon tx-icon" style="--cat:var(--muted)">${icon("arrow")}</span><span class="list-copy"><strong>${esc(financeTitle(title))}</strong><span>Перевод · ${esc(route)}</span></span><span class="amount">${demoMoney(t.amount, from?.currency || "RUB")}</span></button>`;
+}
+/** Операции по дням: заголовок дня и его итог (расходы минус доходы не смешиваем — показываем траты). */
+function financeDays(items, withTransfers) {
+  const rows = [...items.map(item => ({ date: item.date, html: financeTransactionRow(item), spent: item.kind === "expense" && !isReconcile(item) && item.currency === "RUB" ? Number(item.amount) || 0 : 0 })),
+    ...(withTransfers ? monthTransfers().map(t => ({ date: t.date, html: financeTransferRow(t), spent: 0 })) : [])];
+  const days = new Map();
+  for (const row of rows) { if (!days.has(row.date)) days.set(row.date, []); days.get(row.date).push(row); }
+  return [...days.keys()].sort((a, b) => String(b).localeCompare(String(a))).map(date => {
+    const list = days.get(date);
+    const spent = list.reduce((s, r) => s + r.spent, 0);
+    return `<section class="tx-day"><header class="tx-day-head"><span>${esc(financeDayLabel(date))}</span>${spent ? `<b>−${demoMoney(spent)}</b>` : ""}</header><div class="list-panel">${list.map(r => r.html).join("")}</div></section>`;
+  }).join("");
+}
+/** Название без служебного хвоста: «Энергокомфорт Карелия — лицевой счёт 999900341171» → «Энергокомфорт Карелия». */
+function financeTitle(title) {
+  return String(title || "").replace(/\s*[—–-]\s*(?:лицевой сч[её]т|л\/с|договор|счёт №)\s*[\d\s]+$/i, "").replace(/\s+(?:л\/с|лицевой сч[её]т)\s*\d+/i, "").trim() || String(title || "");
 }
 function financeKindTabs(kind) {
   return `<div class="subtabs tx-kinds" role="tablist">${[["", "Все"], ["expense", "Расходы"], ["income", "Доходы"], ["transfer", "Переводы"]].map(([k, label]) => `<button type="button" role="tab" class="${kind === k ? "active" : ""}" aria-selected="${kind === k}" data-action="finance-kind" data-kind="${k}">${label}</button>`).join("")}</div>`;
