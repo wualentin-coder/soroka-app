@@ -111,7 +111,7 @@ function renderArchivePage() {
   const tabs = [["trash", "Корзина"], ["completed", "Завершённые"], ["past", "Прошедшие"], ["viewed", "Просмотренные"]];
   let content = "";
   if (ui.archiveTab === "trash") {
-    content = data.trash.length ? `<div class="list-panel">${data.trash.slice().reverse().map(entry => `<div class="list-row"><span class="list-icon">${icon("trash")}</span><span class="list-copy"><strong>${esc(entry.item.title || entry.item.name || entry.item.person || "Запись")}</strong><span>${esc(/^saved:/.test(entry.type) ? SAVED_NAMES[entry.type.slice(6)] || "Сохранённое" : entry.type)} · удалено ${esc(dateLabel(entry.deletedAt))}</span></span><button class="small-button" type="button" data-action="archive-restore" data-id="${esc(entry.id)}">Вернуть</button><button class="icon-button" type="button" data-action="archive-purge" data-id="${esc(entry.id)}" aria-label="Удалить навсегда">${icon("close", "icon-sm")}</button></div>`).join("")}</div>` : emptyCard("Корзина пуста", "Удалённые записи появятся здесь на 30 дней в рабочем приложении.");
+    content = data.trash.length ? `<div class="list-panel">${data.trash.slice().reverse().map(entry => `<div class="list-row"><span class="list-icon">${icon("trash")}</span><span class="list-copy"><strong>${esc(entry.item.title || entry.item.name || entry.item.person || "Запись")}</strong><span>${esc(/^saved:/.test(entry.type) ? SAVED_NAMES[entry.type.slice(6)] || "Сохранённое" : ({ task: "Задача", event: "Событие", project: "Проект", metric: "Показатель", inbox: "Входящие", "finance:transaction": "Операция", "finance:debt": "Долг", "finance:goal": "Цель", "finance:payment": "Платёж", "finance:budget": "Бюджет", "finance:account": "Счёт" })[entry.type] || entry.type)} · удалено ${esc(dateLabel(entry.deletedAt))}</span></span><button class="small-button" type="button" data-action="archive-restore" data-id="${esc(entry.id)}">Вернуть</button><button class="icon-button" type="button" data-action="archive-purge" data-id="${esc(entry.id)}" aria-label="Удалить навсегда">${icon("close", "icon-sm")}</button></div>`).join("")}</div>` : emptyCard("Корзина пуста", "Удалённые записи появятся здесь на 30 дней в рабочем приложении.");
   } else if (ui.archiveTab === "completed") {
     const done = data.tasks.filter(t => t.done);
     content = done.length ? `<div class="task-stack">${done.map(taskCard).join("")}</div>` : emptyCard("Завершённых задач пока нет", "Отметьте задачу на экране «Сегодня».");
@@ -131,7 +131,8 @@ function overviewBlockSettings() {
 }
 function renderSettingsPage() {
   const s = data.settings;
-  const row = (title, hint, control) => `<div class="settings-row"><div><strong>${title}</strong><span>${hint}</span></div>${control}</div>`;
+  // Поле получает название строки: подпись рядом видна глазами, а экранный диктор без связи её не читал.
+  const row = (title, hint, control) => `<div class="settings-row"><div><strong>${title}</strong><span>${hint}</span></div>${String(control).replace(/<(input|select|textarea)(?![^>]*aria-label)/g, `<$1 aria-label="${esc(title)}"`)}</div>`;
   const select = (setting, value, options) => `<select data-setting="${setting}">${options.map(([key, label]) => `<option value="${key}" ${String(value) === String(key) ? "selected" : ""}>${label}</option>`).join("")}</select>`;
   const accents = `<div class="accent-swatches" role="radiogroup" aria-label="Акцент">${ACCENTS.map(([key, label, color]) => `<label class="accent-swatch" title="${label}"><input type="radio" name="accent" data-setting="accent" value="${key}" ${(s.accent || "teal") === key ? "checked" : ""} aria-label="${label}"><span style="--swatch:${color}"></span></label>`).join("")}</div>`;
   const router = s.openRouter;
@@ -150,12 +151,12 @@ ${row("Стартовый экран", "Что открывать первым",
 <section class="settings-group"><h2>Бот</h2><div class="list-panel">
 ${row("Контекст диалога", "Сколько последних сообщений бот учитывает", select("context", s.context, [[5, "5"], [10, "10"], [20, "20"]]))}
 ${row("Утренняя сводка", "Когда бот присылает план дня", `<input data-setting="digest" type="time" value="${esc(s.digest || "08:30")}">`)}
-${row("Вечерняя сводка", "Итоги дня", `<input data-setting="digestEvening" type="time" value="${esc(s.digestEvening || "21:00")}">`)}
-${row("Тихие часы", "Бот не беспокоит, кроме срочного", `<span class="settings-range"><input data-setting="quietFrom" type="time" value="${esc(s.quietFrom || "23:00")}" aria-label="С"><span>–</span><input data-setting="quietTo" type="time" value="${esc(s.quietTo || "08:00")}" aria-label="До"></span>`)}
+${row("Вечерний разбор", "Бот предложит разобрать входящие, если они есть", `<input data-setting="digestEvening" type="time" value="${esc(s.digestEvening || "21:00")}">`)}
+${row("Тихие часы", "Напоминания и сводки ждут до утра; системные сообщения — сразу", `<span class="settings-range"><input data-setting="quietFrom" type="time" value="${esc(s.quietFrom || "23:00")}" aria-label="С"><span>–</span><input data-setting="quietTo" type="time" value="${esc(s.quietTo || "08:00")}" aria-label="До"></span>`)}
 ${row("Google Календарь", s.gcal ? "События уходят в календарь сами" : "Подключается в боте: команда /calendar", `<b class="settings-status ${s.gcal ? "ok" : ""}">${s.gcal ? "Подключён" : "Не подключён"}</b>`)}
 </div></section>
 <section class="settings-group"><h2>Модели ИИ</h2><div class="list-panel">${row("Ввод без ИИ", s.manualOnly ? "«+» открывает обычные формы" : router && Number(router.left) <= 0 ? "Деньги на OpenRouter кончились — ввод сейчас ручной" : "«+» разбирает текст и ищет фильмы моделью", `<label class="switch"><input type="checkbox" data-setting="manualOnly" ${s.manualOnly ? "checked" : ""}><span></span></label>`)}</div><div class="side-card">${routerRows}</div><p class="section-note">Бот разбирает сообщения моделями OpenRouter; пополнить — openrouter.ai.</p></section>
-<section class="settings-group"><h2>Данные</h2><div class="inline-actions"><button type="button" data-action="export-json">${icon("download")}Экспорт JSON</button><button type="button" data-action="export-csv">${icon("download")}Экспорт CSV</button>${window.SOROKA_LIVE ? `<button type="button" data-action="reset">${icon("reset")}Обновить данные</button>` : ""}</div><p class="section-note">Экспорт — всё, кроме паролей.</p></section>
+<section class="settings-group"><h2>Данные</h2><div class="inline-actions"><button type="button" data-action="export-json">${icon("download")}Экспорт JSON</button><button type="button" data-action="export-csv">${icon("download")}Экспорт CSV</button>${window.SOROKA_LIVE ? `<button type="button" data-action="reset">${icon("reset")}Обновить данные</button>` : ""}</div><p class="section-note">Выгрузка — все записи (кроме паролей): JSON и CSV придут файлами в чат с ботом.</p></section>
 </div><aside class="content-aside"><div class="side-card"><h3>Личные данные</h3><p class="side-note">Записи живут в базе бота и доступны только вам. Пароли — в зашифрованном хранилище и в экспорт не попадают.</p></div></aside></div>`;
 }
 function renderComponentGallery() {
@@ -185,7 +186,7 @@ function searchCatalog() {
   const add = (type, group, label, item, details = "") => catalog.push({ type, group, label, item, details });
   data.tasks.forEach(x => add("task", "tasks", "Задача", x, `${x.description || ""} ${x.project || ""}`));
   data.events.forEach(x => add("event", "events", "Событие", x, x.description || ""));
-  data.notes.forEach(x => add("note", "notes", "Заметка", x, `${x.description || ""} ${x.topic || ""}`));
+  data.notes.forEach(x => add("note", "notes", "Заметка", x, `${x.description || ""} ${x.topic || ""} ${(x.tags || []).join(" ")}`));
   data.inbox.forEach(x => add("inbox", "inbox", "Входящие", x, `${x.detail || ""} ${x.type || ""}`));
   SAVED_CATEGORIES.filter(([key]) => key !== "notes").forEach(([key, label]) => data.saved[key].forEach(x => add(`saved:${key}`, "materials", label, x, `${x.description || ""} ${x.summary || ""} ${(x.tags || []).join(" ")} ${x.topic || ""} ${savedSection(key, x.sectionId)?.name || ""} ${x.reason || ""} ${x.address || ""} ${x.city || ""} ${JSON.stringify(x.ingredients || [])} ${JSON.stringify(x.items || [])}`)));
   data.finance.transactions.forEach(x => add("finance:transaction", "finance", x.kind === "income" ? "Доход" : "Расход", x, `${x.category} ${x.amount} ${x.project || ""}`));
@@ -399,6 +400,8 @@ function moreAction(action, control) {
   if (action === "archive-restore") { const entry = data.trash.find(x => x.id === itemId); if (entry) { if (["task", "event", "note"].includes(entry.type)) data[`${entry.type}s`].push(entry.item); else if (entry.type === "saved:notes") data.notes.push(entry.item); else if (entry.type.startsWith("saved:")) data.saved[entry.type.split(":")[1]].push(entry.item); else if (entry.type.startsWith("finance:")) financeEntityList(entry.type.split(":")[1]).push(entry.item); else if (entry.type === "project") data.projects.push(entry.item); else if (entry.type === "metric") data.metrics.push(entry.item); else if (entry.type === "inbox") data.inbox.push(entry.item); data.trash = data.trash.filter(x => x.id !== itemId); save(); toast("Запись восстановлена"); } return true; }
   if (action === "archive-purge") { if (window.confirm("Удалить эту запись навсегда?")) { data.trash = data.trash.filter(x => x.id !== itemId); save(); toast("Удалено окончательно"); } return true; }
   if (action === "overview-block-up" || action === "overview-block-down") { const order = data.settings.overviewOrder ||= ["next", "tasks", "money", "payments", "saved", "continue", "weekly"]; const i = order.indexOf(control.dataset.key); const next = i + (action === "overview-block-up" ? -1 : 1); if (i >= 0 && next >= 0 && next < order.length) { [order[i], order[next]] = [order[next], order[i]]; save(); render(); } return true; }
+  // В рабочем приложении — полная выгрузка с сервера файлами в чат.
+  if ((action === "export-json" || action === "export-csv") && typeof window.sorokaExportAll === "function") { window.sorokaExportAll(); return true; }
   if (action === "export-json") { exportDemoJson(); return true; }
   if (action === "export-csv") { exportDemoCsv(); return true; }
   if (action === "demo-compare") { ui.sheet = { kind: "compare", justRendered: false }; render(); return true; }
