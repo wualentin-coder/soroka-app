@@ -600,6 +600,12 @@ function seriesKicker(item) {
   for (const s of seasons) for (let e = 1; e <= s.count; e++) if (!s.seen.includes(e)) return `Смотрю · С${s.n} · Е${e}`;
   return "Досмотрен";
 }
+/** То же для карточки: номер сезона и серии — крупно, акцентом. */
+function seriesKickerHtml(item) {
+  const text = seriesKicker(item);
+  const m = text.match(/^Смотрю · С(\d+) · Е(\d+)$/);
+  return m ? `<span class="series-now"><small>Смотрю</small><b>С${m[1]}</b><b>Е${m[2]}</b></span>` : text ? esc(text) : "";
+}
 /*
  * Сезоны и число серий — с IMDb, один раз за открытие приложения: у идущего
  * сериала выходят новые серии. Отмеченное сохраняется (сервер переносит).
