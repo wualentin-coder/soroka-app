@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=fd0e7aa40e","integrity":null},{"src":"./more.js?v=b9ae8815b7","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=986c15bfe9","integrity":null},{"src":"./app.js?v=22b1a1e52e","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=03d64133be","integrity":null},{"src":"./more.js?v=57f3a2e78a","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=986c15bfe9","integrity":null},{"src":"./app.js?v=f5e2ab14ce","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -75,6 +75,9 @@
   let reopenShown = false;
   /** Сервер перестал узнавать приложение посреди работы: объяснить и дать закрыть. */
   function askReopen() {
+    // Сервер не узнал владельца — снимок данных в браузере больше не показываем
+    // (на общем устройстве он иначе висел бы до трёх дней).
+    try { localStorage.removeItem("soroka-snapshot-v1"); } catch (_) {}
     if (reopenShown) return;
     reopenShown = true;
     const layer = document.createElement("div");
@@ -283,16 +286,48 @@
       adopt(answer.snapshot, answer.ids || {}, late);
       if (answer.errors && answer.errors.length) say(human(answer.errors[0].error));
       if (late.length) again = true;
+      unsaved(false);
     } catch (error) {
+      flying = false;
       if (error.status === 401) { askReopen(); return; }
-      say(error.message === "no-telegram" ? "Откройте приложение из Telegram" : "Нет связи с ботом — правка не сохранилась");
-      // Возвращаемся к тому, что есть на сервере: иначе экран врёт.
+      if (error.message === "no-telegram") { say("Откройте приложение из Telegram"); return; }
+      // Нет связи или сервер упал — правку не теряем: плашка «не сохранено»
+      // висит, пока не уйдёт, и отправка повторяется сама.
+      if (!error.status || error.status >= 500) { unsaved(true); return; }
+      // Сервер правку отклонил — возвращаемся к тому, что на нём есть. Раньше
+      // это не срабатывало: refresh выходил, пока стоял флаг «летит».
+      say("Сервер не принял правку — вернул как было");
       await refresh(true);
     } finally {
       flying = false;
       if (again) { again = false; schedule(50); }
     }
   }
+
+  /** Плашка «Изменения не сохранены» с повтором — пока правка не дошла до сервера. */
+  let retryIn = 0, retryTimer = null;
+  function unsaved(on) {
+    let bar = document.getElementById("sync-banner");
+    clearTimeout(retryTimer);
+    if (!on) { retryIn = 0; bar?.remove(); return; }
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "sync-banner";
+      bar.className = "sync-banner";
+      bar.setAttribute("role", "status");
+      bar.innerHTML = '<span>Изменения не сохранены — нет связи</span><button type="button">Повторить</button>';
+      bar.querySelector("button").addEventListener("click", () => { clearTimeout(retryTimer); push(); });
+      document.body.appendChild(bar);
+    }
+    retryIn = Math.min(120, retryIn ? retryIn * 2 : 10);
+    retryTimer = setTimeout(push, retryIn * 1000);
+  }
+  window.sorokaExportAll = async () => {
+    say("Собираю выгрузку…");
+    try { const answer = await call({ action: "export_all" }, 60000); say(answer.text || "Выгрузка в чате"); }
+    catch (_) { say("Не получилось — попробуйте ещё раз"); }
+  };
+  window.addEventListener("online", () => { if (document.getElementById("sync-banner")) push(); });
 
   /** Принять снимок сервера. late — правки, сделанные за время запроса. */
   function adopt(snapshot, ids, late) {
