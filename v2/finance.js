@@ -363,11 +363,50 @@ function reconcileForm() {
 function renderReconcileSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Доходы и расходы</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${reconcileForm()}</section></div>`;
 }
+/*
+ * Умное распределение — схемой в три шага, а не абзацем: сколько тратите,
+ * сколько из-за этого откладывать, куда это идёт.
+ */
+const SMART_COLORS = ["var(--accent)", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+function smartInfographic(info) {
+  const d = info.details;
+  const fmt = n => demoMoney(Math.round(n));
+  const pctTxt = v => `${String(Math.round(v * 10) / 10).replace(".", ",")} %`;
+  // 1. Расходы по составу — на шкале дохода.
+  const e = d.expense;
+  const parts = (e.partial
+    ? [["Обязательные", e.must, "#64748b"], ["Разовые", e.oneOff, "#f59e0b"], ["Повседневные", e.dailyMonth, "#3b82f6"]]
+    : [["Расходы", info.expense, "#3b82f6"]]).filter(x => x[1] > 0);
+  const scale = Math.max(info.income, info.expense, 1);
+  const bar1 = `<div class="smart-bar">${parts.map(([, v, c]) => `<i style="width:${v / scale * 100}%;background:${c}"></i>`).join("")}</div><div class="smart-scale"><span>0</span><span>доход ${fmt(info.income)}</span></div>`;
+  const legend1 = parts.map(([n, v, c]) => `<span class="smart-key"><i style="background:${c}"></i>${n} ${fmt(v)}</span>`).join("");
+  const dailyNote = e.partial && e.daily ? `<small class="smart-note">Повседневные: ${fmt(e.daily)} за ${e.dailyDays} дн. → ${fmt(e.dailyMonth)} на месяц. Разовые и обязательные не умножаются.</small>` : "";
+  // 2. Лестница: чем больше доля расходов, тем меньше процент — но не ниже 10 %.
+  const steps = [["больше 95 %", 10], ["80–95 %", 15], ["60–80 %", 20], ["45–60 %", 25], ["меньше 45 %", 30]];
+  const ladder = `<div class="smart-ladder">${steps.map(([label, v]) => `<div class="${v === info.saved ? "on" : ""}"><b>${v} %</b><small>${label}</small></div>`).join("")}</div>`;
+  // 3. Куда: доли откладываемого.
+  const shares = (d.percents ? Object.entries(d.percents).map(([name, pct]) => ({ name, pct: Number(pct) })) : data.finance.rules.map(r => ({ name: r.name, pct: Number(r.percent) })))
+    .filter(s => !/^Цель «/.test(s.name))
+    .concat((info.goals || []).map(g => ({ name: `Цель «${g.name}»`, pct: Number(g.percent) })))
+    .filter(s => s.pct > 0);
+  const sum = shares.reduce((s, x) => s + x.pct, 0) || 1;
+  const color = i => SMART_COLORS[i % SMART_COLORS.length];
+  const bar3 = `<div class="smart-bar">${shares.map((s, i) => `<i style="width:${s.pct / sum * 100}%;background:${color(i)}"></i>`).join("")}</div>`;
+  const rows3 = shares.map((s, i) => `<div class="smart-row"><span><i style="background:${color(i)}"></i>${esc(s.name)}</span><b>${pctTxt(s.pct)}</b><small>≈ ${fmt(info.income * s.pct / 100)} в месяц</small></div>`).join("");
+  const c = d.cushion;
+  const cushionNote = !c ? "" : c.months < 3 ? `Меньше 3 месяцев расходов — сюда ${c.share} % откладываемого` : c.months < 6 ? `3–6 месяцев — сюда ${c.share} % откладываемого` : `Подушка собрана — поддерживаем ${c.share} %`;
+  const cushion = c ? `<div class="smart-cushion"><div class="smart-row"><span>${esc(c.name)}: ${fmt(c.have)}</span><b>${String(c.months).replace(".", ",")} мес.</b></div><div class="smart-track"><i style="width:${Math.min(100, c.months / 6 * 100)}%"></i><em style="left:50%"></em></div><div class="smart-scale"><span>0</span><span>3 мес.</span><span>6 мес.</span></div><small class="smart-note">${cushionNote}</small></div>` : "";
+  return `<section class="smart-card">${data.settings?.rulesAuto ? "" : `<p class="smart-off">Сейчас выключено — работают ваши доли. Так посчитало бы умное распределение:</p>`}`
+    + `<div class="smart-step"><span class="smart-num">1</span><div class="smart-body"><strong>Сколько вы тратите</strong><small>Расходы ≈ ${fmt(info.expense)} в месяц — ${d.spent} % дохода</small>${bar1}<div class="smart-keys">${legend1}</div>${dailyNote}</div></div>`
+    + `<div class="smart-step"><span class="smart-num">2</span><div class="smart-body"><strong>Откладываем ${info.saved} % дохода</strong><small>сразу, после обязательных платежей · правило 50/30/20</small>${ladder}</div></div>`
+    + `<div class="smart-step"><span class="smart-num">3</span><div class="smart-body"><strong>Куда идут ${pctTxt(sum)}</strong><small>сначала подушка, затем цели, остальное — по вашим пропорциям</small>${bar3}${rows3}${cushion}</div></div>`
+    + `</section>`;
+}
 function financeRulesPage() {
   const income = data.finance.transactions.filter(t => t.kind === "income" && t.currency === "RUB").sort((a, b) => b.date.localeCompare(a.date))[0];
   const auto = Boolean(data.settings?.rulesAuto);
   const info = data.finance.rulesAuto;
-  const toggle = `<label class="rules-auto ${auto ? "on" : ""}"><input type="checkbox" ${auto ? "checked" : ""} data-action="rules-auto" aria-label="Умное распределение"><span class="rules-auto-box">${icon("check", "icon-sm")}</span><span class="rules-auto-copy"><strong>Умное распределение</strong><small>${info ? esc(info.explain) : "Как советуют консультанты: сначала откладывать, подушка на 3–6 месяцев, потом цели и инвестиции."}</small></span></label>`;
+  const toggle = `<label class="rules-auto ${auto ? "on" : ""}"><input type="checkbox" ${auto ? "checked" : ""} data-action="rules-auto" aria-label="Умное распределение"><span class="rules-auto-box">${icon("check", "icon-sm")}</span><span class="rules-auto-copy"><strong>Умное распределение</strong><small>Сначала откладывать, потом тратить: подушка на 3–6 месяцев, цели, инвестиции</small></span></label>`;
   const total = Math.round(data.finance.rules.reduce((sum, r) => sum + Number(r.percent || 0), 0) * 10) / 10;
   // Ползунки: общий — сколько откладывать; доли — внутри него и не выходят
   // за предел (лишнее у одной поровну снимается с остальных).
@@ -378,7 +417,7 @@ function financeRulesPage() {
   const reconcile = reconcileForm();
   // Цели: сколько откладывать на каждую, чтобы успеть к сроку (считает сервер).
   const goalRows = auto && info?.goals?.length ? `<div class="section-heading section"><h2>На цели</h2></div><div class="list-panel">${info.goals.map(g => `<div class="settings-row"><div><strong>${esc(g.name)}</strong><span>${demoMoney(g.monthly)} в месяц · осталось ${demoMoney(g.left)}${g.due ? ` · к ${esc(dateLabel(g.due))}` : " · за год"}</span></div><b class="rule-goal-pct">${g.percent}%</b></div>`).join("")}</div>` : "";
-  return `<div class="overview-intro"><span class="mini-heading">Распределение дохода</span><p>Когда приходит доход, бот предложит отложить часть на эти счета.</p></div>${toggle}${goalRows}${reconcile}<form id="rules-form" class="rules-sliders">${totalRow}<div class="list-panel">${rows}</div>${auto ? `<p class="section-note">Подобрано автоматически: откладывается ${pct(total)}. Чтобы двигать доли вручную, выключите «Умное распределение».</p>` : `<p class="section-note" data-rules-left>Весь процент распределён.</p><button class="primary-button" type="submit">Сохранить правила</button>`}</form>${income ? cardSection(`Пример для «${esc(income.title)}» · ${demoMoney(income.amount)}`, `<div class="side-card">${data.finance.rules.map(r => `<div class="side-row"><span>${esc(r.name)} · ${r.percent}%</span><b>${demoMoney(income.amount * r.percent / 100)}</b></div>`).join("")}</div>`) : ""}`;
+  return `<div class="overview-intro"><span class="mini-heading">Распределение дохода</span><p>Когда приходит доход, бот предложит отложить часть на эти счета.</p></div>${toggle}${info?.details ? auto || ui.smartOpen ? smartInfographic(info) : `<button class="ghost-button smart-more" type="button" data-action="smart-open">Как работает умное распределение</button>` : ""}${goalRows}${reconcile}<form id="rules-form" class="rules-sliders">${totalRow}<div class="list-panel">${rows}</div>${auto ? `<p class="section-note">Подобрано автоматически: откладывается ${pct(total)}. Чтобы двигать доли вручную, выключите «Умное распределение».</p>` : `<p class="section-note" data-rules-left>Весь процент распределён.</p><button class="primary-button" type="submit">Сохранить правила</button>`}</form>${income ? cardSection(`Пример для «${esc(income.title)}» · ${demoMoney(income.amount)}`, `<div class="side-card">${data.finance.rules.map(r => `<div class="side-row"><span>${esc(r.name)} · ${r.percent}%</span><b>${demoMoney(income.amount * r.percent / 100)}</b></div>`).join("")}</div>`) : ""}`;
 }
 function renderFinancePage() {
   const sections = { overview: financeOverview, transactions: financeTransactionsPage, accounts: financeAccountsPage, transfers: financeTransfersPage, budgets: financeBudgetsPage, goals: financeGoalsPage, payments: financePaymentsPage, debts: financeDebtsPage, rules: financeRulesPage };
@@ -507,6 +546,7 @@ function financeAction(action, control) {
     save(); toast("Считаю по записям");
     return true;
   }
+  if (action === "smart-open") { ui.smartOpen = true; render(); return true; }
   if (action === "rules-auto") {
     data.settings.rulesAuto = !data.settings.rulesAuto;
     save();
