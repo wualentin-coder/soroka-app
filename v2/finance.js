@@ -344,6 +344,11 @@ function fixedAccountCard(monthly) {
   const note = topup > 0
     ? short ? `Не хватает: платежей ${demoMoney(monthly)} в месяц — поднимите автоперевод до ${demoMoney(advice)}` : `Хватает: платежей ${demoMoney(monthly)} в месяц, запас ${demoMoney(topup - monthly)}`
     : `Платежей ${demoMoney(monthly)} в месяц. Советую автоперевод ${demoMoney(advice)} — с запасом 10 %`;
+  // Настроено — одна строка: остаток, автоперевод, хватает ли. Форма — по «Настроить».
+  if (topup > 0 && !ui.fixedEdit) {
+    const from = data.finance.accounts.find(a => a.id === data.settings?.fixedTopupFrom);
+    return `<button type="button" class="fixed-line ${short ? "is-short" : ""}" data-action="fixed-edit"><span class="list-icon">${icon("calendar")}</span><span class="list-copy"><strong>${esc(acc.name)} · ${demoMoney(accountBalance(acc))}</strong><span>Автоперевод ${demoMoney(topup)} ${day}-го${from ? ` с «${esc(from.name)}»` : ""} · ${short ? `не хватает, нужно ${demoMoney(advice)}` : "хватает"}</span></span><span class="text-action">Настроить</span></button>`;
+  }
   return `<form id="fixed-topup-form" class="fixed-card ${short ? "is-short" : ""}"><div class="fixed-head"><span><small>${esc(acc.name)}</small><strong>${demoMoney(accountBalance(acc))}</strong></span><span class="fixed-note">${esc(note)}</span></div><div class="field-row"><label class="field">Автоперевод в банке, ₽<input name="fixedTopup" type="number" inputmode="decimal" min="0" step="100" value="${topup || ""}" placeholder="${advice}"></label><label class="field">Число<input name="fixedTopupDay" type="number" inputmode="numeric" min="1" max="28" value="${day}"></label></div><label class="field">Откуда банк переводит<select name="fixedTopupFrom"><option value="">Основная карта</option>${data.finance.accounts.filter(a => a.currency === "RUB" && a.id !== acc.id && a.kind !== "goal").map(a => `<option value="${esc(a.id)}" ${data.settings?.fixedTopupFrom === a.id ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label><p class="section-note">Задайте те же сумму, число и счёт, что в банке: в этот день перевод сам запишется в финансы. Если банк переводит с накопительного, при распределении дохода сумма на платежи откладывается туда — и не тратится с карты случайно.</p><button class="primary-button" type="submit">Сохранить</button></form>`;
 }
 function financePaymentsPage() {
@@ -352,7 +357,7 @@ function financePaymentsPage() {
   const monthly = data.finance.payments.reduce((sum, p) => sum + paymentMonthly(p), 0);
   const gaps = known.some(v => v === null);
   const list = data.finance.payments.slice().sort((a, b) => String(a.nextOn || "9").localeCompare(String(b.nextOn || "9")));
-  return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}${data.finance.payments.some(isUtility) ? " · коммуналка по прошлому месяцу, вверх до 100 ₽" : ""}</span></div>${fixedAccountCard(monthly)}<div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${paymentsGrouped(list)}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
+  return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}</span></div>${fixedAccountCard(monthly)}<div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${paymentsGrouped(list)}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
 }
 /**
  * Коммуналка — одной карточкой: счета приходят каждый месяц на разные суммы
@@ -366,7 +371,7 @@ function paymentsGrouped(list) {
   const sum = bills.reduce((s, p) => s + (paymentRub(p) || 0), 0);
   const left = bills.filter(p => p.status !== "confirmed");
   const open = ui.utilitiesOpen ?? true;
-  const card = `<section class="utility-group ${open ? "is-open" : ""}"><button type="button" class="utility-head" data-action="utilities-toggle" aria-expanded="${open}"><span class="list-icon">${icon("calendar")}</span><span class="list-copy"><strong>Коммуналка</strong><span>${bills.length} ${word(bills.length, "счёт", "счёта", "счетов")}${left.length ? ` · не оплачено ${left.length}` : " · всё оплачено"}</span><span class="utility-next">В следующем месяце ≈ ${demoMoney(bills.reduce((s, p) => s + paymentMonthly(p), 0))} — по прошлым счетам с округлением</span></span><span class="amount">${demoMoney(sum)}</span>${icon(open ? "up" : "down", "icon-sm")}</button>${open ? `<div class="utility-bills">${bills.map(paymentRow).join("")}</div>` : ""}</section>`;
+  const card = `<section class="utility-group ${open ? "is-open" : ""}"><button type="button" class="utility-head" data-action="utilities-toggle" aria-expanded="${open}"><span class="list-icon">${icon("calendar")}</span><span class="list-copy"><strong>Коммуналка</strong><span>${bills.length} ${word(bills.length, "счёт", "счёта", "счетов")}${left.length ? ` · не оплачено ${left.length}` : " · всё оплачено"}</span><span class="utility-next">дальше ≈ ${demoMoney(bills.reduce((s, p) => s + paymentMonthly(p), 0))} в месяц</span></span><span class="amount">${demoMoney(sum)}</span>${icon(open ? "up" : "down", "icon-sm")}</button>${open ? `<div class="utility-bills">${bills.map(paymentRow).join("")}</div>` : ""}</section>`;
   // Карточка встаёт на место самого раннего счёта.
   const first = list.indexOf(bills[0]);
   return list.map((p, i) => i === first ? card : utility(p) ? "" : paymentRow(p)).join("");
@@ -608,6 +613,7 @@ function financeAction(action, control) {
     return true;
   }
   if (action === "goal-open") { openGoalDeposit(control.dataset.id); return true; }
+  if (action === "fixed-edit") { ui.fixedEdit = true; render(); return true; }
   if (action === "income-split") { ui.sheet = { kind: "income-split", ids: splitCandidates().map(t => t.id), base: null, justRendered: false }; loadSplitPreview(); render(); return true; }
   if (action === "income-split-toggle") {
     const id = control.dataset.id, ids = ui.sheet.ids;
@@ -656,6 +662,7 @@ function financeSubmit(event) {
     data.settings.fixedTopup = Math.max(0, Math.round(Number(f.get("fixedTopup") || 0) * 100) / 100);
     data.settings.fixedTopupDay = Math.min(28, Math.max(1, Math.round(Number(f.get("fixedTopupDay") || 1))));
     data.settings.fixedTopupFrom = String(f.get("fixedTopupFrom") || "");
+    ui.fixedEdit = false;
     save(); render();
     toast(data.settings.fixedTopup ? `Автоперевод ${demoMoney(data.settings.fixedTopup)} ${data.settings.fixedTopupDay}-го числа` : "Автоперевод выключен");
     return true;
