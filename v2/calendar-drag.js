@@ -84,7 +84,7 @@
     drag.p = Math.max(0, Math.min(1, drag.from + (event.clientY - drag.startY) / span));
     paint(drag.p);
   }, { passive: true });
-  document.addEventListener("touchmove", event => { if (drag) event.preventDefault(); }, { passive: false });
+  document.addEventListener("touchmove", event => { if (drag && event.cancelable) event.preventDefault(); }, { passive: false });
   const end = () => {
     start = null;
     if (!drag) return;
