@@ -129,6 +129,54 @@ function overviewBlockSettings() {
   const order = data.settings.overviewOrder || Object.keys(labels);
   return order.map((key, index) => `<div class="settings-row"><div><strong>${labels[key]}</strong><span>${data.settings.overviewHidden.includes(key) ? "Скрыт" : "Показан"}</span></div><div class="toolbar-right"><button class="icon-button" type="button" data-action="overview-block-up" data-key="${key}" ${index === 0 ? "disabled" : ""} aria-label="Переместить выше">${icon("up", "icon-sm")}</button><button class="icon-button" type="button" data-action="overview-block-down" data-key="${key}" ${index === order.length - 1 ? "disabled" : ""} aria-label="Переместить ниже">${icon("down", "icon-sm")}</button><input type="checkbox" data-setting="overview-block" data-key="${key}" ${data.settings.overviewHidden.includes(key) ? "" : "checked"} aria-label="Показывать ${labels[key]}"></div></div>`).join("");
 }
+/*
+ * «Телефон» — настройки Android-приложения прямо здесь, а не на отдельном
+ * экране: уведомления и SMS банков, карты у края, батарея, обновление,
+ * журнал. Видно только в приложении на Android (там есть мост phoneState).
+ */
+function phoneState() {
+  try { const a = window.SorokaAndroid; return a && a.phoneState ? JSON.parse(a.phoneState()) : null; } catch (_) { return null; }
+}
+function phoneSettingsSection(row) {
+  const p = phoneState();
+  if (!p) return "";
+  const toggle = (key, on) => `<label class="switch"><input type="checkbox" data-phone="${key}" ${on ? "checked" : ""}><span></span></label>`;
+  const fix = (action, label) => `<button type="button" class="small-button phone-fix" data-phone-action="${action}">${label}</button>`;
+  const chips = (prefix, list) => `<div class="phone-chips">${list.map(c => `<button type="button" class="map-category-chip ${c.on ? "active" : ""}" data-phone="${prefix}:${esc(c.name)}" data-phone-value="${c.on ? "0" : "1"}" aria-pressed="${c.on}">${esc(c.name)}</button>`).join("")}</div>`;
+  const notifyHint = !p.notify ? "Банки, у которых пуш вместо SMS" : p.notifyAccess ? "Доступ выдан · выберите банки" : "Нет доступа к уведомлениям";
+  const smsHint = p.smsPermission ? "Отправители, чьи SMS читать" : "Нет разрешения читать SMS";
+  const upd = p.update || {};
+  const log = (p.log || []);
+  return `<section class="settings-group"><h2>Телефон</h2><div class="list-panel phone-panel">
+${row(`Flow ${esc(p.version)}`, p.linked ? "Телефон подключён к боту" : "Не подключён — нужен код из бота", `<button type="button" class="small-button" data-phone-action="native">${p.linked ? "Подключение" : "Подключить"}</button>`)}
+${row("Уведомления банков", notifyHint, toggle("notify", p.notify))}
+${p.notify ? `<div class="settings-row settings-row-wide phone-sub">${!p.notifyAccess ? fix("notifyAccess", "Выдать доступ") : ""}${chips("app", p.apps)}</div>` : ""}
+${row("SMS банков", smsHint, p.smsPermission ? "" : fix("smsPermission", "Разрешить"))}
+<div class="settings-row settings-row-wide phone-sub">${chips("sms", p.smsPresets)}</div>
+${row("Сообщать, что записал", p.notifyPermission || !p.results ? "Уведомление «Flow записал: …» после разбора" : "Нет разрешения на уведомления", p.results && !p.notifyPermission ? fix("notifyPermission", "Разрешить") : toggle("results", p.results))}
+${row("Уведомления бота", "Дублировать сообщения бота на телефон", toggle("feed", p.feed))}
+${row("Карты у края экрана", p.edge ? (p.edgeText || "Работает") : "Скидочная карта появится у магазина", toggle("edge", p.edge))}
+${p.edge && p.edgeFix ? `<div class="settings-row settings-row-wide phone-sub">${fix(p.edgeFix, { overlay: "Разрешить «поверх окон»", location: "Разрешить геопозицию", background: "Геопозиция «всегда»", battery: "Без экономии батареи" }[p.edgeFix] || "Исправить")}</div>` : ""}
+${row("Работа в фоне", p.awake ? "Телефон не усыпляет Flow" : "Телефон может усыплять Flow — уведомления и карты опоздают", p.awake ? `<b class="settings-status ok">Без ограничений</b>` : fix("battery", "Разрешить"))}
+${row("Обновление", esc(upd.text || "Проверить, есть ли новая версия"), `<button type="button" class="small-button" data-phone-action="${upd.found ? "updateInstall" : "updateCheck"}" ${upd.busy ? "disabled" : ""}>${upd.found ? "Обновить" : "Проверить"}</button>`)}
+<div class="settings-row settings-row-wide phone-sub"><button type="button" class="text-action" data-action="phone-log">${ui.phoneLog ? "Скрыть журнал" : "Журнал телефона"} · ${log.length}</button>${ui.phoneLog && log.length ? `<button type="button" class="text-action muted" data-phone-action="clearLog">Очистить</button>` : ""}</div>
+${ui.phoneLog ? `<div class="phone-log">${log.map(l => `<div class="phone-log-row ${esc(l.k)}"><small>${esc(l.t)}</small><span>${esc(l.s)}</span></div>`).join("") || `<p class="section-note">Пусто</p>`}</div>` : ""}
+</div></section>`;
+}
+// Переключатели и кнопки раздела «Телефон» — прямо в приложение Android.
+document.addEventListener("change", event => {
+  const box = event.target.closest?.("[data-phone]");
+  if (!box || box.tagName !== "INPUT") return;
+  try { window.SorokaAndroid.phoneSet(box.dataset.phone, box.checked ? "1" : "0"); } catch (_) {}
+});
+document.addEventListener("click", event => {
+  const chip = event.target.closest?.("button[data-phone]");
+  if (chip) { try { window.SorokaAndroid.phoneSet(chip.dataset.phone, chip.dataset.phoneValue); } catch (_) {} return; }
+  const act = event.target.closest?.("[data-phone-action]");
+  if (act) { try { window.SorokaAndroid.phoneAction(act.dataset.phoneAction); } catch (_) {} }
+});
+// Приложение сообщает, что что-то поменялось (разрешение выдано, обновление найдено).
+window.sorokaPhoneChanged = () => { if (ui.page === "settings" && !ui.sheet) render(); };
 function renderSettingsPage() {
   const s = data.settings;
   // Поле получает название строки: подпись рядом видна глазами, а экранный диктор без связи её не читал.
@@ -155,7 +203,7 @@ ${row("Вечерний разбор", "Бот предложит разобра
 ${row("Тихие часы", "Напоминания и сводки ждут до утра; системные сообщения — сразу", `<span class="settings-range"><input data-setting="quietFrom" type="time" value="${esc(s.quietFrom || "23:00")}" aria-label="С"><span>–</span><input data-setting="quietTo" type="time" value="${esc(s.quietTo || "08:00")}" aria-label="До"></span>`)}
 ${row("Google Календарь", s.gcal ? "События уходят в календарь сами" : "Подключается в боте: команда /calendar", `<b class="settings-status ${s.gcal ? "ok" : ""}">${s.gcal ? "Подключён" : "Не подключён"}</b>`)}
 </div></section>
-<section class="settings-group"><h2>Модели ИИ</h2><div class="list-panel">${row("Ввод без ИИ", s.manualOnly ? "«+» открывает обычные формы" : router && Number(router.left) <= 0 ? "Деньги на OpenRouter кончились — ввод сейчас ручной" : "«+» разбирает текст и ищет фильмы моделью", `<label class="switch"><input type="checkbox" data-setting="manualOnly" ${s.manualOnly ? "checked" : ""}><span></span></label>`)}</div><div class="side-card">${routerRows}</div><p class="section-note">Бот разбирает сообщения моделями OpenRouter; пополнить — openrouter.ai.</p></section>
+${phoneSettingsSection(row)}<section class="settings-group"><h2>Модели ИИ</h2><div class="list-panel">${row("Ввод без ИИ", s.manualOnly ? "«+» открывает обычные формы" : router && Number(router.left) <= 0 ? "Деньги на OpenRouter кончились — ввод сейчас ручной" : "«+» разбирает текст и ищет фильмы моделью", `<label class="switch"><input type="checkbox" data-setting="manualOnly" ${s.manualOnly ? "checked" : ""}><span></span></label>`)}</div><div class="side-card">${routerRows}</div><p class="section-note">Бот разбирает сообщения моделями OpenRouter; пополнить — openrouter.ai.</p></section>
 <section class="settings-group"><h2>Данные</h2><div class="inline-actions"><button type="button" data-action="export-json">${icon("download")}Экспорт JSON</button><button type="button" data-action="export-csv">${icon("download")}Экспорт CSV</button>${window.SOROKA_LIVE ? `<button type="button" data-action="reset">${icon("reset")}Обновить данные</button>` : ""}</div><p class="section-note">Выгрузка — все записи (кроме паролей): JSON и CSV придут файлами в чат с ботом.</p></section>
 </div><aside class="content-aside"><div class="side-card"><h3>Личные данные</h3><p class="side-note">Записи живут в базе бота и доступны только вам. Пароли — в зашифрованном хранилище и в экспорт не попадают.</p></div></aside></div>`;
 }
@@ -361,6 +409,7 @@ async function shareRecord(type, recordId) {
 function moreAction(action, control) {
   const itemId = control.dataset.id;
   if (captureAction(action, control)) return true;
+  if (action === "phone-log") { ui.phoneLog = !ui.phoneLog; render(); return true; }
   if (action === "swipe-skip") { const row = control.closest(".swipe-row"); if (row) { closeSwipeRows(); swipeSkipQuiet(row, savedItem("movies", row.dataset.swipeId)); } return true; }
   if (["swipe-edit", "swipe-share", "swipe-delete"].includes(action)) { const row = control.closest(".swipe-row"); if (row) { if (action === "swipe-delete") deleteSwipeCard(row); else if (action === "swipe-share") void shareRecord(row.dataset.swipeType, row.dataset.swipeId); else openSwipeCard(row, "edit"); } return true; }
   if (action === "card-preview-settings" && ui.sheet?.kind === "card-preview") { const { type, recordId } = ui.sheet; openCardEditor(type, recordId); return true; }
