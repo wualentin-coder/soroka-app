@@ -593,8 +593,35 @@ function movieRunAdvance() {
  * задаётся ±, по умолчанию 10.
  */
 function isSeries(item) { return item && (item.topic === "Сериалы" || /сериал/i.test(item.genre || "")); }
+/** Где я в сериале — для карточки в списке: «Смотрю · С3 · Е5» или «Досмотрен». */
+function seriesKicker(item) {
+  const seasons = isSeries(item) ? item.episodes || [] : [];
+  if (!seasons.length || !seasons.some(s => s.seen.length)) return "";
+  for (const s of seasons) for (let e = 1; e <= s.count; e++) if (!s.seen.includes(e)) return `Смотрю · С${s.n} · Е${e}`;
+  return "Досмотрен";
+}
+/*
+ * Сезоны и число серий — с IMDb, один раз за открытие приложения: у идущего
+ * сериала выходят новые серии. Отмеченное сохраняется (сервер переносит).
+ */
+const seriesFilled = new Set();
+function seriesFillOnce(item, manualFallback = false) {
+  if (!window.sorokaSeriesFill || seriesFilled.has(item.id)) { if (manualFallback) seriesManualStart(item); return; }
+  seriesFilled.add(item.id);
+  window.sorokaSeriesFill(item.id).then(answer => {
+    if (Array.isArray(answer?.episodes) && answer.episodes.length) {
+      item.episodes = answer.episodes;
+      save(); render();
+    } else if (manualFallback) seriesManualStart(item);
+  }).catch(() => { if (manualFallback) seriesManualStart(item); });
+}
+function seriesManualStart(item) {
+  item.episodes = [{ n: 1, count: 10, seen: [] }];
+  save(); render();
+}
 function seriesTracker(item) {
   if (!isSeries(item)) return "";
+  if (window.sorokaSeriesFill && !seriesFilled.has(item.id) && (item.episodes?.length || /^tt\d/.test(String(item.imdbUrl || "").split("/title/")[1] || ""))) setTimeout(() => seriesFillOnce(item), 0);
   const seasons = item.episodes || [];
   if (!seasons.length) return `<section class="series-track empty"><span>Сезоны и серии</span><button type="button" class="ghost-button" data-action="series-add">${icon("plus", "icon-sm")}Отмечать серии</button></section>`;
   const total = seasons.reduce((s, x) => s + x.count, 0), seen = seasons.reduce((s, x) => s + x.seen.length, 0);
@@ -616,6 +643,7 @@ function seriesAction(action, control) {
   if (action === "series-open") { ui.seriesSeason = { ...(ui.seriesSeason || {}), [item.id]: Number(control.dataset.season) }; render(); return true; }
   item.episodes = (item.episodes || []).map(s => ({ ...s, seen: [...s.seen] }));
   const s = item.episodes[Number(control.dataset.season)];
+  if (action === "series-add" && !item.episodes.length) { seriesFillOnce(item, true); return true; }
   if (action === "series-add") { item.episodes.push({ n: item.episodes.length + 1, count: item.episodes.at(-1)?.count || 10, seen: [] }); ui.seriesSeason = { ...(ui.seriesSeason || {}), [item.id]: item.episodes.length - 1 }; }
   if (action === "series-remove" && ui.seriesSeason) delete ui.seriesSeason[item.id];
   if (action === "series-remove") item.episodes.pop();
