@@ -596,22 +596,28 @@ function isSeries(item) { return item && (item.topic === "Сериалы" || /с
 function seriesTracker(item) {
   if (!isSeries(item)) return "";
   const seasons = item.episodes || [];
+  if (!seasons.length) return `<section class="series-track empty"><span>Сезоны и серии</span><button type="button" class="ghost-button" data-action="series-add">${icon("plus", "icon-sm")}Отмечать серии</button></section>`;
   const total = seasons.reduce((s, x) => s + x.count, 0), seen = seasons.reduce((s, x) => s + x.seen.length, 0);
-  const next = (() => { for (const s of seasons) for (let e = 1; e <= s.count; e++) if (!s.seen.includes(e)) return `С${s.n} · Е${e}`; return ""; })();
-  const rows = seasons.map((s, i) => {
-    const all = s.seen.length === s.count;
-    const eps = Array.from({ length: s.count }, (_, k) => k + 1).map(e => `<button type="button" class="ep ${s.seen.includes(e) ? "on" : ""}" data-action="series-ep" data-season="${i}" data-ep="${e}" aria-pressed="${s.seen.includes(e)}">${e}</button>`).join("");
-    return `<div class="season"><div class="season-head"><button type="button" class="season-title ${all ? "on" : ""}" data-action="series-season" data-season="${i}">${icon(all ? "check" : "eye", "icon-sm")}Сезон ${s.n}<small>${s.seen.length}/${s.count}</small></button><span class="season-count"><button type="button" data-action="series-count" data-season="${i}" data-delta="-1" aria-label="Меньше серий">−</button><button type="button" data-action="series-count" data-season="${i}" data-delta="1" aria-label="Больше серий">+</button></span></div><div class="season-eps">${eps}</div></div>`;
+  const next = (() => { for (let i = 0; i < seasons.length; i++) for (let e = 1; e <= seasons[i].count; e++) if (!seasons[i].seen.includes(e)) return { i, e }; return null; })();
+  // Открыт выбранный сезон, иначе — тот, где следующая серия.
+  const open = Math.min(seasons.length - 1, ui.seriesSeason?.[item.id] ?? (next ? next.i : seasons.length - 1));
+  const s = seasons[open];
+  const chips = seasons.map((x, i) => {
+    const done = x.seen.length === x.count;
+    return `<button type="button" class="season-chip ${i === open ? "active" : ""} ${done ? "done" : ""}" data-action="series-open" data-season="${i}"><b>С${x.n}</b><small>${done ? "✓" : `${x.seen.length}/${x.count}`}</small><i style="width:${x.seen.length / x.count * 100}%"></i></button>`;
   }).join("");
-  return `<section class="series-track"><div class="series-head"><h3>Сезоны и серии</h3><small>${total ? `${seen} из ${total}${next ? ` · дальше ${next}` : " · всё просмотрено"}` : "отмечайте, что посмотрели"}</small></div>${rows}<div class="series-actions"><button type="button" class="ghost-button" data-action="series-add">${icon("plus", "icon-sm")}Сезон</button>${seasons.length ? `<button type="button" class="text-action" data-action="series-remove">Убрать последний</button>` : ""}</div></section>`;
+  const eps = Array.from({ length: s.count }, (_, k) => k + 1).map(e => `<button type="button" class="ep ${s.seen.includes(e) ? "on" : ""}" data-action="series-ep" data-season="${open}" data-ep="${e}" aria-pressed="${s.seen.includes(e)}">${e}</button>`).join("");
+  return `<section class="series-track"><div class="series-head"><div><h3>Сезоны и серии</h3><small>${seen} из ${total}</small></div>${next ? `<button type="button" class="series-next" data-action="series-ep" data-season="${next.i}" data-ep="${next.e}">${icon("check", "icon-sm")}С${seasons[next.i].n} · Е${next.e}</button>` : `<span class="series-done">${icon("check", "icon-sm")}Досмотрен</span>`}</div><div class="season-chips">${chips}<button type="button" class="season-chip add" data-action="series-add" aria-label="Добавить сезон">${icon("plus", "icon-sm")}</button></div><div class="season-eps">${eps}</div><div class="season-tools"><button type="button" class="text-action" data-action="series-season" data-season="${open}">${s.seen.length === s.count ? "Снять сезон" : "Весь сезон"}</button><span class="season-count">Серий: <button type="button" data-action="series-count" data-season="${open}" data-delta="-1" aria-label="Меньше серий">−</button><b>${s.count}</b><button type="button" data-action="series-count" data-season="${open}" data-delta="1" aria-label="Больше серий">+</button></span>${open === seasons.length - 1 ? `<button type="button" class="text-action muted" data-action="series-remove">Убрать сезон</button>` : ""}</div></section>`;
 }
 function seriesAction(action, control) {
   if (!action.startsWith("series-")) return false;
   const item = ui.sheet?.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
   if (!item) return true;
+  if (action === "series-open") { ui.seriesSeason = { ...(ui.seriesSeason || {}), [item.id]: Number(control.dataset.season) }; render(); return true; }
   item.episodes = (item.episodes || []).map(s => ({ ...s, seen: [...s.seen] }));
   const s = item.episodes[Number(control.dataset.season)];
-  if (action === "series-add") item.episodes.push({ n: item.episodes.length + 1, count: item.episodes.at(-1)?.count || 10, seen: [] });
+  if (action === "series-add") { item.episodes.push({ n: item.episodes.length + 1, count: item.episodes.at(-1)?.count || 10, seen: [] }); ui.seriesSeason = { ...(ui.seriesSeason || {}), [item.id]: item.episodes.length - 1 }; }
+  if (action === "series-remove" && ui.seriesSeason) delete ui.seriesSeason[item.id];
   if (action === "series-remove") item.episodes.pop();
   if (action === "series-count" && s) { s.count = Math.max(1, Math.min(200, s.count + Number(control.dataset.delta))); s.seen = s.seen.filter(e => e <= s.count); }
   if (action === "series-season" && s) s.seen = s.seen.length === s.count ? [] : Array.from({ length: s.count }, (_, k) => k + 1);
