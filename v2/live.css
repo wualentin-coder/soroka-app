@@ -458,12 +458,26 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 /* Рамка вокруг карточки — только при навигации с клавиатуры, не после клика мышью. */
 .swipe-row .swipe-content:focus-within { outline: none; }
 .swipe-row .swipe-content:has(:focus-visible) { outline: 1px solid var(--accent); outline-offset: -2px; }
-/* Моя оценка фильма — под постером на всю ширину, цифра рядом */
-.movie-my-rating { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 10px; margin: 0 0 12px; }
-.movie-my-rating .star-slider { margin: 0; min-height: 44px; }
-.movie-my-rating .star-slider .star .icon { max-width: 24px; }
-.movie-my-rating .star-value { display: grid; place-items: center; height: 44px; border-radius: 12px; background: var(--surface-soft); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--accent); }
-
+/* Карточка фильма: одна сетка, без рамок в рамках */
+.movie-view-sheet .movie-detail-hero { grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 6px 0 14px; }
+.movie-view-sheet .movie-detail-hero .movie-cover-detail { width: 112px; border-radius: 12px; }
+.movie-view-sheet .movie-detail-intro { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.movie-view-sheet .movie-detail-status { font-size: 12px; font-weight: 800; color: var(--accent); }
+.movie-view-sheet .movie-detail-meta { font-size: 13px; color: var(--muted); font-weight: 600; }
+.movie-view-sheet .movie-detail-director small { font-size: 11px; color: var(--muted); }
+.movie-view-sheet .movie-detail-director b { font-size: 14px; }
+.movie-view-sheet .movie-ratings { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: auto 0 0; padding: 0; }
+.movie-view-sheet .movie-rating { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 0; padding: 8px 10px; border: 0; border-radius: 12px; background: var(--surface-soft); position: relative; }
+.movie-view-sheet .movie-rating-label { flex: none; font-size: 11px; font-weight: 700; color: var(--muted); }
+.movie-view-sheet .movie-rating strong { font-size: 18px; font-weight: 800; line-height: 1.1; }
+.movie-view-sheet .movie-rating .icon { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; }
+.movie-my-rating { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 4px; align-items: center; margin: 0 0 14px; padding: 10px 14px 12px; border-radius: 14px; background: var(--surface-soft); }
+.movie-my-label { grid-column: 1 / -1; font-size: 11px; font-weight: 700; color: var(--muted); }
+.movie-view-sheet .movie-my-rating .star-slider { margin: 0; padding: 0; min-height: 30px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.movie-my-rating .star-slider .star .icon { max-width: 26px; }
+.movie-my-rating .star-value { min-width: 44px; text-align: right; font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.movie-my-rating .star-value small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.movie-view-sheet .movie-summary { margin: 0 0 4px; }
 /* Сериал: сезоны и серии */
 .series-track { display: grid; gap: 10px; margin: 0 0 14px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; }
 .series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
@@ -481,3 +495,4 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .season-eps .ep.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .series-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .series-actions .ghost-button { min-height: 36px; padding: 0 14px; }
+.movie-view-sheet .movie-my-rating, .movie-view-sheet .movie-my-rating .star-slider { border: 0 !important; box-shadow: none !important; outline: 0; }
