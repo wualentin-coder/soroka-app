@@ -370,3 +370,10 @@ html.in-android .page-header { min-height: 40px; }
 /* Доход — зелёным: красный акцент читался как трата. */
 .amount.income, .finance-row .amount.income, .tx-total strong.income { color: #23935a; }
 :root[data-theme="dark"] .amount.income, :root[data-theme="dark"] .tx-total strong.income { color: #4cc483; }
+/* Коммуналка — одной карточкой, счета внутри. */
+.utility-group { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.utility-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.utility-head .list-copy { flex: 1; min-width: 0; }
+.utility-head .amount { font-weight: 800; }
+.utility-bills { display: grid; gap: 8px; padding: 0 10px 10px; }
+.utility-bills .payment-card { box-shadow: none; }
