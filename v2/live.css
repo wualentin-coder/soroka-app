@@ -561,3 +561,17 @@ body[data-page="finance"] .swipe-row .swipe-action.edit { right: 66px; }
 body[data-page="finance"] .swipe-row.is-open-left { --swipe-x: -126px; }
 body[data-page="finance"] .swipe-row .swipe-action.delete { top: 6px; bottom: 6px; left: 6px; right: 6px; border-radius: 12px; }
 body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
+/* Счёт платежей — одной строкой, форма по «Настроить» */
+.fixed-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; margin: 12px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.fixed-line .list-copy span { color: var(--muted); font-size: 12px; }
+.fixed-line.is-short { border-color: var(--accent); }
+.fixed-line.is-short .list-copy span { color: var(--accent); }
+.fixed-line .text-action { font-size: 13px; }
+/* Коммуналка: счета внутри группы — строки с разделителем, без своей рамки */
+.utility-bills { gap: 0; padding: 0 14px 4px; border-top: 1px solid var(--line); }
+.utility-bills .payment-card, .utility-bills .swipe-row { border: 0 !important; border-radius: 0; background: transparent; margin: 0; }
+.utility-bills .payment-card { padding-left: 0; padding-right: 0; }
+.utility-bills > * + * { border-top: 1px solid var(--line) !important; }
+/* Оплаченный платёж — без строки кнопок: настроить можно свайпом */
+.payment-card.done .payment-actions { display: none; }
+.payment-card.done { padding-bottom: 12px; }
