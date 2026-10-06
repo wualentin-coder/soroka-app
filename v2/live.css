@@ -575,3 +575,6 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 /* Оплаченный платёж — без строки кнопок: настроить можно свайпом */
 .payment-card.done .payment-actions { display: none; }
 .payment-card.done { padding-bottom: 12px; }
+/* Вкладки финансов — во всю ширину, поровну */
+.subtabs[aria-label="Разделы финансов"], .subtabs.tx-kinds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+.subtabs[aria-label="Разделы финансов"] button, .subtabs.tx-kinds button { width: 100%; min-width: 0; padding-left: 4px; padding-right: 4px; justify-content: center; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
