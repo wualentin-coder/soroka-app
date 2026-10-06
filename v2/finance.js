@@ -383,7 +383,10 @@ function smartInfographic(info) {
   const dailyNote = e.partial && e.daily ? `<small class="smart-note">Повседневные: ${fmt(e.daily)} за ${e.dailyDays} дн. → ${fmt(e.dailyMonth)} на месяц. Разовые и обязательные не умножаются.</small>` : "";
   // 2. Лестница: чем больше доля расходов, тем меньше процент — но не ниже 10 %.
   const steps = [["больше 95 %", 10], ["80–95 %", 15], ["60–80 %", 20], ["45–60 %", 25], ["меньше 45 %", 30]];
-  const ladder = `<div class="smart-ladder">${steps.map(([label, v]) => `<div class="${v === info.saved ? "on" : ""}"><b>${v} %</b><small>${label}</small></div>`).join("")}</div>`;
+  const def = d.savedDefault ?? info.saved;
+  const ladder = `<div class="smart-ladder">${steps.map(([label, v]) => `<div class="${v === def ? "on" : ""}"><b>${v} %</b><small>${label}</small></div>`).join("")}</div>`;
+  // Свой процент: ползунок; «По умолчанию» возвращает расчёт по лестнице.
+  const chooser = data.settings?.rulesAuto ? `<div class="smart-choose"><div class="rule-slider-head"><strong>Откладывать</strong><b data-smart-saved-out>${pctTxt(info.saved)}</b></div><input type="range" min="5" max="60" step="1" value="${info.saved}" data-smart-saved aria-label="Сколько откладывать, процентов"><div class="smart-choose-foot"><small>${d.savedChosen ? `Ваш выбор. По лестнице — ${def} %` : "Сейчас по лестнице. Сдвиньте, чтобы выбрать свой"}</small>${d.savedChosen ? `<button class="text-action" type="button" data-action="smart-saved-reset">По умолчанию</button>` : ""}</div></div>` : "";
   // 3. Куда: доли откладываемого.
   const shares = (d.percents ? Object.entries(d.percents).map(([name, pct]) => ({ name, pct: Number(pct) })) : data.finance.rules.map(r => ({ name: r.name, pct: Number(r.percent) })))
     .filter(s => !/^Цель «/.test(s.name))
@@ -398,7 +401,7 @@ function smartInfographic(info) {
   const cushion = c ? `<div class="smart-cushion"><div class="smart-row"><span>${esc(c.name)}: ${fmt(c.have)}</span><b>${String(c.months).replace(".", ",")} мес.</b></div><div class="smart-track"><i style="width:${Math.min(100, c.months / 6 * 100)}%"></i><em style="left:50%"></em></div><div class="smart-scale"><span>0</span><span>3 мес.</span><span>6 мес.</span></div><small class="smart-note">${cushionNote}</small></div>` : "";
   return `<section class="smart-card">${data.settings?.rulesAuto ? "" : `<p class="smart-off">Сейчас выключено — работают ваши доли. Так посчитало бы умное распределение:</p>`}`
     + `<div class="smart-step"><span class="smart-num">1</span><div class="smart-body"><strong>Сколько вы тратите</strong><small>Расходы ≈ ${fmt(info.expense)} в месяц — ${d.spent} % дохода</small>${bar1}<div class="smart-keys">${legend1}</div>${dailyNote}</div></div>`
-    + `<div class="smart-step"><span class="smart-num">2</span><div class="smart-body"><strong>Откладываем ${info.saved} % дохода</strong><small>сразу, после обязательных платежей · правило 50/30/20</small>${ladder}</div></div>`
+    + `<div class="smart-step"><span class="smart-num">2</span><div class="smart-body"><strong>Откладываем ${pctTxt(info.saved)} дохода</strong><small>${d.savedChosen ? "ваш выбор" : "по правилу 50/30/20"} · сразу, после обязательных платежей</small>${ladder}${chooser}</div></div>`
     + `<div class="smart-step"><span class="smart-num">3</span><div class="smart-body"><strong>Куда идут ${pctTxt(sum)}</strong><small>сначала подушка, затем цели, остальное — по вашим пропорциям</small>${bar3}${rows3}${cushion}</div></div>`
     + `</section>`;
 }
@@ -462,6 +465,18 @@ function rulesSliders(form, changed) {
   const note = form.querySelector("[data-rules-left]");
   if (note) note.textContent = left > 0 ? `Не распределено ${String(left).replace(".", ",")} % — останется на жизнь.` : "Весь процент распределён.";
 }
+// Свой процент в умном распределении: цифра — сразу, пересчёт долей — сервером после отпускания.
+document.addEventListener("input", event => {
+  if (!event.target.matches || !event.target.matches("[data-smart-saved]")) return;
+  const out = document.querySelector("[data-smart-saved-out]");
+  if (out) out.textContent = `${event.target.value} %`;
+});
+document.addEventListener("change", event => {
+  if (!event.target.matches || !event.target.matches("[data-smart-saved]")) return;
+  data.settings.rulesSaved = Number(event.target.value);
+  save();
+  toast(`Откладывать ${event.target.value} % — пересчитываю доли`);
+});
 document.addEventListener("input", event => {
   const form = event.target.closest && event.target.closest("#rules-form");
   if (!form) return;
@@ -547,6 +562,7 @@ function financeAction(action, control) {
     return true;
   }
   if (action === "smart-open") { ui.smartOpen = true; render(); return true; }
+  if (action === "smart-saved-reset") { data.settings.rulesSaved = 0; save(); toast("Процент — по умолчанию, пересчитываю"); return true; }
   if (action === "rules-auto") {
     data.settings.rulesAuto = !data.settings.rulesAuto;
     save();
