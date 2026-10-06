@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=5e234eeebc","integrity":null},{"src":"./movies.js?v=017a7678e4","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=bdeea093c5","integrity":null},{"src":"./more.js?v=e09bfdd060","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=876c31fb8e","integrity":null},{"src":"./app.js?v=4c02988b6c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=2ad9ea0e38","integrity":null},{"src":"./movies.js?v=b64d027f58","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=bdeea093c5","integrity":null},{"src":"./more.js?v=e09bfdd060","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=876c31fb8e","integrity":null},{"src":"./app.js?v=4c02988b6c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -37,6 +37,7 @@
    */
   const DELTA = new Set(["planner_snapshot", "planner_sync", "income_split"]);
   let lastFull = null;
+  function remember(full) { if (full && full.__hashes) lastFull = JSON.parse(JSON.stringify(full)); }
   function expand(answer) {
     if (!answer || !answer.__partial) return answer;
     if (!lastFull) throw new Error("server");
@@ -90,8 +91,10 @@
         throw error;
       }
       reportFailures(body.action);
-      if (body.action === "planner_snapshot") return expand(json);
-      if (DELTA.has(body.action) && json.snapshot) json.snapshot = expand(json.snapshot);
+      // Копия «как на сервере» — отдельно от данных на экране: правки на
+      // экране не должны менять то, с чем сравниваются следующие ответы.
+      if (body.action === "planner_snapshot") { const full = expand(json); remember(full); return full; }
+      if (DELTA.has(body.action) && json.snapshot) { json.snapshot = expand(json.snapshot); remember(json.snapshot); }
       return json;
     } catch (error) {
       noteFailure(body.action, error, Date.now() - started);
@@ -343,8 +346,10 @@
   let heldRender = false; // свежие данные пришли при открытой форме — перерисуем после неё
   const SNAP_KEY = "soroka-snapshot-v1";
   function keepSnapshot(snapshot) {
-    if (snapshot && snapshot.__hashes) lastFull = snapshot;
-    setTimeout(() => { try { localStorage.setItem(SNAP_KEY, JSON.stringify({ at: Date.now(), snapshot })); } catch (_) {} }, 0);
+    // На диск — чистая копия «как на сервере», снятая сразу, а не данные,
+    // которые экран успеет поменять до записи.
+    const text = JSON.stringify({ at: Date.now(), snapshot: lastFull || snapshot });
+    setTimeout(() => { try { localStorage.setItem(SNAP_KEY, text); } catch (_) {} }, 0);
   }
   function lastSnapshot() {
     try {
@@ -951,7 +956,8 @@
     }
     // Прошлый снимок есть — открываемся сразу на нём, свежий подхватим следом.
     const bootAt = Date.now();
-    if (!lastFull) { const kept = lastSnapshot(); if (kept && kept.__hashes) lastFull = kept; }
+    // Копия с диска годится как основа только если записана уже с отпечатками.
+    if (!lastFull) { const kept = lastSnapshot(); if (kept && kept.__hashes) remember(kept); }
     const freshSnapshot = call({ action: "planner_snapshot" }, 60000);
     // Android: итог первой загрузки — в журнал приложения (оттуда он уходит
     // на сервер), чтобы «нет связи» было видно с причиной.
