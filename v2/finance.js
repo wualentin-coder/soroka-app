@@ -159,7 +159,7 @@ function renderGoalDepositSheet() {
   if (!goal) return "";
   const progress = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0;
   const left = Math.max(0, goal.target - goal.saved);
-  const chips = [500, 1000, 5000, 10000].map(n => `<button type="button" class="goal-chip" data-action="goal-deposit-chip" data-amount="${n}">+${n.toLocaleString("ru-RU")}</button>`).join("");
+  const chips = [1000, 100, 10, 1].map(n => `<button type="button" class="goal-chip" data-action="goal-deposit-chip" data-amount="${n}">+${n.toLocaleString("ru-RU")}</button>`).join("");
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet goal-deposit-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(goal.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="goal-deposit-progress"><strong>${demoMoney(goal.saved)}</strong><span>из ${demoMoney(goal.target)} · ${progress}%</span><div class="progress-track"><span style="width:${progress}%"></span></div><small>${left > 0 ? `Осталось ${demoMoney(left)}` : "Цель достигнута"}</small></div><form id="goal-deposit-form">${goalAccountOf(goal) ? `<label class="field">Счёт<select name="from">${spendAccounts().filter(a => a.currency === "RUB").sort((a, b) => accountBalance(b) - accountBalance(a)).map(a => `<option value="${esc(a.id)}">${esc(a.name)} · ${demoMoney(accountBalance(a), a.currency)}</option>`).join("")}</select></label>` : ""}${amountSlider("Сумма, ₽", "amount", "", left > 0 ? left : Math.max(goal.saved, goal.target), 'placeholder="0" required')}<div class="goal-chips">${chips}</div><p class="form-error" role="alert"></p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="goal-withdraw">Снять</button><button class="primary-button" type="submit">Отложить</button></div></form><button class="text-action goal-settings" type="button" data-action="finance-edit" data-entity="goal" data-id="${esc(goal.id)}">Настроить цель</button></section></div>`;
 }
 /** Счёт цели: у каждой цели свой, как «цели» в банковском приложении. */
@@ -526,13 +526,24 @@ document.addEventListener("input", event => {
   if (event.target.matches("[data-rules-total]")) rulesSliders(form, "total");
   else if (event.target.matches("[data-rule-range]")) rulesSliders(form, Number(event.target.dataset.ruleRange));
 });
-/** Сумма ползунком и вводом: грубо — пальцем, точно — цифрами. Поля связаны. */
+/*
+ * Сумма: поле ввода и кнопки «+1000 +100 +10 +1». Ползунок был неудобен для
+ * точных сумм — палец не попадает в 1 234 ₽. Кнопки прибавляют к тому, что в
+ * поле; цифры можно вписать и руками.
+ */
 function amountSlider(label, name, value, max, extra = "", unit = "₽") {
-  const top = Math.max(1, Math.round(Number(max) || 0));
-  const step = top >= 100000 ? 1000 : top >= 20000 ? 500 : top >= 2000 ? 100 : 10;
-  const current = Math.min(top, Math.max(0, Number(value) || 0));
-  return `<div class="field amount-slider"><span>${label}</span><div class="amount-slider-row"><input type="range" min="0" max="${top}" step="${step}" value="${current}" data-amount-for="${name}" aria-label="${label}"><input name="${name}" type="number" inputmode="decimal" ${extra} min="0" step="0.01" value="${esc(value ?? "")}" data-amount-range></div><div class="amount-slider-scale"><span>0</span><span data-amount-top data-unit="${esc(unit)}">${top.toLocaleString("ru-RU")} ${esc(unit)}</span></div></div>`;
+  const steps = [1000, 100, 10, 1].map(n => `<button type="button" class="amount-step" data-amount-add="${n}" data-for="${esc(name)}">+${n.toLocaleString("ru-RU")}</button>`).join("");
+  return `<div class="field amount-steps"><span>${label}</span><div class="amount-input-row"><input name="${name}" type="number" inputmode="decimal" ${extra} min="0" step="0.01" value="${esc(value ?? "")}" data-amount-range><button type="button" class="amount-clear" data-amount-clear data-for="${esc(name)}" aria-label="Очистить сумму">${icon("close", "icon-sm")}</button></div><div class="amount-step-row">${steps}</div></div>`;
 }
+document.addEventListener("click", event => {
+  const add = event.target.closest?.("[data-amount-add], [data-amount-clear]");
+  if (!add) return;
+  const input = add.closest(".amount-steps")?.querySelector(`input[name="${add.dataset.for}"]`);
+  if (!input) return;
+  event.preventDefault(); event.stopPropagation();
+  input.value = add.hasAttribute("data-amount-clear") ? "" : String(Math.round(((Number(input.value) || 0) + Number(add.dataset.amountAdd)) * 100) / 100);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}, true);
 document.addEventListener("input", event => {
   const range = event.target.closest?.("[data-amount-for]");
   if (range) { const box = range.closest(".amount-slider"); const input = box?.querySelector(`input[name="${range.dataset.amountFor}"]`); if (input) { input.value = range.value; input.dispatchEvent(new Event("input", { bubbles: true })); } return; }
@@ -739,6 +750,17 @@ function financeInput(event) {
   }
   return false;
 }
+/** Перевод в одной валюте: «Зачислить» и подпись про курс не нужны — суммы равны. */
+function syncTransferCurrency(form) {
+  if (!form || !form.elements.toAmount) return;
+  const from = data.finance.accounts.find(a => a.id === form.elements.fromId?.value);
+  const to = data.finance.accounts.find(a => a.id === form.elements.toId?.value);
+  const same = !from || !to || from.currency === to.currency;
+  form.elements.toAmount.closest(".amount-steps")?.toggleAttribute("hidden", same);
+  form.querySelector(".transfer-rate")?.toggleAttribute("hidden", same);
+}
+document.addEventListener("change", event => { if (event.target.form?.id === "finance-form") syncTransferCurrency(event.target.form); });
+new MutationObserver(() => syncTransferCurrency(document.getElementById("finance-form"))).observe(document.documentElement, { childList: true, subtree: true });
 function financeChange(event) {
   if (ui.sheet?.kind === "finance" && ui.sheet.entity === "transfer" && ["fromId", "toId"].includes(event.target.name)) {
     const form = event.target.form; const from = data.finance.accounts.find(a => a.id === form.elements.fromId.value); const to = data.finance.accounts.find(a => a.id === form.elements.toId.value);
