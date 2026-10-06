@@ -368,12 +368,17 @@ function financeRulesPage() {
   const auto = Boolean(data.settings?.rulesAuto);
   const info = data.finance.rulesAuto;
   const toggle = `<label class="rules-auto ${auto ? "on" : ""}"><input type="checkbox" ${auto ? "checked" : ""} data-action="rules-auto" aria-label="Умное распределение"><span class="rules-auto-box">${icon("check", "icon-sm")}</span><span class="rules-auto-copy"><strong>Умное распределение</strong><small>${info ? esc(info.explain) : "Как советуют консультанты: сначала откладывать, подушка на 3–6 месяцев, потом цели и инвестиции."}</small></span></label>`;
-  const rows = data.finance.rules.map((r, i) => `<div class="settings-row"><div><strong>${esc(r.name)}</strong><span>${auto ? "Подобрано автоматически" : "Доля от поступления"}</span></div><label class="field rule-field"><input name="rule-${i}" type="number" min="0" max="100" value="${r.percent}" ${auto ? "readonly" : "required"}> %</label></div>`).join("");
-  const total = data.finance.rules.reduce((sum, r) => sum + Number(r.percent || 0), 0);
+  const total = Math.round(data.finance.rules.reduce((sum, r) => sum + Number(r.percent || 0), 0) * 10) / 10;
+  // Ползунки: общий — сколько откладывать; доли — внутри него и не выходят
+  // за предел (лишнее у одной поровну снимается с остальных).
+  const pct = v => `${String(Math.round(v * 10) / 10).replace(".", ",")} %`;
+  const cap = Math.max(total, 1);
+  const totalRow = auto ? "" : `<div class="rule-slider rule-total"><div class="rule-slider-head"><strong>Откладывать с дохода</strong><b data-rules-total-out>${pct(total)}</b></div><input type="range" min="0" max="60" step="0.5" value="${total}" data-rules-total aria-label="Откладывать с дохода, процентов"><small>после обязательных платежей</small></div>`;
+  const rows = data.finance.rules.map((r, i) => `<div class="rule-slider"><div class="rule-slider-head"><strong>${esc(r.name)}</strong><b data-rule-out="${i}">${pct(Number(r.percent))}</b></div><input type="range" name="rule-${i}" min="0" max="${auto ? Math.max(cap, Number(r.percent)) : cap}" step="0.5" value="${r.percent}" data-rule-range="${i}" ${auto ? "disabled" : ""} aria-label="${esc(r.name)}, процентов"></div>`).join("");
   const reconcile = reconcileForm();
   // Цели: сколько откладывать на каждую, чтобы успеть к сроку (считает сервер).
   const goalRows = auto && info?.goals?.length ? `<div class="section-heading section"><h2>На цели</h2></div><div class="list-panel">${info.goals.map(g => `<div class="settings-row"><div><strong>${esc(g.name)}</strong><span>${demoMoney(g.monthly)} в месяц · осталось ${demoMoney(g.left)}${g.due ? ` · к ${esc(dateLabel(g.due))}` : " · за год"}</span></div><b class="rule-goal-pct">${g.percent}%</b></div>`).join("")}</div>` : "";
-  return `<div class="overview-intro"><span class="mini-heading">Распределение дохода</span><p>Когда приходит доход, бот предложит отложить часть на эти счета.</p></div>${toggle}${goalRows}${reconcile}<form id="rules-form"><div class="list-panel">${rows}</div>${auto ? `<p class="section-note">Откладывается ${total}% дохода. Остальное остаётся на жизнь.</p>` : `<p class="form-error" role="alert"></p><button class="primary-button" type="submit">Сохранить правила</button>`}</form>${income ? cardSection(`Пример для «${esc(income.title)}» · ${demoMoney(income.amount)}`, `<div class="side-card">${data.finance.rules.map(r => `<div class="side-row"><span>${esc(r.name)} · ${r.percent}%</span><b>${demoMoney(income.amount * r.percent / 100)}</b></div>`).join("")}</div>`) : ""}`;
+  return `<div class="overview-intro"><span class="mini-heading">Распределение дохода</span><p>Когда приходит доход, бот предложит отложить часть на эти счета.</p></div>${toggle}${goalRows}${reconcile}<form id="rules-form" class="rules-sliders">${totalRow}<div class="list-panel">${rows}</div>${auto ? `<p class="section-note">Подобрано автоматически: откладывается ${pct(total)}. Чтобы двигать доли вручную, выключите «Умное распределение».</p>` : `<p class="section-note" data-rules-left>Весь процент распределён.</p><button class="primary-button" type="submit">Сохранить правила</button>`}</form>${income ? cardSection(`Пример для «${esc(income.title)}» · ${demoMoney(income.amount)}`, `<div class="side-card">${data.finance.rules.map(r => `<div class="side-row"><span>${esc(r.name)} · ${r.percent}%</span><b>${demoMoney(income.amount * r.percent / 100)}</b></div>`).join("")}</div>`) : ""}`;
 }
 function renderFinancePage() {
   const sections = { overview: financeOverview, transactions: financeTransactionsPage, accounts: financeAccountsPage, transfers: financeTransfersPage, budgets: financeBudgetsPage, goals: financeGoalsPage, payments: financePaymentsPage, debts: financeDebtsPage, rules: financeRulesPage };
@@ -382,6 +387,48 @@ function renderFinancePage() {
 }
 function financeEntityList(entity) { return { transaction: data.finance.transactions, account: data.finance.accounts, transfer: data.finance.transfers, budget: data.finance.budgets, goal: data.finance.goals, payment: data.finance.payments, debt: data.finance.debts }[entity] || []; }
 function openFinanceForm(entity, recordId = null, kind = "expense") { ui.sheet = { kind: "finance", entity, id: recordId, txKind: kind, justRendered: false }; render(); }
+/*
+ * Ползунки правил. Общий процент — предел: доли не могут в сумме его
+ * превысить. Подняли одну долю сверх остатка — лишнее поровну снимается с
+ * остальных (не ниже нуля). Уменьшили общий — доли сжимаются пропорционально.
+ */
+function rulesSliders(form, changed) {
+  const ranges = [...form.querySelectorAll("[data-rule-range]")];
+  const totalInput = form.querySelector("[data-rules-total]");
+  const total = Number(totalInput?.value || 0);
+  const vals = ranges.map(r => Number(r.value));
+  if (changed === "total") {
+    const sum = vals.reduce((a, b) => a + b, 0);
+    if (sum > total && sum > 0) vals.forEach((v, i) => vals[i] = v * total / sum);
+  } else {
+    vals[changed] = Math.min(vals[changed], total);
+    let excess = vals.reduce((a, b) => a + b, 0) - total;
+    let others = vals.map((_, i) => i).filter(i => i !== changed && vals[i] > 0);
+    while (excess > 0.001 && others.length) {
+      const share = excess / others.length;
+      for (const i of others) { const cut = Math.min(vals[i], share); vals[i] -= cut; excess -= cut; }
+      others = others.filter(i => vals[i] > 0.001);
+    }
+  }
+  ranges.forEach((r, i) => {
+    vals[i] = Math.round(vals[i] * 10) / 10;
+    r.max = String(Math.max(total, 0.5));
+    r.value = String(vals[i]);
+    const out = form.querySelector(`[data-rule-out="${i}"]`);
+    if (out) out.textContent = `${String(vals[i]).replace(".", ",")} %`;
+  });
+  const tOut = form.querySelector("[data-rules-total-out]");
+  if (tOut) tOut.textContent = `${String(total).replace(".", ",")} %`;
+  const left = Math.round((total - vals.reduce((a, b) => a + b, 0)) * 10) / 10;
+  const note = form.querySelector("[data-rules-left]");
+  if (note) note.textContent = left > 0 ? `Не распределено ${String(left).replace(".", ",")} % — останется на жизнь.` : "Весь процент распределён.";
+}
+document.addEventListener("input", event => {
+  const form = event.target.closest && event.target.closest("#rules-form");
+  if (!form) return;
+  if (event.target.matches("[data-rules-total]")) rulesSliders(form, "total");
+  else if (event.target.matches("[data-rule-range]")) rulesSliders(form, Number(event.target.dataset.ruleRange));
+});
 /** Сумма ползунком и вводом: грубо — пальцем, точно — цифрами. Поля связаны. */
 function amountSlider(label, name, value, max, extra = "", unit = "₽") {
   const top = Math.max(1, Math.round(Number(max) || 0));
@@ -508,7 +555,7 @@ function financeAction(action, control) {
   return false;
 }
 function financeSubmit(event) {
-  if (event.target.id === "rules-form") { event.preventDefault(); const values = data.finance.rules.map((_, i) => Number(new FormData(event.target).get(`rule-${i}`) || 0)); const total = values.reduce((a, b) => a + b, 0); if (total !== 100) { event.target.querySelector(".form-error").textContent = "Сумма долей должна быть 100%. Сейчас: " + total + "%."; return true; } data.finance.rules.forEach((rule, i) => rule.percent = values[i]); save(); toast("Правила сохранены"); return true; }
+  if (event.target.id === "rules-form") { event.preventDefault(); const values = data.finance.rules.map((_, i) => Math.round(Number(new FormData(event.target).get(`rule-${i}`) || 0) * 10) / 10); data.finance.rules.forEach((rule, i) => rule.percent = values[i]); save(); render(); toast(`Правила сохранены · откладывается ${String(Math.round(values.reduce((a, b) => a + b, 0) * 10) / 10).replace(".", ",")} %`); return true; }
   if (event.target.id === "fixed-topup-form") {
     event.preventDefault();
     const f = new FormData(event.target);
