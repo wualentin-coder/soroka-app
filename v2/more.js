@@ -143,6 +143,8 @@ function phoneSettingsSection(row) {
   const toggle = (key, on) => `<label class="switch"><input type="checkbox" data-phone="${key}" ${on ? "checked" : ""}><span></span></label>`;
   const fix = (action, label) => `<button type="button" class="small-button phone-fix" data-phone-action="${action}">${label}</button>`;
   const chips = (prefix, list) => `<div class="phone-chips">${list.map(c => `<button type="button" class="map-category-chip ${c.on ? "active" : ""}" data-phone="${prefix}:${esc(c.name)}" data-phone-value="${c.on ? "0" : "1"}" aria-pressed="${c.on}">${esc(c.name)}</button>`).join("")}</div>`;
+  // Свои — фишки с крестиком: убрать одним нажатием.
+  const custom = (action, list) => list.length ? `<div class="phone-chips">${list.map(([key, label]) => `<button type="button" class="map-category-chip active phone-custom" data-phone="${action}:${esc(key)}" data-phone-value="1" aria-label="Убрать ${esc(label)}">${esc(label)}${icon("close", "icon-sm")}</button>`).join("")}</div>` : "";
   const notifyHint = !p.notify ? "Банки, у которых пуш вместо SMS" : p.notifyAccess ? "Доступ выдан · выберите банки" : "Нет доступа к уведомлениям";
   const smsHint = p.smsPermission ? "Отправители, чьи SMS читать" : "Нет разрешения читать SMS";
   const upd = p.update || {};
@@ -150,9 +152,10 @@ function phoneSettingsSection(row) {
   return `<section class="settings-group"><h2>Телефон</h2><div class="list-panel phone-panel">
 ${row(`Flow ${esc(p.version)}`, p.linked ? "Телефон подключён к боту" : "Не подключён — нужен код из бота", `<button type="button" class="small-button" data-phone-action="native">${p.linked ? "Подключение" : "Подключить"}</button>`)}
 ${row("Уведомления банков", notifyHint, toggle("notify", p.notify))}
-${p.notify ? `<div class="settings-row settings-row-wide phone-sub">${!p.notifyAccess ? fix("notifyAccess", "Выдать доступ") : ""}${chips("app", p.apps)}</div>` : ""}
+${p.notify ? `<div class="settings-row settings-row-wide phone-sub">${!p.notifyAccess ? fix("notifyAccess", "Выдать доступ") : ""}${chips("app", p.apps)}${custom("appDel", (p.customApps || []).map(a => [a.token, a.label]))}<button type="button" class="small-button phone-add" data-action="phone-app-pick">${icon("plus", "icon-sm")}Приложение</button></div>` : ""}
 ${row("SMS банков", smsHint, p.smsPermission ? "" : fix("smsPermission", "Разрешить"))}
-<div class="settings-row settings-row-wide phone-sub">${chips("sms", p.smsPresets)}</div>
+<div class="settings-row settings-row-wide phone-sub">${chips("sms", p.smsPresets)}${custom("smsDel", (p.customSms || []).map(s => [s, s]))}</div>
+<form class="settings-row settings-row-wide phone-sub phone-add-form" id="phone-sms-add"><input name="sender" placeholder="Свой отправитель, как в SMS" maxlength="40" aria-label="Свой отправитель SMS"><button type="submit" class="small-button">Добавить</button></form>
 ${row("Сообщать, что записал", p.notifyPermission || !p.results ? "Уведомление «Flow записал: …» после разбора" : "Нет разрешения на уведомления", p.results && !p.notifyPermission ? fix("notifyPermission", "Разрешить") : toggle("results", p.results))}
 ${row("Уведомления бота", "Дублировать сообщения бота на телефон", toggle("feed", p.feed))}
 ${row("Карты у края экрана", p.edge ? (p.edgeText || "Работает") : "Скидочная карта появится у магазина", toggle("edge", p.edge))}
@@ -175,8 +178,33 @@ document.addEventListener("click", event => {
   const act = event.target.closest?.("[data-phone-action]");
   if (act) { try { window.SorokaAndroid.phoneAction(act.dataset.phoneAction); } catch (_) {} }
 });
+// Свой отправитель SMS — из поля в разделе «Телефон».
+document.addEventListener("submit", event => {
+  if (event.target.id !== "phone-sms-add") return;
+  event.preventDefault();
+  const value = String(new FormData(event.target).get("sender") || "").trim();
+  if (value) try { window.SorokaAndroid.phoneSet("smsAdd:" + value, "1"); } catch (_) {}
+}, true);
+/** Выбор своего приложения: сначала те, что недавно присылали уведомления, ниже — все. */
+function renderPhoneAppsSheet() {
+  let list = { recent: [], all: [] };
+  try { list = JSON.parse(window.SorokaAndroid.phoneApps()); } catch (_) {}
+  const q = String(ui.phoneAppQuery || "").toLowerCase();
+  const pick = a => !q || a.label.toLowerCase().includes(q) || a.pkg.includes(q);
+  const row = a => `<button type="button" class="phone-app-row" data-action="phone-app-add" data-pkg="${esc(a.pkg)}"><strong>${esc(a.label)}</strong><small>${esc(a.pkg)}</small>${icon("plus", "icon-sm")}</button>`;
+  const recent = list.recent.filter(pick), all = list.all.filter(pick);
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet phone-apps-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Приложение для уведомлений</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="search-box">${icon("search")}<input id="phone-app-search" type="search" placeholder="Название приложения" value="${esc(ui.phoneAppQuery || "")}" autocomplete="off" aria-label="Поиск приложения"></div>${recent.length ? `<h3 class="phone-apps-head">Недавно присылали уведомления</h3><div class="list-panel">${recent.map(row).join("")}</div>` : ""}<h3 class="phone-apps-head">Все приложения</h3><div class="list-panel">${all.map(row).join("") || `<p class="section-note">Ничего не нашлось</p>`}</div></section></div>`;
+}
+document.addEventListener("input", event => {
+  if (event.target.id !== "phone-app-search") return;
+  ui.phoneAppQuery = event.target.value;
+  const pos = event.target.selectionStart;
+  render();
+  const input = document.getElementById("phone-app-search");
+  if (input) { input.focus(); try { input.setSelectionRange(pos, pos); } catch (_) {} }
+});
 // Приложение сообщает, что что-то поменялось (разрешение выдано, обновление найдено).
-window.sorokaPhoneChanged = () => { if (ui.page === "settings" && !ui.sheet) render(); };
+window.sorokaPhoneChanged = () => { if (ui.page === "settings" && !ui.sheet && !document.activeElement?.closest?.("#phone-sms-add")) render(); };
 function renderSettingsPage() {
   const s = data.settings;
   // Поле получает название строки: подпись рядом видна глазами, а экранный диктор без связи её не читал.
@@ -410,6 +438,8 @@ function moreAction(action, control) {
   const itemId = control.dataset.id;
   if (captureAction(action, control)) return true;
   if (action === "phone-log") { ui.phoneLog = !ui.phoneLog; render(); return true; }
+  if (action === "phone-app-pick") { ui.phoneAppQuery = ""; ui.sheet = { kind: "phone-apps", justRendered: false }; render(); return true; }
+  if (action === "phone-app-add") { try { window.SorokaAndroid.phoneSet("appAdd:" + control.dataset.pkg, "1"); } catch (_) {} ui.sheet = null; render(); toast("Буду читать уведомления этого приложения"); return true; }
   if (action === "swipe-skip") { const row = control.closest(".swipe-row"); if (row) { closeSwipeRows(); swipeSkipQuiet(row, savedItem("movies", row.dataset.swipeId)); } return true; }
   if (["swipe-edit", "swipe-share", "swipe-delete"].includes(action)) { const row = control.closest(".swipe-row"); if (row) { if (action === "swipe-delete") deleteSwipeCard(row); else if (action === "swipe-share") void shareRecord(row.dataset.swipeType, row.dataset.swipeId); else openSwipeCard(row, "edit"); } return true; }
   if (action === "card-preview-settings" && ui.sheet?.kind === "card-preview") { const { type, recordId } = ui.sheet; openCardEditor(type, recordId); return true; }
