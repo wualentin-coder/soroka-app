@@ -359,3 +359,7 @@ html.in-android .page-header { min-height: 40px; }
 /* «+» не закрывает низ последней карты и последней карточки списка. */
 .saved-results, .notes-results { padding-bottom: 88px; }
 .saved-view-actions:not(.has-skip) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+/* Правка не дошла до сервера — видно, пока не уйдёт. */
+.sync-banner { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 14px; border-radius: 14px; background: var(--text); color: var(--page); font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.sync-banner span { flex: 1; min-width: 0; }
+.sync-banner button { border: 0; border-radius: 10px; padding: 7px 12px; background: var(--accent); color: var(--accent-ink, #fff); font: inherit; cursor: pointer; }
