@@ -223,8 +223,9 @@ function renderIncomeSplitSheet() {
   const total = list.filter(t => sheet.ids.includes(t.id)).reduce((s, t) => s + Number(t.amount), 0);
   const p = total > 0 && sheet.base ? splitPlan(total, sheet.base) : null;
   const plan = !p ? `<p class="section-note">Отметьте доходы, которые разложить.</p>`
-    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.obligations ? `<div class="side-row"><span>Обязательные платежи${p.fixed ? ` <small>→ ${esc(p.fixed)}</small>` : " в месяц"}</span><b>${p.fixed ? "" : "−"}${demoMoney(Math.min(p.obligations, p.total))}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${String(s.percent).replace(".", ",")} %${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - Math.min(p.obligations, p.total) - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
-  const moving = p && p.shares ? p.shares.reduce((s, x) => s + x.amount, 0) + (p.fixed ? Math.min(p.obligations, p.total) : 0) : 0;
+    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.obligations ? `<div class="side-row"><span>Обязательные платежи${p.fixed ? ` <small>→ ${esc(p.fixed)}${Number(data.settings?.fixedTopup) > 0 ? `, автоперевод ${Number(data.settings?.fixedTopupDay) || 1}-го` : ""}</small>` : " в месяц"}</span><b>${p.fixed && !(Number(data.settings?.fixedTopup) > 0) ? "" : "−"}${demoMoney(Math.min(p.obligations, p.total))}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${String(s.percent).replace(".", ",")} %${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - Math.min(p.obligations, p.total) - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
+  const auto = Number(data.settings?.fixedTopup) > 0;
+  const moving = p && p.shares ? p.shares.reduce((s, x) => s + x.amount, 0) + (p.fixed && !auto ? Math.min(p.obligations, p.total) : 0) : 0;
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet split-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Распределить доходы</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="list-panel">${rows || `<div class="empty-card"><strong>Нечего распределять</strong>Все доходы уже разложены.</div>`}</div>${plan}<p class="section-note">Появится дело с пунктом на каждый счёт. Переведите деньги в банке и отметьте пункт — перевод запишется в финансы. ✕ — доход не раскладывать (например, перевод от друга).</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="income-split-rules">Правила</button><button class="primary-button" type="button" data-action="income-split-apply" ${moving > 0 && !sheet.busy ? "" : "disabled"}>${sheet.busy ? "Создаю дело…" : moving > 0 ? `В дела: ${demoMoney(moving)}` : "Распределить"}</button></div></section></div>`;
 }
 function renderAccountsSheet() {
@@ -281,13 +282,32 @@ function paymentRow(p) {
   const facts = [paymentDate(p), p.category, p.endsOn ? `до ${dateLabel(p.endsOn)}${p.endsOn.slice(0, 4) !== todayIso().slice(0, 4) ? ` ${p.endsOn.slice(0, 4)}` : ""}` : "", p.locked ? "из «Долгов»" : ""].filter(Boolean).join(" · ");
   return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span><span class="list-copy"><strong>${esc(financeTitle(p.title))}</strong><span>${esc(facts)}${p.status === "confirmed" ? " · оплачено" : ""}</span></span><span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}${p.locked ? miniButton("В долгах", "finance-edit", `data-entity="debt" data-id="${esc(p.creditId)}"`) : miniButton("Настроить", "finance-edit", `data-entity="payment" data-id="${esc(p.id)}"`)}</div></article>`;
 }
+/*
+ * Счёт постоянных расходов: банк пополняет его сам в назначенный день на
+ * сумму обязательных платежей, оттуда и платятся счета. Здесь видно, хватает
+ * ли заданной суммы, и какую поставить в банке.
+ */
+function fixedAccountOf() { return data.finance.accounts.find(a => a.currency === "RUB" && /постоянн|обязательн|на сч[её]та|коммунал/i.test(a.name)); }
+function fixedAccountCard(monthly) {
+  const acc = fixedAccountOf();
+  if (!acc) return `<div class="split-banner"><span><strong>Счёт для обязательных платежей</strong><small>Заведите счёт «Постоянные расходы» — на него удобно откладывать сумму платежей</small></span><button class="ghost-button" type="button" data-action="finance-add" data-entity="account">Добавить</button></div>`;
+  const topup = Number(data.settings?.fixedTopup) || 0;
+  const day = Number(data.settings?.fixedTopupDay) || 1;
+  // Совет: сумма платежей с запасом 10 % (счета ЖКХ зимой дороже), до 500 ₽ вверх.
+  const advice = Math.ceil(monthly * 1.1 / 500) * 500;
+  const short = topup > 0 && topup < monthly;
+  const note = topup > 0
+    ? short ? `Не хватает: платежей ${demoMoney(monthly)} в месяц — поднимите автоперевод до ${demoMoney(advice)}` : `Хватает: платежей ${demoMoney(monthly)} в месяц, запас ${demoMoney(topup - monthly)}`
+    : `Платежей ${demoMoney(monthly)} в месяц. Советую автоперевод ${demoMoney(advice)} — с запасом 10 %`;
+  return `<form id="fixed-topup-form" class="fixed-card ${short ? "is-short" : ""}"><div class="fixed-head"><span><small>${esc(acc.name)}</small><strong>${demoMoney(accountBalance(acc))}</strong></span><span class="fixed-note">${esc(note)}</span></div><div class="field-row"><label class="field">Автоперевод в банке, ₽<input name="fixedTopup" type="number" inputmode="decimal" min="0" step="100" value="${topup || ""}" placeholder="${advice}"></label><label class="field">Число<input name="fixedTopupDay" type="number" inputmode="numeric" min="1" max="28" value="${day}"></label></div><p class="section-note">Задайте те же сумму и число, что в банке: в этот день перевод с основного счёта сам запишется в финансы, а в распределении дохода платежи уже не будут отдельным пунктом.</p><button class="primary-button" type="submit">Сохранить</button></form>`;
+}
 function financePaymentsPage() {
   const known = data.finance.payments.map(paymentRub);
   // Годовой платёж — двенадцатая часть в месяц: подписка 12 000 ₽ в год не стоит 12 000 ₽ в месяц.
   const monthly = data.finance.payments.reduce((sum, p, i) => sum + (known[i] || 0) / (p.repeat === "yearly" ? 12 : 1), 0);
   const gaps = known.some(v => v === null);
   const list = data.finance.payments.slice().sort((a, b) => String(a.nextOn || "9").localeCompare(String(b.nextOn || "9")));
-  return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}</span></div><div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${paymentsGrouped(list)}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
+  return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}</span></div>${fixedAccountCard(monthly)}<div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${paymentsGrouped(list)}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
 }
 /**
  * Коммуналка — одной карточкой: счета приходят каждый месяц на разные суммы
@@ -476,6 +496,15 @@ function financeAction(action, control) {
 }
 function financeSubmit(event) {
   if (event.target.id === "rules-form") { event.preventDefault(); const values = data.finance.rules.map((_, i) => Number(new FormData(event.target).get(`rule-${i}`) || 0)); const total = values.reduce((a, b) => a + b, 0); if (total !== 100) { event.target.querySelector(".form-error").textContent = "Сумма долей должна быть 100%. Сейчас: " + total + "%."; return true; } data.finance.rules.forEach((rule, i) => rule.percent = values[i]); save(); toast("Правила сохранены"); return true; }
+  if (event.target.id === "fixed-topup-form") {
+    event.preventDefault();
+    const f = new FormData(event.target);
+    data.settings.fixedTopup = Math.max(0, Math.round(Number(f.get("fixedTopup") || 0) * 100) / 100);
+    data.settings.fixedTopupDay = Math.min(28, Math.max(1, Math.round(Number(f.get("fixedTopupDay") || 1))));
+    save(); render();
+    toast(data.settings.fixedTopup ? `Автоперевод ${demoMoney(data.settings.fixedTopup)} ${data.settings.fixedTopupDay}-го числа` : "Автоперевод выключен");
+    return true;
+  }
   if (event.target.id === "rules-reconcile-form") {
     event.preventDefault();
     const f = new FormData(event.target);
