@@ -458,7 +458,11 @@ function openEntry(type = "task", date = ui.page === "upcoming" ? ui.selected : 
   ui.menu = false;
   render();
 }
-function closeSheet() { ui.sheet = null; render(); }
+function closeSheet() {
+  // Закрыли поиск — в следующий раз он открывается пустым.
+  if (ui.sheet?.kind === "search") { ui.searchQuery = ""; ui.searchPage = 1; ui.searchType = "all"; }
+  ui.sheet = null; render();
+}
 /*
  * Окно закрывается свайпом вниз, как в Telegram: тянешь за шапку или за
  * содержимое, когда оно прокручено до верха. Отпустил далеко или быстро —
@@ -534,7 +538,7 @@ document.addEventListener("click", event => {
   const action = control.dataset.action;
   if (action === "backdrop") { if (event.target === control) closeSheet(); return; }
   if (action === "navigate") { if (control.dataset.page === "saved") ui.savedCategory = "overview"; if (control.dataset.page === "finance") { ui.financeTab = "overview"; ui.financeCategory = ""; } navigate(control.dataset.page); return; }
-  if (action === "search") { ui.sheet = { kind: "search", justRendered: false }; ui.menu = false; render(); return; }
+  if (action === "search") { if (!ui.sheet) { ui.searchQuery = ""; ui.searchPage = 1; ui.searchType = "all"; } ui.sheet = { kind: "search", justRendered: false }; ui.menu = false; render(); return; }
   if (action === "menu") { ui.menu = !ui.menu; render(); return; }
   if (action === "theme") {
     ui.theme = themeTone() === "dark" ? "light" : "dark";
