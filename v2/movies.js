@@ -436,7 +436,7 @@ function starSlider(item) {
     box.setAttribute("aria-valuenow", String(n));
     // Цифра рядом со звёздами — меняется вслед за пальцем.
     const out = box.parentElement?.querySelector(".star-value");
-    if (out) out.textContent = n ? String(n) : "—";
+    if (out) out.innerHTML = n ? `${n}<small>/10</small>` : "<small>—</small>";
   };
   const movie = () => ui.sheet?.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
   const commit = (n, tap) => {
