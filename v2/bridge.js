@@ -358,16 +358,52 @@
   }
 
   async function refresh(force = false) {
-    if (!base || flying) return;
+    if (!base || flying || refreshing) return;
     if (!force && diff(base, data).length) return;
+    refreshing = true;
     try {
-      const snapshot = await call({ action: "planner_snapshot" });
+      const snapshot = await call({ action: "planner_snapshot" }, 30000);
+      stale(false);
       if (!force && (flying || diff(base, data).length)) return;
       adopt(snapshot, {}, []);
     } catch (error) {
       if (error && error.status === 401) askReopen();
+      else stale(true);
+    } finally {
+      refreshing = false;
     }
   }
+  let refreshing = false;
+
+  /*
+   * Свежие данные не пришли — показываем, от какого они времени, и пробуем
+   * снова сами. Раньше была одна всплывающая строка «Нет связи с ботом», и
+   * приложение больше не пыталось: так и висели данные прошлого раза.
+   */
+  let staleTimer = null, staleIn = 0;
+  function stale(on) {
+    let bar = document.getElementById("stale-banner");
+    clearTimeout(staleTimer);
+    if (!on) { staleIn = 0; bar?.remove(); return; }
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "stale-banner";
+      bar.className = "sync-banner";
+      bar.setAttribute("role", "status");
+      bar.innerHTML = '<span></span><button type="button">Обновить</button>';
+      bar.querySelector("button").addEventListener("click", () => { bar.querySelector("span").textContent = "Обновляю…"; refresh(true); });
+      document.body.appendChild(bar);
+    }
+    let at = "";
+    try { const saved = JSON.parse(localStorage.getItem(SNAP_KEY) || "null"); if (saved && saved.at) at = new Date(saved.at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (_) {}
+    bar.querySelector("span").textContent = at ? `Нет связи с сервером · данные от ${at}` : "Нет связи с сервером";
+    staleIn = Math.min(60, staleIn ? staleIn * 2 : 5);
+    staleTimer = setTimeout(() => refresh(true), staleIn * 1000);
+  }
+  // Пока приложение открыто, правки из чата (бот, уведомления банков)
+  // подтягиваются сами — раньше только при сворачивании и разворачивании.
+  setInterval(() => { if (!document.hidden && !document.querySelector(".sheet form, .composer")) refresh(); }, 60000);
+  window.addEventListener("online", () => refresh(true));
 
   // ------------------------------------------------------------ перехваты
 
@@ -931,7 +967,7 @@
       }).catch((error) => {
         warming = false;
         if (error && error.status === 401) askReopen();
-        else say("Нет связи с ботом — показываю данные прошлого раза");
+        else stale(true);
       });
     }, 0);
   }
