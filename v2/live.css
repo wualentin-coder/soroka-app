@@ -409,3 +409,14 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .fixed-card.is-short .fixed-note { color: var(--accent); font-weight: 600; }
 .fixed-card .section-note { margin: 0; }
 .utility-head .list-copy .utility-next { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+/* Ползунки правил распределения */
+.rules-sliders .list-panel { padding: 4px 0; }
+.rule-slider { display: grid; gap: 6px; padding: 12px 14px; }
+.rule-slider + .rule-slider { border-top: 1px solid var(--line); }
+.rule-slider-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.rule-slider-head b { font-variant-numeric: tabular-nums; color: var(--accent); }
+.rule-slider input[type=range] { width: 100%; accent-color: var(--accent); }
+.rule-slider input[type=range]:disabled { opacity: .5; }
+.rule-total { margin: 0 0 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.rule-total small { color: var(--muted); font-size: 12px; }
+.rules-sliders .primary-button { width: 100%; } .rules-sliders [data-rules-left] { margin: 8px 2px 12px; }
