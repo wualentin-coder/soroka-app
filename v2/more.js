@@ -177,7 +177,7 @@ function renderCompareSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet compare-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Две темы рядом</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="theme-comparison"><div class="theme-phone dark"><small>ТЁМНАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div><div class="theme-phone light"><small>СВЕТЛАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div></div></section></div>`;
 }
 function renderMorePage() {
-  const items = [["inbox", "Входящие", "Нужны решения", "inbox"], ["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["metrics", "Показатели", "График измерений", "chart"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
+  const items = [["inbox", "Входящие", "Нужны решения", "inbox"], ["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
   return `${header("Ещё", "Разделы и действия", "Пространство")}<div class="more-grid">${items.map(([page, label, detail, symbol]) => `<button class="more-tile" type="button" data-action="${page === "search" ? "search" : page === "add" ? "universal-add" : "navigate"}" ${page === "search" || page === "add" ? "" : `data-page="${page}"`}>${icon(symbol)}<span><strong>${label}</strong><small>${detail}</small></span></button>`).join("")}</div><section class="section"><div class="overview-intro"><span class="mini-heading">Связь с ботом</span><p>Текст, голосовые, фото, файлы, видео и пересланные посты бот разложит по разделам сам.</p><div class="inline-actions"><button type="button" data-action="return-chat">${icon("arrow")}Вернуться в чат</button><button type="button" data-action="demo-refresh">${icon("reset")}Обновить</button></div></div></section>`;
 }
 
@@ -665,7 +665,8 @@ document.addEventListener("pointermove", event => {
   const dy = event.clientY - gesture.y;
   if (!gesture.horizontal) {
     if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { swipeGesture = null; return; }
-    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+    // Мышью — порог выше: обычный клик с дрожанием руки не должен сдвигать строку.
+    if (Math.abs(dx) > (event.pointerType === "mouse" ? 24 : 10) && Math.abs(dx) > Math.abs(dy) * 1.25) {
       gesture.horizontal = true;
       try { gesture.row.setPointerCapture(event.pointerId); } catch (_) {}
     }
@@ -723,7 +724,14 @@ document.addEventListener("pointerup", event => {
   gesture.row.classList.toggle("is-open-left", open);
   gesture.row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = open ? 0 : -1);
 });
-document.addEventListener("pointercancel", () => { if (swipeGesture) { swipeGesture.row.classList.remove("swiping", "dir-right", "dir-left", "delete-armed", "swipe-armed"); swipeGesture.row.style.removeProperty("--swipe-x"); swipeGesture.row.style.removeProperty("--del"); swipeGesture = null; } });
+function cancelSwipeGesture() { if (swipeGesture) { swipeGesture.row.classList.remove("swiping", "dir-right", "dir-left", "delete-armed", "swipe-armed"); swipeGesture.row.style.removeProperty("--swipe-x"); swipeGesture.row.style.removeProperty("--del"); swipeGesture = null; } }
+document.addEventListener("pointercancel", cancelSwipeGesture);
+// Мышь отпустили за окном (Telegram на компьютере) — pointerup не приходит, и
+// строка застревала сдвинутой с «На завтра» под ней. Любая такая потеря —
+// карточка возвращается на место.
+document.addEventListener("lostpointercapture", event => { if (swipeGesture && swipeGesture.id === event.pointerId) setTimeout(() => { if (swipeGesture && swipeGesture.id === event.pointerId) cancelSwipeGesture(); }, 0); }, true);
+window.addEventListener("blur", cancelSwipeGesture);
+document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelSwipeGesture(); closeSwipeRows(); } });
 document.addEventListener("click", event => {
   if (event.target.closest(".swipe-action")) return;
   const row = event.target.closest(".swipe-row");
