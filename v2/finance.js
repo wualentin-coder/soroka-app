@@ -202,7 +202,8 @@ function paymentRow(p) {
 }
 function financePaymentsPage() {
   const known = data.finance.payments.map(paymentRub);
-  const monthly = known.reduce((sum, v) => sum + (v || 0), 0);
+  // Годовой платёж — двенадцатая часть в месяц: подписка 12 000 ₽ в год не стоит 12 000 ₽ в месяц.
+  const monthly = data.finance.payments.reduce((sum, p, i) => sum + (known[i] || 0) / (p.repeat === "yearly" ? 12 : 1), 0);
   const gaps = known.some(v => v === null);
   const list = data.finance.payments.slice().sort((a, b) => String(a.nextOn || "9").localeCompare(String(b.nextOn || "9")));
   return `<div class="finance-hero"><p class="eyebrow">Обязательные платежи</p><strong>${demoMoney(monthly)}</strong><span class="section-note">в месяц · ${demoMoney(monthly * 12)} в год${data.finance.payments.some(p => (p.currency || "RUB") !== "RUB") ? " · валюта по курсу ЦБ" : ""}${gaps ? " · без платежей, для которых нет курса" : ""}</span></div><div class="section-heading"><h2>Подписки, счета и кредиты</h2><button class="text-action" type="button" data-action="finance-add" data-entity="payment">Добавить ${icon("plus", "icon-sm")}</button></div><div class="payment-list">${list.map(paymentRow).join("")}</div><p class="section-note">«Списалось» записывает расход днём оплаты. Если списание уже пришло уведомлением банка, второго не будет. Кредиты меняются в «Долгах».</p>`;
