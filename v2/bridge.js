@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=c35f43987d","integrity":null},{"src":"./more.js?v=57f3a2e78a","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=986c15bfe9","integrity":null},{"src":"./app.js?v=f5e2ab14ce","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=dcd4696e7d","integrity":null},{"src":"./more.js?v=57f3a2e78a","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=99d1f524f0","integrity":null},{"src":"./app.js?v=f5e2ab14ce","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -36,6 +36,7 @@
     if (!init && !device) throw new Error("no-telegram");
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
+    const started = Date.now();
     try {
       const answer = await fetch(API, {
         method: "POST",
@@ -49,10 +50,42 @@
         error.status = answer.status;
         throw error;
       }
+      reportFailures(body.action);
       return json;
+    } catch (error) {
+      noteFailure(body.action, error, Date.now() - started);
+      throw error;
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  /*
+   * Сбои связи — в журнал: «отваливается» без подробностей не починить.
+   * Копим на телефоне и отправляем с первым удачным запросом.
+   */
+  const FAIL_KEY = "soroka-fail-log";
+  function noteFailure(action, error, ms) {
+    if (error && error.status && error.status !== 0 && error.status < 500 && error.status !== 429) return;
+    const entry = { at: new Date().toISOString(), action: String(action || ""), error: String((error && (error.name === "AbortError" ? "timeout" : error.message)) || error).slice(0, 120), status: (error && error.status) || 0, ms, online: navigator.onLine, android: !inTelegram, hidden: document.hidden };
+    try {
+      const list = JSON.parse(localStorage.getItem(FAIL_KEY) || "[]").slice(-29);
+      list.push(entry);
+      localStorage.setItem(FAIL_KEY, JSON.stringify(list));
+    } catch (_) {}
+    try { if (android && android.log) android.log(`связь: ${entry.action} ${entry.error} ${ms} мс`); } catch (_) {}
+  }
+  let reporting = false;
+  function reportFailures(action) {
+    if (reporting || action === "client_log") return;
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(FAIL_KEY) || "[]"); } catch (_) {}
+    if (!list.length) return;
+    reporting = true;
+    call({ action: "client_log", entries: list, agent: navigator.userAgent.slice(0, 200) }, 15000)
+      .then(() => { try { localStorage.removeItem(FAIL_KEY); } catch (_) {} })
+      .catch(() => {})
+      .finally(() => { reporting = false; });
   }
 
   // «Улучшить» в заметке: модель оформляет текст в выбранном стиле.
@@ -404,6 +437,15 @@
   // подтягиваются сами — раньше только при сворачивании и разворачивании.
   setInterval(() => { if (!document.hidden && !document.querySelector(".sheet form, .composer")) refresh(); }, 60000);
   window.addEventListener("online", () => refresh(true));
+  // Android-приложение вернулось из фона: WebView не всегда сообщает об этом
+  // через visibilitychange, поэтому приложение зовёт сюда само.
+  window.sorokaResume = () => refresh(true);
+  // «Распределить доходы»: расчёт и сами переводы — на сервере, по тем же
+  // правилам, что и кнопка в чате.
+  window.sorokaIncomeSplit = (ids, apply) => call({ action: "income_split", ids, apply: !!apply }, 30000).then((answer) => {
+    if (apply && answer.snapshot) adopt(answer.snapshot, {}, diff(base, data));
+    return answer;
+  });
 
   // ------------------------------------------------------------ перехваты
 
