@@ -363,3 +363,10 @@ html.in-android .page-header { min-height: 40px; }
 .sync-banner { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 14px; border-radius: 14px; background: var(--text); color: var(--page); font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
 .sync-banner span { flex: 1; min-width: 0; }
 .sync-banner button { border: 0; border-radius: 10px; padding: 7px 12px; background: var(--accent); color: var(--accent-ink, #fff); font: inherit; cursor: pointer; }
+/* Операции по дням: заголовок дня и его траты. */
+.tx-day { margin-top: 14px; }
+.tx-day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.tx-day-head b { font-weight: 700; color: var(--text); }
+/* Доход — зелёным: красный акцент читался как трата. */
+.amount.income, .finance-row .amount.income, .tx-total strong.income { color: #23935a; }
+:root[data-theme="dark"] .amount.income, :root[data-theme="dark"] .tx-total strong.income { color: #4cc483; }
