@@ -198,11 +198,13 @@ function splitBanner() {
 function splitPlan(total, base) {
   const free = Math.max(0, Math.round((total - (base.obligations || 0)) * 100) / 100);
   const shares = base.shares.map(s => ({ ...s, amount: Math.floor(free * Number(s.percent)) / 100 }));
-  return { total, obligations: base.obligations || 0, fixed: base.fixed || null, shares };
+  return { total, obligations: base.obligations || 0, monthly: base.monthly || base.obligations || 0, covered: base.covered || 0, fixed: base.fixed || null, shares };
 }
 function localSplitBase() {
   const must = (data.finance.payments || []).reduce((s, p) => s + paymentMonthly(p), 0);
-  return { obligations: Math.round(must * 100) / 100, shares: data.finance.rules.map(r => ({ name: r.name, percent: Number(r.percent), account: null })) };
+  const acc = fixedAccountOf();
+  const covered = acc ? Math.max(0, Math.min(must, accountBalance(acc))) : 0;
+  return { obligations: Math.round((must - covered) * 100) / 100, monthly: must, covered, fixed: acc ? acc.name : null, shares: data.finance.rules.map(r => ({ name: r.name, percent: Number(r.percent), account: null })) };
 }
 /** Доли и вычет берём у сервера один раз при открытии; галочки дальше считаются на месте. */
 function loadSplitPreview() {
@@ -212,7 +214,7 @@ function loadSplitPreview() {
   if (!window.sorokaIncomeSplit) return;
   window.sorokaIncomeSplit(sheet.ids, false).then(answer => {
     if (ui.sheet !== sheet || !answer.shares) return;
-    sheet.base = { obligations: answer.obligations || 0, fixed: answer.fixed || null, shares: answer.shares };
+    sheet.base = { obligations: answer.obligations || 0, monthly: answer.monthly || 0, covered: answer.covered || 0, fixed: answer.fixed || null, shares: answer.shares };
     render();
   }).catch(() => {});
 }
@@ -223,7 +225,7 @@ function renderIncomeSplitSheet() {
   const total = list.filter(t => sheet.ids.includes(t.id)).reduce((s, t) => s + Number(t.amount), 0);
   const p = total > 0 && sheet.base ? splitPlan(total, sheet.base) : null;
   const plan = !p ? `<p class="section-note">Отметьте доходы, которые разложить.</p>`
-    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.obligations ? `<div class="side-row"><span>Обязательные платежи${p.fixed ? ` <small>→ ${esc(p.fixed)}${Number(data.settings?.fixedTopup) > 0 ? `, автоперевод ${Number(data.settings?.fixedTopupDay) || 1}-го` : ""}</small>` : " в месяц"}</span><b>${p.fixed && !(Number(data.settings?.fixedTopup) > 0) ? "" : "−"}${demoMoney(Math.min(p.obligations, p.total))}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${String(s.percent).replace(".", ",")} %${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - Math.min(p.obligations, p.total) - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
+    : `<div class="side-card split-plan"><div class="side-row"><span>Доходы</span><b>${demoMoney(p.total)}</b></div>${p.covered ? `<div class="side-row"><span>Обязательные платежи в месяц <small>${demoMoney(p.monthly)}, на счёте «${esc(p.fixed || "")}» уже ${demoMoney(p.covered)}</small></span><b></b></div>` : ""}${p.obligations ? `<div class="side-row"><span>${p.covered ? "Доложить на платежи" : "Обязательные платежи"}${p.fixed ? ` <small>→ ${esc(p.fixed)}${Number(data.settings?.fixedTopup) > 0 ? `, автоперевод ${Number(data.settings?.fixedTopupDay) || 1}-го` : ""}</small>` : " в месяц"}</span><b>${p.fixed && !(Number(data.settings?.fixedTopup) > 0) ? "" : "−"}${demoMoney(Math.min(p.obligations, p.total))}</b></div>` : ""}${p.shares.map(s => `<div class="side-row"><span>${esc(s.name)} · ${String(s.percent).replace(".", ",")} %${s.account ? ` <small>→ ${esc(s.account)}</small>` : ""}</span><b>${demoMoney(s.amount)}</b></div>`).join("")}<div class="side-row split-rest"><span>Остаётся на жизнь</span><b>${demoMoney(Math.max(0, p.total - Math.min(p.obligations, p.total) - p.shares.reduce((s, x) => s + x.amount, 0)))}</b></div></div>`;
   const auto = Number(data.settings?.fixedTopup) > 0;
   const moving = p && p.shares ? p.shares.reduce((s, x) => s + x.amount, 0) + (p.fixed && !auto ? Math.min(p.obligations, p.total) : 0) : 0;
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet split-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Распределить доходы</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="list-panel">${rows || `<div class="empty-card"><strong>Нечего распределять</strong>Все доходы уже разложены.</div>`}</div>${plan}<p class="section-note">Появится дело с пунктом на каждый счёт. Переведите деньги в банке и отметьте пункт — перевод запишется в финансы. ✕ — доход не раскладывать (например, перевод от друга).</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="income-split-rules">Правила</button><button class="primary-button" type="button" data-action="income-split-apply" ${moving > 0 && !sheet.busy ? "" : "disabled"}>${sheet.busy ? "Создаю дело…" : moving > 0 ? `В дела: ${demoMoney(moving)}` : "Распределить"}</button></div></section></div>`;
