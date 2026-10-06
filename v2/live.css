@@ -408,3 +408,4 @@ body:has(#sync-banner) #stale-banner { bottom: calc(132px + env(safe-area-inset-
 .fixed-note { font-size: 13px; color: var(--muted); }
 .fixed-card.is-short .fixed-note { color: var(--accent); font-weight: 600; }
 .fixed-card .section-note { margin: 0; }
+.utility-head .list-copy .utility-next { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
