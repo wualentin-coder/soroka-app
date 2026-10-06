@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://snruckyliflxzpzybozr.functions.supabase.co/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=9606fdfbe2","integrity":null},{"src":"./more.js?v=57f3a2e78a","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=99d1f524f0","integrity":null},{"src":"./app.js?v=f5e2ab14ce","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=83ffc68cbb","integrity":null},{"src":"./movies.js?v=8f42f3b655","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=ee17753e87","integrity":null},{"src":"./more.js?v=e09bfdd060","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=876c31fb8e","integrity":null},{"src":"./app.js?v=4c02988b6c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=0d4149231f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -37,12 +37,22 @@
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     const started = Date.now();
+    const payload = JSON.stringify(init ? { initData: init, ...body } : { device, ...body });
     try {
-      const answer = await fetch(API, {
+      // Android: если окно уже не достучалось до сервера — сразу сетью приложения.
+      const answer = useNative ? await nativeFetch(payload, timeout) : await fetch(API, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(init ? { initData: init, ...body } : { device, ...body }),
+        body: payload,
         signal: controller.signal,
+      }).catch((error) => {
+        // Сеть окна не пускает (а уведомления с телефона доходят) — повторяем
+        // запрос сетью Android-приложения и дальше ходим так же.
+        if (!init && android && android.api && !(error && error.name === "AbortError")) {
+          useNative = true;
+          return nativeFetch(payload, timeout);
+        }
+        throw error;
       });
       const json = await answer.json().catch(() => ({}));
       if (!answer.ok) {
@@ -58,6 +68,28 @@
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  /*
+   * Запрос сетью Android-приложения (SorokaNative.api): ответ приходит в
+   * __sorokaNativeReply. Возвращает объект, похожий на Response.
+   */
+  let useNative = false;
+  const nativeWaits = {};
+  window.__sorokaNativeReply = (id, status, text) => {
+    const wait = nativeWaits[id];
+    if (!wait) return;
+    delete nativeWaits[id];
+    if (!status) { wait.fail(new TypeError("native: " + text)); return; }
+    wait.done({ ok: status < 400, status, json: async () => JSON.parse(text) });
+  };
+  function nativeFetch(payload, timeout) {
+    return new Promise((done, fail) => {
+      const id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      nativeWaits[id] = { done, fail };
+      setTimeout(() => { if (nativeWaits[id]) { delete nativeWaits[id]; const e = new Error("timeout"); e.name = "AbortError"; fail(e); } }, timeout + 5000);
+      try { android.api(id, payload); } catch (error) { delete nativeWaits[id]; fail(error); }
+    });
   }
 
   /*
