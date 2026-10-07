@@ -2248,3 +2248,36 @@ body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * {
 .swipe-row .swipe-right-indicator { border-radius: inherit; background: var(--surface-soft) !important; color: var(--accent) !important; }
 .swipe-row.swipe-armed .swipe-right-indicator { background: var(--accent-soft) !important; }
 .swipe-row .swipe-later-hint b { color: var(--text); }
+
+/* VPN: свой сервер — состояние, трафик, ключи, исключения (vpn.js). */
+.vpn-status { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.vpn-status small { color: var(--muted); font-size: 12px; font-weight: 700; }
+.vpn-status strong { display: block; margin: 4px 0; font-size: 24px; font-weight: 800; }
+.vpn-status p { margin: 0; color: var(--muted); font-size: 13px; }
+.vpn-status.ok strong { color: var(--accent); }
+.vpn-status.down { border-color: var(--warn); background: var(--warn-soft); }
+.vpn-status.down strong { color: var(--warn); }
+.vpn-status .small-button { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.vpn-traffic .progress-track { margin: 12px 0 10px; height: 6px; }
+.vpn-traffic .side-row:last-of-type { margin-bottom: 0; }
+.vpn-client { width: 100%; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.vpn-client + .vpn-client { border-top: 1px solid var(--line); }
+.vpn-client .list-copy span { color: var(--muted); }
+.vpn-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--subtle); vertical-align: 1px; }
+.vpn-dot.on { background: var(--accent); }
+.vpn-dot.off { background: var(--warn); }
+.vpn-sheet .kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px; margin: 4px 0 14px; }
+.vpn-sheet .kpi-grid .kpi { grid-column: auto !important; }
+.vpn-sheet > .ghost-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 14px; }
+.vpn-sheet .kpi { min-height: 0; padding: 12px; }
+.vpn-sheet .kpi-value { font-size: 18px; }
+.vpn-links { display: grid; gap: 8px; margin-bottom: 14px; }
+.vpn-links .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.vpn-links .section-note { margin: 0; }
+.vpn-rename { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; margin: 6px 0 4px; }
+.vpn-ex-head { margin: 14px 0 6px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.vpn-ex-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 6px 14px; border-bottom: 1px solid var(--line); }
+.vpn-ex-row:last-child { border-bottom: 0; }
+.vpn-ex-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 8px; }
+.vpn-ex-add input { min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; outline: none; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; }
+.vpn-ex-add input:focus { border-color: var(--accent); }
