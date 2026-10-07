@@ -463,8 +463,10 @@
     ui.sheet = JSON.parse(text);
   }
 
+  let lastRefreshAt = Date.now();
   async function refresh(force = false) {
     if (!base || flying || refreshing) return;
+    lastRefreshAt = Date.now();
     if (!force && diff(base, data).length) return;
     refreshing = true;
     try {
@@ -508,7 +510,12 @@
   }
   // Пока приложение открыто, правки из чата (бот, уведомления банков)
   // подтягиваются сами — раньше только при сворачивании и разворачивании.
-  setInterval(() => { if (!document.hidden && !document.querySelector(".sheet form, .composer")) refresh(); }, 60000);
+  // Раз в 3 минуты и только если окно на экране и в фокусе: каждое
+  // обновление — около 30 запросов к базе, а окно Flow, забытое открытым в
+  // Telegram на компьютере, раз в минуту давало ~40 тыс. запросов в сутки.
+  // Вернулись в окно — обновится сразу (visibilitychange / focus).
+  setInterval(() => { if (!document.hidden && document.hasFocus() && !document.querySelector(".sheet form, .composer")) refresh(); }, 180000);
+  window.addEventListener("focus", () => { if (Date.now() - lastRefreshAt > 60000) refresh(); });
   window.addEventListener("online", () => refresh(true));
   // Android-приложение вернулось из фона: WebView не всегда сообщает об этом
   // через visibilitychange, поэтому приложение зовёт сюда само.
@@ -1102,7 +1109,7 @@
     void original;
     document.addEventListener("click", intercept, true);
     document.addEventListener("submit", interceptSubmit, true);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastRefreshAt > 30000) refresh(); });
     // Форму закрыли, а свежие данные ждали — показываем.
     setInterval(() => { if (heldRender && !document.querySelector(".sheet form, .composer")) render(); }, 700);
     setTimeout(() => {
