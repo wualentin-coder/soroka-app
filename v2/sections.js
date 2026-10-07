@@ -160,7 +160,7 @@ function extendedPage(page) {
     tasks: renderTasksPage, saved: renderSavedPage, finance: renderFinancePage,
     vault: renderVaultPage, inbox: renderInboxPage, overview: renderOverviewPage,
     projects: renderProjectsPage, metrics: renderMetricsPage, archive: renderArchivePage,
-    settings: renderSettingsPage, more: renderMorePage
+    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage
   };
   return (pages[page] || renderMorePage)();
 }
@@ -170,6 +170,9 @@ document.addEventListener("submit", event => {
   goalDepositApply(1);
 }, true);
 function renderExtendedSheet() {
+  if (ui.sheet.kind === "vpn-key") return renderVpnKeySheet();
+  if (ui.sheet.kind === "vpn-new") return renderVpnNewSheet();
+  if (ui.sheet.kind === "vpn-exceptions") return renderVpnExceptionsSheet();
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
   if (ui.sheet.kind === "movie-rate") return renderMovieRateSheet();
   if (ui.sheet.kind === "movie-run") return renderMovieRunSheet();
@@ -199,7 +202,7 @@ function renderExtendedSheet() {
   return renderAddMenu();
 }
 function handleExtendedAction(action, control, event) {
-  return noteAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
+  return noteAction(action, control) || vpnAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
   return loyaltySubmit(event) || mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
