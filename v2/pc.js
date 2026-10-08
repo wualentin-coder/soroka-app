@@ -105,7 +105,7 @@ function pcRenderBlock(d) {
   const line = r.rendering ? `<p class="pc-render-now"><span class="pc-render-dot"></span>Рендерит ${esc(r.app || "After Effects")} · ${mins} мин</p>`
     : r.done_at ? `<p class="section-note">Последний рендер закончился ${esc(new Date(r.done_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}, шёл ${Math.round((r.seconds || 0) / 60)} мин.</p>`
       : `<p class="section-note">Рендер замечу сам — по нагрузке After Effects, aerender или Media Encoder дольше 3 минут.</p>`;
-  return cardSection("После рендера", `${line}<div class="segmented pc-after">${opt("notify", "Только сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением будет минута на «отмену» — в чате и окном на экране.</p>`);
+  return cardSection("После рендера", `${line}<div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением будет минута на «отмену» — в чате и окном на экране.</p>`);
 }
 
 /** Мелочи: экран, звук, ссылка. */
