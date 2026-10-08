@@ -36,8 +36,18 @@ function pcLoad(force = false) {
     // Громкость спрашиваем сами при открытии: ползунку нужно настоящее значение.
     if (answer.agent && (!ui.pc.audioAt || Date.now() - ui.pc.audioAt > 30000)) pcQuick("volume", {}, "audio");
   }).catch(error => { ui.pc = { ...ui.pc, error: String(error?.message || error) }; })
-    .finally(() => { ui.pc.loading = false; if (ui.page === "pc") render(); });
+    .finally(() => {
+      ui.pc.loading = false;
+      if (ui.page !== "pc") return;
+      // Пока человек печатает в поиске — меняем только шапку, иначе поле потеряет фокус.
+      const hero = document.querySelector(".pc-hero");
+      if (document.activeElement?.id === "pc-find" && hero && ui.pc.data) hero.outerHTML = pcHero(ui.pc.data);
+      else render();
+    });
 }
+
+// Пока экран «Компьютер» открыт — состояние раз в 15 с (агент шлёт загрузку раз в 30 с).
+setInterval(() => { if (ui.page === "pc" && !document.hidden && ui.pc?.data && !ui.pc.pending) pcLoad(true); }, 15000);
 
 // ------------------------------------------------------------ иконки
 
@@ -223,9 +233,85 @@ function pcRenderNow(r) {
   return `<div class="pc-render-live"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(r.comp || r.app || "After Effects")}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(facts)}${r.source === "aerender" ? " · aerender" : ""}</p>${r.source === "aerender" ? `<button type="button" class="small-button ${ui.pc.quick?.render_cancel || ""}" data-action="pc-render-cancel">Остановить рендер</button>` : ""}</div>`;
 }
 
-function pcLinkBlock() {
-  return `<section class="pc-card"><div class="pc-card-head"><h3>${pcIcon("link")}Открыть на компьютере</h3></div><div class="pc-open"><input id="pc-url" type="url" inputmode="url" placeholder="https://…" autocomplete="off"><button type="button" class="small-button ${ui.pc.quick?.open || ""}" data-action="pc-open">Открыть</button></div><p class="section-note">Файл на компьютер — пришлите боту с подписью «на комп» (сохранит в «Загрузки\\Flow»). С компьютера — «скинь D:\\путь\\к\\файлу».</p></section>`;
+// ------------------------------------------------------------ «Открыть на компьютере»: умный поиск
+
+const PC_SITES = [
+  { name: "YouTube", url: "https://www.youtube.com", alias: "ютуб ютюб видео" }, { name: "Кинопоиск", url: "https://www.kinopoisk.ru", alias: "кино фильм kinopoisk" },
+  { name: "Twitch", url: "https://www.twitch.tv", alias: "твич стрим" }, { name: "ChatGPT", url: "https://chatgpt.com", alias: "чатгпт gpt нейросеть" },
+  { name: "Яндекс Музыка", url: "https://music.yandex.ru", alias: "музыка yandex music" }, { name: "ВКонтакте", url: "https://vk.com", alias: "вк vk" },
+  { name: "Gmail", url: "https://mail.google.com", alias: "почта mail гмейл" }, { name: "Google Диск", url: "https://drive.google.com", alias: "диск drive гугл" },
+];
+
+function pcScore(q, name, alias = "") {
+  const n = name.toLowerCase();
+  if (!q) return 0;
+  if (n === q) return 100;
+  if (n.startsWith(q)) return 80;
+  if (n.split(/[\s._\-()]+/).some(w => w.startsWith(q))) return 65;
+  if (alias && alias.split(" ").some(w => w && (w.startsWith(q) || q.startsWith(w)))) return 60;
+  if (n.includes(q)) return 50;
+  return 0;
 }
+// При равном совпадении — новее версия, не учебные редакции (как и на ПК).
+const pcRank = name => (/apprentice|education|indie|core|installer|command ?line|viewer/i.test(name) ? -20 : 0) * 10000 + Math.max(0, ...(name.match(/20\d\d|\d{1,2}\.\d+/g) || ["0"]).map(Number));
+
+const PC_EXT = { aep: "Проект AE", aet: "Шаблон AE", hip: "Houdini", hipnc: "Houdini", psd: "Photoshop", ai: "Illustrator", c4d: "Cinema 4D", pdf: "PDF", mp4: "Видео", mov: "Видео", png: "Картинка", jpg: "Картинка", jpeg: "Картинка", exr: "EXR", zip: "Архив", rar: "Архив", docx: "Документ", xlsx: "Таблица", txt: "Текст", "папка": "Папка" };
+
+/** Что предложить на запрос: программы, недавние файлы, сайты; в конце — ссылка или поиск в интернете. */
+function pcFindResults(raw) {
+  const q = raw.trim().toLowerCase();
+  const ix = ui.pc?.data?.openIndex || {};
+  if (!q) {
+    const recent = (ix.recent || []).slice(0, 5).map(r => ({ kind: "file", value: r.id, title: r.name, sub: PC_EXT[r.ext] || r.ext || "Файл", icon: "file" }));
+    return { recent, sites: PC_SITES.slice(0, 4) };
+  }
+  const found = [];
+  for (const a of ix.apps || []) { const s = pcScore(q, a.name, a.alias); if (s) found.push({ s, r: pcRank(a.name), kind: "app", value: a.id, title: a.name, sub: "Программа", icon: "app" }); }
+  for (const r of ix.recent || []) { const s = pcScore(q, r.name) - 5; if (s > 0) found.push({ s, r: r.at || 0, kind: "file", value: r.id, title: r.name, sub: `${PC_EXT[r.ext] || r.ext || "Файл"} · недавний`, icon: "file" }); }
+  for (const w of PC_SITES) { const s = pcScore(q, w.name, w.alias); if (s) found.push({ s, r: 0, kind: "url", value: w.url, title: w.name, sub: "Сайт", icon: "web" }); }
+  found.sort((a, b) => b.s - a.s || b.r - a.r);
+  const list = found.slice(0, 6);
+  const isUrl = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(raw.trim()) && !/\s/.test(raw.trim());
+  list.push(isUrl ? { kind: "url", value: raw.trim(), title: raw.trim(), sub: "Открыть сайт", icon: "web" } : { kind: "search", value: raw.trim(), title: `Найти «${raw.trim()}»`, sub: "Поиск в браузере на компьютере", icon: "search" });
+  return { list };
+}
+
+const PC_FIND_ICON = {
+  app: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h6v6H9z"/>',
+  file: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+};
+
+function pcFindRow(x) {
+  const busy = ui.pc.quick?.[`open-${x.value}`] || "";
+  return `<button type="button" class="pc-find-row ${busy}" data-action="pc-open-item" data-kind="${esc(x.kind)}" data-value="${esc(x.value)}" data-title="${esc(x.title)}"><span class="pc-find-ico ${x.icon}"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON[x.icon]}</svg></span><span class="pc-find-text"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span></button>`;
+}
+
+function pcFindResultsHtml(raw) {
+  const r = pcFindResults(raw);
+  if (r.list) return r.list.map(pcFindRow).join("");
+  const sites = `<div class="pc-find-chips">${r.sites.map(w => `<button type="button" class="pc-chip" data-action="pc-open-item" data-kind="url" data-value="${esc(w.url)}" data-title="${esc(w.name)}">${esc(w.name)}</button>`).join("")}</div>`;
+  return `${r.recent.length ? `<p class="pc-find-label">Недавние файлы</p>${r.recent.map(pcFindRow).join("")}` : `<p class="section-note">Список программ и недавних файлов придёт с компьютера в течение минуты.</p>`}<p class="pc-find-label">Сайты</p>${sites}`;
+}
+
+function pcLinkBlock() {
+  const q = ui.pc.find || "";
+  return `<section class="pc-card pc-find"><div class="pc-card-head"><h3>${pcIcon("link")}Открыть на компьютере</h3></div><div class="pc-find-box"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.search}</svg><input id="pc-find" type="search" enterkeyhint="go" placeholder="Программа, файл, сайт или запрос" autocomplete="off" value="${esc(q)}"></div><div class="pc-find-results">${pcFindResultsHtml(q)}</div><p class="section-note">Файл на компьютер — пришлите боту с подписью «на комп» (сохранит в «Загрузки\\Flow»). С компьютера — «скинь D:\\путь\\к\\файлу».</p></section>`;
+}
+
+// Варианты меняются по мере набора — перерисовываем только список, поле остаётся в фокусе.
+document.addEventListener("input", event => {
+  if (event.target?.id !== "pc-find") return;
+  ui.pc.find = event.target.value;
+  const box = document.querySelector(".pc-find-results");
+  if (box) box.innerHTML = pcFindResultsHtml(ui.pc.find);
+});
+document.addEventListener("keydown", event => {
+  if (event.target?.id !== "pc-find" || event.key !== "Enter") return;
+  event.preventDefault();
+  document.querySelector(".pc-find-results .pc-find-row")?.click();
+});
 
 function renderPcPage() {
   pcLoad();
@@ -392,10 +478,10 @@ function pcAction(action, control) {
     pcQuick("volume", { mute: muted }, "mute");
     return true;
   }
-  if (action === "pc-open") {
-    const url = (document.getElementById("pc-url")?.value || "").trim();
-    if (!/^https?:\/\//i.test(url)) { toast("Нужна полная ссылка, с http"); return true; }
-    pcQuick("open", { url }, "open", () => toast("Открыл на компьютере"));
+  if (action === "pc-open-item") {
+    const { kind, value, title } = control.dataset;
+    const args = kind === "app" || kind === "file" ? { kind, id: value } : kind === "url" ? { kind, url: value } : { kind: "search", q: value };
+    pcQuick("open", args, `open-${value}`, () => { toast(`Открыл: ${title}`); ui.pc.find = ""; const input = document.getElementById("pc-find"); if (input) input.value = ""; });
     return true;
   }
   if (action === "pc-kill") {
