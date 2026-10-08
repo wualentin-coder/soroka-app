@@ -200,11 +200,27 @@ function pcRenderBlock(d) {
   const r = d.render || {};
   const then = r.then || "notify";
   const opt = (value, label) => `<button type="button" class="segment ${then === value ? "active" : ""} ${ui.pc.quick?.[`after-${value}`] || ""}" data-action="pc-after" data-then="${value}" aria-pressed="${then === value}">${label}</button>`;
-  const mins = r.since ? Math.round((Date.now() / 1000 - r.since) / 60) : 0;
-  const line = r.rendering ? `<p class="pc-render-now"><span class="pc-render-dot"></span>Рендерит ${esc(r.app || "After Effects")} · ${mins} мин</p>`
-    : r.done_at ? `<p class="section-note">Последний рендер закончился ${esc(new Date(r.done_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}, шёл ${Math.round((r.seconds || 0) / 60)} мин.</p>`
-      : `<p class="section-note">Замечу сам: After Effects, aerender или Media Encoder грузят ПК дольше 3 минут.</p>`;
-  return `<section class="pc-card ${r.rendering ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}После рендера</h3></div>${line}<div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением — минута на «отмену» в чате и окном на экране.</p></section>`;
+  const line = r.rendering ? pcRenderNow(r)
+    : r.done_at ? `<p class="section-note">${r.status && r.status !== "done" ? "Последний рендер остановлен" : "Последний рендер закончился"}${r.comps?.length ? ` («${r.comps.map(esc).join("», «")}»)` : ""} ${esc(new Date(r.done_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}, шёл ${pcMinutes(r.seconds || 0)}.</p>`
+      : `<p class="section-note">С расширением Flow Render в After Effects вижу название и прогресс; без него — замечаю рендер по нагрузке.</p>`;
+  return `<section class="pc-card ${r.rendering ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}${r.rendering ? "Рендер" : "После рендера"}</h3></div>${line}<p class="pc-after-label">Когда закончится:</p><div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением — минута на «отмену» в чате и окном на экране.</p></section>`;
+}
+
+const pcMinutes = s => { s = Math.round(s); return s >= 3600 ? `${Math.floor(s / 3600)} ч ${Math.round(s % 3600 / 60)} мин` : s >= 60 ? `${Math.round(s / 60)} мин` : `${s} с`; };
+
+/** Идёт рендер: что, сколько процентов (если известно), кадры, сколько осталось. */
+function pcRenderNow(r) {
+  const pct = r.percent === null || r.percent === undefined ? null : Math.max(0, Math.min(100, Number(r.percent)));
+  const elapsed = r.since ? Date.now() / 1000 - r.since : 0;
+  const facts = [
+    r.frames && r.frame !== null && r.frame !== undefined ? `кадр ${r.frame} из ${r.frames}` : "",
+    Number(r.items) > 1 ? `пункт ${r.item} из ${r.items}` : "",
+    r.eta ? `осталось ~${pcMinutes(r.eta)}` : elapsed ? `идёт ${pcMinutes(elapsed)}` : "",
+  ].filter(Boolean).join(" · ");
+  const bar = pct === null
+    ? `<div class="pc-render-bar indeterminate"><b></b></div><p class="section-note">Процента пока нет — жду первые строки журнала рендера AE.</p>`
+    : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
+  return `<div class="pc-render-live"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(r.comp || r.app || "After Effects")}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(facts)}${r.source === "aerender" ? " · aerender" : ""}</p>${r.source === "aerender" ? `<button type="button" class="small-button ${ui.pc.quick?.render_cancel || ""}" data-action="pc-render-cancel">Остановить рендер</button>` : ""}</div>`;
 }
 
 function pcLinkBlock() {
@@ -218,6 +234,8 @@ function renderPcPage() {
   if (!d) return `${top}<div class="content-grid"><div class="content-main pc-page"><section class="pc-hero unknown"><div class="pc-hero-top"><div class="pc-orb">${pcIcon("power")}</div><div class="pc-hero-text"><strong>${ui.pc?.error ? "Нет связи" : "Подключаюсь…"}</strong><span>${esc(ui.pc?.error || "Спрашиваю, включён ли компьютер")}</span></div></div>${ui.pc?.error ? `<button class="primary-button" type="button" data-action="pc-refresh">Повторить</button>` : ""}</section></div></div>`;
   const busy = Boolean(ui.pc.pending);
   const note = !d.agent && d.on ? `<p class="section-note">Компьютер включён, но агент Flow на нём не запущен — остальное недоступно.</p>` : "";
+  // Пока идёт рендер — освежаем состояние сами, чтобы процент двигался.
+  if (d.render?.rendering) { clearTimeout(ui.pc.renderTimer); ui.pc.renderTimer = setTimeout(() => { if (ui.page === "pc") pcLoad(true); }, 6000); }
   const agentPart = d.agent ? `${pcActions(busy)}${pcResult()}${pcMedia()}${pcRenderBlock(d)}${pcLinkBlock()}` : pcResult();
   // Карточки «въезжают» только при входе на экран, а не на каждое нажатие.
   const enter = !ui.pc.entered;
@@ -355,6 +373,11 @@ function pcAction(action, control) {
     return true;
   }
   if (action === "pc-cancel") { pcQuick("cancel", {}, "cancel", () => { toast("Отменил — компьютер работает дальше"); pcLoad(true); }); return true; }
+  if (action === "pc-render-cancel") {
+    if (!window.confirm("Остановить рендер? Уже записанные кадры останутся.")) return true;
+    pcQuick("render_cancel", {}, "render_cancel", () => { toast("Останавливаю рендер"); setTimeout(() => pcLoad(true), 3000); });
+    return true;
+  }
   if (action === "pc-lock") { pcQuick("lock", {}, "lock", () => toast("Экран заблокирован")); return true; }
   if (action === "pc-after") {
     const then = control.dataset.then;
