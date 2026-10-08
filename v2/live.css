@@ -682,3 +682,6 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 .pc-shot { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); cursor: zoom-in; }
 .pc-shot img, .pc-shot-zoom img { display: block; width: 100%; height: auto; }
 .pc-shot-zoom { overflow: auto; max-height: 75vh; border-radius: 12px; touch-action: pan-x pan-y pinch-zoom; }
+
+button.vpn-service { display: block; width: 100%; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.vpn-direct { margin-left: 8px; padding: 1px 7px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); font-size: 11px; font-style: normal; font-weight: 700; }
