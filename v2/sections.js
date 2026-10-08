@@ -172,6 +172,7 @@ document.addEventListener("submit", event => {
 function renderExtendedSheet() {
   if (ui.sheet.kind === "vpn-key") return renderVpnKeySheet();
   if (ui.sheet.kind === "pc-shot") return renderPcShotSheet();
+  if (ui.sheet.kind === "pc-power") return renderPcPowerSheet();
   if (ui.sheet.kind === "vpn-new") return renderVpnNewSheet();
   if (ui.sheet.kind === "vpn-exceptions") return renderVpnExceptionsSheet();
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
@@ -180,6 +181,7 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "cook") return renderCookSheet();
   if (ui.sheet.kind === "finance-reconcile") return renderReconcileSheet();
   if (ui.sheet.kind === "reco-detail") return renderRecoDetailSheet();
+  if (ui.sheet.kind === "movie-similar") return renderMovieSimilarSheet();
   if (ui.sheet.kind === "finance-accounts") return renderAccountsSheet();
   if (ui.sheet.kind === "income-split") return renderIncomeSplitSheet();
   if (ui.sheet.kind === "split-rules") return renderSplitRulesSheet();
