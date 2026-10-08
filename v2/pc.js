@@ -154,8 +154,15 @@ function pcResult() {
   if (r.cmd === "status") return ""; // свежие цифры уже в шапке, с анимацией
   if (r.cmd === "processes") {
     const list = r.result?.processes || [];
-    const max = Math.max(1, ...list.map(x => Number(x.cpu_percent) || 0));
-    return cardSection("Больше всего грузят", `<div class="list-panel pc-procs">${list.slice(0, 10).map((x, i) => `<div class="list-row pc-proc" style="--i:${i}"><span class="list-copy"><strong>${esc(x.name)}</strong><span>процессор ${pcPct(x.cpu_percent)} · память ${pcPct(x.memory_percent)} · PID ${esc(x.pid)}</span><i class="pc-proc-bar"><b style="--v:${(Number(x.cpu_percent) || 0) / max * 100}%"></b></i></span><button type="button" class="text-action" data-action="pc-kill" data-pid="${esc(x.pid)}" data-name="${esc(x.name)}">Завершить</button></div>`).join("")}</div>`);
+    const mem = mb => Number(mb) >= 1024 ? `${(Number(mb) / 1024).toFixed(1)} ГБ` : `${Math.round(Number(mb) || 0)} МБ`;
+    const maxMem = Math.max(1, ...list.map(x => Number(x.memory_mb) || 0));
+    const row = (x, i) => {
+      const title = x.title || x.name;
+      const cpu = Number(x.cpu_percent) || 0;
+      const facts = [x.memory_mb !== undefined ? mem(x.memory_mb) : `память ${pcPct(x.memory_percent)}`, `процессор ${cpu < 0.1 ? "0" : cpu.toFixed(cpu < 10 ? 1 : 0)}%`, Number(x.count) > 1 ? `${x.count} процессов` : ""].filter(Boolean).join(" · ");
+      return `<div class="list-row pc-proc" style="--i:${i}"><span class="list-copy"><strong>${esc(title)}</strong><span>${esc(facts)}</span><i class="pc-proc-bar two"><b class="mem" style="--v:${(Number(x.memory_mb) || 0) / maxMem * 100}%"></b><b class="cpu" style="--v:${Math.min(100, cpu)}%"></b></i></span><button type="button" class="text-action" data-action="pc-kill" data-pid="${esc(x.pid)}" data-name="${esc(x.name)}" data-title="${esc(title)}" data-count="${esc(x.count || 1)}">Закрыть</button></div>`;
+    };
+    return cardSection("Что грузит компьютер", `<div class="list-panel pc-procs">${list.slice(0, 10).map(row).join("")}</div><p class="section-note">Только ваши программы, одинаковые процессы вместе. Полоска сверху — память, снизу — процессор.</p>`);
   }
   if (r.cmd === "screenshot" && r.image) return cardSection("Скриншот", `<button type="button" class="pc-shot pc-flash" data-action="pc-shot-open"><img src="${r.image}" alt="Экран компьютера"></button><p class="section-note">Он же отправлен в чат с ботом. Нажмите, чтобы открыть крупно.</p>`);
   if (r.cmd === "kill") return pcDoneCard("check", "go", "Процесс завершён", esc(r.result?.message || ""));
@@ -485,8 +492,10 @@ function pcAction(action, control) {
     return true;
   }
   if (action === "pc-kill") {
-    if (!window.confirm(`Завершить «${control.dataset.name}»? Несохранённое в нём пропадёт.`)) return true;
-    pcSend("kill", { pid: Number(control.dataset.pid) });
+    const { pid, name, title, count } = control.dataset;
+    const many = Number(count) > 1 ? ` (${count} процессов)` : "";
+    if (!window.confirm(`Закрыть «${title || name}»${many}? Несохранённое в нём пропадёт.`)) return true;
+    pcSend("kill", { pid: Number(pid), name, title });
     return true;
   }
   if (action === "pc-shot-open") { if (ui.pc?.last?.image) { ui.sheet = { kind: "pc-shot", justRendered: false }; render(); } return true; }
