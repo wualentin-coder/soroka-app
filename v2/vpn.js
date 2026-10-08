@@ -97,16 +97,18 @@ function renderVpnPage() {
 function vpnServices(sv) {
   if (!sv?.items?.length) return "";
   const period = ui.vpnPeriod || "month";
-  const items = sv.items.filter(s => s[period] > 0).sort((a, b) => b[period] - a[period]);
+  const items = sv.items.filter(s => s[period] > 0 || s.direct).sort((a, b) => b[period] - a[period]);
   const total = items.reduce((a, s) => a + s[period], 0);
   const tabs = [["today", "Сегодня"], ["week", "Неделя"], ["month", "Месяц"]];
   const seg = `<div class="segmented" role="group" aria-label="Период">${tabs.map(([k, l]) => `<button type="button" class="${period === k ? "active" : ""}" data-action="vpn-period" data-value="${k}" aria-pressed="${period === k}">${l}</button>`).join("")}</div>`;
-  const rows = items.slice(0, 10).map(s => {
+  const rows = [...items.filter(s => !s.direct).slice(0, 10), ...items.filter(s => s.direct)].map(s => {
     const pct = total ? s[period] / total * 100 : 0;
-    return `<div class="vpn-service"><div class="vpn-service-top"><span>${esc(s.title)}</span><b>${vpnBytes(s[period])}<small>${Math.round(pct)}%</small></b></div><div class="progress-track"><span style="width:${Math.max(2, pct)}%"></span></div></div>`;
+    const tag = s.direct ? `<em class="vpn-direct">мимо VPN</em>` : "";
+    const body = `<div class="vpn-service-top"><span>${esc(s.title)}${tag}</span><b>${vpnBytes(s[period])}<small>${Math.round(pct)}%</small></b></div><div class="progress-track"><span style="width:${Math.max(2, pct)}%"></span></div>`;
+    return s.can_route ? `<button type="button" class="vpn-service" data-action="vpn-service" data-tag="${esc(s.tag)}">${body}</button>` : `<div class="vpn-service">${body}</div>`;
   }).join("");
   const since = sv.since ? new Date(`${sv.since}T00:00:00`).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : "";
-  return cardSection("Куда уходит трафик", `<div class="side-card">${rows || `<p class="side-note">За этот период через VPN ничего не прошло.</p>`}<p class="side-note">Только то, что идёт через VPN; российские сайты идут напрямую и сюда не попадают. Считается${since ? ` с ${since}` : ""}, без списка посещённых адресов.</p></div>`, "", seg);
+  return cardSection("Куда уходит трафик", `<div class="side-card">${rows || `<p class="side-note">За этот период через VPN ничего не прошло.</p>`}<p class="side-note">Нажмите на сервис, чтобы пустить его мимо VPN или вернуть. Только то, что идёт через VPN; российские сайты идут напрямую и сюда не попадают. Считается${since ? ` с ${since}` : ""}, без списка посещённых адресов.</p></div>`, "", seg);
 }
 
 function vpnClient(name) {
@@ -152,6 +154,16 @@ function vpnAction(action, control) {
   const name = control.dataset.name || ui.sheet?.name;
   if (action === "vpn-refresh") { vpnLoad(true); render(); return true; }
   if (action === "vpn-period") { ui.vpnPeriod = control.dataset.value; render(); return true; }
+  if (action === "vpn-service") {
+    const s = ui.vpn?.data?.services?.items?.find(x => x.tag === control.dataset.tag);
+    if (!s) return true;
+    const ask = s.direct
+      ? `Вернуть «${s.title}» в VPN?`
+      : `Пустить «${s.title}» мимо VPN? Он пойдёт напрямую через вашего провайдера.${s.tag === "s-ai" ? " Нейросети из России обычно не открываются — без VPN они, скорее всего, перестанут работать." : ""}`;
+    if (!window.confirm(ask)) return true;
+    vpnRun(vpnCall("service-route", { tag: s.tag, direct: !s.direct }), () => toast(s.direct ? "Вернул в VPN — обновите подписку в Happ" : "Мимо VPN — обновите подписку в Happ, чтобы сразу подхватилось"));
+    return true;
+  }
   if (action === "vpn-key") { ui.sheet = { kind: "vpn-key", name }; render(); return true; }
   if (action === "vpn-new") { ui.sheet = { kind: "vpn-new" }; render(); return true; }
   if (action === "vpn-links") {
