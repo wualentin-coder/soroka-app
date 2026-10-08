@@ -862,3 +862,16 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 }
 .pc-media-btn, .pc-mute { flex: none; padding: 0; min-height: 0; min-width: 0; aspect-ratio: 1; align-self: center; }
 .pc-transport { align-items: center; }
+
+.pc-render-live { display: grid; gap: 6px; margin-bottom: 6px; }
+.pc-render-title { display: flex; align-items: center; gap: 8px; }
+.pc-render-title strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.pc-render-pct { font-size: 20px; font-variant-numeric: tabular-nums; color: var(--accent); }
+.pc-render-bar { height: 10px; border-radius: 10px; background: color-mix(in srgb, var(--muted) 16%, transparent); overflow: hidden; }
+.pc-render-bar b { display: block; height: 100%; width: var(--v); border-radius: inherit; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff)); background-size: 200% 100%; transition: width .8s ease; animation: pc-shine 2s linear infinite; }
+.pc-render-bar.indeterminate b { width: 35%; animation: pc-slide 1.6s ease-in-out infinite; }
+.pc-render-facts { margin: 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pc-render-live .small-button { justify-self: start; }
+.pc-after-label { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+@keyframes pc-shine { from { background-position: 200% 0; } to { background-position: 0 0; } }
+@keyframes pc-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
