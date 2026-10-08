@@ -713,3 +713,23 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .pc-moon { fill: currentColor; stroke: none; opacity: 0; animation: pc-moon .6s .15s ease-out forwards; }
 @keyframes pc-moon { from { opacity: 0; transform: rotate(-40deg) scale(.6); transform-origin: center; } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pc-power-off, .pc-off-done .pc-power { animation: none; } .pc-moon { opacity: 1; animation: none; } }
+
+.pc-btn.pc-sleep { background: color-mix(in srgb, #6b74c9 12%, var(--surface)); border-color: color-mix(in srgb, #6b74c9 40%, var(--line)); color: #6b74c9; }
+.pc-pad-3 { grid-template-columns: repeat(3, 1fr); }
+.pc-pad-3 .pc-btn { min-height: 44px; font-size: 13px; padding: 0 6px; }
+.pc-countdown .primary-button { margin-top: 10px; }
+.pc-left { font-variant-numeric: tabular-nums; }
+.pc-after { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
+.pc-after .segment { flex: 1 1 auto; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+.pc-after .segment.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pc-render-now { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; }
+.pc-render-dot { width: 10px; height: 10px; border-radius: 50%; background: #d94b4b; animation: pc-blink 1.2s ease-in-out infinite; }
+.pc-open { display: flex; gap: 8px; margin-top: 12px; }
+.pc-open input { flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
+
+.movie-similar-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 46px; margin: 12px 0; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius: 14px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
+.movie-similar-sheet .record-card { width: 100%; margin: 0 0 10px; }
+.similar-head { margin: 14px 0 8px; font-size: 15px; }
+.similar-new { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 10px; }
+.similar-new .record-card { margin: 0; }
+.similar-own { opacity: .85; }
