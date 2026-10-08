@@ -393,7 +393,7 @@ function pcWait(id, cmd, tries = 0) {
   }).catch(() => setTimeout(() => pcWait(id, cmd, tries + 1), 2500));
 }
 
-const PC_ERRORS = { agent_offline: "Компьютер не на связи", pc_off: "Компьютер выключен", already_on: "Компьютер и так включён", nothing_to_cancel: "Отменять нечего", bad_url: "Нужна полная ссылка, с http" };
+const PC_ERRORS = { esp_offline: "ESP32 не на связи — включить по сети не получится", agent_offline: "Компьютер не на связи", pc_off: "Компьютер выключен", already_on: "Компьютер и так включён", nothing_to_cancel: "Отменять нечего", bad_url: "Нужна полная ссылка, с http" };
 
 function pcSend(cmd, args = {}) {
   ui.pc.pending = { cmd, started: Date.now() };
