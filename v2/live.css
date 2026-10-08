@@ -653,3 +653,7 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 .server-setting > span { font-size: 13px; font-weight: 600; }
 .server-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .server-chips .map-category-chip { min-width: 58px; justify-content: center; font-size: 12px; }
+
+/* Поезд в расписании — с билетом из «Поездок» (eventTicket в app.js) */
+.event-ticket { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; margin-top: 6px; padding: 4px 9px; border-radius: 9px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; }
+.event-ticket .icon { width: 14px; height: 14px; }
