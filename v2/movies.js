@@ -229,7 +229,47 @@ async function openMovieReco() {
 
 // ------------------------------------------------------------ что делаем с предложением
 
-function findPick(key) { return movieRecoState().picks.find(p => pickKey(p) === key); }
+function findPick(key) { return movieRecoState().picks.find(p => pickKey(p) === key) || ui.similar?.picks?.find(p => pickKey(p) === key); }
+
+// ------------------------------------------------------------ «похожие» из карточки фильма
+
+/** Похожее на фильм из библиотеки: что уже есть у вас — отдельно, новое — с «В планы». */
+function openSimilar(item) {
+  const cache = (ui.similarCache ||= {});
+  ui.similar = cache[item.id] || { forId: item.id, title: item.title, loading: true, picks: [], note: "" };
+  ui.sheet = { kind: "movie-similar", justRendered: false };
+  render();
+  if (cache[item.id] || typeof window.sorokaSimilar !== "function") {
+    if (typeof window.sorokaSimilar !== "function") { ui.similar.loading = false; ui.similar.note = "Нужна связь с ботом"; render(); }
+    return;
+  }
+  const state = ui.similar;
+  window.sorokaSimilar({ title: item.title, original_title: item.originalTitle || "", year: item.year || "", kind: item.topic === "Сериалы" ? "series" : "movie" })
+    .then(answer => { state.picks = Array.isArray(answer?.picks) ? answer.picks : []; state.note = answer?.note || ""; cache[item.id] = state; })
+    .catch(() => { state.note = "Не получилось подобрать — попробуйте ещё раз."; })
+    .finally(() => { state.loading = false; if (ui.sheet?.kind === "movie-similar" && ui.similar === state) render(); });
+}
+
+function libraryMatch(p) {
+  const keys = new Set([`${p.title.toLocaleLowerCase("ru-RU")}|${p.year || ""}`, `${String(p.originalTitle || "").toLocaleLowerCase("ru-RU")}|${p.year || ""}`]);
+  return savedItems("movies").find(m => keys.has(libraryKey(m)) || (m.originalTitle && keys.has(`${m.originalTitle.toLocaleLowerCase("ru-RU")}|${m.year || ""}`)));
+}
+
+function renderMovieSimilarSheet() {
+  const s = ui.similar || { picks: [] };
+  const own = [], fresh = [];
+  for (const p of s.picks) { const m = libraryMatch(p); (m ? own : fresh).push([p, m]); }
+  const ownRow = ([p, m]) => `<button type="button" class="record-card movie-card similar-own" data-action="saved-open" data-category="movies" data-id="${esc(m.id)}">${movieCoverMarkup(m)}<span class="movie-card-body"><span class="movie-card-kicker">${movieIsViewed(m) ? `Смотрели${Number(m.rating) ? ` · ${Number(m.rating)}/10` : ""}` : m.skipped ? "Не интересно" : "В планах"}</span><span class="movie-card-title">${esc(m.title)}</span><span class="movie-card-facts">${[m.year, p.genre].filter(Boolean).map(esc).join(" · ")}</span>${p.why ? `<span class="movie-card-description">${esc(p.why)}</span>` : ""}</span></button>`;
+  const freshRow = ([p]) => {
+    const key = esc(pickKey(p));
+    const pending = recoPending.get(pickKey(p));
+    return `<div class="similar-new"><button type="button" class="record-card movie-card" data-action="reco-open" data-key="${key}">${movieCoverMarkup(pickAsMovie(p))}<span class="movie-card-body"><span class="movie-card-kicker">Новое для вас</span><span class="movie-card-title">${esc(p.title)}</span><span class="movie-card-facts">${[p.year, p.genre].filter(Boolean).map(esc).join(" · ")}</span>${p.why ? `<span class="movie-card-description">${esc(p.why)}</span>` : ""}${movieScoresLine(pickAsMovie(p))}</span></button><button type="button" class="small-button" data-action="similar-plans" data-key="${key}" ${pending ? "disabled" : ""}>${icon(pending ? "check" : "plus", "icon-sm")}${pending ? "В планах" : "В планы"}</button></div>`;
+  };
+  const body = s.loading
+    ? `<p class="section-note">Ищу похожее на «${esc(s.title)}» и проверяю каждое название по IMDb — до минуты.</p>${recoSkeleton()}`
+    : `${s.note ? `<p class="section-note">${esc(s.note)}</p>` : ""}${fresh.length ? `<h3 class="similar-head">Новое (${fresh.length})</h3>${fresh.map(freshRow).join("")}` : ""}${own.length ? `<h3 class="similar-head">Уже есть у вас (${own.length})</h3>${own.map(ownRow).join("")}` : ""}`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-similar-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Похожие на «${esc(s.title || "")}»</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${body}</section></div>`;
+}
 
 /** Предложение → запись в библиотеке. mode: plans | skip | seen (с оценкой). */
 function commitPick(key, mode, rating = 0) {
@@ -375,6 +415,8 @@ function movieAction(action, control) {
     return true;
   }
   if (action === "movie-reco-load") { void loadMovieReco(); return true; }
+  if (action === "movie-similar" && ui.sheet?.kind === "saved") { const item = savedItem("movies", ui.sheet.id); if (item) openSimilar(item); return true; }
+  if (action === "similar-plans") { commitPick(control.dataset.key, "plans"); toast("Добавил в планы"); return true; }
   if (action === "reco-open") { ui.sheet = { kind: "reco-detail", pickKey: control.dataset.key, justRendered: false }; render(); return true; }
   if (action === "reco-plans") { ui.sheet = null; deferPick(control.dataset.key, "plans"); return true; }
   if (action === "reco-skip") { ui.sheet = null; deferPick(control.dataset.key, "skip"); return true; }
