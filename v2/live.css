@@ -875,3 +875,27 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .pc-after-label { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
 @keyframes pc-shine { from { background-position: 200% 0; } to { background-position: 0 0; } }
 @keyframes pc-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
+
+/* «Открыть на компьютере» — поиск */
+.pc-find-box { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--muted) 6%, var(--surface)); }
+.pc-find-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.pc-find-box svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2.2; stroke-linecap: round; }
+.pc-find-box input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; outline: none; }
+.pc-find-results { display: grid; gap: 4px; margin-top: 10px; }
+.pc-find-row { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; animation: pc-rise .2s ease-out both; }
+.pc-find-row:hover, .pc-find-row:focus-visible { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.pc-find-row:first-child:not(:only-child) { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.pc-find-ico { flex: none; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.pc-find-ico.file { color: #c98a2e; background: color-mix(in srgb, #c98a2e 12%, var(--surface)); }
+.pc-find-ico.web { color: #4a7fd6; background: color-mix(in srgb, #4a7fd6 12%, var(--surface)); }
+.pc-find-ico.search { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, var(--surface)); }
+.pc-find-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pc-find-text { flex: 1; min-width: 0; display: grid; }
+.pc-find-text b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-find-text small { color: var(--muted); font-size: 12px; }
+.pc-find-row.is-busy .pc-find-ico { animation: pc-fade .8s ease-in-out infinite; }
+.pc-find-row.is-done::after { content: "✓"; position: absolute; right: 10px; top: 50%; margin-top: -11px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--pc-go, #2e9d5b); color: #fff; font-size: 12px; font-weight: 800; animation: pc-pop .4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.pc-find-label { margin: 8px 0 2px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.pc-find-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-chip { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pc-chip:active { transform: scale(.96); }
