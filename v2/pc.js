@@ -43,6 +43,7 @@ function pcResult() {
   const r = ui.pc?.last;
   const p = ui.pc?.pending;
   if (p?.cmd === "on") return pcBootCard(p);
+  if (p?.cmd === "off") return pcOffCard(p);
   if (p) return `<div class="state-card pc-wait"><span class="live-spin"></span><p>${p.cmd === "screenshot" ? "Делаю скриншот…" : "Спрашиваю компьютер…"}</p></div>`;
   if (!r) return "";
   if (r.cmd === "pc_on" && r.status === "done") return `<div class="state-card pc-boot pc-boot-done"><div class="pc-power"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="pc-check" d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div><h2>Компьютер включился</h2><p>За ${esc(r.result?.seconds ?? "")} с · уведомление отправлено в чат с ботом</p></div></div>`;
@@ -53,6 +54,7 @@ function pcResult() {
     return cardSection("Больше всего грузят", `<div class="list-panel">${list.slice(0, 10).map(x => `<div class="list-row pc-proc"><span class="list-copy"><strong>${esc(x.name)}</strong><span>процессор ${pcPct(x.cpu_percent)} · память ${pcPct(x.memory_percent)} · PID ${esc(x.pid)}</span></span><button type="button" class="text-action" data-action="pc-kill" data-pid="${esc(x.pid)}" data-name="${esc(x.name)}">Завершить</button></div>`).join("")}</div>`);
   }
   if (r.cmd === "screenshot" && r.image) return cardSection("Скриншот", `<button type="button" class="pc-shot" data-action="pc-shot-open"><img src="${r.image}" alt="Экран компьютера"></button><p class="section-note">Он же отправлен в чат с ботом. Нажмите, чтобы открыть крупно.</p>`);
+  if ((r.cmd === "off" || r.cmd === "pc_off") && r.status === "done") return `<div class="state-card pc-boot pc-off-done"><div class="pc-power"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="pc-moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></div><div><h2>Компьютер выключился</h2><p>За ${esc(r.result?.seconds ?? "")} с · уведомление отправлено в чат с ботом</p></div></div>`;
   if (r.cmd === "kill" || r.cmd === "off") return `<div class="state-card"><p>${esc(r.result?.message || "Готово")}</p></div>`;
   return "";
 }
@@ -89,25 +91,35 @@ function pcBootCard(p) {
   return `<div class="state-card pc-boot"><div class="pc-power pc-power-on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></div><div><h2>Включаю компьютер</h2><ol class="pc-steps">${list}</ol><p class="pc-boot-time">${sec} с${resent}</p></div></div>`;
 }
 
+/** Выключение: от «команда ушла» до «ПК погас» — пока сервер не увидит, что агент замолчал. */
+function pcOffCard(p) {
+  const sec = Math.max(0, Math.round((Date.now() - p.started) / 1000));
+  const step = p.stage === "shutting" || p.target === "hub" && p.status === "taken" ? 2 : p.status === "taken" ? 1 : 0;
+  const steps = ["Команда отправлена", p.target === "hub" ? "ESP32 передаёт команду (отсрочка 30 с)" : "Компьютер принял команду", "Windows завершает работу"];
+  const list = steps.map((s, i) => `<li class="${i < step ? "done" : i === step ? "now" : ""}">${s}</li>`).join("");
+  return `<div class="state-card pc-boot pc-off"><div class="pc-power pc-power-off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></div><div><h2>Выключаю компьютер</h2><ol class="pc-steps">${list}</ol><p class="pc-boot-time">${sec} с</p></div></div>`;
+}
+
 function pcWait(id, cmd, tries = 0) {
-  const boot = cmd === "on";
+  const boot = cmd === "on" || cmd === "off";
   pcCall({ op: "result", id }).then(r => {
     const done = r && ["done", "failed", "expired"].includes(r.status);
     // Включение ждём до конца: сервер отметит команду, когда ПК выйдет на связь (до 4 минут).
     if (done || tries > (boot ? 140 : 25)) {
       ui.pc.pending = null;
-      ui.pc.last = done ? r : { status: "failed", result: { message: boot ? "Компьютер так и не вышел на связь" : "Компьютер не ответил вовремя" } };
-      if (boot && r?.status === "done") { toast("Компьютер включился"); try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success"); } catch {} }
-      if (boot || cmd === "off") setTimeout(() => pcLoad(true), boot ? 500 : 8000);
+      ui.pc.last = done ? r : { status: "failed", result: { message: cmd === "on" ? "Компьютер так и не вышел на связь" : cmd === "off" ? "Компьютер так и не выключился" : "Компьютер не ответил вовремя" } };
+      if (boot && r?.status === "done") { toast(cmd === "on" ? "Компьютер включился" : "Компьютер выключился"); try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success"); } catch {} }
+      if (boot) setTimeout(() => pcLoad(true), 500);
       if (ui.page === "pc") render();
       return;
     }
     if (boot && ui.pc.pending) {
       ui.pc.pending.status = r?.status;
       ui.pc.pending.resent = Number(r?.args?.resent) || 0;
+      ui.pc.pending.stage = r?.result?.stage;
       // Тикают секунды — перерисовываем только карточку, а не весь экран.
       const card = document.querySelector(".pc-boot");
-      if (card && ui.page === "pc") card.outerHTML = pcBootCard(ui.pc.pending);
+      if (card && ui.page === "pc") card.outerHTML = cmd === "on" ? pcBootCard(ui.pc.pending) : pcOffCard(ui.pc.pending);
     }
     setTimeout(() => pcWait(id, cmd, tries + 1), boot ? 1700 : 1500);
   }).catch(() => setTimeout(() => pcWait(id, cmd, tries + 1), 2500));
@@ -119,6 +131,7 @@ function pcSend(cmd, args = {}) {
   render();
   pcCall({ op: "send", cmd, args }).then(made => {
     if (made?.error) throw new Error(made.error);
+    if (ui.pc.pending) ui.pc.pending.target = made.target;
     pcWait(made.id, cmd);
   }).catch(error => {
     ui.pc.pending = null;
