@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=ce0697713c","integrity":null},{"src":"./movies.js?v=c55c3774ee","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=2e63e29ae9","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=2197c990b9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=0807764b1e","integrity":null},{"src":"./app.js?v=2a39b82a38","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=ce0697713c","integrity":null},{"src":"./movies.js?v=c55c3774ee","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=2e63e29ae9","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=ac23010b18","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=0807764b1e","integrity":null},{"src":"./app.js?v=5c3bc3267c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -199,6 +199,12 @@
     too_many_deletes: "Слишком много удалений разом — ничего не удалил",
     savings_account: "Накопительный счёт постоянный — переименовать можно, удалить нельзя",
     goal_has_money: "В цели есть деньги — сначала снимите их кнопкой «Снять»",
+    vault_key_pending: "Подтвердите доступ к паролям в Telegram — бот прислал кнопку «Разрешить»",
+    vault_key_revoked: "Доступ к паролям с этого телефона отклонён в Telegram",
+    vault_cancel: "Пароли не открыты — нужно подтвердить отпечатком или PIN",
+    vault_no_lock: "Включите на телефоне блокировку экрана (PIN или отпечаток) — без неё пароли не открыть",
+    vault_unlock: "Не получилось подтвердить — попробуйте ещё раз",
+    vault_key_failed: "Телефон не создал ключ для паролей",
   };
   const human = (code) => ERRORS[code] || "Не сохранилось — попробуйте ещё раз";
 
@@ -552,15 +558,52 @@
     }
   }
 
+  /*
+   * Пароли в приложении телефона: каждый запрос подписан ключом из защищённого
+   * хранилища Android. Ключ годен 5 минут после отпечатка или PIN — истёк, и
+   * телефон снова спросит. Новый ключ один раз разрешается кнопкой в Telegram.
+   */
+  const phoneVault = () => !(tg && tg.initData) && android && typeof android.vaultSign === "function";
+  const unlockWaits = {};
+  window.__sorokaVaultUnlocked = (id, ok, why) => { const w = unlockWaits[id]; if (!w) return; delete unlockWaits[id]; w({ ok, why }); };
+  const phoneUnlock = () => new Promise((done) => {
+    const id = "u" + Date.now().toString(36);
+    unlockWaits[id] = done;
+    try { android.vaultUnlock(id); } catch (_) { delete unlockWaits[id]; done({ ok: false, why: "cancel" }); }
+  });
+  async function vaultCall(body) {
+    if (!phoneVault()) return call(body);
+    const key = android.vaultKey();
+    if (!key) throw new Error("vault_key_failed");
+    const sign = () => { const ts = Date.now(); return { ts, sig: android.vaultSign(`flow-vault|${body.action}|${body.id ?? ""}|${ts}`) }; };
+    let proof = sign();
+    if (proof.sig === "auth") {
+      const result = await phoneUnlock();
+      if (!result.ok) throw new Error(result.why === "no_lock" ? "vault_no_lock" : "vault_cancel");
+      proof = sign();
+    }
+    if (!proof.sig || proof.sig === "auth") throw new Error("vault_unlock");
+    try {
+      return await call({ ...body, vaultProof: { key, ts: proof.ts, sig: proof.sig } });
+    } catch (error) {
+      // Ключ ещё не знаком серверу — просим разрешение в Telegram.
+      if (error.message === "vault_key_unknown") {
+        await call({ action: "vault_key_register", key, label: "Телефон" }).catch(() => null);
+        throw new Error("vault_key_pending");
+      }
+      throw error;
+    }
+  }
+
   // Пароли — настоящее хранилище: список без паролей, пароль по запросу.
   const vault = {
     async list() {
-      const answer = await call({ action: "vault_list" });
+      const answer = await vaultCall({ action: "vault_list" });
       data.vault = (answer.entries || []).map((e) => ({ id: `v:${e.id}`, service: e.service, login: e.login || "", password: null, note: "" }));
     },
     async reveal(item) {
       if (!item || item.password !== null) return item;
-      const answer = await call({ action: "vault_reveal", id: Number(String(item.id).slice(2)) });
+      const answer = await vaultCall({ action: "vault_reveal", id: Number(String(item.id).slice(2)) });
       Object.assign(item, { password: answer.entry.password, note: answer.entry.note || "", login: answer.entry.login || item.login });
       return item;
     },
@@ -727,7 +770,7 @@
       stop();
       const item = data.vault.find((x) => x.id === (ui.sheet && ui.sheet.id));
       if (!item || !window.confirm(`Удалить «${item.service}» из хранилища?`)) return;
-      call({ action: "vault_delete", id: Number(String(item.id).slice(2)) })
+      vaultCall({ action: "vault_delete", id: Number(String(item.id).slice(2)) })
         .then(() => vault.list()).then(() => { ui.sheet = null; render(); say("Удалено"); }).catch((e) => vault.fail(e));
     }
   }
@@ -762,7 +805,7 @@
         password: String(f.get("password") || ""), note: String(f.get("note") || "").trim(),
       };
       if (existing) body.id = Number(String(existing.id).slice(2));
-      call(body).then(() => vault.list()).then(() => { ui.sheet = null; render(); say("Сохранено"); }).catch((e) => vault.fail(e));
+      vaultCall(body).then(() => vault.list()).then(() => { ui.sheet = null; render(); say("Сохранено"); }).catch((e) => vault.fail(e));
     }
   }
 
