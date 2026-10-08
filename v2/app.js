@@ -325,7 +325,9 @@ function todayPage() {
   const tasks = !daily.length && !duePays.length ? "" : `<section class="section"><div class="section-heading"><h2>Задачи на сегодня</h2><span class="count">${daily.length + duePays.length}</span></div><div class="task-stack">${payCards}${daily.length ? daily.map(taskCard).join("") : duePays.length ? "" : emptyCard("План свободен", "Добавьте задачу кнопкой ниже или пришлите её боту обычным сообщением.")}</div></section>`;
   const events = !meetings.length ? "" : `<section class="section"><div class="section-heading"><h2>В расписании</h2><span class="count">${meetings.length}</span></div>${meetings.length ? meetings.map(eventCard).join("") : emptyCard("Событий пока нет", "Можно добавить встречу на сегодня.")}</section>`;
   const aside = `<div class="side-card"><h3>Ближайшие дни</h3>${[1, 2, 3].map(n => { const day = offsetIso(n); const count = tasksOn(day).filter(t => !t.done).length + eventsOn(day).length; return `<div class="side-row"><span>${esc(dateLabel(day))}</span><b>${count} ${word(count, "запись", "записи", "записей")}</b></div>`; }).join("")}<button class="text-action" type="button" data-action="navigate" data-page="upcoming">Открыть календарь ${icon("arrow", "icon-sm")}</button></div><div class="side-card"><h3>Быстрый ввод</h3><p class="side-note">Задачи удобно отправлять боту обычным текстом. </p></div>`;
-  const tickets = typeof todayTicketsSection === "function" ? todayTicketsSection() : "";
+  // Билет, уже приколотый к событию в расписании на сегодня, второй раз ниже не показываем.
+  const shownTickets = new Set(meetings.map(eventTicket).filter(Boolean).map(t => t.id));
+  const tickets = typeof todayTicketsSection === "function" ? todayTicketsSection(shownTickets) : "";
   // «Сегодня» и «Предстоящие» — одна вкладка: календарь сверху, под ним день.
   // Сегодня — как раньше (итог, просроченное, дела, расписание); другой день — его дела.
   // Календарь и «сегодня» — одна карточка: сколько дел и сколько сделано — в её шапке.
