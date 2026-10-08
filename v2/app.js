@@ -158,7 +158,7 @@ function save() {
   try { const safe = { ...data }; delete safe.vault; localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); return true; } catch (_) { return false; }
 }
 let data = load();
-const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server"];
+const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc"];
 function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 const ui = {
   page: currentPage(),
