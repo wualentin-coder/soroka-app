@@ -657,3 +657,28 @@ body[data-page="finance"] .swipe-row .swipe-content { border-radius: 12px; }
 /* Поезд в расписании — с билетом из «Поездок» (eventTicket в app.js) */
 .event-ticket { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; margin-top: 6px; padding: 4px 9px; border-radius: 9px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; }
 .event-ticket .icon { width: 14px; height: 14px; }
+
+/* VPN: трафик по сервисам (vpnServices) */
+.vpn-service { padding: 8px 0; }
+.vpn-service + .vpn-service { border-top: 1px solid var(--line); }
+.vpn-service-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; font-weight: 600; }
+.vpn-service-top b { display: inline-flex; align-items: baseline; gap: 6px; }
+.vpn-service-top small { min-width: 30px; color: var(--subtle); font-size: 11px; text-align: right; }
+.vpn-service .progress-track { height: 5px; margin-top: 6px; }
+
+/* «Компьютер» (pc.js): пульт как у VK-бота, ответы ПК ниже */
+.pc-pad { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 14px; }
+.pc-btn { min-height: 48px; padding: 0 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+.pc-btn:disabled { opacity: .45; cursor: default; }
+.pc-btn.pc-on { grid-column: 1 / -1; background: #3f9b5b; border-color: #3f9b5b; color: #fff; }
+.pc-btn.pc-off { background: color-mix(in srgb, var(--warn) 14%, var(--surface)); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); color: var(--warn); }
+.pc-btn.pc-wide { grid-column: 1 / -1; }
+.pc-kpis { margin-bottom: 4px; }
+.pc-wait { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.pc-wait p { margin: 0; }
+.pc-proc { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; }
+.pc-proc + .pc-proc { border-top: 1px solid var(--line); }
+.pc-proc .list-copy span { color: var(--muted); }
+.pc-shot { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); cursor: zoom-in; }
+.pc-shot img, .pc-shot-zoom img { display: block; width: 100%; height: auto; }
+.pc-shot-zoom { overflow: auto; max-height: 75vh; border-radius: 12px; touch-action: pan-x pan-y pinch-zoom; }
