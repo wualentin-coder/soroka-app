@@ -733,3 +733,8 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .similar-new { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 10px; }
 .similar-new .record-card { margin: 0; }
 .similar-own { opacity: .85; }
+.segmented.pc-after { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.pc-after .segment { min-width: 0; padding: 0 6px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-open input { font-size: 15px; }
+.similar-new { grid-template-columns: 1fr; gap: 6px; }
+.similar-new .small-button { justify-self: end; }
