@@ -50,7 +50,7 @@ function pcResult() {
     const list = r.result?.processes || [];
     return cardSection("Больше всего грузят", `<div class="list-panel">${list.slice(0, 10).map(x => `<div class="list-row pc-proc"><span class="list-copy"><strong>${esc(x.name)}</strong><span>процессор ${pcPct(x.cpu_percent)} · память ${pcPct(x.memory_percent)} · PID ${esc(x.pid)}</span></span><button type="button" class="text-action" data-action="pc-kill" data-pid="${esc(x.pid)}" data-name="${esc(x.name)}">Завершить</button></div>`).join("")}</div>`);
   }
-  if (r.cmd === "screenshot" && r.image) return cardSection("Скриншот", `<button type="button" class="pc-shot" data-action="pc-shot-open"><img src="${r.image}" alt="Экран компьютера"></button><p class="section-note">Нажмите, чтобы открыть крупно.</p>`);
+  if (r.cmd === "screenshot" && r.image) return cardSection("Скриншот", `<button type="button" class="pc-shot" data-action="pc-shot-open"><img src="${r.image}" alt="Экран компьютера"></button><p class="section-note">Он же отправлен в чат с ботом. Нажмите, чтобы открыть крупно.</p>`);
   if (r.cmd === "kill" || r.cmd === "off") return `<div class="state-card"><p>${esc(r.result?.message || "Готово")}</p></div>`;
   return "";
 }
