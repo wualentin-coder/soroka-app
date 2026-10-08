@@ -705,3 +705,11 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 @keyframes pc-pop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes pc-draw { to { stroke-dashoffset: 0; } }
 @media (prefers-reduced-motion: reduce) { .pc-power-on, .pc-steps li.now::before, .pc-boot-done .pc-power { animation: none; } .pc-check { stroke-dashoffset: 0; animation: none; } }
+
+.pc-power-off { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, var(--surface)); animation: pc-fade 2.2s ease-in-out infinite; }
+@keyframes pc-fade { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.92); } }
+.pc-off .pc-steps li.done::before, .pc-off .pc-steps li.now::before { background: var(--muted); }
+.pc-off-done .pc-power { color: #6b74c9; background: color-mix(in srgb, #6b74c9 14%, var(--surface)); animation: pc-pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+.pc-moon { fill: currentColor; stroke: none; opacity: 0; animation: pc-moon .6s .15s ease-out forwards; }
+@keyframes pc-moon { from { opacity: 0; transform: rotate(-40deg) scale(.6); transform-origin: center; } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pc-power-off, .pc-off-done .pc-power { animation: none; } .pc-moon { opacity: 1; animation: none; } }
