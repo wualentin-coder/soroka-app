@@ -169,9 +169,9 @@ function ticketTabs() {
   return `<div class="movie-seen-tabs" role="group" aria-label="Билеты">${tab("all", "Предстоящие", all.length - past)}${tab("expired", "Просроченные", past)}</div>`;
 }
 /** Билеты на ближайшую неделю — для экрана «Сегодня». */
-function todayTicketsSection() {
+function todayTicketsSection(skip = new Set()) {
   const now = Date.now();
-  const soon = savedItems("tickets").filter(t => { const at = ticketStart(t); return at && !ticketExpired(t, now) && at.getTime() - now <= 7 * 86400000; })
+  const soon = savedItems("tickets").filter(t => { const at = ticketStart(t); return at && !skip.has(t.id) && !ticketExpired(t, now) && at.getTime() - now <= 7 * 86400000; })
     .sort((a, b) => ticketStart(a) - ticketStart(b));
   if (!soon.length) return "";
   const when = t => {
