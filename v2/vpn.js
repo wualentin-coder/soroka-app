@@ -82,11 +82,31 @@ function renderVpnPage() {
   const online = clients.filter(c => c.online).length;
   const status = `<div class="vpn-status ${s.xray_active ? "ok" : "down"}"><div><small>${esc(s.location)}</small><strong>${s.xray_active ? "Работает" : "VPN остановлен"}</strong><p>${online ? `${online} ${word(online, "устройство", "устройства", "устройств")} в сети` : "Сейчас никто не подключён"} · без перезагрузки ${vpnUptime(s.uptime_s)}</p></div><button class="small-button" type="button" data-action="vpn-restart">${icon("reset", "icon-sm")}Перезапустить</button></div>`;
   const traffic = `<div class="side-card vpn-traffic"><div class="budget-top"><span>Трафик за месяц</span><span>${vpnBytes(used)} из ${vpnBytes(t.limit)}</span></div><div class="progress-track"><span style="width:${pct}%;background:${pct > 80 ? "var(--warn)" : "var(--accent)"}"></span></div><div class="side-row"><span>Сегодня</span><b>${vpnBytes(t.today_out)}</b></div><div class="side-row"><span>Осталось</span><b>${vpnBytes(Math.max(0, t.limit - used))}</b></div>${t.error ? `<p class="side-note">Счётчик сервера: ${esc(t.error)}</p>` : ""}</div>`;
+  const services = vpnServices(v.data.services);
   const keys = cardSection("Ключи", `<div class="list-panel">${clients.length ? clients.map(vpnClientRow).join("") : `<div class="list-row"><span class="list-copy"><strong>Ключей нет</strong><span>Добавьте ключ для устройства.</span></span></div>`}</div>`, "", `<button class="text-action" type="button" data-action="vpn-new">Добавить ${icon("plus", "icon-sm")}</button>`);
   const exRow = (label, list) => `<div class="side-row"><span>${label}</span><b>${list.length ? esc(list.slice(0, 3).join(", ")) + (list.length > 3 ? ` +${list.length - 3}` : "") : "—"}</b></div>`;
   const ex = cardSection("Исключения", `<div class="side-card">${exRow("Напрямую, мимо VPN", exceptions.direct)}${exRow("Всегда через VPN", exceptions.proxy)}<p class="side-note">Российские сайты и сервисы идут напрямую сами. Здесь — то, что нужно добавить сверху. Приложения подхватят изменения из подписки.</p><button class="text-action" type="button" data-action="vpn-exceptions">Изменить ${icon("arrow", "icon-sm")}</button></div>`);
   const aside = `<aside class="content-aside"><div class="side-card"><h3>Сервер</h3><div class="side-row"><span>Адрес</span><b>${esc(s.domain)}</b></div><div class="side-row"><span>Нагрузка</span><b>${Math.round((s.load / (s.cpus || 1)) * 100)}%</b></div><div class="side-row"><span>Память</span><b>${vpnBytes(s.mem_used)} из ${vpnBytes(s.mem_total)}</b></div><div class="side-row"><span>Диск</span><b>${vpnBytes(s.disk_used)} из ${vpnBytes(s.disk_total)}</b></div><div class="side-row"><span>Сертификат</span><b>${s.cert_days === null ? "—" : `ещё ${s.cert_days} дн.`}</b></div><div class="side-row"><span>Xray</span><b>${esc(s.xray_version || "—")}</b></div><button class="text-action" type="button" data-action="vpn-refresh">Обновить ${icon("reset", "icon-sm")}</button></div></aside>`;
-  return `${top}<div class="content-grid"><div class="content-main">${status}${traffic}${keys}${ex}</div>${aside}</div>`;
+  return `${top}<div class="content-grid"><div class="content-main">${status}${traffic}${services}${keys}${ex}</div>${aside}</div>`;
+}
+
+/*
+ * Куда уходит трафик: у каждой группы сайтов на сервере свой выход, Xray
+ * считает байты по ним (без журнала посещений). Период — вкладками.
+ */
+function vpnServices(sv) {
+  if (!sv?.items?.length) return "";
+  const period = ui.vpnPeriod || "month";
+  const items = sv.items.filter(s => s[period] > 0).sort((a, b) => b[period] - a[period]);
+  const total = items.reduce((a, s) => a + s[period], 0);
+  const tabs = [["today", "Сегодня"], ["week", "Неделя"], ["month", "Месяц"]];
+  const seg = `<div class="segmented" role="group" aria-label="Период">${tabs.map(([k, l]) => `<button type="button" class="${period === k ? "active" : ""}" data-action="vpn-period" data-value="${k}" aria-pressed="${period === k}">${l}</button>`).join("")}</div>`;
+  const rows = items.slice(0, 10).map(s => {
+    const pct = total ? s[period] / total * 100 : 0;
+    return `<div class="vpn-service"><div class="vpn-service-top"><span>${esc(s.title)}</span><b>${vpnBytes(s[period])}<small>${Math.round(pct)}%</small></b></div><div class="progress-track"><span style="width:${Math.max(2, pct)}%"></span></div></div>`;
+  }).join("");
+  const since = sv.since ? new Date(`${sv.since}T00:00:00`).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : "";
+  return cardSection("Куда уходит трафик", `<div class="side-card">${rows || `<p class="side-note">За этот период через VPN ничего не прошло.</p>`}<p class="side-note">Только то, что идёт через VPN; российские сайты идут напрямую и сюда не попадают. Считается${since ? ` с ${since}` : ""}, без списка посещённых адресов.</p></div>`, "", seg);
 }
 
 function vpnClient(name) {
@@ -131,6 +151,7 @@ function vpnAction(action, control) {
   if (!action.startsWith("vpn-")) return false;
   const name = control.dataset.name || ui.sheet?.name;
   if (action === "vpn-refresh") { vpnLoad(true); render(); return true; }
+  if (action === "vpn-period") { ui.vpnPeriod = control.dataset.value; render(); return true; }
   if (action === "vpn-key") { ui.sheet = { kind: "vpn-key", name }; render(); return true; }
   if (action === "vpn-new") { ui.sheet = { kind: "vpn-new" }; render(); return true; }
   if (action === "vpn-links") {
