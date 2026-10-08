@@ -212,7 +212,6 @@ const navigation = [
   ["tasks", "Дела", "check"],
   ["saved", "Сохранённое", "bookmark"],
   ["finance", "Финансы", "wallet"],
-  ["inbox", "Входящие", "inbox"],
   ["projects", "Проекты", "project"],
   ["vault", "Пароли", "key"],
   ["archive", "Архив", "archive"],
@@ -285,8 +284,29 @@ function taskCard(task) {
   const dragHandle = ui.page === "upcoming" ? `<span class="task-drag-handle" draggable="true" role="img" aria-label="Перетащить задачу на другой день" title="Перетащить на другой день">${icon("grip", "icon-sm")}</span>` : "";
   return `<article class="task-card ${late ? "overdue" : ""} ${task.done ? "is-done" : ""}" data-task-id="${esc(task.id)}"><button class="task-check ${task.done ? "checked" : ""}" type="button" data-action="toggle-task" data-id="${esc(task.id)}" aria-label="${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${esc(task.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="edit" data-type="task" data-id="${esc(task.id)}" aria-label="${esc(mainLabel)}"><span class="task-title">${esc(task.title)}</span><span class="task-meta">${date}${time}${project}${noDate}</span></button>${checklistBlock(task)}<span class="task-card-trailing"><i class="priority-marker ${esc(task.priority)}" aria-hidden="true"></i>${dragHandle}</span></article>`;
 }
+/*
+ * Поезд в расписании — сразу с билетом: билет на поезд из «Поездок и
+ * мероприятий» в пределах суток от события показывается на карточке, одно
+ * нажатие — и он открыт с кодом.
+ */
+const TRAIN_RE = /поезд|ржд|ласточк|сапсан|электрич|вагон|плацкарт|купе(?![а-яё])/i;
+function eventTicket(event) {
+  if (typeof savedItems !== "function" || typeof ticketStart !== "function" || !(event?.due || event?.date)) return null;
+  if (!TRAIN_RE.test(`${event.title || ""} ${event.description || ""}`)) return null;
+  const at = new Date(`${event.due || event.date}T${/^\d{2}:\d{2}$/.test(event.time || "") ? event.time : "12:00"}:00`).getTime();
+  if (Number.isNaN(at)) return null;
+  const near = savedItems("tickets").filter(t => {
+    const start = ticketStart(t);
+    if (!start || ticketExpired(t)) return false;
+    const train = t.ticketType === "train" || TRAIN_RE.test(`${t.title || ""} ${t.carrier || ""}`);
+    return train && Math.abs(start.getTime() - at) <= (event.time ? 18 : 30) * 3600000;
+  });
+  return near.sort((a, b) => Math.abs(ticketStart(a) - at) - Math.abs(ticketStart(b) - at))[0] || null;
+}
 function eventCard(event) {
-  return `<button class="event-card" type="button" data-action="edit" data-type="event" data-id="${esc(event.id)}"><span class="event-time">${esc(event.time || "Весь день")}</span><i class="event-rule" aria-hidden="true"></i><span class="event-info"><span class="event-title">${esc(event.title)}</span>${event.description ? `<span class="event-place">${esc(event.description)}</span>` : ""}</span></button>`;
+  const ticket = eventTicket(event);
+  const chip = ticket ? `<span class="event-ticket" role="button" tabindex="0" data-action="saved-open" data-category="tickets" data-id="${esc(ticket.id)}">${icon("ticket", "icon-sm")}Билет${ticket.seat ? ` · ${esc(ticket.seat.split(" · ")[0])}` : ""}</span>` : "";
+  return `<button class="event-card" type="button" data-action="edit" data-type="event" data-id="${esc(event.id)}"><span class="event-time">${esc(event.time || "Весь день")}</span><i class="event-rule" aria-hidden="true"></i><span class="event-info"><span class="event-title">${esc(event.title)}</span>${event.description ? `<span class="event-place">${esc(event.description)}</span>` : ""}${chip}</span></button>`;
 }
 function emptyCard(title, detail) { return `<div class="empty-card"><strong>${title}</strong>${detail}</div>`; }
 function todayPage() {
