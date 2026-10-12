@@ -17,8 +17,8 @@ function movieWatchUrl(item) {
 
 function movieWatchMarkup(item) {
   const url = movieWatchUrl(item);
-  if (!url) return '<button type="button" class="movie-similar-btn movie-watch-btn" disabled title="Добавьте ссылку на Кинопоиск в карточку фильма">Смотреть на Kinomix</button>';
-  return `<a class="movie-similar-btn movie-watch-btn" data-action="movie-watch" href="${url}" target="_blank" rel="noopener noreferrer" title="Открыть фильм в браузере">Смотреть на Kinomix</a>`;
+  if (!url) return `<button type="button" class="movie-similar-btn movie-watch-btn movie-compact-action" disabled aria-label="Смотреть на Kinomix — добавьте ссылку на Кинопоиск" title="Добавьте ссылку на Кинопоиск в карточку фильма">${icon("play")}</button>`;
+  return `<a class="movie-similar-btn movie-watch-btn movie-compact-action" data-action="movie-watch" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Смотреть на Kinomix" title="Смотреть на Kinomix">${icon("play")}</a>`;
 }
 
 // В Telegram используем внешний браузер; в остальных случаях работает обычная ссылка.
