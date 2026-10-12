@@ -425,7 +425,6 @@ function searchSheet() {
   return renderSearchSheetExt();
 }
 function render() {
-  window.FlowMoviePlayer?.sync();
   disposeAddressMap();
   if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
   document.documentElement.dataset.theme = themeTone();
