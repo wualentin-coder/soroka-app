@@ -912,7 +912,6 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 
 /* Карточка фильма: действия сразу рядом с постером, только значками. */
 .movie-view-sheet > .eyebrow { flex-wrap: wrap; row-gap: 6px; }
-.movie-view-sheet > .eyebrow .movie-detail-status { margin-left: auto; color: var(--accent); font-size: 12px; font-weight: 750; letter-spacing: 0; text-transform: none; }
 .movie-detail-intro .movie-detail-meta { line-height: 1.5; overflow-wrap: anywhere; }
 .movie-detail-icon-actions { display: flex; align-items: center; gap: 6px; margin: 4px 0 2px; }
 .movie-detail-icon-actions .movie-compact-action { flex: 0 0 44px; display: inline-flex; align-items: center; justify-content: center; width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; margin: 0; border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius: 12px; background: var(--accent-soft); color: var(--accent); text-decoration: none; }
@@ -922,6 +921,13 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 @media (max-width: 360px) {
   .movie-view-sheet .movie-detail-hero { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
   .movie-view-sheet .movie-detail-hero .movie-cover-detail { width: 96px; }
-  .movie-view-sheet .movie-rating { padding: 8px 7px; }
-  .movie-view-sheet .movie-rating .icon { top: auto; bottom: 8px; }
 }
+
+/* Длинный режиссёр не растягивает колонку с рейтингами. */
+.movie-view-sheet .movie-detail-hero { align-items: start; }
+.movie-view-sheet .movie-detail-intro { gap: 10px; }
+.movie-view-sheet .movie-detail-director { display: grid; gap: 3px; line-height: 1.35; }
+.movie-view-sheet .movie-detail-director b { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.movie-view-sheet .movie-detail-icon-actions { margin: 0; }
+.movie-view-sheet > .movie-ratings { margin: 0 0 14px; gap: 8px; }
+.movie-view-sheet > .movie-ratings .movie-rating { min-height: 58px; padding: 10px 12px; }
