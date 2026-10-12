@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=a5715e2d76","integrity":null},{"src":"./movies.js?v=52897be919","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=4de065147a","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./movie-player.js?v=47004f489a","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=1b556c5f6a","integrity":null},{"src":"./movies.js?v=52897be919","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=0780c02a0b","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=4de065147a","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./movie-player.js?v=47004f489a","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -628,18 +628,7 @@
   }
 
   window.sorokaOpenFile = (item) => openFile(item);
-  window.sorokaProductRefresh = async (ref) => {
-    const answer = await call({ action: "product_refresh", ref }, 70000);
-    if (answer.price || !android || !android.pagePrice) return answer;
-    // Сервер цену не снял (магазин закрыт для роботов) — открываем страницу
-    // на телефоне, как в браузере, и отдаём цену серверу.
-    const item = (data.saved.products || []).find((p) => p.id === ref);
-    if (!item || !/^https?:\/\//.test(item.url || "")) return answer;
-    const seen = await pagePrice(item.url).catch(() => null);
-    if (!seen || !(seen.price > 0)) return answer;
-    const saved = await call({ action: "product_price_set", ref, price: seen.price, old: seen.old || 0 }, 20000).catch(() => null);
-    return { ...answer, price: saved?.price ?? seen.price, oldPrice: saved?.oldPrice ?? null };
-  };
+  window.sorokaProductRefresh = (ref) => call({ action: "product_refresh", ref }, 30000);
   const priceWaits = {};
   window.__sorokaPriceReply = (id, json) => { const w = priceWaits[id]; if (!w) return; delete priceWaits[id]; try { w(JSON.parse(json)); } catch (_) { w(null); } };
   function pagePrice(url) {
