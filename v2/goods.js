@@ -6,6 +6,48 @@
 
 const rub = value => `${Math.round(Number(value)).toLocaleString("ru-RU")} ₽`;
 
+// Состояние очереди отдельно от пользовательских данных и формы редактирования.
+const productChecks = new Map();
+function productCheckText(check, item) {
+  const when = value => { const at = new Date(value); return Number.isFinite(at.getTime()) ? at.toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; };
+  if (check?.actionRunning) return "Запускаю проверку…";
+  if (check?.connectionError) return "Нет связи со статусом проверки. Показана последняя сохранённая цена.";
+  if (check?.checkState === "queued" && check.needsPhoneUpdate) return "Ожидает телефон. Для запуска сразу обновите Flow до 4.13. Пока показана предыдущая цена.";
+  if (check?.checkState === "queued") return "Ожидает телефон. Фоновый опрос — раз в 15 минут; Android может задержать запуск. Пока показана предыдущая цена.";
+  if (check?.checkState === "running") return "Проверка выполняется: загружается страница магазина. Пока показана предыдущая цена.";
+  if (check?.checkState === "failed" || (!check && item.checkFailed)) return "Проверка не удалась. Показана предыдущая цена. Можно попробовать ещё раз.";
+  const checkedAt = check?.checkedAt || item.checkedAt;
+  if (check?.checkState === "success" || (!check && checkedAt && !item.checkFailed)) return `Цена проверена${checkedAt ? " · " + when(checkedAt) : ""}`;
+  return "Цена ещё не проверена.";
+}
+function productCheckOpen(ref) {
+  return !document.hidden && ui.sheet?.category === "products" && ui.sheet.id === ref && ui.sheet.mode !== "edit";
+}
+function watchProductCheck(ref) {
+  if (typeof window.sorokaProductStatus !== "function") return;
+  const state = productChecks.get(ref) || {};
+  if (state.timer || state.polling || state.actionRunning || Date.now() - (state.lastAsked || 0) < 10000) return;
+  productChecks.set(ref, state);
+  state.timer = setTimeout(async () => {
+    state.timer = null;
+    if (!productCheckOpen(ref)) return;
+    state.polling = true;
+    const revision = state.revision || 0;
+    state.lastAsked = Date.now();
+    try {
+      const answer = await window.sorokaProductStatus(ref);
+      if ((state.revision || 0) === revision) Object.assign(state, answer, { connectionError: false });
+    } catch (_) { if ((state.revision || 0) === revision) state.connectionError = true; }
+    finally {
+      state.polling = false;
+      if (productCheckOpen(ref)) render();
+      if ((state.checkState === "queued" || state.checkState === "running" || state.connectionError) && productCheckOpen(ref)) {
+        state.timer = setTimeout(() => { state.timer = null; watchProductCheck(ref); }, 10000);
+      }
+    }
+  }, 0);
+}
+
 /**
  * Стартовая цена — та, по которой товар продавался, когда его сохранили
  * (первая из истории цен). Зачёркнутая цена магазина сюда не идёт: важно, как
@@ -63,6 +105,8 @@ function productCard(item) {
 
 /** Подробности товара: фото, цена со скидкой, ссылки на карточку и на магазин. */
 function productDetails(item) {
+  watchProductCheck(item.id);
+  const check = productChecks.get(item.id);
   const off = productDiscount(item);
   const store = productStoreUrl(item);
   const links = [
@@ -75,25 +119,34 @@ function productDetails(item) {
   ].join("");
   const goal = (data.finance?.goals || []).find(g => g.id === item.goalId);
   const goalBlock = goal ? (() => { const pct = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0; return `<div class="product-goal"><div><small>Цель</small><strong>${esc(goal.title)}</strong></div><span>${rub(goal.saved)} из ${rub(goal.target)}</span><div class="progress-track"><span style="width:${pct}%"></span></div></div>`; })() : "";
-  const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}">${icon("reset", "icon-sm")}Обновить цену и фото</button>` : "";
-  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${Number(item.price) < productStart(item) ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : Number(item.price) > productStart(item) ? `дороже на ${rub(Number(item.price) - productStart(item))}` : "цена не менялась"}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}${goalBlock}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
+  const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}" ${check?.actionRunning ? "disabled" : ""}>${check?.actionRunning ? '<span class="live-spin"></span>Смотрю цену…' : icon("reset", "icon-sm") + "Обновить цену и фото"}</button>` : "";
+  return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${Number(item.price) < productStart(item) ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : Number(item.price) > productStart(item) ? `дороже на ${rub(Number(item.price) - productStart(item))}` : "цена не менялась"}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}<p class="section-note" role="status" data-product-check-status="${esc(item.id)}">${esc(productCheckText(check, item))}</p>${goalBlock}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
 }
 
-// «Обновить цену и фото»: сервер снимает их сейчас (магазины с защитой — через поиск).
+// Ручное обновление: очередь телефона и результат показаны в самой карточке.
 document.addEventListener("click", async event => {
   const button = event.target.closest?.("[data-product-refresh]");
   if (!button) return;
   event.preventDefault(); event.stopImmediatePropagation();
   if (typeof window.sorokaProductRefresh !== "function") { toast("Работает в приложении бота"); return; }
   const item = savedItem("products", button.dataset.productRefresh);
-  button.disabled = true;
-  button.innerHTML = '<span class="live-spin"></span>Смотрю цену…';
+  if (!item) return;
+  const check = productChecks.get(item.id) || {};
+  if (check.actionRunning) return;
+  clearTimeout(check.timer); check.timer = null;
+  check.revision = (check.revision || 0) + 1;
+  check.actionRunning = true; check.connectionError = false;
+  productChecks.set(item.id, check);
+  render();
   try {
     const answer = await window.sorokaProductRefresh(item.id);
-    if (answer.price) { item.price = answer.price; item.maxPrice = Math.max(Number(item.maxPrice) || 0, answer.price); }
-    if (answer.oldPrice !== undefined) item.oldPrice = answer.oldPrice || undefined;
-    if (answer.image) item.image = answer.image;
-    render();
-    toast(answer.pending ? "Проверка запланирована на телефоне" : answer.processing || answer.cached ? "Проверка уже выполняется" : answer.unavailable ? "Магазин не отдал цену. Можно попробовать ещё раз" : answer.price ? `Цена: ${rub(answer.price)}` : "Цену снять не удалось. Можно попробовать ещё раз");
-  } catch (_) { button.disabled = false; button.textContent = "Обновить цену и фото"; toast("Не получилось — попробуйте ещё раз"); }
+    Object.assign(check, answer);
+    toast(answer.pending ? "Ожидает телефон — статус есть в карточке" : answer.processing ? "Проверка выполняется" : answer.unavailable ? "Цена не обновилась. Сохранена предыдущая" : answer.price ? `Цена: ${rub(answer.price)}` : "Цену снять не удалось");
+  } catch (_) { check.connectionError = true; toast("Не получилось — проверьте связь и попробуйте ещё раз"); }
+  finally {
+    check.actionRunning = false;
+    check.lastAsked = 0;
+    if (productCheckOpen(item.id)) render();
+    watchProductCheck(item.id);
+  }
 }, true);
