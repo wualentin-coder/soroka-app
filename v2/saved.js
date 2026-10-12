@@ -402,18 +402,6 @@ function renderSavedPage() {
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
   return `<div class="saved-section-screen">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
 }
-/** Где посмотреть легально: страница на Кинопоиске и поиск в онлайн-кинотеатрах. */
-function movieWatchLinks(item) {
-  const q = encodeURIComponent(item.title || "");
-  if (!q) return "";
-  const links = [
-    ["Кинопоиск", item.kinopoiskUrl || `https://www.kinopoisk.ru/index.php?kp_query=${q}`],
-    ["Okko", `https://okko.tv/search/${q}`],
-    ["Иви", `https://www.ivi.ru/search/?q=${q}`],
-    ["Wink", `https://wink.ru/search?query=${q}`],
-  ];
-  return `<div class="movie-watch"><span>Смотреть</span>${links.map(([name, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(name)}</a>`).join("")}</div>`;
-}
 /** Фильмы: что посмотреть и что уже посмотрено — две вкладки, а не пункт в меню. */
 function movieSeenTabs() {
   const all = savedItems("movies").filter(m => !m.skipped);
@@ -629,7 +617,7 @@ function renderSavedViewSheet(item, category) {
   const movieGenres = category === "movies" ? [item.genre, ...(item.tags || [])].filter((value, index, all) => value && all.findIndex(other => String(other).toLocaleLowerCase("ru-RU") === String(value).toLocaleLowerCase("ru-RU")) === index) : [];
   // Фильм: постер слева, справа статус, год и жанр, режиссёр, оценки; описание —
   // во всю ширину под ними. Всё по одной сетке, без плавающих подписей.
-  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}</div></div><div class="movie-my-rating"><span class="movie-my-label">Моя оценка</span>${starSlider(item)}<b class="star-value" aria-hidden="true">${Number(item.rating) ? `${Number(item.rating)}<small>/10</small>` : "<small>—</small>"}</b></div>${seriesTracker(item)}${movieReviewBlock(item)}${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${movieWatchLinks(item)}<div class="movie-detail-buttons"><button type="button" class="movie-similar-btn" data-action="movie-similar">${icon("spark", "icon-sm")}${ui.sheet?.random ? "Похожие" : "Похожие фильмы"}</button>${ui.sheet?.random ? `<button type="button" class="movie-similar-btn" data-action="movie-random">${icon("reset", "icon-sm")}Другой</button>` : ""}</div>${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
+  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">${esc(movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено")}</span><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", ")].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}${movieRatings}</div></div><div class="movie-my-rating"><span class="movie-my-label">Моя оценка</span>${starSlider(item)}<b class="star-value" aria-hidden="true">${Number(item.rating) ? `${Number(item.rating)}<small>/10</small>` : "<small>—</small>"}</b></div>${seriesTracker(item)}${movieReviewBlock(item)}${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}<div class="movie-detail-buttons"><button type="button" class="movie-similar-btn" data-action="movie-similar">${icon("spark", "icon-sm")}${ui.sheet?.random ? "Похожие" : "Похожие фильмы"}</button>${ui.sheet?.random ? `<button type="button" class="movie-similar-btn" data-action="movie-random">${icon("reset", "icon-sm")}Другой</button>` : ""}</div>${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
   // В шапке — закладка: закрепить карточку. «Просмотрено» — свайпом вправо по карточке списка.
   const topViewedAction = `<button class="icon-button sheet-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}">${icon("bookmark", "icon-sm")}</button>`;
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
