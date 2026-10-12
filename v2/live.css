@@ -909,3 +909,19 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .movie-detail-buttons { display: flex; gap: 8px; }
 .movie-detail-buttons .movie-similar-btn { flex: 1 1 0; min-width: 0; }
 .series-air { display: flex; align-items: center; gap: 6px; margin: 8px 0; color: var(--accent); font-size: 13px; font-weight: 600; }
+
+/* Карточка фильма: действия сразу рядом с постером, только значками. */
+.movie-view-sheet > .eyebrow { flex-wrap: wrap; row-gap: 6px; }
+.movie-view-sheet > .eyebrow .movie-detail-status { margin-left: auto; color: var(--accent); font-size: 12px; font-weight: 750; letter-spacing: 0; text-transform: none; }
+.movie-detail-intro .movie-detail-meta { line-height: 1.5; overflow-wrap: anywhere; }
+.movie-detail-icon-actions { display: flex; align-items: center; gap: 6px; margin: 4px 0 2px; }
+.movie-detail-icon-actions .movie-compact-action { flex: 0 0 44px; display: inline-flex; align-items: center; justify-content: center; width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; margin: 0; border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius: 12px; background: var(--accent-soft); color: var(--accent); text-decoration: none; }
+.movie-detail-icon-actions .movie-compact-action .icon { width: 22px; height: 22px; }
+.movie-detail-icon-actions .movie-compact-action:hover { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.movie-detail-icon-actions .movie-compact-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 360px) {
+  .movie-view-sheet .movie-detail-hero { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .movie-view-sheet .movie-detail-hero .movie-cover-detail { width: 96px; }
+  .movie-view-sheet .movie-rating { padding: 8px 7px; }
+  .movie-view-sheet .movie-rating .icon { top: auto; bottom: 8px; }
+}
