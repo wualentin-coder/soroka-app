@@ -94,6 +94,6 @@ document.addEventListener("click", async event => {
     if (answer.oldPrice !== undefined) item.oldPrice = answer.oldPrice || undefined;
     if (answer.image) item.image = answer.image;
     render();
-    toast(answer.pending ? "Проверка запланирована на телефоне" : answer.cached ? "Сегодня уже проверяли. Следующая проверка — через сутки" : answer.unavailable ? "Магазин не отдал цену. Повторим через сутки" : answer.price ? `Цена: ${rub(answer.price)}` : "Цену снять не удалось. Повторим через сутки");
+    toast(answer.pending ? "Проверка запланирована на телефоне" : answer.processing || answer.cached ? "Проверка уже выполняется" : answer.unavailable ? "Магазин не отдал цену. Можно попробовать ещё раз" : answer.price ? `Цена: ${rub(answer.price)}` : "Цену снять не удалось. Можно попробовать ещё раз");
   } catch (_) { button.disabled = false; button.textContent = "Обновить цену и фото"; toast("Не получилось — попробуйте ещё раз"); }
 }, true);
