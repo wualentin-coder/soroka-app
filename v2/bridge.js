@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=4b5a802df7","integrity":null},{"src":"./movies.js?v=fab22c21fd","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=e5177e05be","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./saved.js?v=116ee7951e","integrity":null},{"src":"./movies.js?v=fab22c21fd","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=20a00b95c2","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=e5177e05be","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -361,10 +361,12 @@
     const text = JSON.stringify({ at: Date.now(), snapshot: lastFull || snapshot });
     setTimeout(() => { try { localStorage.setItem(SNAP_KEY, text); } catch (_) {} }, 0);
   }
-  function lastSnapshot() {
+  // Как основа для правок снимок годится 3 дня; показать без сети (билет в
+  // поезде) — до двух месяцев.
+  function lastSnapshot(days = 3) {
     try {
       const saved = JSON.parse(localStorage.getItem(SNAP_KEY) || "null");
-      return saved && Date.now() - saved.at < 3 * 86400000 ? saved.snapshot : null;
+      return saved && Date.now() - saved.at < days * 86400000 ? saved.snapshot : null;
     } catch (_) { return null; }
   }
   let flying = false;
@@ -1049,7 +1051,7 @@
     // на сервер), чтобы «нет связи» было видно с причиной.
     freshSnapshot.then(() => { try { android && android.log && android.log(`снимок: ok ${Date.now() - bootAt} мс${useNative ? " через сеть приложения" : ""}`); } catch (_) {} },
       (error) => { try { android && android.log && android.log(`снимок: ${(error && (error.name === "AbortError" ? "timeout" : error.message)) || error} ${Date.now() - bootAt} мс`); } catch (_) {} });
-    const cachedSnapshot = lastSnapshot();
+    const cachedSnapshot = lastSnapshot(navigator.onLine === false ? 60 : 3);
     let snapshot;
     try {
       if (cachedSnapshot) { snapshot = cachedSnapshot; warming = true; freshSnapshot.catch(() => null); }
@@ -1739,7 +1741,8 @@
     let tried = false;
     try { tried = sessionStorage.getItem("soroka-boot-retry") === "1"; } catch (_) {}
     if (!tried) {
-      try { sessionStorage.setItem("soroka-boot-retry", "1"); localStorage.removeItem(SNAP_KEY); } catch (_) {}
+      // Без сети снимок — единственная копия данных (билеты): не стираем.
+      try { sessionStorage.setItem("soroka-boot-retry", "1"); if (navigator.onLine !== false) localStorage.removeItem(SNAP_KEY); } catch (_) {}
       location.reload();
       return;
     }
