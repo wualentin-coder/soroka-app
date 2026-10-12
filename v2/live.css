@@ -905,11 +905,7 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .pc-proc-bar.two b.mem { --c: #6b74c9; }
 .pc-proc-bar.two b.cpu { --c: var(--accent); }
 
-/* Фильмы 12.10: где смотреть, случайный, ближайшая серия. */
+/* Фильмы 12.10: случайный, ближайшая серия. */
 .movie-detail-buttons { display: flex; gap: 8px; }
 .movie-detail-buttons .movie-similar-btn { flex: 1 1 0; min-width: 0; }
-.movie-watch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; }
-.movie-watch span { color: var(--muted); font-size: 13px; margin-right: 2px; }
-.movie-watch a { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none; }
-.movie-watch a:active { transform: scale(.96); }
 .series-air { display: flex; align-items: center; gap: 6px; margin: 8px 0; color: var(--accent); font-size: 13px; font-weight: 600; }
