@@ -80,11 +80,11 @@
     return controller;
   }
   function createController(options) {
-    let pill = null, section = "Flow", layer = null, pc = null, unavailable = false, page = options.page();
+    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page();
     const current = () => model({ section, pc, data: options.data(), unavailable });
     function close(restoreFocus = true) {
       if (!layer) return;
-      layer.remove(); layer = null;
+      layer.remove(); layer = null; shown = null;
       pill?.setAttribute("aria-expanded", "false");
       if (restoreFocus) pill?.focus({ preventScroll: true });
     }
@@ -104,6 +104,7 @@
         pill.setAttribute("aria-label", `${state.label} — текущая активность`);
       }
       if (layer) {
+        shown = state;
         const card = layer.querySelector(".activity-island-card");
         const html = panel(state);
         if (card.innerHTML !== html) {
@@ -128,7 +129,7 @@
         if (!target) return;
         if (target.matches("[data-island-close], .activity-island-scrim")) { close(); return; }
         if (target.hasAttribute("data-island-pins")) { close(false); options.pinned(); return; }
-        const state = current();
+        const state = shown;
         const task = target.hasAttribute("data-island-task");
         const index = Number(task ? target.dataset.islandTask : target.dataset.islandEvent);
         const record = (task ? state.tasks : state.events)[index];
