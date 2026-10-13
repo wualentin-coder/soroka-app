@@ -424,19 +424,60 @@ function entrySheet() {
 function searchSheet() {
   return renderSearchSheetExt();
 }
+let renderedScrollIdentity = null;
+let modalPageLock = null;
+const sheetScrollSelectors = [".sheet", ".note-editor", ".note-reader", ".season-chips"];
+function sheetScrollIdentity() {
+  const s = ui.sheet;
+  return s ? JSON.stringify([ui.page, s.kind, s.category, s.id, s.mode, s.type, s.index]) : null;
+}
+function captureSheetScroll() {
+  const identity = sheetScrollIdentity();
+  if (!identity || identity !== renderedScrollIdentity) return null;
+  return { identity, groups: sheetScrollSelectors.map(selector => ({ selector, positions: [...app.querySelectorAll(selector)].map(node => [node.scrollTop, node.scrollLeft]) })) };
+}
+function restoreSheetScroll(saved) {
+  if (!saved || saved.identity !== sheetScrollIdentity()) return;
+  for (const group of saved.groups) app.querySelectorAll(group.selector).forEach((node, i) => {
+    const position = group.positions[i];
+    if (position) { node.scrollTop = position[0]; node.scrollLeft = position[1]; }
+  });
+}
+function syncModalScrollLock() {
+  const open = Boolean(document.querySelector('[aria-modal="true"]:not([hidden])'));
+  const body = document.body;
+  if (open && !modalPageLock) {
+    modalPageLock = { x: window.scrollX, y: window.scrollY, page: ui.page, styles: Object.fromEntries(["position", "top", "left", "width"].map(key => [key, body.style[key]])) };
+    Object.assign(body.style, { position: "fixed", top: `${-modalPageLock.y}px`, left: `${-modalPageLock.x}px`, width: "100%" });
+  } else if (!open && modalPageLock) {
+    const saved = modalPageLock;
+    Object.assign(body.style, saved.styles);
+    modalPageLock = null;
+    document.documentElement.classList.remove("modal-open");
+    body.classList.remove("modal-open");
+    window.scrollTo({ top: saved.page === ui.page ? saved.y : 0, left: saved.x, behavior: "instant" });
+  }
+  document.documentElement.classList.toggle("modal-open", open);
+  body.classList.toggle("modal-open", open);
+}
+// Некоторые окна мост добавляет вне app: они тоже должны удерживать фон.
+new MutationObserver(syncModalScrollLock).observe(document.body, { childList: true, subtree: true });
 function render() {
+  const scroll = captureSheetScroll();
   disposeAddressMap();
   if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
   document.documentElement.dataset.theme = themeTone();
   document.documentElement.dataset.palette = ui.theme;
   document.documentElement.dataset.accent = data.settings.accent || "teal";
-  document.body.classList.toggle("modal-open", Boolean(ui.sheet));
   document.body.classList.toggle("density-compact", data.settings.density === "compact");
   document.body.classList.toggle("density-spacious", data.settings.density === "spacious");
   const page = ui.demoState !== "normal" && ui.page !== "settings" ? renderDemoStatePage() : ui.page === "today" ? todayPage() : ui.page === "upcoming" ? upcomingPage() : extendedPage(ui.page);
   const sidebar = `<div class="sidebar-caption">План</div><nav class="sidebar-nav" aria-label="План">${navigation.slice(0, 3).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Пространство</div><nav class="sidebar-nav" aria-label="Разделы">${navigation.slice(3, 9).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Другое</div><nav class="sidebar-nav" aria-label="Другое">${navigation.slice(9).map(item => navItem(item)).join("")}</nav>`;
   const sheet = ui.sheet ? ui.sheet.kind === "search" ? searchSheet() : ui.sheet.kind === "entry" ? entrySheet() : renderExtendedSheet() : "";
   app.innerHTML = `<div class="app-shell"><aside class="sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · личное пространство</p></div></aside><div><div class="mobile-brand">${brand()}</div><main class="main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : "universal-add"}" aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${sheet}${ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : ""}</div>`;
+  syncModalScrollLock();
+  restoreSheetScroll(scroll);
+  renderedScrollIdentity = sheetScrollIdentity();
   const savedTabs = app.querySelector('.subtabs[role="tablist"]');
   const selectedSavedTab = savedTabs?.querySelector('[aria-selected="true"]');
   if (selectedSavedTab) savedTabs.scrollLeft = selectedSavedTab.offsetLeft - savedTabs.offsetLeft - (savedTabs.clientWidth - selectedSavedTab.offsetWidth) / 2;
@@ -446,7 +487,7 @@ function render() {
   if (ui.sheet && !ui.sheet.justRendered) {
     const input = app.querySelector(ui.sheet.kind === "search" ? "#search-input" : ui.sheet.kind === "entry" ? '#entry-form input[name="title"]' : '.sheet [autofocus], .sheet input');
     // На телефоне фокус открыл бы клавиатуру поверх окна — ставим его только в поиске.
-    if (ui.sheet.kind === "search" || !window.matchMedia("(pointer: coarse)").matches) requestAnimationFrame(() => input?.focus());
+    if (ui.sheet.kind === "search" || !window.matchMedia("(pointer: coarse)").matches) requestAnimationFrame(() => input?.focus({ preventScroll: true }));
     ui.sheet.justRendered = true;
   }
 }
