@@ -444,7 +444,7 @@ function restoreSheetScroll(saved) {
   });
 }
 function syncModalScrollLock() {
-  const open = Boolean(document.querySelector('[aria-modal="true"]:not([hidden])'));
+  const open = Boolean(document.querySelector('[aria-modal="true"]:not([hidden]), .composer-layer, .live-file, .loyalty-full, .live-code-full'));
   const body = document.body;
   if (open && !modalPageLock) {
     modalPageLock = { x: window.scrollX, y: window.scrollY, page: ui.page, styles: Object.fromEntries(["position", "top", "left", "width"].map(key => [key, body.style[key]])) };
