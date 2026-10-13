@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=24a2c7afd3","integrity":null},{"src":"./movies.js?v=52897be919","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=7bfa893f73","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=5dc18c9e9e","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=24a2c7afd3","integrity":null},{"src":"./movies.js?v=52897be919","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=7bfa893f73","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=5dc18c9e9e","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=2d642f451b","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -218,6 +218,7 @@
     const savedSections = {};
     for (const key of SAVED_KEYS) savedSections[key] = Array.isArray(sections[key]) ? sections[key] : [];
     const value = {
+      timezone: snapshot.timezone,
       tasks: snapshot.tasks, events: snapshot.events, notes: snapshot.notes, inbox: snapshot.inbox,
       saved: snapshot.saved, finance: snapshot.finance, projects: snapshot.projects, metrics: snapshot.metrics,
       trash: snapshot.trash, settings: snapshot.settings, savedSections,
@@ -693,7 +694,15 @@
   window.sorokaCardStores = (title, lat, lng) => call({ action: "card_stores", title, lat, lng }, 30000);
   /** Раздел «VPN»: действия с сервером идут через приложение бота к сервису управления. */
   window.sorokaVpn = (op, args) => call({ action: "vpn", op, args: args || {} }, 30000);
-  window.sorokaPc = (payload) => call({ action: "pc", ...payload }, 30000);
+  let pcStateSource = null;
+  window.sorokaPc = (payload) => {
+    if (payload.op === "state" && window.FlowActivity) {
+      pcStateSource ||= window.FlowActivity.createStateSource(() => call({ action: "pc", op: "state" }, 30000));
+      return pcStateSource.read();
+    }
+    if (payload.op === "send") pcStateSource?.invalidate();
+    return call({ action: "pc", ...payload }, 30000);
+  };
   window.sorokaHear = (audio) => call({ action: "voice_text", audio, format: "wav" }, 70000);
   window.sorokaFindRecipes = (query) => call({ action: "recipe_find", query }, 60000);
   /** Мини-сайт с телефона: файл уходит в чат с ботом и становится записью «Файлы». */
@@ -1621,14 +1630,19 @@
   function headPill(text) {
     const row = root.querySelector(".main .page-header, .main .notes-topline");
     if (!row || !text) return;
-    const pill = document.createElement("button");
+    const pill = row.querySelector(".head-pill") || document.createElement("button");
     pill.type = "button";
     pill.className = "head-pill";
-    pill.textContent = text;
-    pill.setAttribute("aria-label", `${text} — закреплённое`);
-    pill.addEventListener("click", showPinned);
     row.classList.add("has-pill");
     row.appendChild(pill);
+    mountIsland(pill, text);
+  }
+  function mountIsland(pill, text) {
+    if (window.FlowActivity) window.FlowActivity.mount(pill, {
+      section: text, page: () => ui.page, data: () => data, pinned: showPinned,
+      open: (type, recordId) => openEntry(type, "", recordId),
+    });
+    else { pill.textContent = text; pill.onclick = showPinned; }
   }
   let barsColor = "";
   function paintBars() {
@@ -1749,28 +1763,27 @@
     paintBars();
     const full = Boolean(inTelegram && tg.isFullscreen) || androidApp;
     document.documentElement.classList.toggle("tg-fs", full);
-    if (!full) { if (titleBar) titleBar.hidden = true; return; }
-    if (androidApp) {
+    if (!full) { if (titleBar) titleBar.hidden = true; }
+    if (!full || androidApp) {
       const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
-      headPill(heading ? heading.textContent.trim() : "");
+      headPill(heading ? heading.textContent.trim() : root.querySelector(".main .notes-topline h1")?.textContent.trim() || "Flow");
       return;
     }
     if (!titleBar) {
       titleBar = document.createElement("div");
       titleBar.className = "tg-title";
-      titleBar.innerHTML = '<span role="button" tabindex="0" aria-label="Закреплённое"></span>';
-      titleBar.firstChild.addEventListener("click", showPinned);
+      titleBar.innerHTML = '<button type="button" class="tg-island-pill"></button>';
       document.body.appendChild(titleBar);
     }
     const heading = root.querySelector(".main .page-header h1, .main .saved-section-heading h1");
     const text = heading ? heading.textContent.trim() : "";
     const pill = titleBar.firstChild;
-    pill.textContent = text;
-    titleBar.hidden = !text && !androidApp;
+    mountIsland(pill, text || "Flow");
+    titleBar.hidden = false;
     // Слово целиком: не влезает — шрифт чуть меньше, а не «Предсто…».
     let size = 14;
     pill.style.fontSize = size + "px";
-    while (text && size > 10 && pill.scrollWidth > pill.clientWidth + 1) { size -= 0.5; pill.style.fontSize = size + "px"; }
+    while (pill.textContent && size > 10 && pill.scrollWidth > pill.clientWidth + 1) { size -= 0.5; pill.style.fontSize = size + "px"; }
   }
 
   // Загрузка не должна висеть молча: что бы ни сломалось — сказать и дать повторить.
