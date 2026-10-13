@@ -37,7 +37,7 @@ function wishResults(item,s) {
   if (state!=='success') return `<p class="section-note">Подбор запускается кнопкой. Открытие окна и сортировка не расходуют ИИ.</p>`;
   const items=wishSortedResults(s);
   if (!items.length) return `<div class="wish-search-empty"><strong>Подходящих вариантов не найдено</strong><p>Попробуйте уточнить запрос, расширить бюджет или выбрать другие магазины. Неподтверждённые цены не включаются в подбор с бюджетом.</p></div>`;
-  return `<div class="wish-results-head"><strong>Варианты · ${items.length}</strong><label class="field"><span class="sr-only">Сортировка вариантов</span><select data-wish-sort aria-label="Сортировка вариантов"><option value="value" ${s.sort==='value'?'selected':''}>Лучшее за свои деньги</option><option value="price" ${s.sort==='price'?'selected':''}>Дешевле</option><option value="reviews" ${s.sort==='reviews'?'selected':''}>По отзывам</option></select></label></div>${s.answer.result?.note?`<p class="section-note">${esc(s.answer.result.note)}</p>`:''}<ol class="wish-candidates">${items.map((x,i)=>`<li class="wish-candidate"><div class="wish-candidate-head"><span class="wish-rank">${i+1}</span><div><strong>${esc(x.title)}</strong><small>${esc(x.store)}</small></div><b>${x.price>0?rub(x.price):'Цена не подтверждена'}</b></div><p class="wish-review-line">${x.rating!=null?`★ ${esc(x.rating)}`:'Рейтинг неизвестен'}${x.reviews!=null?` · ${Number(x.reviews).toLocaleString('ru-RU')} оценок / отзывов`:''}</p><p class="wish-reason">${esc(x.reason)}</p>${x.caveat?`<p class="section-note">${esc(x.caveat)}</p>`:''}<p class="section-note">${x.priceSource==='search'?'Цена из поисковой выдачи; перед покупкой сверить в магазине.':x.priceSource==='page'?'Цена из карточки магазина.':''}</p><div class="inline-actions"><a class="small-button" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Магазин ${icon('external','icon-sm')}</a><button type="button" class="primary-button" data-action="product-wish-select" data-url="${esc(x.url)}" ${s.busy?'disabled':''}>Выбрать</button></div></li>`).join('')}</ol>`;
+  return `<div class="wish-results-head"><strong>Варианты · ${items.length}</strong><label class="field"><span class="sr-only">Сортировка вариантов</span><select data-wish-sort aria-label="Сортировка вариантов"><option value="value" ${s.sort==='value'?'selected':''}>Лучшее за свои деньги</option><option value="price" ${s.sort==='price'?'selected':''}>Дешевле</option><option value="reviews" ${s.sort==='reviews'?'selected':''}>По отзывам</option></select></label></div>${s.answer.result?.note?`<p class="section-note">${esc(s.answer.result.note)}</p>`:''}<ol class="wish-candidates">${items.map((x,i)=>`<li class="wish-candidate"><div class="wish-candidate-head"><span class="wish-rank">${i+1}</span><div><strong>${esc(x.title)}</strong><small>${esc(x.store)}</small></div><b>${x.price>0?rub(x.price):'Цена не подтверждена'}</b></div><p class="wish-review-line">${x.rating!=null?`★ ${esc(x.rating)}`:'Рейтинг неизвестен'}${x.reviews!=null?` · Оценки/отзывы: ${Number(x.reviews).toLocaleString('ru-RU')}`:''}</p><p class="wish-reason">${esc(x.reason)}</p>${x.caveat?`<p class="section-note">${esc(x.caveat)}</p>`:x.rating!=null&&x.reviews!=null&&x.reviews<5?'<p class="section-note">Оценок пока мало — рейтинг может быть неустойчивым.</p>':''}<p class="section-note">${x.priceSource==='search'?'Цена из поисковой выдачи; перед покупкой сверить в магазине.':x.priceSource==='page'?'Цена из карточки магазина.':''}</p><div class="inline-actions"><a class="small-button" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Магазин ${icon('external','icon-sm')}</a><button type="button" class="primary-button" data-action="product-wish-select" data-url="${esc(x.url)}" ${s.busy?'disabled':''}>Выбрать</button></div></li>`).join('')}</ol>`;
 }
 function renderProductWishSheet(item) {
   const s=wishState(item), p=s.params;
@@ -57,6 +57,7 @@ function patchWish(item) {
   button.disabled=s.loading||s.busy||s.answer.state==='running';
   button.textContent=s.answer.state==='running'?'Идёт подбор…':'Подобрать с ИИ';
   root.querySelector('#product-wish-link button').disabled=s.busy;
+  for(const button of root.querySelectorAll('.saved-view-actions button')) button.disabled=s.busy;
   root.scrollTop=scroll;
 }
 function wishPoll(item) {
@@ -106,7 +107,7 @@ async function chooseWish(item,url,searchId) {
     // Price checks are ordinary existing checks; selection itself uses no AI.
     window.sorokaProductRefresh?.(item.id).then(answer=>{
       const state=productChecks.get(item.id)||{};
-      Object.assign(state,answer,{revision:(state.revision||0)+1});productChecks.set(item.id,state);
+      Object.assign(state,answer,{revision:(state.revision||0)+1,connectionError:false});productChecks.set(item.id,state);
       if (productCheckOpen(item.id)) render();
     }).catch(()=>{const state=productChecks.get(item.id)||{};state.connectionError=true;productChecks.set(item.id,state);if(productCheckOpen(item.id))render();});
   } catch(error) { s.error=wishError(error); }
