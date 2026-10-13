@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=00ef7463af","integrity":null},{"src":"./movies.js?v=52897be919","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=7bfa893f73","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=e5177e05be","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=24a2c7afd3","integrity":null},{"src":"./movies.js?v=52897be919","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=7bfa893f73","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=458fc175d9","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=466f543dd9","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=93b9270f1e","integrity":null},{"src":"./app.js?v=e5177e05be","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -628,6 +628,17 @@
   }
 
   window.sorokaOpenFile = (item) => openFile(item);
+  window.sorokaMovieCard = async (ref) => {
+    const identity = item => JSON.stringify([item?.title,item?.originalTitle,item?.year]);
+    const before = identity(data?.saved?.movies?.find(movie=>movie.id===ref));
+    const answer=await call({action:"movie_card",ref},30000);
+    if (identity(data?.saved?.movies?.find(movie=>movie.id===ref)) !== before) throw new Error("superseded-movie-card");
+    for(const store of [data,base]) {
+      const item=store?.saved?.movies?.find(movie=>movie.id===ref);
+      if(item){ const {genres,...fields}=answer;Object.assign(item,fields,{year:answer.year || undefined,minutes:answer.minutes || undefined});if(genres?.length){item.genre=genres[0];item.tags=genres.slice(1);} }
+    }
+    return answer;
+  };
   window.sorokaMovieFacts = async (ref) => {
     const answer = await call({ action: "movie_facts", ref }, 30000);
     for (const store of [data, base]) {
@@ -1508,13 +1519,14 @@
     const f = c && c.found[index];
     if (!f) return;
     const key = (s) => norm(s).replace(/[^a-zа-я0-9]+/g, " ").trim();
-    const twin = (data.saved.movies || []).find((m) => (key(m.title) === key(f.title) || (f.originalTitle && key(m.originalTitle) === key(f.originalTitle))) && (!m.year || !f.year || Math.abs(Number(m.year) - Number(f.year)) <= 1));
+    const twin = (data.saved.movies || []).find((m) => (f.imdbUrl && m.imdbUrl===f.imdbUrl) || m.id===`movie:${f.existing}` || ((key(m.title) === key(f.title) || (f.originalTitle && key(m.originalTitle) === key(f.originalTitle))) && (!m.year || !f.year || Math.abs(Number(m.year) - Number(f.year)) <= 1)));
     const seen = mode === "seen";
     if (twin || seen) { closeComposer(); navigate("saved"); }
     if (twin) { openSavedRecord("movies", twin.id); say("Этот фильм уже есть"); return; }
     const movieId = id();
     data.saved.movies.push({
-      id: movieId, title: f.title, description: f.why || "", topic: f.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: f.genre || "", year: f.year || undefined,
+      id: movieId, title: f.title, description: f.why || "", topic: f.kind === "series" ? "Сериалы" : "Кино", tags: f.genres?.slice(1) || [], genre: f.genre || "", year: f.year || undefined,
+      director: f.director || "", countries:f.countries || [],minutes:f.minutes || undefined,plot:f.plot || "",cast:f.cast || [],infoReady:f.infoReady===true,
       originalTitle: f.originalTitle || "", status: seen ? "Посмотрел" : "Хочу посмотреть", viewed: seen, rating: 0, skipped: false,
       seenAt: seen ? new Date().toISOString().slice(0, 10) : "",
       kinopoiskUrl: f.kpUrl || "", imdbUrl: f.imdbUrl || "", kinopoiskRating: f.kpRating ?? "", imdbRating: f.imdbRating ?? "",
