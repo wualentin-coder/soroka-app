@@ -1258,6 +1258,7 @@
     any: { label: "Flow", placeholder: "Напишите как боту", hint: "", manual: true },
   };
   const norm = (s) => String(s || "").toLocaleLowerCase("ru-RU").replace(/ё/g, "е");
+  const movieSearchText = (s) => norm(s).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zа-я0-9]+/g, " ").trim();
   function composeContext() {
     if (ui.page === "saved" && ui.savedCategory && COMPOSE[ui.savedCategory]) return ui.savedCategory;
     if (["today", "upcoming", "tasks"].includes(ui.page)) return "plan";
@@ -1270,7 +1271,7 @@
   }
   /** Уже сохранённое, что похоже на набранное: в разделе — его записи, в плане — дела и события. */
   function composeMatches(ctx, query) {
-    const q = norm(query).trim();
+    const q = ctx === "movies" ? movieSearchText(query) : norm(query).trim();
     if (q.length < 2) return [];
     const hit = (...values) => values.some((v) => norm(v).includes(q));
     if (ctx === "plan") {
@@ -1281,7 +1282,11 @@
     const list = (data.saved && data.saved[ctx]) || [];
     // Сначала названия, начинающиеся с набранного, потом — где слово с него начинается;
     // описание — только с трёх букв и не у фильмов («Бо» в описании — не «Борат»).
-    const starts = (v) => norm(v).startsWith(q) ? 0 : norm(v).split(/[^a-zа-я0-9]+/).some((w) => w.startsWith(q)) ? 1 : 9;
+    const starts = (v) => {
+      const text = ctx === "movies" ? movieSearchText(v) : norm(v);
+      return text.startsWith(q) ? 0 : ctx === "movies" ? (` ${text}`).includes(` ${q}`) ? 1 : 9
+        : text.split(/[^a-zа-я0-9]+/).some((w) => w.startsWith(q)) ? 1 : 9;
+    };
     const rank = (x) => Math.min(starts(x.title), starts(x.originalTitle), ctx !== "movies" && q.length >= 3 && hit(x.title, x.description) ? 2 : 9,
       ctx === "addresses" && hit(x.address) ? 2 : 9,
       ctx === "recipes" && q.length >= 3 && hit(...(x.ingredients || [])) ? 3 : 9);
