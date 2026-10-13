@@ -998,3 +998,4 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .wish-candidate .primary-button { min-height: 38px; padding: 8px 18px; font-size: 13px; }
 .wish-search-progress { display: flex; align-items: center; gap: 10px; }
 .wish-search-empty { padding: 16px 0; font-size: 13px; line-height: 1.6; }
+.wish-unpriced-item .inline-actions .primary-button { flex: 1 1 100%; min-width: 0; }
