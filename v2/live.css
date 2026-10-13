@@ -239,6 +239,10 @@ html.in-android .tg-title span:empty { display: none; }
 .activity-island-card .island-pins { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; padding: 10px 8px; border-top: 1px solid var(--line); color: var(--accent); font-size: 13px; font-weight: 700; }
 .island-empty { padding: 8px; }
 @media (min-width: 761px) { .head-pill.activity-island { max-width: 240px; } }
+@media (max-width: 760px) {
+  .notes-topline.has-pill .notes-back, .notes-topline.has-pill .notes-folders-manage { width: 32px; justify-content: center; gap: 0; font-size: 0; }
+  .notes-topline.has-pill .head-pill { max-width: min(44vw, calc(100% - 208px)); padding: 0 10px; font-size: 12px; }
+}
 html.in-android .main { padding-top: 12px; }
 html.in-android .page-header { min-height: 40px; }
 .live-splash-error { max-width: 300px; margin-top: 8px; color: var(--muted, #888); font-size: 11px; word-break: break-word; text-align: center; }
