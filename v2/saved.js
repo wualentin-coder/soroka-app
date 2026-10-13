@@ -104,6 +104,7 @@ function sortSavedItems(a, b, mode = ui.savedSort) {
 function savedVisibleItems() {
   const q = ui.savedQuery.trim().toLocaleLowerCase("ru-RU");
   const result = savedItems().filter(item => {
+    if (ui.savedCategory === "products" && isProductWish(item) !== (ui.productTab === "wishes")) return false;
     const sectionId = ui.savedCategory === "notes" ? noteFolderId(item) : item.categoryId;
     if (ui.savedCategory !== "addresses" && ui.savedSection === "__none__" && sectionId) return false;
     if (ui.savedCategory !== "addresses" && ui.savedSection && ui.savedSection !== "__none__" && sectionId !== ui.savedSection) return false;
@@ -320,6 +321,7 @@ function renderSavedResults() {
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
   const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
+  if (ui.savedCategory === "products" && ui.productTab === "wishes") return `<div class="product-wishes-list">${items.map(productWishRow).join("") || emptyCard("Хотелок пока нет", "Запишите, что хотите купить. Ссылку или конкретный товар можно выбрать позже.")}</div>${more}<button class="ghost-button" type="button" data-action="product-wish-new">${icon("plus", "icon-sm")}Добавить хотелку</button>`;
   return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
 }
 function noteDateLabel(item) {
@@ -364,6 +366,7 @@ function renderNotesPage() {
 /** Записи открытой вкладки: у фильмов папки «Кино / Сериалы» считаются внутри «В планах» или «Просмотрено». */
 function savedChipPool(category) {
   const items = savedItems(category);
+  if (category === "products") return items.filter(item => isProductWish(item) === (ui.productTab === "wishes"));
   // Счётчики папок — по открытой вкладке: под «Предстоящие 3» стояло «Все 5».
   if (category === "tickets") { const now = Date.now(); const expired = ui.savedFilter === "expired"; return items.filter(item => ticketExpired(item, now) === expired); }
   if (category !== "movies") return items;
@@ -414,7 +417,7 @@ function renderSavedPage() {
     : category === "cards" ? renderWallet()
     : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
     : category === "recipes" && ui.savedFilter === "whatcook" ? `${recipeTabs()}${renderWhatToCook()}`
-    : category === "products" ? `${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results recipe-grid">${renderSavedResults()}</div>`
+    : category === "products" ? `${productWishTabs()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results ${ui.productTab === "wishes" ? "" : "recipe-grid"}">${renderSavedResults()}</div>`
     : category === "recipes" ? `${recipeTabs()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results recipe-grid">${renderSavedResults()}</div>`
     : category === "movies" && ui.savedFilter === "viewed" ? `${seenTabs}${movieSeenFilters()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
     : `${seenTabs}${renderSavedSectionChips(category, sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
@@ -588,6 +591,7 @@ function renumberTicketRows() {
   document.querySelectorAll("[data-ticket-row]").forEach((row, index) => { const title = row.querySelector(".ticket-row-head strong"); if (title) title.textContent = `Билет ${index + 1}`; });
 }
 function renderSavedViewSheet(item, category) {
+  if (category === "products" && isProductWish(item)) return renderProductWishSheet(item);
   const fileUrl = ["files", "tickets"].includes(category) ? savedFileUrl(item) : "";
   const details = [];
   let movieRatings = "";
@@ -658,6 +662,7 @@ function renderSavedSheet() {
   const tags = (item?.tags || []).join(", ");
   const sectionField = category === "addresses" || category === "tickets" ? "" : `<div class="field-row"><label class="field">Раздел<select name="categoryId"><option value="">Без раздела</option>${savedSections(category).map(section => `<option value="${esc(section.id)}" ${value("categoryId") === section.id ? "selected" : ""}>${esc(section.name)}</option>`).join("")}</select></label></div>`;
   const common = `${savedFormField("Название", "title", value("title"), "text", 'maxlength="120" required autofocus')}${category === "posts" ? "" : `<label class="field">${category === "notes" ? "Текст заметки" : "Описание"}<textarea name="description" placeholder="Текст или подробности">${esc(value("description"))}</textarea></label>`}${sectionField}`;
+  if (category === "products" && (item ? isProductWish(item) : ui.productTab === "wishes")) return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${item ? "Изменить хотелку" : "Новая хотелка"}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><form id="saved-form">${common}${savedFormField("Бюджет до, ₽", "targetPrice", value("targetPrice"), "number", 'min="0"')}<input type="hidden" name="goalId" value="${esc(value("goalId"))}"><p class="section-note">Ссылка и конкретная модель пока не нужны. Добавление без ИИ.</p><p class="form-error" role="alert"></p><div class="sheet-actions"><button class="primary-button" type="submit">Сохранить</button></div></form></section></div>`;
   let extra = "";
   if (category === "links") extra += savedFormField("Время чтения, мин", "minutes", value("minutes"), "number", 'min="0"');
   if (category === "posts") {
@@ -693,6 +698,7 @@ function deleteSavedRecord(category, recordId) {
   return true;
 }
 function savedAction(action, control) {
+  if (productWishAction(action, control)) return true;
   if (action === "saved-home") { ui.savedCategory = "overview"; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "saved-section") { ui.savedCategory = control.dataset.category; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "saved-tab") { ui.savedCategory = control.dataset.category; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; render(); return true; }
@@ -813,6 +819,7 @@ function savedAction(action, control) {
   return false;
 }
 function savedSubmit(event) {
+  if (productWishSubmit(event)) return true;
   if (event.target.id === "saved-add-list-item" && ui.sheet?.kind === "saved-add-menu") {
     event.preventDefault();
     const form = new FormData(event.target);
