@@ -34,7 +34,7 @@
     const tasks = (data.tasks || []).filter(t => !t.done && (t.priority === "high" || (today && t.due && t.due < today))).sort((a, b) => Number(b.priority === "high") - Number(a.priority === "high") || String(a.due || "9999").localeCompare(String(b.due || "9999"))).slice(0, 3);
     let kind = "idle", label = section, progress = null;
     if (active) {
-      if (!fresh) { kind = "disconnected"; label = "ПК · связь потеряна"; }
+      if (!fresh) { kind = "disconnected"; label = "ПК · нет связи"; }
       else { kind = "render"; progress = percent(r.percent); label = progress === null ? "AE · рендер" : `AE · ${progress}%`; }
     } else if (events[0] && events[0].at - now <= 3600000) {
       kind = "event"; label = `Через ${Math.max(1, Math.ceil((events[0].at - now) / 60000))} мин`;
