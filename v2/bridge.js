@@ -1472,7 +1472,7 @@
     send.disabled = true;
     send.innerHTML = '<span class="live-spin"></span>';
     c.results.innerHTML = `<p class="composer-caption composer-wait"><span class="live-spin"></span>Ищу «${escape(text.slice(0, 60))}»…</p>`;
-    call({ action: "movie_find", query: text }, 40000).then((answer) => {
+    call({ action: "movie_find", query: text }, 65000).then((answer) => {
       if (composer !== c) return;
       send.disabled = false; send.innerHTML = icon("arrow");
       c.found = answer.found || [];
