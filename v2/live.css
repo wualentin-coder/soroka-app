@@ -212,6 +212,33 @@ html.in-android .tg-title span:empty { display: none; }
 .has-pill { position: relative; }
 .head-pill { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 44vw; height: 32px; padding: 0 15px; overflow: hidden; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 800 14px/32px Manrope, system-ui, sans-serif; white-space: nowrap; text-overflow: ellipsis; box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent); cursor: pointer; transition: transform .15s ease; }
 .head-pill:active { transform: translate(-50%, -50%) scale(.94); }
+.tg-island-pill { pointer-events: auto; max-width: 46vw; height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 800 14px/32px Manrope, system-ui, sans-serif; letter-spacing: .01em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; cursor: pointer; box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent); }
+.activity-island { background: var(--accent); isolation: isolate; }
+.activity-island[data-activity="render"] { background: linear-gradient(90deg, var(--accent) var(--island-progress), var(--accent-soft) var(--island-progress)); color: var(--text); }
+.activity-island[data-activity="render"][data-progress-known="false"] { background: var(--accent-soft); animation: island-wait 2s ease-in-out infinite; }
+@keyframes island-wait { 50% { box-shadow: 0 0 0 3px var(--accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .activity-island[data-activity="render"][data-progress-known="false"] { animation: none; } }
+.activity-island:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+.activity-island-layer { position: fixed; inset: 0; z-index: 56; }
+.activity-island-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--page) 45%, transparent); }
+.activity-island-card { position: absolute; top: calc(var(--tg-top, 0px) + 64px); left: 50%; transform: translateX(-50%); width: min(92vw, 380px); max-height: min(70dvh, 560px); overflow-y: auto; overscroll-behavior: contain; padding: 14px; border: 1px solid var(--line); border-radius: 22px; background: var(--surface-raised); color: var(--text); box-shadow: 0 18px 44px color-mix(in srgb, var(--text) 18%, transparent); }
+.activity-island-card header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.activity-island-card header strong { font-size: 15px; }
+.activity-island-card button { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.activity-island-card header button { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-soft); font-size: 24px; }
+.activity-island-card section { padding: 10px 0; border-top: 1px solid var(--line); }
+.activity-island-card h3 { margin: 0 8px 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.activity-island-card section > button { display: grid; gap: 3px; width: 100%; min-height: 44px; padding: 8px; border-radius: 10px; text-align: left; }
+.activity-island-card b { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.activity-island-card small, .activity-island-card p { color: var(--muted); font-size: 12px; }
+.activity-island-card button:hover { background: var(--surface-soft); }
+.activity-island-card button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.activity-island-card .island-render { display: grid; gap: 4px; padding: 12px 8px; }
+.island-render > span { color: var(--accent); font-size: 20px; font-weight: 800; }
+.island-render > p { margin: 2px 0 0; }
+.activity-island-card .island-pins { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; padding: 10px 8px; border-top: 1px solid var(--line); color: var(--accent); font-size: 13px; font-weight: 700; }
+.island-empty { padding: 8px; }
+@media (min-width: 761px) { .head-pill.activity-island { max-width: 240px; } }
 html.in-android .main { padding-top: 12px; }
 html.in-android .page-header { min-height: 40px; }
 .live-splash-error { max-width: 300px; margin-top: 8px; color: var(--muted, #888); font-size: 11px; word-break: break-word; text-align: center; }
