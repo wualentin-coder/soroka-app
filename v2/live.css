@@ -118,6 +118,8 @@ html.tg-fs .live-splash { padding-top: var(--tg-top); }
 .live-code-full .code-kind-switch button.on { background: #111; color: #fff; }
 /* Название уже в «таблетке» сверху — на странице его не повторяем. */
 html.tg-fs .page-header h1, html.tg-fs .page-header .page-subtitle, html.tg-fs .saved-section-heading h1 { display: none; }
+.page-header.has-pill h1, .page-header.has-pill .page-subtitle, .notes-topline.has-pill + .saved-section-heading { display: none; }
+.page-header.has-pill { min-height: 36px; }
 html.tg-fs .page-header { margin-bottom: 16px; align-items: center; }
 
 /* Штрихкод на весь экран — повёрнут вдоль экрана, во всю высоту. */
