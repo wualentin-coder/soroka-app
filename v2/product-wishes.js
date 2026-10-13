@@ -47,7 +47,8 @@ function wishResults(item,s) {
   const budget=[budgetParams?.min!=null&&budgetParams.min!==''?`от ${rub(budgetParams.min)}`:'',budgetParams?.max!=null&&budgetParams.max!==''?`до ${rub(budgetParams.max)}`:''].filter(Boolean).join(' ');
   const pending=unpriced.length?`<details class="wish-unpriced-results"><summary>Неподтверждённые цены · ${unpriced.length}</summary><p class="section-note">Эти товары найдены по запросу, но ${budget?`соответствие бюджету ${esc(budget)} не подтверждено`:'их цена неизвестна'}. Они не входят в рейтинг по цене. Они не считаются готовыми рекомендациями. Можно добавить такой товар отдельно, без подтверждённой цены.</p><ul class="wish-candidates">${unpriced.map((x,i)=>wishCandidate(x,i,s,true)).join('')}</ul></details>`:'';
   const requested=s.answer.result?.requested||s.params?.count||5;
-  const countNote=`<p class="section-note">${items.length>=requested?`Подобрано ${requested} из ${requested}: цены проверены, бюджет учтён.`:`Подобрано ${items.length} из ${requested}. После проверки и добора остальных подходящих вариантов подтвердить не удалось.`}</p>`;
+  const retry=items.length<requested&&s.answer.searchId?`<button type="button" class="small-button" data-action="product-wish-retry" ${s.loading||s.busy?'disabled':''}>Повторить проверку цен</button><p class="section-note">Проверить найденные карточки заново, без нового поиска и расходов на ИИ.</p>`:'';
+  const countNote=`<p class="section-note">${items.length>=requested?`Подобрано ${requested} из ${requested}: цены проверены, бюджет учтён.`:`Подобрано ${items.length} из ${requested}. Остальные подходящие варианты не удалось подтвердить.`}</p>${retry}`;
   const outside=s.answer.result?.outsideBudget;
   const excluded=outside?`<p class="section-note">За пределами бюджета: ${outside}. Эти варианты скрыты.</p>`:'';
   if (!items.length) return countNote+excluded+(pending || `<div class="wish-search-empty"><strong>${s.answer.result?.emptyReason==='price_unconfirmed'?'Не удалось подтвердить цены':'Не удалось подтвердить варианты в этом бюджете'}</strong><p>Можно уточнить бюджет или привязать ссылку вручную.</p></div>`);
@@ -79,11 +80,15 @@ function wishPoll(item) {
   if (!wishIsOpen(item.id) || !isProductWish(savedItem('products',item.id)) || !(s.answer.state==='running'||s.answer.result?.priceCheck?.pending)) return;
   s.timer=setTimeout(async()=>{
     if (!wishIsOpen(item.id)) return;
-    if (document.hidden) { wishPoll(item);return; }
+    if (!(typeof window.sorokaCanPoll==='function'?window.sorokaCanPoll():!document.hidden)) { wishPoll(item);return; }
     try { s.answer=await window.sorokaWishState(item.id,s.answer.searchId);s.error=''; }
     catch(error) { s.error=wishError(error); }
     patchWish(item);wishPoll(item);
   },3000);
+}
+function resumeProductWish() {
+  const item=savedItem('products',ui.sheet?.id);
+  if(item&&isProductWish(item)&&wishIsOpen(item.id)) void loadWishState(item);
 }
 async function loadWishState(item) {
   const s=wishState(item);
@@ -129,6 +134,15 @@ async function chooseWish(item,url,searchId) {
   finally { s.busy=false;patchWish(item); }
 }
 function productWishAction(action,control) {
+  if(action==='product-wish-retry') {
+    const item=savedItem('products',ui.sheet?.id);
+    if(item) {
+      const s=wishState(item);if(s.busy||s.loading) return true;
+      s.loading=true;s.error='';s.revision=(s.revision||0)+1;patchWish(item);
+      window.sorokaWishRetry(item.id,s.answer.searchId).then(answer=>{s.answer=answer;}).catch(error=>{s.error=wishError(error);}).finally(()=>{s.loading=false;patchWish(item);wishPoll(item);});
+    }
+    return true;
+  }
   if (action==='product-wish-tab') { ui.productTab=control.dataset.tab;ui.savedSection='';ui.savedQuery='';ui.savedLimit=60;render();return true; }
   if (action==='product-wish-new') { ui.productTab='wishes';openSavedRecord('products');return true; }
   if (action==='product-wish-select') {
