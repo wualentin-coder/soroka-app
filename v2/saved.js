@@ -195,13 +195,18 @@ function movieDuration(minutes) {
   const total = Math.round(n), hours = Math.floor(total / 60), rest = total % 60;
   return [hours ? `${hours} ч` : "", rest ? `${rest} мин` : ""].filter(Boolean).join(" ");
 }
-const movieFactsRequests = new Set();
+const movieFactsRequests = new Map();
+const movieCardStates = new Map();
 function ensureMovieFacts(item) {
-  if (!/^movie:\d+$/.test(item.id) || typeof window.sorokaMovieFacts !== "function" || movieFactsRequests.has(item.id)) return;
-  movieFactsRequests.add(item.id);
-  setTimeout(() => window.sorokaMovieFacts(item.id).then(() => {
+  const key=JSON.stringify([item.id,item.title,item.originalTitle,item.year]);
+  if (!/^movie:\d+$/.test(item.id) || typeof window.sorokaMovieCard !== "function" || Date.now()-(movieFactsRequests.get(key)||0)<60000) return;
+  movieFactsRequests.set(key,Date.now());
+  movieCardStates.set(item.id,"loading");
+  setTimeout(() => window.sorokaMovieCard(item.id).then(answer => {
+    movieFactsRequests.set(key,answer.infoReady ? Infinity : Date.now());
+    movieCardStates.set(item.id,answer.infoReady ? "ready" : "unavailable");
     if (ui.sheet?.category === "movies" && ui.sheet.id === item.id && ui.sheet.mode !== "edit") render();
-  }).catch(() => { movieFactsRequests.delete(item.id); }), 0);
+  }).catch(() => { movieCardStates.set(item.id,"unavailable");if(ui.sheet?.category==="movies" && ui.sheet.id===item.id && ui.sheet.mode!=="edit")render(); }), 0);
 }
 function movieInfo(item, key) { return item[key] === undefined ? movieDemoInfo(item)[key] : item[key]; }
 function movieScore(value) { return value === "" || value === null || value === undefined || Number(value) <= 0 ? "—" : Number(value).toLocaleString("ru-RU", { maximumFractionDigits: 1 }); }
@@ -632,7 +637,7 @@ function renderSavedViewSheet(item, category) {
   const movieGenres = category === "movies" ? [item.genre, ...(item.tags || [])].filter((value, index, all) => value && all.findIndex(other => String(other).toLocaleLowerCase("ru-RU") === String(value).toLocaleLowerCase("ru-RU")) === index) : [];
   // Фильм: постер слева, справа сведения, значки действий и оценки; описание —
   // во всю ширину под ними. Всё по одной сетке, без плавающих подписей.
-  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", "), (item.countries || []).join(", "), movieDuration(item.minutes)].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Действия с фильмом">${movieWatchMarkup(item)}<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-similar" aria-label="Похожие фильмы" title="Похожие фильмы">${icon("spark", "icon-sm")}</button>${ui.sheet?.random ? `<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-random" aria-label="Другой фильм" title="Другой фильм">${icon("reset", "icon-sm")}</button>` : ""}</div></div></div>${movieRatings}<div class="movie-my-rating"><span class="movie-my-label">Моя оценка</span>${starSlider(item)}<b class="star-value" aria-hidden="true">${Number(item.rating) ? `${Number(item.rating)}<small>/10</small>` : "<small>—</small>"}</b></div>${seriesTracker(item)}${movieReviewBlock(item)}${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
+  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", "), (item.countries || []).join(", "), movieDuration(item.minutes)].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Действия с фильмом">${movieWatchMarkup(item)}<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-similar" aria-label="Похожие фильмы" title="Похожие фильмы">${icon("spark", "icon-sm")}</button>${ui.sheet?.random ? `<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-random" aria-label="Другой фильм" title="Другой фильм">${icon("reset", "icon-sm")}</button>` : ""}</div></div></div>${item.infoReady===false ? `<p class="section-note">${movieCardStates.get(item.id)==="unavailable" ? "Сведения пока недоступны. Проверьте название и год или откройте карточку позже." : "Загружаю сведения о фильме…"}</p>` : ""}${movieRatings}<div class="movie-my-rating"><span class="movie-my-label">Моя оценка</span>${starSlider(item)}<b class="star-value" aria-hidden="true">${Number(item.rating) ? `${Number(item.rating)}<small>/10</small>` : "<small>—</small>"}</b></div>${seriesTracker(item)}${movieReviewBlock(item)}${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
   // В шапке — закладка: закрепить карточку. «Просмотрено» — свайпом вправо по карточке списка.
   const topViewedAction = `<button class="icon-button sheet-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}">${icon("bookmark", "icon-sm")}</button>`;
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
