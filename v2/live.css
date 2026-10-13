@@ -999,3 +999,7 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .wish-search-progress { display: flex; align-items: center; gap: 10px; }
 .wish-search-empty { padding: 16px 0; font-size: 13px; line-height: 1.6; }
 .wish-unpriced-item .inline-actions .primary-button { flex: 1 1 100%; min-width: 0; }
+.wish-price-progress { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); }
+.wish-price-progress-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.wish-price-progress progress { display: block; width: 100%; height: 8px; margin: 12px 0; accent-color: var(--accent); }
+.wish-price-progress .section-note { margin: 0; line-height: 1.5; }
