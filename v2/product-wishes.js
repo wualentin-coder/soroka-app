@@ -74,7 +74,7 @@ function patchWish(item) {
 }
 function wishPoll(item) {
   const s=wishState(item); clearTimeout(s.timer);
-  if (!wishIsOpen(item.id) || !(s.answer.state==='running'||s.answer.result?.priceCheck?.pending)) return;
+  if (!wishIsOpen(item.id) || !isProductWish(savedItem('products',item.id)) || !(s.answer.state==='running'||s.answer.result?.priceCheck?.pending)) return;
   s.timer=setTimeout(async()=>{
     if (!wishIsOpen(item.id)) return;
     if (document.hidden) { wishPoll(item);return; }
@@ -113,6 +113,7 @@ async function chooseWish(item,url,searchId) {
   s.busy=true;s.error='';patchWish(item);
   try {
     const selected=await window.sorokaWishSelect(item.id,{url,...(searchId?{searchId}:{})});
+    clearTimeout(s.timer);s.revision=(s.revision||0)+1;
     ui.productTab='products';
     if (wishIsOpen(item.id)) { ui.sheet=null;openSavedRecord('products',item.id); }
     else render();
