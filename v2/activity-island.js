@@ -43,18 +43,19 @@
     return { kind, label, progress, render, events, tasks, interval: active && fresh ? 6000 : 15000 };
   }
   function createStateSource(fetchState, { now = Date.now, hidden = () => document.hidden } = {}) {
-    let snapshot = null, at = 0, pending = null;
+    let snapshot = null, at = 0, pending = null, generation = 0;
     return {
       snapshot: () => snapshot,
-      invalidate: () => { at = -Infinity; },
+      invalidate: () => { generation++; at = -Infinity; },
       read() {
         if (hidden()) return snapshot ? Promise.resolve(snapshot) : Promise.reject(new Error("hidden"));
         if (pending) return pending;
         const ttl = snapshot?.render?.rendering ? 6000 : 15000;
         if (snapshot && now() - at < ttl) return Promise.resolve(snapshot);
+        const requestedGeneration = generation;
         pending = Promise.resolve().then(fetchState).then(value => {
           if (!value || value.error) throw new Error(value?.error || "PC state unavailable");
-          snapshot = value; at = now(); return value;
+          snapshot = value; at = requestedGeneration === generation ? now() : -Infinity; return value;
         }).finally(() => { pending = null; });
         return pending;
       },
