@@ -4,11 +4,13 @@
  * можно вписать руками — раньше она терялась при правке.
  */
 
+function productPriceChecksEnabled() { return window.SOROKA_PRICE_CHECKS_ENABLED === true; }
 const rub = value => `${Math.round(Number(value)).toLocaleString("ru-RU")} ₽`;
 
 // Состояние очереди отдельно от пользовательских данных и формы редактирования.
 const productChecks = new Map();
 function productCheckText(check, item) {
+  if (!productPriceChecksEnabled()) return "Проверка цен временно отключена. Показана сохранённая цена.";
   const when = value => { const at = new Date(value); return Number.isFinite(at.getTime()) ? at.toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; };
   if (check?.actionRunning) return "Запускаю проверку…";
   if (check?.connectionError) return "Нет связи со статусом проверки. Показана последняя сохранённая цена.";
@@ -24,6 +26,7 @@ function productCheckOpen(ref) {
   return !document.hidden && ui.sheet?.category === "products" && ui.sheet.id === ref && ui.sheet.mode !== "edit";
 }
 function watchProductCheck(ref) {
+  if (!productPriceChecksEnabled()) return;
   if (typeof window.sorokaProductStatus !== "function") return;
   const state = productChecks.get(ref) || {};
   if (state.timer || state.polling || state.actionRunning || Date.now() - (state.lastAsked || 0) < 10000) return;
@@ -115,11 +118,11 @@ function productDetails(item) {
   ].join("");
   const rows = [
     Number(item.targetPrice) > 0 ? savedDetailLine("Жду цену", rub(item.targetPrice)) : "",
-    item.tracked ? savedDetailLine("Слежу за ценой", { 1: "каждый день", 3: "раз в 3 дня", 7: "раз в неделю" }[Number(item.checkDays) || 1] || "каждый день") : "",
+    item.tracked ? savedDetailLine("Проверка цен", productPriceChecksEnabled() ? "раз в сутки" : "Приостановлена") : "",
   ].join("");
   const goal = (data.finance?.goals || []).find(g => g.id === item.goalId);
   const goalBlock = goal ? (() => { const pct = goal.target > 0 ? Math.min(100, Math.round(goal.saved / goal.target * 100)) : 0; return `<div class="product-goal"><div><small>Цель</small><strong>${esc(goal.title)}</strong></div><span>${rub(goal.saved)} из ${rub(goal.target)}</span><div class="progress-track"><span style="width:${pct}%"></span></div></div>`; })() : "";
-  const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh" data-product-refresh="${esc(item.id)}" ${check?.actionRunning ? "disabled" : ""}>${check?.actionRunning ? '<span class="live-spin"></span>Смотрю цену…' : icon("reset", "icon-sm") + "Обновить цену и фото"}</button>` : "";
+  const refresh = /^https?:\/\//.test(item.url || "") ? `<button type="button" class="ghost-button product-refresh ${productPriceChecksEnabled() ? '' : 'price-paused'}" data-product-refresh="${esc(item.id)}" ${!productPriceChecksEnabled() || check?.actionRunning ? 'disabled aria-disabled="true"' : ''} title="${productPriceChecksEnabled() ? 'Обновить цену и фото' : 'Проверка цен временно отключена'}">${productPriceChecksEnabled() && check?.actionRunning ? '<span class="live-spin"></span>Смотрю цену…' : icon("reset", "icon-sm") + "Обновить цену и фото"}</button>` : "";
   return `<div class="product-hero">${productImage(item, "hero")}${off ? `<span class="product-off big">−${off}%</span>` : ""}</div><div class="product-price-line">${productPrice(item)}${productStart(item) ? `<span class="product-save ${productChange(item) < 0 ? "" : "up"}">${Number(item.price) < productStart(item) ? `дешевле на ${rub(productStart(item) - Number(item.price))}` : Number(item.price) > productStart(item) ? `дороже на ${rub(Number(item.price) - productStart(item))}` : "цена не менялась"}</span>` : ""}</div>${links ? `<div class="product-links">${links}${refresh}</div>` : `<p class="section-note">Ссылки на товар нет — впишите её в «Изменить», и я буду следить за ценой.</p>`}<p class="section-note" role="status" data-product-check-status="${esc(item.id)}">${esc(productCheckText(check, item))}</p>${goalBlock}${rows ? `<div class="saved-detail-table">${rows}</div>` : ""}`;
 }
 
@@ -128,6 +131,7 @@ document.addEventListener("click", async event => {
   const button = event.target.closest?.("[data-product-refresh]");
   if (!button) return;
   event.preventDefault(); event.stopImmediatePropagation();
+  if (!productPriceChecksEnabled()) return;
   if (typeof window.sorokaProductRefresh !== "function") { toast("Работает в приложении бота"); return; }
   const item = savedItem("products", button.dataset.productRefresh);
   if (!item) return;

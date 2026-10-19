@@ -365,6 +365,19 @@ html.in-android .page-header { min-height: 40px; }
 .product-card .product-price b { font-size: 17px; flex: 0 0 auto; }
 .product-card .product-price s, .product-card .product-price em { font-size: 12px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: clip; }
 .product-price em.same, .product-card .product-price em.same { color: var(--muted); }
+/* Keep paused price actions visible and distinct from available actions. */
+.price-paused:disabled {
+  color: var(--muted) !important;
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+  filter: grayscale(1);
+  opacity: .65;
+  cursor: not-allowed;
+}
+.price-paused-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.price-paused-fields:disabled { opacity: .6; filter: grayscale(1); }
+
 /* Кнопка «Обновить цену и фото»: значок и текст одной строкой. */
 .product-links .product-refresh { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; }
 /* Действия под формой — на всю ширину поровну, без пустоты справа. */

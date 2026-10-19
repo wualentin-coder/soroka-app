@@ -35,6 +35,7 @@ function wishCandidate(x,i,s,unpriced=false) {
   return `<li class="wish-candidate ${unpriced?'wish-unpriced-item':''}"><div class="wish-candidate-head">${unpriced?'':`<span class="wish-rank">${i+1}</span>`}<div><strong>${esc(x.title)}</strong><small>${esc(x.store)}</small></div><b>${unpriced?'Цена требует проверки':rub(x.price)}</b></div><p class="wish-review-line">${x.rating!=null?`★ ${esc(x.rating)}`:'Рейтинг неизвестен'}${x.reviews!=null?` · Оценки/отзывы: ${Number(x.reviews).toLocaleString('ru-RU')}`:''}</p><p class="wish-reason">${esc(x.reason)}</p>${x.caveat?`<p class="section-note">${esc(x.caveat)}</p>`:x.rating!=null&&x.reviews!=null&&x.reviews<5?'<p class="section-note">Оценок пока мало — рейтинг может быть неустойчивым.</p>':''}<p class="section-note">${unpriced?esc(priceNote):x.priceSource==='phone'?'Цена проверена через телефон.':x.priceSource==='search'?'Цена из поисковой выдачи; перед покупкой сверить в магазине.':x.priceSource==='page'?'Цена из карточки магазина.':''}</p><div class="inline-actions"><a class="small-button" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Магазин ${icon('external','icon-sm')}</a><button type="button" class="primary-button" data-action="product-wish-select" data-url="${esc(x.url)}" ${s.busy?'disabled':''}>${unpriced?'Добавить без подтверждённой цены':'Выбрать'}</button></div></li>`;
 }
 function wishResults(item,s) {
+  if (!productPriceChecksEnabled()) return '<p class="section-note">ИИ-подбор и проверка цен временно отключены. Можно привязать ссылку вручную.</p>';
   const state=s.answer.state;
   if (s.loading || state==='running') return `<p class="section-note wish-search-progress" role="status"><span class="live-spin"></span>Подбираю товары и проверяю источники…</p>`;
   if (state==='failed') return `<p class="form-error" role="alert">${esc(wishError(s.answer.result?.error))}</p>`;
@@ -56,8 +57,8 @@ function wishResults(item,s) {
 }
 function renderProductWishSheet(item) {
   const s=wishState(item), p=s.params;
-  if (s.sheet !== ui.sheet) { s.sheet=ui.sheet; Promise.resolve().then(()=>loadWishState(item)); }
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet product-wish-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div><p class="eyebrow">Товары · Без цены</p>${item.description?`<p class="saved-prose">${esc(item.description)}</p>`:''}<form id="product-wish-link"><label class="field">Ссылка на товар<input name="url" type="url" placeholder="https://…" required value="${esc(s.link||'')}" inputmode="url"></label><button class="primary-button" type="submit" ${s.busy?'disabled':''}>Привязать ссылку</button></form><div class="wish-divider"><span>или подобрать</span></div><form id="product-wish-search"><label class="field">Что ищем<textarea name="query" maxlength="600" required placeholder="Характеристики и пожелания">${esc(p.query)}</textarea></label><div class="field-row"><label class="field">Бюджет от, ₽<input name="min" type="number" min="0" max="10000000" value="${esc(p.min??'')}" placeholder="Не важно"></label><label class="field">До, ₽<input name="max" type="number" min="0" max="10000000" value="${esc(p.max??'')}" placeholder="Не важно"></label></div><label class="field">Сколько готовых вариантов<select name="count">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${Number(p.count)===n?'selected':''}>${n}</option>`).join('')}</select></label><fieldset class="wish-store-picker"><legend>Где искать</legend>${productWishStores.map(([key,label])=>`<label><input type="checkbox" name="stores" value="${key}" ${p.stores.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}</fieldset><button class="primary-button" type="submit" data-wish-search-button ${s.loading||s.busy||(s.answer.state==='running'||s.answer.result?.priceCheck?.pending)?'disabled':''}>${s.answer.state==='running'?'Идёт подбор…':s.answer.result?.priceCheck?.pending?(s.answer.result?.refilling?'Добираю варианты…':'Проверяю цены…'):'Подобрать с ИИ'}</button></form><p class="section-note">Количество — готовые варианты с проверенной ценой в бюджете. При нехватке — до трёх поисков; проверка цен выполняется без ИИ.</p><p class="form-error" data-wish-error role="alert">${esc(s.error)}</p><div class="product-wish-results" aria-live="polite">${wishResults(item,s)}</div><div class="inline-actions saved-view-actions"><button type="button" data-action="saved-edit">${icon('note')}Изменить хотелку</button><button type="button" class="danger" data-action="saved-delete">${icon('trash')}Удалить</button></div></section></div>`;
+  if (productPriceChecksEnabled() && s.sheet !== ui.sheet) { s.sheet=ui.sheet; Promise.resolve().then(()=>loadWishState(item)); }
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet product-wish-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div><p class="eyebrow">Товары · Без цены</p>${item.description?`<p class="saved-prose">${esc(item.description)}</p>`:''}<form id="product-wish-link"><label class="field">Ссылка на товар<input name="url" type="url" placeholder="https://…" required value="${esc(s.link||'')}" inputmode="url"></label><button class="primary-button" type="submit" ${s.busy?'disabled':''}>Привязать ссылку</button></form><div class="wish-divider"><span>или подобрать</span></div><form id="product-wish-search"><fieldset class="price-paused-fields" ${productPriceChecksEnabled()?'':'disabled'}><label class="field">Что ищем<textarea name="query" maxlength="600" required placeholder="Характеристики и пожелания">${esc(p.query)}</textarea></label><div class="field-row"><label class="field">Бюджет от, ₽<input name="min" type="number" min="0" max="10000000" value="${esc(p.min??'')}" placeholder="Не важно"></label><label class="field">До, ₽<input name="max" type="number" min="0" max="10000000" value="${esc(p.max??'')}" placeholder="Не важно"></label></div><label class="field">Сколько готовых вариантов<select name="count">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${Number(p.count)===n?'selected':''}>${n}</option>`).join('')}</select></label><fieldset class="wish-store-picker"><legend>Где искать</legend>${productWishStores.map(([key,label])=>`<label><input type="checkbox" name="stores" value="${key}" ${p.stores.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}</fieldset><button class="primary-button ${productPriceChecksEnabled()?'':'price-paused'}" type="submit" data-wish-search-button ${!productPriceChecksEnabled()||s.loading||s.busy||(s.answer.state==='running'||s.answer.result?.priceCheck?.pending)?'disabled':''}>${!productPriceChecksEnabled()?'Подбор временно отключён':s.answer.state==='running'?'Идёт подбор…':s.answer.result?.priceCheck?.pending?(s.answer.result?.refilling?'Добираю варианты…':'Проверяю цены…'):'Подобрать с ИИ'}</button></fieldset></form><p class="section-note">Количество — готовые варианты с проверенной ценой в бюджете. При нехватке — до трёх поисков; проверка цен выполняется без ИИ.</p><p class="form-error" data-wish-error role="alert">${esc(s.error)}</p><div class="product-wish-results" aria-live="polite">${wishResults(item,s)}</div><div class="inline-actions saved-view-actions"><button type="button" data-action="saved-edit">${icon('note')}Изменить хотелку</button><button type="button" class="danger" data-action="saved-delete">${icon('trash')}Удалить</button></div></section></div>`;
 }
 function wishIsOpen(ref) { return ui.sheet?.kind==='saved' && ui.sheet.category==='products' && ui.sheet.id===ref && ui.sheet.mode!=='edit'; }
 function patchWish(item) {
@@ -69,13 +70,14 @@ function patchWish(item) {
   results.innerHTML=wishResults(item,s);
   root.querySelector('[data-wish-error]').textContent=s.error;
   const button=root.querySelector('[data-wish-search-button]');
-  button.disabled=s.loading||s.busy||s.answer.state==='running'||s.answer.result?.priceCheck?.pending;
-  button.textContent=s.answer.state==='running'?'Идёт подбор…':s.answer.result?.priceCheck?.pending?(s.answer.result?.refilling?'Добираю варианты…':'Проверяю цены…'):'Подобрать с ИИ';
+  button.disabled=!productPriceChecksEnabled()||s.loading||s.busy||s.answer.state==='running'||s.answer.result?.priceCheck?.pending;
+  button.textContent=!productPriceChecksEnabled()?'Подбор временно отключён':s.answer.state==='running'?'Идёт подбор…':s.answer.result?.priceCheck?.pending?(s.answer.result?.refilling?'Добираю варианты…':'Проверяю цены…'):'Подобрать с ИИ';
   root.querySelector('#product-wish-link button').disabled=s.busy;
   for(const button of root.querySelectorAll('.saved-view-actions button')) button.disabled=s.busy;
   root.scrollTop=scroll;
 }
 function wishPoll(item) {
+  if (!productPriceChecksEnabled()) return;
   const s=wishState(item); clearTimeout(s.timer);
   if (!wishIsOpen(item.id) || !isProductWish(savedItem('products',item.id)) || !(s.answer.state==='running'||s.answer.result?.priceCheck?.pending)) return;
   s.timer=setTimeout(async()=>{
@@ -91,6 +93,7 @@ function resumeProductWish() {
   if(item&&isProductWish(item)&&wishIsOpen(item.id)) void loadWishState(item);
 }
 async function loadWishState(item) {
+  if (!productPriceChecksEnabled()) return;
   const s=wishState(item);
   const revision=s.revision||0;
   if (typeof window.sorokaWishState!=='function') return;
@@ -125,7 +128,7 @@ async function chooseWish(item,url,searchId) {
     if (wishIsOpen(item.id)) { ui.sheet=null;openSavedRecord('products',item.id); }
     else render();
     // Price checks are ordinary existing checks; selection itself uses no AI.
-    if(!(selected.product?.price>0)) window.sorokaProductRefresh?.(item.id).then(answer=>{
+    if(productPriceChecksEnabled() && !(selected.product?.price>0)) window.sorokaProductRefresh?.(item.id).then(answer=>{
       const state=productChecks.get(item.id)||{};
       Object.assign(state,answer,{revision:(state.revision||0)+1,connectionError:false});productChecks.set(item.id,state);
       if (productCheckOpen(item.id)) render();
@@ -134,6 +137,7 @@ async function chooseWish(item,url,searchId) {
   finally { s.busy=false;patchWish(item); }
 }
 function productWishAction(action,control) {
+  if (!productPriceChecksEnabled() && ['product-wish-retry','product-wish-select'].includes(action)) return true;
   if(action==='product-wish-retry') {
     const item=savedItem('products',ui.sheet?.id);
     if(item) {
@@ -157,7 +161,7 @@ function productWishSubmit(event) {
   const item=savedItem('products',ui.sheet?.id);if (!item) return true;
   const s=wishState(item);
   if (event.target.id==='product-wish-link') { void chooseWish(item,new FormData(event.target).get('url'));return true; }
-  if (s.loading||s.busy||s.answer.state==='running'||s.answer.result?.priceCheck?.pending) return true;
+  if (!productPriceChecksEnabled()||s.loading||s.busy||s.answer.state==='running'||s.answer.result?.priceCheck?.pending) return true;
   const params=readWishForm(event.target);
   if (!params.stores.length || (params.min!=null&&params.max!=null&&Number(params.min)>Number(params.max))) { s.error='Проверьте бюджет и выберите хотя бы один магазин.';patchWish(item);return true; }
   s.params=params;s.dirty=true;s.loading=true;s.error='';s.revision=(s.revision||0)+1;patchWish(item);
