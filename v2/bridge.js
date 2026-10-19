@@ -101,6 +101,7 @@
       reportFailures(body.action);
       // Копия «как на сервере» — отдельно от данных на экране: правки на
       // экране не должны менять то, с чем сравниваются следующие ответы.
+      if (body.action === "planner_sync") { try { android?.refreshWidgets?.(); } catch (_) {} }
       if (body.action === "planner_snapshot") { const full = expand(json); remember(full); return full; }
       if (DELTA.has(body.action) && json.snapshot) { json.snapshot = expand(json.snapshot); remember(json.snapshot); }
       return json;
@@ -985,10 +986,19 @@
     debts: "debt", payments: "payment", money: "tx", shop: "list", projects: "project", lists: "list", tickets: "ticket",
     places: "place", metrics: "metric", goals: "goal", budgets: "budget", cards: "card",
   };
+  window.sorokaOpenPlannerDay = (date) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return false;
+    const at = new Date(date + "T12:00:00Z");
+    if (!Number.isFinite(at.getTime()) || at.toISOString().slice(0,10) !== date) return false;
+    navigate("today");
+    ui.selected = date; ui.calendarAnchor = date; ui.month = date.slice(0,7) + "-01";
+    render(); return true;
+  };
   function openDeepLink() {
     const params = new URLSearchParams(location.search);
     const page = params.get("page") || "";
     const rid = params.get("rid") || "";
+    if (page === "tasks" && params.has("date") && window.sorokaOpenPlannerDay(params.get("date"))) return;
     // «Открыть пароли» из чата.
     if (params.get("tab") === "vault") { navigate("vault"); return; }
     if (!page) return;
