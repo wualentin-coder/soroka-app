@@ -986,6 +986,7 @@
     debts: "debt", payments: "payment", money: "tx", shop: "list", projects: "project", lists: "list", tickets: "ticket",
     places: "place", metrics: "metric", goals: "goal", budgets: "budget", cards: "card",
   };
+  window.sorokaOpenPC = () => { navigate("pc"); render(); return true; };
   window.sorokaOpenPlannerDay = (date) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return false;
     const at = new Date(date + "T12:00:00Z");
@@ -998,6 +999,7 @@
     const params = new URLSearchParams(location.search);
     const page = params.get("page") || "";
     const rid = params.get("rid") || "";
+    if (page === "pc") { window.sorokaOpenPC(); return; }
     if (page === "tasks" && params.has("date") && window.sorokaOpenPlannerDay(params.get("date"))) return;
     // «Открыть пароли» из чата.
     if (params.get("tab") === "vault") { navigate("vault"); return; }
