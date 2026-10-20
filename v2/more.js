@@ -161,7 +161,7 @@ ${row("SMS банков", p.smsPermission ? "Отправители, чьи SMS 
 ${pickLine(smsOn, "sms")}
 ${row("Сообщать, что записал", p.notifyPermission || !p.results ? "Уведомление «Flow записал: …» после разбора" : "Нет разрешения на уведомления", p.results && !p.notifyPermission ? fix("notifyPermission", "Разрешить") : toggle("results", p.results))}
 ${row("Уведомления бота", "Дублировать сообщения бота на телефон", toggle("feed", p.feed))}
-${p.renderLiveAvailable ? row("Рендер в Now Bar", p.renderLive ? (p.renderLiveRunning ? "Слежение за ПК при закрытом Flow · тихое уведомление в ожидании" : "Разрешите уведомления и откройте Flow для запуска") : "Процент и композиция в живом уведомлении", toggle("renderLive", p.renderLive)) : ""}
+${p.renderLiveAvailable ? row("Рендер в Now Bar", p.renderLive ? (p.notifyPermission ? "Слежение за ПК при закрытом Flow · тихое уведомление в ожидании" : "Разрешите уведомления для запуска слежения") : "Процент и композиция в живом уведомлении", toggle("renderLive", p.renderLive)) : ""}
 ${p.renderLiveAvailable && p.renderLive ? `<div class="settings-row settings-row-wide phone-sub">${fix("renderSettings", "Настройки живых уведомлений")}</div>` : ""}
 ${row("Карты у края экрана", p.edge ? (p.edgeText || "Работает") : "Скидочная карта появится у магазина", toggle("edge", p.edge))}
 ${p.edge && p.edgeFix ? `<div class="settings-row settings-row-wide phone-sub">${fix(p.edgeFix, { overlay: "Разрешить «поверх окон»", location: "Разрешить геопозицию", background: "Геопозиция «всегда»", battery: "Без экономии батареи" }[p.edgeFix] || "Исправить")}</div>` : ""}
