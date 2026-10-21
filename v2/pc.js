@@ -12,7 +12,7 @@
 function pcCall(payload) {
   if (typeof window.sorokaPc === "function") return window.sorokaPc(payload);
   return new Promise(done => setTimeout(() => {
-    if (payload.op === "state") done({ on: true, agent: true, hub: true, render: { then: "notify" }, status: { cpu_percent: 7, memory_percent: 64, gpu_percent: 11, uptime_seconds: 83616, active_user: "Administrator" }, statusAt: new Date().toISOString() });
+    if (payload.op === "state") done({ on: true, agent: true, hub: true, render: { then: "notify" }, rmQueue: pcDemo.rm, status: { cpu_percent: 7, memory_percent: 64, gpu_percent: 11, uptime_seconds: 83616, active_user: "Administrator" }, statusAt: new Date().toISOString() });
     else if (payload.op === "send") { pcDemo.last = payload; done({ id: Date.now(), target: "agent" }); }
     else {
       const p = pcDemo.last || {};
@@ -21,7 +21,21 @@ function pcCall(payload) {
     }
   }, 500));
 }
-const pcDemo = { last: null, audio: { level: 76, muted: false } };
+const pcDemo = { last: null, audio: { level: 76, muted: false }, rm: {
+  held: false,
+  jobs: [
+    { id: 7, name: "book_COLLECTED · usdrender_rop2", app: "karma", status: "rendering", frames: "60-130", done: 17, total: 71, percent: 24, eta: 1260, stage: "рендер", after: "notify" },
+    { id: 8, name: "BOOK_EVANGILE · БЛОК 2", app: "ae", status: "queued", frames: "0-489", after: "notify" },
+    { id: 9, name: "main_map_v3 · intro", app: "ae", status: "queued", frames: "0-240", after: "notify" },
+    { id: 6, name: "BOOK_EVANGILE · БЛОК 1", app: "ae", status: "cancelled", done: 27, total: 594 },
+    { id: 5, name: "ball · render", app: "karma", status: "failed", error: "нет 2 кадров: 61-62", missing: 2 },
+    { id: 4, name: "book · uv", app: "karma", status: "done", delivery: { status: "done" } },
+  ],
+  scenes: [
+    { id: "aa11bb22", path: "D:\\KARELIA\\book\\project\\book_COLLECTED_20261016.hip", name: "book_COLLECTED_20261016", app: "karma", cloud: false, targets: [{ target: "/stage/usdrender_rop1", frames: "1-130", label: "usdrender_rop1 · 1-130" }, { target: "/stage/usdrender_rop2", frames: "60-130", label: "usdrender_rop2 · 60-130" }] },
+    { id: "cc33dd44", path: "O:\\Backups\\project\\main_map_v3_COLLECTED_20261016.aep", name: "main_map_v3_COLLECTED_20261016", app: "ae", cloud: true, targets: [] },
+  ],
+} };
 
 // ------------------------------------------------------------ состояние
 
@@ -38,7 +52,7 @@ function pcLoad(force = false) {
   }).catch(error => { ui.pc = { ...ui.pc, error: String(error?.message || error) }; })
     .finally(() => {
       ui.pc.loading = false;
-      if (ui.page !== "pc") return;
+      if (!pcOnPage()) return;
       // Пока человек печатает в поиске — меняем только шапку, иначе поле потеряет фокус.
       const hero = document.querySelector(".pc-hero");
       if (document.activeElement?.id === "pc-find" && hero && ui.pc.data) hero.outerHTML = pcHero(ui.pc.data);
@@ -47,7 +61,7 @@ function pcLoad(force = false) {
 }
 
 // Пока экран «Компьютер» открыт — состояние раз в 15 с (агент шлёт загрузку раз в 30 с).
-setInterval(() => { if (ui.page === "pc" && !document.hidden && ui.pc?.data && !ui.pc.pending) pcLoad(true); }, 15000);
+setInterval(() => { if (pcOnPage() && !document.hidden && ui.pc?.data && !ui.pc.pending) pcLoad(true); }, 15000);
 
 // ------------------------------------------------------------ иконки
 
@@ -215,12 +229,14 @@ function pcActions(busy) {
 
 function pcRenderBlock(d) {
   const r = d.render || {};
-  const then = r.then || "notify";
+  // Пока в очереди Render Manager есть задачи, «Когда закончится» — про всю очередь (rm_after)
+  const rmAfter = rmBusy() ? (d.rmQueue.jobs.find(j => ["rendering", "delivering", "queued", "paused"].includes(j.status))?.after || "notify") : null;
+  const then = rmAfter ? (rmAfter === "none" ? "notify" : rmAfter) : r.then || "notify";
   const opt = (value, label) => `<button type="button" class="segment ${then === value ? "active" : ""} ${ui.pc.quick?.[`after-${value}`] || ""}" data-action="pc-after" data-then="${value}" aria-pressed="${then === value}">${label}</button>`;
   const line = r.rendering ? pcRenderNow(r)
     : r.done_at ? `<p class="section-note">${r.status && r.status !== "done" ? "Последний рендер остановлен" : "Последний рендер закончился"}${r.comps?.length ? ` («${r.comps.map(esc).join("», «")}»)` : ""} ${esc(new Date(r.done_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}, шёл ${pcMinutes(r.seconds || 0)}.</p>`
       : `<p class="section-note">С расширением Flow Render в After Effects вижу название и прогресс; без него — замечаю рендер по нагрузке.</p>`;
-  return `<section class="pc-card ${r.rendering ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}${r.rendering ? "Рендер" : "После рендера"}</h3></div>${line}<p class="pc-after-label">Когда закончится:</p><div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением — минута на «отмену» в чате и окном на экране.</p></section>`;
+  return `<section class="pc-card ${r.rendering ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}${r.rendering ? "Рендер" : "После рендера"}</h3></div>${rmAfter ? "" : line}<p class="pc-after-label">${rmAfter ? "Когда очередь рендеров закончится:" : "Когда закончится:"}</p><div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением — минута на «отмену» в чате и окном на экране.</p></section>`;
 }
 
 const pcMinutes = s => { s = Math.round(s); return s >= 3600 ? `${Math.floor(s / 3600)} ч ${Math.round(s % 3600 / 60)} мин` : s >= 60 ? `${Math.round(s / 60)} мин` : `${s} с`; };
@@ -320,6 +336,8 @@ document.addEventListener("keydown", event => {
   document.querySelector(".pc-find-results .pc-find-row")?.click();
 });
 
+const pcOnPage = () => ui.page === "pc" || ui.page === "render";
+
 function renderPcPage() {
   pcLoad();
   const d = ui.pc?.data;
@@ -328,8 +346,9 @@ function renderPcPage() {
   const busy = Boolean(ui.pc.pending);
   const note = !d.agent && d.on ? `<p class="section-note">Компьютер включён, но агент Flow на нём не запущен — остальное недоступно.</p>` : "";
   // Пока идёт рендер — освежаем состояние сами, чтобы процент двигался.
-  if (d.render?.rendering) { clearTimeout(ui.pc.renderTimer); ui.pc.renderTimer = setTimeout(() => { if (ui.page === "pc") pcLoad(true); }, 6000); }
-  const agentPart = d.agent ? `${pcActions(busy)}${pcResult()}${pcMedia()}${pcRenderBlock(d)}${pcLinkBlock()}` : pcResult();
+  if (d.render?.rendering || (d.rmQueue?.jobs || []).some(j => j.status === "rendering" || j.status === "delivering")) { clearTimeout(ui.pc.renderTimer); ui.pc.renderTimer = setTimeout(() => { if (pcOnPage()) pcLoad(true); }, 6000); }
+  // Рендер (очередь Render Manager, ручной рендер AE, «Когда закончится») — отдельный раздел, здесь — строка-переход
+  const agentPart = d.agent ? `${pcActions(busy)}${pcResult()}${pcMedia()}${rmLinkRow(d)}${pcLinkBlock()}` : pcResult();
   // Карточки «въезжают» только при входе на экран, а не на каждое нажатие.
   const enter = !ui.pc.entered;
   if (enter) setTimeout(() => { if (ui.pc) ui.pc.entered = true; }, 600);
@@ -370,7 +389,7 @@ function pcWait(id, cmd, tries = 0) {
       if (r?.status === "done" && power) { toast(cmd === "on" ? "Компьютер включился" : cmd === "sleep" ? "Компьютер уснул" : "Компьютер выключился"); try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success"); } catch {} }
       if (cmd === "status" && r?.status === "done" && ui.pc.data) { ui.pc.data.status = r.result; ui.pc.data.statusAt = new Date().toISOString(); }
       if (power) setTimeout(() => pcLoad(true), 500);
-      if (ui.page === "pc") render();
+      if (pcOnPage()) render();
       return;
     }
     if (ui.pc.pending) {
@@ -380,7 +399,7 @@ function pcWait(id, cmd, tries = 0) {
       // Тикают секунды — перерисовываем только карточку, а не весь экран.
       // Меняем только шаги и секунды: целиком карточку не трогаем, иначе кольцо крутится рывками.
       const card = document.querySelector(".pc-page .pc-boot:not(.pc-countdown)");
-      if (card && ui.page === "pc") {
+      if (card && pcOnPage()) {
         const next = document.createElement("div");
         next.innerHTML = pcPendingCard(ui.pc.pending);
         for (const part of [".pc-steps", ".pc-boot-time", "h2"]) {
@@ -415,15 +434,15 @@ function pcSend(cmd, args = {}) {
 function pcQuick(cmd, args, key, done) {
   ui.pc.quick ||= {};
   const quiet = key === "audio";
-  if (!quiet) { ui.pc.quick[key] = "is-busy"; if (ui.page === "pc") render(); }
+  if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage()) render(); }
   const finish = (state, result) => {
     if (result?.audio) { ui.pc.audio = result.audio; ui.pc.audioAt = Date.now(); }
     if (!quiet) {
       ui.pc.quick[key] = state;
-      setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (ui.page === "pc") render(); } }, 1200);
+      setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (pcOnPage()) render(); } }, 1200);
     }
     if (state === "is-done") done?.(result);
-    if (ui.page === "pc" && !document.querySelector(".pc-vol-range:active")) render();
+    if (pcOnPage() && !document.querySelector(".pc-vol-range:active")) render();
   };
   pcCall({ op: "send", cmd, args }).then(made => {
     if (made?.error) throw new Error(made.error);
@@ -474,6 +493,12 @@ function pcAction(action, control) {
   if (action === "pc-lock") { pcQuick("lock", {}, "lock", () => toast("Экран заблокирован")); return true; }
   if (action === "pc-after") {
     const then = control.dataset.then;
+    if (rmBusy()) {
+      const jobs = ui.pc.data.rmQueue.jobs.map(j => ["rendering", "delivering", "queued", "paused"].includes(j.status) ? { ...j, after: then } : j);
+      ui.pc.data.rmQueue = { ...ui.pc.data.rmQueue, jobs };
+      pcQuick("rm_after", { after: then }, `after-${then}`);
+      return true;
+    }
     ui.pc.data.render = { ...(ui.pc.data.render || {}), then };
     pcQuick("after_render", { then }, `after-${then}`);
     return true;
