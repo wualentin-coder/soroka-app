@@ -108,7 +108,7 @@ const RM_DELIVER = [["move", "В облако"], ["copy", "Копию в обл�
 const RM_BACKEND = [["background", "В фоне"], ["cep", "В открытом AE"], ["auto", "Авто"]];
 // Фон частями (rm/runners/ae_split.py): несколько AE на своих кусках кадров; видео — кадрами, склейка ffmpeg
 const RM_PARTS = [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]];
-const RM_PARTS_NOTE = "Каждая часть — свой After Effects и своя память; при 48 ГБ разумно 2–3. Видео рендерится кадрами и склеивается ffmpeg — поэтому есть «Пауза» и «Продолжить».";
+const RM_PARTS_NOTE = "Каждая часть — свой After Effects и своя память; при 48 ГБ разумно 2–3. Видео рендерится кадрами и склеивается ffmpeg — поэтому есть «Пауза» и «Продолжить». MFR у частей выключен: вместе они переполняют видеопамять.";
 const rmLabel = (list, v) => (list.find(([k]) => k === v) || [, v])[1];
 function rmSettings() {
   const s = rmQueue().settings || {};
@@ -284,7 +284,7 @@ function rmJobForm(s, t) {
     many && !bench ? rmField("Один диапазон для всех", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="у каждой свой">`) : "",
     ae ? rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit"), "Только для этой задачи; композиция в проекте не меняется.") : "",
     ae ? rmField("Формат вывода", `<select class="rm-input" data-form="ae_template"><option value="">Как в проекте</option>${[...new Set(chosen.flatMap(x => x.audit?.templates || []))].map(name => `<option value="${esc(name)}" ${f.ae_template === name ? "selected" : ""}>${esc(name)}</option>`).join("")}</select>`) : "",
-    ae && !bench && f.ae_backend === "background" ? rmField("Многокадровый рендер (MFR)", rmSegments("ae_mfr", [["inherit", "Как в AE"], ["off", "Выкл."], ["on", "Вкл."]], f.ae_mfr || "inherit"), "Ускоряет не всё: проверьте тестом скорости.") : "",
+    ae && !bench && f.ae_backend === "background" && Number(f.parallel || 1) <= 1 ? rmField("Многокадровый рендер (MFR)", rmSegments("ae_mfr", [["inherit", "Как в AE"], ["off", "Выкл."], ["on", "Вкл."]], f.ae_mfr || "inherit"), "Ускоряет не всё: проверьте тестом скорости.") : "",
     ae && !many && !bench ? `<button type="button" class="ghost-button rm-wide" data-action="rm-benchmark">Тест скорости: с MFR и без</button>` : "",
     !bench ? rmPresetSave(f) : "",
   ].join("");
