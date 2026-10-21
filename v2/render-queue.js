@@ -31,12 +31,15 @@ function rmActiveRow(j, fresh = true) {
     : [j.total ? `кадр ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
   const bar = pct === null
     ? `<div class="pc-render-bar indeterminate"><b></b></div>` : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
-  return `<div class="pc-render-live rm-live"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p>${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div>`;
+  return `<div class="pc-render-live rm-live"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p>${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<div class="rm-acts">${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
 }
 
 /** Ждущая задача: ручка для перетаскивания, название, кадры, отмена. */
 function rmWaitingRow(j, i) {
-  return `<div class="rm-wait" data-id="${j.id}" style="--i:${i}"><span class="rm-grip" aria-label="Перетащить">${"<i></i>".repeat(6)}</span><span class="rm-wait-text"><b>${esc(j.name)}</b><small>${esc([RM_APP[j.app] || j.app, j.frames ? `кадры ${j.frames}` : "", j.status === "paused" ? "на паузе" : ""].filter(Boolean).join(" · "))}</small></span><button type="button" class="icon-button rm-x ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}" aria-label="Убрать из очереди">${pcIcon("x")}</button></div>`;
+  const paused = j.status === "paused";
+  // на паузе: сколько уже готово — «Продолжить» дорендерит остальное
+  const facts = [RM_APP[j.app] || j.app, paused && j.total ? `готово ${j.done || 0} из ${j.total}` : j.frames ? `кадры ${j.frames}` : "", paused ? "на паузе" : ""];
+  return `<div class="rm-wait ${paused ? "rm-paused" : ""}" data-id="${j.id}" style="--i:${i}"><span class="rm-grip" aria-label="Перетащить">${"<i></i>".repeat(6)}</span><span class="rm-wait-text"><b>${esc(j.name)}</b><small>${esc(facts.filter(Boolean).join(" · "))}</small></span>${paused ? `<button type="button" class="text-action ${rmBusyCls(`rm-resume-${j.id}`)}" data-action="rm-resume" data-id="${j.id}">Продолжить</button>` : ""}<button type="button" class="icon-button rm-x ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}" aria-label="Убрать из очереди">${pcIcon("x")}</button></div>`;
 }
 
 /** Законченная: итог одной строкой и действие, если оно есть. */
@@ -99,11 +102,15 @@ function renderRenderPage() {
 const RM_OUTPUT = [["root", "Папка рендера"], ["scene", "Как в сцене"], ["custom", "Своя папка"]];
 const RM_DELIVER = [["move", "В облако"], ["copy", "Копию в облако"], ["none", "Не отправлять"]];
 const RM_BACKEND = [["background", "В фоне"], ["cep", "В открытом AE"], ["auto", "Авто"]];
+// Фон частями (rm/runners/ae_split.py): несколько AE на своих кусках кадров; видео — кадрами, склейка ffmpeg
+const RM_PARTS = [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]];
+const RM_PARTS_NOTE = "Каждая часть — свой After Effects и своя память; при 48 ГБ разумно 2–3. Видео рендерится кадрами и склеивается ffmpeg — поэтому есть «Пауза» и «Продолжить».";
 const rmLabel = (list, v) => (list.find(([k]) => k === v) || [, v])[1];
 function rmSettings() {
   const s = rmQueue().settings || {};
   return { render_root: s.render_root || "D:\\Render", deliver_root: s.deliver_root || "D:\\RenderCloud", default_output: s.default_output || "root",
-    default_deliver: s.default_deliver || "move", ae_backend: s.ae_backend || "auto", background_off: Boolean(s.background_off), known: Boolean(rmQueue().settings) };
+    default_deliver: s.default_deliver || "move", ae_backend: s.ae_backend || "auto", ae_parallel: String(s.ae_parallel || 2),
+    background_off: Boolean(s.background_off), known: Boolean(rmQueue().settings) };
 }
 
 /** Ряд кнопок-вариантов: выбранный подсвечен, нажатие меняет поле формы листа. */
@@ -142,7 +149,7 @@ function rmJobArgs(scene,t,f) {
   return {path:scene.path,target:t.target,frames:String(f.frames).replace(/\s+/g,''),output:t.output || '',scene_stamp:t.scene_stamp,
     ...(t.comp_id ? {comp_id:t.comp_id} : {}),...(t.rq_index ? {rq_index:t.rq_index} : {}),urgent:f.urgent==='1',
     output_mode:f.output_mode,deliver:f.deliver,...(f.output_mode==='custom' ? {output_dir:String(f.output_dir || '').trim()} : {}),
-    ...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {})};
+    ...(scene.app==='ae' && f.ae_backend==='background' ? {parallel:Number(f.parallel) || 1} : {}),...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {})};
 }
 function rmSubmitSheet() {
   const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene), f=ui.sheet?.form;
@@ -184,6 +191,7 @@ function renderRmSettingsSheet() {
     rmField("Куда по умолчанию", rmSegments("default_output", RM_OUTPUT.filter(([k]) => k !== "custom"), f.default_output)),
     rmField("Облако по умолчанию", rmSegments("default_deliver", RM_DELIVER, f.default_deliver)),
     rmField("After Effects по умолчанию", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), rmBackendNote(rmSettings())),
+    rmField("Частей в фоне по умолчанию", rmSegments("ae_parallel", RM_PARTS, String(f.ae_parallel || "2")), RM_PARTS_NOTE),
   ].join("");
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Настройки рендера</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${body}<button type="button" class="primary-button rm-submit ${rmBusyCls("rm-settings-save")}" data-action="rm-settings-save">Сохранить</button></section></div>`;
 }
@@ -264,6 +272,7 @@ function rmJobForm(s, t) {
     rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : ""), rmWhere(s, t, f) ? `<span class="rm-path">${esc(rmWhere(s, t, f))}</span>` : ""),
     rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver)),
     ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
+    ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", RM_PARTS, String(f.parallel || set.ae_parallel)), RM_PARTS_NOTE) : "",
     `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>`,
   ];
   const more = ui.sheet.more;
@@ -461,7 +470,7 @@ function rmAction(action, control) {
       if (!selected.size || selected.size>50) {toast('Выберите от 1 до 50 целей');return true;}
       // одна цель — сразу её кадры в поле; несколько — у каждой свой диапазон
       const one=selected.size===1 ? (scene.targets || []).find(t=>selected.has(rmTargetKey(t))) : null;
-      const s=rmSettings();ui.sheet.batch=true;ui.sheet.more=false;ui.sheet.form={frames:one?.frames || '',output_mode:s.default_output,output_dir:'',deliver:s.default_deliver,ae_backend:s.ae_backend,ae_mfr:'inherit',ae_resolution:'inherit',ae_template:'',urgent:''};
+      const s=rmSettings();ui.sheet.batch=true;ui.sheet.more=false;ui.sheet.form={frames:one?.frames || '',output_mode:s.default_output,output_dir:'',deliver:s.default_deliver,ae_backend:s.ae_backend,parallel:s.ae_parallel,ae_mfr:'inherit',ae_resolution:'inherit',ae_template:'',urgent:''};
     }
     render();return true;
   }
@@ -494,6 +503,11 @@ function rmAction(action, control) {
     if (action==='rm-preset-save' && !name) {toast('Введите название пресета');return true;}
     const args=action==='rm-preset-delete' ? {action:'delete',id:control.dataset.id} : {action:'save',...(f.preset_id ? {id:f.preset_id} : {}),name,app:scene.app,form:Object.fromEntries(RM_PRESET_KEYS.map(k=>[k,f[k] || '']))};
     pcQuick('rm_presets',args,'rm-preset-save',r=>{ui.pc.data.rmQueue={...rmQueue(),presets:r?.presets || []};f.preset_id='';toast(action==='rm-preset-delete' ? 'Пресет удалён' : 'Пресет сохранён');render();});return true;
+  }
+  if (action === "rm-pause" || action === "rm-resume") {
+    const cmd = action === "rm-pause" ? "rm_pause" : "rm_resume";
+    pcQuick(cmd, { id }, `${action}-${id}`, r => { toast(r?.message || (action === "rm-pause" ? "На паузе" : "Продолжаю")); reload(); });
+    return true;
   }
   if (action === "rm-cancel") {
     if (!window.confirm(`Отменить «${control.dataset.name}»? Уже записанные кадры останутся.`)) return true;
@@ -529,7 +543,7 @@ function rmAction(action, control) {
     if (!t) return true;
     const s = rmSettings();
     ui.sheet = { kind: "rm-scenes", scene: scene.id, target: i, justRendered: false,
-      targetKey: rmTargetKey(t), form: { frames: t.frames || "", output_mode: s.default_output, output_dir: "", deliver: s.default_deliver, ae_backend: s.ae_backend, ae_mfr: "inherit", ae_resolution:"inherit", ae_template:"", urgent: "" } };
+      targetKey: rmTargetKey(t), form: { frames: t.frames || "", output_mode: s.default_output, output_dir: "", deliver: s.default_deliver, ae_backend: s.ae_backend, parallel: s.ae_parallel, ae_mfr: "inherit", ae_resolution:"inherit", ae_template:"", urgent: "" } };
     render();
     return true;
   }
@@ -541,7 +555,7 @@ function rmAction(action, control) {
   if (action === "rm-submit") {if (ui.pc.quick?.['rm-submit'] !== 'is-busy') rmSubmitSheet();return true;}
   if (action === "rm-settings") {
     const s = rmSettings();
-    ui.sheet = { kind: "rm-settings", justRendered: false, form: { render_root: s.render_root, deliver_root: s.deliver_root, default_output: s.default_output, default_deliver: s.default_deliver, ae_backend: s.ae_backend } };
+    ui.sheet = { kind: "rm-settings", justRendered: false, form: { render_root: s.render_root, deliver_root: s.deliver_root, default_output: s.default_output, default_deliver: s.default_deliver, ae_backend: s.ae_backend, ae_parallel: s.ae_parallel } };
     render();
     return true;
   }
@@ -549,7 +563,7 @@ function rmAction(action, control) {
     const f = ui.sheet?.form;
     if (!f) return true;
     if (![f.render_root, f.deliver_root].every(p => /^[a-z]:\\/i.test(String(p).trim()))) { toast("Папки — полный путь, например D:\\Render"); return true; }
-    const args = { ...f, render_root: f.render_root.trim(), deliver_root: f.deliver_root.trim() };
+    const args = { ...f, render_root: f.render_root.trim(), deliver_root: f.deliver_root.trim(), ae_parallel: Number(f.ae_parallel) || 2 };
     pcQuick("rm_settings", args, "rm-settings-save", r => {
       if (r?.settings) ui.pc.data.rmQueue = { ...rmQueue(), settings: r.settings };
       toast("Настройки сохранены");
