@@ -26,7 +26,9 @@
   function model({ section = "Flow", pc = null, data = {}, now = Date.now(), unavailable = false }) {
     const r = pc?.render || {};
     const seen = Date.parse(pc?.agentSeen);
-    const fresh = !unavailable && pc?.agent === true && Number.isFinite(seen) && now - seen >= -5000 && now - seen < ONLINE_MS;
+    const renderAt = r.at ? Date.parse(r.at) : seen;
+    const fresh = !unavailable && pc?.agent === true && Number.isFinite(seen) && now - seen >= -5000 && now - seen < ONLINE_MS
+      && Number.isFinite(renderAt) && now - renderAt >= -30000 && now - renderAt < 90000;
     const active = r.rendering === true;
     const events = (data.events || []).map(event => ({ ...event, at: eventStart(event, data.timezone) })).filter(e => e.at !== null && e.at >= now).sort((a, b) => a.at - b.at).slice(0, 3);
     const day = zonedParts(now, data.timezone);
@@ -35,7 +37,7 @@
     let kind = "idle", label = section, progress = null;
     if (active) {
       if (!fresh) { kind = "disconnected"; label = "ПК · нет связи"; }
-      else { kind = "render"; progress = percent(r.percent); label = progress === null ? "AE · рендер" : `AE · ${progress}%`; }
+      else { kind = "render"; progress = percent(r.percent); const app = r.app === "Karma" ? "Karma" : "AE"; label = progress === null ? `${app} · рендер` : `${app} · ${progress}%`; }
     } else if (events[0] && events[0].at - now <= 3600000) {
       kind = "event"; label = `Через ${Math.max(1, Math.ceil((events[0].at - now) / 60000))} мин`;
     }
