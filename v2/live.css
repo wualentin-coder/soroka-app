@@ -1023,6 +1023,8 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .rm-acts { display: flex; gap: 8px; }
 .rm-wait.rm-paused { border: 1px dashed var(--line); }
 .rm-wait .text-action { flex: none; min-height: 36px; padding: 0 4px; font-size: 13px; }
+.rm-test-label { margin: 6px 0 -2px; font-size: 12px; }
+.rm-mfr-warn { margin: -2px 0 12px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 12%, transparent); font-size: 12px; }
 
 /* Панель долгих действий (render-queue.js rmDock): ход, «свернуть», окно итога — поверх листов, над нижним меню */
 .rm-dock { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); display: grid; gap: 8px; max-width: 440px; margin: 0 auto; pointer-events: none; }
