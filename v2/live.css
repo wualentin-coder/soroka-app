@@ -953,6 +953,11 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .rm-sheet .sheet-head h2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rm-sheet .sheet-head .icon-button { flex: none; }
 .rm-scenes { display: grid; gap: 2px; margin-bottom: 10px; }
+.rm-target-pick { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rm-target-pick > .icon-button { flex: none; font-size: 23px; }
+.rm-target-pick > .icon-button[aria-pressed="true"] { color: var(--accent); }
+.rm-target-pick > .pc-find-row { min-width: 0; }
+.rm-preset-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .rm-sheet .rm-read { width: 100%; }
 .rm-field { display: grid; gap: 6px; margin-bottom: 12px; }
 .rm-field .pc-after-label { margin: 0; }

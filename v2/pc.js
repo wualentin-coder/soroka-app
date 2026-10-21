@@ -455,8 +455,8 @@ function pcQuick(cmd, args, key, done) {
     if (!made.id) return finish("is-done", made);
     const poll = (tries = 0) => pcCall({ op: "result", id: made.id }).then(r => {
       if (r?.status === "done") return finish("is-done", r.result);
-      if (r?.status === "failed" || r?.status === "expired" || tries > 20) { if (!quiet) toast(r?.result?.message || "Компьютер не ответил"); return finish("is-fail"); }
-      setTimeout(() => poll(tries + 1), 600);
+      if (r?.status === "failed" || r?.status === "expired" || tries > (cmd === 'rm_batch' ? 900 : 20)) { if (!quiet) toast(r?.result?.message || "Компьютер не ответил"); return finish("is-fail"); }
+      setTimeout(() => poll(tries + 1), cmd === 'rm_batch' ? 1000 : 600);
     }).catch(() => setTimeout(() => poll(tries + 1), 1500));
     poll();
   }).catch(error => { const m = String(error?.message || error); if (!quiet) toast(PC_ERRORS[m] || `Не получилось: ${m.slice(0, 60)}`); finish("is-fail"); });
