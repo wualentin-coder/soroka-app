@@ -175,7 +175,12 @@ function rmSubmitSheet() {
   }
   const batch=items.length>1 || ui.sheet.benchmark;
   ui.sheet.submissionId ||= window.crypto?.randomUUID?.() || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
-  pcQuick(batch ? 'rm_batch' : 'rm_add',batch ? {path:scene.path,request_id:ui.sheet.submissionId,items:items.map(({path,...item})=>item)} : items[0],'rm-submit',r=>{toast(r?.message || 'Поставил в очередь');ui.sheet=null;setTimeout(()=>pcLoad(true),1500);});
+  const args=batch ? {path:scene.path,request_id:ui.sheet.submissionId,items:items.map(({path,...item})=>item)} : items[0];
+  const names=[...new Set(items.map(x=>x.target))], bench=ui.sheet.benchmark;
+  ui.sheet=null;render();
+  rmTask(batch ? 'rm_batch' : 'rm_add',args,{title:bench ? 'Ставлю тест скорости' : batch ? `Ставлю ${rmPlural(items.length,'задачу','задачи','задач')}` : `Ставлю «${names[0]}»`,
+    done:r=>{setTimeout(()=>pcLoad(true),1000);return {title:r?.message || 'Поставил в очередь',lines:names.slice(0,6),
+      action:{label:'К очереди',run:()=>{if (ui.page!=='render') navigate('render');render();}}};}});
 }
 const rmBackendNote = s => s.background_off ? "Фон после сбоя отключён на сутки: «Авто» сейчас рендерит в открытом AE. «В фоне» — попробовать фон снова." : "В фоне AE работает без окна, как Karma в Houdini; не начал за 20 мин — «Авто» переходит в открытый AE.";
 
@@ -377,30 +382,184 @@ function renderRmScenesSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">${head(s ? s.name : "Поставить на рендер")}${body}</section></div>`;
 }
 
-/** Прочитать цели сцены: ПК открывает её без окна, ответ кладёт в rmQueue.scenes. */
+/** Прочитать цели сцены: ПК открывает её без окна, ответ кладёт в rmQueue.scenes. Ход — в панели внизу. */
 function rmRead(id) {
   const scene = (rmQueue().scenes || []).find(x => x.id === id);
   if (!scene) return;
   ui.pc.rmReading = { ...(ui.pc.rmReading || {}), [id]: true };
+  ui.sheet = null;  // лист закрываем — ход виден в панели, а итог откроет его снова
   render();
-  const stop = message => { delete ui.pc.rmReading[id]; if (message) toast(message); render(); };
-  pcCall({ op: "send", cmd: "rm_targets", args: { path: scene.path, ...(scene.app === "ae" ? rmFilter(scene) : {}) } }).then(made => {
-    if (made?.error) throw new Error(made.error);
-    if (made.woke) toast("Компьютер выключен — включаю его");
-    const poll = (tries = 0) => pcCall({ op: "result", id: made.id }).then(r => {
-      if (r?.status === "done") {
-        const fresh = r.result?.scene;
-        if (fresh && ui.sheet?.scene === id) ui.sheet.selected=[];
-        if (fresh) ui.pc.data.rmQueue = {...rmQueue(),scenes:[fresh,...(rmQueue().scenes || []).filter(x=>x.id!==fresh.id)]};
-        stop(!fresh?.targets?.length ? r.result?.message || "По фильтру не найдено композиций" : "");
-        return;
-      }
-      if (r?.status === "failed" || r?.status === "expired" || tries > 150) return stop(r?.result?.message || "Компьютер не прочитал сцену");
-      setTimeout(() => poll(tries + 1), 2000);
-    }).catch(() => setTimeout(() => poll(tries + 1), 3000));
-    poll();
-  }).catch(error => { const m = String(error?.message || error); stop(PC_ERRORS[m] || `Не получилось: ${m.slice(0, 60)}`); });
+  rmTask("rm_targets", { path: scene.path, ...(scene.app === "ae" ? rmFilter(scene) : {}) }, {
+    title: `Читаю «${scene.name}»`,
+    after: () => { delete ui.pc.rmReading[id]; if (pcOnPage()) render(); },
+    done: r => {
+      const fresh = r.scene;
+      if (fresh) ui.pc.data.rmQueue = { ...rmQueue(), scenes: [fresh, ...(rmQueue().scenes || []).filter(x => x.id !== fresh.id)] };
+      const targets = fresh?.targets || [];
+      const warn = targets.reduce((n, x) => n + (x.audit?.warnings?.length || 0) + (x.problems?.length || 0), 0);
+      const lines = [...targets.slice(0, 6).map(x => `${x.target}${x.frames ? ` · кадры ${x.frames}` : ""}`),
+        ...(targets.length > 6 ? [`и ещё ${targets.length - 6}`] : []), ...(warn ? [`Предупреждений: ${warn} — видно при выборе`] : [])];
+      const open = () => { if (ui.page !== "render") navigate("render"); ui.sheet = { kind: "rm-scenes", scene: id, selected: [], justRendered: false }; render(); };
+      return targets.length
+        ? { title: `«${scene.name}»: ${rmPlural(targets.length, "цель", "цели", "целей")}`, lines, action: { label: scene.app === "ae" ? "Выбрать композиции" : "Выбрать ROP", run: open } }
+        : { title: r.message || "По фильтру не найдено композиций", lines: ["Поменяйте фильтр и прочитайте сцену снова."], action: { label: "Открыть сцену", run: open } };
+    },
+  });
 }
+
+// ------------------------------------------------------------ долгие действия: ход, «свернуть», итог
+
+/** Команды на ПК, которые идут секунды–минуты: шаги (по статусу команды и времени) и сколько обычно занимают.
+ *  Ход показывает панель внизу экрана (поверх листов): её можно свернуть в плашку, а когда готово —
+ *  выезжает небольшое окно итога, которое раскрывается в подробности. Панель живёт вне render() приложения. */
+const RM_FLOWS = {
+  rm_targets: { title: "Читаю сцену", typical: 35, steps: ["Отправил на компьютер", "Компьютер принял", "Открываю сцену без окна", "Собираю композиции и исходники"] },
+  rm_add: { title: "Ставлю на рендер", typical: 10, steps: ["Отправил на компьютер", "Компьютер принял", "Снимаю копию проекта", "Ставлю в очередь"] },
+  rm_batch: { title: "Ставлю пакет на рендер", typical: 25, steps: ["Отправил на компьютер", "Компьютер принял", "Копии проекта для каждой композиции", "Ставлю в очередь"] },
+  rm_pause: { title: "Ставлю на паузу", typical: 12, steps: ["Отправил на компьютер", "Останавливаю After Effects", "Убираю недописанные кадры"] },
+  rm_resume: { title: "Продолжаю рендер", typical: 5, steps: ["Отправил на компьютер", "Возвращаю в очередь"] },
+  rm_cancel: { title: "Отменяю рендер", typical: 10, steps: ["Отправил на компьютер", "Останавливаю рендер"] },
+  rm_retry: { title: "Ставлю заново", typical: 8, steps: ["Отправил на компьютер", "Готовлю копию проекта", "Возвращаю в очередь"] },
+  rm_deliver: { title: "Отправляю в облако", typical: 6, steps: ["Отправил на компьютер", "Запускаю перенос"] },
+};
+const RM_WAKE_STEP = "Включаю компьютер через ESP32";
+
+function rmTasks() { ui.pc ||= {}; return (ui.pc.rmTasks ||= []); }
+
+/** Команда на ПК с панелью хода. done(result) — побочные действия и итог: {title, lines, action:{label, run}}. */
+function rmTask(cmd, args, { title, done, after } = {}) {
+  const flow = RM_FLOWS[cmd] || { title: "Выполняю", typical: 6, steps: ["Отправил на компьютер", "Компьютер выполняет"] };
+  const task = { id: `${cmd}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, cmd, title: title || flow.title, steps: [...flow.steps],
+    typical: flow.typical, started: Date.now(), takenAt: 0, woke: false, status: "running", min: false, open: false };
+  rmTasks().push(task);
+  rmDock();
+  const finish = (ok, result) => {
+    if (task.status !== "running") return;
+    try { after?.(); } catch (_) {}
+    let out = {};
+    try { out = (ok && done ? done(result) : null) || {}; } catch (_) {}
+    task.status = ok ? "done" : "failed";
+    task.ended = Date.now();
+    task.result = { title: out.title || result?.message || (ok ? "Готово" : "Не получилось"), lines: out.lines || [], action: out.action || null };
+    task.min = false;
+    task.open = false;  // сначала небольшое окно; подробности — по нажатию
+    try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(ok ? "success" : "error"); } catch (_) {}
+    rmDock();
+    setTimeout(() => { if (!task.open) rmDismiss(task.id); }, 20000);
+  };
+  pcCall({ op: "send", cmd, args }).then(made => {
+    if (made?.error) throw new Error(made.error);
+    if (made.woke) { task.woke = true; task.steps.splice(1, 0, RM_WAKE_STEP); task.typical += 120; }
+    const deadline = Date.now() + (made.woke ? 15 : 6) * 60000;
+    const poll = () => pcCall({ op: "result", id: made.id }).then(r => {
+      if (r?.status === "taken" && !task.takenAt) task.takenAt = Date.now();
+      if (r?.status === "done") return finish(true, r.result || {});
+      if (r?.status === "failed" || r?.status === "expired" || r?.status === "cancelled") {
+        return finish(false, { message: r?.result?.message || (r.status === "expired" ? "Компьютер не забрал команду за 10 минут" : "Компьютер не выполнил команду") });
+      }
+      if (Date.now() > deadline) return finish(false, { message: "Компьютер не ответил вовремя" });
+      setTimeout(poll, 1200);
+    }).catch(() => setTimeout(poll, 2500));
+    poll();
+  }).catch(error => { const m = String(error?.message || error); finish(false, { message: PC_ERRORS[m] || `Не получилось: ${m.slice(0, 80)}` }); });
+  return task;
+}
+
+function rmDismiss(id) {
+  ui.pc.rmTasks = rmTasks().filter(t => t.id !== id);
+  rmDock();
+}
+
+/** Какой шаг сейчас: до «принял» — первый (или включение ПК), дальше — по времени от «обычно занимает». */
+function rmTaskStep(t) {
+  if (t.status !== "running") return t.steps.length;
+  const base = t.woke ? 2 : 1;  // после «Отправил» (и «Включаю компьютер»)
+  if (!t.takenAt) return t.woke && Date.now() - t.started > 3000 ? 1 : 0;
+  const rest = t.steps.length - base;
+  const per = Math.max(2, t.typical / Math.max(1, rest));
+  return Math.min(t.steps.length - 1, base + Math.floor((Date.now() - t.takenAt) / 1000 / per));
+}
+function rmTaskPct(t) {
+  if (t.status !== "running") return 100;
+  const s = (Date.now() - t.started) / 1000;
+  return Math.min(95, Math.round(95 * (1 - Math.exp(-s / Math.max(3, t.typical)))));  // близко к концу, но не 100 до ответа
+}
+const rmSecs = ms => { const s = Math.max(0, Math.round(ms / 1000)); return s >= 60 ? `${Math.floor(s / 60)} мин ${s % 60} с` : `${s} с`; };
+
+function rmTaskHtml(t) {
+  const key = `${t.id}:${t.status}:${t.min}:${t.open}:${t.steps.length}`;
+  const icon = t.status === "done" ? pcIcon("check") : t.status === "failed" ? pcIcon("x") : `<i class="rm-t-spin"></i>`;
+  if (t.status === "running" && t.min) {
+    return `<button type="button" class="rm-t-pill" data-key="${key}" data-rm-dock="unmin" data-id="${t.id}">${icon}<b>${esc(t.title)}</b><span class="rm-t-time">${rmSecs(Date.now() - t.started)} · ${rmTaskPct(t)}%</span></button>`;
+  }
+  if (t.status === "running") {
+    const step = rmTaskStep(t);
+    return `<section class="rm-t" data-key="${key}" role="status"><div class="rm-t-head">${icon}<b>${esc(t.title)}</b><span class="rm-t-time">${rmSecs(Date.now() - t.started)}</span><button type="button" class="rm-t-min" data-rm-dock="min" data-id="${t.id}" aria-label="Свернуть">Свернуть</button></div>
+      <div class="rm-t-bar"><b style="width:${rmTaskPct(t)}%"></b></div>
+      <ol class="rm-t-steps">${t.steps.map((s, i) => `<li class="${i < step ? "done" : i === step ? "now" : ""}">${esc(s)}</li>`).join("")}</ol>
+      <p class="rm-t-note">Обычно до ${rmSecs(t.typical * 1000)}. Можно свернуть — итог появится здесь.</p></section>`;
+  }
+  const r = t.result || {};
+  if (!t.open) {
+    return `<div class="rm-t-pill ${t.status}" data-key="${key}"><button type="button" class="rm-t-pill-main" data-rm-dock="open" data-id="${t.id}">${icon}<b>${esc(r.title)}</b><span class="rm-t-more">Подробнее</span></button><button type="button" class="rm-t-x" data-rm-dock="close" data-id="${t.id}" aria-label="Закрыть">${pcIcon("x")}</button></div>`;
+  }
+  const lines = [`${t.title} · ${rmSecs((t.ended || Date.now()) - t.started)}`, ...(r.lines || [])];
+  return `<section class="rm-t ${t.status}" data-key="${key}"><div class="rm-t-head">${icon}<b>${esc(r.title)}</b><button type="button" class="rm-t-min" data-rm-dock="close" data-id="${t.id}" aria-label="Закрыть">${pcIcon("x")}</button></div>
+    <ul class="rm-t-lines">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>
+    ${r.action ? `<button type="button" class="primary-button rm-wide" data-rm-dock="act" data-id="${t.id}">${esc(r.action.label)}</button>` : ""}</section>`;
+}
+
+/** Панель задач внизу экрана. Пока что-то идёт — обновляет время, полосу и шаги раз в полсекунды,
+ *  не пересобирая карточку (иначе крутилка перезапускалась бы каждый раз). */
+function rmDock() {
+  let dock = document.getElementById("rm-dock");
+  if (!dock) {
+    dock = document.createElement("div");
+    dock.id = "rm-dock";
+    dock.className = "rm-dock";
+    document.body.appendChild(dock);
+  }
+  const tasks = rmTasks();
+  dock.hidden = !tasks.length;
+  const existing = new Map([...dock.children].map(el => [el.dataset.key, el]));
+  const wanted = tasks.map(t => {
+    const html = rmTaskHtml(t);
+    const key = html.match(/data-key="([^"]+)"/)[1];
+    let el = existing.get(key);
+    if (!el) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      el = tmp.firstElementChild;
+    } else if (t.status === "running") {
+      const time = el.querySelector(".rm-t-time");
+      if (time) time.textContent = t.min ? `${rmSecs(Date.now() - t.started)} · ${rmTaskPct(t)}%` : rmSecs(Date.now() - t.started);
+      const bar = el.querySelector(".rm-t-bar b");
+      if (bar) bar.style.width = `${rmTaskPct(t)}%`;
+      const step = rmTaskStep(t);
+      el.querySelectorAll(".rm-t-steps li").forEach((li, i) => { li.className = i < step ? "done" : i === step ? "now" : ""; });
+    }
+    return el;
+  });
+  dock.replaceChildren(...wanted);
+  clearTimeout(rmDock.timer);
+  if (tasks.some(t => t.status === "running")) rmDock.timer = setTimeout(rmDock, 500);
+}
+
+document.addEventListener("click", event => {
+  const b = event.target.closest?.("[data-rm-dock]");
+  if (!b) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const t = rmTasks().find(x => x.id === b.dataset.id);
+  if (!t) return;
+  const op = b.dataset.rmDock;
+  if (op === "min") t.min = true;
+  else if (op === "unmin") t.min = false;
+  else if (op === "open") t.open = true;
+  else if (op === "close") return rmDismiss(t.id);
+  else if (op === "act") { rmDismiss(t.id); t.result?.action?.run?.(); return; }
+  rmDock();
+}, true);
 
 // ------------------------------------------------------------ порядок: перетаскивание за ручку
 
@@ -510,19 +669,20 @@ function rmAction(action, control) {
   }
   if (action === "rm-pause" || action === "rm-resume") {
     const cmd = action === "rm-pause" ? "rm_pause" : "rm_resume";
-    pcQuick(cmd, { id }, `${action}-${id}`, r => { toast(r?.message || (action === "rm-pause" ? "На паузе" : "Продолжаю")); reload(); });
+    rmTask(cmd, { id }, { done: r => { reload(); return { title: r?.message || (action === "rm-pause" ? "На паузе" : "Продолжаю") }; } });
     return true;
   }
   if (action === "rm-cancel") {
     if (!window.confirm(`Отменить «${control.dataset.name}»? Уже записанные кадры останутся.`)) return true;
-    pcQuick("rm_cancel", { id }, `rm-cancel-${id}`, r => { toast(r?.message || "Отменил"); reload(); });
+    rmTask("rm_cancel", { id }, { done: r => { reload(); return { title: r?.message || "Отменил" }; } });
     return true;
   }
   if (action === "rm-retry" || action === "rm-missing") {
-    pcQuick("rm_retry", { id, missing_only: action === "rm-missing" }, `${action}-${id}`, r => { toast(r?.message || "Поставил заново"); reload(); });
+    rmTask("rm_retry", { id, missing_only: action === "rm-missing" }, { title: action === "rm-missing" ? "Дорендериваю недостающие" : undefined,
+      done: r => { reload(); return { title: r?.message || "Поставил заново" }; } });
     return true;
   }
-  if (action === "rm-deliver") { pcQuick("rm_deliver", { id }, `rm-deliver-${id}`, r => { toast(r?.message || "Отправляю в облако"); reload(); }); return true; }
+  if (action === "rm-deliver") { rmTask("rm_deliver", { id }, { done: r => { reload(); return { title: r?.message || "Отправляю в облако" }; } }); return true; }
   if (action === "rm-hold") {
     const on = control.dataset.on === "1";
     pcQuick("rm_hold", { on }, "rm-hold", r => { toast(r?.message || (on ? "Очередь на паузе" : "Очередь продолжена")); ui.pc.data.rmQueue = { ...rmQueue(), held: on }; reload(); });
