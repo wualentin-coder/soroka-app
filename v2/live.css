@@ -921,7 +921,10 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .pc-after-label { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
 
 /* Очередь рендеров Render Manager (render-queue.js) */
-.rm-card { display: grid; gap: 8px; }
+/* minmax(0, 1fr): иначе длинное имя задачи (nowrap) растягивает колонку шире экрана и страница едет вбок */
+.rm-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.rm-card > *, .rm-live, .rm-wait, .rm-recent { min-width: 0; }
+.pc-render-live { grid-template-columns: minmax(0, 1fr); }
 .rm-card .pc-card-head { margin-bottom: 2px; }
 .rm-card .pc-find-label { margin: 4px 0 0; }
 .rm-live { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
@@ -951,6 +954,18 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .rm-sheet .sheet-head .icon-button { flex: none; }
 .rm-scenes { display: grid; gap: 2px; margin-bottom: 10px; }
 .rm-sheet .rm-read { width: 100%; }
+.rm-field { display: grid; gap: 6px; margin-bottom: 12px; }
+.rm-field .pc-after-label { margin: 0; }
+.rm-field .section-note { margin: 0; overflow-wrap: anywhere; }
+.segmented.rm-seg { display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 6px; }
+.segmented.rm-seg .segment { min-height: var(--control-compact, 38px); padding: 6px 4px; font-size: 13px; line-height: 1.15; white-space: normal; }
+.rm-input { width: 100%; min-height: var(--control-default, 44px); padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; box-sizing: border-box; }
+.rm-input:focus { outline: none; border-color: var(--accent); }
+.rm-submit { width: 100%; margin-top: 4px; }
+.rm-set-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.rm-set-row:last-of-type { border-bottom: 0; }
+.rm-set-row span { color: var(--muted); flex: none; }
+.rm-set-row b { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
 .rm-link { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .rm-link > .pc-ico { flex: none; width: 20px; height: 20px; color: var(--accent); }
 .rm-link .rm-wait-text b { font-size: 16px; }
