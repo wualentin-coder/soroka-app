@@ -124,8 +124,14 @@ function rmPresets(app) {
 function rmBenchmarkText(r) {
   return `Тест: ${Number(r.wall_seconds).toFixed(1)} с · ${Number(r.seconds_per_frame).toFixed(2)} с/кадр · полный рендер ≈${rmMinutes(r.estimated_seconds)} · MFR ${r.mfr === 'on' ? 'вкл.' : 'выкл.'}`;
 }
-function rmPresetControls(scene,f) {
-  return rmField('Пресет', `<div class="rm-preset-list">${rmPresets(scene.app).map(p=>`<button type="button" class="small-button" data-action="rm-preset" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div><input class="rm-input" data-form="preset_name" maxlength="60" value="${esc(f.preset_name || '')}" placeholder="Название своего пресета"><button type="button" class="text-action ${rmBusyCls('rm-preset-save')}" data-action="rm-preset-save">Сохранить текущие настройки</button>${f.preset_id ? `<button type="button" class="text-action" data-action="rm-preset-delete" data-id="${esc(f.preset_id)}">Удалить свой пресет</button>` : ''}`, 'Кадры и срочность не сохраняются. Формат — из проекта или выбранного шаблона AE.');
+/** Пресеты — одной строкой чипов наверху; сохранить свой — в «Дополнительно». */
+function rmPresetChips(scene,f) {
+  const list = rmPresets(scene.app);
+  if (!list.length) return '';
+  return `<div class="rm-chips" role="group" aria-label="Пресеты">${list.map(p=>`<button type="button" class="rm-chip ${f.preset_name===p.name ? 'active' : ''}" data-action="rm-preset" data-id="${esc(p.id)}" aria-pressed="${f.preset_name===p.name}">${esc(p.name)}</button>`).join('')}</div>`;
+}
+function rmPresetSave(f) {
+  return rmField('Сохранить как пресет', `<div class="rm-inline"><input class="rm-input" data-form="preset_name" maxlength="60" value="${esc(f.preset_name || '')}" placeholder="Название"><button type="button" class="small-button ${rmBusyCls('rm-preset-save')}" data-action="rm-preset-save">Сохранить</button></div>${f.preset_id ? `<button type="button" class="text-action" data-action="rm-preset-delete" data-id="${esc(f.preset_id)}">Удалить этот пресет</button>` : ''}`, 'Сохраняются куда, облако и настройки AE — без кадров и срочности.');
 }
 function rmChosenTargets(scene) {
   return ui.sheet?.batch ? (scene.targets || []).filter(t=>(ui.sheet.selected || []).includes(rmTargetKey(t))) :
@@ -146,7 +152,7 @@ function rmSubmitSheet() {
   const items=[];
   for (const t of targets) {
     const form=rmFormFor(t,f), audit=rmAudit(scene,t,form);
-    if (audit.errors.length) {toast(audit.errors[0]);return;}
+    if (audit.errors.length) {toast(audit.errors[0]);rmRefreshError();return;}
     const args=rmJobArgs(scene,t,form);
     if (ui.sheet.benchmark) {
       let sample;
@@ -156,8 +162,7 @@ function rmSubmitSheet() {
       for (const mfr of ['off','on']) items.push({...args,frames:f.sample_frames,benchmark:{full_frames:args.frames},ae_backend:'background',ae_mfr:mfr,deliver:'none'});
     } else items.push(args);
   }
-  if (!ui.sheet.confirm) {ui.sheet.confirm=true;render();return;}
-  const batch=ui.sheet.batch || ui.sheet.benchmark;
+  const batch=items.length>1 || ui.sheet.benchmark;
   ui.sheet.submissionId ||= window.crypto?.randomUUID?.() || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
   pcQuick(batch ? 'rm_batch' : 'rm_add',batch ? {path:scene.path,request_id:ui.sheet.submissionId,items:items.map(({path,...item})=>item)} : items[0],'rm-submit',r=>{toast(r?.message || 'Поставил в очередь');ui.sheet=null;setTimeout(()=>pcLoad(true),1500);});
 }
@@ -200,62 +205,101 @@ function rmFrameSummary(text) {
   if (count > 10000000) throw Error("Слишком большой диапазон кадров");
   return {count,segments:merged.length};
 }
+/** Проверка перед постановкой: ошибки (не пустим) и предупреждения (пустим, но покажем). */
 function rmAudit(scene,target,form) {
   const a = target.audit || {}, errors = [], warnings = [...(a.warnings || []), ...(target.problems || [])];
   let frames;
   try { frames = rmFrameSummary(form.frames); } catch(error) { errors.push(error.message); }
   if (scene.app === "ae" && frames?.segments > 1) errors.push("Для AE нужен непрерывный диапазон кадров");
-  if (!target.audited_at || !target.scene_stamp) errors.push("Сначала прочитайте сцену, чтобы проверить параметры");
-  if (form.output_mode === "scene" && !target.output) errors.push("В сцене не указан путь вывода");
-  if (form.output_mode === "custom" && !/^[a-z]:\\/i.test(form.output_dir || "")) errors.push("Укажите полный путь своей папки");
-  const fps = Number(a.fps), knownFps = Number.isFinite(fps) && fps > 0;
-  const row = (name,value) => `<div class="rm-set-row"><span>${name}</span><b>${esc(value)}</b></div>`;
-  const rows = [row("Кадры", `${form.frames || "—"}${frames ? ` · всего ${frames.count}` : ""}`),
-    row("Длительность", frames && knownFps ? `${(frames.count/fps).toFixed(2)} с · ${fps} FPS` : "Не прочитана"),
-    row(scene.app === "ae" ? "Размер композиции" : "Размер Render Product", a.width && a.height ? `${a.width} × ${a.height}` : "Не прочитан"),
-    row("Формат", a.format || "Не прочитан — по настройкам AE"),
-    a.depth ? row("Проект", `${a.depth} бит/канал`) : "",
-    scene.app === 'ae' ? row('Разрешение задачи',rmLabel(RM_RESOLUTION,form.ae_resolution || 'inherit')) : '',
-    scene.app === 'ae' && form.ae_template ? row('Шаблон вывода',form.ae_template) : '',
-    scene.app === "ae" ? row("MFR", ui.sheet?.benchmark ? "Сравнение: выкл. / вкл." : form.ae_backend === "background" && form.ae_mfr === "on" ? "Включён · до 90% CPU" : form.ae_backend==='background' && form.ae_mfr==='off' ? 'Выключен' : "Как в After Effects") : "",
-    a.resolution ? row("Масштаб в проекте", a.resolution) : "",
-    a.resize ? row("Resize вывода", a.resize) : "", a.crop ? row("Crop вывода", a.crop) : "",
-    a.camera ? row("Камера", a.camera) : "",
-    row("Вывод", ui.sheet?.benchmark ? `${rmSettings().render_root}\\_benchmarks` : form.output_mode === "scene" ? target.output || "Не задан" : form.output_mode === "custom" ? form.output_dir || "Не задан" : rmSettings().render_root),
-    `<p class="section-note">${form.output_mode === "scene" ? "При совпадении файлов создаётся новая версия." : "Цель будет записана в отдельную версию v###."} Параметры из сохранённого проекта; несохранённые правки не включены.</p>`];
-  return {errors,html:`<div class="rm-audit">${rows.join("")}${[...warnings,...errors].map(x=>`<p class="rm-warn">${esc(x)}</p>`).join("")}</div>`};
+  if (!target.audited_at || !target.scene_stamp) errors.push("Сначала прочитайте сцену");
+  if (form.output_mode === "scene" && !target.output) errors.push("В сцене не указан путь вывода — выберите «Папка рендера»");
+  if (form.output_mode === "custom" && !/^[a-z]:\\/i.test(form.output_dir || "")) errors.push("Укажите полный путь своей папки, например E:\\Render");
+  return {errors, warnings, frames, a};
 }
 
-/** Шаг перед постановкой: кадры, куда, облако, способ AE, срочно. */
+const rmFps = fps => Number.isFinite(Number(fps)) && Number(fps) > 0 ? `${+Number(fps).toFixed(3)} fps` : "";
+function rmDuration(count, fps) {
+  if (!count || !(Number(fps) > 0)) return "";
+  const s = count / Number(fps);
+  return s >= 60 ? `${Math.floor(s / 60)} мин ${Math.round(s % 60)} с` : `${s.toFixed(1)} с`;
+}
+const rmPlural = (n, one, few, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many}`;
+
+/** Что рендерим — одной карточкой: кадры, длительность, размер, формат; ниже — предупреждения. */
+function rmSummary(s, chosen, f) {
+  if (chosen.length > 1) {
+    const rows = chosen.slice(0, 6).map(t => `<div class="rm-sum-row"><span>${esc(t.target)}</span><b>${esc(rmFormFor(t, f).frames)}</b></div>`).join("");
+    const more = chosen.length > 6 ? `<p class="rm-sum-facts">и ещё ${chosen.length - 6}</p>` : "";
+    return `<div class="rm-summary"><b class="rm-sum-title">${rmPlural(chosen.length, "композиция", "композиции", "композиций")}</b>${rows}${more}</div>`;
+  }
+  const t = chosen[0], audit = rmAudit(s, t, rmFormFor(t, f)), a = audit.a, n = audit.frames?.count;
+  const line1 = [n ? rmPlural(n, "кадр", "кадра", "кадров") : "", rmDuration(n, a.fps)].filter(Boolean).join(" · ");
+  const line2 = [a.width && a.height ? `${a.width}×${a.height}` : "", rmFps(a.fps), a.format || ""].filter(Boolean).join(" · ");
+  const warn = audit.warnings.slice(0, 3).map(w => `<p class="rm-warn">${esc(w)}</p>`).join("") + (audit.warnings.length > 3 ? `<p class="rm-warn">и ещё ${audit.warnings.length - 3}</p>` : "");
+  return `<div class="rm-summary"><b class="rm-sum-title">${esc(t.target)}</b>${line1 ? `<p class="rm-sum-facts">${esc(line1)}</p>` : ""}${line2 ? `<p class="rm-sum-facts">${esc(line2)}</p>` : ""}${warn}</div>`;
+}
+
+/** Куда ляжет рендер — одной строкой под переключателем. */
+function rmWhere(s, t, f) {
+  if (ui.sheet?.benchmark) return `${rmSettings().render_root}\\_benchmarks`;
+  if (f.output_mode === "scene") return t.output || "в сцене путь не задан";
+  if (f.output_mode === "custom") return f.output_dir ? `${f.output_dir}\\…\\v###` : "";
+  // как rm/paths.py output_for: папка рендера \ папка проекта \ сцена \ цель \ v###
+  const parts = String(s.path || "").split("\\");
+  const project = parts.length > 1 ? parts[parts.length - 2] : "scenes";
+  const leaf = (ui.sheet?.batch && rmChosenTargets(s).length > 1) ? "<композиция>" : String(t.target || "").replace(/^.*\//, "");
+  return `${rmSettings().render_root}\\${project}\\${s.name}\\${leaf}\\v###`;
+}
+
+/** Параметры задачи: главное сверху, редкое — в «Дополнительно», кнопка — внизу листа. */
 function rmJobForm(s, t) {
-  const f = ui.sheet.form;
-  const set = rmSettings();
-  const audit = rmAudit(s,t,rmFormFor(t,f));
-  if (ui.sheet.confirm) return `${rmChosenTargets(s).map(target=>`<p class="pc-find-label">${esc(target.target)}</p>${rmAudit(s,target,rmFormFor(target,f)).html}`).join('')}${ui.sheet.benchmark ? `<p class="rm-warn">Тест: ${esc(f.sample_frames)}, два прогона — MFR выкл./вкл. Отдельный вывод, без облака. Кэш и разная сложность кадров влияют на прогноз.</p>` : ''}<button type="button" class="primary-button rm-submit ${rmBusyCls("rm-submit")}" data-action="rm-submit">${ui.sheet.benchmark ? 'Подтвердить тест' : 'Подтвердить и поставить'}</button><button type="button" class="ghost-button" data-action="rm-confirm-back">Изменить параметры</button>`;
-  return [
-    rmPresetControls(s,f),
-    ui.sheet.batch ? `<div class="rm-audit">${rmChosenTargets(s).map(target=>`<div class="rm-set-row"><span>${esc(target.target)}</span><b>${esc(rmFormFor(target,f).frames)}</b></div>`).join('')}</div>` : audit.html,
-    !t.audited_at ? `<button type="button" class="ghost-button" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : "",
-    `<p class="section-note">${ui.sheet.batch ? `Выбрано целей: ${rmChosenTargets(s).length}` : esc(t.label || t.target)}</p>`,
-    rmField(ui.sheet.batch ? 'Общий диапазон (необязательно)' : 'Полный диапазон кадров', `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="${ui.sheet.batch ? 'У каждой цели свой диапазон' : esc(t.frames || '1-100')}">`,ui.sheet.batch ? 'Оставьте пустым, чтобы сохранить диапазон каждой композиции.' : ''),
-    ui.sheet.benchmark ? rmField('Кадры для теста',`<input class="rm-input" data-form="sample_frames" value="${esc(f.sample_frames)}" inputmode="numeric">`,'2–120 последовательных кадров внутри полного диапазона. Два фоновых прогона без MFR и с ним, без облака и выключения ПК.') : '',
-    !ui.sheet.benchmark ? rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render\\проект" autocomplete="off" spellcheck="false">` : ""),
-      f.output_mode === "root" ? `${esc(set.render_root)}\\${esc(s.name)}\\…\\v###` : f.output_mode === "scene" ? "Путь из настроек вывода в самой сцене." : "Внутри — папка цели и версии v###.") : "",
-    !ui.sheet.benchmark ? rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver), f.deliver === "none" ? "" : `После проверки кадров — в ${esc(set.deliver_root)}.`) : "",
-    s.app === "ae" && !ui.sheet.benchmark ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), rmBackendNote(set)) : "",
-    s.app === 'ae' ? rmField('Разрешение',rmSegments('ae_resolution',RM_RESOLUTION,f.ae_resolution || 'inherit'),'Размер композиции не меняется; масштаб применяется к снимку задачи.') : '',
-    s.app === 'ae' ? rmField('Шаблон Output Module',`<select class="rm-input" data-form="ae_template"><option value="">Как в проекте</option>${[...new Set(rmChosenTargets(s).flatMap(x=>x.audit?.templates || []))].map(name=>`<option value="${esc(name)}" ${f.ae_template===name ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select>`,'Сохранённые в AE шаблоны; выбранный формат применяется при запуске.') : '',
-    s.app === "ae" && !ui.sheet.benchmark && f.ae_backend === "background" ? rmField("Многокадровый рендер", rmSegments("ae_mfr", [["inherit","Как в AE"],["off","Выключен"],["on","MFR · 90% CPU"]], f.ae_mfr || "inherit"), "Только для этой фоновой задачи. Помогает при совместимых эффектах и достаточной RAM; настройки качества не меняются.") : "",
-    !ui.sheet.benchmark ? rmField("Очередь", rmSegments("urgent", [["", "Обычно"], ["1", "Срочно — первой"]], f.urgent)) : `<button type="button" class="text-action" data-action="rm-benchmark-exit">Вернуться к обычному рендеру</button>`,
-    s.app === 'ae' && !ui.sheet.batch && !ui.sheet.benchmark ? `<button type="button" class="ghost-button" data-action="rm-benchmark">Тест скорости · MFR выкл. / вкл.</button>` : '',
-    `<button type="button" class="primary-button rm-submit ${rmBusyCls("rm-submit")}" data-action="rm-submit">Проверить параметры</button>`,
+  const f = ui.sheet.form, set = rmSettings(), chosen = rmChosenTargets(s), many = chosen.length > 1, bench = ui.sheet.benchmark;
+  const errors = [...new Set(chosen.flatMap(x => rmAudit(s, x, rmFormFor(x, f)).errors))];
+  const ae = s.app === "ae";
+  const main = bench ? [
+    `<div class="rm-banner"><b>Тест скорости</b><span>Два коротких фоновых прогона — без MFR и с MFR. По ним видно, ускоряет ли MFR этот проект, и сколько займёт полный рендер. Без облака, в отдельную папку.</span><button type="button" class="text-action" data-action="rm-benchmark-exit">Отменить тест</button></div>`,
+    rmField("Кадры для теста", `<input class="rm-input" data-form="sample_frames" value="${esc(f.sample_frames)}" inputmode="numeric" autocomplete="off">`, `2–120 кадров подряд внутри ${esc(f.frames)}.`),
+  ] : [
+    !many ? rmField("Кадры", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="${esc(t.frames || "1-100")}">`) : "",
+    rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : ""), rmWhere(s, t, f) ? `<span class="rm-path">${esc(rmWhere(s, t, f))}</span>` : ""),
+    rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver)),
+    ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
+    `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>`,
+  ];
+  const more = ui.sheet.more;
+  const extra = !more ? "" : [
+    many && !bench ? rmField("Один диапазон для всех", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="у каждой свой">`) : "",
+    ae ? rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit"), "Только для этой задачи; композиция в проекте не меняется.") : "",
+    ae ? rmField("Формат вывода", `<select class="rm-input" data-form="ae_template"><option value="">Как в проекте</option>${[...new Set(chosen.flatMap(x => x.audit?.templates || []))].map(name => `<option value="${esc(name)}" ${f.ae_template === name ? "selected" : ""}>${esc(name)}</option>`).join("")}</select>`) : "",
+    ae && !bench && f.ae_backend === "background" ? rmField("Многокадровый рендер (MFR)", rmSegments("ae_mfr", [["inherit", "Как в AE"], ["off", "Выкл."], ["on", "Вкл."]], f.ae_mfr || "inherit"), "Ускоряет не всё: проверьте тестом скорости.") : "",
+    ae && !many && !bench ? `<button type="button" class="ghost-button rm-wide" data-action="rm-benchmark">Тест скорости: с MFR и без</button>` : "",
+    !bench ? rmPresetSave(f) : "",
   ].join("");
+  const label = bench ? "Запустить тест" : many ? `Поставить ${rmPlural(chosen.length, "задачу", "задачи", "задач")}` : "Поставить в очередь";
+  return [
+    rmSummary(s, chosen, f),
+    !bench ? rmPresetChips(s, f) : "",
+    ...main,
+    `<button type="button" class="rm-more" data-action="rm-more" aria-expanded="${Boolean(more)}">Дополнительно<span>${more ? "▴" : "▾"}</span></button>`,
+    extra,
+    `<div class="rm-foot"><p class="rm-err" ${errors.length ? "" : "hidden"}>${esc(errors[0] || "")}</p>${!t.audited_at ? `<button type="button" class="ghost-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : ""}<button type="button" class="primary-button rm-wide ${rmBusyCls("rm-submit")}" data-action="rm-submit">${label}</button></div>`,
+  ].join("");
+}
+
+/** Пока печатают кадры или папку — обновляем только строку ошибки над кнопкой (поле не теряет фокус). */
+function rmRefreshError() {
+  const box = document.querySelector(".rm-sheet .rm-err");
+  const s = (rmQueue().scenes || []).find(x => x.id === ui.sheet?.scene), f = ui.sheet?.form;
+  if (!box || !s || !f) return;
+  const first = rmChosenTargets(s).flatMap(x => rmAudit(s, x, rmFormFor(x, f)).errors)[0] || "";
+  box.textContent = first;
+  box.hidden = !first;
 }
 
 // Поля листа: значение — сразу в форму, без перерисовки (иначе поле теряет фокус).
 document.addEventListener("input", event => {
   const key = event.target?.dataset?.form;
-  if (key && ui.sheet?.form) {ui.sheet.form[key] = event.target.value;delete ui.sheet.submissionId;ui.sheet.confirm=false;}
+  if (key && ui.sheet?.form) {ui.sheet.form[key] = event.target.value;delete ui.sheet.submissionId;ui.sheet.confirm=false;rmRefreshError();}
 });
 document.addEventListener('change',event=>{
   const key=event.target?.dataset?.form;
@@ -266,13 +310,16 @@ document.addEventListener('change',event=>{
 
 const rmTargetKey = t => `${t.comp_id || t.target}:${t.rq_index || 0}`;
 const rmFilter = scene => ui.pc.rmTargetFilters?.[scene.id] || scene.target_filter || {mode:"queue",prefix:"[R]",label_id:1};
+/** Какие композиции AE показать: из Render Queue, по префиксу имени или по цветовой метке (label). */
 function rmTargetFilter(scene) {
   if (scene.app !== "ae") return "";
   const filter = rmFilter(scene);
-  return rmField("Композиции AE", `<select class="rm-input" data-rm-filter="mode"><option value="queue" ${filter.mode === "queue" ? "selected" : ""}>Render Queue</option><option value="prefix" ${filter.mode === "prefix" ? "selected" : ""}>По началу названия</option><option value="label" ${filter.mode === "label" ? "selected" : ""}>По цветовой метке label</option></select>` +
-    (filter.mode === "prefix" ? `<input class="rm-input" data-rm-filter="prefix" value="${esc(filter.prefix)}" maxlength="24" placeholder="[R]">` : "") +
-    (filter.mode === "label" ? `<select class="rm-input" data-rm-filter="label_id">${Array.from({length:16},(_,i)=>`<option value="${i+1}" ${Number(filter.label_id) === i+1 ? "selected" : ""}>Label ${i+1}${scene.ae_labels?.[String(i+1)] ? ` · ${esc(scene.ae_labels[String(i+1)])}` : ""}</option>`).join("")}</select>` : ""), "Label — цветовая метка самой композиции в Project AE, не слоя. Названия цветов появятся после первого чтения. После смены фильтра нажмите «Прочитать сцену». Цвета в AE могут быть переопределены.");
+  const chip = (mode, label) => `<button type="button" class="rm-chip ${filter.mode === mode ? "active" : ""}" data-action="rm-filter" data-mode="${mode}" aria-pressed="${filter.mode === mode}">${label}</button>`;
+  return `<div class="rm-chips" role="group" aria-label="Какие композиции">${chip("queue", "Render Queue")}${chip("prefix", "Префикс имени")}${chip("label", "Цвет метки")}</div>` +
+    (filter.mode === "prefix" ? `<input class="rm-input" data-rm-filter="prefix" value="${esc(filter.prefix)}" maxlength="24" placeholder="Начало имени, например [R]">` : "") +
+    (filter.mode === "label" ? `<select class="rm-input" data-rm-filter="label_id">${Array.from({length:16},(_,i)=>`<option value="${i+1}" ${Number(filter.label_id) === i+1 ? "selected" : ""}>${scene.ae_labels?.[String(i+1)] ? esc(scene.ae_labels[String(i+1)]) : `Цвет ${i+1}`}</option>`).join("")}</select>` : "");
 }
+const rmTargetFacts = t => [t.rq_index ? `#${t.rq_index} в очереди AE` : "", t.frames ? `кадры ${t.frames}` : "", t.audit?.width ? `${t.audit.width}×${t.audit.height}` : ""].filter(Boolean).join(" · ");
 document.addEventListener("change", event => {
   const key = event.target?.dataset?.rmFilter;
   if (!key) return;
@@ -301,8 +348,18 @@ function renderRmScenesSheet() {
     const requested = rmFilter(s), loaded = s.target_filter || {mode:"queue",prefix:"[R]",label_id:1};
     const matches = s.app !== "ae" || (requested.mode === loaded.mode && (requested.mode !== "prefix" || requested.prefix === loaded.prefix) && (requested.mode !== "label" || Number(requested.label_id) === Number(loaded.label_id)));
     const available=matches ? s.targets || [] : [];
-    const targets=available.map((t,i)=>`<div class="rm-target-pick"><button type="button" class="icon-button" data-action="rm-select" data-i="${i}" aria-label="Выбрать ${esc(t.target)}" aria-pressed="${(ui.sheet.selected || []).includes(rmTargetKey(t))}">${(ui.sheet.selected || []).includes(rmTargetKey(t)) ? '☑' : '☐'}</button><button type="button" class="pc-find-row" data-action="rm-go" data-id="${esc(s.id)}" data-i="${i}"><span class="pc-find-text"><b>${esc(t.label || t.target)}</b><small>${esc(t.frames || '')}</small></span></button></div>`).join('');
-    body = `<p class="section-note">${esc(s.path)}</p>${rmTargetFilter(s)}${targets ? `<button type="button" class="text-action" data-action="rm-select-all">Выбрать все / снять</button><div class="rm-scenes">${targets}</div><button type="button" class="primary-button" data-action="rm-batch-config" ${(ui.sheet.selected || []).length ? "" : "disabled"}>Настроить выбранные · ${(ui.sheet.selected || []).length}</button>` : `<p class="section-note">${s.cloud ? "Сцена в Облаке — " : ""}${matches ? "Прочитайте сцену на компьютере, чтобы получить список композиций." : "Фильтр изменён — прочитайте сцену заново."}</p>`}<button type="button" class="${targets ? "ghost-button" : "primary-button"} rm-read ${reading ? "is-busy" : ""}" data-action="rm-read" data-id="${esc(s.id)}" ${reading ? "disabled" : ""}>${reading ? "Читаю сцену…" : "Прочитать сцену"}</button>${reading ? `<p class="section-note">Houdini или After Effects открывают сцену без окна — 20–60 секунд.</p>` : ""}`;
+    const selected=new Set(ui.sheet.selected || []), n=available.filter(t=>selected.has(rmTargetKey(t))).length;
+    const kind=s.app === "ae" ? "Композиции" : "ROP";
+    // строка целиком — переключатель; дальше — одна кнопка внизу
+    const rows=available.map((t,i)=>{const on=selected.has(rmTargetKey(t));return `<button type="button" class="rm-pick ${on ? "on" : ""}" data-action="rm-select" data-i="${i}" aria-pressed="${on}"><span class="rm-check">${on ? pcIcon("check") : ""}</span><span class="rm-wait-text"><b>${esc(t.target)}</b><small>${esc(rmTargetFacts(t))}</small></span></button>`;}).join("");
+    const readBtn=cls=>`<button type="button" class="${cls} rm-read ${reading ? "is-busy" : ""}" data-action="rm-read" data-id="${esc(s.id)}" ${reading ? "disabled" : ""}>${reading ? "Читаю сцену…" : rows ? "Обновить" : "Прочитать сцену"}</button>`;
+    const empty=reading ? "Houdini или After Effects открывают сцену без окна — 20–60 секунд."
+      : !matches ? "Фильтр изменён — прочитайте сцену, чтобы увидеть композиции."
+      : `${s.cloud ? "Сцена в Облаке. " : ""}Прочитайте сцену — компьютер откроет её без окна и пришлёт, что в ней можно рендерить.`;
+    body = `<p class="rm-path">${esc(s.path)}</p>${rmTargetFilter(s)}${rows
+      ? `<div class="rm-list-head"><span>${kind} · ${available.length}</span><span class="rm-list-acts"><button type="button" class="text-action" data-action="rm-select-all">${n === available.length ? "Снять все" : "Выбрать все"}</button>${readBtn("text-action")}</span></div><div class="rm-picks">${rows}</div>
+         <div class="rm-foot"><button type="button" class="primary-button rm-wide" data-action="rm-batch-config" ${n ? "" : "disabled"}>${n ? `Дальше · ${n}` : `Отметьте ${s.app === "ae" ? "композиции" : "ROP"}`}</button></div>`
+      : `<p class="section-note">${empty}</p><div class="rm-foot">${readBtn("primary-button rm-wide")}</div>`}`;
   }
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">${head(s ? s.name : "Поставить на рендер")}${body}</section></div>`;
 }
@@ -402,11 +459,21 @@ function rmAction(action, control) {
     } else if (action==='rm-select-all') ui.sheet.selected=selected.size===(scene.targets || []).length ? [] : (scene.targets || []).map(rmTargetKey);
     else {
       if (!selected.size || selected.size>50) {toast('Выберите от 1 до 50 целей');return true;}
-      const s=rmSettings();ui.sheet.batch=true;ui.sheet.form={frames:'',output_mode:s.default_output,output_dir:'',deliver:s.default_deliver,ae_backend:s.ae_backend,ae_mfr:'inherit',ae_resolution:'inherit',ae_template:'',urgent:''};
+      // одна цель — сразу её кадры в поле; несколько — у каждой свой диапазон
+      const one=selected.size===1 ? (scene.targets || []).find(t=>selected.has(rmTargetKey(t))) : null;
+      const s=rmSettings();ui.sheet.batch=true;ui.sheet.more=false;ui.sheet.form={frames:one?.frames || '',output_mode:s.default_output,output_dir:'',deliver:s.default_deliver,ae_backend:s.ae_backend,ae_mfr:'inherit',ae_resolution:'inherit',ae_template:'',urgent:''};
     }
     render();return true;
   }
   if (action==='rm-benchmark-exit') {ui.sheet.benchmark=false;ui.sheet.confirm=false;render();return true;}
+  if (action==='rm-more') {ui.sheet.more=!ui.sheet.more;ui.sheet.justRendered=false;render();return true;}
+  if (action==='rm-filter') {
+    const scene=(rmQueue().scenes || []).find(x=>x.id===ui.sheet?.scene);
+    if (!scene) return true;
+    ui.sheet.selected=[];
+    ui.pc.rmTargetFilters={...(ui.pc.rmTargetFilters || {}),[scene.id]:{...rmFilter(scene),mode:control.dataset.mode}};
+    ui.sheet.justRendered=false;render();return true;
+  }
   if (action==='rm-benchmark') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
     if (!scene || !f || scene.app!=='ae') return true;
@@ -448,7 +515,11 @@ function rmAction(action, control) {
     return true;
   }
   if (action === "rm-scenes") { ui.sheet = { kind: "rm-scenes", justRendered: false }; render(); return true; }
-  if (action === "rm-scene") { ui.sheet = { kind: "rm-scenes", scene: control.dataset.id, justRendered: false }; render(); return true; }
+  if (action === "rm-scene") {
+    // «Назад» из параметров — к той же сцене с той же отметкой композиций
+    const keep = ui.sheet?.scene === control.dataset.id ? ui.sheet.selected : [];
+    ui.sheet = { kind: "rm-scenes", scene: control.dataset.id, selected: keep || [], justRendered: false }; render(); return true;
+  }
   if (action === "rm-read") { rmRead(control.dataset.id); return true; }
   if (action === "rm-go") {
     // цель выбрана — шаг с параметрами, по умолчанию из настроек Render Manager
