@@ -61,6 +61,12 @@ function pcLoad(force = false) {
     });
 }
 
+window.addEventListener("flow:pc-state", event => {
+  if (!event.detail || event.detail.error) return;
+  ui.pc = { ...(ui.pc || {}), data: event.detail, at: Date.now(), error: "" };
+  if (pcOnPage() && !document.hidden && !ui.sheet && !document.activeElement?.matches("input,textarea,select")) render();
+});
+
 // Пока экран «Компьютер» открыт — состояние раз в 15 с (агент шлёт загрузку раз в 30 с).
 setInterval(() => { if (pcOnPage() && !document.hidden && ui.pc?.data && !ui.pc.pending) pcLoad(true); }, 15000);
 
@@ -347,7 +353,6 @@ function renderPcPage() {
   const busy = Boolean(ui.pc.pending);
   const note = !d.agent && d.on ? `<p class="section-note">Компьютер включён, но агент Flow на нём не запущен — остальное недоступно.</p>` : "";
   // Пока идёт рендер — освежаем состояние сами, чтобы процент двигался.
-  if (d.render?.rendering || (d.rmQueue?.jobs || []).some(j => j.status === "rendering" || j.status === "delivering")) { clearTimeout(ui.pc.renderTimer); ui.pc.renderTimer = setTimeout(() => { if (pcOnPage()) pcLoad(true); }, 6000); }
   // Рендер (очередь Render Manager, ручной рендер AE, «Когда закончится») — отдельный раздел, здесь — строка-переход
   const agentPart = d.agent ? `${pcActions(busy)}${pcResult()}${pcMedia()}${rmLinkRow(d)}${pcLinkBlock()}` : pcResult();
   // Карточки «въезжают» только при входе на экран, а не на каждое нажатие.
