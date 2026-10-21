@@ -28,7 +28,8 @@ function rmProgress(j) {
 function rmActiveRow(j, fresh = true) {
   const pct = fresh ? rmProgress(j) : null;
   const facts = !fresh ? "Нет свежих данных с ПК" : j.status === "delivering" ? `переношу в облачную папку${j.delivery?.total ? ` · ${j.delivery.files || 0} из ${j.delivery.total} файлов` : ""}`
-    : [j.total ? `кадр ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
+    // «готово», а не «кадр»: части рендерят с разных мест, номер кадра в папке обгоняет счёт готовых
+    : [j.total ? `готово ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
   const bar = pct === null
     ? `<div class="pc-render-bar indeterminate"><b></b></div>` : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
   return `<div class="pc-render-live rm-live"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p>${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<div class="rm-acts">${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
@@ -108,7 +109,10 @@ const RM_DELIVER = [["move", "В облако"], ["copy", "Копию в обл�
 const RM_BACKEND = [["background", "В фоне"], ["cep", "В открытом AE"], ["auto", "Авто"]];
 // Фон частями (rm/runners/ae_split.py): несколько AE на своих кусках кадров; видео — кадрами, склейка ffmpeg
 const RM_PARTS = [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]];
-const RM_PARTS_NOTE = "Каждая часть — свой After Effects и своя память; при 48 ГБ разумно 2–3. Видео рендерится кадрами и склеивается ffmpeg — поэтому есть «Пауза» и «Продолжить». MFR у частей выключен: вместе они переполняют видеопамять.";
+// 5–8 — для тестов владельца: у каждой части своя память и видеопамять, на 48 ГБ / 16 ГБ VRAM разумно 2–4
+const RM_PARTS_TEST = [["5", "5"], ["6", "6"], ["7", "7"], ["8", "8"]];
+const RM_MFR_PARTS_WARN = "Тест: MFR в каждой части. 21.10 три части с MFR заняли 15,5 из 16 ГБ видеопамяти и встали — если рендер замрёт, Render Manager дорендерит кусок одной частью.";
+const RM_PARTS_NOTE = "Каждая часть — свой After Effects и своя память; при 48 ГБ разумно 2–3. Видео рендерится кадрами и склеивается ffmpeg — поэтому есть «Пауза» и «Продолжить». MFR у частей по умолчанию выключен: вместе они переполняют видеопамять.";
 const rmLabel = (list, v) => (list.find(([k]) => k === v) || [, v])[1];
 function rmSettings() {
   const s = rmQueue().settings || {};
@@ -153,7 +157,9 @@ function rmJobArgs(scene,t,f) {
   return {path:scene.path,target:t.target,frames:String(f.frames).replace(/\s+/g,''),output:t.output || '',scene_stamp:t.scene_stamp,
     ...(t.comp_id ? {comp_id:t.comp_id} : {}),...(t.rq_index ? {rq_index:t.rq_index} : {}),urgent:f.urgent==='1',
     output_mode:f.output_mode,deliver:f.deliver,...(f.output_mode==='custom' ? {output_dir:String(f.output_dir || '').trim()} : {}),
-    ...(scene.app==='ae' && f.ae_backend==='background' ? {parallel:Number(f.parallel) || 1} : {}),...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {})};
+    ...(scene.app==='ae' && f.ae_backend==='background' ? {parallel:Number(f.parallel) || 1} : {}),...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {}),
+    // тест: MFR в каждой части принудительно (по умолчанию у частей выключен)
+    ...(scene.app==='ae' && f.ae_backend==='background' && Number(f.parallel) > 1 && f.mfr_in_parts==='1' ? {mfr_in_parts:true,ae_mfr:'on'} : {})};
 }
 function rmSubmitSheet() {
   const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene), f=ui.sheet?.form;
@@ -281,7 +287,10 @@ function rmJobForm(s, t) {
     rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : ""), rmWhere(s, t, f) ? `<span class="rm-path">${esc(rmWhere(s, t, f))}</span>` : ""),
     rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver)),
     ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
-    ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", RM_PARTS, String(f.parallel || set.ae_parallel)), RM_PARTS_NOTE) : "",
+    ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", RM_PARTS, String(f.parallel || set.ae_parallel))
+      + `<p class="pc-after-label rm-test-label">Для теста</p>` + rmSegments("parallel", RM_PARTS_TEST, String(f.parallel || set.ae_parallel)), RM_PARTS_NOTE) : "",
+    ae && f.ae_backend === "background" && Number(f.parallel || set.ae_parallel) > 1 && !bench
+      ? `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="mfr_in_parts" data-value="${f.mfr_in_parts === "1" ? "" : "1"}" aria-pressed="${f.mfr_in_parts === "1"}"><span>MFR в каждой части (тест)</span><i class="rm-switch"></i></button>${f.mfr_in_parts === "1" ? `<p class="rm-warn rm-mfr-warn">${RM_MFR_PARTS_WARN}</p>` : ""}` : "",
     `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>`,
   ];
   const more = ui.sheet.more;
