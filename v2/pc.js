@@ -23,6 +23,7 @@ function pcCall(payload) {
 }
 const pcDemo = { last: null, audio: { level: 76, muted: false }, rm: {
   held: false,
+  settings: { render_root: "D:\\Render", deliver_root: "D:\\RenderCloud", default_output: "root", default_deliver: "move", ae_backend: "auto", background_off: true },
   jobs: [
     { id: 7, name: "book_COLLECTED · usdrender_rop2", app: "karma", status: "rendering", frames: "60-130", done: 17, total: 71, percent: 24, eta: 1260, stage: "рендер", after: "notify" },
     { id: 8, name: "BOOK_EVANGILE · БЛОК 2", app: "ae", status: "queued", frames: "0-489", after: "notify" },
