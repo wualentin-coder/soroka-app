@@ -19,11 +19,17 @@ function rmMinutes(s) { s = Math.round(Number(s) || 0); return s >= 3600 ? `${Ma
 const rmBusyCls = key => ui.pc.quick?.[key] || "";
 
 /** Идущая задача: название, процент, полоса, кадры и сколько осталось. */
-function rmActiveRow(j) {
-  const pct = j.status === "delivering" ? null : Math.max(0, Math.min(100, Number(j.percent) || 0));
-  const facts = j.status === "delivering" ? "переношу в облако"
+function rmProgress(j) {
+  if (j.status === "delivering") return Number(j.delivery?.total) > 0 ? Math.max(0, Math.min(100, Number(j.delivery.files || 0) / Number(j.delivery.total) * 100)) : null;
+  if (j.percent === null || j.percent === undefined || j.percent === "" || !Number.isFinite(Number(j.percent))) return null;
+  if (!j.done && j.stage && !j.stage.startsWith("рендер")) return null;
+  return Math.max(0, Math.min(100, Number(j.percent)));
+}
+function rmActiveRow(j, fresh = true) {
+  const pct = fresh ? rmProgress(j) : null;
+  const facts = !fresh ? "Нет свежих данных с ПК" : j.status === "delivering" ? `переношу в облачную папку${j.delivery?.total ? ` · ${j.delivery.files || 0} из ${j.delivery.total} файлов` : ""}`
     : [j.total ? `кадр ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
-  const bar = pct === null || (!j.done && j.stage && j.stage !== "рендер")
+  const bar = pct === null
     ? `<div class="pc-render-bar indeterminate"><b></b></div>` : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
   return `<div class="pc-render-live rm-live"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p>${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div>`;
 }
@@ -57,7 +63,7 @@ function rmBlock(d) {
   const empty = !active.length && !waiting.length;
   const body = [
     q.held ? `<p class="section-note rm-held">Очередь на паузе: текущий рендер доработает, следующие ждут.</p>` : "",
-    active.map(rmActiveRow).join(""),
+    active.map(j => rmActiveRow(j, d.agent !== false && (!q.at || Date.now() - Date.parse(q.at) < 90000))).join(""),
     waiting.length ? `<p class="pc-find-label">Дальше${waiting.length > 1 ? " — порядок можно менять, перетаскивая за ручку" : ""}</p><div class="rm-waiting">${waiting.map(rmWaitingRow).join("")}</div>` : "",
     empty ? `<p class="section-note">Сейчас в очереди ничего нет.</p>` : "",
     recent.length ? `<p class="pc-find-label">Недавно</p><div class="rm-recents">${recent.map(rmRecentRow).join("")}</div>` : "",
@@ -71,7 +77,8 @@ function rmLinkRow(d) {
   const now = jobs.find(j => RM_ACTIVE.includes(j.status));
   const waiting = jobs.filter(j => RM_WAITING.includes(j.status)).length;
   const r = d.render || {};
-  const line = now ? `${now.name} — ${Math.round(Number(now.percent) || 0)}%${waiting ? ` · ещё ${waiting} в очереди` : ""}`
+  const progress = now ? rmProgress(now) : null;
+  const line = now ? `${now.name} — ${progress === null ? (now.status === "delivering" ? "доставка" : "подготовка") : `${Math.round(progress)}%`}${waiting ? ` · ещё ${waiting} в очереди` : ""}`
     : r.rendering ? `Вручную в AE: ${r.comp || "композиция"}${r.percent != null ? ` — ${Math.round(Number(r.percent))}%` : ""}`
       : waiting ? `В очереди: ${waiting}` : "Очередь, прогресс, поставить сцену";
   return `<button type="button" class="pc-card rm-link ${now || r.rendering ? "pc-rendering" : ""}" data-action="navigate" data-page="render">${pcIcon("film")}<span class="rm-wait-text"><b>Рендер</b><small>${esc(line)}</small></span>${now || r.rendering ? `<span class="pc-render-dot"></span>` : ""}<span class="rm-chev">›</span></button>`;
