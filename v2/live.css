@@ -919,6 +919,42 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .pc-render-facts { margin: 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pc-render-live .small-button { justify-self: start; }
 .pc-after-label { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+/* Очередь рендеров Render Manager (render-queue.js) */
+.rm-card { display: grid; gap: 8px; }
+.rm-card .pc-card-head { margin-bottom: 2px; }
+.rm-card .pc-find-label { margin: 4px 0 0; }
+.rm-live { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.rm-warn { margin: 0; font-size: 12px; color: var(--warn); }
+.rm-held { margin: 0; color: var(--warn); }
+.rm-waiting, .rm-recents { display: grid; gap: 4px; }
+.rm-wait, .rm-recent { display: flex; align-items: center; gap: 10px; min-height: var(--control-default, 44px); padding: 4px 4px 4px 0; border-radius: 12px; background: var(--surface); }
+.rm-wait { transition: transform .2s cubic-bezier(.2, .8, .3, 1); }
+.rm-wait.rm-dragging { position: relative; z-index: 2; transition: none; box-shadow: 0 8px 24px rgb(0 0 0 / .25); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.rm-grip { flex: none; display: grid; grid-template-columns: repeat(2, 4px); gap: 3px; padding: 12px 8px; cursor: grab; touch-action: none; }
+.rm-grip i { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); opacity: .7; }
+.rm-dragging .rm-grip { cursor: grabbing; }
+.rm-wait-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.rm-wait-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; }
+.rm-wait-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.rm-recent .rm-wait-text small { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.rm-mark { flex: none; display: grid; place-items: center; width: 28px; height: 28px; margin-left: 4px; border-radius: 50%; color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+.rm-mark .pc-ico { width: 15px; height: 15px; }
+.rm-mark.ok { color: var(--pc-go, #2e9d5b); background: color-mix(in srgb, var(--pc-go, #2e9d5b) 16%, transparent); }
+.rm-mark.bad { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.rm-x { flex: none; width: var(--control-compact, 38px); height: var(--control-compact, 38px); color: var(--muted); }
+.rm-x .pc-ico { width: 16px; height: 16px; }
+.rm-recent .text-action { flex: none; position: relative; }
+.rm-add { justify-self: stretch; margin-top: 4px; }
+.rm-sheet .section-note { overflow-wrap: anywhere; }
+.rm-sheet .sheet-head h2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-sheet .sheet-head .icon-button { flex: none; }
+.rm-scenes { display: grid; gap: 2px; margin-bottom: 10px; }
+.rm-sheet .rm-read { width: 100%; }
+.rm-link { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.rm-link > .pc-ico { flex: none; width: 20px; height: 20px; color: var(--accent); }
+.rm-link .rm-wait-text b { font-size: 16px; }
+.rm-chev { flex: none; font-size: 22px; line-height: 1; color: var(--muted); }
 @keyframes pc-shine { from { background-position: 200% 0; } to { background-position: 0 0; } }
 @keyframes pc-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
 
