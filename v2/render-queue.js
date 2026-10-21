@@ -85,17 +85,82 @@ function renderRenderPage() {
   if (!d) return `${top}<div class="content-grid"><div class="content-main pc-page"><section class="pc-card"><p class="section-note">${esc(ui.pc?.error || "Спрашиваю компьютер…")}</p>${ui.pc?.error ? `<button class="primary-button" type="button" data-action="pc-refresh">Повторить</button>` : ""}</section></div></div>`;
   if ((d.rmQueue?.jobs || []).some(j => RM_ACTIVE.includes(j.status)) || d.render?.rendering) { clearTimeout(ui.pc.renderTimer); ui.pc.renderTimer = setTimeout(() => { if (pcOnPage()) pcLoad(true); }, 6000); }
   const off = !d.agent ? `<section class="pc-card"><p class="section-note">${d.on === false ? "Компьютер выключен" : "Компьютер не на связи"} — ниже последняя известная очередь. «Поставить сцену» включит его сам${d.hub ? "" : ", когда ESP32 будет на связи"}.</p></section>` : "";
-  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${d.agent ? pcRenderBlock(d) : ""}</div></div>`;
+  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${d.agent ? pcRenderBlock(d) : ""}${rmSettingsCard(d)}</div></div>`;
 }
+
+// ------------------------------------------------------------ параметры задачи и настройки
+
+const RM_OUTPUT = [["root", "Папка рендера"], ["scene", "Как в сцене"], ["custom", "Своя папка"]];
+const RM_DELIVER = [["move", "В облако"], ["copy", "Копию в облако"], ["none", "Не отправлять"]];
+const RM_BACKEND = [["background", "В фоне"], ["cep", "В открытом AE"], ["auto", "Авто"]];
+const rmLabel = (list, v) => (list.find(([k]) => k === v) || [, v])[1];
+function rmSettings() {
+  const s = rmQueue().settings || {};
+  return { render_root: s.render_root || "D:\\Render", deliver_root: s.deliver_root || "D:\\RenderCloud", default_output: s.default_output || "root",
+    default_deliver: s.default_deliver || "move", ae_backend: s.ae_backend || "auto", background_off: Boolean(s.background_off), known: Boolean(rmQueue().settings) };
+}
+
+/** Ряд кнопок-вариантов: выбранный подсвечен, нажатие меняет поле формы листа. */
+function rmSegments(key, list, value) {
+  return `<div class="segmented rm-seg" style="--n:${list.length}">${list.map(([v, label]) => `<button type="button" class="segment ${value === v ? "active" : ""}" data-action="rm-opt" data-key="${key}" data-value="${v}" aria-pressed="${value === v}">${label}</button>`).join("")}</div>`;
+}
+const rmField = (label, html, note = "") => `<div class="rm-field"><p class="pc-after-label">${label}</p>${html}${note ? `<p class="section-note">${note}</p>` : ""}</div>`;
+const rmBackendNote = s => s.background_off ? "Фон после сбоя отключён на сутки: «Авто» сейчас рендерит в открытом AE. «В фоне» — попробовать фон снова." : "В фоне AE работает без окна, как Karma в Houdini; не начал за 20 мин — «Авто» переходит в открытый AE.";
+
+/** Настройки по умолчанию: куда рендерить, облако, способ AE. */
+function rmSettingsCard(d) {
+  const s = rmSettings();
+  if (!s.known && !d.agent) return "";
+  const row = (k, v) => `<div class="rm-set-row"><span>${k}</span><b>${esc(v)}</b></div>`;
+  return `<section class="pc-card rm-card"><div class="pc-card-head"><h3>${pcIcon("list")}Настройки рендера</h3><button type="button" class="small-button" data-action="rm-settings" ${s.known ? "" : "disabled"}>Изменить</button></div>${s.known ? `${row("Папка рендера", s.render_root)}${row("Папка Облака", s.deliver_root)}${row("Куда по умолчанию", rmLabel(RM_OUTPUT, s.default_output))}${row("Облако по умолчанию", rmLabel(RM_DELIVER, s.default_deliver))}${row("After Effects", rmLabel(RM_BACKEND, s.ae_backend))}${s.background_off && s.ae_backend === "auto" ? `<p class="rm-warn">${rmBackendNote(s)}</p>` : ""}` : `<p class="section-note">Настройки придут с компьютера вместе с очередью — в течение минуты.</p>`}</section>`;
+}
+
+function renderRmSettingsSheet() {
+  const f = ui.sheet.form;
+  const body = [
+    rmField("Папка рендера", `<input class="rm-input" data-form="render_root" value="${esc(f.render_root)}" autocomplete="off" spellcheck="false">`, "Сюда рендерится всё с «Папка рендера»: сцена\\цель\\v001."),
+    rmField("Папка Облака", `<input class="rm-input" data-form="deliver_root" value="${esc(f.deliver_root)}" autocomplete="off" spellcheck="false">`, "Её резервирует Облако Mail.ru — готовый рендер переносится или копируется сюда."),
+    rmField("Куда по умолчанию", rmSegments("default_output", RM_OUTPUT.filter(([k]) => k !== "custom"), f.default_output)),
+    rmField("Облако по умолчанию", rmSegments("default_deliver", RM_DELIVER, f.default_deliver)),
+    rmField("After Effects по умолчанию", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), rmBackendNote(rmSettings())),
+  ].join("");
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Настройки рендера</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${body}<button type="button" class="primary-button rm-submit ${rmBusyCls("rm-settings-save")}" data-action="rm-settings-save">Сохранить</button></section></div>`;
+}
+
+/** Шаг перед постановкой: кадры, куда, облако, способ AE, срочно. */
+function rmJobForm(s, t) {
+  const f = ui.sheet.form;
+  const set = rmSettings();
+  return [
+    `<p class="section-note">${esc(t.label || t.target)}</p>`,
+    rmField("Кадры", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="${esc(t.frames || "1-100")}">`),
+    rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render\\проект" autocomplete="off" spellcheck="false">` : ""),
+      f.output_mode === "root" ? `${esc(set.render_root)}\\${esc(s.name)}\\…\\v###` : f.output_mode === "scene" ? "Путь из настроек вывода в самой сцене." : "Внутри — папка цели и версии v###."),
+    rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver), f.deliver === "none" ? "" : `После проверки кадров — в ${esc(set.deliver_root)}.`),
+    s.app === "ae" ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), rmBackendNote(set)) : "",
+    rmField("Очередь", rmSegments("urgent", [["", "Обычно"], ["1", "Срочно — первой"]], f.urgent)),
+    `<button type="button" class="primary-button rm-submit ${rmBusyCls("rm-submit")}" data-action="rm-submit">Поставить в очередь</button>`,
+  ].join("");
+}
+
+// Поля листа: значение — сразу в форму, без перерисовки (иначе поле теряет фокус).
+document.addEventListener("input", event => {
+  const key = event.target?.dataset?.form;
+  if (key && ui.sheet?.form) ui.sheet.form[key] = event.target.value;
+});
 
 // ------------------------------------------------------------ «Поставить сцену»
 
 function renderRmScenesSheet() {
   const scenes = rmQueue().scenes || [];
   const s = ui.sheet.scene ? scenes.find(x => x.id === ui.sheet.scene) : null;
-  const head = title => `<div class="sheet-handle"></div><div class="sheet-head">${s ? `<button class="icon-button" type="button" data-action="rm-scenes" aria-label="Назад">${icon("left")}</button>` : ""}<h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>`;
+  const t = s && ui.sheet.target !== undefined ? s.targets?.[ui.sheet.target] : null;
+  const back = t ? `data-action="rm-scene" data-id="${esc(s.id)}"` : `data-action="rm-scenes"`;
+  const head = title => `<div class="sheet-handle"></div><div class="sheet-head">${s ? `<button class="icon-button" type="button" ${back} aria-label="Назад">${icon("left")}</button>` : ""}<h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>`;
   let body;
-  if (!s) {
+  if (t) {
+    body = rmJobForm(s, t);
+  } else if (!s) {
     body = scenes.length
       ? `<div class="rm-scenes">${scenes.map(x => `<button type="button" class="pc-find-row" data-action="rm-scene" data-id="${esc(x.id)}"><span class="pc-find-ico file"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.file}</svg></span><span class="pc-find-text"><b>${esc(x.name)}${x.cloud ? " ☁" : ""}</b><small>${esc([x.app === "karma" ? "Houdini" : "After Effects", x.targets?.length ? `целей: ${x.targets.length}` : "ещё не прочитана", x.cloud ? "в Облаке" : ""].filter(Boolean).join(" · "))}</small></span></button>`).join("")}</div><p class="section-note">Недавние сцены Houdini и AE, прошлые рендеры и проекты в Облаке (O:). Список обновляется раз в 10 минут, пока компьютер на связи.</p>`
       : `<p class="section-note">Список сцен с компьютера ещё не пришёл — он приходит в течение 10 минут после запуска агента Flow.</p>`;
@@ -212,11 +277,52 @@ function rmAction(action, control) {
   if (action === "rm-scene") { ui.sheet = { kind: "rm-scenes", scene: control.dataset.id, justRendered: false }; render(); return true; }
   if (action === "rm-read") { rmRead(control.dataset.id); return true; }
   if (action === "rm-go") {
+    // цель выбрана — шаг с параметрами, по умолчанию из настроек Render Manager
     const scene = (rmQueue().scenes || []).find(x => x.id === control.dataset.id);
-    const t = scene?.targets?.[Number(control.dataset.i)];
+    const i = Number(control.dataset.i);
+    const t = scene?.targets?.[i];
     if (!t) return true;
-    const args = { path: scene.path, target: t.target, frames: t.frames || "", output: "", urgent: false, ...(t.rq_index ? { rq_index: t.rq_index } : {}) };
-    pcQuick("rm_add", args, `rm-go-${scene.id}-${control.dataset.i}`, r => { toast(r?.message || "Поставил в очередь"); ui.sheet = null; reload(); });
+    const s = rmSettings();
+    ui.sheet = { kind: "rm-scenes", scene: scene.id, target: i, justRendered: false,
+      form: { frames: t.frames || "", output_mode: s.default_output, output_dir: "", deliver: s.default_deliver, ae_backend: s.ae_backend, urgent: "" } };
+    render();
+    return true;
+  }
+  if (action === "rm-opt") {
+    if (ui.sheet?.form) { ui.sheet.form[control.dataset.key] = control.dataset.value; ui.sheet.justRendered = false; render(); }
+    return true;
+  }
+  if (action === "rm-submit") {
+    const scene = (rmQueue().scenes || []).find(x => x.id === ui.sheet?.scene);
+    const t = scene?.targets?.[ui.sheet.target];
+    const f = ui.sheet?.form;
+    if (!t || !f) return true;
+    const frames = String(f.frames || t.frames || "").replace(/\s+/g, "");
+    if (!/^-?\d+(--?\d+)?(,-?\d+(--?\d+)?)*$/.test(frames)) { toast("Кадры — например 1-100 или 1-50,60"); return true; }
+    if (f.output_mode === "custom" && !/^[a-z]:\\/i.test(f.output_dir || "")) { toast("Своя папка — полный путь, например E:\\Render"); return true; }
+    const args = { path: scene.path, target: t.target, frames, output: "", urgent: f.urgent === "1", output_mode: f.output_mode, deliver: f.deliver,
+      ...(f.output_mode === "custom" ? { output_dir: f.output_dir.trim() } : {}), ...(scene.app === "ae" ? { ae_backend: f.ae_backend } : {}),
+      ...(t.rq_index ? { rq_index: t.rq_index } : {}) };
+    pcQuick("rm_add", args, "rm-submit", r => { toast(r?.message || "Поставил в очередь"); ui.sheet = null; reload(); });
+    return true;
+  }
+  if (action === "rm-settings") {
+    const s = rmSettings();
+    ui.sheet = { kind: "rm-settings", justRendered: false, form: { render_root: s.render_root, deliver_root: s.deliver_root, default_output: s.default_output, default_deliver: s.default_deliver, ae_backend: s.ae_backend } };
+    render();
+    return true;
+  }
+  if (action === "rm-settings-save") {
+    const f = ui.sheet?.form;
+    if (!f) return true;
+    if (![f.render_root, f.deliver_root].every(p => /^[a-z]:\\/i.test(String(p).trim()))) { toast("Папки — полный путь, например D:\\Render"); return true; }
+    const args = { ...f, render_root: f.render_root.trim(), deliver_root: f.deliver_root.trim() };
+    pcQuick("rm_settings", args, "rm-settings-save", r => {
+      if (r?.settings) ui.pc.data.rmQueue = { ...rmQueue(), settings: r.settings };
+      toast("Настройки сохранены");
+      ui.sheet = null;
+      render();
+    });
     return true;
   }
   return false;
