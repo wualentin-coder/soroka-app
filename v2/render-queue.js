@@ -50,9 +50,13 @@ function rmRecentRow(j) {
   const note = j.status === "done" && j.benchmark ? (j.benchmark_result ? rmBenchmarkText(j.benchmark_result) : `Тест завершён без достоверной оценки${j.warning ? `: ${j.warning}` : ''}`) : j.status === "done" ? (deliveryFailed ? `в облако не ушло: ${j.delivery.error || "ошибка"}` : j.delivery?.status === "done" ? "готово, в облаке" : "готово")
     : j.status === "failed" ? (j.error || "ошибка") : `отменено${j.total ? ` на кадре ${j.done || 0} из ${j.total}` : ""}`;
   const act = (op, label) => `<button type="button" class="text-action ${rmBusyCls(`rm-${op}-${j.id}`)}" data-action="rm-${op}" data-id="${j.id}">${label}</button>`;
+  // Karma и фон частями дорендеривают с готовых кадров в ту же папку — это «Продолжить», и ролик склеится целиком
+  // (21.10 новая задача «с 980 кадра» ушла в отдельный рендер, и видео собралось только из её кадров).
+  const resumable = (j.app === "karma" || (j.app === "ae" && j.ae_backend === "background")) && Number(j.done) > 0 && Number(j.total) > Number(j.done);
   const action = deliveryFailed ? act("deliver", "В облако")
     : j.status === "failed" && j.missing > 0 ? act("missing", `Дорендерить ${j.missing}`)
-      : j.status === "failed" || j.status === "cancelled" ? act("retry", "Повторить") : "";
+      : (j.status === "failed" || j.status === "cancelled") && resumable ? act("retry", `Продолжить · ${j.done}/${j.total}`)
+        : j.status === "failed" || j.status === "cancelled" ? act("retry", "Повторить") : "";
   return `<div class="rm-recent">${mark}<span class="rm-wait-text"><b>${esc(j.name)}</b><small>${esc(note)}</small></span>${action}</div>`;
 }
 
