@@ -174,6 +174,7 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "pc-shot") return renderPcShotSheet();
   if (ui.sheet.kind === "pc-power") return renderPcPowerSheet();
   if (ui.sheet.kind === "rm-scenes") return renderRmScenesSheet();
+  if (ui.sheet.kind === "rm-settings") return renderRmSettingsSheet();
   if (ui.sheet.kind === "vpn-new") return renderVpnNewSheet();
   if (ui.sheet.kind === "vpn-exceptions") return renderVpnExceptionsSheet();
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
