@@ -11,6 +11,10 @@ const RM_WAITING = ["queued", "paused"];
 const RM_APP = { karma: "Karma", ae: "After Effects", fake: "Тест" };
 
 function rmQueue() { return ui.pc?.data?.rmQueue || {}; }
+function rmFresh(d) {
+  const q=d.rmQueue || {},stamp=q.at || q.observed_at;
+  return d.agent!==false && q.service?.available!==false && (!stamp || (Number.isFinite(Date.parse(stamp)) && Date.now()-Date.parse(stamp)<90000));
+}
 const rmJobs = () => rmQueue().jobs || [];
 /** Есть ли в очереди что-то идущее или ждущее — тогда «Когда закончится» управляет очередью. */
 const rmBusy = () => rmJobs().some(j => RM_ACTIVE.includes(j.status) || RM_WAITING.includes(j.status));
@@ -21,6 +25,8 @@ const rmBusyCls = key => ui.pc.quick?.[key] || "";
 /** Идущая задача: название, процент, полоса, кадры и сколько осталось. */
 function rmProgress(j) {
   if (j.status === "delivering") return Number(j.delivery?.total) > 0 ? Math.max(0, Math.min(100, Number(j.delivery.files || 0) / Number(j.delivery.total) * 100)) : null;
+  // Счётчик кадров — не процент готового ролика: после него ещё сборка и проверка.
+  if (j.stage && /склей|кодир|сборк|провер|подготов|открыва|копир|исходник/i.test(j.stage)) return null;
   if (j.percent === null || j.percent === undefined || j.percent === "" || !Number.isFinite(Number(j.percent))) return null;
   if (!j.done && j.stage && !j.stage.startsWith("рендер")) return null;
   return Math.max(0, Math.min(100, Number(j.percent)));
@@ -48,7 +54,7 @@ function rmRecentRow(j) {
   const deliveryFailed = j.status === "done" && j.delivery?.status === "failed";
   const mark = j.status === "done" && !deliveryFailed ? `<span class="rm-mark ok">${pcIcon("check")}</span>`
     : j.status === "cancelled" ? `<span class="rm-mark off">${pcIcon("x")}</span>` : `<span class="rm-mark bad">${pcIcon("x")}</span>`;
-  const note = j.status === "done" && j.benchmark ? (j.benchmark_result ? rmBenchmarkText(j.benchmark_result) : `Тест завершён без достоверной оценки${j.warning ? `: ${j.warning}` : ''}`) : j.status === "done" ? (deliveryFailed ? `в облако не ушло: ${j.delivery.error || "ошибка"}` : j.delivery?.status === "done" ? "готово, в облаке" : "готово")
+  const note = j.status === "done" && j.benchmark ? (j.benchmark_result ? rmBenchmarkText(j.benchmark_result) : `Тест завершён без достоверной оценки${j.warning ? `: ${j.warning}` : ''}`) : j.status === "done" ? (deliveryFailed ? `в облако не ушло: ${j.delivery.error || "ошибка"}` : j.warning ? `готово с предупреждением: ${j.warning}` : j.delivery?.status === "done" ? "готово, в облаке" : "готово")
     : j.status === "failed" ? (j.error || "ошибка") : `отменено${j.total ? ` на кадре ${j.done || 0} из ${j.total}` : ""}`;
   const act = (op, label) => `<button type="button" class="text-action ${rmBusyCls(`rm-${op}-${j.id}`)}" data-action="rm-${op}" data-id="${j.id}">${label}</button>`;
   // Karma и фон частями дорендеривают с готовых кадров в ту же папку — это «Продолжить», и ролик склеится целиком
@@ -71,7 +77,7 @@ function rmBlock(d) {
   const empty = !active.length && !waiting.length;
   const body = [
     q.held ? `<p class="section-note rm-held">Очередь на паузе: текущий рендер доработает, следующие ждут.</p>` : "",
-    active.map(j => rmActiveRow(j, d.agent !== false && (!q.at || Date.now() - Date.parse(q.at) < 90000))).join(""),
+    active.map(j => rmActiveRow(j, rmFresh(d))).join(""),
     waiting.length ? `<p class="pc-find-label">Дальше${waiting.length > 1 ? " — порядок можно менять, перетаскивая за ручку" : ""}</p><div class="rm-waiting">${waiting.map(rmWaitingRow).join("")}</div>` : "",
     empty ? `<p class="section-note">Сейчас в очереди ничего нет.</p>` : "",
     recent.length ? `<p class="pc-find-label">Недавно</p><div class="rm-recents">${recent.map(rmRecentRow).join("")}</div><button type="button" class="text-action ${rmBusyCls("rm-clear")}" data-action="rm-clear">Очистить завершённые</button>` : "",
@@ -85,8 +91,8 @@ function rmLinkRow(d) {
   const now = jobs.find(j => RM_ACTIVE.includes(j.status));
   const waiting = jobs.filter(j => RM_WAITING.includes(j.status)).length;
   const r = d.render || {};
-  const progress = now ? rmProgress(now) : null;
-  const line = now ? `${now.name} — ${progress === null ? (now.status === "delivering" ? "доставка" : "подготовка") : `${Math.round(progress)}%`}${waiting ? ` · ещё ${waiting} в очереди` : ""}`
+  const progress = now && rmFresh(d) ? rmProgress(now) : null;
+  const line = now ? `${now.name} — ${!rmFresh(d)?'нет свежих данных':progress === null ? (now.stage || (now.status === "delivering" ? "доставка" : "подготовка")) : `${Math.round(progress)}%`}${waiting ? ` · ещё ${waiting} в очереди` : ""}`
     : r.rendering ? `Вручную в AE: ${r.comp || "композиция"}${r.percent != null ? ` — ${Math.round(Number(r.percent))}%` : ""}`
       : waiting ? `В очереди: ${waiting}` : "Очередь, прогресс, поставить сцену";
   return `<button type="button" class="pc-card rm-link ${now || r.rendering ? "pc-rendering" : ""}" data-action="navigate" data-page="render">${pcIcon("film")}<span class="rm-wait-text"><b>Рендер</b><small>${esc(line)}</small></span>${now || r.rendering ? `<span class="pc-render-dot"></span>` : ""}<span class="rm-chev">›</span></button>`;
@@ -99,7 +105,14 @@ function renderRenderPage() {
   const top = header("Рендер", "Karma и After Effects на домашнем ПК", "Дом");
   if (!d) return `${top}<div class="content-grid"><div class="content-main pc-page"><section class="pc-card"><p class="section-note">${esc(ui.pc?.error || "Спрашиваю компьютер…")}</p>${ui.pc?.error ? `<button class="primary-button" type="button" data-action="pc-refresh">Повторить</button>` : ""}</section></div></div>`;
   const off = !d.agent ? `<section class="pc-card"><p class="section-note">${d.on === false ? "Компьютер выключен" : "Компьютер не на связи"} — ниже последняя известная очередь. «Поставить сцену» включит его сам${d.hub ? "" : ", когда ESP32 будет на связи"}.</p></section>` : "";
-  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${d.agent ? pcRenderBlock(d) : ""}${rmSettingsCard(d)}</div></div>`;
+  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${rmHealthCard(d)}${d.agent ? pcRenderBlock(d) : ""}${rmSettingsCard(d)}</div></div>`;
+}
+
+function rmHealthCard(d) {
+  const q=d.rmQueue || {},service=q.service || {},age=stamp=>Number.isFinite(Date.parse(stamp)) ? `${rmSecs(Math.max(0,Date.now()-Date.parse(stamp)))} назад`:'ещё нет данных';
+  const row=(label,value)=>`<div class="rm-set-row"><span>${label}</span><b>${esc(value)}</b></div>`;
+  const active=(q.jobs || []).find(j=>RM_ACTIVE.includes(j.status));
+  return `<details class="pc-card rm-card"><summary>Связь и диагностика</summary>${row('Агент ПК',d.agent?'на связи':'нет связи')}${row('Последняя связь агента',age(d.agentSeen))}${row('Сервис Render Manager',service.available===false?'не отвечает':rmFresh(d)&&q.at?'на связи':'нет свежего подтверждения')}${row('Очередь обновлена',age(q.at || q.observed_at))}${row('Расширение AE',service.ae_agent?.alive?'на связи':service.ae_agent?'нет связи / AE закрыт':'нет данных')}${service.build?row('Сборка',typeof service.build==='string'?service.build:service.build.code || service.build.commit || service.build.version || 'неизвестна'):''}${active?row('Этап',active.stage || active.status):''}${active?.warning?`<p class="rm-warn">${esc(active.warning)}</p>`:''}<button type="button" class="text-action" data-action="pc-refresh">Обновить состояние</button></details>`;
 }
 
 // ------------------------------------------------------------ параметры задачи и настройки
@@ -126,7 +139,7 @@ function rmSegments(key, list, value) {
   return `<div class="segmented rm-seg" style="--n:${list.length}">${list.map(([v, label]) => `<button type="button" class="segment ${value === v ? "active" : ""}" data-action="rm-opt" data-key="${key}" data-value="${v}" aria-pressed="${value === v}">${label}</button>`).join("")}</div>`;
 }
 const rmField = (label, html, note = "") => `<div class="rm-field"><p class="pc-after-label">${label}</p>${html}${note ? `<p class="section-note">${note}</p>` : ""}</div>`;
-const RM_PRESET_KEYS = ['output_mode','output_dir','deliver','ae_backend','ae_mfr','ae_resolution','ae_template'];
+const RM_PRESET_KEYS = ['output_mode','output_dir','deliver','ae_backend','parallel','mfr_in_parts','ae_mfr','ae_resolution','ae_template'];
 const RM_RESOLUTION = [['inherit','Как в AE'],['full','Полное'],['half','½'],['quarter','¼']];
 function rmPresets(app) {
   const base = {output_mode:'root',output_dir:'',deliver:'none',ae_backend:'background',ae_mfr:'inherit',ae_template:''};
@@ -137,7 +150,23 @@ function rmPresets(app) {
   ] : []),...(rmQueue().presets || []).filter(p=>p.app===app)];
 }
 function rmBenchmarkText(r) {
-  return `Тест: ${Number(r.wall_seconds).toFixed(1)} с · ${Number(r.seconds_per_frame).toFixed(2)} с/кадр · полный рендер ≈${rmMinutes(r.estimated_seconds)} · MFR ${r.mfr === 'on' ? 'вкл.' : 'выкл.'}`;
+  return `Тест: ${Number(r.wall_seconds).toFixed(1)} с · ${Number(r.seconds_per_frame).toFixed(2)} с/кадр · полный рендер ≈${rmMinutes(r.estimated_seconds)} · ${r.mode==='parts'?`${r.parallel} части · проба ${r.repeat}`:`MFR ${r.mfr === 'on' ? 'вкл.' : 'выкл.'}`}`;
+}
+function rmPartAdvice(scene,target,form) {
+  const jobs=rmJobs().filter(j=>j.status==='done' && j.benchmark_result?.mode==='parts' && j.benchmark?.group &&
+    j.scene===scene.path && j.target===target.target && j.scene_stamp===target.scene_stamp &&
+    (j.ae_resolution || 'inherit')===(form.ae_resolution || 'inherit') && (j.benchmark.requested_template || '')===(form.ae_template || ''));
+  const group=jobs.sort((a,b)=>Number(b.finished_at || 0)-Number(a.finished_at || 0))[0]?.benchmark.group;
+  const samples=jobs.filter(j=>j.benchmark.group===group),scores=[];
+  for(const parallel of [1,2,3,4]) {
+    const measured=samples.filter(j=>j.benchmark_result.parallel===parallel && Number(j.benchmark_result.seconds_per_frame)>0);
+    if(new Set(measured.map(j=>j.benchmark.repeat)).size<2)return '';
+    const values=measured.map(j=>Number(j.benchmark_result.seconds_per_frame)).sort((a,b)=>a-b);
+    const n=values.length,median=(values[Math.floor((n-1)/2)]+values[Math.floor(n/2)])/2;
+    scores.push({parallel,median});
+  }
+  const best=scores.sort((a,b)=>a.median-b.median || a.parallel-b.parallel)[0];
+  return best?`<button type="button" class="text-action" data-action="rm-opt" data-key="parallel" data-value="${best.parallel}">По двум пробам: ${best.parallel} части · ${best.median.toFixed(2)} с/кадр — применить</button>`:'';
 }
 /** Пресеты — одной строкой чипов наверху; сохранить свой — в «Дополнительно». */
 function rmPresetChips(scene,f) {
@@ -154,7 +183,9 @@ function rmChosenTargets(scene) {
 }
 function rmFormFor(t,f) { return {...f,frames:ui.sheet?.batch && !String(f.frames || '').trim() ? t.frames : f.frames,...(ui.sheet?.benchmark ? {output_mode:'root',deliver:'none',ae_backend:'background'} : {})}; }
 function rmJobArgs(scene,t,f) {
+  const media=rmEffectiveMedia(t,f,scene.app);
   return {path:scene.path,target:t.target,frames:String(f.frames).replace(/\s+/g,''),output:t.output || '',scene_stamp:t.scene_stamp,
+    ...(Number(t.audit?.fps)>0 ? {fps:Number(t.audit.fps)} : {}),...(media.width && media.height ? {width:media.width,height:media.height} : {}),format:f.ae_template ? '' : t.audit?.format || '',audit:t.audit || {},
     ...(t.comp_id ? {comp_id:t.comp_id} : {}),...(t.rq_index ? {rq_index:t.rq_index} : {}),urgent:f.urgent==='1',
     output_mode:f.output_mode,deliver:f.deliver,...(f.output_mode==='custom' ? {output_dir:String(f.output_dir || '').trim()} : {}),
     ...(scene.app==='ae' && f.ae_backend==='background' ? {parallel:Number(f.parallel) || 1} : {}),...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {}),
@@ -176,15 +207,19 @@ function rmSubmitSheet() {
       try {sample=rmFrameSummary(f.sample_frames);} catch(e){toast(e.message);return;}
       const full=String(form.frames).match(/^(-?\d+)(?:-(-?\d+))?$/), part=String(f.sample_frames).match(/^(-?\d+)(?:-(-?\d+))?$/);
       if (!full || !part || sample.segments!==1 || sample.count<2 || sample.count>120 || Number(part[1])<Number(full[1]) || Number(part[2]??part[1])>Number(full[2]??full[1])) {toast('Тест: 2–120 кадров внутри полного диапазона');return;}
-      for (const mfr of ['off','on']) items.push({...args,frames:f.sample_frames,benchmark:{full_frames:args.frames},ae_backend:'background',ae_mfr:mfr,deliver:'none'});
+      if(f.benchmark_mode==='parts') {
+        const group=ui.sheet.submissionId ||= window.crypto?.randomUUID?.() || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+        for(const [index,parallel] of [1,2,3,4,4,3,2,1].entries())items.push({...args,frames:f.sample_frames,parallel,
+          benchmark:{full_frames:args.frames,mode:'parts',repeat:index<4?1:2,group},ae_backend:'background',ae_mfr:'off',mfr_in_parts:false,deliver:'none'});
+      } else for (const mfr of ['off','on']) items.push({...args,frames:f.sample_frames,benchmark:{full_frames:args.frames},ae_backend:'background',ae_mfr:mfr,deliver:'none'});
     } else items.push(args);
   }
   const batch=items.length>1 || ui.sheet.benchmark;
   ui.sheet.submissionId ||= window.crypto?.randomUUID?.() || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
-  const args=batch ? {path:scene.path,request_id:ui.sheet.submissionId,items:items.map(({path,...item})=>item)} : items[0];
+  const args={path:scene.path,request_id:ui.sheet.submissionId,items:items.map(({path,...item})=>item)};
   const names=[...new Set(items.map(x=>x.target))], bench=ui.sheet.benchmark;
   ui.sheet=null;render();
-  rmTask(batch ? 'rm_batch' : 'rm_add',args,{title:bench ? 'Ставлю тест скорости' : batch ? `Ставлю ${rmPlural(items.length,'задачу','задачи','задач')}` : `Ставлю «${names[0]}»`,
+  rmTask('rm_batch',args,{title:bench ? 'Ставлю тест скорости' : batch ? `Ставлю ${rmPlural(items.length,'задачу','задачи','задач')}` : `Ставлю «${names[0]}»`,
     done:r=>{setTimeout(()=>pcLoad(true),1000);return {title:r?.message || 'Поставил в очередь',lines:names.slice(0,6),
       action:{label:'К очереди',run:()=>{if (ui.page!=='render') navigate('render');render();}}};}});
 }
@@ -237,7 +272,29 @@ function rmAudit(scene,target,form) {
   if (!target.audited_at || !target.scene_stamp) errors.push("Сначала прочитайте сцену");
   if (form.output_mode === "scene" && !target.output) errors.push("В сцене не указан путь вывода — выберите «Папка рендера»");
   if (form.output_mode === "custom" && !/^[a-z]:\\/i.test(form.output_dir || "")) errors.push("Укажите полный путь своей папки, например E:\\Render");
+  const media = rmEffectiveMedia(target,form,scene.app);
+  warnings.push(...media.warnings);
+  if (scene.app==='ae' && form.ae_backend==='background' && Number(form.parallel)>4) warnings.push('5–8 частей — экспериментальный режим: каждая часть занимает отдельную RAM и VRAM.');
+  if (scene.app==='ae' && form.ae_backend==='background' && Number(form.parallel)>1 && form.mfr_in_parts==='1') warnings.push(RM_MFR_PARTS_WARN);
   return {errors, warnings, frames, a};
+}
+
+/** Аудит хранит размеры композиции. Показываем выбранный масштаб, не выдавая
+ * неизвестный Output Module resize/crop за проверенные размеры файла. */
+function rmEffectiveMedia(target,form,app='ae') {
+  const a=target.audit || {}, warnings=[];
+  const template=String(form.ae_template || '');
+  let divisor=app==='ae'?{full:1,half:2,quarter:4}[form.ae_resolution]:1;
+  if (!divisor) {
+    const resolution=String(a.resolution || '').trim().toLowerCase();
+    divisor=/^(full|полное|полный|1)$/.test(resolution)?1:/^(half|половина|половинное|½|2)$/.test(resolution)?2:/^(quarter|четверть|¼|4)$/.test(resolution)?4:0;
+  }
+  const transformed=[a.resize,a.crop].some(x=>x && !/^(off|false|выкл\.?|нет|0)$/i.test(String(x).trim()));
+  const known=divisor && !transformed && !template && Number(a.width)>0 && Number(a.height)>0;
+  if (!known && a.width && a.height) warnings.push(`Композиция ${a.width}×${a.height}; итоговый размер подтвердит AE${transformed?' (resize/crop в Output Module)':''}.`);
+  if (template) warnings.push('Параметры выбранного Output Module подтвердит AE. Нестандартное видео рендерится одним процессом, чтобы сохранить кодек и прозрачность.');
+  const format=template ? `Шаблон: ${template}` : a.format || 'Формат из проекта';
+  return {width:known?Math.ceil(Number(a.width)/divisor):null,height:known?Math.ceil(Number(a.height)/divisor):null,format,warnings};
 }
 
 const rmFps = fps => Number.isFinite(Number(fps)) && Number(fps) > 0 ? `${+Number(fps).toFixed(3)} fps` : "";
@@ -251,13 +308,16 @@ const rmPlural = (n, one, few, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ?
 /** Что рендерим — одной карточкой: кадры, длительность, размер, формат; ниже — предупреждения. */
 function rmSummary(s, chosen, f) {
   if (chosen.length > 1) {
-    const rows = chosen.slice(0, 6).map(t => `<div class="rm-sum-row"><span>${esc(t.target)}</span><b>${esc(rmFormFor(t, f).frames)}</b></div>`).join("");
-    const more = chosen.length > 6 ? `<p class="rm-sum-facts">и ещё ${chosen.length - 6}</p>` : "";
-    return `<div class="rm-summary"><b class="rm-sum-title">${rmPlural(chosen.length, "композиция", "композиции", "композиций")}</b>${rows}${more}</div>`;
+    const rows = chosen.map(t => {
+      const form=rmFormFor(t,f),audit=rmAudit(s,t,form),media=rmEffectiveMedia(t,form,s.app);
+      const facts=[form.frames,media.width?`${media.width}×${media.height}`:'',rmFps(audit.a.fps),media.format].filter(Boolean).join(' · ');
+      return `<div class="rm-sum-row"><span>${esc(t.target)}</span><b>${esc(facts)}</b></div>${audit.warnings.map(w=>`<p class="rm-warn">${esc(w)}</p>`).join('')}`;
+    }).join("");
+    return `<div class="rm-summary"><b class="rm-sum-title">${rmPlural(chosen.length, "композиция", "композиции", "композиций")}</b><details open><summary>Параметры и предупреждения всех композиций</summary>${rows}</details></div>`;
   }
-  const t = chosen[0], audit = rmAudit(s, t, rmFormFor(t, f)), a = audit.a, n = audit.frames?.count;
+  const t = chosen[0], audit = rmAudit(s, t, rmFormFor(t, f)), a = audit.a, n = audit.frames?.count,media=rmEffectiveMedia(t,f,s.app);
   const line1 = [n ? rmPlural(n, "кадр", "кадра", "кадров") : "", rmDuration(n, a.fps)].filter(Boolean).join(" · ");
-  const line2 = [a.width && a.height ? `${a.width}×${a.height}` : "", rmFps(a.fps), a.format || ""].filter(Boolean).join(" · ");
+  const line2 = [media.width && media.height ? `${media.width}×${media.height}` : "", rmFps(a.fps), media.format].filter(Boolean).join(" · ");
   const warn = audit.warnings.slice(0, 3).map(w => `<p class="rm-warn">${esc(w)}</p>`).join("") + (audit.warnings.length > 3 ? `<p class="rm-warn">и ещё ${audit.warnings.length - 3}</p>` : "");
   return `<div class="rm-summary"><b class="rm-sum-title">${esc(t.target)}</b>${line1 ? `<p class="rm-sum-facts">${esc(line1)}</p>` : ""}${line2 ? `<p class="rm-sum-facts">${esc(line2)}</p>` : ""}${warn}</div>`;
 }
@@ -280,14 +340,15 @@ function rmJobForm(s, t) {
   const errors = [...new Set(chosen.flatMap(x => rmAudit(s, x, rmFormFor(x, f)).errors))];
   const ae = s.app === "ae";
   const main = bench ? [
-    `<div class="rm-banner"><b>Тест скорости</b><span>Два коротких фоновых прогона — без MFR и с MFR. По ним видно, ускоряет ли MFR этот проект, и сколько займёт полный рендер. Без облака, в отдельную папку.</span><button type="button" class="text-action" data-action="rm-benchmark-exit">Отменить тест</button></div>`,
+    `<div class="rm-banner"><b>Тест скорости</b><span>${f.benchmark_mode==='parts'?'1–4 части, по две пробы в обратном порядке. Сравниваем время кадров; копирование проекта и сборка видео в замер не входят.':'Два коротких прогона — без MFR и с MFR.'} Тест пишет отдельную секвенцию без доставки и выключения ПК. Оценка полного рендера приблизительная.</span><button type="button" class="text-action" data-action="rm-benchmark-exit">Отменить тест</button></div>`,
+    rmField('Что сравнить',rmSegments('benchmark_mode',[['mfr','MFR'],['parts','1–4 части']],f.benchmark_mode || 'mfr')),
     rmField("Кадры для теста", `<input class="rm-input" data-form="sample_frames" value="${esc(f.sample_frames)}" inputmode="numeric" autocomplete="off">`, `2–120 кадров подряд внутри ${esc(f.frames)}.`),
   ] : [
     !many ? rmField("Кадры", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="${esc(t.frames || "1-100")}">`) : "",
     rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : ""), rmWhere(s, t, f) ? `<span class="rm-path">${esc(rmWhere(s, t, f))}</span>` : ""),
     rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver)),
     ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
-    ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", RM_PARTS, String(f.parallel || set.ae_parallel))
+    ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", RM_PARTS, String(f.parallel || set.ae_parallel)) + (!many ? rmPartAdvice(s,t,f):'')
       + `<p class="pc-after-label rm-test-label">Для теста</p>` + rmSegments("parallel", RM_PARTS_TEST, String(f.parallel || set.ae_parallel)), RM_PARTS_NOTE) : "",
     ae && f.ae_backend === "background" && Number(f.parallel || set.ae_parallel) > 1 && !bench
       ? `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="mfr_in_parts" data-value="${f.mfr_in_parts === "1" ? "" : "1"}" aria-pressed="${f.mfr_in_parts === "1"}"><span>MFR в каждой части (тест)</span><i class="rm-switch"></i></button>${f.mfr_in_parts === "1" ? `<p class="rm-warn rm-mfr-warn">${RM_MFR_PARTS_WARN}</p>` : ""}` : "",
@@ -442,33 +503,56 @@ function rmTask(cmd, args, { title, done, after } = {}) {
     typical: flow.typical, started: Date.now(), takenAt: 0, woke: false, status: "running", min: false, open: false };
   rmTasks().push(task);
   rmDock();
+  let deadline=task.started+6*60000,deadlineTimer;
   const finish = (ok, result) => {
     if (task.status !== "running") return;
+    clearTimeout(deadlineTimer);
     try { after?.(); } catch (_) {}
     let out = {};
     try { out = (ok && done ? done(result) : null) || {}; } catch (_) {}
     task.status = ok ? "done" : "failed";
     task.ended = Date.now();
-    task.result = { title: out.title || result?.message || (ok ? "Готово" : "Не получилось"), lines: out.lines || [], action: out.action || null };
+    const retry=!ok && ['rm_batch','rm_add'].includes(cmd) && args.request_id ? {label:'Проверить постановку без дублирования',run:()=>rmTask(cmd,args,{title,done,after})}:null;
+    task.result = { title: out.title || result?.message || (ok ? "Готово" : "Не получилось"), lines: out.lines || [], action: out.action || retry };
     task.min = false;
     task.open = false;  // сначала небольшое окно; подробности — по нажатию
     try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(ok ? "success" : "error"); } catch (_) {}
     rmDock();
     setTimeout(() => { if (!task.open) rmDismiss(task.id); }, 20000);
   };
+  const expired=()=> {
+    if (task.status!=='running') return true;
+    if (Date.now()<deadline) return false;
+    finish(false,{message:task.lastError ? 'Связь с компьютером потеряна — время ожидания истекло. Проверьте очередь перед повтором.' : 'Компьютер не ответил вовремя. Проверьте очередь перед повтором.'});return true;
+  };
+  const guard=()=>{if(!expired())deadlineTimer=setTimeout(guard,Math.max(1,deadline-Date.now()));};
+  guard();
   pcCall({ op: "send", cmd, args }).then(made => {
+    if (expired()) return;
     if (made?.error) throw new Error(made.error);
     if (made.woke) { task.woke = true; task.steps.splice(1, 0, RM_WAKE_STEP); task.typical += 120; }
-    const deadline = Date.now() + (made.woke ? 15 : 6) * 60000;
-    const poll = () => pcCall({ op: "result", id: made.id }).then(r => {
+    deadline = Date.now() + (made.woke ? 15 : 6) * 60000;
+    clearTimeout(deadlineTimer);guard();
+    task.commandId=made.id;
+    const poll = () => {
+      if (expired()) return;
+      task.lastAttempt=Date.now();
+      return pcCall({ op: "result", id: made.id }).then(r => {
+      if (expired()) return;
+      if (r?.error) throw new Error(r.error);
+      task.lastResponse=Date.now();task.lastError='';
       if (r?.status === "taken" && !task.takenAt) task.takenAt = Date.now();
       if (r?.status === "done") return finish(true, r.result || {});
       if (r?.status === "failed" || r?.status === "expired" || r?.status === "cancelled") {
         return finish(false, { message: r?.result?.message || (r.status === "expired" ? "Компьютер не забрал команду за 10 минут" : "Компьютер не выполнил команду") });
       }
-      if (Date.now() > deadline) return finish(false, { message: "Компьютер не ответил вовремя" });
       setTimeout(poll, 1200);
-    }).catch(() => setTimeout(poll, 2500));
+    }).catch(error => {
+      if (task.status!=='running') return;
+      task.lastError=String(error?.message || error);
+      if (/401|403|unauthorized|forbidden|auth_required|invalid_init_data/i.test(task.lastError)) return finish(false,{message:'Сессия истекла. Откройте Flow заново и проверьте очередь перед повтором.'});
+      if (!expired()) setTimeout(poll,2500);
+    });};
     poll();
   }).catch(error => { const m = String(error?.message || error); finish(false, { message: PC_ERRORS[m] || `Не получилось: ${m.slice(0, 80)}` }); });
   return task;
@@ -488,25 +572,20 @@ function rmTaskStep(t) {
   const per = Math.max(2, t.typical / Math.max(1, rest));
   return Math.min(t.steps.length - 1, base + Math.floor((Date.now() - t.takenAt) / 1000 / per));
 }
-function rmTaskPct(t) {
-  if (t.status !== "running") return 100;
-  const s = (Date.now() - t.started) / 1000;
-  return Math.min(95, Math.round(95 * (1 - Math.exp(-s / Math.max(3, t.typical)))));  // близко к концу, но не 100 до ответа
-}
 const rmSecs = ms => { const s = Math.max(0, Math.round(ms / 1000)); return s >= 60 ? `${Math.floor(s / 60)} мин ${s % 60} с` : `${s} с`; };
 
 function rmTaskHtml(t) {
-  const key = `${t.id}:${t.status}:${t.min}:${t.open}:${t.steps.length}`;
+  const key = `${t.id}:${t.status}:${t.min}:${t.open}:${t.steps.length}:${Boolean(t.lastError)}`;
   const icon = t.status === "done" ? pcIcon("check") : t.status === "failed" ? pcIcon("x") : `<i class="rm-t-spin"></i>`;
   if (t.status === "running" && t.min) {
-    return `<button type="button" class="rm-t-pill" data-key="${key}" data-rm-dock="unmin" data-id="${t.id}">${icon}<b>${esc(t.title)}</b><span class="rm-t-time">${rmSecs(Date.now() - t.started)} · ${rmTaskPct(t)}%</span></button>`;
+    return `<button type="button" class="rm-t-pill" data-key="${key}" data-rm-dock="unmin" data-id="${t.id}">${icon}<b>${esc(t.title)}</b><span class="rm-t-time">${rmSecs(Date.now() - t.started)}</span></button>`;
   }
   if (t.status === "running") {
     const step = rmTaskStep(t);
     return `<section class="rm-t" data-key="${key}" role="status"><div class="rm-t-head">${icon}<b>${esc(t.title)}</b><span class="rm-t-time">${rmSecs(Date.now() - t.started)}</span><button type="button" class="rm-t-min" data-rm-dock="min" data-id="${t.id}" aria-label="Свернуть">Свернуть</button></div>
-      <div class="rm-t-bar"><b style="width:${rmTaskPct(t)}%"></b></div>
+      <div class="pc-render-bar indeterminate"><b></b></div>
       <ol class="rm-t-steps">${t.steps.map((s, i) => `<li class="${i < step ? "done" : i === step ? "now" : ""}">${esc(s)}</li>`).join("")}</ol>
-      <p class="rm-t-note">Обычно до ${rmSecs(t.typical * 1000)}. Можно свернуть — итог появится здесь.</p></section>`;
+      <p class="rm-t-note">${t.lastError ? 'Нет связи с сервером. Повторяю проверку этой же команды.' : `Этапы ориентировочные; подтверждение придёт с ПК. Обычно до ${rmSecs(t.typical * 1000)}. Можно свернуть — итог появится здесь.`}</p></section>`;
   }
   const r = t.result || {};
   if (!t.open) {
@@ -541,9 +620,7 @@ function rmDock() {
       el = tmp.firstElementChild;
     } else if (t.status === "running") {
       const time = el.querySelector(".rm-t-time");
-      if (time) time.textContent = t.min ? `${rmSecs(Date.now() - t.started)} · ${rmTaskPct(t)}%` : rmSecs(Date.now() - t.started);
-      const bar = el.querySelector(".rm-t-bar b");
-      if (bar) bar.style.width = `${rmTaskPct(t)}%`;
+      if (time) time.textContent = rmSecs(Date.now() - t.started);
       const step = rmTaskStep(t);
       el.querySelectorAll(".rm-t-steps li").forEach((li, i) => { li.className = i < step ? "done" : i === step ? "now" : ""; });
     }
@@ -666,7 +743,7 @@ function rmAction(action, control) {
   if (action==='rm-preset') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
     const preset=scene && rmPresets(scene.app).find(p=>p.id===control.dataset.id);
-    if (f && preset) {for (const key of RM_PRESET_KEYS) if (key in preset.form) f[key]=preset.form[key];f.preset_id=(rmQueue().presets || []).some(p=>p.id===preset.id) ? preset.id : '';f.preset_name=preset.name;delete ui.sheet.submissionId;ui.sheet.confirm=false;render();}return true;
+    if (f && preset) {for (const key of RM_PRESET_KEYS) if (key in preset.form) f[key]=key==='mfr_in_parts' ? (preset.form[key]?'1':'') : key==='parallel'?String(preset.form[key]):preset.form[key];f.preset_id=(rmQueue().presets || []).some(p=>p.id===preset.id) ? preset.id : '';f.preset_name=preset.name;delete ui.sheet.submissionId;ui.sheet.confirm=false;render();}return true;
   }
   if (action==='rm-preset-save' || action==='rm-preset-delete') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
@@ -674,6 +751,7 @@ function rmAction(action, control) {
     const name=String(f.preset_name || '').trim();
     if (action==='rm-preset-save' && !name) {toast('Введите название пресета');return true;}
     const args=action==='rm-preset-delete' ? {action:'delete',id:control.dataset.id} : {action:'save',...(f.preset_id ? {id:f.preset_id} : {}),name,app:scene.app,form:Object.fromEntries(RM_PRESET_KEYS.map(k=>[k,f[k] || '']))};
+    if (args.form) {args.form.parallel=Number(f.parallel)||1;args.form.mfr_in_parts=f.mfr_in_parts==='1';}
     pcQuick('rm_presets',args,'rm-preset-save',r=>{ui.pc.data.rmQueue={...rmQueue(),presets:r?.presets || []};f.preset_id='';toast(action==='rm-preset-delete' ? 'Пресет удалён' : 'Пресет сохранён');render();});return true;
   }
   if (action === "rm-pause" || action === "rm-resume") {
