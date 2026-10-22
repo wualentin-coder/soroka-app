@@ -1027,9 +1027,9 @@ button.vpn-service { display: block; width: 100%; border: 0; background: transpa
 .rm-mfr-warn { margin: -2px 0 12px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 12%, transparent); font-size: 12px; }
 
 /* Панель долгих действий (render-queue.js rmDock): ход, «свернуть», окно итога — поверх листов, над нижним меню */
-.rm-dock { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); display: grid; gap: 8px; max-width: 440px; margin: 0 auto; pointer-events: none; }
+.rm-dock { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; max-width: 440px; max-height: calc(100dvh - 108px - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; margin: 0 auto; pointer-events: none; }
 .rm-dock[hidden] { display: none; }
-.rm-dock > * { pointer-events: auto; animation: rm-rise .28s cubic-bezier(.2, .9, .3, 1.1) both; }
+.rm-dock > * { min-width: 0; max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; pointer-events: auto; animation: rm-rise .28s cubic-bezier(.2, .9, .3, 1.1) both; }
 @keyframes rm-rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
 .rm-t { display: grid; gap: 10px; padding: 14px 14px 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface-raised); color: var(--text); box-shadow: 0 14px 40px rgb(0 0 0 / .28); }
 .rm-t-head { display: flex; align-items: center; gap: 10px; min-width: 0; }

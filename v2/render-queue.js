@@ -628,7 +628,8 @@ function rmDock() {
     }
     return el;
   });
-  dock.replaceChildren(...wanted);
+  wanted.forEach((el, i) => { if (dock.children[i] !== el) dock.insertBefore(el, dock.children[i] || null); });
+  while (dock.children.length > wanted.length) dock.lastElementChild.remove();
   clearTimeout(rmDock.timer);
   if (tasks.some(t => t.status === "running")) rmDock.timer = setTimeout(rmDock, 500);
 }
