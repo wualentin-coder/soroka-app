@@ -56,7 +56,7 @@ function sizeMovieCarousel(track) {
   filters.hidden=false;
   const viewport=window.visualViewport?.height || innerHeight;
   const counter=document.getElementById('movie-deck-count');
-  const footer=Math.max((counter?.offsetHeight || 22)+16,56);
+  const footer=(counter?.offsetHeight || 22)+8;
   const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
   const room=()=>viewport-(track.getBoundingClientRect().top+window.scrollY)-footer;
   filters.hidden=movieFiltersOpen===null ? width*1.5+208>room() : !movieFiltersOpen;
