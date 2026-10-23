@@ -1249,10 +1249,6 @@ body:has(.movie-deck) .fab { bottom:max(8px,env(safe-area-inset-bottom)); }
 .movie-library-screen .movie-type-chips { margin-bottom:6px; }
 @media(max-width:680px) { .app-shell:has(.movie-deck) > .fab { width:44px; height:44px; min-width:44px; min-height:44px; right:16px; border-radius:14px; } }
 
-.movie-random-fab { right:90px; background:var(--surface); color:var(--accent); border:1px solid var(--line); }
-.movie-random-fab:hover { background:var(--accent-soft); }
-@media(min-width:681px) { .movie-random-fab { right:102px; } }
-@media(max-width:680px) { .app-shell:has(.movie-deck) > .movie-random-fab { right:72px; } }
 .movie-view-sheet .movie-summary { display:block; overflow:visible; white-space:normal; overflow-wrap:anywhere; -webkit-line-clamp:unset; }
 
 /* «Компьютер»: действия сеткой 3×2; сон и выключение — тихими плитками (под ними окно подтверждения). */
