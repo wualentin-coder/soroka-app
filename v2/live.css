@@ -1194,7 +1194,10 @@ button.rm-t-pill { padding-right: 14px; }
 .movie-filter-toggle { flex:0 0 32px; display:grid; place-items:center; border:1px solid var(--line); border-radius:12px; background:var(--surface-soft); color:var(--muted); }
 .movie-filter-toggle .icon-sm { width:16px; height:16px; transition:transform .18s ease; }
 .movie-filter-toggle[aria-expanded="true"] { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
-.movie-filter-toggle[aria-expanded="true"] .icon-sm { transform:rotate(180deg); }
+.movie-filter-toggle[aria-expanded="true"] .icon-sm { transform:none; }
+.movie-folder-chips[hidden] { display:none!important; }
+.movie-island-row .movie-filter-toggle { border:0; background:transparent; border-radius:11px; }
+.movie-island-row .movie-filter-toggle[aria-expanded="true"] { color:var(--accent); background:var(--accent-soft); }
 .movie-carousel-filters[hidden] { display:none!important; }
 body:has(.movie-deck) .mobile-nav { display:none; }
 .main:has(.movie-deck) { padding-bottom:max(8px,env(safe-area-inset-bottom)); }
