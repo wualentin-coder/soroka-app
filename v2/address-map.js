@@ -9,7 +9,7 @@ function mapCategory(id) {
 }
 function mapCategoryBadge(id) {
   const category = mapCategory(id);
-  return category ? `<span class="map-category-badge" style="--map-color:${esc(category.color)}">${icon(category.icon || "pin", "icon-sm")}${esc(category.name)}</span>` : `<span class="map-category-badge">${icon("pin", "icon-sm")}Без категории</span>`;
+  return category ? `<span class="map-category-badge" style="--map-color:${esc(category.color)}">${icon(sectionIcon(category, "pin"), "icon-sm")}${esc(category.name)}</span>` : `<span class="map-category-badge">${icon("pin", "icon-sm")}Без категории</span>`;
 }
 function mapPointItems() {
   return savedVisibleItems().filter(item => !ui.mapCategory || item.categoryId === ui.mapCategory);
@@ -175,12 +175,40 @@ document.addEventListener("input", event => {
   clearTimeout(addressTimer);
   addressTimer = setTimeout(() => void findAddress(form), 650);
 }, true);
+/**
+ * Адреса по близости — как скидочные карты: ближние сверху. Позицию спрашиваем
+ * при открытии раздела, не чаще раза в две минуты; до ответа — прошлая из кэша.
+ */
+let addressPosAsking = false;
+function addressPosition() {
+  const known = ui.myPos || cachedPosition();
+  if (!addressPosAsking && (!ui.myPos || Date.now() - (ui.myPos.at || 0) > 120000)) {
+    addressPosAsking = true;
+    requestPosition().then(pos => {
+      addressPosAsking = false;
+      if (!pos) return;
+      ui.myPos = { ...pos, at: Date.now() };
+      if (ui.page === "saved" && ui.savedCategory === "addresses" && !ui.sheet) render();
+    });
+  }
+  return known && Number.isFinite(known.lat) ? known : null;
+}
+/** Метры до адреса или null: нет позиции или у адреса нет точки на карте. */
+function addressDistance(item) {
+  const me = ui.myPos || cachedPosition();
+  const at = mapPointCoordinates(item);
+  return me && at ? distanceM(me, { lat: at[0], lng: at[1] }) : null;
+}
+function distanceLabel(m) {
+  return m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} м` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",")} км`;
+}
 function renderAddressWorkspace() {
+  addressPosition();
   const categories = mapCategories();
   const items = mapPointItems();
   const mapped = items.filter(item => mapPointCoordinates(item));
   const selected = items.find(item => item.id === ui.mapSelectedId);
-  const categoryChips = `<div class="map-categories" aria-label="Категории адресов"><button class="map-category-chip ${!ui.mapCategory ? "active" : ""}" type="button" data-action="map-filter" data-category="" aria-pressed="${!ui.mapCategory}">Все <span>${savedItems("addresses").length}</span></button>${categories.filter(category => ui.mapCategory === category.id || savedItems("addresses").some(item => item.categoryId === category.id)).map(category => `<button class="map-category-chip ${ui.mapCategory === category.id ? "active" : ""}" type="button" data-action="map-filter" data-category="${esc(category.id)}" aria-pressed="${ui.mapCategory === category.id}" style="--map-color:${esc(category.color)}">${icon(category.icon || "pin", "icon-sm")}${esc(category.name)}<span>${savedItems("addresses").filter(item => item.categoryId === category.id).length}</span></button>`).join("")}<button class="map-manage-chip" type="button" data-action="map-manage-categories">${icon("settings", "icon-sm")}Разделы</button></div>`;
+  const categoryChips = `<div class="map-categories" aria-label="Категории адресов"><button class="map-category-chip ${!ui.mapCategory ? "active" : ""}" type="button" data-action="map-filter" data-category="" aria-pressed="${!ui.mapCategory}">Все <span>${savedItems("addresses").length}</span></button>${categories.filter(category => ui.mapCategory === category.id || savedItems("addresses").some(item => item.categoryId === category.id)).map(category => `<button class="map-category-chip ${ui.mapCategory === category.id ? "active" : ""}" type="button" data-action="map-filter" data-category="${esc(category.id)}" aria-pressed="${ui.mapCategory === category.id}" style="--map-color:${esc(category.color)}">${icon(sectionIcon(category, "pin"), "icon-sm")}${esc(category.name)}<span>${savedItems("addresses").filter(item => item.categoryId === category.id).length}</span></button>`).join("")}<button class="map-manage-chip" type="button" data-action="map-manage-categories">${icon("settings", "icon-sm")}Разделы</button></div>`;
   const switcher = `<div class="map-view-switch" role="group" aria-label="Вид адресов"><button type="button" class="${ui.addressView === "list" ? "active" : ""}" data-action="map-view" data-view="list" aria-pressed="${ui.addressView === "list"}">${icon("note", "icon-sm")}Список</button><button type="button" class="${ui.addressView === "map" ? "active" : ""}" data-action="map-view" data-view="map" aria-pressed="${ui.addressView === "map"}">${icon("pin", "icon-sm")}Карта</button></div>`;
   const map = `<div class="map-frame ${ui.mapPlacing ? "is-placing" : ""}"><div id="address-map" class="address-map" role="application" aria-label="Карта сохранённых адресов"></div><button class="map-locate" type="button" data-action="map-locate" aria-label="Где я">${icon("locate")}</button><div class="map-empty-fallback" id="map-fallback" hidden>Карта не загрузилась. Адреса доступны в списке.</div>${ui.mapPlacing ? `<div class="map-place-hint">Нажмите на карте, чтобы поставить метку <button type="button" data-action="map-cancel-place">Отмена</button></div>` : ""}</div>${mapped.length ? `<div class="map-point-strip" aria-label="Метки на карте">${mapped.map(item => `<button type="button" class="${ui.mapSelectedId === item.id ? "active" : ""}" data-action="map-select-point" data-id="${esc(item.id)}" style="--map-color:${esc(mapCategory(item.categoryId)?.color || "#78beb8")}"><span></span>${esc(item.title)}</button>`).join("")}</div>` : ""}${selected ? renderMapPointCard(selected) : `<p class="map-caption">Нажмите на метку или выберите место под картой.</p>`}${items.length > mapped.length ? `<p class="section-note">${items.length - mapped.length} адресов пока без метки на карте. Координаты можно добавить при редактировании.</p>` : ""}`;
   const list = `<div id="saved-results" class="saved-results">${items.length ? `<div class="record-list">${items.map(item => savedRecordCard(item, "addresses")).join("")}</div>` : emptyCard("Адресов нет", "Добавьте точку на карте или измените фильтр.")}</div>`;
@@ -189,7 +217,7 @@ function renderAddressWorkspace() {
 function renderMapCategoriesSheet() {
   const editing = mapCategory(ui.sheet.editCategoryId);
   const options = [["event", "Дом"], ["project", "Работа"], ["bookmark", "Место"], ["arrow", "Поездка"], ["wallet", "Покупки"], ["pin", "Метка"]];
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet map-categories-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Разделы адресов</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">Создавайте свои категории и назначайте им цвет и значок.</p><div class="map-category-list">${mapCategories().map(category => { const count = savedItems("addresses").filter(item => item.categoryId === category.id).length; return `<div class="map-category-row"><span class="map-category-symbol" style="--map-color:${esc(category.color)}">${icon(category.icon || "pin")}</span><span><strong>${esc(category.name)}</strong><small>${count} ${word(count, "место", "места", "мест")}</small></span><button type="button" data-action="map-category-edit" data-id="${esc(category.id)}" aria-label="Изменить ${esc(category.name)}">${icon("note", "icon-sm")}</button><button type="button" data-action="map-category-delete" data-id="${esc(category.id)}" aria-label="Удалить ${esc(category.name)}">${icon("trash", "icon-sm")}</button></div>`; }).join("")}</div><form id="map-category-form"><h3>${editing ? "Изменить раздел" : "Новый раздел"}</h3>${savedFormField("Название", "name", editing?.name || "", "text", 'maxlength="40" required autofocus')}<div class="field-row"><label class="field">Значок<select name="icon">${options.map(([value, label]) => `<option value="${value}" ${editing?.icon === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field">Цвет<input name="color" type="color" value="${esc(editing?.color || "#8dbbb4")}"></label></div><div class="sheet-actions">${editing ? `<button class="ghost-button" type="button" data-action="map-category-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${editing ? "Сохранить" : "Создать раздел"}</button></div></form></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet map-categories-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Разделы адресов</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">Создавайте свои категории и назначайте им цвет и значок.</p><div class="map-category-list">${mapCategories().map(category => { const count = savedItems("addresses").filter(item => item.categoryId === category.id).length; return `<div class="map-category-row"><span class="map-category-symbol" style="--map-color:${esc(category.color)}">${icon(sectionIcon(category, "pin"))}</span><span><strong>${esc(category.name)}</strong><small>${count} ${word(count, "место", "места", "мест")}</small></span><button type="button" data-action="map-category-edit" data-id="${esc(category.id)}" aria-label="Изменить ${esc(category.name)}">${icon("note", "icon-sm")}</button><button type="button" data-action="map-category-delete" data-id="${esc(category.id)}" aria-label="Удалить ${esc(category.name)}">${icon("trash", "icon-sm")}</button></div>`; }).join("")}</div><form id="map-category-form"><h3>${editing ? "Изменить раздел" : "Новый раздел"}</h3>${savedFormField("Название", "name", editing?.name || "", "text", 'maxlength="40" required autofocus')}<div class="field-row"><label class="field">Значок<select name="icon">${options.map(([value, label]) => `<option value="${value}" ${editing?.icon === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field">Цвет<input name="color" type="color" value="${esc(editing?.color || "#8dbbb4")}"></label></div><div class="sheet-actions">${editing ? `<button class="ghost-button" type="button" data-action="map-category-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${editing ? "Сохранить" : "Создать раздел"}</button></div></form></section></div>`;
 }
 function disposeAddressMap() {
   if (miniMap) { miniMap.remove(); miniMap = null; }
@@ -218,7 +246,7 @@ function mountMiniMap() {
   miniMap = map;
   addBaseLayer(map, () => map === miniMap);
   const category = mapCategory(item.categoryId);
-  L.marker(coordinates, { icon: L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker selected" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(category?.icon || "pin", "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] }) }).addTo(map);
+  L.marker(coordinates, { icon: L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker selected" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(sectionIcon(category, "pin"), "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] }) }).addTo(map);
 }
 /*
  * Где я: точка и круг погрешности на карте. Сначала — геопозиция Telegram
@@ -297,7 +325,7 @@ function mountAddressMap() {
   void showMyPosition(false);
   items.forEach(item => {
     const category = mapCategory(item.categoryId);
-    const markerIcon = L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker ${item.id === ui.mapSelectedId ? "selected" : ""}" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(category?.icon || "pin", "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] });
+    const markerIcon = L.divIcon({ className: "map-marker-shell", html: `<span class="map-marker ${item.id === ui.mapSelectedId ? "selected" : ""}" style="--map-color:${esc(category?.color || "#78beb8")}">${icon(sectionIcon(category, "pin"), "icon-sm")}</span>`, iconSize: [38, 46], iconAnchor: [19, 43] });
     L.marker(mapPointCoordinates(item), { icon: markerIcon, title: item.title }).addTo(addressMap).on("click", () => selectMapPoint(item.id));
   });
   addressMap.on("click", event => {
