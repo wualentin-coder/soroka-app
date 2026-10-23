@@ -3,7 +3,6 @@ let movieDeck = null;
 let movieDeckId = "";
 let movieFiltersOpen = null;
 let movieLayoutObserver = null;
-let movieRandomSpin = null;
 let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view") === "carousel"; } catch { return false; } })();
 function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
 function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
@@ -11,7 +10,7 @@ function movieBuiltinSection(section) { return /^(кино|фильмы|сери
 function movieCarouselToggle() {
   if (!moviePlansTab()) return "";
   const label = movieDeckMode ? "Показать списком" : "Показать каруселью";
-  return `<button type="button" class="saved-tool movie-carousel-toggle ${movieDeckMode ? "active" : ""}" data-action="movie-carousel-toggle" aria-label="${label}" aria-pressed="${movieDeckMode}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${movieDeckMode ? '<rect x="4" y="5" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/>' : '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 7v10M21 7v10"/>'}</svg>${movieDeckMode ? "Список" : "Карусель"}</button>`;
+  return `<button type="button" class="icon-button movie-carousel-toggle ${movieDeckMode ? "active" : ""}" data-action="movie-carousel-toggle" aria-label="${label}" aria-pressed="${movieDeckMode}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${movieDeckMode ? '<rect x="4" y="5" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/>' : '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 7v10M21 7v10"/>'}</svg></button>`;
 }
 function movieCarouselScores(item) {
   const rating=Number(item.imdbRating)>0?['IMDb',item.imdbRating]:Number(item.kinopoiskRating)>0?['КП',item.kinopoiskRating]:Number(item.rating)>0?['Моя оценка',item.rating]:null;
@@ -28,7 +27,7 @@ function mountMovieCarousel() {
   if (movieDeck?.track === track) return;
   movieLayoutObserver?.disconnect();movieLayoutObserver=null;
   movieDeck?.destroy(); movieDeck = null;
-  if (!track || !movieCarouselEnabled()) {movieRandomSpin=null;return;}
+  if (!track || !movieCarouselEnabled()) return;
   const items = savedVisibleItems();
   if (!items.length) return;
   const index = Math.max(0, items.findIndex(item => item.id === movieDeckId));
@@ -42,24 +41,13 @@ function mountMovieCarousel() {
     const count = document.getElementById("movie-deck-count");
     if (count) count.textContent = `${i + 1} из ${items.length}`;
   }});
-  if(movieRandomSpin){
-    const target=items.findIndex(item=>item.id===movieRandomSpin.id);
-    if(target>=0)runMovieRandomSpin(target);else movieRandomSpin=null;
-  }
   if(typeof ResizeObserver==='function'){
     movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.paint();}});
     track.closest('.movie-library-screen')?.querySelectorAll('.notes-topline,.saved-section-heading,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
   }
 }
-function runMovieRandomSpin(index){
-  const button=document.querySelector('.movie-random-button');
-  button?.setAttribute('aria-busy','true');
-  movieDeck.spinTo(index,Math.max(0,movieRandomSpin.until-performance.now()),()=>{
-    movieRandomSpin=null;document.querySelector('.movie-random-button')?.removeAttribute('aria-busy');
-  });
-}
 function sizeMovieCarousel(track) {
-  const screen=track.closest('.movie-library-screen'),filters=screen?.querySelector('.movie-carousel-filters');
+  const screen=track.closest('.movie-library-screen'),filters=screen?.querySelector('.movie-folder-chips');
   const toggle=screen?.querySelector('.movie-filter-toggle');
   if(!filters)return;
   filters.hidden=false;
@@ -75,9 +63,8 @@ function sizeMovieCarousel(track) {
 document.addEventListener("click", event => {
   if(event.target.closest('[data-action="movie-random"]') && movieCarouselEnabled() && movieDeck){
     event.preventDefault();event.stopImmediatePropagation();
-    if(movieRandomSpin)return;
     const items=savedVisibleItems(),index=Math.floor(Math.random()*items.length);
-    movieRandomSpin={id:items[index].id,until:performance.now()+3600};runMovieRandomSpin(index);return;
+    if(items.length)movieDeck.select(index);return;
   }
   const filters=event.target.closest('[data-action="movie-filters-toggle"]');
   if(filters){
@@ -85,7 +72,7 @@ document.addEventListener("click", event => {
     movieFiltersOpen=filters.getAttribute('aria-expanded')!=='true';
     if(movieDeck){sizeMovieCarousel(movieDeck.track);movieDeck.paint();}
     else {
-      const panel=filters.closest('.movie-library-screen')?.querySelector('.movie-carousel-filters');
+      const panel=filters.closest('.movie-library-screen')?.querySelector('.movie-folder-chips');
       if(panel)panel.hidden=!movieFiltersOpen;
       filters.setAttribute('aria-expanded',String(movieFiltersOpen));
     }
