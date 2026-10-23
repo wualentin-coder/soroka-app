@@ -136,7 +136,7 @@ function financeTransferRow(t) {
 }
 /** Операции по дням: заголовок дня и его итог (расходы минус доходы не смешиваем — показываем траты). */
 function financeDays(items, withTransfers) {
-  const rows = [...items.map(item => ({ date: item.date, html: financeTransactionRow(item), spent: item.kind === "expense" && !isReconcile(item) && item.currency === "RUB" ? Number(item.amount) || 0 : 0 })),
+  const rows = [...items.map(item => ({ date: item.date, html: financeTransactionRow(item) + expenseCategoryPicker(item), spent: item.kind === "expense" && !isReconcile(item) && item.currency === "RUB" ? Number(item.amount) || 0 : 0 })),
     ...(withTransfers ? monthTransfers().map(t => ({ date: t.date, html: financeTransferRow(t), spent: 0 })) : [])];
   const days = new Map();
   for (const row of rows) { if (!days.has(row.date)) days.set(row.date, []); days.get(row.date).push(row); }
@@ -146,6 +146,21 @@ function financeDays(items, withTransfers) {
     return `<section class="tx-day"><header class="tx-day-head"><span>${esc(financeDayLabel(date))}</span>${spent ? `<b>−${demoMoney(spent)}</b>` : ""}</header><div class="list-panel">${list.map(r => r.html).join("")}</div></section>`;
   }).join("");
 }
+function expenseCategoryPicker(item) {
+  if (item.kind !== 'expense' || String(item.category).toLowerCase() !== 'прочее') return '';
+  return `<label class="expense-category-picker">Выбрать категорию<select data-expense-category="${esc(item.id)}"><option value="">Категория…</option>${FINANCE_CATEGORIES.filter(c => c !== 'Прочее').map(c => `<option>${esc(c)}</option>`).join('')}</select><small>Запомню для похожего платежа</small></label>`;
+}
+document.addEventListener('change', async event => {
+  const select = event.target.closest?.('[data-expense-category]');
+  if (!select || !select.value) return;
+  const id = select.dataset.expenseCategory, category = select.value;
+  select.disabled = true;
+  try {
+    if (window.sorokaExpenseCategory) await window.sorokaExpenseCategory(id, category);
+    else { const tx = data.finance.transactions.find(t => t.id === id); if (tx) tx.category = category; save(); }
+    render(); toast('Категория сохранена для следующих похожих платежей');
+  } catch { select.disabled = false; select.value = ''; toast('Не удалось сохранить категорию'); }
+});
 /** Название без служебного хвоста: «Энергокомфорт Карелия — лицевой счёт 999900341171» → «Энергокомфорт Карелия». */
 function financeTitle(title) {
   return String(title || "").replace(/\s*[—–-]\s*(?:лицевой сч[её]т|л\/с|договор|счёт №)\s*[\d\s]+$/i, "").replace(/\s+(?:л\/с|лицевой сч[её]т)\s*\d+/i, "").trim() || String(title || "");
