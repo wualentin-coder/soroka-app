@@ -983,6 +983,10 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .movie-card-score { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; color: #e2a83b; font-size: 12px; }
 .movie-card-score .icon { width: 12px; height: 12px; fill: currentColor; stroke: none; }
 .movie-seen-tabs.three { grid-template-columns: repeat(3, 1fr); }
+.movie-seen-tabs.four { grid-template-columns: repeat(4, 1fr); }
+.movie-seen-tabs.four button { padding: 0 2px; font-size: 12.5px; white-space: nowrap; }
+/* Режимы страницы (Финансы, Архив) — тот же сегментный переключатель, что у Фильмов и Материалов; фильтры — чипами. */
+.movie-seen-tabs.page-modes { margin-bottom: 14px; }
 .movie-seen-tabs.three button { padding: 0 4px; font-size: 12.5px; white-space: nowrap; }
 .saved-more { width: 100%; margin: 12px 0 4px; justify-content: center; }
 /* Смахнули влево: настроить, не интересно, поделиться. */
@@ -2281,3 +2285,155 @@ body.cal-just-dragged .calendar-grid, body.cal-just-dragged .calendar-grid > * {
 .vpn-ex-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 8px; }
 .vpn-ex-add input { min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; outline: none; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; }
 .vpn-ex-add input:focus { border-color: var(--accent); }
+
+/* Подписанные инструменты раздела (Фильмы: «Случайный», «Карусель») — в строке сортировки. */
+.saved-sort-row { gap: 8px; align-items: center; }
+.saved-tool { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.saved-tool.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.saved-sort-row .saved-tool + .saved-sort-pill, .saved-sort-row .saved-tool + .saved-tool { margin-left: 0; }
+.saved-sort-row:has(.saved-tool) { justify-content: flex-start; flex-wrap: wrap; }
+.saved-sort-row:has(.saved-tool) .saved-sort-pill { margin-left: auto; }
+
+/* Платёж одной строкой: справа сумма и под ней «Списалось»; нажатие на карточку — настройка. */
+.payment-card { grid-template-columns: 40px minmax(0, 1fr) auto; }
+.payment-card .payment-actions { grid-column: 3; grid-row: 2; justify-content: flex-end; margin: 2px 0 0; padding: 0; border-top: 0; }
+.payment-card .payment-actions:empty { display: none; }
+.payment-card .payment-actions button { min-height: 30px; padding: 0 12px; font-size: 12px; position: relative; }
+.payment-card .payment-actions button::after { content: ""; position: absolute; inset: -7px -4px; }
+.payment-card .list-icon { grid-row: 1 / span 2; align-self: center; }
+.payment-card .list-copy { grid-row: 1 / span 2; }
+
+/* Заглушка без картинки — одна для рецептов и товаров: буква на мягком тёплом цвете.
+   В тёмной теме приглушённее, чтобы не светилась ярким пятном среди карточек. */
+.product-image.blank { display: grid; place-items: center; }
+.product-image.blank b { font-size: 34px; font-weight: 800; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.15); }
+:is(.recipe-image, .product-image).blank { background: linear-gradient(135deg, hsl(var(--h, 30) 80% 86%), hsl(calc(var(--h, 30) + 25) 75% 72%)) !important; }
+html[data-theme="dark"] :is(.recipe-image, .product-image).blank { background: linear-gradient(135deg, hsl(var(--h, 30) 38% 34%), hsl(calc(var(--h, 30) + 25) 42% 24%)) !important; }
+html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(var(--h, 30) 70% 88%); text-shadow: none; }
+
+/* Пароли: вход по мастер-паролю */
+.vault-lock-card { display: grid; gap: 10px; text-align: left; }
+.vault-lock-card h2, .vault-lock-card > .list-icon { text-align: center; }
+.vault-lock-card .primary-button { justify-self: stretch; }
+.vault-warn { color: var(--warn, #d6404d); font-size: 13px; }
+.vault-legacy { display: grid; gap: 8px; margin: 0 0 12px; }
+
+/* Многотомный архив одной карточкой */
+.file-group { padding: 0; min-height: 0; overflow: hidden; }
+.file-group-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; padding: 15px; border: 0; background: none; color: inherit; text-align: left; font: inherit; }
+.file-group-head .record-kicker { display: inline-flex; align-items: center; gap: 6px; }
+.file-group-head .record-meta { display: flex; justify-content: space-between; width: 100%; }
+.file-group.has-gap .file-group-head .record-meta span:first-child { color: var(--warn); }
+.file-group-parts { display: grid; border-top: 1px solid var(--line); }
+.file-group-part { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 15px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; }
+.file-group-part:last-child { border-bottom: 0; }
+.file-group-part span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-group-part .icon:last-child { color: var(--muted); }
+
+/* Выходные и праздники в календаре */
+.calendar-day.is-off:not(.selected) > span:first-child { color: #e5484d; }
+.calendar-day.outside.is-off > span:first-child { color: inherit; }
+.calendar-day.is-holiday:not(.selected)::after { content: ""; position: absolute; top: 7px; right: calc(50% - 13px); width: 4px; height: 4px; border-radius: 50%; background: #e5484d; }
+.calendar-day.is-workday:not(.selected) > span:first-child { text-decoration: underline dotted; text-underline-offset: 3px; }
+.date-agenda .section-heading h2 { display: flex; flex-direction: column; gap: 2px; }
+.day-note { text-transform: none; font-size: 12px; font-weight: 600; color: var(--muted); }
+.day-note.is-off { color: #e5484d; }
+.calendar-legend .holiday-dot { background: #e5484d; }
+
+/* ---------- Документы ---------- */
+.doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.doc-grid + .section-note { margin-bottom: 84px; }
+.doc-tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 150px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); text-align: left; font: inherit; }
+.doc-tile .doc-icon { width: 64px; height: 64px; align-self: center; margin-top: 8px; color: var(--muted); }
+.doc-tile.is-filled .doc-icon { color: var(--accent); }
+.doc-tile-name { font-size: 14px; font-weight: 700; line-height: 1.25; padding-right: 26px; }
+.doc-tile-mark, .doc-tile-add { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; }
+.doc-tile-mark { background: var(--accent); color: var(--accent-ink); }
+.doc-tile-add { background: var(--surface-soft); color: var(--muted); }
+.doc-tile-new { border-style: dashed; }
+.docs-lock-note { margin: 0 0 12px; }
+.doc-sheet .doc-face { margin: 4px 0 14px; }
+.doc-fields { display: grid; gap: 6px; }
+.doc-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; font: inherit; }
+.doc-field span { display: grid; gap: 2px; min-width: 0; }
+.doc-field small { color: var(--muted); font-size: 12px; }
+.doc-field b { font-weight: 600; overflow-wrap: anywhere; }
+.doc-field > .icon { flex: none; color: var(--accent); }
+.doc-copy-all { width: 100%; margin-bottom: 10px; }
+.doc-photos, .doc-photo-edit { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.doc-photos button { padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: none; }
+.doc-photos img, .doc-photo-edit img { display: block; width: 84px; height: 84px; object-fit: cover; border-radius: 10px; }
+.doc-photo-edit span { position: relative; }
+.doc-photo-edit span .icon-button { position: absolute; top: 2px; right: 2px; width: 26px; height: 26px; min-height: 0; background: rgba(0,0,0,.55); color: #fff; }
+.doc-photo-add { display: grid; place-items: center; align-content: center; gap: 4px; width: 84px; height: 84px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); text-align: center; }
+.doc-photo-add small { font-size: 10px; line-height: 1.2; padding: 0 4px; }
+.doc-note { margin: 12px 0 0; color: var(--muted); white-space: pre-wrap; }
+.doc-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.doc-form .field { min-width: 0; }
+.doc-wide { grid-column: 1 / -1; }
+.doc-row-edit { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 6px; align-items: center; }
+.doc-row-edit input { min-width: 0; }
+.doc-photo-full { display: grid; place-items: center; background: rgba(0,0,0,.92); }
+.doc-photo-full img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.doc-photo-full > .icon-button { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px; background: rgba(255,255,255,.15); color: #fff; }
+
+/* Лицевая сторона: бумага, а не тема приложения — одинаково в светлой и тёмной. */
+.doc-face { --ink: #2b2730; position: relative; border-radius: 14px; color: var(--ink); overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.18); font-family: inherit; }
+.doc-face small { display: block; font-size: 9px; letter-spacing: .02em; opacity: .7; }
+.doc-face b { font-size: 13px; font-weight: 700; }
+.df-row { min-width: 0; }
+.df-row b { display: block; overflow-wrap: anywhere; }
+.df-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.df-photo { flex: none; width: 74px; height: 94px; border-radius: 4px; background: rgba(0,0,0,.08); overflow: hidden; display: grid; place-items: center; }
+.df-photo img { width: 100%; height: 100%; object-fit: cover; }
+.df-photo svg { width: 46px; fill: none; stroke: rgba(0,0,0,.3); stroke-width: 2; }
+.df-data { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.df-title { margin: 0; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.df-sub { margin: 2px 0 0; font-size: 10px; opacity: .75; }
+
+.df-passport { background: #f3e6e4; }
+.df-passport .df-page { padding: 14px 16px; background:
+  repeating-radial-gradient(circle at 20% 30%, rgba(176,84,96,.07) 0 2px, transparent 2px 7px),
+  linear-gradient(160deg, #f6e9e6, #ead6d6); }
+.df-passport .df-top { display: grid; gap: 8px; border-bottom: 1px dashed rgba(120,60,70,.35); }
+.df-passport .df-state { margin: 0; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #8a3b47; }
+.df-passport .df-bottom { display: flex; gap: 12px; padding-right: 34px; }
+.df-serial { position: absolute; right: 8px; bottom: 14px; writing-mode: vertical-rl; transform: rotate(180deg); font: 700 15px/1 ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: .12em; color: #c0283b; }
+
+.df-foreign { background: linear-gradient(170deg, #e9eef6, #d9e2ef); }
+.df-band { display: flex; flex-direction: column; padding: 10px 16px; background: #1f3a68; color: #f2d98c; }
+.df-band b { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
+.df-band span { font-size: 10px; color: #dbe4f5; }
+.df-foreign .df-body { display: flex; gap: 12px; padding: 12px 16px; }
+.df-lat { margin-top: -3px; font-size: 10px !important; opacity: .65 !important; letter-spacing: .06em !important; }
+.df-mrz { display: grid; padding: 8px 12px 12px; background: rgba(255,255,255,.55); font: 600 10.5px/1.45 ui-monospace, "OCR-B", Menlo, monospace; letter-spacing: .08em; white-space: pre; overflow: hidden; }
+
+.df-inn { padding: 8px; background: #f7f4e8; }
+.df-frame { display: grid; gap: 8px; padding: 16px; text-align: center; border: 3px double #4f7d58; border-radius: 8px; background:
+  repeating-linear-gradient(45deg, rgba(79,125,88,.05) 0 3px, transparent 3px 8px), #fbf9ef; }
+.df-emblem { justify-self: center; width: 34px; height: 38px; border-radius: 4px 4px 17px 17px; background: radial-gradient(circle at 50% 40%, #c9a646 0 30%, #a8862d 31% 100%); }
+.df-inn .df-name { margin: 4px 0; font-size: 15px; font-weight: 700; }
+.df-inn .df-pair { text-align: left; }
+.df-cap { font-weight: 800; opacity: .9 !important; font-size: 11px !important; }
+.df-boxes { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.df-boxes i { display: grid; place-items: center; height: 26px; border: 1px solid #4f7d58; border-radius: 3px; background: #fff; font: 700 14px ui-monospace, Menlo, monospace; font-style: normal; }
+
+.df-snils { --ink: #10331d; padding: 16px; background: linear-gradient(135deg, #a9d8a2, #6fb877 60%, #5aa565); }
+.df-snils .df-title { font-size: 13px; }
+.df-snils .df-number { margin: 12px 0; font: 800 22px/1 ui-monospace, Menlo, monospace; letter-spacing: .06em; }
+.df-snils .df-rest { font-size: 13px; }
+
+.df-oms { padding: 0 16px 16px; background: #fff; border: 1px solid #d5dfef; }
+.df-stripe { display: flex; align-items: center; gap: 8px; margin: 0 -16px 8px; padding: 10px 16px; background: linear-gradient(90deg, #1d63b8, #3c8ae0); color: #fff; }
+.df-stripe b { font-size: 14px; color: #fff; letter-spacing: .06em; text-transform: uppercase; }
+.df-cross { width: 18px; height: 18px; background: linear-gradient(#fff, #fff) center/6px 18px no-repeat, linear-gradient(#fff, #fff) center/18px 6px no-repeat; }
+.df-oms .df-number { margin: 10px 0; font: 800 19px/1 ui-monospace, Menlo, monospace; letter-spacing: .04em; color: #1d4f8f; }
+.df-oms .df-name { font-size: 14px; }
+
+.df-copies { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; background: var(--surface-soft); box-shadow: none; }
+.df-copies button { padding: 0; border: 0; background: none; border-radius: 8px; overflow: hidden; aspect-ratio: 3 / 4; }
+.df-copies img { width: 100%; height: 100%; object-fit: cover; }
+.df-copies p { grid-column: 1 / -1; margin: 6px; color: var(--muted); }
+
+.df-custom { display: grid; gap: 8px; padding: 16px; background: linear-gradient(160deg, #f4f2ee, #e8e4dc); }
+.df-custom-icon .doc-icon { width: 30px; height: 30px; color: #6b6458; }
