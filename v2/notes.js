@@ -80,7 +80,7 @@ function saveNoteQuietly() {
 function renderNoteSheet(item) {
   const d = noteDraft(item);
   const reading = ui.sheet.mode === "read";
-  const folder = savedSection("notes", d.categoryId)?.name || "Без папки";
+  const folder = savedSection("notes", d.categoryId)?.name || "Без раздела";
   const versions = item?.versions || [];
   const history = versions.length ? `<details class="note-history"><summary>История изменений <span>${versions.length}</span></summary>${versions.slice().reverse().map((version, index) => `<div class="note-history-entry"><time>${esc(version.date || "Ранее")}</time><p>${esc(version.description || "Пустая версия")}</p><button type="button" data-action="saved-restore-version" data-version="${versions.length - 1 - index}">Вставить в редактор</button></div>`).join("")}</details>` : "";
   const tools = `<button class="note-tool improve" type="button" data-action="note-improve-menu" aria-label="Улучшить">${icon("spark", "icon-sm")}<span>Улучшить</span></button>${item ? `<button class="note-tool" type="button" data-action="saved-share" aria-label="Поделиться">${icon("share", "icon-sm")}</button><button class="note-tool danger" type="button" data-action="saved-delete" aria-label="Удалить">${icon("trash", "icon-sm")}</button>` : ""}`;
