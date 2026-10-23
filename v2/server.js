@@ -21,7 +21,7 @@ function serverDemo() {
     db: { ok: true, size: 36.6e6, cron_ok: 60, cron_failed: 0, cron_last: now - 20, worker_ok: 60, worker_failed: 0 },
     functions: { count: 0, last: [] },
     storage_size: 154e6,
-    backups: { files: [{ name: "db-2026-10-08.dump", size: 5.4e6, time: now - 3600 * 5 }, { name: "storage-2026-10-07.tgz", size: 121e6, time: now - 86400 }], count: 2, total: 126e6, running: false },
+    backups: { files: [{ name: "db-2026-10-08.dump", size: 5.4e6, time: now - 3600 * 5 }, { name: "storage-2026-10-07.tgz", size: 121e6, time: now - 86400 }], count: 2, total: 126e6, running: false, offsite: { ok: true, at: now - 3600 * 5, files: 18, latest: "db-2026-10-08.dump" } },
     events: [{ time: now - 7200, text: "Функции Flow перезапущены из приложения" }],
     settings: { ALERTS: 1, MEM_ALERT_MB: 150, DISK_ALERT_PCT: 85, BACKUP_DAYS: 14 }
   };
@@ -117,6 +117,13 @@ function serverUptime(s) {
   return `работает ${vpnUptime(s)}`;
 }
 
+function offsiteRow(o) {
+  if (!o) return `<div class="side-row"><span>Облако Mail.ru</span><b>не настроено</b></div>`;
+  return o.ok
+    ? `<div class="side-row"><span>Облако Mail.ru</span><b>${serverAgo(o.at)} · ${o.files} ${word(o.files, "файл", "файла", "файлов")}</b></div>`
+    : `<div class="side-row"><span>Облако Mail.ru</span><b style="color:var(--warn)">ошибка · ${esc(o.error || "")}</b></div>`;
+}
+
 function renderServerPage() {
   serverLoad();
   const s = ui.server || {};
@@ -141,7 +148,7 @@ function renderServerPage() {
   const flow = cardSection("Flow", `<div class="side-card"><div class="side-row"><span>База данных</span><b>${db.ok ? vpnBytes(db.size) : "—"}</b></div><div class="side-row"><span>Файлы</span><b>${vpnBytes(d.storage_size)}</b></div><div class="side-row"><span>Фоновые задачи</span><b class="${db.worker_failed ? "server-bad" : ""}">${esc(workerHint)}</b></div><div class="side-row"><span>Ошибки функций за час</span><b class="${d.functions.count ? "server-bad" : ""}">${d.functions.count || "нет"}</b></div>${d.functions.last.length ? `<p class="side-note server-log">${d.functions.last.map(esc).join("<br>")}</p>` : ""}</div>`);
 
   const b = d.backups, last = b.files.find(f => f.name.startsWith("db-"));
-  const backups = cardSection("Копии", `<div class="side-card"><div class="side-row"><span>Последняя копия базы</span><b>${last ? `${serverAgo(last.time)} · ${vpnBytes(last.size)}` : "ещё не было"}</b></div><div class="side-row"><span>Всего копий</span><b>${b.count} · ${vpnBytes(b.total)}</b></div><div class="side-row"><span>Хранятся</span><b>${d.settings.BACKUP_DAYS} ${word(d.settings.BACKUP_DAYS, "день", "дня", "дней")}</b></div><p class="side-note">Каждую ночь в 3:30 — база, раз в неделю — файлы.</p><button class="ghost-button server-wide" type="button" data-action="server-run" data-op="backup" ${b.running ? "disabled" : ""}>${icon("download", "icon-sm")}${b.running ? "Копия делается…" : "Сделать копию сейчас"}</button></div>`);
+  const backups = cardSection("Копии", `<div class="side-card"><div class="side-row"><span>Последняя копия базы</span><b>${last ? `${serverAgo(last.time)} · ${vpnBytes(last.size)}` : "ещё не было"}</b></div><div class="side-row"><span>Всего копий</span><b>${b.count} · ${vpnBytes(b.total)}</b></div><div class="side-row"><span>Хранятся</span><b>${d.settings.BACKUP_DAYS} ${word(d.settings.BACKUP_DAYS, "день", "дня", "дней")}</b></div>${offsiteRow(b.offsite)}<p class="side-note">Каждую ночь в 3:30 — база, раз в неделю — файлы.</p><button class="ghost-button server-wide" type="button" data-action="server-run" data-op="backup" ${b.running ? "disabled" : ""}>${icon("download", "icon-sm")}${b.running ? "Копия делается…" : "Сделать копию сейчас"}</button></div>`);
 
   const ev = d.events;
   const events = cardSection("Журнал сторожа", ev.length ? `<div class="list-panel">${ev.slice(0, 8).map(e => `<div class="list-row server-row"><span class="list-copy"><strong>${esc(e.text)}</strong><span>${serverAgo(e.time)} · ${new Date(e.time * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span></span></div>`).join("")}</div>` : `<div class="side-card"><p class="side-note">Сторож проверяет VPN и Flow каждую минуту. Пока ему ничего не пришлось чинить.</p></div>`);
