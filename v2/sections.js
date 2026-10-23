@@ -1,13 +1,14 @@
 /* Дополнительные экраны дизайн-прототипа. Серверные интеграции здесь не вызываются. */
 const SAVED_CATEGORIES = [
-  ["notes", "Заметки", "note"], ["files", "Файлы", "archive"],
-  ["posts", "Посты", "inbox"], ["links", "Ссылки", "link"],
+  ["notes", "Заметки", "note"], ["files", "Файлы", "file"],
+  ["posts", "Посты", "message"], ["links", "Ссылки", "link"],
   ["lists", "Списки", "check"], ["recipes", "Рецепты", "bowl"],
-  ["movies", "Фильмы", "film"], ["products", "Товары", "wallet"],
+  ["movies", "Фильмы", "film"], ["products", "Товары", "cart"],
   ["addresses", "Адреса", "pin"], ["tickets", "Билеты", "ticket"],
   ["cards", "Карты", "card"]
 ];
 const SAVED_NAMES = Object.fromEntries(SAVED_CATEGORIES.map(([key, label]) => [key, label]));
+SAVED_NAMES.materials = "Материалы"; // сводный раздел: ссылки, посты и файлы (saved.js)
 
 function extraSeed() {
   const now = todayIso();
@@ -64,7 +65,7 @@ function extraSeed() {
       links: [{ id: "study", name: "Учёба", icon: "bookmark", color: "#8ba9df", sortOrder: 0 }, { id: "trips", name: "Поездки", icon: "arrow", color: "#ba9ad9", sortOrder: 1 }],
       lists: [{ id: "home", name: "Дом", icon: "event", color: "#8dbbb4", sortOrder: 0 }, { id: "trips", name: "Поездки", icon: "arrow", color: "#ba9ad9", sortOrder: 1 }, { id: "food", name: "Еда", icon: "bookmark", color: "#d8a572", sortOrder: 2 }],
       products: [{ id: "home", name: "Дом", icon: "event", color: "#8dbbb4", sortOrder: 0 }, { id: "wish", name: "Хочу купить", icon: "wallet", color: "#d9949e", sortOrder: 1 }],
-      tickets: [{ id: "events", name: "Мероприятия", icon: "ticket", color: "#d8a572", sortOrder: 0 }, { id: "trains", name: "Поезд", icon: "arrow", color: "#8ba9df", sortOrder: 1 }, { id: "flights", name: "Самолёт", icon: "arrow", color: "#8dbbb4", sortOrder: 2 }]
+      tickets: [{ id: "events", name: "Мероприятия", icon: "music", color: "#d8a572", sortOrder: 0 }, { id: "trains", name: "Поезд", icon: "train", color: "#8ba9df", sortOrder: 1 }, { id: "flights", name: "Самолёт", icon: "plane", color: "#8dbbb4", sortOrder: 2 }]
     },
     finance: {
       accounts: [
@@ -142,11 +143,16 @@ function hydrateExtra(value, fresh) {
   };
 }
 
+// toLocaleString с параметрами каждый раз строит форматтер заново — на списке операций это заметно.
+const moneyFormats = {
+  whole: new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
+  cents: new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+};
 function demoMoney(amount, currency = "RUB") {
   const symbol = { RUB: "₽", USD: "$", EUR: "€" }[currency] || currency;
   const n = Number(amount || 0);
   const fraction = Math.round(Math.abs(n) * 100) % 100 !== 0;
-  return `${n.toLocaleString("ru-RU", { minimumFractionDigits: fraction ? 2 : 0, maximumFractionDigits: 2 })} ${symbol}`;
+  return `${(fraction ? moneyFormats.cents : moneyFormats.whole).format(n)} ${symbol}`;
 }
 function miniButton(label, action, extra = "") {
   return `<button class="small-button" type="button" data-action="${action}" ${extra}>${label}</button>`;
@@ -160,7 +166,7 @@ function extendedPage(page) {
     tasks: renderTasksPage, saved: renderSavedPage, finance: renderFinancePage,
     vault: renderVaultPage, inbox: renderInboxPage, overview: renderOverviewPage,
     projects: renderProjectsPage, metrics: renderMetricsPage, archive: renderArchivePage,
-    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage
+    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage
   };
   return (pages[page] || renderMorePage)();
 }
@@ -170,6 +176,9 @@ document.addEventListener("submit", event => {
   goalDepositApply(1);
 }, true);
 function renderExtendedSheet() {
+  if (ui.sheet.kind === "doc") return renderDocSheet();
+  if (ui.sheet.kind === "doc-edit") return renderDocEditSheet();
+  if (ui.sheet.kind === "doc-photo") return renderDocPhotoSheet();
   if (ui.sheet.kind === "vpn-key") return renderVpnKeySheet();
   if (ui.sheet.kind === "pc-shot") return renderPcShotSheet();
   if (ui.sheet.kind === "pc-power") return renderPcPowerSheet();
@@ -197,6 +206,7 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "saved-sections") return renderSavedSectionsSheet();
   if (ui.sheet.kind === "map-categories") return renderMapCategoriesSheet();
   if (ui.sheet.kind === "finance") return renderFinanceSheet();
+  if (ui.sheet.kind === "vault-master") return renderVaultMasterSheet();
   if (ui.sheet.kind === "vault") return renderVaultSheet();
   if (ui.sheet.kind === "project") return renderProjectSheet();
   if (ui.sheet.kind === "metric") return renderMetricSheet();
@@ -207,7 +217,7 @@ function renderExtendedSheet() {
   return renderAddMenu();
 }
 function handleExtendedAction(action, control, event) {
-  return noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
+  return docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
   return loyaltySubmit(event) || mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
