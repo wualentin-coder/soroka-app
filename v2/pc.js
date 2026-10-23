@@ -121,10 +121,12 @@ function pcHero(d) {
   const st = d.status;
   const line = on ? [st?.uptime_seconds ? `работает ${pcUptime(st.uptime_seconds)}` : "", st?.active_user || ""].filter(Boolean).join(" · ") || (d.agent ? "агент на связи" : "агент Flow не запущен")
     : off ? "можно включить по сети" : "ESP32 давно не выходила на связь";
-  const hub = d.hub ? "ESP32 на связи" : "ESP32 не на связи";
+  // ESP32 и свежесть данных — только когда что-то не так: «на связи · только что» читать незачем.
+  const stale = d.statusAt && Date.now() - Date.parse(d.statusAt) > 120000;
+  const hub = d.hub ? (stale ? "" : null) : "ESP32 не на связи — включить по сети не выйдет";
   const fresh = ui.pc.last?.cmd === "status" && ui.pc.last.status === "done";
   return `<section class="pc-hero ${mode}">
-    <div class="pc-hero-top"><div class="pc-orb">${pcIcon(off ? "moon" : "power")}</div><div class="pc-hero-text"><strong>${title}</strong><span>${esc(line)}</span><small>${esc(hub)}${d.statusAt && on ? ` · данные ${esc(pcAgo(d.statusAt))}` : ""}</small></div><button class="icon-button pc-refresh ${ui.pc.loading ? "spin" : ""}" type="button" data-action="pc-refresh" aria-label="Обновить">${pcIcon("refresh")}</button></div>
+    <div class="pc-hero-top"><div class="pc-orb">${pcIcon(off ? "moon" : "power")}</div><div class="pc-hero-text"><strong>${title}</strong><span>${esc(line)}</span>${hub !== null || (stale && on) ? `<small>${esc([hub, stale && on ? `данные ${pcAgo(d.statusAt)}` : ""].filter(Boolean).join(" · "))}</small>` : ""}</div><button class="icon-button pc-refresh ${ui.pc.loading ? "spin" : ""}" type="button" data-action="pc-refresh" aria-label="Обновить">${pcIcon("refresh")}</button></div>
     ${on ? pcMeters(fresh ? ui.pc.last.result : st, fresh) : ""}
   </section>`;
 }
@@ -218,7 +220,7 @@ function pcMedia() {
   const muted = Boolean(a?.muted);
   const t = (key, icon, label, cls = "") => `<button type="button" class="pc-media-btn ${cls} ${q(key)}" data-action="pc-media" data-key="${key}" aria-label="${label}">${pcIcon(icon)}</button>`;
   return `<section class="pc-card pc-media">
-    <div class="pc-card-head"><h3>${pcIcon("sound")}Звук и музыка</h3>${a ? "" : `<small class="pc-wait-dot">узнаю громкость…</small>`}</div>
+    <div class="pc-card-head"><h3>${pcIcon("sound")}Звук и музыка</h3>${a ? window.SorokaNative?.pcVolumeKeys ? `<small>кнопки громкости телефона тоже работают</small>` : "" : `<small class="pc-wait-dot">узнаю громкость…</small>`}</div>
     <div class="pc-volume ${muted ? "is-muted" : ""} ${q("level")}">
       <button type="button" class="pc-mute ${q("mute")}" data-action="pc-mute" aria-label="${muted ? "Включить звук" : "Выключить звук"}" aria-pressed="${muted}">${pcIcon(muted ? "muted" : "sound")}</button>
       <input class="pc-vol-range" type="range" min="0" max="100" step="1" value="${level}" style="--v:${level}%" aria-label="Громкость" ${a ? "" : "disabled"}>
@@ -230,9 +232,14 @@ function pcMedia() {
 
 // ------------------------------------------------------------ действия, рендер, ссылка
 
+/**
+ * Действия одной сеткой 3×2. «Загрузка» убрана — её показывает шапка, обновить —
+ * кнопкой там же. Сон и выключение — обычные плитки: под ними окно «сейчас или
+ * через время», а не мгновенное выключение.
+ */
 function pcActions(busy) {
-  const a = (cmd, icon, label, action = "pc-send") => `<button type="button" class="pc-action ${ui.pc.quick?.[cmd] || ""}" data-action="${action}" data-cmd="${cmd}" ${busy ? "disabled" : ""}>${pcIcon(icon)}<span>${label}</span></button>`;
-  return `<div class="pc-actions">${a("status", "chart", "Загрузка")}${a("processes", "list", "Процессы")}${a("screenshot", "camera", "Скриншот")}${a("lock", "lock", "Блокировка", "pc-lock")}</div>`;
+  const a = (cmd, icon, label, action = "pc-send", cls = "") => `<button type="button" class="pc-action ${cls} ${ui.pc.quick?.[cmd] || ""}" data-action="${action}" data-cmd="${cmd}" ${busy ? "disabled" : ""}>${pcIcon(icon)}<span>${label}</span></button>`;
+  return `<div class="pc-actions six">${a("screenshot", "camera", "Скриншот")}${a("processes", "list", "Процессы")}<button type="button" class="pc-action" data-action="pc-find-focus">${pcIcon("link")}<span>Открыть</span></button>${a("lock", "lock", "Блокировка", "pc-lock")}${a("sleep", "moon", "Сон", "pc-power", "pc-tile-sleep")}${a("off", "power", "Выключить", "pc-power", "pc-tile-off")}</div>`;
 }
 
 function pcRenderBlock(d, hideProgress=false) {
@@ -355,11 +362,15 @@ function renderPcPage() {
   const note = !d.agent && d.on ? `<p class="section-note">Компьютер включён, но агент Flow на нём не запущен — остальное недоступно.</p>` : "";
   // Пока идёт рендер — освежаем состояние сами, чтобы процент двигался.
   // Рендер (очередь Render Manager, ручной рендер AE, «Когда закончится») — отдельный раздел, здесь — строка-переход
-  const agentPart = d.agent ? `${pcActions(busy)}${pcResult()}${pcMedia()}${rmLinkRow(d)}${pcLinkBlock()}` : pcResult();
+  // Порядок — по срочности: идёт рендер — он сразу под статусом; дальше действия, звук, «Открыть».
+  const renderBusy = (d.rmQueue?.jobs || []).some(j => RM_ACTIVE.includes(j.status) || RM_WAITING.includes(j.status)) || d.render?.rendering;
+  const agentPart = d.agent ? `${renderBusy ? rmLinkRow(d) : ""}${pcActions(busy)}${pcResult()}${pcMedia()}${renderBusy ? "" : rmLinkRow(d)}${pcLinkBlock()}` : pcResult();
   // Карточки «въезжают» только при входе на экран, а не на каждое нажатие.
   const enter = !ui.pc.entered;
   if (enter) setTimeout(() => { if (ui.pc) ui.pc.entered = true; }, 600);
-  return `${top}<div class="content-grid"><div class="content-main pc-page ${enter ? "pc-enter" : ""}">${pcHero(d)}${pcPowerCountdown(d)}${pcPowerRow(d, busy)}${note}${agentPart}</div></div>`;
+  // Большие кнопки питания — только когда нужно включить (или агент не отвечает): иначе сон и выключение в сетке действий.
+  const power = d.on === true && d.agent ? "" : pcPowerRow(d, busy);
+  return `${top}<div class="content-grid"><div class="content-main pc-page ${enter ? "pc-enter" : ""}">${pcHero(d)}${pcPowerCountdown(d)}${power}${note}${agentPart}</div></div>`;
 }
 
 /** Скриншот крупно: листается и масштабируется пальцами. */
@@ -480,6 +491,35 @@ document.addEventListener("change", event => {
   pcQuick("volume", { level }, "level");
 });
 
+// Кнопки громкости телефона (приложение Android) на экране «Компьютер»: шаг 4%,
+// ползунок двигается сразу, на компьютер уходит итог серии нажатий.
+let pcVolumeKeysOn = false, pcVolumeTimer = null;
+function pcVolumeKeysSync() {
+  const native = window.SorokaNative;
+  if (!native?.pcVolumeKeys) return;
+  const on = ui.page === "pc" && !ui.sheet && Boolean(ui.pc?.data?.agent);
+  if (on === pcVolumeKeysOn) return;
+  pcVolumeKeysOn = on;
+  try { native.pcVolumeKeys(on); } catch (_) {}
+}
+// Свернули приложение — Android сам вернул кнопки телефону; при возврате включаем снова.
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { pcVolumeKeysOn = false; pcVolumeKeysSync(); } });
+window.sorokaPcVolumeKey = dir => {
+  if (!pcVolumeKeysOn) return;
+  const audio = ui.pc.audio;
+  // Громкость ещё не знаем — шлём саму клавишу, компьютер шагнёт сам.
+  if (!audio || typeof audio.level !== "number") { pcQuick("volume", { key: dir > 0 ? "up" : "down" }, "audio"); return; }
+  const level = Math.max(0, Math.min(100, Math.round(audio.level / 4) * 4 + dir * 4));
+  ui.pc.audio = { level, muted: false };
+  const range = document.querySelector(".pc-vol-range");
+  if (range) { range.value = level; range.style.setProperty("--v", `${level}%`); }
+  const value = document.querySelector(".pc-vol-value");
+  if (value) value.textContent = `${level}%`;
+  document.querySelector(".pc-volume")?.classList.remove("is-muted");
+  clearTimeout(pcVolumeTimer);
+  pcVolumeTimer = setTimeout(() => pcQuick("volume", { level: ui.pc.audio.level }, "audio"), 250);
+};
+
 function pcAction(action, control) {
   if (!action.startsWith("pc-")) return false;
   if (action === "pc-refresh") { pcLoad(true); render(); return true; }
@@ -498,6 +538,7 @@ function pcAction(action, control) {
     pcQuick("render_cancel", {}, "render_cancel", () => { toast("Останавливаю рендер"); setTimeout(() => pcLoad(true), 3000); });
     return true;
   }
+  if (action === "pc-find-focus") { const field = document.getElementById("pc-find"); field?.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => field?.focus(), 250); return true; }
   if (action === "pc-lock") { pcQuick("lock", {}, "lock", () => toast("Экран заблокирован")); return true; }
   if (action === "pc-after") {
     const then = control.dataset.then;
