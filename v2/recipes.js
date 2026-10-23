@@ -11,9 +11,13 @@
 const MEAL_NAMES = { завтрак: "Завтрак", обед: "Обед", ужин: "Ужин", перекус: "Перекус", десерт: "Десерт", напиток: "Напиток", выпечка: "Выпечка", салат: "Салат", суп: "Суп", соус: "Соус" };
 const DIFFICULTY_DOTS = { легко: 1, средне: 2, сложно: 3 };
 
+/** Оттенок заглушки по названию: у одной записи всегда один цвет. Общий для рецептов и товаров. */
+function placeholderHue(title) {
+  return [...String(title || "")].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 50 + 10;
+}
 /** Картинка блюда; нет — тёплый градиент с первой буквой. */
 function recipeImage(item, size = "card") {
-  const hue = [...String(item.title || "")].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 50 + 10;
+  const hue = placeholderHue(item.title);
   return item.image
     ? `<span class="recipe-image ${size}"><img src="${esc(item.image)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('blank');this.remove()"></span>`
     : `<span class="recipe-image ${size} blank" style="--h:${hue}"><b>${esc(String(item.title || "?").trim().charAt(0).toUpperCase())}</b></span>`;
