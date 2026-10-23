@@ -5,13 +5,17 @@ let movieFiltersOpen = null;
 let movieLayoutObserver = null;
 let movieRandomSpin = null;
 let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view") === "carousel"; } catch { return false; } })();
+function movieRandomFab() {
+  if (ui.page !== 'saved' || ui.savedCategory !== 'movies') return '';
+  return `<button type="button" class="fab movie-random-button movie-random-fab" data-action="movie-random" aria-label="Случайный фильм" title="Случайный фильм">${icon('reset')}</button>`;
+}
 function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
 function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
 function movieBuiltinSection(section) { return /^(кино|фильмы|сериалы|анимация|мультфильмы)$/i.test(String(section?.name || "").trim()); }
 function movieCarouselToggle() {
   if (!moviePlansTab()) return "";
   const label = movieDeckMode ? "Показать списком" : "Показать каруселью";
-  return `<button type="button" class="icon-button movie-carousel-toggle ${movieDeckMode ? "active" : ""}" data-action="movie-carousel-toggle" aria-label="${label}" title="${label}" aria-pressed="${movieDeckMode}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${movieDeckMode ? '<rect x="4" y="5" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/>' : '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 7v10M21 7v10"/>'}</svg></button>`;
+  return `<button type="button" class="icon-button movie-carousel-toggle ${movieDeckMode ? "active" : ""}" data-action="movie-carousel-toggle" aria-label="${label}" aria-pressed="${movieDeckMode}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${movieDeckMode ? '<rect x="4" y="5" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/>' : '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 7v10M21 7v10"/>'}</svg></button>`;
 }
 function movieCarouselScores(item) {
   const rating=Number(item.imdbRating)>0?['IMDb',item.imdbRating]:Number(item.kinopoiskRating)>0?['КП',item.kinopoiskRating]:Number(item.rating)>0?['Моя оценка',item.rating]:null;
@@ -48,7 +52,7 @@ function mountMovieCarousel() {
   }
   if(typeof ResizeObserver==='function'){
     movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.paint();}});
-    track.closest('.movie-library-screen')?.querySelectorAll('.movie-island-row,.saved-section-heading,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
+    track.closest('.movie-library-screen')?.querySelectorAll('.notes-topline,.saved-section-heading,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
   }
 }
 function runMovieRandomSpin(index){
@@ -68,7 +72,7 @@ function sizeMovieCarousel(track) {
   const footer=Math.max((counter?.offsetHeight || 22)+16,56);
   const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
   const room=()=>viewport-(track.getBoundingClientRect().top+window.scrollY)-footer;
-  filters.hidden=movieFiltersOpen===null ? width*1.5+160>room() : !movieFiltersOpen;
+  filters.hidden=movieFiltersOpen===null ? width*1.5+192>room() : !movieFiltersOpen;
   toggle?.setAttribute('aria-expanded',String(!filters.hidden));
   track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
 }
