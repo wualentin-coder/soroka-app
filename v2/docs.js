@@ -28,6 +28,68 @@ const DOC_ICONS = {
 };
 function docIcon(name, cls = "") { return `<svg class="doc-icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DOC_ICONS[name] || DOC_ICONS.document}</svg>`; }
 
+// Pure import merge: plaintext stays in memory and is encrypted by FlowDocs.save.
+window.FlowDocumentImports = (() => {
+  const MAX_BYTES = 8_000_000;
+  const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+  function attachment(data, mime) {
+    if (typeof data !== "string" || data.length > MAX_BYTES) return null;
+    const match = data.match(/^data:(image\/(?:jpeg|png|webp)|application\/pdf);base64,([A-Za-z0-9+/]+={0,2})$/);
+    if (!match || (mime && mime !== match[1]) || match[2].length % 4) return null;
+    let head;
+    try { head = atob(match[2].slice(0, 32)); } catch { return null; }
+    const valid = match[1] === "application/pdf" ? head.startsWith("%PDF-")
+      : match[1] === "image/jpeg" ? head.startsWith("\xff\xd8\xff")
+      : match[1] === "image/png" ? head.startsWith("\x89PNG\r\n\x1a\n")
+      : head.startsWith("RIFF") && head.slice(8, 12) === "WEBP";
+    return valid ? { data, mime: match[1] } : null;
+  }
+  function merge(original, imports) {
+    const doc = JSON.parse(JSON.stringify(original));
+    doc.fields ||= {};
+    doc.photos ||= [];
+    doc.files ||= [];
+    doc.conflicts ||= [];
+    doc.appliedImports ||= [];
+    const allowed = new Set((DOC_TYPES[doc.kind]?.fields || []).map(([key]) => key));
+    const ids = [];
+    const existing = new Set([...doc.photos, ...doc.files.map(file => file.data)]);
+    for (const item of imports) {
+      const id = String(item.id);
+      ids.push(id);
+      if (doc.appliedImports.includes(id)) continue;
+      const payload = item.payload;
+      if (!payload || typeof payload !== "object") throw new Error("docs_bad_import");
+      for (const [key, proposed] of Object.entries(payload.fields || {})) {
+        if (!allowed.has(key) || typeof proposed !== "string" || proposed.length > 2000 || !proposed.trim()) continue;
+        const value = proposed.trim();
+        const current = own(doc.fields, key) ? String(doc.fields[key] ?? "") : "";
+        if (!current.trim()) doc.fields[key] = value;
+        else if (current.trim() !== value && !doc.conflicts.some(c => c.field === key && c.proposed === value)) {
+          doc.conflicts.push({ field: key, proposed: value, importId: id });
+        }
+      }
+      const scans = [...(payload.photos || []).map(data => ({ data })), ...(payload.files || [])];
+      for (const scan of scans) {
+        const safe = attachment(scan?.data, scan?.mime);
+        if (!safe) throw new Error("docs_bad_attachment");
+        if (existing.has(safe.data)) continue;
+        existing.add(safe.data);
+        // Keep image bytes once: the full-screen preview offers an original download.
+        const name = String(scan.name || (safe.mime === "application/pdf" ? "Скан.pdf" : "Скан." + safe.mime.split("/")[1]))
+          .replace(/[\\/\x00-\x1f]/g, "_").slice(0, 120);
+        if (safe.mime.startsWith("image/")) doc.photos.push(safe.data);
+        else doc.files.push({ ...safe, name });
+      }
+      if (!String(doc.note || "").trim() && typeof payload.note === "string") doc.note = payload.note.slice(0, 2000);
+      doc.appliedImports.push(id);
+      if (JSON.stringify(doc).length > MAX_BYTES) throw new Error("docs_too_large");
+    }
+    return { doc, ids: [...new Set(ids)] };
+  }
+  return { merge, attachment };
+})();
+
 // ------------------------------------------------------------ хранилище демо
 
 window.FlowDocs = window.FlowDocs || {
@@ -57,12 +119,11 @@ function docsReload() {
 /** Расшифровать документ и показать; пока идёт — окно с ожиданием. */
 function docOpen(id) {
   const state = docsState();
-  ui.sheet = { kind: "doc", id, justRendered: false };
+  ui.sheet = { kind: "doc", id, loading: true, justRendered: false };
   render();
-  if (state.cache[id]) return;
   FlowDocs.get(id).then(doc => { if (doc) state.cache[id] = doc; else toast("Документ не найден"); })
     .catch(() => toast("Не удалось открыть документ"))
-    .finally(() => { if (ui.sheet?.kind === "doc" && ui.sheet.id === id) render(); });
+    .finally(() => { if (ui.sheet?.kind === "doc" && ui.sheet.id === id) { ui.sheet.loading = false; render(); } });
 }
 
 // ------------------------------------------------------------ форматирование
@@ -169,7 +230,7 @@ function docSheetShell(title, body, actions = "") {
 }
 function renderDocSheet() {
   const doc = docsState().cache[ui.sheet.id];
-  if (!doc) return docSheetShell("Документ", `<div class="state-card"><h2>Расшифровываю…</h2></div>`);
+  if (!doc || ui.sheet.loading) return docSheetShell("Документ", `<div class="state-card"><h2>Расшифровываю…</h2></div>`);
   const type = DOC_TYPES[doc.kind] || DOC_TYPES.custom;
   const rows = doc.kind === "custom"
     ? (doc.rows || []).map((r, i) => r.value ? [`row:${i}`, r.label || "Поле", r.value] : null).filter(Boolean)
@@ -177,10 +238,16 @@ function renderDocSheet() {
   const list = rows.map(([key, label, value]) => `<button type="button" class="doc-field" data-action="doc-copy" data-field="${esc(key)}"><span><small>${esc(label)}</small><b>${esc(value)}</b></span>${icon("copy", "icon-sm")}</button>`).join("");
   const photos = doc.kind !== "copies" && (doc.photos || []).length ? `<div class="doc-photos">${doc.photos.map((src, i) => `<button type="button" data-action="doc-photo" data-index="${i}"><img src="${esc(src)}" alt="Скан ${i + 1}"></button>`).join("")}</div>` : "";
   const note = doc.note ? `<p class="doc-note">${esc(doc.note)}</p>` : "";
+  const conflicts = (doc.conflicts || []).map((item, index) => {
+    const label = type.fields.find(([key]) => key === item.field)?.[1] || item.field;
+    return `<div class="doc-import-conflict"><b>${esc(label)}</b><small>Сейчас: ${esc(docValue(doc.kind, item.field, doc.fields?.[item.field]))}</small><small>На скане: ${esc(docValue(doc.kind, item.field, item.proposed))}</small><div><button type="button" class="ghost-button" data-action="doc-import-keep" data-index="${index}">Оставить прежнее</button><button type="button" class="ghost-button" data-action="doc-import-use" data-index="${index}">Взять со скана</button></div></div>`;
+  }).join("");
+  const review = conflicts ? `<section class="doc-import-review"><h3>Проверьте данные со скана</h3><p>Прежние значения сохранены. Выберите, какие оставить.</p>${conflicts}</section>` : "";
+  const files = (doc.files || []).map((file, index) => FlowDocumentImports.attachment(file.data, file.mime) ? `<button type="button" class="ghost-button doc-file-download" data-action="doc-file" data-index="${index}">${icon("document", "icon-sm")}${esc(file.name || "Скан документа")} · Скачать</button>` : "").join("");
   const copyAll = rows.length ? `<button type="button" class="ghost-button doc-copy-all" data-action="doc-copy-all">${icon("copy", "icon-sm")}Скопировать всё текстом</button>` : "";
   const confirm = ui.sheet.confirmDelete;
   const actions = `<div class="sheet-actions"><button type="button" class="primary-button" data-action="doc-edit">${icon("pen", "icon-sm")}Изменить</button><button type="button" class="ghost-button danger ${confirm ? "confirm" : ""}" data-action="doc-delete">${icon("trash", "icon-sm")}${confirm ? "Точно удалить?" : "Удалить"}</button></div>`;
-  return docSheetShell(doc.title, `${docFace(doc)}${copyAll}<div class="doc-fields">${list}</div>${photos}${note}`, actions);
+  return docSheetShell(doc.title, `${docFace(doc)}${copyAll}<div class="doc-fields">${list}</div>${review}${photos}${files}${note}`, actions);
 }
 function docInput(type, [key, label, kind], value) {
   const v = esc(value || "");
@@ -201,13 +268,15 @@ function renderDocEditSheet() {
     : type.fields.map(field => docInput(doc.kind, field, doc.fields?.[field[0]])).join("");
   const photos = `<div class="doc-wide doc-photo-edit">${(doc.photos || []).map((src, i) => `<span><img src="${esc(src)}" alt=""><button type="button" class="icon-button" data-action="doc-photo-remove" data-index="${i}" aria-label="Убрать фото">${icon("close", "icon-sm")}</button></span>`).join("")}${(doc.photos || []).length < 4 ? `<label class="doc-photo-add">${icon("plus")}<small>${doc.kind === "copies" ? "Фото или скан" : "Скан, если нужен"}</small><input type="file" accept="image/*" multiple data-doc-photos hidden></label>` : ""}</div>`;
   const note = `<label class="field doc-wide">Заметка<textarea name="note" rows="2">${esc(doc.note || "")}</textarea></label>`;
-  const body = `<form id="doc-form" class="doc-form">${titleField}${fields}${photos}${note}<div class="sheet-actions doc-wide"><button type="submit" class="primary-button" ${sheet.saving ? "disabled" : ""}>${sheet.saving ? "Сохраняю…" : "Сохранить"}</button></div></form>`;
+  const files = (doc.files || []).map((file, index) => `<div class="doc-wide doc-file-row"><span>${esc(file.name || "Скан.pdf")}</span><button type="button" class="icon-button" data-action="doc-file-remove" data-index="${index}" aria-label="Убрать файл">${icon("close")}</button></div>`).join("");
+  const body = `<form id="doc-form" class="doc-form">${titleField}${fields}${photos}${files}${note}<div class="sheet-actions doc-wide"><button type="submit" class="primary-button" ${sheet.saving ? "disabled" : ""}>${sheet.saving ? "Сохраняю…" : "Сохранить"}</button></div></form>`;
   return docSheetShell(sheet.isNew ? `Новый: ${type.title.toLowerCase()}` : `Изменить: ${doc.title}`, body);
 }
 function renderDocPhotoSheet() {
   const doc = docsState().cache[ui.sheet.id];
-  const src = doc?.photos?.[ui.sheet.index];
-  return `<div class="modal-backdrop doc-photo-full" data-action="backdrop"><button type="button" class="icon-button" data-action="doc-photo-back" aria-label="Закрыть">${icon("close")}</button>${src ? `<img src="${esc(src)}" alt="">` : ""}</div>`;
+  const raw = doc?.photos?.[ui.sheet.index];
+  const src = FlowDocumentImports.attachment(raw)?.mime.startsWith("image/") ? raw : "";
+  return `<div class="modal-backdrop doc-photo-full" data-action="backdrop"><button type="button" class="icon-button" data-action="doc-photo-back" aria-label="Закрыть">${icon("close")}</button>${src ? `<img src="${esc(src)}" alt=""><button type="button" class="ghost-button doc-photo-download" data-action="doc-photo-download" data-index="${ui.sheet.index}">Скачать оригинал</button>` : ""}</div>`;
 }
 
 // ------------------------------------------------------------ действия
@@ -273,6 +342,33 @@ function docsAction(action, control) {
   if (!action.startsWith("doc-")) return false;
   const state = docsState();
   const doc = ui.sheet?.id ? state.cache[ui.sheet.id] : null;
+  if ((action === "doc-import-keep" || action === "doc-import-use") && doc && !ui.sheet.saving) {
+    const index = Number(control.dataset.index);
+    const conflict = doc.conflicts?.[index];
+    if (!conflict) return true;
+    const next = JSON.parse(JSON.stringify(doc));
+    if (action === "doc-import-use") next.fields[conflict.field] = conflict.proposed;
+    next.conflicts.splice(index, 1);
+    const sheet = ui.sheet;
+    sheet.saving = true;
+    FlowDocs.save(next).then(() => {
+      state.cache[doc.id] = next;
+    }).catch(() => toast("Не удалось сохранить выбор. Данные не изменены"))
+      .finally(() => { sheet.saving = false; if (ui.sheet === sheet) render(); });
+    return true;
+  }
+  if ((action === "doc-file" || action === "doc-photo-download") && doc) {
+    const file = action === "doc-file" ? doc.files?.[Number(control.dataset.index)] : { data: doc.photos?.[Number(control.dataset.index)], name: "Скан" };
+    const safe = FlowDocumentImports.attachment(file?.data, file?.mime);
+    if (!safe) return true;
+    const binary = atob(safe.data.slice(safe.data.indexOf(",") + 1));
+    const url = URL.createObjectURL(new Blob([Uint8Array.from(binary, c => c.charCodeAt(0))], { type: safe.mime }));
+    const link = document.createElement("a");
+    link.href = url; link.download = String(file.name || "Скан").replace(/[\\/\x00-\x1f]/g, "_") + (action === "doc-photo-download" ? "." + safe.mime.split("/")[1] : "");
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return true;
+  }
   if (action === "doc-open") { docOpen(control.dataset.id); return true; }
   if (action === "doc-new") {
     const kind = control.dataset.kind;
@@ -302,5 +398,6 @@ function docsAction(action, control) {
   if (action === "doc-row-add") { const draft = docReadForm(); draft.rows = [...(draft.rows || []), { label: "", value: "" }]; render(); return true; }
   if (action === "doc-row-remove") { const draft = docReadForm(); draft.rows.splice(Number(control.dataset.index), 1); render(); return true; }
   if (action === "doc-photo-remove") { const draft = docReadForm(); draft.photos.splice(Number(control.dataset.index), 1); render(); return true; }
+  if (action === "doc-file-remove") { const draft = docReadForm(); draft.files.splice(Number(control.dataset.index), 1); render(); return true; }
   return false;
 }
