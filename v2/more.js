@@ -62,7 +62,7 @@ function projectMatches(project) {
     tasks: data.tasks.filter(t => t.project === name),
     events: data.events.filter(e => e.project === name),
     notes: data.notes.filter(n => n.project === name || n.topic === name),
-    materials: SAVED_CATEGORIES.filter(([key]) => key !== "notes").flatMap(([key]) => data.saved[key].filter(x => x.project === name || x.topic === name).map(item => ({ ...item, category: key }))),
+    materials: SAVED_CATEGORIES.filter(([key]) => key !== "notes").flatMap(([key]) => savedItems(key).filter(x => x.project === name || x.topic === name).map(item => ({ ...item, category: key }))),
     transactions: data.finance.transactions.filter(t => t.project === name)
   };
 }
@@ -87,11 +87,32 @@ function renderProjectSheet() {
 let vaultTimer = null;
 function vaultVisible(idValue) { return ui.vaultShown?.id === idValue && ui.vaultShown.until > Date.now(); }
 function hideVaultSecret() { ui.vaultShown = null; clearTimeout(vaultTimer); if (ui.page === "vault" || ui.sheet?.kind === "vault") render(); }
+/** «Назад» туда, откуда открыли раздел: из «Ещё» — в «Ещё», из «Сохранённого» — туда. */
+function backLink(fallback = "saved") {
+  const names = { saved: "Сохранённое", more: "Ещё", today: "План", finance: "Финансы", settings: "Настройки" };
+  const page = names[ui.fromPage] ? ui.fromPage : fallback;
+  return `<button class="notes-back vault-back" type="button" data-action="navigate" data-page="${page}">${icon("left", "icon-sm")}${names[page]}</button>`;
+}
+/**
+ * Пароли со сквозным шифрованием (vault-crypto.js): мастер-пароль знает только
+ * человек, сервер и бот видят шифр. Здесь — только вид; в рабочем приложении
+ * формы и данные ведёт bridge.js, в демо — moreSubmit.
+ */
+function vaultLockedCard() {
+  if (window.SOROKA_LIVE && ui.vaultSetup === undefined) return `<div class="state-card"><div class="list-icon" style="margin:0 auto 14px">${icon("key")}</div><h2>Проверяю хранилище…</h2></div>`;
+  const field = (name, label, auto) => `<label class="field">${label}<input name="${name}" type="password" minlength="8" maxlength="200" autocomplete="${auto}" required></label>`;
+  if (ui.vaultSetup === false) return `<form id="vault-setup-form" class="state-card vault-lock-card"><div class="list-icon" style="margin:0 auto 14px">${icon("key")}</div><h2>Создать хранилище</h2><p>Придумайте мастер-пароль — не короче 8 символов. Его не знает никто, кроме вас: ни сервер, ни бот. Пароли откроются на любом устройстве, где вы его введёте.</p><p class="vault-warn">Забудете мастер-пароль — сохранённые пароли не восстановить.</p>${field("master", "Мастер-пароль", "new-password")}${field("repeat", "Ещё раз", "new-password")}<button class="primary-button" type="submit">Создать</button></form>`;
+  return `<form id="vault-unlock-form" class="state-card vault-lock-card"><div class="list-icon" style="margin:0 auto 14px">${icon("key")}</div><h2>Открыть пароли</h2><p>Введите мастер-пароль. Без действий хранилище закроется само через 5 минут.</p>${field("master", "Мастер-пароль", "current-password")}<button class="primary-button" type="submit">Открыть</button>${ui.vaultError ? `<p class="vault-warn" role="alert">${esc(ui.vaultError)}</p>` : ""}</form>`;
+}
+function renderVaultMasterSheet() {
+  const field = (name, label, auto) => `<label class="field">${label}<input name="${name}" type="password" minlength="8" maxlength="200" autocomplete="${auto}" required></label>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Сменить мастер-пароль</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><form id="vault-master-form" class="sheet-form"><p class="section-note">Пароли перешифровывать не нужно: меняется только замок хранилища.</p>${field("old", "Текущий мастер-пароль", "current-password")}${field("master", "Новый мастер-пароль", "new-password")}${field("repeat", "Новый ещё раз", "new-password")}<div class="sheet-actions"><button class="primary-button" type="submit">Сменить</button></div></form></section></div>`;
+}
 function renderVaultPage() {
-  if (!ui.vaultUnlocked) return `<button class="notes-back vault-back" type="button" data-action="navigate" data-page="saved">${icon("left", "icon-sm")}Сохранённое</button>${header("Пароли", "Отдельное пространство для учётных записей", "Хранилище")}<div class="state-card"><div class="list-icon" style="margin:0 auto 14px">${icon("key")}</div>${window.SOROKA_LIVE ? `<h2>Открыть пароли</h2><p>Пароли лежат в зашифрованном хранилище. ${window.SorokaAndroid?.vaultSign ? "Открываются по отпечатку или PIN телефона, на пять минут." : "Доступ — пять минут после открытия приложения из Telegram."}</p><button class="primary-button" type="button" data-action="vault-unlock">Открыть</button></div>` : `<h2>Открыть пароли</h2><p>Пароли открываются отдельно от остальных записей.</p><button class="primary-button" type="button" data-action="vault-unlock">Открыть</button></div>`}`;
+  if (!ui.vaultUnlocked) return `${backLink()}${header("Пароли", "Зашифровано мастер-паролем", "Хранилище")}${vaultLockedCard()}`;
   const q = ui.vaultQuery.trim().toLowerCase();
   const entries = data.vault.filter(v => v.service.toLowerCase().includes(q));
-  return `<button class="notes-back vault-back" type="button" data-action="navigate" data-page="saved">${icon("left", "icon-sm")}Сохранённое</button>${header("Пароли", "Быстрый доступ к нужному сервису", "Хранилище")}<div class="section-toolbar"><input id="vault-search" class="filter-input" type="search" placeholder="Найти сервис…" value="${esc(ui.vaultQuery)}" aria-label="Поиск сервиса"><button class="tool-button" type="button" data-action="vault-lock">${icon("key")}Закрыть</button></div><div id="vault-results" class="section">${entries.length ? entries.map(v => `<div class="budget-card"><div class="section-heading"><h2>${esc(v.service)}</h2><button class="text-action" type="button" data-action="vault-edit" data-id="${esc(v.id)}">Изменить</button></div><div class="side-row"><span>Логин</span><b>${esc(v.login)}</b></div><div class="vault-secret"><span>${vaultVisible(v.id) ? esc(v.password) : "••••••••••••"}</span><button class="icon-button" type="button" data-action="vault-reveal" data-id="${esc(v.id)}" aria-label="${vaultVisible(v.id) ? "Скрыть" : "Показать"} пароль">${icon(vaultVisible(v.id) ? "eyeOff" : "eye", "icon-sm")}</button></div><div class="inline-actions"><button type="button" data-action="vault-copy" data-field="login" data-id="${esc(v.id)}">${icon("copy")}Логин</button><button type="button" data-action="vault-copy" data-field="password" data-id="${esc(v.id)}">${icon("copy")}Пароль</button></div>${v.note ? `<p class="section-note">${esc(v.note)}</p>` : ""}</div>`).join("") : emptyCard("Сервис не найден", "Попробуйте другое название.")}</div><button class="text-action" type="button" data-action="vault-new">Добавить сервис ${icon("plus", "icon-sm")}</button>`;
+  return `${backLink()}${header("Пароли", "Быстрый доступ к нужному сервису", "Хранилище")}<div class="section-toolbar"><input id="vault-search" class="filter-input" type="search" placeholder="Найти сервис…" value="${esc(ui.vaultQuery)}" aria-label="Поиск сервиса"><button class="tool-button" type="button" data-action="vault-master">${icon("settings")}Мастер-пароль</button><button class="tool-button" type="button" data-action="vault-lock">${icon("key")}Закрыть</button></div>${ui.vaultLegacy ? `<div class="state-card vault-legacy"><p>Есть ${ui.vaultLegacy} ${word(ui.vaultLegacy, "старый пароль", "старых пароля", "старых паролей")} из прежнего хранилища.</p><button class="primary-button" type="button" data-action="vault-migrate">Перенести под мастер-пароль</button></div>` : ""}<div id="vault-results" class="section">${entries.length ? entries.map(v => `<div class="budget-card"><div class="section-heading"><h2>${esc(v.service)}</h2><button class="text-action" type="button" data-action="vault-edit" data-id="${esc(v.id)}">Изменить</button></div><div class="side-row"><span>Логин</span><b>${v.login === null ? "скрыт · 👁" : esc(v.login || "—")}</b></div><div class="vault-secret"><span>${vaultVisible(v.id) ? esc(v.password) : "••••••••••••"}</span><button class="icon-button" type="button" data-action="vault-reveal" data-id="${esc(v.id)}" aria-label="${vaultVisible(v.id) ? "Скрыть" : "Показать"} пароль">${icon(vaultVisible(v.id) ? "eyeOff" : "eye", "icon-sm")}</button></div><div class="inline-actions"><button type="button" data-action="vault-copy" data-field="login" data-id="${esc(v.id)}">${icon("copy")}Логин</button><button type="button" data-action="vault-copy" data-field="password" data-id="${esc(v.id)}">${icon("copy")}Пароль</button></div>${v.note ? `<p class="section-note">${esc(v.note)}</p>` : ""}</div>`).join("") : emptyCard("Сервис не найден", "Попробуйте другое название.")}</div><button class="text-action" type="button" data-action="vault-new">Добавить сервис ${icon("plus", "icon-sm")}</button>`;
 }
 function renderVaultSheet() {
   const item = ui.sheet.id ? data.vault.find(v => v.id === ui.sheet.id) : null;
@@ -108,7 +129,7 @@ function renderMetricSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Показатель</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><form id="metric-form"><label class="field">Название<input name="title" type="text" value="${esc(item?.title || "Сон")}" required autofocus></label><div class="field-row"><label class="field">Значение<input name="value" type="number" step="0.1" value="${esc(item?.value || "")}" required></label><label class="field">Единица<input name="unit" type="text" value="${esc(item?.unit || "ч")}" required></label></div><label class="field">Дата<input name="date" type="date" value="${esc(item?.date || todayIso())}" required></label><div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="metric-delete">Удалить</button>` : ""}<button class="primary-button" type="submit">Сохранить</button></div></form></section></div>`;
 }
 function renderArchivePage() {
-  const tabs = [["trash", "Корзина"], ["completed", "Завершённые"], ["past", "Прошедшие"], ["viewed", "Просмотренные"]];
+  const tabs = [["trash", "Корзина"], ["completed", "Завершено"], ["past", "Прошедшие"], ["viewed", "Просмотрено"]];
   let content = "";
   if (ui.archiveTab === "trash") {
     content = data.trash.length ? `<div class="list-panel">${data.trash.slice().reverse().map(entry => `<div class="list-row"><span class="list-icon">${icon("trash")}</span><span class="list-copy"><strong>${esc(entry.item.title || entry.item.name || entry.item.person || "Запись")}</strong><span>${esc(/^saved:/.test(entry.type) ? SAVED_NAMES[entry.type.slice(6)] || "Сохранённое" : ({ task: "Задача", event: "Событие", project: "Проект", metric: "Показатель", inbox: "Входящие", "finance:transaction": "Операция", "finance:debt": "Долг", "finance:goal": "Цель", "finance:payment": "Платёж", "finance:budget": "Бюджет", "finance:account": "Счёт" })[entry.type] || entry.type)} · удалено ${esc(dateLabel(entry.deletedAt))}</span></span><button class="small-button" type="button" data-action="archive-restore" data-id="${esc(entry.id)}">Вернуть</button><button class="icon-button" type="button" data-action="archive-purge" data-id="${esc(entry.id)}" aria-label="Удалить навсегда">${icon("close", "icon-sm")}</button></div>`).join("")}</div>` : emptyCard("Корзина пуста", "Удалённые записи появятся здесь на 30 дней в рабочем приложении.");
@@ -119,10 +140,10 @@ function renderArchivePage() {
     const past = data.events.filter(e => e.due < todayIso() || e.due === todayIso() && e.time && e.time < new Date().toTimeString().slice(0, 5)).sort((a, b) => b.due.localeCompare(a.due));
     content = past.length ? `<div class="task-stack">${past.map(eventCard).join("")}</div>` : emptyCard("Прошедших событий нет", "После времени события оно появится здесь.");
   } else {
-    const viewed = SAVED_CATEGORIES.filter(([category]) => !["notes", "lists"].includes(category)).flatMap(([category]) => data.saved[category].filter(x => x.viewed).map(item => ({ category, item })));
+    const viewed = SAVED_CATEGORIES.filter(([category]) => !["notes", "lists"].includes(category)).flatMap(([category]) => savedItems(category).filter(x => x.viewed).map(item => ({ category, item })));
     content = viewed.length ? `<div class="record-list">${viewed.map(({ category, item }) => savedRecordCard(item, category)).join("")}</div>` : emptyCard("Просмотренных материалов пока нет", "Отметьте материал в библиотеке.");
   }
-  return `${header("Архив и корзина", "Завершённое рядом, удалённое можно вернуть", "История")}${subtabButtons(tabs, ui.archiveTab, "archive-tab", "tab")}<div class="content-grid"><div class="content-main"><button class="tool-button" type="button" data-action="archive-random">${icon("bookmark")}Случайное из сохранённого</button><div class="section">${content}</div></div><aside class="content-aside"><div class="side-card"><h3>Хранение</h3><p class="side-note">Удалённое хранится в корзине 30 дней, потом стирается само.</p></div></aside></div>`;
+  return `${header("Архив и корзина", "Завершённое рядом, удалённое можно вернуть", "История")}<div class="movie-seen-tabs four page-modes" role="tablist" aria-label="Архив">${tabs.map(([value, label]) => `<button type="button" role="tab" aria-selected="${ui.archiveTab === value}" class="${ui.archiveTab === value ? "active" : ""}" data-action="archive-tab" data-tab="${value}">${label}</button>`).join("")}</div><div class="content-grid"><div class="content-main"><button class="tool-button" type="button" data-action="archive-random">${icon("bookmark")}Случайное из сохранённого</button><div class="section">${content}</div></div><aside class="content-aside"><div class="side-card"><h3>Хранение</h3><p class="side-note">Удалённое хранится в корзине 30 дней, потом стирается само.</p></div></aside></div>`;
 }
 function overviewBlockSettings() {
   const labels = { next: "Ближайшее событие", tasks: "Главные задачи", money: "Доступные деньги", payments: "Платежи", saved: "Материалы", continue: "Продолжить", weekly: "Недельная сводка" };
@@ -278,7 +299,7 @@ function renderCompareSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet compare-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Две темы рядом</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="theme-comparison"><div class="theme-phone dark"><small>ТЁМНАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div><div class="theme-phone light"><small>СВЕТЛАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div></div></section></div>`;
 }
 function renderMorePage() {
-  const items = [["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["vpn", "VPN", "Ключи и трафик", "locate"], ["server", "Сервер", "Нагрузка, службы и копии", "server"], ["pc", "Компьютер", "Включить, скриншот, процессы", "today"], ["render", "Рендер", "Очередь Karma и After Effects", "film"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
+  const items = [["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["docs", "Документы", "Паспорт, ИНН, СНИЛС, полис", "file"], ["vpn", "VPN", "Ключи и трафик", "locate"], ["server", "Сервер", "Нагрузка, службы и копии", "server"], ["pc", "Компьютер", "Включить, скриншот, процессы", "today"], ["render", "Рендер", "Очередь Karma и After Effects", "film"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
   return `${header("Ещё", "Разделы и действия", "Пространство")}<div class="more-grid">${items.map(([page, label, detail, symbol]) => `<button class="more-tile" type="button" data-action="${page === "search" ? "search" : page === "add" ? "universal-add" : "navigate"}" ${page === "search" || page === "add" ? "" : `data-page="${page}"`}>${icon(symbol)}<span><strong>${label}</strong><small>${detail}</small></span></button>`).join("")}</div><section class="section"><div class="overview-intro"><span class="mini-heading">Связь с ботом</span><p>Текст, голосовые, фото, файлы, видео и пересланные посты бот разложит по разделам сам.</p><div class="inline-actions"><button type="button" data-action="return-chat">${icon("arrow")}Вернуться в чат</button><button type="button" data-action="demo-refresh">${icon("reset")}Обновить</button></div></div></section>`;
 }
 
@@ -289,7 +310,7 @@ function searchCatalog() {
   data.events.forEach(x => add("event", "events", "Событие", x, x.description || ""));
   data.notes.forEach(x => add("note", "notes", "Заметка", x, `${x.description || ""} ${x.topic || ""} ${(x.tags || []).join(" ")}`));
   data.inbox.forEach(x => add("inbox", "inbox", "Входящие", x, `${x.detail || ""} ${x.type || ""}`));
-  SAVED_CATEGORIES.filter(([key]) => key !== "notes").forEach(([key, label]) => data.saved[key].forEach(x => add(`saved:${key}`, "materials", label, x, `${x.description || ""} ${x.summary || ""} ${(x.tags || []).join(" ")} ${x.topic || ""} ${savedSection(key, x.sectionId)?.name || ""} ${x.reason || ""} ${x.address || ""} ${x.city || ""} ${JSON.stringify(x.ingredients || [])} ${JSON.stringify(x.items || [])}`)));
+  SAVED_CATEGORIES.filter(([key]) => key !== "notes").forEach(([key, label]) => savedItems(key).forEach(x => add(`saved:${key}`, "materials", label, x, `${x.description || ""} ${x.summary || ""} ${(x.tags || []).join(" ")} ${x.topic || ""} ${savedSection(key, x.sectionId)?.name || ""} ${x.reason || ""} ${x.address || ""} ${x.city || ""} ${JSON.stringify(x.ingredients || [])} ${JSON.stringify(x.items || [])}`)));
   data.finance.transactions.forEach(x => add("finance:transaction", "finance", x.kind === "income" ? "Доход" : "Расход", x, `${x.category} ${x.amount} ${x.project || ""}`));
   data.finance.debts.forEach(x => add("finance:debt", "finance", "Долг", { ...x, title: x.person }, `${x.amount} ${x.note || ""}`));
   data.finance.payments.forEach(x => add("finance:payment", "finance", "Платёж", x, `${x.amount} ${x.category || ""}`));
@@ -492,6 +513,7 @@ function moreAction(action, control) {
   if (action === "project-transaction") { openFinanceForm("transaction", itemId); return true; }
   if (action === "project-delete") { const target = data.projects.find(x => x.id === ui.sheet?.id); if (target && window.confirm(`Удалить проект «${target.name}»?`)) { pushTrash("project", target); data.projects = data.projects.filter(x => x.id !== target.id); ui.projectId = null; ui.sheet = null; save(); toast("Проект в корзине"); } return true; }
   if (action === "vault-unlock") { ui.vaultUnlocked = true; render(); return true; }
+  if (action === "vault-master") { ui.sheet = { kind: "vault-master", justRendered: false }; render(); return true; }
   if (action === "vault-lock") { ui.vaultUnlocked = false; ui.vaultShown = null; clearTimeout(vaultTimer); render(); return true; }
   if (action === "vault-new" || action === "vault-edit") { ui.sheet = { kind: "vault", id: action === "vault-edit" ? itemId : null, justRendered: false }; render(); return true; }
   if (action === "vault-reveal") { ui.vaultShown = vaultVisible(itemId) ? null : { id: itemId, until: Date.now() + 30000 }; clearTimeout(vaultTimer); if (ui.vaultShown) vaultTimer = setTimeout(hideVaultSecret, 30000); render(); return true; }
@@ -500,7 +522,7 @@ function moreAction(action, control) {
   if (action === "metric-new" || action === "metric-edit") { ui.sheet = { kind: "metric", id: action === "metric-edit" ? itemId : null, justRendered: false }; render(); return true; }
   if (action === "metric-delete") { const item = data.metrics.find(x => x.id === ui.sheet?.id); if (item) pushTrash("metric", item); data.metrics = data.metrics.filter(x => x.id !== ui.sheet?.id); ui.sheet = null; save(); toast("Запись в корзине"); return true; }
   if (action === "archive-tab") { ui.archiveTab = control.dataset.tab; render(); return true; }
-  if (action === "archive-random") { const pool = [{ category: "notes", items: data.notes }, ...SAVED_CATEGORIES.filter(([key]) => key !== "notes").map(([category]) => ({ category, items: data.saved[category] }))].flatMap(({ category, items }) => items.map(item => ({ category, item }))); const picked = pool[Math.floor(Math.random() * pool.length)]; if (picked) openSavedRecord(picked.category, picked.item.id); else toast("Сохранённых записей пока нет"); return true; }
+  if (action === "archive-random") { const pool = [{ category: "notes", items: data.notes }, ...SAVED_CATEGORIES.filter(([key]) => key !== "notes").map(([category]) => ({ category, items: savedItems(category) }))].flatMap(({ category, items }) => items.map(item => ({ category, item }))); const picked = pool[Math.floor(Math.random() * pool.length)]; if (picked) openSavedRecord(picked.category, picked.item.id); else toast("Сохранённых записей пока нет"); return true; }
   if (action === "swipe-undo") { const entry = data.trash.slice().reverse().find(x => String(x.item?.id) === control.dataset.undoId); if (entry) { control.dataset.id = entry.id; return moreAction("archive-restore", control); } render(); return true; }
   if (action === "archive-restore") { const entry = data.trash.find(x => x.id === itemId); if (entry) { if (["task", "event", "note"].includes(entry.type)) data[`${entry.type}s`].push(entry.item); else if (entry.type === "saved:notes") data.notes.push(entry.item); else if (entry.type.startsWith("saved:")) data.saved[entry.type.split(":")[1]].push(entry.item); else if (entry.type.startsWith("finance:")) financeEntityList(entry.type.split(":")[1]).push(entry.item); else if (entry.type === "project") data.projects.push(entry.item); else if (entry.type === "metric") data.metrics.push(entry.item); else if (entry.type === "inbox") data.inbox.push(entry.item); data.trash = data.trash.filter(x => x.id !== itemId); save(); toast("Запись восстановлена"); } return true; }
   if (action === "archive-purge") { if (window.confirm("Удалить эту запись навсегда?")) { data.trash = data.trash.filter(x => x.id !== itemId); save(); toast("Удалено окончательно"); } return true; }
@@ -525,7 +547,7 @@ function moreSubmit(event) {
   if (formId === "quick-capture-form") { event.preventDefault(); quickCapture(new FormData(event.target).get("text")); return true; }
   if (formId === "batch-form") return submitCaptureReview(event);
   if (formId === "inbox-form") { event.preventDefault(); const item = data.inbox.find(x => x.id === ui.sheet?.id); if (item) { const form = new FormData(event.target); item.title = String(form.get("title") || "").trim(); item.detail = String(form.get("detail") || "").trim(); item.type = String(form.get("type") || "Сообщение"); save(); } ui.sheet = null; toast("Входящее обновлено"); return true; }
-  if (!["project-form", "vault-form", "metric-form"].includes(formId)) return false;
+  if (!["project-form", "vault-form", "metric-form", "vault-unlock-form", "vault-setup-form", "vault-master-form"].includes(formId)) return false;
   event.preventDefault();
   const form = new FormData(event.target);
   if (formId === "project-form") {
@@ -538,6 +560,13 @@ function moreSubmit(event) {
     if (!existing) data.projects.push(project);
     if (oldName && oldName !== name) { data.tasks.filter(x => x.project === oldName).forEach(x => x.project = name); data.events.filter(x => x.project === oldName).forEach(x => x.project = name); data.notes.filter(x => x.project === oldName).forEach(x => x.project = name); data.finance.transactions.filter(x => x.project === oldName).forEach(x => x.project = name); }
     ui.projectId = project.id; ui.sheet = null; save(); toast("Проект сохранён"); return true;
+  }
+  if (formId === "vault-unlock-form" || formId === "vault-setup-form" || formId === "vault-master-form") {
+    // Демо: хранилище открывается любым паролем; в рабочем приложении формы ведёт bridge.js.
+    const form = new FormData(event.target);
+    if (formId !== "vault-unlock-form" && form.get("master") !== form.get("repeat")) { toast("Пароли не совпадают"); return true; }
+    if (formId === "vault-master-form") { ui.sheet = null; toast("Мастер-пароль сменён"); render(); return true; }
+    ui.vaultSetup = true; ui.vaultUnlocked = true; ui.vaultError = ""; render(); return true;
   }
   if (formId === "vault-form") {
     const existing = data.vault.find(x => x.id === ui.sheet?.id);
@@ -857,6 +886,8 @@ document.addEventListener("pointerup", event => {
     : !(distance > -gesture.open + 36 || (flick && gesture.speed > 0));
   gesture.row.classList.toggle("is-open-left", open);
   gesture.row.querySelectorAll(".swipe-action").forEach(button => button.tabIndex = open ? 0 : -1);
+  // Короткий свайп: карточка вернулась, а dir-left оставался и держал кнопки видимыми.
+  if (!open) setTimeout(() => { if (!gesture.row.classList.contains("is-open-left") && !gesture.row.classList.contains("swiping")) gesture.row.classList.remove("dir-left"); }, 280);
 });
 function cancelSwipeGesture() { if (swipeGesture) { swipeGesture.row.classList.remove("swiping", "dir-right", "dir-left", "delete-armed", "swipe-armed"); swipeGesture.row.style.removeProperty("--swipe-x"); swipeGesture.row.style.removeProperty("--del"); swipeGesture = null; } }
 document.addEventListener("pointercancel", cancelSwipeGesture);
@@ -881,10 +912,8 @@ document.addEventListener("click", event => {
   }
   if (row && event.target.closest(".swipe-content")) {
     if (event.target.closest(".task-drag-handle")) { event.preventDefault(); event.stopImmediatePropagation(); return; }
-    if ((ui.page === "today" || ui.page === "upcoming") && row.dataset.swipeType === "task" && event.target.closest(".task-card") && !event.target.closest(".task-check, .task-drag-handle, .task-sub")) {
-      event.preventDefault(); event.stopImmediatePropagation();
-      toggleTask(row.dataset.swipeId); return;
-    }
+    // Нажатие на задачу открывает её везде, как в «Делах»; завершает только кружок —
+    // промах при прокрутке «Плана» больше не закрывает дело.
     const action = event.target.closest("[data-action]")?.dataset.action;
     const nativeViews = new Set(["saved-open", "project-open", "project-note", "project-saved"]);
     const inlineActions = new Set(["toggle-task", "task-check-item", "task-checklist-toggle", "finance-open-payments", "vault-reveal", "vault-copy", "payment-confirm", "inbox-task", "inbox-archive", "saved-pin-card"]);
