@@ -31,7 +31,9 @@ class LoopDeck {
       this.track.innerHTML=slots.map(slot=>this.card(this.wrap(slot),slot)).join('');
     }
     const width=this.width,step=this.step;
-    this.track.style.height=`${width*1.5+160}px`;
+    const height=Math.min(width*1.5+160,Number(this.track.dataset.heightLimit)||Infinity);
+    this.track.style.height=`${height}px`;
+    this.track.style.setProperty('--movie-poster-height',`${height-160}px`);
     for(const node of this.track.children){
       const slot=Number(node.dataset.slot),distance=slot-this.position,depth=Math.min(Math.abs(distance),2);
       node.style.width=`${width}px`;

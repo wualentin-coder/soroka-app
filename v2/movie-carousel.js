@@ -1,6 +1,8 @@
 // Carousel is a local display preference; records and actions stay in Saved.
 let movieDeck = null;
 let movieDeckId = "";
+let movieFiltersOpen = null;
+let movieLayoutObserver = null;
 let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view") === "carousel"; } catch { return false; } })();
 function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
 function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
@@ -23,6 +25,7 @@ function movieCarouselCard(item, index, slot) {
 function mountMovieCarousel() {
   const track = document.getElementById("movie-deck");
   if (movieDeck?.track === track) return;
+  movieLayoutObserver?.disconnect();movieLayoutObserver=null;
   movieDeck?.destroy(); movieDeck = null;
   if (!track || !movieCarouselEnabled()) return;
   const items = savedVisibleItems();
@@ -38,17 +41,43 @@ function mountMovieCarousel() {
     const count = document.getElementById("movie-deck-count");
     if (count) count.textContent = `${i + 1} из ${items.length}`;
   }});
+  if(typeof ResizeObserver==='function'){
+    movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.paint();}});
+    track.closest('.movie-library-screen')?.querySelectorAll('.movie-island-row,.saved-section-heading,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
+  }
 }
 function sizeMovieCarousel(track) {
-  // Keep the full poster width even on short screens; the page can scroll.
-  delete track.dataset.widthLimit;
+  const screen=track.closest('.movie-library-screen'),filters=screen?.querySelector('.movie-carousel-filters');
+  const toggle=screen?.querySelector('.movie-filter-toggle');
+  if(!filters)return;
+  filters.hidden=false;
+  const viewport=window.visualViewport?.height || innerHeight;
+  const counter=document.getElementById('movie-deck-count');
+  const footer=Math.max((counter?.offsetHeight || 22)+16,56);
+  const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
+  const room=()=>viewport-(track.getBoundingClientRect().top+window.scrollY)-footer;
+  filters.hidden=movieFiltersOpen===null ? width*1.5+160>room() : !movieFiltersOpen;
+  toggle?.setAttribute('aria-expanded',String(!filters.hidden));
+  track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
 }
 document.addEventListener("click", event => {
+  const filters=event.target.closest('[data-action="movie-filters-toggle"]');
+  if(filters){
+    event.preventDefault();event.stopPropagation();
+    movieFiltersOpen=filters.getAttribute('aria-expanded')!=='true';
+    if(movieDeck){sizeMovieCarousel(movieDeck.track);movieDeck.paint();}
+    else {
+      const panel=filters.closest('.movie-library-screen')?.querySelector('.movie-carousel-filters');
+      if(panel)panel.hidden=!movieFiltersOpen;
+      filters.setAttribute('aria-expanded',String(movieFiltersOpen));
+    }
+    return;
+  }
   const control = event.target.closest('[data-action="movie-carousel-toggle"]');
   if (control) {
     event.preventDefault(); event.stopPropagation(); movieDeckMode = !movieDeckMode;
     try { localStorage.setItem("flow-movie-view", movieDeckMode ? "carousel" : "list"); } catch {}
-    render(); return;
+    window.scrollTo(0,0);render(); return;
   }
   const card = event.target.closest(".movie-deck-card");
   if (!card || !movieDeck) return;
@@ -62,5 +91,6 @@ document.addEventListener("keydown", event => {
   event.preventDefault(); movieDeck.nudge(event.key === "ArrowRight" ? 1 : -1);
 });
 window.addEventListener("resize", () => { if (movieDeck) { sizeMovieCarousel(movieDeck.track); movieDeck.select(Math.round(movieDeck.position), undefined, false); } });
+window.visualViewport?.addEventListener('resize',()=>{if(movieDeck){sizeMovieCarousel(movieDeck.track);movieDeck.paint();}});
 // Full renders and search-only result replacements share the same lifecycle.
 new MutationObserver(mountMovieCarousel).observe(document.documentElement, {childList: true, subtree: true});

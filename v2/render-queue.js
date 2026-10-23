@@ -402,11 +402,12 @@ function rmJobForm(s, t) {
   ] : [
     !many ? rmField("Кадры", rmFrameFields(f.frames)) : "",
     ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
-    rmField("Сохранение и облако", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : "") + `<p class="rm-path">${esc(rmWhere(s,t,f))}</p><span class="rm-field-caption">После рендера</span>` + rmSegments("deliver",RM_DELIVER,f.deliver), 'Облако сохраняет папку проекта. Занятое имя получит суффикс _002.'),
+    rmField("Сохранение и облако", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : "") + `<span class="rm-field-caption">После рендера</span>` + rmSegments("deliver",RM_DELIVER,f.deliver) + `<p class="rm-path">${esc(rmWhere(s,t,f))}</p>`, 'Облако сохраняет папку проекта. Занятое имя получит суффикс _002.'),
     ae ? rmField('Формат вывода',rmFormatSelect(chosen,f),'MOV + альфа сохраняет прозрачность. MP4 — без прозрачности. HAP требует больше места.') : '',
   ];
   const more = ui.sheet.more;
   const extra = !more ? "" : [
+    !bench ? rmPresetChips(s, f) : "",
     !bench && ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || 'auto')), 'Авто учитывает замеры и свободную RAM/VRAM.') : "",
     !bench ? `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>` : '',
     many && !bench ? rmField("Один диапазон для всех", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="у каждой свой">`) : "",
@@ -416,7 +417,6 @@ function rmJobForm(s, t) {
   const label = bench ? "Запустить тест" : many ? `Поставить ${rmPlural(chosen.length, "задачу", "задачи", "задач")}` : "Поставить в очередь";
   return [
     rmSummary(s, chosen, f),
-    !bench ? rmPresetChips(s, f) : "",
     ...main,
     `<button type="button" class="rm-more" data-action="rm-more" aria-expanded="${Boolean(more)}">Дополнительно<span>${more ? "▴" : "▾"}</span></button>`,
     extra,
