@@ -68,19 +68,59 @@ const icons = {
   star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
   locate: '<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>',
-  server: '<rect x="4" y="4" width="16" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/><path d="M8 7.5h.01M8 16.5h.01M12 7.5h4M12 16.5h4"/>'
+  server: '<rect x="4" y="4" width="16" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/><path d="M8 7.5h.01M8 16.5h.01M12 7.5h4M12 16.5h4"/>',
+  plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  train: '<path d="M8 3.1V7a4 4 0 0 0 8 0V3.1"/><path d="m9 15-1-1M15 15l1-1"/><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3M16 19l2 3"/>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  cart: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h2l2.7 12.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 1.9-1.6L22 7H5.1"/>',
+  coffee: '<path d="M10 2v2M14 2v2M6 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>',
+  car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  health: '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/><path d="M3.2 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.3"/>',
+  wifi: '<path d="M12 20h.01M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M8.5 16.4a5 5 0 0 1 7 0"/>',
+  repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  shirt: '<path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5a2 2 0 0 0-1.3 2.2l.6 3.5a1 1 0 0 0 1 .8H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.2a1 1 0 0 0 1-.8l.6-3.5a2 2 0 0 0-1.4-2.2z"/>',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+  study: '<path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.6-3.9a2 2 0 0 0-1.7 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.7 0z"/><path d="M22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+  file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/>',
+  message: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  transfer: '<path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/>',
+  door: '<path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h3M13 20h9M10 12v.01"/><path d="M13 4.6v16a1 1 0 0 1-1.2 1L5 20V5.6a2 2 0 0 1 1.5-1.9l4-1A2 2 0 0 1 13 4.6Z"/>'
 };
+/**
+ * Иконка раздела: выбранная человеком, а у старых общих («стрелка», «закладка»)
+ * — по названию: «Поезд» с поездом, «Самолёт» с самолётом.
+ */
+function sectionIcon(section, fallback = "bookmark") {
+  const own = section?.icon;
+  if (own && !["arrow", "bookmark", "note", "archive"].includes(own)) return own;
+  const name = String(section?.name || "").toLowerCase();
+  const rules = [[/(^|\s)поезд(а|ом|е)?($|\s)|ржд|электрич|сапсан/, "train"], [/самол|авиа|рейс|перел/, "plane"], [/концерт|мероприят|театр|кино|шоу/, "music"],
+    [/дом|квартир/, "home"], [/покуп|магазин/, "cart"], [/еда|кафе|ресторан|рецепт/, "coffee"], [/подар/, "gift"], [/машин|авто/, "car"],
+    [/здоров|врач|аптек/, "health"], [/учёб|учеб|курс|урок/, "study"], [/клиент|работ/, "project"]];
+  return rules.find(([re]) => re.test(name))?.[1] || own || fallback;
+}
+/** Иконка категории расхода — по смыслу, а не один кошелёк на всё. */
+function categoryIcon(category) {
+  const c = String(category || "").toLowerCase();
+  const rules = [[/продукт|еда|супермаркет/, "cart"], [/кафе|ресторан|кофе|доставк/, "coffee"], [/транспорт|такси|авто|бензин|топливо|парков/, "car"],
+    [/путешеств|отпуск|отел|авиа|билет/, "plane"], [/жиль|аренд|коммунал|ипотек|дом/, "home"], [/здоров|аптек|медиц|врач|спорт/, "health"],
+    [/связь|интернет|телефон/, "wifi"], [/подписк/, "repeat"], [/одежд|обув/, "shirt"], [/подар/, "gift"], [/образован|учёб|учеб|курс/, "study"],
+    [/развлеч|кино|игр/, "film"], [/красот|уход/, "spark"], [/кредит|долг/, "card"]];
+  return rules.find(([re]) => re.test(c))?.[1] || "wallet";
+}
 function icon(name, size = "") {
   return `<svg class="icon ${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.note}</svg>`;
 }
 function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&#39;" }[c]));
+  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function localIso(date) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
 }
 function parseDate(value) {
-  const [y, m, d] = String(value).split("-").map(Number);
+  // Дата или полная отметка времени (2026-10-23T12:00:00Z) — берём только день.
+  const [y, m, d] = String(value).slice(0, 10).split("-").map(Number);
   return new Date(y, m - 1, d, 12);
 }
 function shiftDay(date, count) {
@@ -90,14 +130,31 @@ function shiftDay(date, count) {
 }
 function offsetIso(count) { return localIso(shiftDay(new Date(), count)); }
 function todayIso() { return localIso(new Date()); }
+// Создать Intl.DateTimeFormat дорого (~0,3 мс), а дат на экране сотни: форматтеры — один раз.
+const dateFormats = {
+  full: new Intl.DateTimeFormat("ru-RU", { weekday: "long", day: "numeric", month: "long" }),
+  short: new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }),
+  month: new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
+};
+const dateCache = new Map();
+function cachedDate(kind, value) {
+  const key = kind + value;
+  let text = dateCache.get(key);
+  if (text === undefined) {
+    if (dateCache.size > 4000) dateCache.clear();
+    text = dateFormats[kind].format(parseDate(value));
+    dateCache.set(key, text);
+  }
+  return text;
+}
 function fullDate(value) {
-  return new Intl.DateTimeFormat("ru-RU", { weekday: "long", day: "numeric", month: "long" }).format(parseDate(value));
+  return cachedDate("full", value);
 }
 function shortDate(value) {
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(parseDate(value));
+  return cachedDate("short", value);
 }
 function monthName(value) {
-  const text = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(parseDate(value)).replace(/\s*г\.?$/, "");
+  const text = cachedDate("month", value).replace(/\s*г\.?$/, "");
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 function dateLabel(value) {
@@ -158,7 +215,7 @@ function save() {
   try { const safe = { ...data }; delete safe.vault; localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); return true; } catch (_) { return false; }
 }
 let data = load();
-const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render"];
+const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs"];
 function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 const ui = {
   page: currentPage(),
@@ -214,6 +271,7 @@ const navigation = [
   ["finance", "Финансы", "wallet"],
   ["projects", "Проекты", "project"],
   ["vault", "Пароли", "key"],
+  ["docs", "Документы", "file"],
   ["archive", "Архив", "archive"],
   ["settings", "Настройки", "settings"],
   ["more", "Все разделы", "more"]
@@ -279,8 +337,7 @@ function taskCard(task) {
   const time = task.time ? `<span>${icon("clock", "icon-sm")}${esc(task.time)}</span>` : "";
   const project = task.project ? `<span>${esc(task.project)}</span>` : "";
   const noDate = !task.due && ui.page === "tasks" ? `<span>Без даты</span>` : "";
-  const completesOnTap = ui.page === "today" || ui.page === "upcoming";
-  const mainLabel = completesOnTap ? `${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${task.title}` : `Открыть задачу: ${task.title}`;
+  const mainLabel = `Открыть задачу: ${task.title}`;
   const dragHandle = ui.page === "upcoming" ? `<span class="task-drag-handle" draggable="true" role="img" aria-label="Перетащить задачу на другой день" title="Перетащить на другой день">${icon("grip", "icon-sm")}</span>` : "";
   return `<article class="task-card ${late ? "overdue" : ""} ${task.done ? "is-done" : ""}" data-task-id="${esc(task.id)}"><button class="task-check ${task.done ? "checked" : ""}" type="button" data-action="toggle-task" data-id="${esc(task.id)}" aria-label="${task.done ? "Вернуть задачу" : "Завершить задачу"}: ${esc(task.title)}">${icon("check", "icon-sm")}</button><button class="task-main" type="button" data-action="edit" data-type="task" data-id="${esc(task.id)}" aria-label="${esc(mainLabel)}"><span class="task-title">${esc(task.title)}</span><span class="task-meta">${date}${time}${project}${noDate}</span></button>${checklistBlock(task)}<span class="task-card-trailing"><i class="priority-marker ${esc(task.priority)}" aria-hidden="true"></i>${dragHandle}</span></article>`;
 }
@@ -317,7 +374,7 @@ function todayPage() {
   const percentage = daily.length ? Math.round(done / daily.length * 100) : 100;
   const late = overdueTasks();
   const meetings = eventsOn(today);
-  const hero = `<div class="hero-panel"><div class="hero-top"><div><p class="hero-date">${esc(fullDate(today))}</p><div class="hero-number">${pending.length}<span>${word(pending.length, "дело", "дела", "дел")} на сегодня</span></div></div><div class="hero-mini">${percentage}%<br><span style="color:var(--subtle);font-weight:600">выполнено</span></div></div><div class="progress-track"><span style="width:${percentage}%"></span></div><div class="progress-caption"><span>${done} завершено</span><span>${daily.length} всего</span></div></div>`;
+  const hero = `<div class="hero-panel"><div class="hero-top"><div><p class="hero-date">${esc(fullDate(today))}${typeof dayInfo === "function" && dayInfo(today).holiday ? ` · <span class="day-note is-off">${esc(dayInfo(today).holiday)}</span>` : ""}</p><div class="hero-number">${pending.length}<span>${word(pending.length, "дело", "дела", "дел")} на сегодня</span></div></div><div class="hero-mini">${percentage}%<br><span style="color:var(--subtle);font-weight:600">выполнено</span></div></div><div class="progress-track"><span style="width:${percentage}%"></span></div><div class="progress-caption"><span>${done} завершено</span><span>${daily.length} всего</span></div></div>`;
   const overdue = late.length ? `<section class="section overdue-section"><div class="section-heading overdue-heading"><h2>Просрочено <span class="count">${late.length}</span></h2><button class="text-action" type="button" data-action="move-overdue">Перенести на сегодня ${icon("arrow", "icon-sm")}</button></div>${ui.overdueOpen ? `<div class="overdue-list">${late.map(taskCard).join("")}</div>` : ""}<button class="text-action" type="button" data-action="toggle-overdue">${ui.overdueOpen ? "Свернуть" : "Показать"} ${icon(ui.overdueOpen ? "up" : "down", "icon-sm")}</button></section>` : "";
   // Платежи, срок которых настал (или прошёл), — тоже дела на сегодня.
   const duePays = (data.finance?.payments || []).filter(p => p.status !== "confirmed" && p.nextOn && p.nextOn <= today);
@@ -343,9 +400,10 @@ function todayPage() {
   const free = !tasks && !events ? `<p class="plan-free">${icon("check", "icon-sm")}На сегодня ни дел, ни встреч</p>` : "";
   // Из бывшего «Обзора» — деньги и «продолжить»: коротко, внизу дня.
   const glance = typeof rubBalance === "function" ? (() => {
-    const pending = (data.finance?.payments || []).filter(p => p.status === "pending" && p.nextOn).sort((a, b) => a.nextOn.localeCompare(b.nextOn));
+    // Платёж — только если он на этой неделе: счёт через месяц на «Плане» лишь отвлекает.
+    const pending = (data.finance?.payments || []).filter(p => p.status === "pending" && p.nextOn && p.nextOn <= offsetIso(7)).sort((a, b) => a.nextOn.localeCompare(b.nextOn));
     const last = ui.lastOpened;
-    return `<section class="section plan-glance"><button type="button" class="glance-tile" data-action="navigate" data-page="finance"><small>Доступно</small><strong>${demoMoney(rubBalance())}</strong>${pending[0] ? `<span>${esc(pending[0].title)} · ${esc(dateLabel(pending[0].nextOn))}</span>` : `<span>Платежи оплачены</span>`}</button>${last?.title ? `<button type="button" class="glance-tile" data-action="overview-continue"><small>Продолжить</small><strong>${esc(last.title)}</strong><span>Последняя открытая запись</span></button>` : ""}</section>`;
+    return `<section class="section plan-glance"><button type="button" class="glance-tile" data-action="navigate" data-page="finance"><small>Доступно</small><strong>${demoMoney(rubBalance())}</strong>${pending[0] ? `<span>${esc(financeTitle(pending[0].title))} · ${esc(dateLabel(pending[0].nextOn))}</span>` : ""}</button>${last?.title ? `<button type="button" class="glance-tile" data-action="overview-continue"><small>Продолжить</small><strong>${esc(last.title)}</strong><span>Последняя открытая запись</span></button>` : ""}</section>`;
   })() : "";
   const body = isToday ? `${overdue}${tasks}${events}${free}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
@@ -366,19 +424,27 @@ function calendarDay(date) {
   const hasTasks = tasksOn(value).some(t => !t.done);
   const hasEvents = eventsOn(value).length > 0;
   const outside = value.slice(0, 7) < ui.month.slice(0, 7);
-  const cls = [outside ? "outside" : "", value === todayIso() ? "today" : "", value === ui.selected ? "selected" : ""].join(" ");
+  const info = typeof dayInfo === "function" ? dayInfo(value) : { off: false, holiday: "" };
+  const cls = [outside ? "outside" : "", value === todayIso() ? "today" : "", value === ui.selected ? "selected" : "", info.off ? "is-off" : "", info.holiday ? "is-holiday" : "", info.workday ? "is-workday" : ""].join(" ");
   const dots = `<span class="calendar-dots">${hasTasks ? "<i></i>" : ""}${hasEvents ? '<i class="event-dot"></i>' : ""}</span>`;
   const taskCount = tasksOn(value).filter(t => !t.done).length;
   const eventCount = eventsOn(value).length;
-  return `<button type="button" class="calendar-day ${cls}" data-action="select-day" data-date="${value}" aria-label="${esc(fullDate(value))}, ${taskCount} ${word(taskCount, "задача", "задачи", "задач")}, ${eventCount} ${word(eventCount, "событие", "события", "событий")}" ${value === ui.selected ? 'aria-pressed="true"' : ""}><span>${date.getDate()}</span>${dots}</button>`;
+  return `<button type="button" class="calendar-day ${cls}" data-action="select-day" data-date="${value}" aria-label="${esc(fullDate(value))}${info.holiday ? `, ${esc(info.holiday)}` : info.workday ? ", рабочая суббота" : ""}, ${taskCount} ${word(taskCount, "задача", "задачи", "задач")}, ${eventCount} ${word(eventCount, "событие", "события", "событий")}" ${value === ui.selected ? 'aria-pressed="true"' : ""}><span>${date.getDate()}</span>${dots}</button>`;
 }
 function calendarCard(summary = "", progress = null) {
-  return `<div class="calendar-card ${ui.calendarExpanded ? "expanded" : ""} ${summary ? "with-summary" : ""}" data-calendar-swipe><div class="calendar-top"><button class="calendar-expand-title" type="button" data-action="calendar-expand" aria-expanded="${ui.calendarExpanded}" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь">${esc(monthName(ui.month))}${icon(ui.calendarExpanded ? "up" : "down", "icon-sm")}</button>${summary}<div class="calendar-controls"><button type="button" data-action="month-prev" aria-label="Предыдущий месяц">${icon("left")}</button><button type="button" data-action="month-next" aria-label="Следующий месяц">${icon("right")}</button></div></div><div class="calendar-toolbar"><div class="segmented"><button type="button" data-action="calendar-mode" data-mode="week" class="${!ui.calendarExpanded ? "active" : ""}">Неделя</button><button type="button" data-action="calendar-mode" data-mode="month" class="${ui.calendarExpanded ? "active" : ""}">Месяц</button></div><button type="button" class="text-action" data-action="calendar-today">К сегодня</button></div><div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="calendar-grid">${calendarDays().map(calendarDay).join("")}</div><div class="calendar-legend"><span><i></i>Задачи</span><span><i class="event-dot"></i>События</span></div>${progress !== null ? `<div class="plan-progress"><span style="width:${progress}%"></span></div>` : ""}<button type="button" class="calendar-handle" data-action="calendar-expand" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь жестом"><span></span></button></div>`;
+  return `<div class="calendar-card ${ui.calendarExpanded ? "expanded" : ""} ${summary ? "with-summary" : ""}" data-calendar-swipe><div class="calendar-top"><button class="calendar-expand-title" type="button" data-action="calendar-expand" aria-expanded="${ui.calendarExpanded}" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь">${esc(monthName(ui.month))}${icon(ui.calendarExpanded ? "up" : "down", "icon-sm")}</button>${summary}<div class="calendar-controls"><button type="button" data-action="month-prev" aria-label="Предыдущий месяц">${icon("left")}</button><button type="button" data-action="month-next" aria-label="Следующий месяц">${icon("right")}</button></div></div><div class="calendar-toolbar"><div class="segmented"><button type="button" data-action="calendar-mode" data-mode="week" class="${!ui.calendarExpanded ? "active" : ""}">Неделя</button><button type="button" data-action="calendar-mode" data-mode="month" class="${ui.calendarExpanded ? "active" : ""}">Месяц</button></div><button type="button" class="text-action" data-action="calendar-today">К сегодня</button></div><div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="calendar-grid">${calendarDays().map(calendarDay).join("")}</div><div class="calendar-legend"><span><i></i>Задачи</span><span><i class="event-dot"></i>События</span><span><i class="holiday-dot"></i>Выходной</span></div>${progress !== null ? `<div class="plan-progress"><span style="width:${progress}%"></span></div>` : ""}<button type="button" class="calendar-handle" data-action="calendar-expand" aria-label="${ui.calendarExpanded ? "Свернуть" : "Развернуть"} календарь жестом"><span></span></button></div>`;
+}
+/** Подпись под датой: праздник или рабочая суббота. */
+function dayNote(day) {
+  const info = typeof dayInfo === "function" ? dayInfo(day) : null;
+  if (info?.holiday) return `<small class="day-note is-off">${esc(info.holiday)}</small>`;
+  if (info?.workday) return `<small class="day-note">Рабочий день (перенос)</small>`;
+  return "";
 }
 function dayAgenda(day) {
   const tasks = tasksOn(day);
   const events = eventsOn(day);
-  return `<section class="date-agenda"><div class="section-heading"><h2>${esc(fullDate(day))}</h2><button class="text-action" type="button" data-action="add" data-type="task">Добавить ${icon("plus", "icon-sm")}</button></div>${tasks.length || events.length ? `${events.length ? `<div class="agenda-group-label">События</div>${events.map(eventCard).join("")}` : ""}${tasks.length ? `<div class="agenda-group-label">Задачи</div><div class="task-stack">${tasks.map(taskCard).join("")}</div>` : ""}` : emptyCard("Здесь пока свободно", "Выберите другую дату или добавьте задачу на этот день.")}</section>`;
+  return `<section class="date-agenda"><div class="section-heading"><h2>${esc(fullDate(day))}${dayNote(day)}</h2><button class="text-action" type="button" data-action="add" data-type="task">Добавить ${icon("plus", "icon-sm")}</button></div>${tasks.length || events.length ? `${events.length ? `<div class="agenda-group-label">События</div>${events.map(eventCard).join("")}` : ""}${tasks.length ? `<div class="agenda-group-label">Задачи</div><div class="task-stack">${tasks.map(taskCard).join("")}</div>` : ""}` : emptyCard("Здесь пока свободно", "Выберите другую дату или добавьте задачу на этот день.")}</section>`;
 }
 function upcomingPage() {
   const late = overdueTasks();
@@ -419,7 +485,7 @@ function entrySheet() {
   // у события — «каждый год» и «напомнить за…». О задаче со сроком бот напоминает в срок сам.
   const repeatOptions = sheet.type === "event" ? [["none", "Не повторять"], ["yearly", "Каждый год"]] : [["none", "Не повторять"], ["daily", "Каждый день"], ["weekdays", "По будням"], ["weekly", "Каждую неделю"], ["monthly", "Каждый месяц"], ["yearly", "Каждый год"]];
   const reminderFields = sheet.type !== "note" ? `<div class="entry-reminders"><h3>${sheet.type === "event" ? "Повтор и напоминание" : "Повтор"}</h3><div class="field-row"><label class="field">Повторять<select name="repeat">${repeatOptions.map(([key, label]) => `<option value="${key}" ${String(field("repeat") || "none") === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>${sheet.type === "event" ? `<label class="field">Напомнить<select name="remindBefore">${[["none", "Не напоминать"], ["at", "В момент начала"], ["5m", "За 5 минут"], ["15m", "За 15 минут"], ["1h", "За 1 час"], ["1d", "За 1 день"]].map(([key, label]) => `<option value="${key}" ${String(field("remindBefore") || (item ? "none" : "1h")) === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>` : ""}</div>${sheet.type === "task" ? `<p class="section-note">Со временем — бот напомнит в срок; без времени — утром в день срока.</p>` : ""}</div>` : "";
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><label class="field">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${dateFields}${taskFields}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}<div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">Удалить</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><label class="field">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${dateFields}${taskFields}${sheet.type === "event" && (sheet.birthday || (typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item?.title || ""))) ? `<label class="field gift-field">🎁 Идеи подарков<textarea name="gifts" rows="3" placeholder="Каждая идея с новой строки, купленное — с ✓ в начале. За 10 дней до дня рождения бот напомнит купить">${esc((item?.gifts || []).map(g => `${g.done ? "✓ " : ""}${g.text}`).join("\n"))}</textarea></label>` : ""}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}<div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">Удалить</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
 }
 function searchSheet() {
   return renderSearchSheetExt();
@@ -443,11 +509,15 @@ function restoreSheetScroll(saved) {
     if (position) { node.scrollTop = position[0]; node.scrollLeft = position[1]; }
   });
 }
+let scrollBeforeRender = null;
 function syncModalScrollLock() {
   const open = Boolean(document.querySelector('[aria-modal="true"]:not([hidden]), .composer-layer, .live-file, .loyalty-full, .live-code-full'));
   const body = document.body;
   if (open && !modalPageLock) {
-    modalPageLock = { x: window.scrollX, y: window.scrollY, page: ui.page, styles: Object.fromEntries(["position", "top", "left", "width"].map(key => [key, body.style[key]])) };
+    // Прокрутку берём снятую до вставки окна: чтение после вставки заставляло
+    // браузер пересчитать всю раскладку — больше половины времени открытия.
+    const at = scrollBeforeRender || { x: window.scrollX, y: window.scrollY };
+    modalPageLock = { x: at.x, y: at.y, page: ui.page, styles: Object.fromEntries(["position", "top", "left", "width"].map(key => [key, body.style[key]])) };
     Object.assign(body.style, { position: "fixed", top: `${-modalPageLock.y}px`, left: `${-modalPageLock.x}px`, width: "100%" });
   } else if (!open && modalPageLock) {
     const saved = modalPageLock;
@@ -462,28 +532,49 @@ function syncModalScrollLock() {
 }
 // Некоторые окна мост добавляет вне app: они тоже должны удерживать фон.
 new MutationObserver(syncModalScrollLock).observe(document.body, { childList: true, subtree: true });
+let renderedShell = "";
 function render() {
+  scrollBeforeRender = modalPageLock ? null : { x: window.scrollX, y: window.scrollY };
   const scroll = captureSheetScroll();
-  disposeAddressMap();
-  if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
   document.documentElement.dataset.theme = themeTone();
   document.documentElement.dataset.palette = ui.theme;
   document.documentElement.dataset.accent = data.settings.accent || "teal";
   document.body.classList.toggle("density-compact", data.settings.density === "compact");
   document.body.classList.toggle("density-spacious", data.settings.density === "spacious");
   const page = ui.demoState !== "normal" && ui.page !== "settings" ? renderDemoStatePage() : ui.page === "today" ? todayPage() : ui.page === "upcoming" ? upcomingPage() : extendedPage(ui.page);
-  const sidebar = `<div class="sidebar-caption">План</div><nav class="sidebar-nav" aria-label="План">${navigation.slice(0, 3).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Пространство</div><nav class="sidebar-nav" aria-label="Разделы">${navigation.slice(3, 9).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Другое</div><nav class="sidebar-nav" aria-label="Другое">${navigation.slice(9).map(item => navItem(item)).join("")}</nav>`;
   const sheet = ui.sheet ? ui.sheet.kind === "search" ? searchSheet() : ui.sheet.kind === "entry" ? entrySheet() : renderExtendedSheet() : "";
-  app.innerHTML = `<div class="app-shell"><aside class="sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · личное пространство</p></div></aside><div><div class="mobile-brand">${brand()}</div><main class="main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : "universal-add"}" aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${sheet}${ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : ""}</div>`;
-  syncModalScrollLock();
-  restoreSheetScroll(scroll);
-  renderedScrollIdentity = sheetScrollIdentity();
+  const overlay = `${sheet}${ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : ""}`;
+  // Открыли или закрыли окно, показали подсказку, а экран под ними тот же —
+  // меняем только окно. Пересборка всего экрана с картами и свайпами давала
+  // 120–200 мс задержки на каждое открытие.
+  const nav = app.querySelector(":scope > .app-shell > .mobile-nav");
+  const hasMap = html => /id="(loyalty-map|mini-map|address-map)"/.test(html);
+  if (nav && page === renderedShell && !hasMap(sheet) && !(nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container"))) {
+    while (nav.nextSibling) nav.nextSibling.remove();
+    nav.insertAdjacentHTML("afterend", overlay);
+    nav.parentElement.querySelectorAll(":scope > .mobile-nav ~ *").forEach(installSwipeCards);
+    afterRender(scroll);
+    return;
+  }
+  disposeAddressMap();
+  if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
+  renderedShell = page;
+  const sidebar = `<div class="sidebar-caption">План</div><nav class="sidebar-nav" aria-label="План">${navigation.slice(0, 3).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Пространство</div><nav class="sidebar-nav" aria-label="Разделы">${navigation.slice(3, 10).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Другое</div><nav class="sidebar-nav" aria-label="Другое">${navigation.slice(10).map(item => navItem(item)).join("")}</nav>`;
+  app.innerHTML = `<div class="app-shell"><aside class="sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · личное пространство</p></div></aside><div><div class="mobile-brand">${brand()}</div><main class="main">${page}</main></div>${movieRandomFab()}<button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${overlay}</div>`;
   const savedTabs = app.querySelector('.subtabs[role="tablist"]');
   const selectedSavedTab = savedTabs?.querySelector('[aria-selected="true"]');
   if (selectedSavedTab) savedTabs.scrollLeft = selectedSavedTab.offsetLeft - savedTabs.offsetLeft - (savedTabs.clientWidth - selectedSavedTab.offsetWidth) / 2;
   installSwipeCards(app);
   mountAddressMap();
   if (typeof mountLoyaltyMap === "function") { mountLoyaltyMap(); drawLoyaltyPeek(); }
+  afterRender(scroll);
+}
+function afterRender(scroll) {
+  syncModalScrollLock();
+  if (typeof pcVolumeKeysSync === "function") pcVolumeKeysSync();
+  scrollBeforeRender = null;
+  restoreSheetScroll(scroll);
+  renderedScrollIdentity = sheetScrollIdentity();
   if (ui.sheet && !ui.sheet.justRendered) {
     const input = app.querySelector(ui.sheet.kind === "search" ? "#search-input" : ui.sheet.kind === "entry" ? '#entry-form input[name="title"]' : '.sheet [autofocus], .sheet input');
     // На телефоне фокус открыл бы клавиатуру поверх окна — ставим его только в поиске.
@@ -509,6 +600,7 @@ function navigate(page) {
   // «Предстоящие» и «Обзор» теперь внутри «Плана».
   if (page === "upcoming" || page === "overview") page = "today";
   if (page === "today" && ui.page !== "today") { ui.selected = todayIso(); ui.calendarAnchor = ui.selected; ui.month = ui.selected.slice(0, 7) + "-01"; }
+  if (ui.page !== page) ui.fromPage = ui.page; // кнопка «назад» ведёт туда, откуда пришли
   ui.page = page;
   ui.menu = false;
   ui.sheet = null;
@@ -672,6 +764,11 @@ document.addEventListener("submit", event => {
   item.title = title;
   item.description = String(form.get("description") || "").trim();
   if (type !== "note") { item.due = String(form.get("due") || (type === "event" ? todayIso() : "")); item.time = String(form.get("time") || ""); item.repeat = String(form.get("repeat") || "none"); if (form.has("remindBefore")) item.remindBefore = String(form.get("remindBefore") || "none"); }
+  if (type === "event" && form.has("gifts")) {
+    // «✓ Наушники» — уже куплено.
+    item.gifts = String(form.get("gifts") || "").split("\n").map(line => line.trim()).filter(Boolean).slice(0, 30)
+      .map(line => { const done = /^[✓✔+]\s*/.test(line); return { text: line.replace(/^[✓✔+]\s*/, ""), done }; }).filter(g => g.text);
+  }
   if (type === "task") {
     item.priority = String(form.get("priority") || "medium"); item.project = String(form.get("project") || "Личное"); if (!existing) item.done = false;
     const before = item.checklist || [];
@@ -682,7 +779,7 @@ document.addEventListener("submit", event => {
   if (ui.page === "upcoming" && item.due) { ui.selected = item.due; ui.month = item.due.slice(0, 7) + "-01"; ui.calendarAnchor = item.due; }
   ui.sheet = null;
   save();
-  toast(existing ? "Изменения сохранены" : `${type === "task" ? "Задача" : type === "event" ? "Событие" : "Заметка"} добавлена`);
+  toast(existing ? "Изменения сохранены" : type === "event" ? "Событие добавлено" : `${type === "task" ? "Задача" : "Заметка"} добавлена`);
 });
 document.addEventListener("input", event => { handleExtendedInput(event); });
 document.addEventListener("change", event => { handleExtendedChange(event); });
