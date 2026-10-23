@@ -45,7 +45,8 @@ function giftSummary(e) {
 
 function giftEditorRow(g = {}) {
   const products = data.saved.products || [];
-  return `<div class="gift-editor-row"><input type="checkbox" data-gift-done aria-label="Куплено" ${g.done ? "checked" : ""}><div class="gift-editor-copy"><input data-gift-text value="${esc(g.text || '')}" maxlength="200" placeholder="Идея подарка"><select data-gift-product aria-label="Карточка товара"><option value="">Прикрепить товар…</option>${products.map(p => `<option value="${esc(p.id)}" ${g.productRef === p.id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select><div class="gift-product-preview">${giftProductPreview(g.productRef)}</div></div><button type="button" class="icon-button" data-gift-remove aria-label="Удалить идею">${icon('close')}</button></div>`;
+  const picker = flowChoicePicker({value:g.productRef || '',label:'Прикрепить товар',attrs:'data-gift-product',options:[{value:'',label:'Без товара'},...products.map(p => ({value:p.id,label:p.title}))]});
+  return `<div class="gift-editor-row check-row"><label class="gift-check"><input type="checkbox" data-gift-done aria-label="Куплено" ${g.done ? "checked" : ""}><span class="task-check">${icon('check','icon-sm')}</span></label><div class="gift-editor-copy"><label class="field"><input data-gift-text value="${esc(g.text || '')}" maxlength="200" placeholder="Идея подарка"></label>${picker}<div class="gift-product-preview">${giftProductPreview(g.productRef)}</div></div><button type="button" class="icon-button" data-gift-remove aria-label="Удалить идею">${icon('close')}</button></div>`;
 }
 function giftProductPreview(ref) {
   const product = (data.saved.products || []).find(p => p.id === ref);
