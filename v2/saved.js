@@ -1,10 +1,29 @@
 function savedItems(category = ui.savedCategory) {
+  if (category === "materials") return MATERIAL_KINDS.flatMap(([key]) => data.saved[key] || []);
   return category === "notes" ? data.notes : (data.saved[category] || []);
+}
+/**
+ * «Материалы» — ссылки, посты и файлы одним списком: искать прочитанное по
+ * трём разделам было неудобно. В базе они по-прежнему отдельно, у каждой
+ * записи свои поля и свой экран.
+ */
+const MATERIAL_KINDS = [["links", "Ссылки", "link"], ["posts", "Посты", "message"], ["files", "Файлы", "file"]];
+function materialCategoryOf(item) {
+  return MATERIAL_KINDS.find(([key]) => (data.saved[key] || []).includes(item))?.[0] || "links";
+}
+function materialKindTabs() {
+  const now = ui.materialKind || "";
+  const tab = (kind, label) => {
+    const count = kind ? (data.saved[kind] || []).length : savedItems("materials").length;
+    return `<button type="button" class="${kind === now ? "active" : ""}" data-action="material-kind" data-kind="${kind}" aria-pressed="${kind === now}">${label}<span>${count}</span></button>`;
+  };
+  return `<div class="movie-seen-tabs four" role="group" aria-label="Тип материала">${tab("", "Все")}${MATERIAL_KINDS.map(([kind, label]) => tab(kind, label)).join("")}</div>`;
 }
 function savedItem(category, recordId) {
   return savedItems(category).find(item => item.id === recordId);
 }
 function savedIcon(category) {
+  if (category === "materials") return "archive";
   return (SAVED_CATEGORIES.find(([key]) => key === category) || [null, null, "note"])[2];
 }
 function savedSections(category = ui.savedCategory) {
@@ -15,12 +34,12 @@ function savedSection(category, sectionId) {
 }
 function savedSectionBadge(category, sectionId) {
   const section = savedSection(category, sectionId);
-  return section ? `<span class="map-category-badge" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}</span>` : "";
+  return section ? `<span class="map-category-badge" style="--map-color:${esc(section.color)}">${icon(sectionIcon(section, savedIcon(category)), "icon-sm")}${esc(section.name)}</span>` : "";
 }
 function savedCount() {
   return SAVED_CATEGORIES.reduce((sum, [key]) => sum + savedItems(key).length, 0);
 }
-const SAVED_PRIMARY = ["notes", "recipes", "movies", "addresses", "files", "tickets"];
+const SAVED_PRIMARY = ["notes", "materials", "recipes", "movies", "addresses", "tickets"];
 function savedRecordLabel(count) {
   const lastTwo = count % 100;
   const last = count % 10;
@@ -31,6 +50,7 @@ const SAVED_SECTION_DESCRIPTIONS = {
   recipes: "Ингредиенты и шаги",
   movies: "Что посмотреть",
   addresses: "Места и маршруты",
+  materials: "Ссылки, посты и файлы",
   files: "Документы и вложения",
   posts: "Публикации из чатов",
   links: "Статьи и сайты",
@@ -55,16 +75,18 @@ function savedOrdered(keys, group) {
 function savedExtraCard(key) {
   const extra = key === "vault"
     ? { page: "vault", icon: "key", name: "Пароли", about: "Зашифрованное хранилище", count: "" }
+    : key === "docs" ? { page: "docs", icon: "file", name: "Документы", about: "Паспорт, ИНН, СНИЛС", count: "" }
     : { page: "projects", icon: "project", name: "Проекты", about: "Задачи по проектам", count: String((data.projects || []).length) };
   return `<button class="saved-section-card compact saved-section-${key}" type="button" data-action="navigate" data-page="${extra.page}" data-order-key="${key}" aria-label="${extra.name}"><span class="saved-section-icon">${icon(extra.icon)}</span><span class="saved-section-copy"><strong>${extra.name}</strong><small>${extra.about}</small></span>${extra.count ? `<span class="saved-section-count">${extra.count}</span>` : ""}<span class="saved-section-arrow" aria-hidden="true">${icon("right", "icon-sm")}</span></button>`;
 }
 function renderSavedOverview() {
   const list = data.settings.savedLayout === "list";
-  const card = (key, compact) => key === "birthdays" ? birthdayTile() : key === "sites" ? sitesTile() : ["vault", "projects"].includes(key) ? savedExtraCard(key) : savedSectionCard(key, compact);
+  const card = (key, compact) => key === "birthdays" ? birthdayTile() : key === "sites" ? sitesTile() : ["vault", "projects", "docs"].includes(key) ? savedExtraCard(key) : savedSectionCard(key, compact);
   // Какие плитки в «Основных» — решает человек: перетащил плитку в «Ещё» или обратно.
   // Пустые «Проекты» — плитка с нулём, ведущая на пустой экран: не показываем, пока проектов нет.
-  const all = [...SAVED_CATEGORIES.map(([key]) => key), "birthdays", "sites", ...((data.projects || []).length ? ["projects"] : []), "vault"];
-  const chosen = ((data.settings.savedOrder || {}).main || []).filter(key => all.includes(key));
+  const all = [...SAVED_CATEGORIES.map(([key]) => key).filter(key => !MATERIAL_KINDS.some(([kind]) => kind === key)), "materials", "birthdays", "sites", ...((data.projects || []).length ? ["projects"] : []), "vault", "docs"];
+  // Старый порядок со «Ссылками», «Постами» или «Файлами» в основных — теперь это «Материалы».
+  const chosen = [...new Set(((data.settings.savedOrder || {}).main || []).map(key => MATERIAL_KINDS.some(([kind]) => kind === key) ? "materials" : key))].filter(key => all.includes(key));
   const mainKeys = chosen.length ? chosen : SAVED_PRIMARY;
   const primary = savedOrdered(mainKeys, "main").map(key => card(key, list)).join("");
   const others = all.filter(key => !mainKeys.includes(key));
@@ -83,11 +105,13 @@ function renderSavedAddMenuSheet() {
   const category = ui.savedCategory;
   const overview = category === "overview";
   const ai = `<button type="button" class="saved-add-ai" data-action="universal-add">${icon("note", "icon-sm")}<span>Написать как боту — ИИ разберёт<small>Одно сообщение, одна или несколько записей</small></span>${icon("right", "icon-sm")}</button>`;
-  const options = ai + (overview ? SAVED_CATEGORIES.map(([key, label]) => `<button type="button" data-action="saved-add-record" data-category="${key}">${icon(savedIcon(key), "icon-sm")}<span>${esc(label)}</span>${icon("right", "icon-sm")}</button>`).join("") : `<button type="button" data-action="saved-add-record" data-category="${category}">${icon(savedIcon(category), "icon-sm")}<span>${category === "lists" ? "Новый список" : category === "tickets" ? "Новый билет" : category === "notes" ? "Новая заметка" : `Новая запись · ${SAVED_NAMES[category]}`}</span>${icon("right", "icon-sm")}</button>${category === "addresses" ? `<button type="button" data-action="saved-add-map">${icon("pin", "icon-sm")}<span>Поставить метку на карте</span>${icon("right", "icon-sm")}</button>` : ""}`);
+  const options = ai + (overview || category === "materials" ? (overview ? SAVED_CATEGORIES.filter(([key]) => !MATERIAL_KINDS.some(([kind]) => kind === key)).concat(MATERIAL_KINDS) : MATERIAL_KINDS).map(([key, label]) => `<button type="button" data-action="saved-add-record" data-category="${key}">${icon(savedIcon(key), "icon-sm")}<span>${esc(label)}</span>${icon("right", "icon-sm")}</button>`).join("") : `<button type="button" data-action="saved-add-record" data-category="${category}">${icon(savedIcon(category), "icon-sm")}<span>${category === "lists" ? "Новый список" : category === "tickets" ? "Новый билет" : category === "notes" ? "Новая заметка" : `Новая запись · ${SAVED_NAMES[category]}`}</span>${icon("right", "icon-sm")}</button>${category === "addresses" ? `<button type="button" data-action="saved-add-map">${icon("pin", "icon-sm")}<span>Поставить метку на карте</span>${icon("right", "icon-sm")}</button>` : ""}`);
   const lists = !overview && category === "lists" && savedItems("lists").length ? `<form id="saved-add-list-item" class="saved-add-list-item"><h3>Пункт в существующий список</h3><label class="field">Список<select name="listId">${savedItems("lists").map(item => `<option value="${esc(item.id)}">${esc(item.title)}</option>`).join("")}</select></label><label class="field">Новый пункт<input name="text" type="text" placeholder="Что добавить?" maxlength="120" required></label><button class="primary-button" type="submit">Добавить пункт</button></form>` : "";
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-add-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${overview ? "Добавить в сохранённое" : `Добавить · ${esc(SAVED_NAMES[category])}`}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="saved-add-options ${overview ? "is-overview" : ""}">${options}</div>${lists}</section></div>`;
 }
 function openSavedRecord(category, recordId = null, mode = recordId ? "view" : "edit") {
+  // Из «Материалов» запись открывается своим разделом, а после закрытия — снова «Материалы».
+  if (ui.savedCategory === "materials" && MATERIAL_KINDS.some(([kind]) => kind === category)) ui.savedReturn = category;
   ui.savedCategory = category;
   ui.sheet = { kind: "saved", category, id: recordId, mode, draft: !recordId ? { categoryId: ui.savedSection === "__none__" ? "" : ui.savedSection } : null, justRendered: false };
   ui.menu = false;
@@ -106,6 +130,7 @@ function savedVisibleItems() {
   const q = ui.savedQuery.trim().toLocaleLowerCase("ru-RU");
   const result = savedItems().filter(item => {
     if (ui.savedCategory === "products" && isProductWish(item) !== (ui.productTab === "wishes")) return false;
+    if (ui.savedCategory === "materials" && ui.materialKind && materialCategoryOf(item) !== ui.materialKind) return false;
     const sectionId = ui.savedCategory === "notes" ? noteFolderId(item) : item.categoryId;
     if (ui.savedCategory !== "addresses" && !(ui.savedCategory === "movies" && ui.savedFilter === "viewed") && ui.savedSection === "__none__" && sectionId) return false;
     if (ui.savedCategory !== "addresses" && !(ui.savedCategory === "movies" && ui.savedFilter === "viewed") && ui.savedSection && ui.savedSection !== "__none__" && sectionId !== ui.savedSection) return false;
@@ -129,9 +154,14 @@ function savedVisibleItems() {
     if (ui.savedCategory === "movies" && seen && !item.rewatch && !["viewed", "pinned", "skipped"].includes(ui.savedFilter) && !q) return false;
     if (ui.savedCategory === "movies" && ui.savedFilter === "viewed" && !movieSeenMatch(item)) return false;
     const sectionName = ui.savedCategory === "addresses" ? mapCategory(item.categoryId)?.name : savedSection(ui.savedCategory, sectionId)?.name;
-    return !q || `${item.title} ${item.description || ""} ${item.topic || ""} ${item.address || ""} ${item.city || ""} ${addressParts(item).join(" ")} ${item.origin || ""} ${item.destination || ""} ${item.venue || ""} ${item.reference || ""} ${sectionName || ""} ${(item.tags || []).join(" ")}`.toLocaleLowerCase("ru-RU").includes(q);
+    return !q || `${item.title} ${item.description || ""} ${item.topic || ""} ${item.address || ""} ${item.city || ""} ${doorParts(item).join(" ")} ${item.origin || ""} ${item.destination || ""} ${item.venue || ""} ${item.reference || ""} ${sectionName || ""} ${(item.tags || []).join(" ")}`.toLocaleLowerCase("ru-RU").includes(q);
   });
   result.sort((a, b) => sortSavedItems(a, b));
+  // Адреса — ближние сверху, если известно, где вы, и не выбрана другая сортировка.
+  if (ui.savedCategory === "addresses" && (!ui.savedSort || ui.savedSort === "newest") && typeof addressDistance === "function") {
+    const far = item => addressDistance(item) ?? Infinity;
+    if (result.some(item => far(item) < Infinity)) result.sort((a, b) => far(a) - far(b));
+  }
   // Готовые списки (все пункты отмечены) — вниз: сверху то, что ещё нужно купить или сделать.
   if (ui.savedCategory === "lists") {
     const finished = list => (list.items || []).length > 0 && (list.items || []).every(x => x.done);
@@ -182,11 +212,16 @@ function todayTicketsSection(skip = new Set()) {
     const day = days <= 0 ? "Сегодня" : days === 1 ? "Завтра" : `Через ${days} ${word(days, "день", "дня", "дней")}`;
     return `${day}${t.eventTime ? ` · ${t.eventTime}` : ""}`;
   };
-  const rows = soon.map(t => `<button type="button" class="ticket-mini" data-action="saved-open" data-category="tickets" data-id="${esc(t.id)}"><span class="ticket-mini-icon">${icon("ticket")}</span><span class="ticket-mini-copy"><strong>${esc(t.title)}</strong><small>${esc(when(t))}${t.seat ? ` · ${esc(t.seat.split(" · ")[0])}` : ""}</small></span>${icon("right", "icon-sm")}</button>`).join("");
+  const rows = soon.map(t => `<button type="button" class="ticket-mini" data-action="saved-open" data-category="tickets" data-id="${esc(t.id)}"><span class="ticket-mini-icon">${icon(ticketIcon(t))}</span><span class="ticket-mini-copy"><strong>${esc(t.title)}</strong><small>${esc(when(t))}${t.seat ? ` · ${esc(t.seat.split(" · ")[0])}` : ""}</small></span>${icon("right", "icon-sm")}</button>`).join("");
   return `<section class="section"><div class="section-heading"><h2>Билеты на этой неделе</h2><span class="count">${soon.length}</span></div><div class="ticket-mini-list">${rows}</div></section>`;
 }
 function movieBlurbEmpty(text) { return /^(фильм|сериал|мультфильм)\s+\d{4}\s+года\.?$|^(?:фильм|сериал|мультфильм)\s+включ[её]н\s+в\s+список\s+(?:ролика|рилса)|^входит в (?:подборку|список)|^в посте представлен|^добавлен[аоы]?(?:\s+фильм)?\s+из|^(?:фильм|сериал)\s+из\s+(?:подборки|рилс)|^(?:подборка|список)\s+(?:из\s+)?(?:инстаграм|instagram|рилс)/i.test(String(text).trim()); }
 function movieCardBlurb(item) { return String(item.hook || (!movieBlurbEmpty(item.description || '') ? item.description : '') || '').trim(); }
+function movieHookBlock(item) {
+  const hook = movieCardBlurb(item);
+  const note = !movieBlurbEmpty(item.description || '') ? String(item.description || '').trim() : '';
+  return `${hook ? `<blockquote class="movie-summary">${esc(hook)}</blockquote>` : ''}${item.hook && note && note !== hook ? `<div class="detail-block movie-personal-note"><h3>Моя заметка</h3><p>${esc(note)}</p></div>` : ''}`;
+}
 function movieIsViewed(item) { return item.status === "Посмотрел" || Boolean(item.viewed); }
 function movieDemoInfo(item) {
   return item.title?.trim().toLocaleLowerCase("ru-RU") === "патерсон" && Number(item.year) === 2016
@@ -270,11 +305,49 @@ function postTime(created) {
 // Подборки фильмов — теперь разделы с их названием (сервер кладёт фильм в
 // раздел подборки), поэтому отдельных контуров в списке больше нет.
 function savedCardsGrouped(items, category) {
-  return items.map(item => savedRecordCard(item, category)).join("");
+  const kindOf = item => category === "materials" ? materialCategoryOf(item) : category;
+  // Тома одного архива (dragns.part1.rar … part10.rar, film.7z.001) — одной карточкой.
+  const groups = new Map();
+  for (const item of items) {
+    const part = kindOf(item) === "files" ? multipartOf(item) : null;
+    if (part) groups.set(part.key, [...(groups.get(part.key) || []), { item, ...part }]);
+  }
+  const shown = new Set();
+  return items.map(item => {
+    const part = kindOf(item) === "files" ? multipartOf(item) : null;
+    const group = part && groups.get(part.key);
+    if (!group || group.length < 2) return savedRecordCard(item, kindOf(item));
+    if (shown.has(part.key)) return "";
+    shown.add(part.key);
+    return multipartCard(group);
+  }).join("");
+}
+function multipartOf(item) {
+  const name = String(item.fileName || item.title || "").trim();
+  let m = name.match(/^(.+?)[._ -]?part0*(\d{1,4})(\.[a-z0-9]{1,5})$/i);
+  if (m) return { key: (m[1] + m[3]).toLocaleLowerCase("ru-RU"), name: m[1] + m[3], part: Number(m[2]) };
+  m = name.match(/^(.+\.[a-z0-9]{1,5})\.0*(\d{1,4})$/i);
+  if (m) return { key: m[1].toLocaleLowerCase("ru-RU"), name: m[1], part: Number(m[2]) };
+  return null;
+}
+function multipartCard(group) {
+  const parts = group.slice().sort((a, b) => a.part - b.part);
+  const last = parts[parts.length - 1].part;
+  const have = new Set(parts.map(p => p.part));
+  const missing = [];
+  for (let n = 1; n <= last && missing.length < 4; n++) if (!have.has(n)) missing.push(n);
+  const key = parts[0].key;
+  const open = (ui.openFileGroups || []).includes(key);
+  const word = n => n % 10 === 1 && n % 100 !== 11 ? "часть" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "части" : "частей";
+  const state = missing.length ? `нет ${missing.length > 1 ? "частей" : "части"} ${missing.join(", ")}${missing.length === 4 ? "…" : ""}` : "все части на месте";
+  const rows = open ? `<div class="file-group-parts">${parts.map(p => `<button type="button" class="file-group-part" data-action="saved-open" data-category="files" data-id="${esc(p.item.id)}">${icon("file", "icon-sm")}<span>${esc(p.item.fileName || p.item.title)}</span>${icon("right", "icon-sm")}</button>`).join("")}</div>` : "";
+  return `<div class="record-card file-group ${open ? "is-open" : ""} ${missing.length ? "has-gap" : ""}"><button type="button" class="file-group-head" data-action="file-group-toggle" data-key="${esc(key)}" aria-expanded="${open}"><span class="record-kicker">${icon("archive", "icon-sm")}Архив · ${parts.length} ${word(parts.length)}</span><span class="record-title">${esc(parts[0].name)}</span><span class="record-meta"><span>${esc(state)}</span><span>${icon(open ? "up" : "down", "icon-sm")}</span></span></button>${rows}</div>`;
 }
 function savedRecordCard(item, category) {
   return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}${(category === "movies" ? movieIsViewed(item) : item.viewed) ? `<span class="record-seen" title="Просмотрено" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon(category === "products" ? "heart" : "bookmark", "icon-sm")}</button></div>`;
 }
+/** Самолёт, поезд или концерт — по типу билета. */
+function ticketIcon(item) { return { flight: "plane", train: "train", event: "music" }[item?.ticketType] || "ticket"; }
 function savedRecordCardBody(item, category) {
   if (category === "tickets") {
     const type = { event: "Мероприятие", train: "Поезд", flight: "Самолёт" }[item.ticketType] || "Билет";
@@ -287,7 +360,7 @@ function savedRecordCardBody(item, category) {
     const coded = rows.filter(row => row.text);
     const seats = rows.map(row => row.seat).filter(Boolean);
     const when = `${item.eventDate ? shortDate(item.eventDate) : "Дата не указана"}${item.eventTime ? ` · ${item.eventTime}` : ""}`;
-    const main = `<button class="ticket-main" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}"><span class="ticket-kicker">${icon("ticket", "icon-sm")}${esc(type)} · ${esc(when)}</span><strong>${esc(item.title)}</strong>${route ? `<span class="ticket-route">${esc(route)}</span>` : ""}${seats.length ? `<span class="ticket-seats">${seats.map(esc).join("<br>")}</span>` : ""}</button>`;
+    const main = `<button class="ticket-main" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}"><span class="ticket-kicker">${icon(ticketIcon(item), "icon-sm")}${esc(type)} · ${esc(when)}</span><strong>${esc(item.title)}</strong>${route ? `<span class="ticket-route">${esc(route)}</span>` : ""}${seats.length ? `<span class="ticket-seats">${seats.map(esc).join("<br>")}</span>` : ""}</button>`;
     const stub = `<button class="ticket-stub ${coded.length ? "" : "is-empty"}" type="button" data-action="saved-open" data-category="tickets" data-id="${esc(item.id)}" ${coded.length ? `data-live-code="0" data-ticket="${esc(item.id)}"` : ""} aria-label="${coded.length ? "Код билета на весь экран" : "Кода пока нет"}">${stubBarcode(coded[0]?.text || item.id)}</button>`;
     const notches = ["tl", "bl", "tr", "br", "pt", "pb"].map(n => `<i class="ticket-notch ${n}" aria-hidden="true"></i>`).join("");
     return `<div class="record-card ticket-card ticket-paper">${notches}${main}${stub}</div>`;
@@ -309,8 +382,9 @@ function savedRecordCardBody(item, category) {
     return `<button class="record-card post-card post-bubble tail-${side} ${image ? "has-media" : ""}" type="button" data-action="saved-open" data-category="posts" data-id="${esc(item.id)}"><strong class="post-bubble-title">${esc(item.title)}</strong>${image ? `<span class="post-card-image"><img src="${esc(image.src)}" alt="" loading="lazy" onerror="this.parentElement.remove()"></span>` : ""}${(() => { const text = item.description || String(postInfo(item, "body") || "").trim(); return text ? `<span class="post-bubble-text">${esc(text)}</span>` : `<span class="post-bubble-text is-empty">${/t\.me\//.test(item.url || "") ? "Telegram не показывает этот пост вне приложения — откройте его в канале." : "Без текста — только вложение, оно в чате с ботом."}</span>`; })()}${meta}</button>`;
   }
   const status = category === "movies" ? item.status : category === "files" && (item.filePath || item.fileData) ? "Открыть файл" : item.viewed ? "Просмотрено" : category === "lists" ? `${(item.items || []).filter(x => x.done).length}/${(item.items || []).length} пунктов` : item.minutes ? `${item.minutes} мин` : "";
-  const extra = category === "products" ? demoMoney(item.price) : category === "recipes" ? `${item.servings || 1} порции` : category === "movies" ? String(item.year || "") : category === "addresses" ? item.city || "" : /^(Из чата|Сохранено)$/.test(item.source || "") ? "" : item.source || "";
-  const description = category === "addresses" ? item.address : item.description;
+  const extra = category === "products" ? demoMoney(item.price) : category === "recipes" ? `${item.servings || 1} порции` : category === "movies" ? String(item.year || "") : category === "addresses" ? [item.city, typeof addressDistance === "function" && addressDistance(item) !== null ? distanceLabel(addressDistance(item)) : ""].filter(Boolean).join(" · ") : /^(Из чата|Сохранено)$/.test(item.source || "") ? "" : item.source || "";
+  // Адрес целиком: подъезд, этаж и квартира — сразу в карточке, не только в подробностях.
+  const description = category === "addresses" ? [item.address, ...doorParts(item)].filter(Boolean).join(", ") : item.description;
   return `<button class="record-card" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}"><span class="record-kicker">${category === "addresses" ? mapCategoryBadge(item.categoryId) : savedSectionBadge(category, item.categoryId)}</span><span class="record-title">${esc(item.title)}</span>${category === "lists" ? listPreview(item) : ""}${description ? `<span class="record-description">${esc(description)}</span>` : ""}${status || extra ? `<span class="record-meta">${status ? `<span>${esc(status)}</span>` : ""}${extra ? `<span>${esc(extra)}</span>` : ""}</span>` : ""}</button>`;
 }
 function ticketCodeBlock(item) {
@@ -347,12 +421,12 @@ function notePlain(text, title = "") {
   return lines.join(" · ").slice(0, 220);
 }
 function noteRow(item) {
-  const folder = savedSection("notes", noteFolderId(item))?.name || "Без папки";
+  const folder = savedSection("notes", noteFolderId(item))?.name || "Без раздела";
   return `<button class="note-row" type="button" data-action="saved-open" data-category="notes" data-id="${esc(item.id)}"><span class="note-row-title">${esc(item.title || "Без названия")}</span><span class="note-row-preview">${esc(notePlain(item.description, item.title) || "Пустая заметка")}</span><span class="note-row-foot"><time>${esc(noteDateLabel(item))}</time><span>${esc(folder)}</span>${item.viewed ? `<span class="note-row-seen" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}${item.pinned ? `<span class="note-row-pin" aria-label="Закреплено">${icon("bookmark", "icon-sm")}</span>` : ""}</span></button>`;
 }
 function renderNotesResults() {
   const items = savedVisibleItems().slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.updated || b.created || "").localeCompare(String(a.updated || a.created || "")));
-  if (!items.length) return `<div class="notes-empty"><strong>${ui.savedQuery ? "Ничего не найдено" : "Здесь пока нет заметок"}</strong><p>${ui.savedQuery ? "Попробуйте другое слово или выберите другую папку." : "Нажмите «+», чтобы записать мысль."}</p></div>`;
+  if (!items.length) return `<div class="notes-empty"><strong>${ui.savedQuery ? "Ничего не найдено" : "Здесь пока нет заметок"}</strong><p>${ui.savedQuery ? "Попробуйте другое слово или выберите другой раздел." : "Нажмите «+», чтобы записать мысль."}</p></div>`;
   const pinned = items.filter(item => item.pinned);
   const rest = items.filter(item => !item.pinned);
   const group = (title, list) => list.length ? `<section class="notes-group"><h2>${title}</h2><div class="notes-list">${list.map(noteRow).join("")}</div></section>` : "";
@@ -364,8 +438,10 @@ function renderNotesPage() {
   const sections = savedSections("notes");
   const folderCount = id => savedItems("notes").filter(item => noteFolderId(item) === id).length;
   const unfiled = folderCount("");
-  const folders = `<div class="notes-folders" aria-label="Папки заметок"><button type="button" class="${!ui.savedSection ? "active" : ""}" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${savedItems("notes").length}</span></button>${sections.map(section => `<button type="button" class="${ui.savedSection === section.id ? "active" : ""}" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}">${esc(section.name)} <span>${folderCount(section.id)}</span></button>`).join("")}${unfiled ? `<button type="button" class="${ui.savedSection === "__none__" ? "active" : ""}" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без папки <span>${unfiled}</span></button>` : ""}</div>`;
-  return `<div class="notes-screen"><div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Папки</button></div><header class="notes-heading saved-section-heading"><div><h1>Заметки</h1></div><span>${savedItems("notes").length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Новая заметка">${icon("plus")}</button></header><label class="notes-search">${icon("search", "icon-sm")}<input id="saved-filter-input" type="search" value="${esc(ui.savedQuery)}" placeholder="Поиск по заметкам" aria-label="Поиск по заметкам"></label>${folders}<div id="saved-results" class="notes-results">${renderNotesResults()}</div></div>`;
+  // Разделы заметок — такими же чипами, как в остальных разделах «Сохранённого».
+  const chip = (id, label, count, section) => `<button type="button" class="map-category-chip ${ui.savedSection === id ? "active" : ""}" data-action="saved-section-filter" data-id="${esc(id)}" aria-pressed="${ui.savedSection === id}"${section ? ` style="--map-color:${esc(section.color)}"` : ""}>${section ? icon(sectionIcon(section, "note"), "icon-sm") : ""}${esc(label)} <span>${count}</span></button>`;
+  const folders = sections.length ? `<div class="map-categories saved-subcategories" aria-label="Разделы заметок">${chip("", "Все", savedItems("notes").length)}${sections.map(section => chip(section.id, section.name, folderCount(section.id), section)).join("")}${unfiled ? chip("__none__", "Без раздела", unfiled) : ""}</div>` : "";
+  return `<div class="notes-screen"><div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button></div><header class="notes-heading saved-section-heading"><div><h1>Заметки</h1></div><span>${savedItems("notes").length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Новая заметка">${icon("plus")}</button></header><label class="notes-search">${icon("search", "icon-sm")}<input id="saved-filter-input" type="search" value="${esc(ui.savedQuery)}" placeholder="Поиск по заметкам" aria-label="Поиск по заметкам"></label>${folders}<div id="saved-results" class="notes-results">${renderNotesResults()}</div></div>`;
 }
 /** Записи открытой вкладки: у фильмов папки «Кино / Сериалы» считаются внутри «В планах» или «Просмотрено». */
 function savedChipPool(category) {
@@ -387,7 +463,7 @@ function renderSavedSectionChips(category, tail = "") {
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
   // Папки видны всегда, когда хоть одна не пуста: по ним и ходят внутри раздела.
   if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return base+(tail ? `<div class="saved-sort-row">${tail}</div>` : "");
-  return base+`<div class="map-categories saved-subcategories ${category === "movies" ? "movie-folder-chips" : ""}" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${tail}</div>`;
+  return base+`<div class="map-categories saved-subcategories ${category === "movies" ? "movie-folder-chips" : ""}" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(sectionIcon(section, savedIcon(category)), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}</div>${tail ? `<div class="saved-sort-row">${tail}</div>` : ""}`;
 }
 /** Разделы лентой — только непустые (и открытый), открытый — по центру. */
 function savedSwitch() {
@@ -395,6 +471,7 @@ function savedSwitch() {
   return `<div class="subtabs saved-switch" role="tablist" aria-label="Разделы сохранённого">${items.map(([key, label, symbol]) => `<button type="button" role="tab" class="${ui.savedCategory === key ? "active" : ""}" aria-selected="${ui.savedCategory === key}" data-action="saved-tab" data-category="${key}">${icon(symbol, "icon-sm")}${label}<span class="tab-count">${savedItems(key).length}</span></button>`).join("")}</div>`;
 }
 function renderSavedPage() {
+  if (ui.savedReturn && !ui.sheet) { if (ui.savedCategory === ui.savedReturn) ui.savedCategory = "materials"; ui.savedReturn = null; }
   if (ui.savedCategory === "overview") return renderSavedOverview();
   if (ui.savedCategory === "notes") return renderNotesPage();
   if (ui.savedCategory === "birthdays") return renderBirthdaysPage();
@@ -416,10 +493,11 @@ function renderSavedPage() {
   // Поиск — в «+» (он ищет и добавляет), а «Показать» стоит в одном ряду с папками.
   const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
   const toolbar = "";
-  const heading = `<div class="notes-topline ${category === 'movies' ? 'movie-island-row' : ''}"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button>${category === 'movies' ? movieCarouselToggle() : ''}<span class="notes-topline-actions">${category === "movies" ? `<button type="button" class="icon-button movie-random-button" data-action="movie-random" aria-label="Случайный фильм" title="Случайный фильм">${icon("spark", "icon-sm")}</button>` : ""}<button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
+  const heading = `<div class="notes-topline ${category === 'movies' ? 'movie-island-row' : ''}"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button>${category === 'movies' ? movieCarouselToggle() : ''}<span class="notes-topline-actions"><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "materials" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
   const hint = category === "movies" && !movieCarouselEnabled() && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
   const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
-  const main = category === "addresses" ? renderAddressWorkspace()
+  const main = category === "materials" ? `${materialKindTabs()}<div class="saved-sort-row">${sortSelect}</div>${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
+    : category === "addresses" ? renderAddressWorkspace()
     : category === "cards" ? renderWallet()
     : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
     : category === "recipes" && ui.savedFilter === "whatcook" ? `${recipeTabs()}${renderWhatToCook()}`
@@ -448,10 +526,10 @@ function renderSavedSectionsSheet() {
   const category = ui.sheet.category;
   const sections = savedSections(category);
   const editing = sections.find(section => section.id === ui.sheet.editSectionId);
-  const iconOptions = [["note", "Заметка"], ["bookmark", "Закладка"], ["event", "Календарь"], ["project", "Проект"], ["archive", "Папка"], ["arrow", "Поездка"], ["wallet", "Покупки"], ["inbox", "Входящие"], ["overview", "Сетка"], ["link", "Ссылка"], ["check", "Список"]];
+  const iconOptions = [["note", "Заметка"], ["bookmark", "Закладка"], ["event", "Календарь"], ["project", "Проект"], ["archive", "Папка"], ["arrow", "Поездка"], ["plane", "Самолёт"], ["train", "Поезд"], ["music", "Концерт"], ["car", "Машина"], ["home", "Дом"], ["cart", "Покупки"], ["coffee", "Еда"], ["gift", "Подарок"], ["health", "Здоровье"], ["study", "Учёба"], ["wallet", "Деньги"], ["inbox", "Входящие"], ["overview", "Сетка"], ["link", "Ссылка"], ["check", "Список"]];
   const isNotes = category === "notes";
-  const rows = sections.map(section => { const count = savedItems(category).filter(item => (isNotes ? noteFolderId(item) : item.categoryId) === section.id).length; return `<div class="map-category-row"><span class="map-category-symbol" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category))}</span><span><strong>${esc(section.name)}</strong><small>${savedRecordLabel(count)}</small></span><button type="button" data-action="saved-section-edit" data-id="${esc(section.id)}" aria-label="Изменить ${esc(section.name)}">${icon("note", "icon-sm")}</button><button type="button" data-action="saved-section-delete" data-id="${esc(section.id)}" aria-label="Удалить ${esc(section.name)}">${icon("trash", "icon-sm")}</button></div>`; }).join("");
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet map-categories-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${isNotes ? "Папки заметок" : `Разделы: ${esc(SAVED_NAMES[category])}`}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">${isNotes ? "Создавайте папки для заметок. Заметки без папки остаются в списке «Все»." : "Создавайте собственные разделы. Записи без раздела остаются в «Все»."}</p><div class="map-category-list">${rows || `<p class="section-note">${isNotes ? "Папок пока нет." : "Разделов пока нет."}</p>`}</div><form id="saved-section-form"><h3>${editing ? (isNotes ? "Изменить папку" : "Изменить раздел") : (isNotes ? "Новая папка" : "Новый раздел")}</h3>${savedFormField("Название", "name", editing?.name || "", "text", 'maxlength="40" required autofocus')}<div class="field-row"><label class="field">Значок<select name="icon">${iconOptions.map(([value, label]) => `<option value="${value}" ${editing?.icon === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field">Цвет<input name="color" type="color" value="${esc(editing?.color || "#8dbbb4")}"></label></div><p class="form-error" role="alert"></p><div class="sheet-actions">${editing ? `<button class="ghost-button" type="button" data-action="saved-section-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${editing ? "Сохранить" : (isNotes ? "Создать папку" : "Создать раздел")}</button></div></form></section></div>`;
+  const rows = sections.map(section => { const count = savedItems(category).filter(item => (isNotes ? noteFolderId(item) : item.categoryId) === section.id).length; return `<div class="map-category-row"><span class="map-category-symbol" style="--map-color:${esc(section.color)}">${icon(sectionIcon(section, savedIcon(category)))}</span><span><strong>${esc(section.name)}</strong><small>${savedRecordLabel(count)}</small></span><button type="button" data-action="saved-section-edit" data-id="${esc(section.id)}" aria-label="Изменить ${esc(section.name)}">${icon("note", "icon-sm")}</button><button type="button" data-action="saved-section-delete" data-id="${esc(section.id)}" aria-label="Удалить ${esc(section.name)}">${icon("trash", "icon-sm")}</button></div>`; }).join("");
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet map-categories-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Разделы: ${esc(SAVED_NAMES[category])}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">${"Создавайте собственные разделы. Записи без раздела остаются в «Все»."}</p><div class="map-category-list">${rows || `<p class="section-note">${"Разделов пока нет."}</p>`}</div><form id="saved-section-form"><h3>${editing ? ("Изменить раздел") : ("Новый раздел")}</h3>${savedFormField("Название", "name", editing?.name || "", "text", 'maxlength="40" required autofocus')}<div class="field-row"><label class="field">Значок<select name="icon">${iconOptions.map(([value, label]) => `<option value="${value}" ${editing?.icon === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field">Цвет<input name="color" type="color" value="${esc(editing?.color || "#8dbbb4")}"></label></div><p class="form-error" role="alert"></p><div class="sheet-actions">${editing ? `<button class="ghost-button" type="button" data-action="saved-section-cancel">Отмена</button>` : ""}<button class="primary-button" type="submit">${editing ? "Сохранить" : ("Создать раздел")}</button></div></form></section></div>`;
 }
 function savedFormField(label, name, value, type = "text", extra = "") {
   return `<label class="field">${label}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
@@ -632,7 +710,7 @@ function renderSavedViewSheet(item, category) {
     const venuePoint = { title: item.venue || item.title, address: item.venue, lat: item.venueLat, lng: item.venueLng };
     const venueCoords = mapPointCoordinates(venuePoint);
     const venueBlock = item.ticketType === "event" && item.venue ? `<div class="ticket-venue"><div class="saved-address">${icon("pin")}<strong>${esc(item.venue)}</strong></div>${venueCoords ? `<a class="address-mini-map-link" href="${esc(mapExternalUrl(venuePoint))}" target="_blank" rel="noopener noreferrer" aria-label="Открыть в картах"><div id="address-mini-map" class="address-mini-map" data-lat="${venueCoords[0]}" data-lng="${venueCoords[1]}"></div></a>` : ""}<a class="small-button saved-link-button" href="${esc(mapExternalUrl(venuePoint))}" target="_blank" rel="noopener noreferrer">Открыть в картах ${icon("external", "icon-sm")}</a></div>` : "";
-    details.push(`<div class="ticket-detail"><div class="ticket-detail-main"><span>${icon("ticket", "icon-sm")}${type}</span><strong>${esc(item.title)}</strong><p>${esc(destination || item.description || "")}</p></div><div class="ticket-detail-stub"><span>${esc(item.eventDate ? shortDate(item.eventDate) : "Без даты")}${item.eventTime ? ` · ${esc(item.eventTime)}` : ""}</span><strong>${seats.length ? seats.map(esc).join("<br>") : "Место не указано"}</strong>${item.reference ? `<small>${esc(item.reference)}</small>` : ""}</div></div>${ticketCodeBlock(item)}${venueBlock}<div class="saved-detail-table">${savedDetailLine("Перевозчик / организатор", item.carrier)}${savedDetailLine("Откуда", item.origin)}${savedDetailLine("Куда", item.destination)}</div>${fileUrl ? `<a class="small-button saved-link-button" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer">Открыть билет ${icon("external", "icon-sm")}</a>` : window.SOROKA_LIVE ? "" : `<p class="section-note">Файл билета можно прикрепить через «Изменить».</p>`}`);
+    details.push(`<div class="ticket-detail"><div class="ticket-detail-main"><span>${icon(ticketIcon(item), "icon-sm")}${type}</span><strong>${esc(item.title)}</strong><p>${esc(destination || item.description || "")}</p></div><div class="ticket-detail-stub"><span>${esc(item.eventDate ? shortDate(item.eventDate) : "Без даты")}${item.eventTime ? ` · ${esc(item.eventTime)}` : ""}</span><strong>${seats.length ? seats.map(esc).join("<br>") : "Место не указано"}</strong>${item.reference ? `<small>${esc(item.reference)}</small>` : ""}</div></div>${ticketCodeBlock(item)}${venueBlock}<div class="saved-detail-table">${savedDetailLine("Перевозчик / организатор", item.carrier)}${savedDetailLine("Откуда", item.origin)}${savedDetailLine("Куда", item.destination)}</div>${fileUrl ? `<a class="small-button saved-link-button" href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer">Открыть билет ${icon("external", "icon-sm")}</a>` : window.SOROKA_LIVE ? "" : `<p class="section-note">Файл билета можно прикрепить через «Изменить».</p>`}`);
   }
   if (category === "files") {
     const preview = savedPreviewUrl(item);
@@ -648,7 +726,7 @@ function renderSavedViewSheet(item, category) {
   const movieGenres = category === "movies" ? [item.genre, ...(item.tags || [])].filter((value, index, all) => value && all.findIndex(other => String(other).toLocaleLowerCase("ru-RU") === String(value).toLocaleLowerCase("ru-RU")) === index) : [];
   // Фильм: постер слева, справа сведения, значки действий и оценки; описание —
   // во всю ширину под ними. Всё по одной сетке, без плавающих подписей.
-  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", "), (item.countries || []).join(", "), movieDuration(item.minutes)].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Действия с фильмом">${movieWatchMarkup(item)}<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-similar" aria-label="Похожие фильмы" title="Похожие фильмы">${icon("spark", "icon-sm")}</button>${ui.sheet?.random ? `<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-random" aria-label="Другой фильм" title="Другой фильм">${icon("reset", "icon-sm")}</button>` : ""}</div></div></div>${item.infoReady===false ? `<p class="section-note">${movieCardStates.get(item.id)==="unavailable" ? "Сведения пока недоступны. Проверьте название и год или откройте карточку позже." : "Загружаю сведения о фильме…"}</p>` : ""}${movieRatings}<div class="movie-my-rating"><span class="movie-my-label">Моя оценка</span>${starSlider(item)}<b class="star-value" aria-hidden="true">${Number(item.rating) ? `${Number(item.rating)}<small>/10</small>` : "<small>—</small>"}</b></div>${seriesTracker(item)}${movieReviewBlock(item)}${item.description ? `<blockquote class="movie-summary">${esc(item.description)}</blockquote>` : ""}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
+  const movieHero = category === "movies" ? `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-meta">${[item.year, movieGenres.slice(0, 2).join(", "), (item.countries || []).join(", "), movieDuration(item.minutes)].filter(Boolean).map(esc).join(" · ")}</span>${item.director ? `<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>` : ""}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Действия с фильмом">${movieWatchMarkup(item)}<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-similar" aria-label="Похожие фильмы" title="Похожие фильмы">${icon("spark", "icon-sm")}</button>${ui.sheet?.random ? `<button type="button" class="movie-similar-btn movie-compact-action" data-action="movie-random" aria-label="Другой фильм" title="Другой фильм">${icon("reset", "icon-sm")}</button>` : ""}</div></div></div>${item.infoReady===false ? `<p class="section-note">${movieCardStates.get(item.id)==="unavailable" ? "Сведения пока недоступны. Проверьте название и год или откройте карточку позже." : "Загружаю сведения о фильме…"}</p>` : ""}${movieRatings}<div class="movie-my-rating"><span class="movie-my-label">Моя оценка</span>${starSlider(item)}<b class="star-value" aria-hidden="true">${Number(item.rating) ? `${Number(item.rating)}<small>/10</small>` : "<small>—</small>"}</b></div>${seriesTracker(item)}${movieReviewBlock(item)}${movieHookBlock(item)}${item.plot || item.cast?.length ? `<section class="movie-plot">${item.plot ? `<h3>Описание</h3><p>${esc(item.plot)}</p>` : ""}${item.cast?.length ? `<p class="movie-cast"><span>В ролях</span>${item.cast.map(esc).join(", ")}</p>` : ""}</section>` : ""}` : "";
   // В шапке — закладка: закрепить карточку. «Просмотрено» — свайпом вправо по карточке списка.
   const topViewedAction = `<button class="icon-button sheet-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}">${icon("bookmark", "icon-sm")}</button>`;
   const bottomViewedAction = !["notes", "lists", "movies", "posts", "tickets"].includes(category) ? `<button type="button" data-action="saved-viewed">${icon("check")}${item.viewed ? "Вернуть в очередь" : "Просмотрено"}</button>` : "";
@@ -708,6 +786,7 @@ function deleteSavedRecord(category, recordId) {
 function savedAction(action, control) {
   if (productWishAction(action, control)) return true;
   if (action === "saved-home") { ui.savedCategory = "overview"; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
+  if (action === "material-kind") { ui.materialKind = control.dataset.kind || ""; ui.savedSection = ""; ui.savedLimit = 60; render(); return true; }
   if (action === "saved-section") { ui.savedCategory = control.dataset.category; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "saved-tab") { ui.savedCategory = control.dataset.category; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; render(); return true; }
   if (action === "saved-section-filter") { ui.savedSection = control.dataset.id || ""; render(); return true; }
@@ -751,6 +830,7 @@ function savedAction(action, control) {
   if (action === "saved-add-manage" && ui.sheet?.kind === "saved-add-menu") { ui.sheet = { kind: ui.savedCategory === "addresses" ? "map-categories" : "saved-sections", category: ui.savedCategory }; render(); return true; }
   if (action === "saved-add-map" && ui.sheet?.kind === "saved-add-menu") { ui.sheet = null; ui.addressView = "map"; ui.mapPlacing = true; render(); return true; }
   if (action === "saved-open") { openSavedRecord(control.dataset.category, control.dataset.id); return true; }
+  if (action === "file-group-toggle") { const key = control.dataset.key; const list = ui.openFileGroups || []; ui.openFileGroups = list.includes(key) ? list.filter(k => k !== key) : [...list, key]; render(); return true; }
   if (action === "ticket-row-add") { const box = document.querySelector("[data-ticket-rows]"); if (box) { box.insertAdjacentHTML("beforeend", ticketRowField({}, box.children.length)); renumberTicketRows(); box.lastElementChild?.querySelector("input")?.focus(); } return true; }
   if (action === "ticket-row-remove") { const row = control.closest("[data-ticket-row]"); const box = row?.parentElement; if (row && box) { if (box.children.length > 1) row.remove(); else row.querySelectorAll("input:not([type=hidden])").forEach(input => { input.value = ""; }); renumberTicketRows(); } return true; }
   if (action === "list-to-today" && ui.sheet?.kind === "saved") {
@@ -1227,8 +1307,8 @@ function savedChange(event) {
   document.addEventListener("pointercancel", finish);
 })();
 
-/** Подъезд, этаж, квартира, домофон — короткими подписями. */
-function addressParts(item) {
+/** Подъезд, этаж, квартира, домофон — короткими подписями. (Не addressParts: так называется разбор геокодера в address-map.js, и он перекрывал эту функцию.) */
+function doorParts(item) {
   return [item.entrance ? `подъезд ${item.entrance}` : "", item.floor ? `этаж ${item.floor}` : "", item.apartment ? `кв. ${item.apartment}` : "", item.intercom ? `домофон ${item.intercom}` : ""].filter(Boolean);
 }
 function addressChips(item) {
