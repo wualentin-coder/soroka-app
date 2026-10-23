@@ -53,7 +53,7 @@ function pcLoad(force = false) {
   }).catch(error => { ui.pc = { ...ui.pc, error: String(error?.message || error) }; })
     .finally(() => {
       ui.pc.loading = false;
-      if (!pcOnPage()) return;
+      if (!pcOnPage() || pcVolumeDragging) return;
       // Пока человек печатает в поиске — меняем только шапку, иначе поле потеряет фокус.
       const hero = document.querySelector(".pc-hero");
       if (document.activeElement?.id === "pc-find" && hero && ui.pc.data) hero.outerHTML = pcHero(ui.pc.data);
@@ -65,7 +65,7 @@ function pcLoad(force = false) {
 window.addEventListener("flow:pc-state", event => {
   if (!event.detail || event.detail.error) return;
   ui.pc = { ...(ui.pc || {}), data: event.detail, at: Date.now(), error: "" };
-  if (pcOnPage() && !document.hidden && !ui.sheet && !document.activeElement?.matches("input,textarea,select")) render();
+  if (pcOnPage() && !pcVolumeDragging && !document.hidden && !ui.sheet && !document.activeElement?.matches("input,textarea,select")) render();
 });
 
 // Пока экран «Компьютер» открыт — состояние раз в 15 с (агент шлёт загрузку раз в 30 с).
@@ -407,7 +407,7 @@ function pcWait(id, cmd, tries = 0) {
       if (r?.status === "done" && power) { toast(cmd === "on" ? "Компьютер включился" : cmd === "sleep" ? "Компьютер уснул" : "Компьютер выключился"); try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success"); } catch {} }
       if (cmd === "status" && r?.status === "done" && ui.pc.data) { ui.pc.data.status = r.result; ui.pc.data.statusAt = new Date().toISOString(); }
       if (power) setTimeout(() => pcLoad(true), 500);
-      if (pcOnPage()) render();
+      if (pcOnPage() && !pcVolumeDragging) render();
       return;
     }
     if (ui.pc.pending) {
@@ -450,35 +450,61 @@ function pcSend(cmd, args = {}) {
 
 /** Быстрое действие: отклик на кнопке (крутится → галочка), без карточки результата. */
 function pcQuick(cmd, args, key, done, failed) {
+  const audioRevision = cmd === "volume" ? pcVolumeRevision : null;
+  const deadline = Date.now() + (cmd === "rm_batch" ? 15 * 60000 : 45000);
   ui.pc.quick ||= {};
   const quiet = key === "audio";
-  if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage()) render(); }
+  if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage() && !pcVolumeDragging) render(); }
   const finish = (state, result) => {
-    if (result?.audio) { ui.pc.audio = result.audio; ui.pc.audioAt = Date.now(); }
+    if (result?.audio && (audioRevision === null || audioRevision === pcVolumeRevision) && !pcVolumeDragging) { ui.pc.audio = result.audio; ui.pc.audioAt = Date.now(); }
     if (!quiet) {
       ui.pc.quick[key] = state;
-      setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (pcOnPage()) render(); } }, 1200);
+      setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (pcOnPage() && !pcVolumeDragging) render(); } }, 1200);
     }
     if (state === "is-done") done?.(result);
     if (state === "is-fail") failed?.();
-    if (pcOnPage() && !document.querySelector(".pc-vol-range:active")) render();
+    if (pcOnPage() && !pcVolumeDragging && !document.querySelector(".pc-vol-range:active")) render();
   };
   pcCall({ op: "send", cmd, args }).then(made => {
     if (made?.error) throw new Error(made.error);
     if (!made.id) return finish("is-done", made);
-    const poll = (tries = 0) => pcCall({ op: "result", id: made.id }).then(r => {
+    const poll = (tries = 0) => {
+      if (Date.now() > deadline) return finish("is-fail");
+      return pcCall({ op: "result", id: made.id }).then(r => {
       if (r?.status === "done") return finish("is-done", r.result);
       if (r?.status === "failed" || r?.status === "expired" || tries > (cmd === 'rm_batch' ? 900 : 20)) { if (!quiet) toast(r?.result?.message || "Компьютер не ответил"); return finish("is-fail"); }
       setTimeout(() => poll(tries + 1), cmd === 'rm_batch' ? 1000 : 600);
     }).catch(() => setTimeout(() => poll(tries + 1), 1500));
+    };
     poll();
   }).catch(error => { const m = String(error?.message || error); if (!quiet) toast(PC_ERRORS[m] || `Не получилось: ${m.slice(0, 60)}`); finish("is-fail"); });
 }
+
+let pcVolumeRevision = 0, pcVolumeDragging = false, pcVolumePending = null, pcVolumeSending = false;
+function pcVolumePreview(level) {
+  pcVolumeRevision++;
+  ui.pc.audio = { level, muted: false };
+  ui.pc.audioAt = Date.now();
+}
+// Only one write is in flight. New gestures replace the pending value, rather
+// than queueing every intermediate position or letting old replies move the knob.
+function pcQueueAudio(args) {
+  pcVolumePending = { ...(pcVolumePending || {}), ...args };
+  if (pcVolumeSending) return;
+  const next = pcVolumePending; pcVolumePending = null; pcVolumeSending = true;
+  const finish = () => { pcVolumeSending = false; if (pcVolumePending !== null) pcQueueAudio(pcVolumePending); };
+  pcQuick("volume", next, "audio", finish, finish);
+}
+function pcQueueVolume(level) { pcQueueAudio({level, mute:false}); }
+document.addEventListener("pointerdown", event => { if (event.target.closest?.(".pc-vol-range")) pcVolumeDragging = true; });
+document.addEventListener("pointerup", () => { pcVolumeDragging = false; });
+document.addEventListener("pointercancel", () => { pcVolumeDragging = false; });
 
 // Ползунок громкости: подпись меняется сразу, на компьютер уходит, когда отпустили.
 document.addEventListener("input", event => {
   const range = event.target.closest?.(".pc-vol-range");
   if (!range) return;
+  pcVolumePreview(Number(range.value));
   range.style.setProperty("--v", `${range.value}%`);
   const value = range.closest(".pc-volume")?.querySelector(".pc-vol-value");
   if (value) value.textContent = `${range.value}%`;
@@ -487,11 +513,11 @@ document.addEventListener("change", event => {
   const range = event.target.closest?.(".pc-vol-range");
   if (!range) return;
   const level = Number(range.value);
-  ui.pc.audio = { level, muted: false };
-  pcQuick("volume", { level }, "level");
+  pcVolumePreview(level);
+  pcQueueVolume(level);
 });
 
-// Кнопки громкости телефона (приложение Android) на экране «Компьютер»: шаг 4%,
+// Кнопки громкости телефона (приложение Android) на экране «Компьютер»: шаг 2%,
 // ползунок двигается сразу, на компьютер уходит итог серии нажатий.
 let pcVolumeKeysOn = false, pcVolumeTimer = null;
 function pcVolumeKeysSync() {
@@ -508,16 +534,16 @@ window.sorokaPcVolumeKey = dir => {
   if (!pcVolumeKeysOn) return;
   const audio = ui.pc.audio;
   // Громкость ещё не знаем — шлём саму клавишу, компьютер шагнёт сам.
-  if (!audio || typeof audio.level !== "number") { pcQuick("volume", { key: dir > 0 ? "up" : "down" }, "audio"); return; }
-  const level = Math.max(0, Math.min(100, Math.round(audio.level / 4) * 4 + dir * 4));
-  ui.pc.audio = { level, muted: false };
+  if (!audio || typeof audio.level !== "number") { if (!pcVolumeSending) pcQueueAudio({}); return; }
+  const level = Math.max(0, Math.min(100, Math.round(audio.level) + dir * 2));
+  pcVolumePreview(level);
   const range = document.querySelector(".pc-vol-range");
   if (range) { range.value = level; range.style.setProperty("--v", `${level}%`); }
   const value = document.querySelector(".pc-vol-value");
   if (value) value.textContent = `${level}%`;
   document.querySelector(".pc-volume")?.classList.remove("is-muted");
   clearTimeout(pcVolumeTimer);
-  pcVolumeTimer = setTimeout(() => pcQuick("volume", { level: ui.pc.audio.level }, "audio"), 250);
+  pcVolumeTimer = setTimeout(() => pcQueueVolume(ui.pc.audio.level), 180);
 };
 
 function pcAction(action, control) {
@@ -555,8 +581,11 @@ function pcAction(action, control) {
   if (action === "pc-media") { pcQuick("volume", { key: control.dataset.key }, control.dataset.key); return true; }
   if (action === "pc-mute") {
     const muted = !ui.pc.audio?.muted;
+    pcVolumeRevision++;
+    clearTimeout(pcVolumeTimer);
     ui.pc.audio = { level: ui.pc.audio?.level ?? 50, muted };
-    pcQuick("volume", { mute: muted }, "mute");
+    pcQueueAudio({ mute: muted });
+    render();
     return true;
   }
   if (action === "pc-open-item") {
