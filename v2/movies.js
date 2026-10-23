@@ -244,7 +244,7 @@ function openSimilar(item) {
     return;
   }
   const state = ui.similar;
-  window.sorokaSimilar({ title: item.title, original_title: item.originalTitle || "", year: item.year || "", kind: item.topic === "Сериалы" ? "series" : "movie" })
+  window.sorokaSimilar({ title: item.title, original_title: item.originalTitle || "", year: item.year || "", kind: isSeries(item) ? "series" : "movie" })
     .then(answer => { state.picks = Array.isArray(answer?.picks) ? answer.picks : []; state.note = answer?.note || ""; cache[item.id] = state; })
     .catch(() => { state.note = "Не получилось подобрать — попробуйте ещё раз."; })
     .finally(() => { state.loading = false; if (ui.sheet?.kind === "movie-similar" && ui.similar === state) render(); });
@@ -278,7 +278,7 @@ function commitPick(key, mode, rating = 0) {
   if (!savedItems("movies").some(m => libraryKey(m) === `${p.title.toLocaleLowerCase("ru-RU")}|${p.year || ""}`)) {
     const seen = mode === "seen";
     data.saved.movies.push({
-      id: id(), title: p.title, description: p.why || "", topic: p.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: p.genre || "", year: p.year || undefined,
+      id: id(), title: p.title, description: p.why || "", kind: p.kind === "series" ? "series" : "movie", topic: p.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: p.genre || "", year: p.year || undefined,
       originalTitle: p.originalTitle || "", status: seen ? "Посмотрел" : "Хочу посмотреть", viewed: seen, rating: seen ? Number(rating) || 0 : 0, skipped: mode === "skip",
       kinopoiskUrl: p.kpUrl || "", imdbUrl: p.imdbUrl || "", kinopoiskRating: p.kpRating ?? "", imdbRating: p.imdbRating ?? "",
       coverPath: p.poster || "", source: "Подборка", created: new Date().toISOString(), pinned: false,
@@ -634,7 +634,15 @@ function movieRunAdvance() {
  * если зажать «до этой»); нажал сезон — весь сезон. Сколько серий в сезоне —
  * задаётся ±, по умолчанию 10.
  */
-function isSeries(item) { return item && (item.topic === "Сериалы" || /сериал/i.test(item.genre || "")); }
+function isSeries(item) { return !!item && (item.kind ? item.kind === "series" : Boolean(item.episodes?.length) || item.topic === "Сериалы" || /сериал/i.test(item.genre || "")); }
+function movieBaseType(item) {
+  if (/animation|анимац|мульт|аниме/i.test([item.genre,...(item.tags || [])].join(' '))) return 'animation';
+  return isSeries(item) ? 'series' : 'movie';
+}
+function movieTypeChips() {
+  const pool=savedChipPool('movies'),now=ui.movieType || '';
+  return `<div class="map-categories saved-subcategories" aria-label="Тип произведения">${[['','Все'],['movie','Фильмы'],['series','Сериалы'],['animation','Анимация']].map(([value,label])=>`<button type="button" class="map-category-chip ${now===value?'active':''}" data-action="movie-type-filter" data-value="${value}" aria-pressed="${now===value}">${label} <span>${pool.filter(m=>!value || movieBaseType(m)===value).length}</span></button>`).join('')}</div>`;
+}
 /** Где я в сериале — для карточки в списке: «Смотрю · С3 · Е5» или «Досмотрен». */
 function seriesKicker(item) {
   const seasons = isSeries(item) ? item.episodes || [] : [];
@@ -653,19 +661,15 @@ function seriesKickerHtml(item) {
  * сериала выходят новые серии. Отмеченное сохраняется (сервер переносит).
  */
 const seriesFilled = new Set();
-function seriesFillOnce(item, manualFallback = false) {
-  if (!window.sorokaSeriesFill || seriesFilled.has(item.id)) { if (manualFallback) seriesManualStart(item); return; }
+function seriesFillOnce(item) {
+  if (!window.sorokaSeriesFill || seriesFilled.has(item.id)) return;
   seriesFilled.add(item.id);
   window.sorokaSeriesFill(item.id).then(answer => {
     if (Array.isArray(answer?.episodes) && answer.episodes.length) {
       item.episodes = answer.episodes;
       save(); render();
-    } else if (manualFallback) seriesManualStart(item);
-  }).catch(() => { if (manualFallback) seriesManualStart(item); });
-}
-function seriesManualStart(item) {
-  item.episodes = [{ n: 1, count: 10, seen: [] }];
-  save(); render();
+    }
+  }).catch(() => {});
 }
 function seriesTracker(item) {
   if (!isSeries(item)) return "";
@@ -673,7 +677,7 @@ function seriesTracker(item) {
   const seasons = item.episodes || [];
   // Ближайшая серия по IMDb (сервер проверяет раз в сутки и пишет в чат, когда выйдет).
   const air = item.nextEpisode?.date ? `<p class="series-air">${icon("bell", "icon-sm")}Следующая серия: С${item.nextEpisode.season} · Е${item.nextEpisode.episode} — ${new Date(item.nextEpisode.date + "T12:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</p>` : "";
-  if (!seasons.length) return `${air}<section class="series-track empty"><span>Сезоны и серии</span><button type="button" class="ghost-button" data-action="series-add">${icon("plus", "icon-sm")}Отмечать серии</button></section>`;
+  if (!seasons.length) return `${air}<section class="series-track empty"><span>Сезоны и серии ещё не получены из IMDb</span><button type="button" class="ghost-button" data-action="series-sync">Обновить из IMDb</button></section>`;
   const total = seasons.reduce((s, x) => s + x.count, 0), seen = seasons.reduce((s, x) => s + x.seen.length, 0);
   const next = (() => { for (let i = 0; i < seasons.length; i++) for (let e = 1; e <= seasons[i].count; e++) if (!seasons[i].seen.includes(e)) return { i, e }; return null; })();
   // Открыт выбранный сезон, иначе — тот, где следующая серия.
@@ -684,20 +688,17 @@ function seriesTracker(item) {
     return `<button type="button" class="season-chip ${i === open ? "active" : ""} ${done ? "done" : ""}" data-action="series-open" data-season="${i}"><b>С${x.n}</b><small>${done ? "✓" : `${x.seen.length}/${x.count}`}</small><i style="width:${x.seen.length / x.count * 100}%"></i></button>`;
   }).join("");
   const eps = Array.from({ length: s.count }, (_, k) => k + 1).map(e => `<button type="button" class="ep ${s.seen.includes(e) ? "on" : ""}" data-action="series-ep" data-season="${open}" data-ep="${e}" aria-pressed="${s.seen.includes(e)}">${e}</button>`).join("");
-  return `<section class="series-track"><div class="series-head"><div><h3>Сезоны и серии</h3><small>${seen} из ${total}</small></div>${next ? `<button type="button" class="series-next" data-action="series-ep" data-season="${next.i}" data-ep="${next.e}">${icon("check", "icon-sm")}С${seasons[next.i].n} · Е${next.e}</button>` : `<span class="series-done">${icon("check", "icon-sm")}Досмотрен</span>`}</div>${air}<div class="season-chips">${chips}<button type="button" class="season-chip add" data-action="series-add" aria-label="Добавить сезон">${icon("plus", "icon-sm")}</button></div><div class="season-eps">${eps}</div><div class="season-tools"><button type="button" class="text-action" data-action="series-season" data-season="${open}">${s.seen.length === s.count ? "Снять сезон" : "Весь сезон"}</button><span class="season-count">Серий: <button type="button" data-action="series-count" data-season="${open}" data-delta="-1" aria-label="Меньше серий">−</button><b>${s.count}</b><button type="button" data-action="series-count" data-season="${open}" data-delta="1" aria-label="Больше серий">+</button></span>${open === seasons.length - 1 ? `<button type="button" class="text-action muted" data-action="series-remove">Убрать сезон</button>` : ""}</div></section>`;
+  return `<section class="series-track"><div class="series-head"><div><h3>Сезоны и серии</h3><small>${seen} из ${total}</small></div>${next ? `<button type="button" class="series-next" data-action="series-ep" data-season="${next.i}" data-ep="${next.e}">${icon("check", "icon-sm")}С${seasons[next.i].n} · Е${next.e}</button>` : `<span class="series-done">${icon("check", "icon-sm")}Досмотрен</span>`}</div>${air}<div class="season-chips">${chips}</div><div class="season-eps">${eps}</div><div class="season-tools"><button type="button" class="text-action" data-action="series-season" data-season="${open}">${s.seen.length === s.count ? "Снять сезон" : "Весь сезон"}</button><span class="season-count">Серий: <b>${s.count}</b> · IMDb</span></div></section>`;
 }
 function seriesAction(action, control) {
   if (!action.startsWith("series-")) return false;
+  if (["series-add","series-count","series-remove"].includes(action)) return true;
   const item = ui.sheet?.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
   if (!item) return true;
+  if (action === "series-sync") { seriesFilled.delete(item.id); seriesFillOnce(item); return true; }
   if (action === "series-open") { ui.seriesSeason = { ...(ui.seriesSeason || {}), [item.id]: Number(control.dataset.season) }; render(); return true; }
   item.episodes = (item.episodes || []).map(s => ({ ...s, seen: [...s.seen] }));
   const s = item.episodes[Number(control.dataset.season)];
-  if (action === "series-add" && !item.episodes.length) { seriesFillOnce(item, true); return true; }
-  if (action === "series-add") { item.episodes.push({ n: item.episodes.length + 1, count: item.episodes.at(-1)?.count || 10, seen: [] }); ui.seriesSeason = { ...(ui.seriesSeason || {}), [item.id]: item.episodes.length - 1 }; }
-  if (action === "series-remove" && ui.seriesSeason) delete ui.seriesSeason[item.id];
-  if (action === "series-remove") item.episodes.pop();
-  if (action === "series-count" && s) { s.count = Math.max(1, Math.min(200, s.count + Number(control.dataset.delta))); s.seen = s.seen.filter(e => e <= s.count); }
   if (action === "series-season" && s) s.seen = s.seen.length === s.count ? [] : Array.from({ length: s.count }, (_, k) => k + 1);
   if (action === "series-ep" && s) { const e = Number(control.dataset.ep); s.seen = s.seen.includes(e) ? s.seen.filter(x => x !== e) : [...s.seen, e].sort((a, b) => a - b); }
   // Всё просмотрено — сериал «Посмотрел».
@@ -707,6 +708,7 @@ function seriesAction(action, control) {
   return true;
 }
 function movieMoreAction(action, control) {
+  if (action === "movie-type-filter") { ui.movieType=control.dataset.value || ""; ui.savedSection=""; render(); return true; }
   if (seriesAction(action, control)) return true;
   if (action === "movie-seen-filter") { ui.movieSeen = control.dataset.value || ""; render(); return true; }
   if (action === "movie-rewatch") { toggleRewatch(savedItem("movies", control.dataset.id)); render(); return true; }
