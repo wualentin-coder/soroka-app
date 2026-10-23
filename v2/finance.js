@@ -148,18 +148,18 @@ function financeDays(items, withTransfers) {
 }
 function expenseCategoryPicker(item) {
   if (item.kind !== 'expense' || String(item.category).toLowerCase() !== 'прочее') return '';
-  return `<label class="expense-category-picker">Выбрать категорию<select data-expense-category="${esc(item.id)}"><option value="">Категория…</option>${FINANCE_CATEGORIES.filter(c => c !== 'Прочее').map(c => `<option>${esc(c)}</option>`).join('')}</select><small>Запомню для похожего платежа</small></label>`;
+  return `<div class="expense-category-picker">${flowChoicePicker({label:'Выбрать категорию',attrs:`data-expense-category="${esc(item.id)}"`,options:FINANCE_CATEGORIES.filter(c => c !== 'Прочее').map(c => ({value:c,label:c}))})}<small>Запомню для похожего платежа</small></div>`;
 }
 document.addEventListener('change', async event => {
   const select = event.target.closest?.('[data-expense-category]');
   if (!select || !select.value) return;
   const id = select.dataset.expenseCategory, category = select.value;
-  select.disabled = true;
+  const picker = select.closest('.flow-choice'); picker.dataset.busy = 'true'; picker.setAttribute('aria-busy','true');
   try {
     if (window.sorokaExpenseCategory) await window.sorokaExpenseCategory(id, category);
     else { const tx = data.finance.transactions.find(t => t.id === id); if (tx) tx.category = category; save(); }
     render(); toast('Категория сохранена для следующих похожих платежей');
-  } catch { select.disabled = false; select.value = ''; toast('Не удалось сохранить категорию'); }
+  } catch { delete picker.dataset.busy; picker.removeAttribute('aria-busy'); select.value = ''; picker.querySelector('.flow-choice-label').textContent = 'Выбрать категорию'; toast('Не удалось сохранить категорию'); }
 });
 /** Название без служебного хвоста: «Энергокомфорт Карелия — лицевой счёт 999900341171» → «Энергокомфорт Карелия». */
 function financeTitle(title) {
