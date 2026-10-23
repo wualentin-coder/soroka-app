@@ -89,7 +89,8 @@ function productStoreName(item) {
 function productImage(item, size = "card") {
   return item.image
     ? `<span class="product-image ${size}"><img src="${esc(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('blank');this.remove()"></span>`
-    : `<span class="product-image ${size} blank">${icon("wallet")}</span>`;
+    // Без картинки — буква на мягком цвете, как у рецептов: серый блок с кошельком выглядел недоделанным.
+    : `<span class="product-image ${size} blank" style="--h:${placeholderHue(item.title)}"><b>${esc(String(item.title || "?").trim().charAt(0).toUpperCase())}</b></span>`;
 }
 
 function productPrice(item) {
