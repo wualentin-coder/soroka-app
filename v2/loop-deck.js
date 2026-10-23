@@ -14,21 +14,26 @@ class LoopDeck {
     track.addEventListener('click',e=>{if(performance.now()<this.ignoreClickUntil){e.preventDefault();e.stopImmediatePropagation();}},{...options,capture:true});
     track.addEventListener('wheel',e=>{
       const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.shiftKey?e.deltaY:0;
-      if(!delta||count<2)return;e.preventDefault();this.stop();
+      if(!delta||count<2)return;e.preventDefault();if(this.spinning)return;this.stop();
       this.position+=delta*(e.deltaMode===1?16:1)/this.step;
       this.paint();clearTimeout(this.wheelTimer);this.wheelTimer=setTimeout(()=>this.settle(),100);
     },{...options,passive:false});
     this.paint();
   }
   wrap(n){return ((n%this.count)+this.count)%this.count;}
+  itemIndex(slot){return this.spinMap?.get(slot) ?? this.wrap(slot);}
   get width(){return Math.min(480,innerWidth*.8,this.track.clientWidth*.94);}
   get step(){return this.width-25;}
-  stop(){cancelAnimationFrame(this.frame);this.frame=0;this.velocity=0;clearTimeout(this.wheelTimer);}
+  stop(){
+    cancelAnimationFrame(this.frame);this.frame=0;this.velocity=0;clearTimeout(this.wheelTimer);
+    if(this.spinMap){this.position=this.itemIndex(Math.round(this.position));this.spinMap=null;this.base=null;}
+    this.spinning=false;
+  }
   paint(){
     const base=Math.floor(this.position),nearest=Math.round(this.position);
     if(base!==this.base){
       this.base=base;const slots=this.count===1?[0]:Array.from({length:7},(_,i)=>base+i-3);
-      this.track.innerHTML=slots.map(slot=>this.card(this.wrap(slot),slot)).join('');
+      this.track.innerHTML=slots.map(slot=>this.card(this.itemIndex(slot),slot)).join('');
     }
     const width=this.width,step=this.step;
     const height=Math.min(width*1.5+160,Number(this.track.dataset.heightLimit)||Infinity);
@@ -46,10 +51,10 @@ class LoopDeck {
       const hidden=Math.abs(distance)>1.6;node.setAttribute('aria-hidden',String(hidden));
       node.querySelectorAll('button').forEach(b=>b.tabIndex=slot===nearest?0:-1);
     }
-    this.onChange(this.wrap(nearest));
+    this.onChange(this.itemIndex(nearest));
   }
   down(e){
-    if(e.button!==0||(!this.onAction&&this.count<2)||this.drag)return;
+    if(e.button!==0||(!this.onAction&&this.count<2)||this.drag||this.spinning)return;
     this.stop();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastAt:performance.now(),start:this.position,moved:false};
     // Capture on the stable track before paint replaces the touched card.
     this.track.setPointerCapture(e.pointerId);
@@ -111,5 +116,22 @@ class LoopDeck {
     if(!smooth){this.position=target;this.paint();}else this.animate('snap',target);
   }
   nudge(direction){this.stop();this.animate('snap',Math.round(this.position)+direction);}
+  spinTo(index,duration=3600,onDone=()=>{}){
+    this.stop();index=this.wrap(index);
+    if(this.reduced||this.count<2||duration<120){this.position=index;this.base=null;this.paint();onDone();return;}
+    const start=this.position,first=Math.floor(start),last=Math.round(start)+12;
+    this.spinMap=new Map();
+    // A bounded reel keeps large libraries from requesting hundreds of posters.
+    for(let slot=first-3;slot<=last+3;slot++)this.spinMap.set(slot,slot<=first+3?this.wrap(slot):Math.floor(Math.random()*this.count));
+    for(let offset=-3;offset<=3;offset++)this.spinMap.set(last+offset,this.wrap(index+offset));
+    this.base=null;this.spinning=true;const began=performance.now();
+    const tick=now=>{
+      const t=Math.min(1,Math.max(0,(now-began)/duration));
+      this.position=start+(last-start)*(1-Math.pow(1-t,3));this.paint();
+      if(t<1)this.frame=requestAnimationFrame(tick);
+      else {this.spinMap=null;this.spinning=false;this.position=index;this.base=null;this.frame=0;this.paint();onDone();}
+    };
+    this.frame=requestAnimationFrame(tick);
+  }
   destroy(){this.stop();this.abort.abort();}
 }

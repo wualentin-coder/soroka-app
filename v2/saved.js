@@ -185,7 +185,8 @@ function todayTicketsSection(skip = new Set()) {
   const rows = soon.map(t => `<button type="button" class="ticket-mini" data-action="saved-open" data-category="tickets" data-id="${esc(t.id)}"><span class="ticket-mini-icon">${icon("ticket")}</span><span class="ticket-mini-copy"><strong>${esc(t.title)}</strong><small>${esc(when(t))}${t.seat ? ` · ${esc(t.seat.split(" · ")[0])}` : ""}</small></span>${icon("right", "icon-sm")}</button>`).join("");
   return `<section class="section"><div class="section-heading"><h2>Билеты на этой неделе</h2><span class="count">${soon.length}</span></div><div class="ticket-mini-list">${rows}</div></section>`;
 }
-function movieBlurbEmpty(text) { return /^(фильм|сериал|мультфильм)\s+\d{4}\s+года\.?$|^входит в (?:подборку|список)|^в посте представлен/i.test(String(text).trim()); }
+function movieBlurbEmpty(text) { return /^(фильм|сериал|мультфильм)\s+\d{4}\s+года\.?$|^(?:фильм|сериал|мультфильм)\s+включ[её]н\s+в\s+список\s+(?:ролика|рилса)|^входит в (?:подборку|список)|^в посте представлен|^добавлен[аоы]?(?:\s+фильм)?\s+из|^(?:фильм|сериал)\s+из\s+(?:подборки|рилс)|^(?:подборка|список)\s+(?:из\s+)?(?:инстаграм|instagram|рилс)/i.test(String(text).trim()); }
+function movieCardBlurb(item) { return String(item.hook || (!movieBlurbEmpty(item.description || '') ? item.description : '') || '').trim(); }
 function movieIsViewed(item) { return item.status === "Посмотрел" || Boolean(item.viewed); }
 function movieDemoInfo(item) {
   return item.title?.trim().toLocaleLowerCase("ru-RU") === "патерсон" && Number(item.year) === 2016
@@ -292,7 +293,7 @@ function savedRecordCardBody(item, category) {
     return `<div class="record-card ticket-card ticket-paper">${notches}${main}${stub}</div>`;
   }
   if (category === "movies") {
-    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(seriesKicker(item) || (movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено"))}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${item.description && !movieBlurbEmpty(item.description) ? `<span class="movie-card-description">${esc(item.description)}</span>` : ""}${movieScoresLine(item)}${item.where && !/^https?:\/\//.test(item.where) ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
+    return `<button class="record-card movie-card" type="button" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}">${movieCoverMarkup(item)}<span class="movie-card-body"><span class="movie-card-kicker">${esc(seriesKicker(item) || (movieIsViewed(item) ? "Посмотрел" : item.status || "Сохранено"))}</span><span class="movie-card-title">${esc(item.title)}</span><span class="movie-card-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span>${movieCardBlurb(item) ? `<span class="movie-card-description">${esc(movieCardBlurb(item))}</span>` : ""}${movieScoresLine(item)}${item.where && !/^https?:\/\//.test(item.where) ? `<span class="movie-card-where">${esc(item.where)}</span>` : ""}</span>${item.pinned ? `<span class="record-pin">${icon("bookmark", "icon-sm")}</span>` : ""}</button>`;
   }
   if (category === "recipes") return recipeCard(item);
   if (category === "products") return productCard(item);
@@ -436,7 +437,7 @@ function movieSeenTabs() {
   const now = ui.savedFilter === "viewed" ? "viewed" : ui.savedFilter === "reco" ? "reco" : "all";
   const tab = (filter, label, count) => `<button type="button" class="${filter === now ? "active" : ""}" data-action="saved-filter" data-filter="${filter}" aria-pressed="${filter === now}">${label}${count === "" ? "" : `<span>${count}</span>`}</button>`;
   const tabs = `<div class="movie-seen-tabs three" role="group" aria-label="Фильмы">${tab("all", "В планах", "")}${tab("viewed", "Просмотрено", "")}${tab("reco", "Что смотреть", "")}</div>`;
-  return movieCarouselEnabled() ? `<div class="movie-carousel-tabbar">${tabs}<button type="button" class="movie-filter-toggle" data-action="movie-filters-toggle" aria-label="Категории" aria-expanded="true">⌄</button></div>` : tabs;
+  return movieCarouselEnabled() ? `<div class="movie-carousel-tabbar">${tabs}<button type="button" class="movie-filter-toggle" data-action="movie-filters-toggle" aria-label="Категории" aria-expanded="true"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>` : tabs;
 }
 /** Подсказка про свайп — один раз: дальше она только занимает место. */
 function savedHintSeen() {
