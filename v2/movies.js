@@ -641,7 +641,7 @@ function movieBaseType(item) {
 }
 function movieTypeChips() {
   const pool=savedChipPool('movies'),now=ui.movieType || '';
-  return `<div class="map-categories saved-subcategories" aria-label="Тип произведения">${[['','Все'],['movie','Фильмы'],['series','Сериалы'],['animation','Анимация']].map(([value,label])=>`<button type="button" class="map-category-chip ${now===value?'active':''}" data-action="movie-type-filter" data-value="${value}" aria-pressed="${now===value}">${label} <span>${pool.filter(m=>!value || movieBaseType(m)===value).length}</span></button>`).join('')}</div>`;
+  return `<div class="map-categories saved-subcategories movie-type-chips" aria-label="Тип произведения">${[['','Все'],['movie','Фильмы'],['series','Сериалы'],['animation','Анимация']].map(([value,label])=>`<button type="button" class="map-category-chip ${now===value?'active':''}" data-action="movie-type-filter" data-value="${value}" aria-pressed="${now===value}">${label} <span>${pool.filter(m=>!value || movieBaseType(m)===value).length}</span></button>`).join('')}</div>`;
 }
 /** Где я в сериале — для карточки в списке: «Смотрю · С3 · Е5» или «Досмотрен». */
 function seriesKicker(item) {

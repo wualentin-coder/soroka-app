@@ -10,8 +10,15 @@ function movieCarouselToggle() {
   const label = movieDeckMode ? "Показать списком" : "Показать каруселью";
   return `<button type="button" class="icon-button movie-carousel-toggle ${movieDeckMode ? "active" : ""}" data-action="movie-carousel-toggle" aria-label="${label}" title="${label}" aria-pressed="${movieDeckMode}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${movieDeckMode ? '<rect x="4" y="5" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/>' : '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 7v10M21 7v10"/>'}</svg></button>`;
 }
+function movieCarouselScores(item) {
+  const rating=Number(item.imdbRating)>0?['IMDb',item.imdbRating]:Number(item.kinopoiskRating)>0?['КП',item.kinopoiskRating]:Number(item.rating)>0?['Моя оценка',item.rating]:null;
+  return rating?`<span class="movie-deck-rating">${icon('star','icon-sm')}<b>${movieScore(rating[1])}</b><small>/ 10 · ${rating[0]}</small></span>`:'<span class="movie-deck-rating is-empty">Пока без оценки</span>';
+}
+function movieCarouselActions(item) {
+ return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet movie-deck-actions" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div><div class="movie-deck-actions-list"><button type="button" data-action="saved-edit">${icon('note','icon-sm')}Изменить</button><button type="button" data-action="saved-share">${icon('share','icon-sm')}Поделиться</button><button type="button" data-action="movie-skip">${icon('thumbDown','icon-sm')}Не интересно</button><button type="button" class="danger" data-action="saved-delete">${icon('trash','icon-sm')}Удалить</button></div></section></div>`;
+}
 function movieCarouselCard(item, index, slot) {
-  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button><button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong><span class="movie-deck-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span><span class="movie-deck-description">${esc(item.description && !movieBlurbEmpty(item.description) ? item.description : "Добавлен в планы на просмотр.")}</span>${movieScoresLine(item)}</button></article>`;
+  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button><button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong>${movieCarouselScores(item)}<span class="movie-deck-description">${esc(item.description && !movieBlurbEmpty(item.description) ? item.description : "Добавлен в планы на просмотр.")}</span></button></article>`;
 }
 function mountMovieCarousel() {
   const track = document.getElementById("movie-deck");
@@ -22,7 +29,11 @@ function mountMovieCarousel() {
   if (!items.length) return;
   const index = Math.max(0, items.findIndex(item => item.id === movieDeckId));
   sizeMovieCarousel(track);
-  movieDeck = new LoopDeck(track, {count: items.length, index, card: (i, slot) => movieCarouselCard(items[i], i, slot), onChange: i => {
+  movieDeck = new LoopDeck(track, {count: items.length, index, card: (i, slot) => movieCarouselCard(items[i], i, slot), onAction: (action,i)=>{
+    const item=savedItem('movies',items[i].id);if(!item)return;
+    if(action==='viewed')toggleMovieViewed(item);
+    else {ui.sheet={kind:'saved',category:'movies',id:item.id,mode:'carousel-actions',justRendered:false};render();}
+  }, onChange: i => {
     movieDeckId = items[i].id;
     const count = document.getElementById("movie-deck-count");
     if (count) count.textContent = `${i + 1} из ${items.length}`;
@@ -32,7 +43,7 @@ function sizeMovieCarousel(track) {
   const nav = document.querySelector(".mobile-nav");
   const navTop = nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().top : innerHeight;
   const available = navTop - track.getBoundingClientRect().top - 26;
-  track.dataset.widthLimit = String(Math.max(110, (available - (innerHeight < 760 ? 162 : 170)) / 1.5));
+  track.dataset.widthLimit = String(Math.max(110, (available - 160) / 1.5));
 }
 document.addEventListener("click", event => {
   const control = event.target.closest('[data-action="movie-carousel-toggle"]');

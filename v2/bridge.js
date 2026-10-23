@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=950d58cd79","integrity":null},{"src":"./loop-deck.js?v=d96ae14ed8","integrity":null},{"src":"./movie-carousel.js?v=acae1a3516","integrity":null},{"src":"./movies.js?v=52e26f746b","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=90d70ed4c3","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=e20ddfbaf3","integrity":null},{"src":"./render-queue.js?v=a542248648","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=e0c8a37b18","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=157a8cfb14","integrity":null},{"src":"./app.js?v=b36489870c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=303bbaf8b2","integrity":null},{"src":"./loop-deck.js?v=eb6202e08b","integrity":null},{"src":"./movie-carousel.js?v=f36db669b2","integrity":null},{"src":"./movies.js?v=abdfc21d1f","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=90d70ed4c3","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=e20ddfbaf3","integrity":null},{"src":"./render-queue.js?v=242fa6f6d6","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=e0c8a37b18","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=157a8cfb14","integrity":null},{"src":"./app.js?v=b36489870c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1729,7 +1729,7 @@
     document.body.appendChild(hint);
     const busy = () => ui.sheet || document.querySelector(".composer, .pins-drop, .loyalty-full, .live-code-full");
     document.addEventListener("touchstart", (event) => {
-      if (event.touches.length !== 1 || busy() || event.target.closest(".swipe-row, .calendar-card, .wallet, input, textarea, .leaflet-container")) { pull = null; return; }
+      if (event.touches.length !== 1 || busy() || event.target.closest(".swipe-row, .calendar-card, .wallet, .movie-deck, input, textarea, .leaflet-container")) { pull = null; return; }
       const top = window.scrollY <= 0;
       const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
       if (!top && !bottom) { pull = null; return; }
@@ -1757,69 +1757,7 @@
     });
   })();
 
-  /*
-   * Листание свайпом: влево — дальше, вправо — назад. Сначала переключается
-   * ряд вкладок над пальцем (Операции → Платежи, В планах → Просмотрено);
-   * вкладки кончились или их нет — соседний раздел нижнего меню. Там, где
-   * горизонтальный жест уже занят (строки со свайпом, календарь, карты,
-   * карусели, прокручиваемые ряды), листание не мешает.
-   */
-  (function installPageSwipe() {
-    const NAV = ["today", "saved", "finance", "more"];
-    const TABS = ".subtabs, .segmented, .movie-seen-tabs";
-    const SKIP = ".swipe-row, .calendar-card, .wallet, .wallet-swipe, input, textarea, select, .leaflet-container, .reco-item, .movie-run-card, .live-code-track, .star-slider, .rule-slider, .smart-choose, [data-no-page-swipe]";
-    let start = null;
-    const busy = () => ui.sheet || ui.menu || document.querySelector(".composer, .pins-drop, .loyalty-full, .live-code-full");
-    const scrollsSideways = (el) => {
-      for (let n = el; n && n !== document.body; n = n.parentElement) {
-        if (n.scrollWidth > n.clientWidth + 4) { const o = getComputedStyle(n).overflowX; if (o === "auto" || o === "scroll") return true; }
-      }
-      return false;
-    };
-    document.addEventListener("touchstart", (event) => {
-      start = null;
-      if (event.touches.length !== 1 || busy()) return;
-      const target = event.target;
-      // От самого края — системное «назад» Android: такие жесты не трогаем.
-      const x0 = event.touches[0].clientX;
-      if (x0 < 24 || x0 > window.innerWidth - 24) return;
-      if (!target.closest || !target.closest(".main, main") || target.closest(SKIP) || scrollsSideways(target)) return;
-      start = { x: event.touches[0].clientX, y: event.touches[0].clientY, t: Date.now() };
-    }, { passive: true });
-    document.addEventListener("touchmove", (event) => {
-      if (start && Math.abs(event.touches[0].clientY - start.y) > 40) start = null;
-    }, { passive: true });
-    document.addEventListener("touchend", (event) => {
-      if (!start) return;
-      const touch = event.changedTouches[0];
-      const dx = touch.clientX - start.x, dy = touch.clientY - start.y, dt = Date.now() - start.t;
-      const y = start.y;
-      start = null;
-      if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8 || dt > 700 || busy()) return;
-      // Строка ушла в свайп, календарь листнулся — это не листание страницы.
-      if (document.querySelector(".swipe-row.is-open-left, .swipe-row.swiping")) return;
-      const dir = dx < 0 ? 1 : -1;
-      const groups = [...root.querySelectorAll(TABS)].filter((g) => g.offsetParent && g.querySelector(".active, [aria-selected=\"true\"], [aria-pressed=\"true\"]"));
-      const above = groups.filter((g) => g.getBoundingClientRect().top < y);
-      const group = above[above.length - 1] || groups[0];
-      if (group) {
-        const buttons = [...group.querySelectorAll("button")].filter((b) => b.offsetParent && !b.disabled);
-        const now = buttons.findIndex((b) => b.matches(".active, [aria-selected=\"true\"], [aria-pressed=\"true\"]"));
-        const next = buttons[now + dir];
-        if (now >= 0 && next) { next.click(); slide(dir); return; }
-      }
-      const page = NAV.includes(ui.page) ? ui.page : "more";
-      const to = NAV[NAV.indexOf(page) + dir];
-      const button = to && root.querySelector(`.mobile-nav [data-page="${to}"]`);
-      if (button) { button.click(); slide(dir); }
-    }, { passive: true });
-    function slide(dir) {
-      requestAnimationFrame(() => {
-        const main = root.querySelector(".content-main, .main, main");
-        main?.animate([{ transform: `translateX(${dir * 28}px)`, opacity: 0.35 }, { transform: "none", opacity: 1 }], { duration: 220, easing: "cubic-bezier(.2,.8,.3,1)" });
-      });
-    }
-  })();
+  // Разделы и вкладки переключаются только явным нажатием.
 
   function topTitle() {
     paintBars();

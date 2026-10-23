@@ -65,7 +65,8 @@ function rmCalibrationCard() {
   const tests=latest ? all.filter(j=>latest.benchmark.group ? j.benchmark.group===latest.benchmark.group : j.id===latest.id) : [];
   const running=tests.some(j=>RM_ACTIVE.includes(j.status)||RM_WAITING.includes(j.status));
   const completed=tests.filter(j=>j.status==='done'&&j.benchmark_result);
-  return `<section class="pc-card rm-card"><div class="pc-card-head"><h3>Тест скорости ПК</h3></div><p class="section-note">${running?`Тест идёт: завершено ${completed.length} из ${tests.length} проб.`:tests.length?`Завершено успешно: ${completed.length} из ${tests.length} проб.`:'Один запуск: выберите характерную композицию и короткий участок. Выполним 8 проб для 1–4 частей и сохраним общий профиль ПК.'}</p>${latest?rmBenchmarkSummary(tests):''}<p class="section-note">Авто выбирает режим при запуске с учётом свободной памяти. Другие сцены могут требовать больше RAM/VRAM. Оценка полного рендера приблизительная.</p><button type="button" class="ghost-button rm-wide" data-action="rm-calibrate">${tests.length?'Новый общий тест':'Общий тест скорости'}</button></section>`;
+  const sceneOnly=latest && latest.benchmark.scope!=='pc';
+  return `<section class="pc-card rm-card"><div class="pc-card-head"><h3>${sceneOnly ? "Тест скорости сцены" : "Тест скорости ПК"}</h3></div>${sceneOnly ? `<p class="section-note">Это замер отдельной композиции. Для выбора частей в других композициях нужен общий тест ПК — кнопка ниже.</p>` : ""}<p class="section-note">${running?`Тест идёт: завершено ${completed.length} из ${tests.length} проб.`:tests.length?`Завершено успешно: ${completed.length} из ${tests.length} проб.`:'Один запуск: выберите характерную композицию и короткий участок. Выполним 8 проб для 1–4 частей и сохраним общий профиль ПК.'}</p>${latest?rmBenchmarkSummary(tests):''}<p class="section-note">Авто выбирает режим при запуске с учётом свободной памяти. Другие сцены могут требовать больше RAM/VRAM. Оценка полного рендера приблизительная.</p><button type="button" class="ghost-button rm-wide" data-action="rm-calibrate">${tests.length && !sceneOnly?'Новый общий тест':'Общий тест скорости'}</button></section>`;
 }
 function rmBenchmarkSummary(tests) {
   const first=tests[0],groups=new Map(),positive=n=>typeof n==='number'&&Number.isFinite(n)&&n>0;
@@ -220,7 +221,10 @@ function rmOutputName(t,f) {
 function rmFormatSelect(chosen,f) {
   const templates=[...new Set(chosen.flatMap(x=>x.audit?.templates || []))];
   const standard=[['','Как в проекте'],['@flow:mp4','MP4 · H.264'],['@flow:mov-alpha','MOV · ProRes 4444 + альфа'],['@flow:png','PNG · секвенция + альфа'],['@flow:exr','EXR · секвенция + альфа'],['@flow:hap','MOV · HAP'],['@flow:hap-alpha','MOV · HAP + альфа']];
-  return `<select class="rm-input" data-form="ae_template">${standard.map(([v,n])=>`<option value="${v}" ${f.ae_template===v?'selected':''}>${n}</option>`).join('')}<optgroup label="Шаблоны AE">${templates.map(n=>`<option value="${esc(n)}" ${f.ae_template===n?'selected':''}>${esc(n)}</option>`).join('')}</optgroup>${templates.some(n=>/DXV/i.test(n))?'':'<option disabled>DXV · нужен шаблон DXV в AE</option>'}</select>`;
+  const selected=standard.find(([v])=>v===(f.ae_template || ''))?.[1] || f.ae_template;
+  const row=(value,label)=>`<button type="button" class="rm-format-option ${value===(f.ae_template || '')?'selected':''}" data-action="rm-format-pick" data-value="${esc(value)}" role="radio" aria-checked="${value===(f.ae_template || '')}"><span>${esc(label)}</span><i aria-hidden="true"></i></button>`;
+  if(ui.sheet?.formatOpen && typeof queueMicrotask==='function')queueMicrotask(()=>{const list=document.getElementById('rm-format-list');if(list)list.scrollTop=ui.sheet?.formatScroll || 0;});
+  return `<div class="rm-format-picker"><button type="button" class="rm-format-current" data-action="rm-format-toggle" aria-expanded="${Boolean(ui.sheet?.formatOpen)}" aria-controls="rm-format-list"><span>${esc(selected)}</span><span aria-hidden="true">${ui.sheet?.formatOpen?'⌃':'⌄'}</span></button>${ui.sheet?.formatOpen?`<div class="rm-format-list" id="rm-format-list" role="radiogroup" aria-label="Формат вывода">${standard.map(([v,n])=>row(v,n)).join('')}${templates.length?`<button type="button" class="rm-format-templates" data-action="rm-format-templates" aria-expanded="${Boolean(ui.sheet.formatTemplatesOpen)}">Шаблоны AE <span>${templates.length}</span></button>${ui.sheet.formatTemplatesOpen?templates.map(n=>row(n,n)).join(''):''}`:''}${templates.some(n=>/DXV/i.test(n))?'':'<p class="section-note">DXV появится после установки шаблона DXV в AE.</p>'}</div>`:''}</div>`;
 }
 function rmJobArgs(scene,t,f) {
   const media=rmEffectiveMedia(t,f,scene.app);
@@ -434,6 +438,9 @@ document.addEventListener('change',event=>{
   const key=event.target?.dataset?.form;
   if (key && ui.sheet?.form) {ui.sheet.form[key]=event.target.value;delete ui.sheet.submissionId;ui.sheet.confirm=false;}
 });
+document.addEventListener('scroll',event=>{
+  if(event.target?.id==='rm-format-list' && ui.sheet)ui.sheet.formatScroll=event.target.scrollTop;
+},true);
 
 // ------------------------------------------------------------ «Поставить сцену»
 
@@ -753,6 +760,12 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function rmAction(action, control) {
+  if(action==='rm-format-toggle'){ui.sheet.formatOpen=!ui.sheet.formatOpen;render();return true;}
+  if(action==='rm-format-templates'){ui.sheet.formatTemplatesOpen=!ui.sheet.formatTemplatesOpen;render();return true;}
+  if(action==='rm-format-pick'){
+    ui.sheet.form.ae_template=control.dataset.value;ui.sheet.formatOpen=false;ui.sheet.formatScroll=0;
+    delete ui.sheet.submissionId;ui.sheet.confirm=false;render();return true;
+  }
   if (!action.startsWith("rm-")) return false;
   const id = Number(control.dataset.id);
   const reload = () => setTimeout(() => pcLoad(true), 1500);

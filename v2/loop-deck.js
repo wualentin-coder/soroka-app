@@ -1,6 +1,7 @@
 class LoopDeck {
-  constructor(track,{count,index,card,onChange}) {
+  constructor(track,{count,index,card,onChange,onAction}) {
     this.track=track;this.count=count;this.position=index;this.card=card;this.onChange=onChange;
+    this.onAction=onAction;
     this.velocity=0;this.frame=0;this.base=null;this.drag=null;this.ignoreClickUntil=0;
     this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.abort=new AbortController();const options={signal:this.abort.signal};
@@ -19,7 +20,7 @@ class LoopDeck {
     this.paint();
   }
   wrap(n){return ((n%this.count)+this.count)%this.count;}
-  get width(){return Math.min(250,Number(this.track.dataset.widthLimit)||Infinity,this.track.clientWidth*(innerHeight<760?.51:.57));}
+  get width(){return Math.min(300,Number(this.track.dataset.widthLimit)||Infinity,this.track.clientWidth*.76);}
   get step(){return this.width-25;}
   stop(){cancelAnimationFrame(this.frame);this.frame=0;this.velocity=0;clearTimeout(this.wheelTimer);}
   paint(){
@@ -29,11 +30,12 @@ class LoopDeck {
       this.track.innerHTML=slots.map(slot=>this.card(this.wrap(slot),slot)).join('');
     }
     const width=this.width,step=this.step;
-    this.track.style.height=`${width*1.5+(innerHeight<760?162:170)}px`;
+    this.track.style.height=`${width*1.5+160}px`;
     for(const node of this.track.children){
       const slot=Number(node.dataset.slot),distance=slot-this.position,depth=Math.min(Math.abs(distance),2);
       node.style.width=`${width}px`;
-      node.style.transform=`translate3d(calc(-50% + ${distance*step}px), ${depth*14}px, 0) scale(${1-depth*.075})`;
+      const lift=this.drag?.axis==='y'&&slot===nearest?Math.max(-95,Math.min(95,this.drag.dy||0)):0;
+      node.style.transform=`translate3d(calc(-50% + ${distance*step}px), ${depth*14+lift}px, 0) scale(${1-depth*.075})`;
       node.style.opacity=String(Math.max(0,1-Math.max(0,depth-.15)*.2));
       node.style.visibility=Math.abs(distance)>2.3?'hidden':'visible';
       node.style.zIndex=String(100-Math.round(Math.abs(distance)*20));
@@ -44,16 +46,20 @@ class LoopDeck {
     this.onChange(this.wrap(nearest));
   }
   down(e){
-    if(e.button!==0||this.count<2||this.drag)return;
+    if(e.button!==0||(!this.onAction&&this.count<2)||this.drag)return;
     this.stop();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastAt:performance.now(),start:this.position,moved:false};
   }
   move(e){
     const d=this.drag;if(!d||d.id!==e.pointerId)return;
     const dx=e.clientX-d.x,dy=e.clientY-d.y;
     if(!d.moved){
-      if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){this.drag=null;this.settle();return;}
-      if(Math.abs(dx)<7)return;
+      if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;
+      d.axis=Math.abs(dy)>Math.abs(dx)?'y':'x';
+      if(d.axis==='y'&&!this.onAction || d.axis==='x'&&this.count<2){this.drag=null;this.settle();return;}
       d.moved=true;this.track.setPointerCapture(e.pointerId);this.track.classList.add('dragging');
+    }
+    if(d.axis==='y'){
+      d.dy=dy;this.track.dataset.cardAction=dy<0?'Просмотрено':'Действия';this.paint();return;
     }
     const now=performance.now(),dt=Math.max(8,now-d.lastAt);
     this.velocity=this.velocity*.25+(-(e.clientX-d.lastX)/dt*1000/this.step)*.75;
@@ -62,8 +68,14 @@ class LoopDeck {
   up(e,cancelled=false){
     const d=this.drag;if(!d||d.id!==e.pointerId)return;
     this.drag=null;this.track.classList.remove('dragging');
+    delete this.track.dataset.cardAction;
     if(this.track.hasPointerCapture(e.pointerId))this.track.releasePointerCapture(e.pointerId);
     if(d.moved)this.ignoreClickUntil=performance.now()+350;
+    if(d.axis==='y'){
+      this.paint();
+      if(!cancelled&&Math.abs(d.dy||0)>78)this.onAction?.(d.dy<0?'viewed':'menu',this.wrap(Math.round(this.position)));
+      return;
+    }
     if(cancelled||performance.now()-d.lastAt>100)this.velocity=0;
     if(this.reduced){this.position=Math.round(this.position);this.paint();return;}
     this.velocity=Math.max(-12,Math.min(12,this.velocity));this.animate(Math.abs(this.velocity)>.22?'coast':'snap');

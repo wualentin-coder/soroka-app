@@ -386,7 +386,7 @@ function renderSavedSectionChips(category, tail = "") {
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
   // Папки видны всегда, когда хоть одна не пуста: по ним и ходят внутри раздела.
   if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return base+(tail ? `<div class="saved-sort-row">${tail}</div>` : "");
-  return base+`<div class="map-categories saved-subcategories" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${tail}</div>`;
+  return base+`<div class="map-categories saved-subcategories ${category === "movies" ? "movie-folder-chips" : ""}" aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(section.icon || savedIcon(category), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${tail}</div>`;
 }
 /** Разделы лентой — только непустые (и открытый), открытый — по центру. */
 function savedSwitch() {
@@ -660,6 +660,7 @@ function renderPostBotPreviewSheet(item) {
 function renderSavedSheet() {
   const { category, id: recordId } = ui.sheet;
   const item = recordId ? savedItem(category, recordId) : null;
+  if (category === "movies" && item && ui.sheet.mode === "carousel-actions") return movieCarouselActions(item);
   if (category === "notes") return renderNoteSheet(item);
   if (category === "posts" && item && ui.sheet.mode === "bot-preview") return renderPostBotPreviewSheet(item);
   if (item && ui.sheet.mode !== "edit") return renderSavedViewSheet(item, category);
