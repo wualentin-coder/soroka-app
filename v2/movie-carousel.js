@@ -7,6 +7,9 @@ let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view"
 function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
 function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
 function movieBuiltinSection(section) { return /^(кино|фильмы|сериалы|анимация|мультфильмы)$/i.test(String(section?.name || "").trim()); }
+function moviePrototypeHeader() {
+  return `<div class="movie-prototype-header"><div class="movie-brand-row"><button type="button" class="head-pill" aria-label="Фильмы">Фильмы</button></div><div class="movie-prototype-toolbar"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><div class="movie-prototype-tools">${movieCarouselToggle()}<button type="button" class="icon-button movie-random-button" data-action="movie-random" aria-label="Случайный фильм">${icon("spark", "icon-sm")}</button><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать фильм">${icon("search", "icon-sm")}</button><button type="button" class="icon-button movie-filter-toggle" data-action="movie-filters-toggle" aria-label="Показать или скрыть разделы" aria-expanded="${movieFiltersOpen !== false}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 8h18v12H3zM3 8V4h7l2 3"/></svg></button></div></div></div>`;
+}
 function movieCarouselToggle() {
   if (!moviePlansTab()) return "";
   const label = movieDeckMode ? "Показать списком" : "Показать каруселью";
@@ -43,7 +46,7 @@ function mountMovieCarousel() {
   }});
   if(typeof ResizeObserver==='function'){
     movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.paint();}});
-    track.closest('.movie-library-screen')?.querySelectorAll('.notes-topline,.saved-section-heading,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
+    track.closest('.movie-library-screen')?.querySelectorAll('.movie-prototype-header,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
   }
 }
 function sizeMovieCarousel(track) {
@@ -56,7 +59,7 @@ function sizeMovieCarousel(track) {
   const footer=Math.max((counter?.offsetHeight || 22)+16,56);
   const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
   const room=()=>viewport-(track.getBoundingClientRect().top+window.scrollY)-footer;
-  filters.hidden=movieFiltersOpen===null ? width*1.5+192>room() : !movieFiltersOpen;
+  filters.hidden=movieFiltersOpen===null ? width*1.5+208>room() : !movieFiltersOpen;
   toggle?.setAttribute('aria-expanded',String(!filters.hidden));
   track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
 }
