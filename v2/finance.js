@@ -41,10 +41,10 @@ function ratesStrip() {
   if (!codes.length) return "";
   return `<div class="rates-strip" aria-label="Курсы ЦБ РФ">${codes.map(c => `<span><b>${c}</b> ${rateOf(c).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>`).join("")}<small>ЦБ РФ</small></div>`;
 }
-function financeTabs() { return `<div class="subtabs" role="tablist" aria-label="Разделы финансов">${FINANCE_TABS.map(([key, label]) => `<button type="button" role="tab" aria-selected="${ui.financeTab === key}" class="${ui.financeTab === key ? "active" : ""}" data-action="finance-tab" data-tab="${key}">${label}</button>`).join("")}</div>`; }
+function financeTabs() { return `<div class="movie-seen-tabs four page-modes" role="tablist" aria-label="Разделы финансов">${FINANCE_TABS.map(([key, label]) => `<button type="button" role="tab" aria-selected="${ui.financeTab === key}" class="${ui.financeTab === key ? "active" : ""}" data-action="finance-tab" data-tab="${key}">${label}</button>`).join("")}</div>`; }
 function financeTransactionRow(item) {
   const account = data.finance.accounts.find(a => a.id === item.accountId);
-  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transaction" data-id="${esc(item.id)}"><span class="list-icon tx-icon" style="--cat:${isReconcile(item) ? "var(--muted)" : categoryColor(item.category)}">${icon(isReconcile(item) ? "reset" : item.kind === "income" ? "download" : "wallet")}</span><span class="list-copy"><strong>${esc(isReconcile(item) ? "Сверка остатка" : financeTitle(item.title))}</strong><span>${esc(isReconcile(item) ? "поправка счёта" : item.category)}${account ? ` · ${esc(account.name)}` : ""}</span></span><span class="amount ${item.kind === "income" ? "income" : ""}">${item.kind === "income" ? "+" : "−"}${demoMoney(item.amount, item.currency)}</span></button>`;
+  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transaction" data-id="${esc(item.id)}"><span class="list-icon tx-icon" style="--cat:${isReconcile(item) ? "var(--muted)" : categoryColor(item.category)}">${icon(isReconcile(item) ? "reset" : item.kind === "income" ? "download" : categoryIcon(item.category))}</span><span class="list-copy"><strong>${esc(isReconcile(item) ? "Сверка остатка" : financeTitle(item.title))}</strong><span>${esc(isReconcile(item) ? "поправка счёта" : item.category)}${account ? ` · ${esc(account.name)}` : ""}</span></span><span class="amount ${item.kind === "income" ? "income" : ""}">${item.kind === "income" ? "+" : "−"}${demoMoney(item.amount, item.currency)}</span></button>`;
 }
 function budgetCard(item) {
   const spent = categorySpent(item.category);
@@ -70,7 +70,9 @@ function monthCategories(kind = "expense") {
   const sums = new Map();
   for (const t of monthTransactions()) {
     if (t.kind !== kind || t.currency !== "RUB" || t.category === "не записал") continue;
-    const name = t.category || "Прочее";
+    // «прочее» и «Прочее» — одна категория: модель и банк пишут её по-разному
+    const raw = String(t.category || "Прочее").trim() || "Прочее";
+    const name = raw.charAt(0).toUpperCase() + raw.slice(1);
     sums.set(name, (sums.get(name) || 0) + Number(t.amount || 0));
   }
   return [...sums.entries()].sort((a, b) => b[1] - a[1]);
@@ -81,8 +83,15 @@ function categoriesCard() {
   if (!rows.length) return emptyCard("Расходов пока нет", "Траты месяца по категориям появятся здесь.");
   const total = rows.reduce((s, [, v]) => s + v, 0);
   const bar = `<div class="cat-bar" role="img" aria-label="Доли категорий">${rows.map(([name, v]) => `<i style="flex:${v};background:${categoryColor(name)}"></i>`).join("")}</div>`;
-  const list = rows.map(([name, v]) => `<button class="cat-row" type="button" data-action="finance-category" data-category="${esc(name)}"><i class="cat-dot" style="background:${categoryColor(name)}"></i><span class="cat-name">${esc(name)}</span><span class="cat-share">${Math.round(v / total * 100)}%</span><span class="cat-sum">${demoMoney(v)}</span>${icon("right", "icon-sm")}</button>`).join("");
-  return `<div class="side-card cat-card"><div class="cat-head"><span>Всего за ${esc(thisMonthName())}</span><strong>${demoMoney(total)}</strong></div>${bar}<div class="cat-list">${list}</div></div>`;
+  // Пять крупных сразу, мелочь (меньше 2 %) — под «Ещё»: тринадцать строк с «0 %» не читаются.
+  const shown = ui.financeCatsAll ? rows : rows.filter(([, v], i) => i < 5 && v / total >= 0.02);
+  const rest = rows.slice(shown.length);
+  const share = v => { const p = v / total * 100; return p < 1 ? "<1%" : `${Math.round(p)}%`; };
+  const list = shown.map(([name, v]) => `<button class="cat-row" type="button" data-action="finance-category" data-category="${esc(name)}"><i class="cat-dot" style="background:${categoryColor(name)}"></i><span class="cat-name">${esc(name)}</span><span class="cat-share">${share(v)}</span><span class="cat-sum">${demoMoney(v)}</span>${icon("right", "icon-sm")}</button>`).join("");
+  const more = rest.length
+    ? `<button class="cat-row cat-more" type="button" data-action="finance-cats-toggle"><i class="cat-dot" style="background:var(--subtle)"></i><span class="cat-name">Ещё ${rest.length} ${word(rest.length, "категория", "категории", "категорий")}</span><span class="cat-share">${share(rest.reduce((s, [, v]) => s + v, 0))}</span><span class="cat-sum">${demoMoney(rest.reduce((s, [, v]) => s + v, 0))}</span>${icon("down", "icon-sm")}</button>`
+    : ui.financeCatsAll && rows.length > 5 ? `<button class="cat-row cat-more" type="button" data-action="finance-cats-toggle"><span class="cat-name">Свернуть</span>${icon("up", "icon-sm")}</button>` : "";
+  return `<div class="side-card cat-card"><div class="cat-head"><span>Всего за ${esc(thisMonthName())}</span><strong>${demoMoney(total)}</strong></div>${bar}<div class="cat-list">${list}${more}</div></div>`;
 }
 function financeOverview() {
   // Сверки остатка («не записал») — поправка счёта, а не доход или расход.
@@ -123,7 +132,7 @@ function financeTransferRow(t) {
   const from = data.finance.accounts.find(a => a.id === t.fromId), to = data.finance.accounts.find(a => a.id === t.toId);
   const title = t.note || "Перевод";
   const route = `${from?.name || "вне учёта"} → ${to?.name || "вне учёта"}`;
-  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transfer" data-id="${esc(t.id)}"><span class="list-icon tx-icon" style="--cat:var(--muted)">${icon("arrow")}</span><span class="list-copy"><strong>${esc(financeTitle(title))}</strong><span>Перевод · ${esc(route)}</span></span><span class="amount">${demoMoney(t.amount, from?.currency || "RUB")}</span></button>`;
+  return `<button class="finance-row finance-row-button" type="button" data-action="finance-edit" data-entity="transfer" data-id="${esc(t.id)}"><span class="list-icon tx-icon" style="--cat:var(--muted)">${icon("transfer")}</span><span class="list-copy"><strong>${esc(financeTitle(title))}</strong><span>Перевод · ${esc(route)}</span></span><span class="amount">${demoMoney(t.amount, from?.currency || "RUB")}</span></button>`;
 }
 /** Операции по дням: заголовок дня и его итог (расходы минус доходы не смешиваем — показываем траты). */
 function financeDays(items, withTransfers) {
@@ -325,7 +334,7 @@ function paymentDate(p) {
 function paymentRow(p) {
   const late = p.status !== "confirmed" && p.nextOn && p.nextOn < todayIso();
   const facts = [paymentDate(p), p.category, p.endsOn ? `до ${dateLabel(p.endsOn)}${p.endsOn.slice(0, 4) !== todayIso().slice(0, 4) ? ` ${p.endsOn.slice(0, 4)}` : ""}` : "", p.locked ? "из «Долгов»" : ""].filter(Boolean).join(" · ");
-  return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span><span class="list-copy"><strong>${esc(financeTitle(p.title))}</strong><span>${esc(facts)}${p.status === "confirmed" ? " · оплачено" : ""}</span></span><span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}${p.locked ? miniButton("В долгах", "finance-edit", `data-entity="debt" data-id="${esc(p.creditId)}"`) : miniButton("Настроить", "finance-edit", `data-entity="payment" data-id="${esc(p.id)}"`)}</div></article>`;
+  return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span><span class="list-copy"><strong>${esc(financeTitle(p.title))}</strong><span>${esc(facts)}${p.status === "confirmed" ? " · оплачено" : ""}</span></span><span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}</div></article>`; // «Настроить» не нужна: нажатие на карточку открывает платёж
 }
 /*
  * Счёт постоянных расходов: банк пополняет его сам в назначенный день на
@@ -657,6 +666,7 @@ function financeAction(action, control) {
   if (action === "finance-kind") { ui.financeKind = control.dataset.kind || ""; ui.financeCategory = ""; ui.financeTab = "transactions"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "finance-add") { openFinanceForm(control.dataset.entity, null, control.dataset.kind || "expense"); return true; }
   if (action === "finance-edit") { openFinanceForm(control.dataset.entity, control.dataset.id); return true; }
+  if (action === "finance-cats-toggle") { ui.financeCatsAll = !ui.financeCatsAll; render(); return true; }
   if (action === "finance-category") { ui.financeCategory = control.dataset.category; ui.financeTab = "transactions"; render(); return true; }
   if (action === "finance-clear-category") { ui.financeCategory = ""; render(); return true; }
   if (action === "finance-receipt") { openFinanceForm("receipt"); return true; }
