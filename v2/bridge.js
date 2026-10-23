@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=02a4649960","integrity":null},{"src":"./loop-deck.js?v=9a697d7e1f","integrity":null},{"src":"./movie-carousel.js?v=35d059f5c8","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=74e9c5c90d","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=5dcea25ef8","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=6861f37a33","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=04e2b70b36","integrity":null},{"src":"./more.js?v=f807f885b0","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=22c4dcdc13","integrity":null},{"src":"./app.js?v=54cff84df4","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=b8ed5771c5","integrity":null},{"src":"./loop-deck.js?v=9a697d7e1f","integrity":null},{"src":"./movie-carousel.js?v=6d7b0edeab","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=0c19ba36d5","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=a31b9e5cec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=ea066aef45","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=22c4dcdc13","integrity":null},{"src":"./app.js?v=ca59ff76ff","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -576,6 +576,13 @@
   });
   // Сериал: сезоны и число серий с IMDb (сервер сохраняет сам).
   window.sorokaSeriesFill = (id) => call({ action: "series_fill", id }, 30000);
+  window.sorokaExpenseCategory = async (id, category) => {
+    await call({action:"expense_category",id:Number(String(id).replace(/^tx:/,"")),category,remember:true});
+    const item = data.finance.transactions.find(t => t.id === id);
+    if (item) item.category = category;
+    const previous = base?.finance?.transactions?.find(t => t.id === id);
+    if (previous) previous.category = category;
+  };
   // «Распределить доходы»: расчёт и сами переводы — на сервере, по тем же
   // правилам, что и кнопка в чате.
   window.sorokaIncomeSplit = (ids, apply) => call({ action: "income_split", ids, apply: !!apply }, 30000).then((answer) => {
@@ -665,6 +672,7 @@
     load() {
       if (!v2.loading) v2.loading = call({ action: "vault2_state" }).then((s) => {
         v2.state = s.setup ? s : null; ui.vaultSetup = Boolean(s.setup);
+        biometricState();
         if (ui.page === "vault" || ui.page === "docs") render();
       }).catch((e) => { v2.loading = null; vault.fail(e); });
       return v2.loading;
@@ -683,8 +691,11 @@
     },
     async reveal(item) {
       if (!item || item.password !== null) return item;
+      const key = v2.key;
+      if (!key || !ui.vaultUnlocked) throw new Error("vault_locked");
       const answer = await call({ action: "vault2_get", id: v2.num(item) });
-      const secret = await FlowVault.decrypt(v2.key, answer.envelope);
+      const secret = await FlowVault.decrypt(key, answer.envelope);
+      if (v2.key !== key || !ui.vaultUnlocked || document.hidden) throw new Error("vault_locked");
       Object.assign(item, { login: secret.login || "", password: secret.password || "", note: secret.note || "" });
       v2.touch();
       return item;
@@ -695,7 +706,10 @@
       v2.touch();
     },
     async opened() {
-      await v2.list(); ui.vaultUnlocked = true; ui.vaultError = ""; v2.touch();
+      const key = v2.key;
+      await v2.list();
+      if (!key || key !== v2.key || document.hidden) return;
+      ui.vaultUnlocked = true; ui.vaultError = ""; v2.touch();
       // Старые пароли — только из Telegram: на телефоне проверка спросила бы отпечаток.
       // Уже перенесённые (то же название есть в новом хранилище) второй раз не предлагаем.
       if (!phoneVault()) vaultCall({ action: "vault_list" }).then((a) => {
@@ -706,6 +720,31 @@
       render();
     },
   };
+  const biometricPending = new Map();
+  const biometricBinding = () => v2.state ? `${v2.state.publicKey.x}.${v2.state.publicKey.y}.${v2.state.salt}` : "";
+  function biometricState() {
+    try {
+      const state = JSON.parse(window.SorokaNative?.vaultBiometricState?.(biometricBinding()) || "{}");
+      ui.vaultBiometricAvailable = Boolean(state.available);
+      ui.vaultBiometricEnrolled = Boolean(state.enrolled);
+    } catch { ui.vaultBiometricAvailable = ui.vaultBiometricEnrolled = false; }
+  }
+  window.__flowBiometric = (id, ok, value) => {
+    const pending = biometricPending.get(id);
+    if (!pending) return;
+    biometricPending.delete(id); clearTimeout(pending.timer);
+    if (ok) pending.resolve(value); else pending.reject(new Error(value === "cancel" ? "biometric_cancel" : "biometric_unavailable"));
+  };
+  function biometricRequest(master) {
+    return new Promise((resolve, reject) => {
+      if (biometricPending.size) { reject(new Error("biometric_busy")); return; }
+      const id = crypto.randomUUID().replaceAll("-", "");
+      const timer = setTimeout(() => { biometricPending.delete(id); reject(new Error("biometric_unavailable")); }, 90000);
+      biometricPending.set(id, { resolve, reject, timer });
+      try { window.SorokaNative.vaultBiometric(id, biometricBinding(), master || "", master !== undefined); }
+      catch { window.__flowBiometric(id, false, "unavailable"); }
+    });
+  }
   document.addEventListener("visibilitychange", () => { if (document.hidden) v2.lock(); });
 
   /*
@@ -721,15 +760,52 @@
       return (answer.items || []).map((d) => ({ id: d.id, kind: d.kind, title: d.title }));
     },
     async get(id) {
+      const key = v2.key;
+      if (!key || !ui.vaultUnlocked) throw new Error("vault_locked");
       const row = await call({ action: "docs_get", id: Number(id) });
-      const secret = await FlowVault.decrypt(v2.key, row.envelope);
+      const secret = await FlowVault.decrypt(key, row.envelope);
+      const imports = [];
+      for (const item of row.imports || []) imports.push({ id: item.id, payload: await FlowVault.decrypt(key, item.envelope) });
+      if (v2.key !== key || !ui.vaultUnlocked) throw new Error("vault_locked");
+      let doc = { ...secret, id: row.id, kind: row.kind, title: row.title, _serverUpdatedAt: row.updated_at };
+      if (imports.length) {
+        let next = doc;
+        const ids = [];
+        for (const item of imports) {
+          try {
+            const merged = FlowDocumentImports.merge(next, [item]);
+            next = merged.doc; ids.push(...merged.ids);
+          } catch (error) {
+            if (error.message !== "docs_too_large") throw error;
+            toast("Для нового скана не хватает места в карточке. Удалите лишние вложения и откройте её снова.");
+            break;
+          }
+        }
+        if (!ids.length) return doc;
+        next._serverImportIds = ids;
+        // Save and acknowledge together. An interrupted response is safe because
+        // appliedImports is encrypted in the saved document, and merging is idempotent.
+        await window.FlowDocs.save(next);
+        doc = next;
+      }
+      if (v2.key !== key || !ui.vaultUnlocked) throw new Error("vault_locked");
       v2.touch();
-      return { ...secret, id: row.id, kind: row.kind, title: row.title };
+      return doc;
     },
     async save(doc) {
-      const { id, kind, title, ...secret } = doc;
+      const key = v2.key;
+      if (!key || !ui.vaultUnlocked) throw new Error("vault_locked");
+      const { id, kind, title } = doc;
+      const secret = Object.fromEntries(Object.entries(doc).filter(([name]) => !["id", "kind", "title"].includes(name) && !name.startsWith("_server")));
+      if (JSON.stringify(secret).length > 8_000_000) throw new Error("docs_too_large");
       const envelope = await FlowVault.encrypt(v2.state.publicKey, secret);
-      const answer = await call({ action: "docs_save", ...(id ? { id: Number(id) } : {}), kind, title, envelope }, 60000);
+      if (v2.key !== key || !ui.vaultUnlocked) throw new Error("vault_locked");
+      const answer = await call({ action: "docs_save", ...(id ? { id: Number(id) } : {}), kind, title, envelope,
+        ...(doc._serverUpdatedAt ? { if_updated_at: doc._serverUpdatedAt } : {}),
+        ...(doc._serverImportIds?.length ? { import_ids: doc._serverImportIds } : {}),
+      }, 60000);
+      doc._serverUpdatedAt = answer.updated_at;
+      delete doc._serverImportIds;
       v2.touch();
       return answer.id;
     },
@@ -969,6 +1045,18 @@
       return;
     }
     if (action === "vault-lock") { stop(); v2.lock(); return; }
+    if (action === "vault-biometric-disable") {
+      stop(); window.SorokaNative?.vaultBiometricClear?.(); biometricState(); render(); say("Вход по биометрии отключён на этом телефоне"); return;
+    }
+    if (action === "vault-biometric") {
+      stop();
+      biometricRequest().then(async master => {
+        const key = await FlowVault.unlock(master, v2.state);
+        if (document.hidden) return;
+        v2.key = key; await v2.opened();
+      }).catch(error => { if (error.message !== "biometric_cancel") say("Введите мастер-пароль и включите биометрию заново"); });
+      return;
+    }
     if (action === "vault-reveal" || action === "vault-edit" || action === "vault-copy") {
       const item = data.vault.find((x) => x.id === control.dataset.id);
       if (item && item.password === null && v2.key) {
@@ -1037,7 +1125,14 @@
     if (form.id === "vault-unlock-form") {
       done((async () => {
         if (!v2.state) await v2.load();
-        v2.key = await FlowVault.unlock(master, v2.state);
+        const unlockedKey = await FlowVault.unlock(master, v2.state);
+        if (f.get("biometric")) {
+          try { await biometricRequest(master); }
+          catch (error) { if (error.message !== "biometric_cancel") say("Не удалось включить биометрию. Мастер-пароль продолжит работать"); }
+          biometricState();
+        }
+        if (document.hidden) return;
+        v2.key = unlockedKey;
         await v2.opened();
       })());
     } else if (form.id === "vault-setup-form") {
@@ -1053,6 +1148,7 @@
       done((async () => {
         const wrapped = await FlowVault.rewrap(String(f.get("old") || ""), master, v2.state);
         await call({ action: "vault2_rewrap", ...wrapped });
+        window.SorokaNative?.vaultBiometricClear?.();
         v2.loading = null; await v2.load();
         ui.sheet = null; render(); say("Мастер-пароль сменён");
       })());
@@ -1168,6 +1264,7 @@
     if (page === "tasks" && params.has("date") && window.sorokaOpenPlannerDay(params.get("date"))) return;
     // «Открыть пароли» из чата.
     if (params.get("tab") === "vault") { navigate("vault"); return; }
+    if (params.get("tab") === "docs") { navigate("docs"); return; }
     if (!page) return;
     const kind = PAGE_KIND[page];
     if (!rid || !kind) {
