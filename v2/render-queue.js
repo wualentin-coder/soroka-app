@@ -47,10 +47,32 @@ function rmMemoryText(r, fresh=true) {
   return `RAM ${gb(current?r.ram_bytes:null)} · VRAM ${gb(current?r.vram_bytes:null)}`;
 }
 function rmCalibrationCard() {
-  const tests=rmJobs().filter(j=>j.benchmark?.scope==='pc');
+  const all=rmJobs().filter(j=>j.benchmark);
+  const latest=[...all].sort((a,b)=>Number(b.id)-Number(a.id))[0];
+  const tests=latest ? all.filter(j=>latest.benchmark.group ? j.benchmark.group===latest.benchmark.group : j.id===latest.id) : [];
   const running=tests.some(j=>RM_ACTIVE.includes(j.status)||RM_WAITING.includes(j.status));
   const completed=tests.filter(j=>j.status==='done'&&j.benchmark_result);
-  return `<section class="pc-card rm-card"><div class="pc-card-head"><h3>Тест скорости ПК</h3></div><p class="section-note">${running?'Общий тест в очереди. Результаты появятся после завершения проб.':completed.length?`Завершено проб: ${completed.length}. Авто использует полный набор достоверных замеров и проверяет свободную память перед запуском.`:'Один запуск: выберите характерную композицию и короткий участок. Выполним 8 проб для 1–4 частей и сохраним общий профиль ПК.'}</p><p class="section-note">Другие проекты могут требовать больше памяти. Для них применяется дополнительный запас; точные замеры сцены имеют приоритет.</p><button type="button" class="ghost-button rm-wide" data-action="rm-calibrate">${completed.length?'Повторить общий тест':'Общий тест скорости'}</button></section>`;
+  return `<section class="pc-card rm-card"><div class="pc-card-head"><h3>Тест скорости ПК</h3></div><p class="section-note">${running?`Тест идёт: завершено ${completed.length} из ${tests.length} проб.`:tests.length?`Завершено успешно: ${completed.length} из ${tests.length} проб.`:'Один запуск: выберите характерную композицию и короткий участок. Выполним 8 проб для 1–4 частей и сохраним общий профиль ПК.'}</p>${latest?rmBenchmarkSummary(tests):''}<p class="section-note">Авто выбирает режим при запуске с учётом свободной памяти. Другие сцены могут требовать больше RAM/VRAM. Оценка полного рендера приблизительная.</p><button type="button" class="ghost-button rm-wide" data-action="rm-calibrate">${tests.length?'Новый общий тест':'Общий тест скорости'}</button></section>`;
+}
+function rmBenchmarkSummary(tests) {
+  const first=tests[0],groups=new Map(),positive=n=>typeof n==='number'&&Number.isFinite(n)&&n>0;
+  const median=a=>{const s=[...a].sort((x,y)=>x-y),i=Math.floor(s.length/2);return s.length%2?s[i]:(s[i-1]+s[i])/2;};
+  const gb=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0?`${(n/1073741824).toFixed(1)} ГБ`:'нет замера';
+  for(const j of [...tests].sort((a,b)=>(a.benchmark.repeat||1)-(b.benchmark.repeat||1))) {
+    const key=j.benchmark.mode==='parts'?`Частей: ${j.parallel}`:`MFR ${j.benchmark_result?.mfr==='on'?'вкл.':j.benchmark_result?.mfr==='off'?'выкл.':'не определён'}`;
+    if(!groups.has(key))groups.set(key,[]);groups.get(key).push(j);
+  }
+  let incomplete=tests.some(j=>j.status!=='done'||j.warning||!positive(j.benchmark_result?.seconds_per_frame));
+  const rows=[...groups].map(([label,jobs])=>{
+    const valid=jobs.filter(j=>j.status==='done'&&!j.warning&&positive(j.benchmark_result?.seconds_per_frame));
+    if(first.benchmark.mode==='parts' && new Set(valid.map(j=>j.benchmark.repeat)).size<2)incomplete=true;
+    const speeds=valid.map(j=>j.benchmark_result.seconds_per_frame),score=speeds.length?median(speeds):null;
+    const peak=key=>{const values=valid.map(j=>j.benchmark_result.resources?.[key]).filter(n=>typeof n==='number'&&Number.isFinite(n)&&n>=0);return values.length?gb(Math.max(...values)):'нет замера';};
+    const unstable=speeds.length>1&&Math.max(...speeds)>Math.min(...speeds)*1.25;
+    return {label,score,unstable,html:`<div class="rm-recent"><span class="rm-wait-text"><b>${esc(label)} · ${valid.length}/${jobs.length} проб</b><small>${jobs.map(j=>`Проба ${esc(j.benchmark.repeat||1)}: `+esc(j.status==='done'&&positive(j.benchmark_result?.wall_seconds)?`${j.benchmark_result.wall_seconds.toFixed(1)} с${j.warning?` · ${j.warning}`:''}`:j.error||j.warning||({queued:'ожидает',rendering:'идёт',cancelled:'отменена',paused:'пауза'}[j.status])||'нет достоверного замера')).join(' · ')}</small><small>${score===null?'Скорость не определена':`${score.toFixed(2)} с/кадр · медиана`}${unstable?' · большой разброс, повторите тест':''}</small><small>Пик RAM: ${peak('peak_ram_bytes')} · VRAM: ${peak('peak_vram_bytes')}</small></span></div>`};
+  });
+  const winner=rows.filter(r=>r.score!==null).sort((a,b)=>a.score-b.score)[0];
+  return `<details class="rm-resource" open><summary>Результаты теста</summary><p class="section-note" style="overflow-wrap:anywhere">${first.benchmark.scope==='pc'?'Общий профиль ПК':'Тест сцены'} · ${esc(first.target||first.name)}<br>${esc(first.scene||'')}<br>Участок: ${esc(first.frames)} · полный диапазон: ${esc(first.benchmark.full_frames)}<br>Фоновый AE · PNG · разрешение: ${esc(({inherit:'как в проекте',full:'полное',half:'½',quarter:'¼'})[first.ae_resolution]||'как в проекте')}. Время проб включает запуск; с/кадр — сохранённый замер скорости после первого прогресса, если он доступен.</p>${rows.map(r=>r.html).join('')}${winner?`<p class="section-note"><b>Лучшее время в тесте: ${esc(winner.label)}</b>. ${incomplete||rows.some(r=>r.unstable)?'Результат предварительный: не все пробы достоверны или повторы сильно различаются.':''} Это сравнение измеренных проб, а не гарантия времени всего проекта.</p>`:''}</details>`;
 }
 
 /** Ждущая задача: ручка для перетаскивания, название, кадры, отмена. */
