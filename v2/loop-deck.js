@@ -5,6 +5,7 @@ class LoopDeck {
     this.velocity=0;this.frame=0;this.base=null;this.drag=null;this.ignoreClickUntil=0;
     this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.abort=new AbortController();const options={signal:this.abort.signal};
+    track.addEventListener('dragstart',e=>e.preventDefault(),options);
     track.addEventListener('pointerdown',e=>this.down(e),options);
     track.addEventListener('pointermove',e=>this.move(e),options);
     track.addEventListener('pointerup',e=>this.up(e),options);
@@ -20,7 +21,7 @@ class LoopDeck {
     this.paint();
   }
   wrap(n){return ((n%this.count)+this.count)%this.count;}
-  get width(){return Math.min(300,Number(this.track.dataset.widthLimit)||Infinity,this.track.clientWidth*.76);}
+  get width(){return Math.min(480,innerWidth*.8,this.track.clientWidth*.94);}
   get step(){return this.width-25;}
   stop(){cancelAnimationFrame(this.frame);this.frame=0;this.velocity=0;clearTimeout(this.wheelTimer);}
   paint(){
@@ -48,6 +49,8 @@ class LoopDeck {
   down(e){
     if(e.button!==0||(!this.onAction&&this.count<2)||this.drag)return;
     this.stop();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastAt:performance.now(),start:this.position,moved:false};
+    // Capture on the stable track before paint replaces the touched card.
+    this.track.setPointerCapture(e.pointerId);
   }
   move(e){
     const d=this.drag;if(!d||d.id!==e.pointerId)return;
@@ -88,7 +91,7 @@ class LoopDeck {
     const tick=now=>{
       const dt=Math.min(.025,Math.max(.001,(now-previous)/1000));previous=now;
       if(phase==='coast'){
-        this.position+=this.velocity*dt;this.velocity*=Math.exp(-5.8*dt);
+        this.position+=this.velocity*dt;this.velocity*=Math.exp(-2.5*dt);
         if(Math.abs(this.velocity)<.22){phase='snap';target=Math.round(this.position);}
       }else{
         this.velocity+=(-180*(this.position-target)-27*this.velocity)*dt;

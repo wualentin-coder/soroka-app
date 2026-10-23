@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=303bbaf8b2","integrity":null},{"src":"./loop-deck.js?v=eb6202e08b","integrity":null},{"src":"./movie-carousel.js?v=f36db669b2","integrity":null},{"src":"./movies.js?v=abdfc21d1f","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=90d70ed4c3","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=e20ddfbaf3","integrity":null},{"src":"./render-queue.js?v=242fa6f6d6","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=e0c8a37b18","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=157a8cfb14","integrity":null},{"src":"./app.js?v=b36489870c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=86fc7c64d9","integrity":null},{"src":"./saved.js?v=303bbaf8b2","integrity":null},{"src":"./loop-deck.js?v=3d888aed5a","integrity":null},{"src":"./movie-carousel.js?v=92dd982ae8","integrity":null},{"src":"./movies.js?v=abdfc21d1f","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=90d70ed4c3","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=edd1fecbb0","integrity":null},{"src":"./render-queue.js?v=c61a9f06f8","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=e0c8a37b18","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=157a8cfb14","integrity":null},{"src":"./app.js?v=b36489870c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1692,11 +1692,17 @@
   function headPill(text) {
     const row = root.querySelector(".main .page-header, .main .notes-topline");
     if (!row || !text) return;
-    const pill = row.querySelector(".head-pill") || document.createElement("button");
+    const movies = row.closest('.movie-library-screen');
+    let host = row;
+    if (movies) {
+      host = movies.querySelector('.movie-island-row');
+      if (!host) {host=document.createElement('div');host.className='movie-island-row';row.before(host);}
+    }
+    const pill = host.querySelector(".head-pill") || document.createElement("button");
     pill.type = "button";
     pill.className = "head-pill";
     row.classList.add("has-pill");
-    row.appendChild(pill);
+    host.appendChild(pill);
     mountIsland(pill, text);
   }
   function mountIsland(pill, text) {

@@ -57,7 +57,8 @@ function pcLoad(force = false) {
       // Пока человек печатает в поиске — меняем только шапку, иначе поле потеряет фокус.
       const hero = document.querySelector(".pc-hero");
       if (document.activeElement?.id === "pc-find" && hero && ui.pc.data) hero.outerHTML = pcHero(ui.pc.data);
-      else render();
+        else if(ui.sheet?.kind==='rm-scenes' && document.activeElement?.matches('[data-form], [data-frame-edge]')) rmRefreshError();
+        else render();
     });
 }
 

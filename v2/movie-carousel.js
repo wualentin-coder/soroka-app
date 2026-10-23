@@ -40,10 +40,8 @@ function mountMovieCarousel() {
   }});
 }
 function sizeMovieCarousel(track) {
-  const nav = document.querySelector(".mobile-nav");
-  const navTop = nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().top : innerHeight;
-  const available = navTop - track.getBoundingClientRect().top - 26;
-  track.dataset.widthLimit = String(Math.max(110, (available - 160) / 1.5));
+  // Keep the full poster width even on short screens; the page can scroll.
+  delete track.dataset.widthLimit;
 }
 document.addEventListener("click", event => {
   const control = event.target.closest('[data-action="movie-carousel-toggle"]');

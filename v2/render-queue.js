@@ -280,7 +280,7 @@ function rmSettingsCard(d) {
 function renderRmSettingsSheet() {
   const f = ui.sheet.form;
   const body = [
-    rmField("Папка рендера", `<input class="rm-input" data-form="render_root" value="${esc(f.render_root)}" autocomplete="off" spellcheck="false">`, "Сюда рендерится всё с «Папка рендера»: сцена\\цель\\v001."),
+    rmField("Папка рендера", `<input class="rm-input" data-form="render_root" value="${esc(f.render_root)}" autocomplete="off" spellcheck="false">`, "Сюда рендерится всё с «Папка рендера»: проект\\имя файла."),
     rmField("Папка Облака", `<input class="rm-input" data-form="deliver_root" value="${esc(f.deliver_root)}" autocomplete="off" spellcheck="false">`, "Её резервирует Облако Mail.ru — готовый рендер переносится или копируется сюда."),
     rmField("Куда по умолчанию", rmSegments("default_output", RM_OUTPUT.filter(([k]) => k !== "custom"), f.default_output)),
     rmField("Облако по умолчанию", rmSegments("default_deliver", RM_DELIVER, f.default_deliver)),
@@ -368,19 +368,26 @@ function rmSummary(s, chosen, f) {
   const line1 = [n ? rmPlural(n, "кадр", "кадра", "кадров") : "", rmDuration(n, a.fps)].filter(Boolean).join(" · ");
   const line2 = [media.width && media.height ? `${media.width}×${media.height}` : "", rmFps(a.fps), media.format].filter(Boolean).join(" · ");
   const warn = audit.warnings.slice(0, 3).map(w => `<p class="rm-warn">${esc(w)}</p>`).join("") + (audit.warnings.length > 3 ? `<p class="rm-warn">и ещё ${audit.warnings.length - 3}</p>` : "");
-  return `<div class="rm-summary"><b class="rm-sum-title">${esc(t.target)}</b>${line1 ? `<p class="rm-sum-facts">${esc(line1)}</p>` : ""}${line2 ? `<p class="rm-sum-facts">${esc(line2)}</p>` : ""}${warn}</div>`;
+  return `<div class="rm-summary"><div class="rm-summary-name"><b class="rm-sum-title">${esc(f.output_name || t.target)}</b>${!ui.sheet?.benchmark?`<button type="button" class="icon-button" data-action="rm-name-toggle" aria-label="Изменить имя файла"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button>`:''}</div>${ui.sheet?.renameOpen?`<input class="rm-input" data-form="output_name" maxlength="120" value="${esc(f.output_name || '')}" placeholder="Имя файла без расширения" aria-label="Имя итогового файла">`:''}${line1 ? `<p class="rm-sum-facts">${esc(line1)}</p>` : ""}${line2 ? `<p class="rm-sum-facts">${esc(line2)}</p>` : ""}${warn}</div>`;
 }
 
 /** Куда ляжет рендер — одной строкой под переключателем. */
 function rmWhere(s, t, f) {
   if (ui.sheet?.benchmark) return `${rmSettings().render_root}\\_benchmarks`;
-  if (f.output_mode === "scene") return t.output || "в сцене путь не задан";
-  if (f.output_mode === "custom") return f.output_dir ? `${f.output_dir}\\…\\v###` : "";
-  // как rm/paths.py output_for: папка рендера \ папка проекта \ сцена \ цель \ v###
-  const parts = String(s.path || "").split("\\");
-  const project = parts.length > 1 ? parts[parts.length - 2] : "scenes";
-  const leaf = (ui.sheet?.batch && rmChosenTargets(s).length > 1) ? "<композиция>" : String(t.target || "").replace(/^.*\//, "");
-  return `${rmSettings().render_root}\\${project}\\${s.name}\\${leaf}\\v###`;
+  let output=rmOutputName(t,f);
+  const extension={'@flow:mp4':'mp4','@flow:mov-alpha':'mov','@flow:hap':'mov','@flow:hap-alpha':'mov','@flow:png':'png','@flow:exr':'exr'}[f.ae_template];
+  if(extension) output=output.replace(/(?:\.\[#+\])?\.[^.\\/]+$/,['png','exr'].includes(extension)?`.[####].${extension}`:`.${extension}`);
+  if (f.output_mode === "scene") return output || "в сцене путь не задан";
+  const filename=output.split(/[\\/]/).pop() || `${t.target || 'render'}.[####].exr`;
+  const project=String(s.path || s.name).split(/[\\/]/).pop().replace(/\.[^.]+$/,'').replace(/[<>:"/\\|?*]/g,'_');
+  const folder=f.output_mode==='custom'?f.output_dir:`${rmSettings().render_root}\\${project}`;
+  return folder?`${folder.replace(/[\\/]$/,'')}\\${filename}`:'';
+}
+
+function rmFrameFields(frames) {
+  const range=String(frames || '').match(/^(-?\d+)(?:-(-?\d+))?$/);
+  if(!range)return `<input class="rm-input" data-form="frames" value="${esc(frames || '')}" aria-label="Кадры">`;
+  return `<div class="rm-frame-range"><input class="rm-input" type="number" step="1" data-frame-edge="start" value="${range[1]}" aria-label="Первый кадр"><span>—</span><input class="rm-input" type="number" step="1" data-frame-edge="end" value="${range[2] || range[1]}" aria-label="Последний кадр"></div>`;
 }
 
 /** Параметры задачи: главное сверху, редкое — в «Дополнительно», кнопка — внизу листа. */
@@ -393,17 +400,15 @@ function rmJobForm(s, t) {
     !ui.sheet.calibration ? rmField('Что сравнить',rmSegments('benchmark_mode',[['mfr','MFR'],['parts','1–4 части']],f.benchmark_mode || 'mfr')) : '',
     rmField("Кадры для теста", `<input class="rm-input" data-form="sample_frames" value="${esc(f.sample_frames)}" inputmode="numeric" autocomplete="off">`, `2–120 кадров подряд внутри ${esc(f.frames)}.`),
   ] : [
-    !many ? rmField("Кадры", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="${esc(t.frames || "1-100")}">`) : "",
-    rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : ""), rmWhere(s, t, f) ? `<span class="rm-path">${esc(rmWhere(s, t, f))}</span>` : ""),
-    !many ? rmField('Имя итогового файла',`<input class="rm-input" data-form="output_name" maxlength="120" value="${esc(f.output_name || '')}" placeholder="Как в проекте · без расширения">`) : '',
-    ae ? rmField('Формат вывода',rmFormatSelect(chosen,f),'MOV + альфа сохраняет прозрачность. MP4 — без прозрачности. HAP требует больше места.') : '',
-    rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver), 'Отдельная папка проекта в Облаке.'),
+    !many ? rmField("Кадры", rmFrameFields(f.frames)) : "",
     ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
-    ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || 'auto')), f.parallel==='auto'?'Авто учитывает общий тест ПК, замеры сцены и свободную RAM/VRAM. Без замеров — одна часть.':RM_PARTS_NOTE) : "",
-    `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>`,
+    rmField("Сохранение и облако", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : "") + `<p class="rm-path">${esc(rmWhere(s,t,f))}</p><span class="rm-field-caption">После рендера</span>` + rmSegments("deliver",RM_DELIVER,f.deliver), 'Облако сохраняет папку проекта. Занятое имя получит суффикс _002.'),
+    ae ? rmField('Формат вывода',rmFormatSelect(chosen,f),'MOV + альфа сохраняет прозрачность. MP4 — без прозрачности. HAP требует больше места.') : '',
   ];
   const more = ui.sheet.more;
   const extra = !more ? "" : [
+    !bench && ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || 'auto')), 'Авто учитывает замеры и свободную RAM/VRAM.') : "",
+    !bench ? `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>` : '',
     many && !bench ? rmField("Один диапазон для всех", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="у каждой свой">`) : "",
     ae ? rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit"), "Только для этой задачи; композиция в проекте не меняется.") : "",
     !bench ? rmPresetSave(f) : "",
@@ -431,6 +436,12 @@ function rmRefreshError() {
 
 // Поля листа: значение — сразу в форму, без перерисовки (иначе поле теряет фокус).
 document.addEventListener("input", event => {
+  if(event.target?.dataset?.frameEdge && ui.sheet?.form){
+    const group=event.target.closest('.rm-frame-range');
+    const start=group.querySelector('[data-frame-edge="start"]').value,end=group.querySelector('[data-frame-edge="end"]').value;
+    ui.sheet.form.frames=!start || !end?'':start===end?start:`${start}-${end}`;
+    delete ui.sheet.submissionId;ui.sheet.confirm=false;rmRefreshError();return;
+  }
   const key = event.target?.dataset?.form;
   if (key && ui.sheet?.form) {ui.sheet.form[key] = event.target.value;delete ui.sheet.submissionId;ui.sheet.confirm=false;rmRefreshError();}
 });
@@ -760,6 +771,7 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function rmAction(action, control) {
+  if(action==='rm-name-toggle'){ui.sheet.renameOpen=!ui.sheet.renameOpen;render();return true;}
   if(action==='rm-format-toggle'){ui.sheet.formatOpen=!ui.sheet.formatOpen;render();return true;}
   if(action==='rm-format-templates'){ui.sheet.formatTemplatesOpen=!ui.sheet.formatTemplatesOpen;render();return true;}
   if(action==='rm-format-pick'){
