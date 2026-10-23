@@ -1,0 +1,57 @@
+// Carousel is a local display preference; records and actions stay in Saved.
+let movieDeck = null;
+let movieDeckId = "";
+let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view") === "carousel"; } catch { return false; } })();
+function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
+function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
+function movieBuiltinSection(section) { return /^(кино|фильмы|сериалы|анимация|мультфильмы)$/i.test(String(section?.name || "").trim()); }
+function movieCarouselToggle() {
+  if (!moviePlansTab()) return "";
+  const label = movieDeckMode ? "Показать списком" : "Показать каруселью";
+  return `<button type="button" class="icon-button movie-carousel-toggle ${movieDeckMode ? "active" : ""}" data-action="movie-carousel-toggle" aria-label="${label}" title="${label}" aria-pressed="${movieDeckMode}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${movieDeckMode ? '<rect x="4" y="5" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/>' : '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 7v10M21 7v10"/>'}</svg></button>`;
+}
+function movieCarouselCard(item, index, slot) {
+  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button><button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong><span class="movie-deck-facts">${[item.year, item.genre || item.tags?.[0]].filter(Boolean).map(esc).join(" · ")}</span><span class="movie-deck-description">${esc(item.description && !movieBlurbEmpty(item.description) ? item.description : "Добавлен в планы на просмотр.")}</span>${movieScoresLine(item)}</button></article>`;
+}
+function mountMovieCarousel() {
+  const track = document.getElementById("movie-deck");
+  if (movieDeck?.track === track) return;
+  movieDeck?.destroy(); movieDeck = null;
+  if (!track || !movieCarouselEnabled()) return;
+  const items = savedVisibleItems();
+  if (!items.length) return;
+  const index = Math.max(0, items.findIndex(item => item.id === movieDeckId));
+  sizeMovieCarousel(track);
+  movieDeck = new LoopDeck(track, {count: items.length, index, card: (i, slot) => movieCarouselCard(items[i], i, slot), onChange: i => {
+    movieDeckId = items[i].id;
+    const count = document.getElementById("movie-deck-count");
+    if (count) count.textContent = `${i + 1} из ${items.length}`;
+  }});
+}
+function sizeMovieCarousel(track) {
+  const nav = document.querySelector(".mobile-nav");
+  const navTop = nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().top : innerHeight;
+  const available = navTop - track.getBoundingClientRect().top - 26;
+  track.dataset.widthLimit = String(Math.max(110, (available - (innerHeight < 760 ? 162 : 170)) / 1.5));
+}
+document.addEventListener("click", event => {
+  const control = event.target.closest('[data-action="movie-carousel-toggle"]');
+  if (control) {
+    event.preventDefault(); event.stopPropagation(); movieDeckMode = !movieDeckMode;
+    try { localStorage.setItem("flow-movie-view", movieDeckMode ? "carousel" : "list"); } catch {}
+    render(); return;
+  }
+  const card = event.target.closest(".movie-deck-card");
+  if (!card || !movieDeck) return;
+  if (performance.now() < movieDeck.ignoreClickUntil) { event.preventDefault(); event.stopPropagation(); return; }
+  if (Number(card.dataset.slot) !== Math.round(movieDeck.position)) {
+    event.preventDefault(); event.stopPropagation(); movieDeck.select(Number(card.dataset.index), Number(card.dataset.slot));
+  }
+}, true);
+document.addEventListener("keydown", event => {
+  if (!event.target.closest("#movie-deck") || !movieDeck || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  event.preventDefault(); movieDeck.nudge(event.key === "ArrowRight" ? 1 : -1);
+});
+window.addEventListener("resize", () => { if (movieDeck) { sizeMovieCarousel(movieDeck.track); movieDeck.select(Math.round(movieDeck.position), undefined, false); } });
+// Full renders and search-only result replacements share the same lifecycle.
+new MutationObserver(mountMovieCarousel).observe(document.documentElement, {childList: true, subtree: true});

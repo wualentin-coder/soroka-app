@@ -102,6 +102,7 @@ function sortSavedItems(a, b, mode = ui.savedSort) {
   return (b.created || "").localeCompare(a.created || "");
 }
 function savedVisibleItems() {
+  if (ui.savedCategory === "movies" && typeof movieBuiltinSection === "function" && movieBuiltinSection(savedSection("movies", ui.savedSection))) ui.savedSection = "";
   const q = ui.savedQuery.trim().toLocaleLowerCase("ru-RU");
   const result = savedItems().filter(item => {
     if (ui.savedCategory === "products" && isProductWish(item) !== (ui.productTab === "wishes")) return false;
@@ -318,6 +319,7 @@ function ticketCodeBlock(item) {
 }
 function renderSavedResults() {
   let all = savedVisibleItems();
+  if (typeof movieCarouselEnabled === "function" && movieCarouselEnabled() && all.length) return `<div class="movie-deck" id="movie-deck" tabindex="0" role="region" aria-roledescription="карусель" aria-label="Фильмы в планах"></div><div id="movie-deck-count" class="movie-deck-count"></div>`;
   // Сотни карточек разом тормозят телефон: показываем порциями.
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
@@ -378,7 +380,7 @@ function savedChipPool(category) {
 function renderSavedSectionChips(category, tail = "") {
   const base=category === "movies" ? movieTypeChips() : "";
   if(category === "movies" && ui.savedFilter === "viewed") return base+(tail ? `<div class="saved-sort-row">${tail}</div>` : "");
-  const sections = savedSections(category);
+  const sections = savedSections(category).filter(section => category !== "movies" || !movieBuiltinSection(section));
   const pool = savedChipPool(category);
   const unassigned = pool.filter(item => !item.categoryId).length;
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
@@ -413,8 +415,8 @@ function renderSavedPage() {
   // Поиск — в «+» (он ищет и добавляет), а «Показать» стоит в одном ряду с папками.
   const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
   const toolbar = "";
-  const heading = `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><span class="notes-topline-actions">${category === "movies" ? `<button type="button" class="icon-button movie-random-button" data-action="movie-random" aria-label="Случайный фильм" title="Случайный фильм">${icon("spark", "icon-sm")}</button>` : ""}<button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
-  const hint = category === "movies" && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
+  const heading = `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><span class="notes-topline-actions">${category === "movies" ? `${movieCarouselToggle()}<button type="button" class="icon-button movie-random-button" data-action="movie-random" aria-label="Случайный фильм" title="Случайный фильм">${icon("spark", "icon-sm")}</button>` : ""}<button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
+  const hint = category === "movies" && !movieCarouselEnabled() && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
   const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
   const main = category === "addresses" ? renderAddressWorkspace()
     : category === "cards" ? renderWallet()
@@ -425,7 +427,7 @@ function renderSavedPage() {
     : category === "movies" && ui.savedFilter === "viewed" ? `${seenTabs}${movieSeenFilters()}${renderSavedSectionChips(category, sortSelect)}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
     : `${seenTabs}${renderSavedSectionChips(category, sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
-  return `<div class="saved-section-screen">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
+  return `<div class="saved-section-screen ${category === "movies" ? "movie-library-screen" : ""}">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
 }
 /** Фильмы: что посмотреть и что уже посмотрено — две вкладки, а не пункт в меню. */
 function movieSeenTabs() {
