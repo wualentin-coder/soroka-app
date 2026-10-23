@@ -44,6 +44,10 @@ body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="
 .task-check { position: relative; }
 .task-check::before { content: ""; position: absolute; inset: -9px; }
 .text-action { min-height: 36px; }
+/* Стрелки месяца, «Неделя/Месяц», вкладки графика сервера и «Перенести на сегодня» в баннере —
+   27–30 px (баннер — 19). Вид прежний, палец попадает по ~44 px. */
+:is([data-action="month-prev"], [data-action="month-next"], [data-action="calendar-mode"], [data-action="server-chart"], .overdue-banner [data-action="move-overdue"]) { position: relative; }
+:is([data-action="month-prev"], [data-action="month-next"], [data-action="calendar-mode"], [data-action="server-chart"], .overdue-banner [data-action="move-overdue"])::after { content: ""; position: absolute; inset: -8px -3px; }
 
 /* Коды билетов: миниатюры в ряд, на весь экран — листаются свайпом. */
 /* Коды растягиваются на всю ширину блока: один — во всю, два — пополам, три — по трети. */
@@ -249,12 +253,6 @@ html.in-android .main { padding-top: 12px; }
 html.in-android .page-header { min-height: 40px; }
 .live-splash-error { max-width: 300px; margin-top: 8px; color: var(--muted, #888); font-size: 11px; word-break: break-word; text-align: center; }
 
-/* Жесты на краях: значок «Закреплённое» сверху и «Поиск» снизу наливается по мере движения. */
-.edge-hint { position: fixed; z-index: 45; left: 50%; display: none; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: var(--surface-raised); color: var(--muted); font: 800 13px Manrope, system-ui, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); opacity: var(--k, 0); pointer-events: none; transition: background .15s ease, color .15s ease; }
-.edge-hint.on { display: inline-flex; }
-.edge-hint.is-top { top: calc(var(--tg-top, 0px) + 10px); transform: translate(-50%, calc((var(--k) - 1) * 30px)) scale(calc(.85 + var(--k) * .15)); }
-.edge-hint.is-bottom { bottom: calc(80px + env(safe-area-inset-bottom)); transform: translate(-50%, calc((1 - var(--k)) * 30px)) scale(calc(.85 + var(--k) * .15)); }
-.edge-hint.ready { background: var(--accent); color: var(--accent-ink); }
 .composer-movie-acts { display: grid; gap: 6px; align-self: center; }
 .composer-movie-acts button { white-space: nowrap; }
 .composer-movie-done { display: inline-flex; align-items: center; gap: 4px; align-self: center; color: #2fa96a; font-weight: 600; font-size: 14px; white-space: nowrap; animation: review-in .3s ease-out; }
@@ -1218,13 +1216,13 @@ body:has(.movie-deck) .fab { bottom:max(8px,env(safe-area-inset-bottom)); }
 .movie-deck .movie-cover-fallback { width:100%; }
 .movie-deck-pin { position:absolute; top:10px; right:10px; width:36px; height:38px; display:grid; place-items:center; border:1px solid #ffffff55; border-radius:11px; background:#17232d9c; color:white; backdrop-filter:blur(8px); }
 .movie-deck-pin.is-pinned { background:var(--accent); border-color:var(--accent); }
-.movie-deck-info { display:flex; flex-direction:column; gap:7px; height:144px; width:100%; padding:12px 14px; background:var(--surface); border:0; text-align:left; color:inherit; transition:opacity .15s ease; }
+.movie-deck-info { display:flex; flex-direction:column; gap:7px; height:176px; width:100%; padding:12px 14px; background:var(--surface); border:0; text-align:left; color:inherit; transition:opacity .15s ease; }
 .movie-deck-card:not(.active) .movie-deck-info { opacity:1; }
 .movie-deck-info > strong { font-size:20px; line-height:1.15; letter-spacing:-.025em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; flex-shrink:0; }
 .movie-deck-rating { display:flex; align-items:center; gap:5px; font-size:13px; color:var(--accent); flex-shrink:0; }
 .movie-deck-rating .icon { width:14px; height:14px; }
 .movie-deck-rating small { color:var(--muted); font-size:10px; }
-.movie-deck-description { color:var(--muted); font-size:11px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.movie-deck-description { color:var(--muted); font-size:11px; line-height:1.45; flex-shrink:0; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
 .movie-deck-count { text-align:center; font-size:11px; color:var(--muted); padding:0 0 8px; }
 .movie-library-screen:has(.movie-deck) .saved-results { overflow:hidden; }
 .movie-deck[data-card-action]::after { content:attr(data-card-action); position:absolute; top:42%; left:50%; transform:translate(-50%,-50%); z-index:200; border-radius:16px; padding:12px 18px; background:var(--accent); color:var(--accent-ink); font-size:14px; font-weight:700; pointer-events:none; }
@@ -1250,3 +1248,26 @@ body:has(.movie-deck) .fab { bottom:max(8px,env(safe-area-inset-bottom)); }
 .rm-format-list .section-note { padding:6px 10px; font-size:11px; }
 .movie-library-screen .movie-type-chips { margin-bottom:6px; }
 @media(max-width:680px) { .app-shell:has(.movie-deck) > .fab { width:44px; height:44px; min-width:44px; min-height:44px; right:16px; border-radius:14px; } }
+
+.movie-random-fab { right:90px; background:var(--surface); color:var(--accent); border:1px solid var(--line); }
+.movie-random-fab:hover { background:var(--accent-soft); }
+@media(min-width:681px) { .movie-random-fab { right:102px; } }
+@media(max-width:680px) { .app-shell:has(.movie-deck) > .movie-random-fab { right:72px; } }
+.movie-view-sheet .movie-summary { display:block; overflow:visible; white-space:normal; overflow-wrap:anywhere; -webkit-line-clamp:unset; }
+
+/* «Компьютер»: действия сеткой 3×2; сон и выключение — тихими плитками (под ними окно подтверждения). */
+.pc-actions.six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pc-action.pc-tile-off { color: var(--warn, #d6404d); }
+.pc-action.pc-tile-sleep { color: #6b74c9; }
+/* «Рендер»: редкое — одним свёрнутым блоком; внутри карточки без второй рамки. */
+.rm-tools > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; list-style: none; min-height: 32px; }
+.rm-tools > summary::-webkit-details-marker { display: none; }
+.rm-tools > summary::after { content: "›"; margin-left: auto; transform: rotate(90deg); transition: transform .2s; color: var(--muted); }
+.rm-tools:not([open]) > summary::after { transform: none; }
+.rm-tools > .pc-card, .rm-tools > details.pc-card { border: 0; box-shadow: none; background: none; padding: 12px 0 0; margin: 8px 0 0; border-top: 1px solid var(--line); border-radius: 0; }
+.rm-card .rm-add { width: 100%; margin-top: 12px; }
+/* Звук компактнее: кнопки меньше, без отдельной большой зоны под транспорт. */
+.pc-media .pc-transport { gap: 16px; margin-top: 8px; }
+.pc-media .pc-media-btn { width: 44px; height: 44px; }
+.pc-media .pc-media-btn.main { width: 54px; height: 54px; }
+.pc-media .pc-media-btn.main .pc-ico { width: 24px; height: 24px; }
