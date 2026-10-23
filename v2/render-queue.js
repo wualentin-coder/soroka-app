@@ -15,7 +15,20 @@ function rmFresh(d) {
   const q=d.rmQueue || {},stamp=q.at || q.observed_at;
   return d.agent!==false && q.service?.available!==false && (!stamp || (Number.isFinite(Date.parse(stamp)) && Date.now()-Date.parse(stamp)<90000));
 }
-const rmJobs = () => rmQueue().jobs || [];
+const rmPendingArchive = new Map();
+function rmVisibleJobs(queue) {
+  const now=Date.now();
+  for(const [id,until] of rmPendingArchive)if(until<now)rmPendingArchive.delete(id);
+  return (queue.jobs || []).filter(j=>!rmPendingArchive.has(Number(j.id)));
+}
+const rmJobs = () => rmVisibleJobs(rmQueue());
+function rmArchive(ids) {
+  ids=ids.filter(id=>rmJobs().some(j=>Number(j.id)===id && ['done','failed','cancelled'].includes(j.status)));
+  if(!ids.length)return;
+  ids.forEach(id=>rmPendingArchive.set(id,Date.now()+120000));
+  render();
+  pcQuick('rm_clear',{ids},'rm-clear',()=>{pcLoad(true);},()=>{ids.forEach(id=>rmPendingArchive.delete(id));render();});
+}
 /** Есть ли в очереди что-то идущее или ждущее — тогда «Когда закончится» управляет очередью. */
 const rmBusy = () => rmJobs().some(j => RM_ACTIVE.includes(j.status) || RM_WAITING.includes(j.status));
 
@@ -103,18 +116,19 @@ function rmRecentRow(j) {
 
 function rmBlock(d) {
   const q = d.rmQueue || {};
-  const jobs = q.jobs || [];
+  const jobs = rmVisibleJobs(q);
   const active = jobs.filter(j => RM_ACTIVE.includes(j.status));
   const waiting = jobs.filter(j => RM_WAITING.includes(j.status));
-  const recent = jobs.filter(j => !RM_ACTIVE.includes(j.status) && !RM_WAITING.includes(j.status)).slice(0, 3);
+  const recent = jobs.filter(j => ['done','failed','cancelled'].includes(j.status));
   const hold = `<button type="button" class="small-button rm-hold ${rmBusyCls("rm-hold")}" data-action="rm-hold" data-on="${q.held ? "0" : "1"}">${q.held ? "Продолжить" : "Пауза"}</button>`;
   const empty = !active.length && !waiting.length;
   const body = [
     q.held ? `<p class="section-note rm-held">Очередь на паузе: текущий рендер доработает, следующие ждут.</p>` : "",
+    !active.length && d.render?.rendering ? `<div class="rm-manual-row"><p class="pc-find-label">Вручную в After Effects</p>${pcRenderNow(d.render)}</div>` : '',
     active.map(j => rmActiveRow(j, rmFresh(d))).join(""),
     waiting.length ? `<p class="pc-find-label">Дальше${waiting.length > 1 ? " — порядок можно менять, перетаскивая за ручку" : ""}</p><div class="rm-waiting">${waiting.map(rmWaitingRow).join("")}</div>` : "",
-    empty ? `<p class="section-note">Сейчас в очереди ничего нет.</p>` : "",
-    recent.length ? `<p class="pc-find-label">Недавно</p><div class="rm-recents">${recent.map(rmRecentRow).join("")}</div><button type="button" class="text-action ${rmBusyCls("rm-clear")}" data-action="rm-clear">Очистить завершённые</button>` : "",
+    empty && !d.render?.rendering ? `<p class="section-note">Сейчас в очереди ничего нет.</p>` : "",
+    recent.length ? `<details class="rm-history" ${ui.pc.rmHistoryOpen?'open':''}><summary data-action="rm-history-toggle">История · ${recent.length}</summary><div class="rm-recents">${recent.map(j=>`<div class="rm-history-swipe" data-history-id="${j.id}"><button type="button" class="rm-history-remove" data-action="rm-archive" data-id="${j.id}" aria-label="Убрать из истории: ${esc(j.name)}">${pcIcon('x')}</button><div class="rm-history-row">${rmRecentRow(j)}</div></div>`).join('')}</div><button type="button" class="text-action ${rmBusyCls("rm-clear")}" data-action="rm-clear">Очистить завершённые</button></details>` : "",
   ].join("");
   return `<section class="pc-card rm-card ${active.length ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}Очередь рендеров</h3>${empty && !q.held ? "" : hold}</div>${body}<button type="button" class="ghost-button rm-add" data-action="rm-scenes">Поставить сцену</button></section>`;
 }
@@ -139,7 +153,7 @@ function renderRenderPage() {
   const top = header("Рендер", "Karma и After Effects на домашнем ПК", "Дом");
   if (!d) return `${top}<div class="content-grid"><div class="content-main pc-page"><section class="pc-card"><p class="section-note">${esc(ui.pc?.error || "Спрашиваю компьютер…")}</p>${ui.pc?.error ? `<button class="primary-button" type="button" data-action="pc-refresh">Повторить</button>` : ""}</section></div></div>`;
   const off = !d.agent ? `<section class="pc-card"><p class="section-note">${d.on === false ? "Компьютер выключен" : "Компьютер не на связи"} — ниже последняя известная очередь. «Поставить сцену» включит его сам${d.hub ? "" : ", когда ESP32 будет на связи"}.</p></section>` : "";
-  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${rmCalibrationCard()}${rmHealthCard(d)}${d.agent ? pcRenderBlock(d) : ""}${rmSettingsCard(d)}</div></div>`;
+  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${rmCalibrationCard()}${rmHealthCard(d)}${d.agent ? pcRenderBlock(d,true) : ""}${rmSettingsCard(d)}</div></div>`;
 }
 
 function rmHealthCard(d) {
@@ -198,9 +212,19 @@ function rmChosenTargets(scene) {
     [ui.sheet?.targetKey ? scene.targets?.find(t=>rmTargetKey(t)===ui.sheet.targetKey) : scene.targets?.[ui.sheet?.target]].filter(Boolean);
 }
 function rmFormFor(t,f) { return {...f,frames:ui.sheet?.batch && !String(f.frames || '').trim() ? t.frames : f.frames,...(ui.sheet?.benchmark ? {output_mode:'root',deliver:'none',ae_backend:'background'} : {})}; }
+function rmOutputName(t,f) {
+  if(!String(f.output_name || '').trim())return t.output || '';
+  const source=t.output || 'render.mp4',folder=source.replace(/[^\\/]*$/,''),extension=source.match(/\.[^.\\/]+$/)?.[0] || '.mp4';
+  return folder+String(f.output_name).trim()+(/\[#+\]/.test(source)?'.[####]':'')+extension;
+}
+function rmFormatSelect(chosen,f) {
+  const templates=[...new Set(chosen.flatMap(x=>x.audit?.templates || []))];
+  const standard=[['','Как в проекте'],['@flow:mp4','MP4 · H.264'],['@flow:mov-alpha','MOV · ProRes 4444 + альфа'],['@flow:png','PNG · секвенция + альфа'],['@flow:exr','EXR · секвенция + альфа'],['@flow:hap','MOV · HAP'],['@flow:hap-alpha','MOV · HAP + альфа']];
+  return `<select class="rm-input" data-form="ae_template">${standard.map(([v,n])=>`<option value="${v}" ${f.ae_template===v?'selected':''}>${n}</option>`).join('')}<optgroup label="Шаблоны AE">${templates.map(n=>`<option value="${esc(n)}" ${f.ae_template===n?'selected':''}>${esc(n)}</option>`).join('')}</optgroup>${templates.some(n=>/DXV/i.test(n))?'':'<option disabled>DXV · нужен шаблон DXV в AE</option>'}</select>`;
+}
 function rmJobArgs(scene,t,f) {
   const media=rmEffectiveMedia(t,f,scene.app);
-  return {path:scene.path,target:t.target,frames:String(f.frames).replace(/\s+/g,''),output:t.output || '',scene_stamp:t.scene_stamp,
+  return {path:scene.path,target:t.target,frames:String(f.frames).replace(/\s+/g,''),output:rmOutputName(t,f),scene_stamp:t.scene_stamp,
     ...(Number(t.audit?.fps)>0 ? {fps:Number(t.audit.fps)} : {}),...(media.width && media.height ? {width:media.width,height:media.height} : {}),format:f.ae_template ? '' : t.audit?.format || '',audit:t.audit || {},
     ...(t.comp_id ? {comp_id:t.comp_id} : {}),...(t.rq_index ? {rq_index:t.rq_index} : {}),urgent:f.urgent==='1',
     output_mode:f.output_mode,deliver:f.deliver,...(f.output_mode==='custom' ? {output_dir:String(f.output_dir || '').trim()} : {}),
@@ -287,8 +311,12 @@ function rmAudit(scene,target,form) {
   if (!target.audited_at || !target.scene_stamp) errors.push("Сначала прочитайте сцену");
   if (form.output_mode === "scene" && !target.output) errors.push("В сцене не указан путь вывода — выберите «Папка рендера»");
   if (form.output_mode === "custom" && !/^[a-z]:\\/i.test(form.output_dir || "")) errors.push("Укажите полный путь своей папки, например E:\\Render");
+  if (form.output_name && (/[<>:"/\\|?*]/.test(form.output_name) || form.output_name.length>120 || /[. ]$/.test(form.output_name))) errors.push('Имя файла: до 120 символов, без знаков пути и точки в конце');
+  if (/^@flow:/.test(form.ae_template || '') && form.ae_backend==='cep') errors.push('Для этого формата выберите фоновый рендер');
   const media = rmEffectiveMedia(target,form,scene.app);
   warnings.push(...media.warnings);
+  if(form.ae_template==='@flow:mp4' && media.width && (media.width%2 || media.height%2)) errors.push('MP4 H.264 требует чётные ширину и высоту. Выберите MOV + альфа или измените размер композиции.');
+  if(/^@flow:hap/.test(form.ae_template || '') && media.width && (media.width%4 || media.height%4)) errors.push('HAP требует ширину и высоту, кратные четырём. Выберите другой формат.');
   if (scene.app==='ae' && form.ae_backend==='background' && Number(form.parallel)>4) warnings.push('5–8 частей — экспериментальный режим: каждая часть занимает отдельную RAM и VRAM.');
   if (scene.app==='ae' && form.ae_backend==='background' && Number(form.parallel)>1 && form.mfr_in_parts==='1') warnings.push(RM_MFR_PARTS_WARN);
   return {errors, warnings, frames, a};
@@ -305,11 +333,13 @@ function rmEffectiveMedia(target,form,app='ae') {
     divisor=/^(full|полное|полный|1)$/.test(resolution)?1:/^(half|половина|половинное|½|2)$/.test(resolution)?2:/^(quarter|четверть|¼|4)$/.test(resolution)?4:0;
   }
   const transformed=[a.resize,a.crop].some(x=>x && !/^(off|false|выкл\.?|нет|0)$/i.test(String(x).trim()));
-  const known=divisor && !transformed && !template && Number(a.width)>0 && Number(a.height)>0;
+  const explicit=template.startsWith('@flow:');
+  const known=divisor && (explicit || !transformed && !template) && Number(a.width)>0 && Number(a.height)>0;
   if (!known && a.width && a.height) warnings.push(`Композиция ${a.width}×${a.height}; итоговый размер подтвердит AE${transformed?' (resize/crop в Output Module)':''}.`);
-  if (template) warnings.push('Параметры выбранного Output Module подтвердит AE. Нестандартное видео рендерится одним процессом, чтобы сохранить кодек и прозрачность.');
-  const format=template ? `Шаблон: ${template}` : a.format || 'Формат из проекта';
-  return {width:known?Math.ceil(Number(a.width)/divisor):null,height:known?Math.ceil(Number(a.height)/divisor):null,format,warnings};
+  if (template && !explicit) warnings.push('Параметры выбранного Output Module подтвердит AE. Нестандартное видео рендерится одним процессом, чтобы сохранить кодек и прозрачность.');
+  const formats={'@flow:mp4':'MP4 · H.264','@flow:mov-alpha':'MOV · ProRes 4444 + альфа','@flow:png':'PNG · секвенция + альфа','@flow:exr':'EXR · секвенция + альфа','@flow:hap':'MOV · HAP','@flow:hap-alpha':'MOV · HAP + альфа'};
+  const format=template ? formats[template] || `Шаблон: ${template}` : a.format || 'Формат из проекта';
+  return {width:known?Math.floor(Number(a.width)/divisor):null,height:known?Math.floor(Number(a.height)/divisor):null,format,warnings};
 }
 
 const rmFps = fps => Number.isFinite(Number(fps)) && Number(fps) > 0 ? `${+Number(fps).toFixed(3)} fps` : "";
@@ -361,7 +391,9 @@ function rmJobForm(s, t) {
   ] : [
     !many ? rmField("Кадры", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="${esc(t.frames || "1-100")}">`) : "",
     rmField("Куда", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : ""), rmWhere(s, t, f) ? `<span class="rm-path">${esc(rmWhere(s, t, f))}</span>` : ""),
-    rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver)),
+    !many ? rmField('Имя итогового файла',`<input class="rm-input" data-form="output_name" maxlength="120" value="${esc(f.output_name || '')}" placeholder="Как в проекте · без расширения">`) : '',
+    ae ? rmField('Формат вывода',rmFormatSelect(chosen,f),'MOV + альфа сохраняет прозрачность. MP4 — без прозрачности. HAP требует больше места.') : '',
+    rmField("Облако", rmSegments("deliver", RM_DELIVER, f.deliver), 'Отдельная папка проекта в Облаке.'),
     ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
     ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || 'auto')), f.parallel==='auto'?'Авто учитывает общий тест ПК, замеры сцены и свободную RAM/VRAM. Без замеров — одна часть.':RM_PARTS_NOTE) : "",
     `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>`,
@@ -370,7 +402,6 @@ function rmJobForm(s, t) {
   const extra = !more ? "" : [
     many && !bench ? rmField("Один диапазон для всех", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="у каждой свой">`) : "",
     ae ? rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit"), "Только для этой задачи; композиция в проекте не меняется.") : "",
-    ae ? rmField("Формат вывода", `<select class="rm-input" data-form="ae_template"><option value="">Как в проекте</option>${[...new Set(chosen.flatMap(x => x.audit?.templates || []))].map(name => `<option value="${esc(name)}" ${f.ae_template === name ? "selected" : ""}>${esc(name)}</option>`).join("")}</select>`) : "",
     !bench ? rmPresetSave(f) : "",
   ].join("");
   const label = bench ? "Запустить тест" : many ? `Поставить ${rmPlural(chosen.length, "задачу", "задачи", "задач")}` : "Поставить в очередь";
@@ -796,8 +827,10 @@ function rmAction(action, control) {
     pcQuick("rm_hold", { on }, "rm-hold", r => { toast(r?.message || (on ? "Очередь на паузе" : "Очередь продолжена")); ui.pc.data.rmQueue = { ...rmQueue(), held: on }; reload(); });
     return true;
   }
+  if (action === 'rm-history-toggle') { ui.pc.rmHistoryOpen=!ui.pc.rmHistoryOpen; return true; }
+  if (action === 'rm-archive') { rmArchive([id]); return true; }
   if (action === "rm-clear") {
-    pcQuick("rm_clear", {}, "rm-clear", r => { toast(r?.message || "Завершённые задачи убраны"); reload(); });
+    rmArchive(rmJobs().filter(j=>['done','failed','cancelled'].includes(j.status)).map(j=>Number(j.id)));
     return true;
   }
   if (action === "rm-calibrate" || action === "rm-scenes") { ui.sheet = { kind: "rm-scenes", calibration:action==='rm-calibrate' || Boolean(ui.sheet?.calibration), justRendered: false }; render(); return true; }
@@ -847,3 +880,28 @@ function rmAction(action, control) {
   }
   return false;
 }
+// A history swipe archives one finished entry; files and live jobs are untouched.
+(function rmHistorySwipe(){
+ let drag=null,blockUntil=0;
+ document.addEventListener('pointerdown',e=>{
+  const box=e.target.closest?.('.rm-history-swipe');
+  if(!box || e.button!==0)return;
+  drag={box,row:box.querySelector('.rm-history-row'),id:Number(box.dataset.historyId),x:e.clientX,y:e.clientY,on:false};
+ });
+ document.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(!drag.on && Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){drag=null;return;}
+  if(dx < -12)drag.on=true;
+  if(drag.on)drag.row.style.transform=`translateX(${Math.max(-110,Math.min(0,dx))}px)`;
+ },{passive:true});
+ const end=(e,cancelled=false)=>{
+  if(!drag)return;
+  const d=drag;drag=null;
+  d.row.style.transform='';
+  if(d.on){blockUntil=performance.now()+400;if(!cancelled && e.clientX-d.x < -65)rmArchive([d.id]);}
+ };
+ document.addEventListener('pointerup',end);
+ document.addEventListener('pointercancel',e=>end(e,true));
+ document.addEventListener('click',e=>{if(performance.now()<blockUntil && e.target.closest?.('.rm-history-swipe')){e.preventDefault();e.stopPropagation();}},true);
+})();

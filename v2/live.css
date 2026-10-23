@@ -1191,3 +1191,11 @@ button.rm-t-pill { padding-right: 14px; }
 .movie-library-screen:has(.movie-deck) .saved-results { overflow: hidden; }
 @media(max-height:760px) { .movie-deck-info { height:148px; } }
 @media(prefers-reduced-motion:reduce) { .movie-deck-card { animation:none!important; transition:none!important; } }
+.rm-history { margin-top: 12px; }
+.rm-history > summary { cursor:pointer; color:var(--muted); font-size:13px; padding:8px 0; }
+.rm-history-swipe { position:relative; overflow:hidden; border-radius:14px; touch-action:pan-y; }
+.rm-history-row { position:relative; background:var(--surface); padding-right:32px; }
+.rm-history-remove { position:absolute; right:0; top:0; bottom:0; width:34px; border:0; background:var(--warn-soft); color:var(--warn); display:grid; place-items:center; }
+.rm-history-row > .rm-recent { margin:0; }
+.rm-manual-row { margin-bottom:14px; }
+.rm-history-remove { z-index:2; }

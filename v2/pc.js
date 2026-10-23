@@ -234,7 +234,7 @@ function pcActions(busy) {
   return `<div class="pc-actions">${a("status", "chart", "Загрузка")}${a("processes", "list", "Процессы")}${a("screenshot", "camera", "Скриншот")}${a("lock", "lock", "Блокировка", "pc-lock")}</div>`;
 }
 
-function pcRenderBlock(d) {
+function pcRenderBlock(d, hideProgress=false) {
   const r = d.render || {};
   // Пока в очереди Render Manager есть задачи, «Когда закончится» — про всю очередь (rm_after)
   const rmAfter = rmBusy() ? (d.rmQueue.jobs.find(j => ["rendering", "delivering", "queued", "paused"].includes(j.status))?.after || "notify") : null;
@@ -243,7 +243,7 @@ function pcRenderBlock(d) {
   const line = r.rendering ? pcRenderNow(r)
     : r.done_at ? `<p class="section-note">${r.status && r.status !== "done" ? "Последний рендер остановлен" : "Последний рендер закончился"}${r.comps?.length ? ` («${r.comps.map(esc).join("», «")}»)` : ""} ${esc(new Date(r.done_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}, шёл ${pcMinutes(r.seconds || 0)}.</p>`
       : `<p class="section-note">С расширением Flow Render в After Effects вижу название и прогресс; без него — замечаю рендер по нагрузке.</p>`;
-  return `<section class="pc-card ${r.rendering ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}${r.rendering ? "Рендер" : "После рендера"}</h3></div>${rmAfter ? "" : line}<p class="pc-after-label">${rmAfter ? "Когда очередь рендеров закончится:" : "Когда закончится:"}</p><div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением — минута на «отмену» в чате и окном на экране.</p></section>`;
+  return `<section class="pc-card ${r.rendering ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}${r.rendering && !hideProgress ? "Рендер" : "После рендера"}</h3></div>${rmAfter || hideProgress ? "" : line}<p class="pc-after-label">${rmAfter ? "Когда очередь рендеров закончится:" : "Когда закончится:"}</p><div class="segmented pc-after">${opt("notify", "Сообщить")}${opt("off", "Выключить")}${opt("sleep", "Сон")}</div><p class="section-note">Перед выключением — минута на «отмену» в чате и окном на экране.</p></section>`;
 }
 
 const pcMinutes = s => { s = Math.round(s); return s >= 3600 ? `${Math.floor(s / 3600)} ч ${Math.round(s % 3600 / 60)} мин` : s >= 60 ? `${Math.round(s / 60)} мин` : `${s} с`; };
@@ -437,7 +437,7 @@ function pcSend(cmd, args = {}) {
 }
 
 /** Быстрое действие: отклик на кнопке (крутится → галочка), без карточки результата. */
-function pcQuick(cmd, args, key, done) {
+function pcQuick(cmd, args, key, done, failed) {
   ui.pc.quick ||= {};
   const quiet = key === "audio";
   if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage()) render(); }
@@ -448,6 +448,7 @@ function pcQuick(cmd, args, key, done) {
       setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (pcOnPage()) render(); } }, 1200);
     }
     if (state === "is-done") done?.(result);
+    if (state === "is-fail") failed?.();
     if (pcOnPage() && !document.querySelector(".pc-vol-range:active")) render();
   };
   pcCall({ op: "send", cmd, args }).then(made => {
