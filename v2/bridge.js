@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=92749aeaaf","integrity":null},{"src":"./loop-deck.js?v=0a68b25c12","integrity":null},{"src":"./movie-carousel.js?v=3fade883b7","integrity":null},{"src":"./movies.js?v=abdfc21d1f","integrity":null},{"src":"./recipes.js?v=2ee2969b2b","integrity":null},{"src":"./goods.js?v=90d70ed4c3","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8fa522397e","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=c98ab3d156","integrity":null},{"src":"./pc.js?v=edd1fecbb0","integrity":null},{"src":"./render-queue.js?v=01cd8adec4","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=4b0cf29181","integrity":null},{"src":"./finance.js?v=f5155b8503","integrity":null},{"src":"./more.js?v=e0c8a37b18","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./sections.js?v=157a8cfb14","integrity":null},{"src":"./app.js?v=b36489870c","integrity":null},{"src":"./notes.js?v=94b07efdd9","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=0396e20c62","integrity":null},{"src":"./loop-deck.js?v=9a697d7e1f","integrity":null},{"src":"./movie-carousel.js?v=ea6bb05cf0","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=74e9c5c90d","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=5dcea25ef8","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=6861f37a33","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=04e2b70b36","integrity":null},{"src":"./more.js?v=f807f885b0","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=22c4dcdc13","integrity":null},{"src":"./app.js?v=54cff84df4","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -198,6 +198,7 @@
     reopen_app: "Откройте приложение заново из Telegram — доступ к паролям действует пять минут",
     complex_transaction: "Эту операцию бот завёл сам (перевод, сверка) — поправьте её словами в чате",
     read_only: "Это пока меняется только в чате с ботом",
+    sync_in_flight: "Прошлое сохранение ещё доходит — обновлю через пару секунд",
     empty_title: "Нужно название",
     invalid_amount: "Проверьте сумму",
     invalid_date: "Проверьте дату",
@@ -205,6 +206,11 @@
     savings_account: "Накопительный счёт постоянный — переименовать можно, удалить нельзя",
     goal_has_money: "В цели есть деньги — сначала снимите их кнопкой «Снять»",
     vault_key_pending: "Подтвердите доступ к паролям в Telegram — бот прислал кнопку «Разрешить»",
+    vault_master_short: "Мастер-пароль — не короче 8 символов",
+    vault_master_wrong: "Неверный мастер-пароль",
+    vault_exists: "Хранилище уже создано — откройте его своим мастер-паролем",
+    vault_bad_item: "Нужно название сервиса",
+    vault_not_found: "Запись не найдена — обновите список",
     vault_key_revoked: "Доступ к паролям с этого телефона отклонён в Telegram",
     vault_cancel: "Пароли не открыты — нужно подтвердить отпечатком или PIN",
     vault_no_lock: "Включите на телефоне блокировку экрана (PIN или отпечаток) — без неё пароли не открыть",
@@ -361,6 +367,23 @@
   let warming = false;    // открыты на снимке из прошлого запуска, свежий ещё идёт
   let heldRender = false; // свежие данные пришли при открытой форме — перерисуем после неё
   const SNAP_KEY = "soroka-snapshot-v1";
+  // Правки, не дошедшие до сервера, — на диске: закрыли приложение без сети,
+  // а при следующем открытии они ложатся поверх свежего снимка и уходят.
+  const PENDING_KEY = "soroka-pending-v1";
+  function keepPending() {
+    try {
+      const changes = base ? diff(base, data) : [];
+      if (changes.length) localStorage.setItem(PENDING_KEY, JSON.stringify({ at: Date.now(), changes }));
+      else localStorage.removeItem(PENDING_KEY);
+    } catch (_) {}
+  }
+  function takePending() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PENDING_KEY) || "null");
+      localStorage.removeItem(PENDING_KEY);
+      return saved && Date.now() - saved.at < 3 * 86400000 && Array.isArray(saved.changes) ? saved.changes : [];
+    } catch (_) { return []; }
+  }
   function keepSnapshot(snapshot) {
     // На диск — чистая копия «как на сервере», снятая сразу, а не данные,
     // которые экран успеет поменять до записи.
@@ -403,10 +426,14 @@
     try {
       const answer = await call({ action: "planner_sync", changes }, 60000);
       const late = diff(sent, data);
-      adopt(answer.snapshot, answer.ids || {}, late);
+      // A partial response must not erase the records the server could not save.
+      // Replay failed changes before edits made while this request was in flight.
+      const failed = changes.filter(change => (answer.errors || []).some(error =>
+        error.col === "*" || error.col === change.col && error.id === change.id));
+      adopt(answer.snapshot, answer.ids || {}, [...failed, ...late]);
       if (answer.errors && answer.errors.length) say(human(answer.errors[0].error));
       if (late.length) again = true;
-      unsaved(false);
+      unsaved(Boolean(failed.length || late.length));
     } catch (error) {
       flying = false;
       if (error.status === 401) { askReopen(); return; }
@@ -429,7 +456,8 @@
   function unsaved(on) {
     let bar = document.getElementById("sync-banner");
     clearTimeout(retryTimer);
-    if (!on) { retryIn = 0; bar?.remove(); return; }
+    if (!on) { retryIn = 0; bar?.remove(); try { localStorage.removeItem(PENDING_KEY); } catch (_) {} return; }
+    keepPending();
     if (!bar) {
       bar = document.createElement("div");
       bar.id = "sync-banner";
@@ -624,6 +652,96 @@
       return item;
     },
     fail(error) { say(human(error.message)); },
+  };
+
+  /*
+   * Пароли со сквозным шифрованием (vault-crypto.js). Сервер хранит только
+   * шифр; ключ хранилища живёт в памяти окна и забывается через 5 минут без
+   * действий или когда приложение свёрнуто. Старое хранилище (vault выше)
+   * нужно только для переноса прежних паролей.
+   */
+  const v2 = {
+    state: null, key: null, timer: 0, loading: null,
+    load() {
+      if (!v2.loading) v2.loading = call({ action: "vault2_state" }).then((s) => {
+        v2.state = s.setup ? s : null; ui.vaultSetup = Boolean(s.setup);
+        if (ui.page === "vault" || ui.page === "docs") render();
+      }).catch((e) => { v2.loading = null; vault.fail(e); });
+      return v2.loading;
+    },
+    touch() { clearTimeout(v2.timer); v2.timer = setTimeout(v2.lock, 5 * 60000); },
+    lock() {
+      v2.key = null; clearTimeout(v2.timer);
+      if (!ui.vaultUnlocked) return;
+      ui.vaultUnlocked = false; ui.vaultShown = null; data.vault = [];
+      if (ui.page === "vault") render();
+    },
+    num: (item) => Number(String(item.id).slice(2)),
+    async list() {
+      const answer = await call({ action: "vault2_list" });
+      data.vault = (answer.items || []).map((e) => ({ id: `w:${e.id}`, service: e.service, login: null, password: null, note: "" }));
+    },
+    async reveal(item) {
+      if (!item || item.password !== null) return item;
+      const answer = await call({ action: "vault2_get", id: v2.num(item) });
+      const secret = await FlowVault.decrypt(v2.key, answer.envelope);
+      Object.assign(item, { login: secret.login || "", password: secret.password || "", note: secret.note || "" });
+      v2.touch();
+      return item;
+    },
+    async save(id, service, secret) {
+      const envelope = await FlowVault.encrypt(v2.state.publicKey, secret);
+      await call({ action: "vault2_save", ...(id ? { id } : {}), service, envelope });
+      v2.touch();
+    },
+    async opened() {
+      await v2.list(); ui.vaultUnlocked = true; ui.vaultError = ""; v2.touch();
+      // Старые пароли — только из Telegram: на телефоне проверка спросила бы отпечаток.
+      // Уже перенесённые (то же название есть в новом хранилище) второй раз не предлагаем.
+      if (!phoneVault()) vaultCall({ action: "vault_list" }).then((a) => {
+        const have = new Set(data.vault.map((x) => x.service.toLowerCase()));
+        ui.vaultLegacy = (a.entries || []).filter((e) => !have.has(String(e.service || "").toLowerCase())).length;
+        if (ui.page === "vault") render();
+      }).catch(() => {});
+      render();
+    },
+  };
+  document.addEventListener("visibilitychange", () => { if (document.hidden) v2.lock(); });
+
+  /*
+   * Документы — тем же ключом хранилища: поля и фото шифруются на устройстве,
+   * сервер хранит вид (passport, inn…), название и шифр. Закрылось хранилище —
+   * расшифрованное из памяти тоже уходит.
+   */
+  window.FlowDocs = {
+    ready: () => Boolean(ui.vaultUnlocked && v2.key),
+    async list() {
+      const answer = await call({ action: "docs_list" });
+      v2.touch();
+      return (answer.items || []).map((d) => ({ id: d.id, kind: d.kind, title: d.title }));
+    },
+    async get(id) {
+      const row = await call({ action: "docs_get", id: Number(id) });
+      const secret = await FlowVault.decrypt(v2.key, row.envelope);
+      v2.touch();
+      return { ...secret, id: row.id, kind: row.kind, title: row.title };
+    },
+    async save(doc) {
+      const { id, kind, title, ...secret } = doc;
+      const envelope = await FlowVault.encrypt(v2.state.publicKey, secret);
+      const answer = await call({ action: "docs_save", ...(id ? { id: Number(id) } : {}), kind, title, envelope }, 60000);
+      v2.touch();
+      return answer.id;
+    },
+    async remove(id) { await call({ action: "docs_delete", id: Number(id) }); v2.touch(); },
+  };
+  const lockVault = v2.lock;
+  v2.lock = function () {
+    ui.docs = null;
+    if (ui.sheet && String(ui.sheet.kind).startsWith("doc")) ui.sheet = null;
+    const was = ui.vaultUnlocked;
+    lockVault();
+    if (was && ui.page === "docs") render();
   };
 
   // ------------------------------------------------------------ файлы из чата
@@ -850,25 +968,40 @@
       if (p) { p.status = "confirmed"; p.paidAt = todayIso(); save(); say("Отметил — списание запишется"); }
       return;
     }
-    if (action === "vault-unlock") {
-      stop();
-      vault.list().then(() => { ui.vaultUnlocked = true; render(); }).catch((e) => vault.fail(e));
-      return;
-    }
+    if (action === "vault-lock") { stop(); v2.lock(); return; }
     if (action === "vault-reveal" || action === "vault-edit" || action === "vault-copy") {
       const item = data.vault.find((x) => x.id === control.dataset.id);
-      if (item && item.password === null) {
+      if (item && item.password === null && v2.key) {
         stop();
-        vault.reveal(item).then(() => control.click()).catch((e) => vault.fail(e));
-      }
+        v2.reveal(item).then(() => control.click()).catch((e) => vault.fail(e));
+      } else v2.touch();
       return;
     }
     if (action === "vault-delete") {
       stop();
       const item = data.vault.find((x) => x.id === (ui.sheet && ui.sheet.id));
       if (!item || !window.confirm(`Удалить «${item.service}» из хранилища?`)) return;
-      vaultCall({ action: "vault_delete", id: Number(String(item.id).slice(2)) })
-        .then(() => vault.list()).then(() => { ui.sheet = null; render(); say("Удалено"); }).catch((e) => vault.fail(e));
+      call({ action: "vault2_delete", id: v2.num(item) })
+        .then(() => v2.list()).then(() => { ui.sheet = null; render(); say("Удалено"); }).catch((e) => vault.fail(e));
+      return;
+    }
+    if (action === "vault-migrate") {
+      // Прежнее хранилище: список и каждый пароль по одному, сюда — уже шифром.
+      stop();
+      vault.list().then(async () => {
+        const have = new Set((await call({ action: "vault2_list" })).items.map((x) => String(x.service).toLowerCase()));
+        const old = data.vault.filter((x) => !have.has(x.service.toLowerCase()));
+        let moved = 0;
+        for (const item of old) {
+          await vault.reveal(item);
+          await v2.save(null, item.service, { login: item.login || "", password: item.password || "", note: item.note || "" });
+          moved++;
+        }
+        ui.vaultLegacy = 0;
+        await v2.list(); render();
+        say(`Перенёс ${moved} — старые записи можно удалить в прежнем хранилище`);
+      }).catch((e) => { vault.fail(e); v2.list().then(render).catch(() => {}); });
+      return;
     }
   }
 
@@ -892,17 +1025,45 @@
       });
       return;
     }
-    if (form.id === "vault-form") {
-      event.preventDefault(); event.stopImmediatePropagation();
-      const f = new FormData(form);
+    const vaultForm = { "vault-form": 1, "vault-unlock-form": 1, "vault-setup-form": 1, "vault-master-form": 1 };
+    if (!vaultForm[form.id]) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    const f = new FormData(form);
+    const busy = (on) => { const b = form.querySelector("button[type=submit]"); if (b) { b.disabled = on; if (on) b.dataset.label = b.textContent; b.innerHTML = on ? '<span class="live-spin"></span>Шифрую…' : (b.dataset.label || "Готово"); } };
+    const master = String(f.get("master") || "");
+    if ((form.id === "vault-setup-form" || form.id === "vault-master-form") && master !== String(f.get("repeat") || "")) { say("Пароли не совпадают"); return; }
+    busy(true);
+    const done = (p) => p.catch((e) => { busy(false); if (e.message === "vault_master_wrong") { ui.vaultError = "Неверный мастер-пароль"; render(); } else vault.fail(e); });
+    if (form.id === "vault-unlock-form") {
+      done((async () => {
+        if (!v2.state) await v2.load();
+        v2.key = await FlowVault.unlock(master, v2.state);
+        await v2.opened();
+      })());
+    } else if (form.id === "vault-setup-form") {
+      done((async () => {
+        const keys = await FlowVault.setup(master);
+        await call({ action: "vault2_setup", ...keys });
+        v2.loading = null; await v2.load();
+        v2.key = await FlowVault.unlock(master, v2.state);
+        await v2.opened();
+        say("Хранилище создано. Мастер-пароль нигде не сохранён — запомните его");
+      })());
+    } else if (form.id === "vault-master-form") {
+      done((async () => {
+        const wrapped = await FlowVault.rewrap(String(f.get("old") || ""), master, v2.state);
+        await call({ action: "vault2_rewrap", ...wrapped });
+        v2.loading = null; await v2.load();
+        ui.sheet = null; render(); say("Мастер-пароль сменён");
+      })());
+    } else {
       const existing = data.vault.find((x) => x.id === (ui.sheet && ui.sheet.id));
-      const body = {
-        action: existing ? "vault_update" : "vault_create",
-        service: String(f.get("service") || "").trim(), login: String(f.get("login") || "").trim(),
-        password: String(f.get("password") || ""), note: String(f.get("note") || "").trim(),
-      };
-      if (existing) body.id = Number(String(existing.id).slice(2));
-      vaultCall(body).then(() => vault.list()).then(() => { ui.sheet = null; render(); say("Сохранено"); }).catch((e) => vault.fail(e));
+      done((async () => {
+        await v2.save(existing ? v2.num(existing) : null, String(f.get("service") || "").trim(), {
+          login: String(f.get("login") || "").trim(), password: String(f.get("password") || ""), note: String(f.get("note") || "").trim(),
+        });
+        await v2.list(); ui.sheet = null; render(); say("Сохранено");
+      })());
     }
   }
 
@@ -1241,6 +1402,7 @@
       heldRender = false;
       paint();
       document.body.dataset.page = ui.page;
+      if ((ui.page === "vault" || ui.page === "docs") && ui.vaultSetup === undefined) v2.load();
       document.body.dataset.financeTab = ui.financeTab || "";
       topTitle();
     };
@@ -1265,10 +1427,21 @@
     document.addEventListener("click", intercept, true);
     document.addEventListener("submit", interceptSubmit, true);
     document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastRefreshAt > 30000) refresh(); });
+    // Свернули сразу после правки (отправка ещё не ушла) — тоже на диск.
+    const stash = () => { if (base && (flying || timer || document.getElementById("sync-banner"))) keepPending(); };
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stash(); });
+    window.addEventListener("pagehide", stash);
     // Форму закрыли, а свежие данные ждали — показываем.
     setInterval(() => { if (heldRender && !document.querySelector(".sheet form, .composer")) render(); }, 700);
     setTimeout(() => {
       base = clone(data);
+      const pending = takePending();
+      if (pending.length) {
+        applyChanges(data, pending, {});
+        render();
+        say("Возвращаю правки, которые не успели сохраниться");
+        if (!warming) schedule(50);
+      }
       openDeepLink();
       if (!warming) return;
       freshSnapshot.then((snapshot) => {
@@ -1718,46 +1891,7 @@
     const light = (Number(rgb[0]) * 299 + Number(rgb[1]) * 587 + Number(rgb[2]) * 114) / 1000 > 150;
     try { android.bars(hex, light); } catch (_) {}
   }
-  /*
-   * Жесты на краях страницы: в самом верху потянуть вниз — «Закреплённое»,
-   * в самом низу потянуть вверх — поиск. Над страницей виден значок, который
-   * наливается по мере движения, — понятно, что сейчас откроется.
-   */
-  (function edgeGestures() {
-    let pull = null;
-    const hint = document.createElement("div");
-    hint.className = "edge-hint";
-    document.body.appendChild(hint);
-    const busy = () => ui.sheet || document.querySelector(".composer, .pins-drop, .loyalty-full, .live-code-full");
-    document.addEventListener("touchstart", (event) => {
-      if (event.touches.length !== 1 || busy() || event.target.closest(".swipe-row, .calendar-card, .wallet, .movie-deck, input, textarea, .leaflet-container")) { pull = null; return; }
-      const top = window.scrollY <= 0;
-      const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-      if (!top && !bottom) { pull = null; return; }
-      pull = { y: event.touches[0].clientY, x: event.touches[0].clientX, top, bottom, dy: 0 };
-    }, { passive: true });
-    document.addEventListener("touchmove", (event) => {
-      if (!pull) return;
-      const dy = event.touches[0].clientY - pull.y, dx = event.touches[0].clientX - pull.x;
-      if (Math.abs(dx) > Math.abs(dy)) { pull = null; hint.className = "edge-hint"; return; }
-      pull.dy = dy;
-      const down = pull.top && dy > 10, up = pull.bottom && dy < -10;
-      if (!down && !up) { hint.className = "edge-hint"; return; }
-      const k = Math.min(1, Math.abs(dy) / 90);
-      hint.className = `edge-hint on ${down ? "is-top" : "is-bottom"} ${k >= 1 ? "ready" : ""}`;
-      hint.style.setProperty("--k", k.toFixed(3));
-      hint.innerHTML = down ? `${icon("bookmark", "icon-sm")}<span>Закреплённое</span>` : `${icon("search", "icon-sm")}<span>Поиск</span>`;
-    }, { passive: true });
-    document.addEventListener("touchend", () => {
-      if (!pull) return;
-      const { dy, top, bottom } = pull;
-      pull = null;
-      hint.className = "edge-hint";
-      if (top && dy > 90) showPinned();
-      else if (bottom && dy < -90) openComposer();
-    });
-  })();
-
+  // Жестов на краях страницы нет: «Закреплённое» и поиск открываются кнопками.
   // Разделы и вкладки переключаются только явным нажатием.
 
   function topTitle() {
