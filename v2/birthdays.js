@@ -37,10 +37,16 @@ function plural(n, one, few, many) {
   return a > 10 && a < 20 ? many : b === 1 ? one : b >= 2 && b <= 4 ? few : many;
 }
 
+/** «· 🎁 Наушники +1» — идеи, которые ещё не куплены. */
+function giftSummary(e) {
+  const open = (e.gifts || []).filter(g => !g.done);
+  if (!open.length) return (e.gifts || []).length ? " · 🎁 всё куплено" : "";
+  return ` · 🎁 ${esc(open[0].text)}${open.length > 1 ? ` +${open.length - 1}` : ""}`;
+}
 function birthdayRow(b) {
   const soon = b.days <= 7;
   const hue = [...b.name].reduce((s, ch) => s + ch.charCodeAt(0), 0) % 360;
-  return `<button type="button" class="birthday-row ${b.days === 0 ? "today" : soon ? "soon" : ""}" data-action="birthday-open" data-id="${esc(b.e.id)}"><span class="birthday-avatar" style="--h:${hue}">${b.days === 0 ? "🎉" : esc(b.name.charAt(0).toUpperCase())}</span><span class="birthday-copy"><b>${esc(b.name)}</b><small>${b.day} ${MONTHS_GEN[b.month]}${b.e.repeat === "yearly" ? "" : " · без повтора"}</small></span>${birthdayWhen(b) ? `<span class="birthday-when">${birthdayWhen(b)}</span>` : ""}</button>`;
+  return `<button type="button" class="birthday-row ${b.days === 0 ? "today" : soon ? "soon" : ""}" data-action="birthday-open" data-id="${esc(b.e.id)}"><span class="birthday-avatar" style="--h:${hue}">${b.days === 0 ? "🎉" : esc(b.name.charAt(0).toUpperCase())}</span><span class="birthday-copy"><b>${esc(b.name)}</b><small>${b.day} ${MONTHS_GEN[b.month]}${b.e.repeat === "yearly" ? "" : " · без повтора"}${giftSummary(b.e)}</small></span>${birthdayWhen(b) ? `<span class="birthday-when">${birthdayWhen(b)}</span>` : ""}</button>`;
 }
 
 /** Дни рождения на неделю вперёд — для «Плана». */
@@ -73,7 +79,7 @@ function birthdayTile() {
   const list = birthdays();
   const next = list[0];
   const about = next ? `${next.name} — ${birthdayWhen(next) || `${next.day} ${MONTHS_GEN[next.month]}`}` : "Повторяются каждый год";
-  return `<button class="saved-section-card compact saved-section-birthdays" type="button" data-action="saved-section" data-category="birthdays" data-order-key="birthdays" aria-label="Дни рождения"><span class="saved-section-icon">${icon("calendar")}</span><span class="saved-section-copy"><strong>Дни рождения</strong><small>${esc(about)}</small></span>${list.length ? `<span class="saved-section-count">${list.length}</span>` : ""}</button>`;
+  return `<button class="saved-section-card compact saved-section-birthdays" type="button" data-action="saved-section" data-category="birthdays" data-order-key="birthdays" aria-label="Дни рождения"><span class="saved-section-icon">${icon("gift")}</span><span class="saved-section-copy"><strong>Дни рождения</strong><small>${esc(about)}</small></span>${list.length ? `<span class="saved-section-count">${list.length}</span>` : ""}</button>`;
 }
 
 function birthdayAction(action, control) {
@@ -81,6 +87,8 @@ function birthdayAction(action, control) {
   if (action === "birthday-open") { const e = data.events.find(x => x.id === control.dataset.id); if (e) openEntry("event", e.due, e.id); return true; }
   if (action === "birthday-add") {
     openEntry("event", todayIso());
+    if (ui.sheet) ui.sheet.birthday = true; // сразу с полем «Идеи подарков»
+    render();
     setTimeout(() => {
       const form = document.querySelector(".sheet form");
       if (!form) return;
