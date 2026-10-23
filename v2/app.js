@@ -863,6 +863,25 @@ document.addEventListener("pointerup", event => {
   // Вверх-вниз календарь раскрывается за пальцем — это calendar-drag.js.
 });
 let swipeSuppressCalendar = 0;
+// Inline app choices: no Android system select dialog and no lost form draft.
+function flowChoicePicker({value = '', label, options, attrs = ''}) {
+  const selected = options.find(option => option.value === value);
+  return `<details class="flow-choice"><summary class="tool-button"><span class="flow-choice-label">${esc((value && selected?.label) || label)}</span>${icon('down','icon-sm')}</summary><div class="flow-choice-options" role="group" aria-label="${esc(label)}">${options.map(option => `<button type="button" class="map-category-chip ${option.value === value ? 'active' : ''}" data-flow-choice="${esc(option.value)}" aria-pressed="${option.value === value}">${esc(option.label)}</button>`).join('')}</div><input type="hidden" value="${esc(value)}" ${attrs}></details>`;
+}
+document.addEventListener('click', event => {
+  const button = event.target.closest?.('[data-flow-choice]');
+  if (!button) return;
+  const picker = button.closest('.flow-choice');
+  if (picker.dataset.busy === 'true') return;
+  const input = picker.querySelector('input[type=hidden]');
+  input.value = button.dataset.flowChoice;
+  picker.querySelector('.flow-choice-label').textContent = button.textContent;
+  picker.querySelectorAll('[data-flow-choice]').forEach(option => {
+    const active = option === button; option.classList.toggle('active',active); option.setAttribute('aria-pressed',String(active));
+  });
+  picker.open = false;
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+});
 document.addEventListener("click", event => {
   if (Date.now() < swipeSuppressCalendar && event.target.closest(".calendar-card")) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
