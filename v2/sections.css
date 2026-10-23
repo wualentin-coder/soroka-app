@@ -2437,3 +2437,19 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 
 .df-custom { display: grid; gap: 8px; padding: 16px; background: linear-gradient(160deg, #f4f2ee, #e8e4dc); }
 .df-custom-icon .doc-icon { width: 30px; height: 30px; color: #6b6458; }
+
+/* Encrypted Telegram document imports: review each different reading explicitly. */
+.doc-import-review { margin: 18px 0; padding: 14px; border: 1px solid var(--accent, #c33); border-radius: 16px; }
+.doc-import-review h3 { margin: 0 0 8px; font-size: 16px; }
+.doc-import-review p { font-size: 13px; opacity: .75; }
+.doc-import-conflict { display: grid; gap: 7px; padding: 12px 0; overflow-wrap: anywhere; }
+.doc-import-conflict + .doc-import-conflict { border-top: 1px solid var(--line, #52616a); }
+.doc-import-conflict > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.doc-import-conflict .ghost-button { flex: 1; font-size: 13px; white-space: normal; }
+.doc-file-download { width: 100%; margin: 8px 0; overflow-wrap: anywhere; white-space: normal; }
+
+.doc-photo-full .doc-photo-download { position: absolute; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: var(--surface, #23313a); }
+.gift-editor-row{display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.gift-editor-copy{flex:1;min-width:0;display:grid;gap:6px}.gift-editor-copy input,.gift-editor-copy select{width:100%;min-width:0}.gift-editor-row:has([data-gift-done]:checked) [data-gift-text]{text-decoration:line-through;opacity:.6}
+.expense-category-picker{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:0 16px 14px;color:var(--muted);font-size:12px}.expense-category-picker select{flex:1;min-width:140px;padding:8px;border-radius:10px}.expense-category-picker small{width:100%}
+.gift-product-preview{display:flex;align-items:center;gap:8px;font-size:12px}.gift-product-preview:empty{display:none}.gift-product-preview img{width:42px;height:48px;object-fit:cover;border-radius:6px}.gift-product-preview small{display:block;color:var(--muted)}
