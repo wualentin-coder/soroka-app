@@ -121,7 +121,8 @@ function rmBlock(d) {
   const active = jobs.filter(j => RM_ACTIVE.includes(j.status));
   const waiting = jobs.filter(j => RM_WAITING.includes(j.status));
   const recent = jobs.filter(j => ['done','failed','cancelled'].includes(j.status));
-  const hold = `<button type="button" class="small-button rm-hold ${rmBusyCls("rm-hold")}" data-action="rm-hold" data-on="${q.held ? "0" : "1"}">${q.held ? "Продолжить" : "Пауза"}</button>`;
+  // «Остановить очередь», а не вторая «Пауза»: пауза у задачи — своя, в её строке.
+  const hold = `<button type="button" class="text-action rm-hold ${rmBusyCls("rm-hold")}" data-action="rm-hold" data-on="${q.held ? "0" : "1"}">${q.held ? "Продолжить очередь" : "Остановить очередь"}</button>`;
   const empty = !active.length && !waiting.length;
   const body = [
     q.held ? `<p class="section-note rm-held">Очередь на паузе: текущий рендер доработает, следующие ждут.</p>` : "",
@@ -131,7 +132,7 @@ function rmBlock(d) {
     empty && !d.render?.rendering ? `<p class="section-note">Сейчас в очереди ничего нет.</p>` : "",
     recent.length ? `<details class="rm-history" ${ui.pc.rmHistoryOpen?'open':''}><summary data-action="rm-history-toggle">История · ${recent.length}</summary><div class="rm-recents">${recent.map(j=>`<div class="rm-history-swipe" data-history-id="${j.id}"><button type="button" class="rm-history-remove" data-action="rm-archive" data-id="${j.id}" aria-label="Убрать из истории: ${esc(j.name)}">${pcIcon('x')}</button><div class="rm-history-row">${rmRecentRow(j)}</div></div>`).join('')}</div><button type="button" class="text-action ${rmBusyCls("rm-clear")}" data-action="rm-clear">Очистить завершённые</button></details>` : "",
   ].join("");
-  return `<section class="pc-card rm-card ${active.length ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}Очередь рендеров</h3>${empty && !q.held ? "" : hold}</div>${body}<button type="button" class="ghost-button rm-add" data-action="rm-scenes">Поставить сцену</button></section>`;
+  return `<section class="pc-card rm-card ${active.length ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}Очередь рендеров</h3>${empty && !q.held ? "" : hold}</div>${body}<button type="button" class="primary-button rm-add" data-action="rm-scenes">Поставить сцену</button></section>`;
 }
 
 /** Строка на экране «Компьютер»: что с рендером сейчас, по нажатию — раздел «Рендер». */
@@ -154,7 +155,10 @@ function renderRenderPage() {
   const top = header("Рендер", "Karma и After Effects на домашнем ПК", "Дом");
   if (!d) return `${top}<div class="content-grid"><div class="content-main pc-page"><section class="pc-card"><p class="section-note">${esc(ui.pc?.error || "Спрашиваю компьютер…")}</p>${ui.pc?.error ? `<button class="primary-button" type="button" data-action="pc-refresh">Повторить</button>` : ""}</section></div></div>`;
   const off = !d.agent ? `<section class="pc-card"><p class="section-note">${d.on === false ? "Компьютер выключен" : "Компьютер не на связи"} — ниже последняя известная очередь. «Поставить сцену» включит его сам${d.hub ? "" : ", когда ESP32 будет на связи"}.</p></section>` : "";
-  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${rmCalibrationCard()}${rmHealthCard(d)}${d.agent ? pcRenderBlock(d,true) : ""}${rmSettingsCard(d)}</div></div>`;
+  // Наверху — то, что нужно сейчас: очередь и «после рендера». Настройки, тест скорости
+  // и диагностика нужны редко — свёрнуты одним блоком внизу.
+  const tools = `<details class="pc-card rm-tools" ${ui.pc.rmToolsOpen ? "open" : ""}><summary data-action="rm-tools-toggle">${pcIcon("list")}Настройки и диагностика</summary>${rmSettingsCard(d)}${rmCalibrationCard()}${rmHealthCard(d)}</details>`;
+  return `${top}<div class="content-grid"><div class="content-main pc-page">${off}${rmBlock(d)}${d.agent ? pcRenderBlock(d,true) : ""}${tools}</div></div>`;
 }
 
 function rmHealthCard(d) {
@@ -852,6 +856,7 @@ function rmAction(action, control) {
     pcQuick("rm_hold", { on }, "rm-hold", r => { toast(r?.message || (on ? "Очередь на паузе" : "Очередь продолжена")); ui.pc.data.rmQueue = { ...rmQueue(), held: on }; reload(); });
     return true;
   }
+  if (action === 'rm-tools-toggle') { ui.pc.rmToolsOpen=!ui.pc.rmToolsOpen; return true; }
   if (action === 'rm-history-toggle') { ui.pc.rmHistoryOpen=!ui.pc.rmHistoryOpen; return true; }
   if (action === 'rm-archive') { rmArchive([id]); return true; }
   if (action === "rm-clear") {
