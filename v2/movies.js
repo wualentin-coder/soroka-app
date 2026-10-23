@@ -388,8 +388,9 @@ document.addEventListener("pointerup", event => {
   const open = drag.dx < -RECO_OPEN / 2.4;
   drag.row.classList.toggle("open", open);
   drag.content.style.setProperty("--dx", open ? `${-RECO_OPEN}px` : "0px");
+  if (!open) setTimeout(() => { if (!drag.row.classList.contains("open") && !drag.row.classList.contains("dragging")) drag.row.classList.remove("dir-left"); }, 300);
 });
-document.addEventListener("pointercancel", () => { if (recoDrag) { recoDrag.row.classList.remove("dragging"); recoDrag.content.style.removeProperty("--dx"); recoDrag = null; } });
+document.addEventListener("pointercancel", () => { if (recoDrag) { recoDrag.row.classList.remove("dragging", "dir-left", "dir-right"); recoDrag.content.style.removeProperty("--dx"); recoDrag = null; } });
 // Палец отпустили — карточка не должна ещё и открыться.
 document.addEventListener("click", event => {
   if (Date.now() < recoSuppress && event.target.closest?.(".reco-swipe-content")) { event.preventDefault(); event.stopImmediatePropagation(); }
