@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=748f4012ee","integrity":null},{"src":"./loop-deck.js?v=3ca9406f77","integrity":null},{"src":"./movie-carousel.js?v=b915508d5e","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8e7e1e19ab","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=5de55c1224","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=c5ff71ed63","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=22c4dcdc13","integrity":null},{"src":"./app.js?v=0d4cef12ee","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=748f4012ee","integrity":null},{"src":"./loop-deck.js?v=3ca9406f77","integrity":null},{"src":"./movie-carousel.js?v=b915508d5e","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8e7e1e19ab","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=5de55c1224","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=286051de77","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=22c4dcdc13","integrity":null},{"src":"./app.js?v=0d4cef12ee","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -670,9 +670,9 @@
   const v2 = {
     state: null, key: null, timer: 0, loading: null,
     load() {
-      if (!v2.loading) v2.loading = call({ action: "vault2_state" }).then((s) => {
+      if (!v2.loading) v2.loading = call({ action: "vault2_state" }).then(async (s) => {
         v2.state = s.setup ? s : null; ui.vaultSetup = Boolean(s.setup);
-        biometricState();
+        biometricState(); await trustedState();
         if (ui.page === "vault" || ui.page === "docs") render();
       }).catch((e) => { v2.loading = null; vault.fail(e); });
       return v2.loading;
@@ -720,6 +720,54 @@
       render();
     },
   };
+  const trustedPending = new Map();
+  let trustedVisitAttempted = false;
+  function trustedRequest(action, master) {
+    return new Promise((resolve,reject) => {
+      if (!window.FlowTrusted?.postMessage) { reject(new Error("trusted_unavailable")); return; }
+      window.FlowTrusted.onmessage = event => {
+        try { const answer=JSON.parse(event.data),pending=trustedPending.get(answer.id); if(!pending)return;
+          trustedPending.delete(answer.id);clearTimeout(pending.timer);
+          if(answer.ok)pending.resolve(answer);else pending.reject(new Error("trusted_unavailable"));
+        } catch (_) {}
+      };
+      const id=crypto.randomUUID().replaceAll("-","");
+      const timer=setTimeout(()=>{trustedPending.delete(id);reject(new Error("trusted_unavailable"));},15000);
+      trustedPending.set(id,{resolve,reject,timer});
+      try { window.FlowTrusted.postMessage(JSON.stringify({id,action,binding:biometricBinding(),...(master===undefined?{}:{master})})); }
+      catch (_) { trustedPending.delete(id);clearTimeout(timer);reject(new Error("trusted_unavailable")); }
+    });
+  }
+  async function trustedState() {
+    ui.vaultTrustedAvailable=false;ui.vaultTrustedEnrolled=false;
+    if(!window.FlowTrusted?.postMessage || !v2.state)return;
+    try { const state=await trustedRequest("state");ui.vaultTrustedAvailable=Boolean(state.available);ui.vaultTrustedEnrolled=Boolean(state.enrolled); } catch (_) {}
+  }
+  async function rememberTrustedDevice(master) {
+    if(!ui.vaultTrustedAvailable || ui.vaultTrustedEnrolled)return;
+    try { await trustedRequest("save",master);await trustedState(); }
+    catch (_) { say("Не удалось запомнить телефон. Вход по мастер-паролю остаётся доступен"); }
+  }
+  async function unlockTrustedDevice() {
+    trustedVisitAttempted=true;
+    const binding=biometricBinding();
+    try {
+      const {master}=await trustedRequest("read");
+      if(document.hidden || ui.page!=="vault" || binding!==biometricBinding())return;
+      const key=await FlowVault.unlock(master,v2.state);
+      if(document.hidden || ui.page!=="vault" || binding!==biometricBinding())return;
+      v2.key=key;await v2.opened();
+    } catch (_) {
+      await trustedRequest("clear").catch(()=>{}); await trustedState();
+      ui.vaultError="Введите мастер-пароль, чтобы снова подключить этот телефон";if(ui.page==="vault")render();
+    }
+  }
+  function autoUnlockTrustedDevice() {
+    if(ui.page!=="vault"){trustedVisitAttempted=false;return;}
+    if(document.hidden || ui.vaultUnlocked || v2.key || trustedVisitAttempted || trustedPending.size)return;
+    if(!v2.state || !ui.vaultTrustedEnrolled || !ui.vaultTrustedAvailable)return;
+    trustedVisitAttempted=true;void unlockTrustedDevice();
+  }
   const biometricPending = new Map();
   let biometricVisitAttempted = false;
   async function unlockWithBiometric() {
@@ -1067,7 +1115,10 @@
       if (p) { p.status = "confirmed"; p.paidAt = todayIso(); save(); say("Отметил — списание запишется"); }
       return;
     }
-    if (action === "vault-lock") { stop(); v2.lock(); return; }
+    if (action === "vault-lock") { stop(); trustedVisitAttempted=true; v2.lock(); return; }
+    if (action === "vault-trusted-forget") {
+      stop(); trustedRequest("clear").then(async()=>{await trustedState();v2.lock();render();}).catch(()=>say("Не удалось отключить быстрый вход")); return;
+    }
     if (action === "vault-biometric-disable") {
       stop(); window.SorokaNative?.vaultBiometricClear?.(); biometricState(); render(); say("Вход по биометрии отключён на этом телефоне"); return;
     }
@@ -1145,11 +1196,7 @@
       done((async () => {
         if (!v2.state) await v2.load();
         const unlockedKey = await FlowVault.unlock(master, v2.state);
-        if (f.get("biometric")) {
-          try { await biometricRequest(master); }
-          catch (error) { if (error.message !== "biometric_cancel") say("Не удалось включить биометрию. Мастер-пароль продолжит работать"); }
-          biometricState();
-        }
+        await rememberTrustedDevice(master);
         if (document.hidden) return;
         v2.key = unlockedKey;
         await v2.opened();
@@ -1159,6 +1206,8 @@
         const keys = await FlowVault.setup(master);
         await call({ action: "vault2_setup", ...keys });
         v2.loading = null; await v2.load();
+        await rememberTrustedDevice(master);
+        if(document.hidden)return;
         v2.key = await FlowVault.unlock(master, v2.state);
         await v2.opened();
         say("Хранилище создано. Мастер-пароль нигде не сохранён — запомните его");
@@ -1168,6 +1217,8 @@
         const wrapped = await FlowVault.rewrap(String(f.get("old") || ""), master, v2.state);
         await call({ action: "vault2_rewrap", ...wrapped });
         window.SorokaNative?.vaultBiometricClear?.();
+        if(window.FlowTrusted?.postMessage) await trustedRequest("clear").catch(()=>{});
+        await trustedState();
         v2.loading = null; await v2.load();
         ui.sheet = null; render(); say("Мастер-пароль сменён");
       })());
@@ -1521,7 +1572,7 @@
       if ((ui.page === "vault" || ui.page === "docs") && ui.vaultSetup === undefined) v2.load();
       document.body.dataset.financeTab = ui.financeTab || "";
       topTitle();
-      autoUnlockWithBiometric();
+      autoUnlockTrustedDevice();
     };
     if (tg && tg.onEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach((name) => { try { tg.onEvent(name, topTitle); } catch (_) {} });
     try { performance.mark("soroka-scripts"); } catch (_) {}
