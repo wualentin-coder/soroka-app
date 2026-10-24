@@ -22,8 +22,13 @@ function movieCarouselScores(item) {
 function movieCarouselActions(item) {
  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet movie-deck-actions" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div><div class="movie-deck-actions-list"><button type="button" data-action="saved-edit">${icon('note','icon-sm')}Изменить</button><button type="button" data-action="saved-share">${icon('share','icon-sm')}Поделиться</button><button type="button" data-action="movie-skip">${icon('thumbDown','icon-sm')}Не интересно</button><button type="button" class="danger" data-action="saved-delete">${icon('trash','icon-sm')}Удалить</button></div></section></div>`;
 }
+function movieCarouselMetadata(item) {
+  const genres=[item.genre,...(item.tags || [])].filter((value,index,all)=>value && all.findIndex(other=>String(other).toLocaleLowerCase("ru-RU")===String(value).toLocaleLowerCase("ru-RU"))===index);
+  const text=[item.year,genres.slice(0,2).join(", "),(item.countries || []).join(", ")].filter(Boolean).join(" · ");
+  return text ? `<span class="movie-deck-metadata">${esc(text)}</span>` : "";
+}
 function movieCarouselCard(item, index, slot) {
-  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button><button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong>${movieCarouselScores(item)}<span class="movie-deck-description">${esc(movieCardBlurb(item))}</span></button></article>`;
+  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button><button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong>${movieCarouselMetadata(item)}${movieCarouselScores(item)}<span class="movie-deck-description">${esc(movieCardBlurb(item))}</span></button></article>`;
 }
 function mountMovieCarousel() {
   const track = document.getElementById("movie-deck");
@@ -59,7 +64,7 @@ function sizeMovieCarousel(track) {
   const footer=(counter?.offsetHeight || 22)+8;
   const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
   const room=()=>viewport-(track.getBoundingClientRect().top+window.scrollY)-footer;
-  filters.hidden=movieFiltersOpen===null ? width*1.5+208>room() : !movieFiltersOpen;
+  filters.hidden=movieFiltersOpen===null ? width*1.5+240>room() : !movieFiltersOpen;
   toggle?.setAttribute('aria-expanded',String(!filters.hidden));
   track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
 }
