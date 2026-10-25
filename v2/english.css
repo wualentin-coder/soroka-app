@@ -125,3 +125,52 @@
 .en-home-text span { color: var(--muted); font-size: 12px; }
 .en-home > .icon { color: var(--muted); }
 .en-home.done .en-step-ic { background: var(--surface-soft); color: var(--muted); }
+
+/* Сегодня: ссылки */
+.en-today-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.en-today-links button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* Практика */
+.en-practice-sit { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
+.en-practice-sit b { color: var(--text); }
+.en-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.en-mode { display: grid; justify-items: start; gap: 4px; padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: transform .12s; }
+.en-mode:active { transform: scale(.97); }
+.en-mode b { font-size: 15px; margin-top: 6px; }
+.en-mode small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.en-tiles, .en-line { display: flex; flex-wrap: wrap; gap: 8px; }
+.en-line { min-height: 56px; padding: 10px; border-radius: 16px; border: 1px dashed var(--line); align-items: center; }
+.en-line small { color: var(--muted); }
+.en-line.ok { border: 1px solid var(--accent); }
+.en-line.bad { border: 1px solid var(--warn); }
+.en-tile { padding: 9px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; animation: en-in .15s ease; }
+.en-tile.on { background: var(--accent-soft); border-color: transparent; }
+.en-tile.ghost { opacity: .25; }
+.en-gap-text .en-blank { display: inline-block; min-width: 70px; border-bottom: 2px solid var(--accent); color: var(--accent); text-align: center; }
+.en-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.en-opt { min-height: 50px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.en-opt.right { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.en-opt.wrong { border-color: var(--warn); color: var(--warn); }
+.en-theory-part { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 8px; }
+.en-theory-part h3 { margin: 0; font-size: 16px; }
+.en-theory-part p { margin: 0; line-height: 1.55; font-size: 14px; color: var(--text); }
+.en-example { display: flex; align-items: center; gap: 10px; padding-top: 6px; border-top: 1px solid var(--line); }
+.en-example div { display: grid; gap: 1px; }
+.en-example small { color: var(--muted); font-size: 12px; }
+
+/* Живой разговор */
+.en-live { display: grid; justify-items: center; gap: 8px; padding: 8px 0 4px; position: sticky; bottom: 76px; background: var(--surface); }
+.en-orb { position: relative; width: 78px; height: 78px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink, #102426); display: grid; place-items: center; cursor: pointer; }
+.en-orb .icon { width: 30px; height: 30px; position: relative; }
+.en-orb i { position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; transform: scale(calc(1 + var(--level, 0) * .35)); transition: transform .08s; }
+.en-live.listen .en-orb i { opacity: .5; animation: en-breathe 1.6s ease-in-out infinite; }
+.en-live.hear .en-orb i { opacity: .9; }
+.en-live.think .en-orb { background: var(--surface-soft); color: var(--accent); }
+.en-live.think .en-orb i { opacity: .6; border-style: dashed; animation: en-spin 1.4s linear infinite; }
+.en-live.speak .en-orb { background: var(--accent-soft); color: var(--accent); }
+@keyframes en-breathe { 0%, 100% { transform: scale(1); opacity: .25; } 50% { transform: scale(1.12); opacity: .6; } }
+@keyframes en-spin { to { transform: rotate(360deg); } }
+.en-live-state { color: var(--muted); font-size: 12px; text-align: center; }
+.en-live-tools { display: flex; gap: 22px; }
+.en-say { white-space: pre-wrap; }
+.en-run > .en-go, .en-run > .primary-button { flex: none; min-height: 52px; height: auto; }
