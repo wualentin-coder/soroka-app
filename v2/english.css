@@ -1,7 +1,7 @@
 /* «Английский» — занятие, карточки-фразы, разговор. Цвета — переменные Flow. */
 .en-page { display: grid; gap: 14px; max-width: 640px; margin: 0 auto; padding-bottom: 24px; }
-.en-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-soft); }
-.en-tabs button { height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.en-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-soft); }
+.en-tabs button { height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; cursor: pointer; }
 .en-tabs button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 0 var(--line); }
 
 .en-hero, .en-situation, .en-chat, .en-metrics { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 16px; }
@@ -193,3 +193,70 @@
 .en-wordcard { display: block; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
 .en-wordcard small { display: flex; align-items: center; gap: 4px; margin-top: 3px; color: var(--muted); font-size: 12px; }
 .en-wordcard small .icon { color: var(--accent); }
+
+/* Проверка уровня — приглашение на «Сегодня» */
+.en-place { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 22px; background: var(--accent-soft); }
+.en-place > div { flex: 1; display: grid; gap: 2px; }
+.en-place small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.en-place .primary-button { flex: none; min-height: 40px; padding: 0 16px; }
+
+/* Две цели: слова и курс */
+.en-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.en-goal { display: grid; gap: 6px; text-align: left; padding: 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.en-goal small { color: var(--muted); font-size: 12px; }
+.en-goal b { font-size: 22px; }
+.en-goal b span { font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* Колода: карточка со свайпом */
+.en-swipe { position: relative; min-height: 300px; display: grid; align-content: center; justify-items: center; gap: 14px; padding: 28px 20px; border-radius: 28px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, .12); text-align: center; touch-action: pan-y; user-select: none; cursor: grab; animation: en-in .2s ease; }
+.en-swipe:active { cursor: grabbing; }
+.en-swipe .en-play { position: absolute; top: 12px; right: 12px; }
+.en-swipe-front { display: grid; gap: 6px; justify-items: center; }
+.en-word { font-size: 36px; line-height: 1.1; letter-spacing: -.01em; word-break: break-word; }
+.en-swipe-front small { color: var(--muted); font-size: 13px; }
+.en-swipe-tip { opacity: .7; margin-top: 18px; }
+.en-swipe-back { display: grid; gap: 8px; justify-items: center; padding-top: 14px; border-top: 1px solid var(--line); width: 100%; }
+.en-word-ru { font-size: 20px; font-weight: 700; margin: 0; }
+.en-word-ex { margin: 6px 0 0; font-size: 15px; line-height: 1.4; }
+.en-swipe-back small { color: var(--muted); font-size: 13px; }
+.en-swipe-hint { position: absolute; top: 18px; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 800; opacity: 0; transition: opacity .12s; pointer-events: none; }
+.en-swipe-hint.know { left: 16px; color: var(--accent); border: 2px solid var(--accent); }
+.en-swipe-hint.dont { right: 16px; color: var(--warn); border: 2px solid var(--warn); }
+.en-swipe.to-know .en-swipe-hint.know, .en-swipe.to-dont .en-swipe-hint.dont { opacity: 1; }
+.en-swipe.to-know { border-color: var(--accent); }
+.en-swipe.to-dont { border-color: var(--warn); }
+.en-swipe.to-know .en-play, .en-swipe.to-dont .en-play { opacity: 0; }
+.en-deck-btns { display: grid; gap: 10px; margin-top: 14px; }
+.en-deck-btns.two { grid-template-columns: 1fr 1fr; }
+.en-deck-btns .primary-button { min-height: 52px; }
+.en-know, .en-dont { min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 16px; font: inherit; font-weight: 800; font-size: 15px; cursor: pointer; }
+.en-know { border: 0; background: var(--accent); color: var(--accent-ink); }
+.en-dont { border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.en-deck-goal { text-align: center; color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+/* Список слов */
+.en-wlist { display: grid; }
+.en-wrow { display: flex; align-items: center; gap: 12px; padding: 9px 2px; border-top: 1px solid var(--line); }
+.en-wrow > small { width: 38px; flex: none; color: var(--muted); font-size: 11px; text-align: right; }
+.en-wrow > div { flex: 1; display: grid; min-width: 0; }
+.en-wrow span { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Курс: уровни и уроки */
+.en-level { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 14px 12px; }
+.en-level > .en-row { padding: 0 4px 6px; }
+.en-unit { display: flex; align-items: center; gap: 12px; padding: 9px 4px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.en-unit > span:nth-child(2) { flex: 1; display: grid; min-width: 0; }
+.en-unit small { color: var(--muted); font-size: 12px; }
+.en-unit-n { width: 30px; height: 30px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--surface-soft); color: var(--muted); }
+.en-unit.done .en-unit-n { color: var(--accent); background: var(--accent-soft); }
+.en-unit.current { background: var(--accent-soft); }
+.en-unit.current .en-unit-n { background: var(--accent); color: var(--accent-ink); }
+.en-unit.next b { color: var(--muted); }
+.en-unit-score { flex: none; }
+.en-unit-more { display: flex; gap: 8px; padding: 4px 4px 10px 46px; }
+.en-unit-more button { min-height: 40px; flex: 1; }
+
+/* Разговор: что постараться сказать */
+.en-aims { display: flex; flex-wrap: wrap; gap: 6px; }
+.en-aims span { font-size: 12px; padding: 4px 9px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.en-done .en-targets { max-width: 420px; }
