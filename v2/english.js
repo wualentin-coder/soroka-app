@@ -44,6 +44,10 @@ function enDemo(op, args) {
     { id: 5, en: "We went to the country.", ru: "Мы ездили за город.", mode: "recall", section: "Проверка", first: true },
     { mode: "talk", section: "Разговор", situation: unit.key, title: topic.title, goal: topic.goal, grammar: unit.grammar, targets: ["We went to the country."] },
   ] };
+  if (op === "books") return { items: [{ id: 1, key: "a1-flat", title: "A New Flat", author: "Flow", level: "A1", source: "builtin", pages: 2, page: 0, marks: 0, opened_at: null }, { id: 2, key: "b1-market", title: "The Night Market", author: "Flow", level: "B1", source: "builtin", pages: 4, page: 1, marks: 3, opened_at: "2026-10-26" }] };
+  if (op === "book") return { id: args.id, title: "The Night Market", author: "Flow", level: "B1", page: args.page ?? 1, pages: 4, marks: ["stalls"], body: "I had been living in Bangkok for three weeks before I found the night market. To be honest, I hadn't been looking for it.\n\nIt was almost ten o'clock, but the street was full of light and noise. Hundreds of small stalls stretched as far as I could see." };
+  if (op === "bookword") return { lemma: "stretch", ru: "тянуться, простираться", phrase: "stretched as far as I could see", phraseRu: "тянулись насколько хватало глаз", deck: 1460 };
+  if (op === "bookadd") return { id: 3, pages: 10 };
   if (op === "word") return { lemma: "weekend", ru: "выходные", phrase: "last weekend", phraseRu: "в прошлые выходные", deck: 900 };
   if (op === "theory") return { key: unit.key, title: "Урок 10 · A1", heading: unit.grammar, goal: unit.title, parts: [{ title: "Правильные глаголы: -ed", text: "Большинство глаголов в прошедшем получают -ed.", examples: [["I watched a film.", "Я посмотрел фильм."]] }] };
   if (op === "practice") {
@@ -55,7 +59,7 @@ function enDemo(op, args) {
   return { ok: true };
 }
 
-const EN_TABS = [["today", "Сегодня"], ["words", "Слова"], ["course", "Курс"], ["chat", "Разговор"], ["phrases", "Фразы"]];
+const EN_TABS = [["today", "Сегодня"], ["words", "Слова"], ["course", "Курс"], ["read", "Чтение"], ["chat", "Разговор"]];
 const EN_RATINGS = [[1, "Не вспомнил"], [2, "С трудом"], [3, "Легко"]];
 const EN_TOTAL = 4380;
 
@@ -125,7 +129,8 @@ function renderEnglishPage() {
   if (s.deck) return `<div class="en-run">${s.deck.loading ? enWait() : enDeckTop(s.deck) + enDeckScreen(s.deck)}</div>`;
   if (s.ex) return enExScreen(s.ex);
   const tabs = `<div class="en-tabs" role="tablist">${EN_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="en-tab" data-tab="${key}">${label}</button>`).join("")}</div>`;
-  const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen()
+  if (s.tab === "read" && s.book) return enReaderScreen();
+  const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : s.tab === "read" ? enBooksScreen()
     : s.tab === "words" ? enWordsScreen() : s.tab === "course" ? enCourseScreen() : enTodayScreen();
   return `${header("Английский", "", "")}<div class="en-page">${tabs}${body}</div>`;
 }
@@ -320,6 +325,7 @@ function enWordsScreen() {
       <button class="primary-button en-go" type="button" data-action="en-deck">${icon("card", "icon-sm")}Учить слова</button>
       ${w.placed ? "" : `<button class="ghost-button" type="button" data-action="en-place">Проверка уровня · 3 минуты</button>`}</section>
     <section class="en-situation"><div class="en-row"><b>По частоте</b><small>учу сейчас ${w.learning}</small></div>${bands}</section>
+    <button type="button" class="en-goal en-phrases-link" data-action="en-tab" data-tab="phrases"><small>Мои фразы</small><b>Предложения уроков и ваши ошибки</b></button>
     <section class="en-situation"><div class="en-row"><b>Новых слов за занятие</b><small>знакомые не считаются</small></div><div class="map-categories en-chips">${chips}</div></section>
     <label class="notes-search">${icon("search", "icon-sm")}<input id="en-wsearch" type="search" value="${esc(s.wq)}" placeholder="Найти слово" aria-label="Поиск слова"></label>
     <div class="map-categories en-chips">${chip("learning", "Учу")}${chip("known", "Знаю")}${chip("all", "Все по порядку")}</div>
@@ -359,27 +365,42 @@ function enChatStart(unitKey, title, opener) {
   const first = opener || (own ? u?.topic?.opener : "");
   if (first) s.chat.msgs.push({ role: "ai", text: first, opener: true });
 }
-const EN_LIVE_LABEL = { off: "Нажмите, чтобы начать разговор", listen: "Слушаю — говорите", hear: "Слышу вас…", think: "Думаю…", speak: "Тренер говорит · нажмите, чтобы перебить" };
+const EN_LIVE_LABEL = { off: "Голосом", listen: "Слушаю — говорите", hear: "Слышу вас…", think: "Печатает…", speak: "Говорит · нажмите, чтобы перебить" };
 function enChatScreen() {
   // Перерисовали чат — окно сообщений остаётся у последней реплики.
   const s = enState();
   const old = document.querySelector(".en-msgs"), count = s.chat?.msgs.length ?? 0;
   const keep = old && s.chat?.seen === count ? old.scrollTop : null;
   if (s.chat) s.chat.seen = count;
-  queueMicrotask(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = keep ?? box.scrollHeight; });
+  // Недописанное сообщение и курсор переживают перерисовку.
+  const field = document.querySelector("[data-en-chat] input"), draft = field?.value || "", focused = document.activeElement === field;
+  queueMicrotask(() => {
+    const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = keep ?? box.scrollHeight;
+    const input = document.querySelector("[data-en-chat] input");
+    if (input && draft && !input.value && !s.chat?.sent) input.value = draft;
+    if (input && focused) input.focus();
+    if (s.chat) s.chat.sent = false;
+  });
   if (!s.today) { enLoad("today", "today"); return enWait(); }
   if (!s.chat) enChatStart(s.today.unit.key);
   const c = s.chat;
   const live = enLive.state;
+  const tone = s.today.tone || "friend";
+  const wordCard = m => !m.word ? "" : `<div class="en-pop">${m.word.loading ? `<span class="live-spin"></span>` : m.word.error ? "Не получилось перевести" : `<span><b>${esc(m.word.lemma)}</b> — ${esc(m.word.ru)}</span>${m.word.phrase && m.word.phrase !== m.word.lemma ? `<small>${esc(m.word.phrase)} — ${esc(m.word.phraseRu)}</small>` : ""}<small class="en-pop-saved">${icon("check", "icon-sm")}${m.word.deck ? `В колоде слов · №${m.word.deck}` : "Во «Фразах»"}</small>`}</div>`;
   const msgs = c.msgs.map((m, i) => m.role === "me"
-    ? `<div class="en-bub me">${esc(m.text)}${m.correction ? `<div class="en-fixline">Лучше: <b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}${m.saved ? `<small>В повторениях</small>` : ""}</div>` : ""}</div>`
-    : `<div class="en-bub ai" data-action="en-bubble" data-index="${i}"><span class="en-say" data-say="${i}">${m.streaming ? esc(m.shown || "") : enWords(m.text, i)}</span>${m.word ? `<span class="en-wordcard">${m.word.loading ? `<span class="live-spin"></span>` : m.word.error ? "Не получилось перевести" : `<b>${esc(m.word.lemma)}</b> — ${esc(m.word.ru)}${m.word.phrase && m.word.phrase !== m.word.lemma ? `<small>${esc(m.word.phrase)} — ${esc(m.word.phraseRu)}</small>` : ""}<small>${icon("check", "icon-sm")}${m.word.deck ? `В колоде слов (№${m.word.deck})` : "Добавлено во «Фразы»"}</small>`}</span>` : ""}${m.open && m.ru ? `<small>${esc(m.ru)}</small>` : ""}</div>`).join("");
-  const input = c.typing ? `<form class="en-write" data-en-chat><input name="text" autocomplete="off" placeholder="Напишите реплику" aria-label="Реплика"><button class="primary-button" type="submit">${icon("arrow", "icon-sm")}</button></form>` : "";
+    ? `<div class="en-msg me"><div class="en-bub me">${esc(m.text)}</div>${m.correction ? `<div class="en-fixline"><span>Лучше сказать</span><b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}${m.saved ? `<small class="en-pop-saved">${icon("check", "icon-sm")}В повторениях</small>` : ""}</div>` : ""}</div>`
+    : `<div class="en-msg ai"><div class="en-bub ai"><span class="en-say" data-say="${i}">${m.streaming ? esc(m.shown || "") : enWords(m.text, i, m.word?.at)}</span>${m.open && m.ru ? `<div class="en-bub-ru">${esc(m.ru)}</div>` : ""}</div>${wordCard(m)}${!m.streaming && m.ru && !m.ruOnly ? `<button type="button" class="en-bub-tr" data-action="en-bubble" data-index="${i}">${m.open ? "Скрыть перевод" : "Перевод"}</button>` : ""}</div>`).join("");
+  const status = live === "off" ? esc(c.title || "Разговор") : esc(EN_LIVE_LABEL[live]);
   const aims = c.targets?.length ? `<div class="en-aims">${c.targets.map(t => `<span>${esc(t)}</span>`).join("")}</div>` : "";
-  return `<section class="en-chat"><div class="en-chat-head"><span class="en-step-ic">${icon("message", "icon-sm")}</span><div><b>${esc(c.title || "Разговор")}</b><small>Нажмите слово — перевод и в изучение</small></div><button class="text-action" type="button" data-action="en-chat-reset">Заново</button></div>${aims}
-    <div class="en-msgs">${msgs}${c.busy && !c.msgs.some(m => m.streaming) ? `<div class="en-bub ai typing"><span class="live-spin"></span></div>` : ""}</div>${input}
-    <div class="en-live ${live}"><button class="en-orb" type="button" data-action="en-live" aria-label="${esc(EN_LIVE_LABEL[live])}"><i></i>${icon(live === "speak" ? "play" : live === "think" ? "spark" : "mic")}</button><small class="en-live-state">${esc(EN_LIVE_LABEL[live])}</small>
-      <div class="en-live-tools"><button class="text-action" type="button" data-action="en-chat-type">${c.typing ? "Скрыть клавиатуру" : "Написать"}</button>${live !== "off" ? `<button class="text-action danger" type="button" data-action="en-live-stop">Закончить</button>` : ""}</div></div></section>`;
+  return `<section class="en-chat">
+    <div class="en-chat-head"><span class="en-avatar">E</span><div><b>Эмма</b><small class="en-chat-status">${status}</small></div>
+      <button type="button" class="en-tone ${tone}" data-action="en-tone" title="Тон тренера">${tone === "friend" ? "Друг" : "Вежливо"}</button>
+      <button class="icon-button" type="button" data-action="en-chat-reset" aria-label="Начать заново">${icon("reset", "icon-sm")}</button></div>${aims}
+    <div class="en-msgs">${msgs}${c.busy && !c.msgs.some(m => m.streaming) ? `<div class="en-msg ai"><div class="en-bub ai typing"><i></i><i></i><i></i></div></div>` : ""}</div>
+    <div class="en-live ${live}">
+      <form class="en-compose" data-en-chat><input name="text" autocomplete="off" placeholder="Сообщение…" aria-label="Сообщение"><button type="submit" class="en-send" aria-label="Отправить">${icon("arrow", "icon-sm")}</button><button type="button" class="en-mic-btn" data-action="en-live" aria-label="Говорить голосом">${icon("mic", "icon-sm")}</button></form>
+      <div class="en-livebar"><button type="button" class="en-livebar-main" data-action="en-live"><span class="en-dot"></span><span class="en-live-state">${esc(EN_LIVE_LABEL[live])}</span></button><button type="button" class="text-action danger" data-action="en-live-stop">Стоп</button></div>
+    </div></section>`;
 }
 
 // ------------------------------------------------------------ живой голос
@@ -425,6 +446,8 @@ function enLiveSet(state) {
     const label = box.querySelector(".en-live-state");
     if (label) label.textContent = EN_LIVE_LABEL[state];
   }
+  const head = document.querySelector(".en-chat-status");
+  if (head) head.textContent = state === "off" ? (enState().chat?.title || "Разговор") : EN_LIVE_LABEL[state];
 }
 async function enLiveStart() {
   const ctx = enAudioCtx();
@@ -464,7 +487,7 @@ function enLiveHear(data, rate) {
   enLive.chunks.push(chunk);
   enLive.total += dt;
   if (rms > 0.015) { enLive.voiced += dt; enLive.silence = 0; } else enLive.silence += dt;
-  document.querySelector(".en-orb i")?.style.setProperty("--level", Math.min(1, rms * 12).toFixed(2));
+  document.querySelector(".en-dot")?.style.setProperty("--level", Math.min(1, rms * 12).toFixed(2));
   if (enLive.silence > 1.6 || enLive.total > 30) {
     const chunks = enLive.chunks; enLive.chunks = [];
     if (enLive.voiced < 0.35) { enLiveSet("listen"); return; } // кашель, шум — не реплика
@@ -478,9 +501,9 @@ function enLiveHear(data, rate) {
 }
 
 /** Реплика тренера словами-кнопками: нажали слово — перевод и в изучение. */
-function enWords(text, index) {
-  return String(text || "").split(/(\s+)/).map(part => /[A-Za-z]/.test(part)
-    ? `<span class="en-w" data-action="en-word" data-index="${index}" data-word="${esc(part.replace(/[^A-Za-z'’-]/g, ""))}">${esc(part)}</span>` : esc(part)).join("");
+function enWords(text, index, selected) {
+  return String(text || "").split(/(\s+)/).map((part, at) => /[A-Za-z]/.test(part)
+    ? `<span class="en-w ${at === selected ? "on" : ""}" data-action="en-word" data-index="${index}" data-at="${at}" data-word="${esc(part.replace(/[^A-Za-z'’-]/g, ""))}">${esc(part)}</span>` : esc(part)).join("");
 }
 
 /** Показать кусок ответа тогда, когда он прозвучит. */
@@ -499,7 +522,7 @@ async function enChatSend(text) {
   if (!c || !text.trim() || c.busy) return;
   const mine = { role: "me", text: text.trim() };
   const history = c.msgs.map(m => ({ role: m.role, text: m.text }));
-  c.msgs.push(mine); c.busy = true; c.typing = false;
+  c.msgs.push(mine); c.busy = true; c.sent = true;
   enStopPcm();
   if (enLive.state !== "off") enLiveSet("think");
   render(); enScrollChat();
@@ -516,13 +539,13 @@ async function enChatSend(text) {
   try {
     if (typeof window.sorokaEnglishStream !== "function") throw new Error("no-stream");
     let ai = null, index = -1;
-    await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text, targets: c.targets || [] }, (type, data) => {
+    await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text, targets: c.targets || [], tone: enState().today?.tone }, (type, data) => {
       if (type === "say") {
         if (!ai) { ai = { role: "ai", text: "", shown: "", streaming: true }; c.msgs.push(ai); index = c.msgs.length - 1; render(); if (enLive.state !== "off") enLiveSet("speak"); }
         ai.text += data.text; enRevealAt(ai, index, data.text);
       } else if (type === "audio") enPlayPcm(data);
       else if (type === "fix") { if (data.correction) { Object.assign(mine, { correction: data.correction, explain: data.explain, saved: data.saved }); render(); } }
-      else if (type === "reply" && ai) ai.text = data.reply || ai.text;
+      else if (type === "reply" && ai) { ai.text = data.reply || ai.text; ai.ruOnly = /[а-яё]/i.test(ai.text) && (ai.text.match(/[а-яё]/gi) || []).length > (ai.text.match(/[a-z]/gi) || []).length; }
       else if (type === "ru" && ai) ai.ru = data.ru;
       else if (type === "error" && !ai) throw new Error(data.error || "stream");
     });
@@ -531,7 +554,7 @@ async function enChatSend(text) {
   } catch (_) {
     // Без потока: обычный ответ, озвучка следом (файлом).
     try {
-      const answer = await enCall("chat", { situation: c.situation, history, text: mine.text, targets: c.targets || [] });
+      const answer = await enCall("chat", { situation: c.situation, history, text: mine.text, targets: c.targets || [], tone: enState().today?.tone });
       if (answer.correction) Object.assign(mine, { correction: answer.correction, explain: answer.explain, saved: answer.saved });
       c.msgs.push({ role: "ai", text: answer.reply, ru: answer.replyRu });
       render(); enScrollChat();
@@ -695,6 +718,226 @@ function enExNext() {
   if (ex.mode !== "lesson" && ex.items[ex.index] && ex.mode === "dictation") enSpeak(ex.items[ex.index].en);
 }
 
+// ------------------------------------------------------------ чтение
+// Читать много и чуть ниже своего уровня — так слова учатся из контекста.
+// Незнакомое слово: нажали — облачко с переводом по смыслу предложения,
+// слово подсвечивается во всей книге и уходит в колоду (её повторит FSRS).
+
+const EN_BOOK_LEVELS = ["A1", "A2", "B1", "B2"];
+function enBooksScreen() {
+  const s = enState();
+  if (!s.books) { enLoad("books", "books"); return enWait(); }
+  const items = s.books.items || [];
+  const card = b => `<button type="button" class="en-book" data-action="en-book" data-id="${b.id}"><span class="en-book-cover lvl-${esc(b.level || "x")}">${esc(b.level || "📖")}</span><span class="en-book-text"><b>${esc(b.title)}</b><small>${esc(b.author || "")}${b.pages ? ` · ${b.pages} ${enPlural(b.pages, "страница", "страницы", "страниц")}` : ""}${b.marks ? ` · ${b.marks} ${enPlural(b.marks, "слово", "слова", "слов")}` : ""}</small>${b.page ? `<span class="en-bar slim"><i style="width:${Math.round((b.page + 1) / b.pages * 100)}%"></i></span>` : ""}</span>${icon("arrow", "icon-sm")}</button>`;
+  const last = items.find(b => b.opened_at);
+  const mine = items.filter(b => b.source === "upload");
+  const ready = EN_BOOK_LEVELS.map(level => { const list = items.filter(b => b.source === "builtin" && b.level === level); return list.length ? `<p class="en-book-level">${EN_LEVEL_NAMES[level]}</p>${list.map(card).join("")}` : ""; }).join("");
+  return `${last ? `<section class="en-hero en-continue"><small>Продолжить</small>${card(last)}</section>` : ""}
+    <section class="en-hero"><div class="en-hero-top"><div><h2>Своя книга</h2><small>txt, fb2 или epub · нажимайте незнакомые слова — перевод и в колоду</small></div></div>
+      <label class="primary-button en-go en-upload">${icon("upload", "icon-sm")}${s.uploading ? "Загружаю…" : "Загрузить книгу"}<input type="file" accept=".txt,.fb2,.epub,text/plain,application/epub+zip" data-en-upload hidden></label>
+      ${mine.map(card).join("")}</section>
+    <section class="en-situation"><div class="en-row"><b>Рассказы по уровням</b><small>написаны для Flow</small></div>${ready}</section>`;
+}
+
+// Читалка на весь экран: тап в середину — панели, у краёв или свайп — листать.
+// Настройки внешнего вида — только на этом телефоне (localStorage).
+const EN_READER_THEMES = [["dark", "Тёмный"], ["black", "Чёрный"], ["sepia", "Сепия"], ["light", "Светлый"]];
+const EN_READER_DEFAULT = { theme: "dark", size: 19, lh: 1.7, font: "serif", bright: 1, contrast: 1 };
+function enReaderPrefs() {
+  const s = enState();
+  if (!s.readerPrefs) { let saved = {}; try { saved = JSON.parse(localStorage.getItem("flow-en-reader") || "{}"); } catch (_) {} s.readerPrefs = { ...EN_READER_DEFAULT, ...saved }; }
+  return s.readerPrefs;
+}
+function enReaderSave(patch) {
+  const r = Object.assign(enReaderPrefs(), patch);
+  try { localStorage.setItem("flow-en-reader", JSON.stringify(r)); } catch (_) {}
+  render();
+}
+function enReaderScreen() {
+  const s = enState(), b = s.book, r = enReaderPrefs();
+  const style = `--rs:${r.size}px;--rl:${r.lh};--rfilter:brightness(${r.bright}) contrast(${r.contrast})`;
+  if (b.loading) return `<div class="en-reader theme-${r.theme}" style="${style}"><div class="en-reader-wait">${enWait()}</div></div>`;
+  const marks = new Set((b.marks || []).map(w => w.toLowerCase()));
+  const paras = String(b.body || "").split(/\n\s*\n/).map(p => `<p>${p.split(/(\s+)/).map(part => {
+    const w = part.replace(/[^A-Za-z'’-]/g, "").replace(/^['’-]+|['’-]+$/g, "");
+    if (!w) return esc(part);
+    return `<span class="en-rw ${marks.has(w.toLowerCase()) ? "mark" : ""} ${s.pop?.w === w.toLowerCase() ? "on" : ""}" data-action="en-rword" data-w="${esc(w)}">${esc(part)}</span>`;
+  }).join("")}</p>`).join("");
+  const pop = s.pop ? `<div class="en-pop en-rpop" style="top:${s.pop.y}px;left:${s.pop.x}px">${s.pop.loading ? `<span class="live-spin"></span>` : s.pop.error ? "Не получилось перевести" : `<div class="en-pop-head"><b>${esc(s.pop.lemma)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(s.pop.lemma)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><span>${esc(s.pop.ru)}</span>${s.pop.phrase && s.pop.phrase !== s.pop.lemma ? `<small>${esc(s.pop.phrase)} — ${esc(s.pop.phraseRu)}</small>` : ""}<div class="en-pop-foot"><small class="en-pop-saved">${icon("check", "icon-sm")}${s.pop.deck ? "В колоде слов" : "Во «Фразах»"}</small><button class="text-action" type="button" data-action="en-unmark">Снять</button></div>`}</div>` : "";
+  const range = (key, label, min, max, step, val, fmt) => `<label class="en-rset-row"><span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${val}" data-en-rset="${key}"><small>${fmt(val)}</small></label>`;
+  const settings = s.readerSet ? `<div class="en-rset" data-en-rsheet>
+      <div class="en-rset-themes">${EN_READER_THEMES.map(([k, l]) => `<button type="button" class="en-rtheme theme-${k} ${r.theme === k ? "on" : ""}" data-action="en-rtheme" data-theme="${k}">Аа<small>${l}</small></button>`).join("")}</div>
+      ${range("bright", "Яркость", .4, 1.2, .05, r.bright, v => `${Math.round(v * 100)}%`)}
+      ${range("contrast", "Контраст", .6, 1.5, .05, r.contrast, v => `${Math.round(v * 100)}%`)}
+      ${range("size", "Шрифт", 14, 30, 1, r.size, v => `${v}`)}
+      ${range("lh", "Интервал", 1.3, 2.2, .1, r.lh, v => Number(v).toFixed(1))}
+      <div class="en-rset-fonts"><button type="button" class="${r.font === "serif" ? "on" : ""}" data-action="en-rfont" data-font="serif" style="font-family:Georgia,serif">С засечками</button><button type="button" class="${r.font === "sans" ? "on" : ""}" data-action="en-rfont" data-font="sans">Без засечек</button></div>
+      <button type="button" class="text-action" data-action="en-rreset">Сбросить</button>
+    </div>` : "";
+  return `<div class="en-reader theme-${r.theme} font-${r.font} ${s.readerUi ? "ui" : ""}" style="${style}">
+    <header class="en-reader-bar top"><button class="icon-button" type="button" data-action="en-book-close" aria-label="К книгам">${icon("left", "icon-sm")}</button><div class="en-reader-title"><b>${esc(b.title)}</b><small>${esc(b.author || "")}${b.level ? ` · ${esc(b.level)}` : ""}</small></div><button class="icon-button" type="button" data-action="en-say" data-text="${esc(String(b.body || "").split(/\n\s*\n/)[0].slice(0, 480))}" aria-label="Послушать начало страницы">${icon("play", "icon-sm")}</button><button class="en-aa" type="button" data-action="en-rset" aria-label="Настройки чтения">Aa</button></header>
+    <div class="en-reader-scroll"><article class="en-page-text" data-reader-tap>${paras}${pop}<p class="en-page-num">${b.page + 1} / ${b.pages}</p></article></div>
+    <footer class="en-reader-bar bottom"><button class="icon-button" type="button" data-action="en-page" data-d="-1" ${b.page ? "" : "disabled"} aria-label="Назад">${icon("left", "icon-sm")}</button><input type="range" min="1" max="${b.pages}" value="${b.page + 1}" data-en-pageslider aria-label="Страница"><small>${b.page + 1}/${b.pages}</small><button class="icon-button" type="button" data-action="en-page" data-d="1" ${b.page + 1 < b.pages ? "" : "disabled"} aria-label="Дальше">${icon("right", "icon-sm")}</button></footer>
+    ${settings}</div>`;
+}
+async function enBookOpen(id, page) {
+  const s = enState();
+  s.pop = null;
+  s.book = { ...(s.book?.id === id ? s.book : {}), id, loading: !s.book || s.book.id !== id };
+  render();
+  try {
+    const data = await enCall("book", page === undefined ? { id } : { id, page });
+    if (data?.error) throw new Error(data.error);
+    s.book = data;
+    requestAnimationFrame(() => document.querySelector(".en-reader-scroll")?.scrollTo({ top: 0 }));
+  } catch (_) { s.book = null; toast("Не получилось открыть книгу"); }
+  render();
+}
+/** Предложение вокруг слова — для перевода по смыслу. */
+function enSentenceAround(span) {
+  const text = span.closest("p")?.textContent || "";
+  const at = text.indexOf(span.textContent);
+  const start = Math.max(text.lastIndexOf(".", at - 1), text.lastIndexOf("!", at - 1), text.lastIndexOf("?", at - 1)) + 1;
+  const ends = [".", "!", "?"].map(c => text.indexOf(c, at)).filter(i => i >= 0);
+  return text.slice(start, ends.length ? Math.min(...ends) + 1 : undefined).trim().slice(0, 300);
+}
+const enBookCache = new Map();
+// Нажатие в тексте мимо слова: открыто облачко — закрыть; у краёв — листать; в середине — панели.
+document.addEventListener("click", event => {
+  const s = enState();
+  const page = event.target.closest?.("[data-reader-tap]");
+  if (!page || event.target.closest(".en-rw, .en-rpop") || enReaderSwiped) return;
+  if (s.pop || s.readerSet) { s.pop = null; s.readerSet = false; render(); return; }
+  const x = event.clientX / window.innerWidth;
+  if (x < .22 && s.book.page > 0) enBookOpen(s.book.id, s.book.page - 1);
+  else if (x > .78 && s.book.page + 1 < s.book.pages) enBookOpen(s.book.id, s.book.page + 1);
+  else { s.readerUi = !s.readerUi; render(); }
+});
+let enReaderTouch = null, enReaderSwiped = false;
+document.addEventListener("pointerdown", event => { if (event.target.closest?.("[data-reader-tap]")) { enReaderTouch = { x: event.clientX, y: event.clientY }; enReaderSwiped = false; } });
+document.addEventListener("pointerup", event => {
+  if (!enReaderTouch) return;
+  const dx = event.clientX - enReaderTouch.x, dy = event.clientY - enReaderTouch.y, s = enState();
+  enReaderTouch = null;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5 && s.book && !s.book.loading) {
+    enReaderSwiped = true; setTimeout(() => { enReaderSwiped = false; }, 300);
+    const next = s.book.page + (dx < 0 ? 1 : -1);
+    if (next >= 0 && next < s.book.pages) enBookOpen(s.book.id, next);
+  }
+});
+document.addEventListener("input", event => {
+  const key = event.target.dataset?.enRset;
+  if (!key) return;
+  // Ползунок — сразу на экране, без перерисовки (иначе он «прыгает» под пальцем).
+  const r = enReaderPrefs(); r[key] = Number(event.target.value);
+  const box = document.querySelector(".en-reader");
+  if (box) { box.style.setProperty("--rs", `${r.size}px`); box.style.setProperty("--rl", r.lh); box.style.setProperty("--rfilter", `brightness(${r.bright}) contrast(${r.contrast})`); }
+  const out = event.target.nextElementSibling; if (out) out.textContent = key === "lh" ? Number(r.lh).toFixed(1) : key === "size" ? r.size : `${Math.round(r[key] * 100)}%`;
+});
+document.addEventListener("change", event => {
+  if (event.target.dataset?.enRset) { enReaderSave({}); return; }
+  if (event.target.matches?.("[data-en-pageslider]")) { const s = enState(); enBookOpen(s.book.id, Number(event.target.value) - 1); }
+});
+function enReadWord(control) {
+  const s = enState(), b = s.book;
+  const w = control.dataset.w, key = w.toLowerCase();
+  if (s.pop?.w === key) { s.pop = null; render(); return; }
+  const box = document.querySelector(".en-page-text").getBoundingClientRect(), r = control.getBoundingClientRect();
+  const x = Math.max(6, Math.min(box.width - 236, r.left - box.left + r.width / 2 - 115)), y = r.bottom - box.top + 6;
+  const cached = enBookCache.get(key);
+  s.pop = cached ? { ...cached, w: key, x, y } : { loading: true, w: key, x, y };
+  if (!b.marks.map(m => m.toLowerCase()).includes(key)) b.marks = [...b.marks, key];
+  render();
+  if (cached) return;
+  enCall("bookword", { id: b.id, word: w, sentence: enSentenceAround(control) }).then(answer => {
+    if (answer?.error) throw new Error(answer.error);
+    enBookCache.set(key, answer);
+    if (s.pop?.w === key) s.pop = { ...answer, w: key, x, y };
+  }).catch(() => { if (s.pop?.w === key) s.pop = { error: true, w: key, x, y }; }).finally(() => render());
+}
+
+// Своя книга: txt (UTF-8 или Windows-1251), fb2 (XML), epub (zip с xhtml) — разбираем здесь.
+function enDecode(bytes) {
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); } catch (_) { return new TextDecoder("windows-1251").decode(bytes); }
+}
+async function enUnzip(buf) {
+  const v = new DataView(buf), u8 = new Uint8Array(buf), files = new Map();
+  let end = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (v.getUint32(i, true) === 0x06054b50) { end = i; break; }
+  if (end < 0) throw new Error("not_zip");
+  let p = v.getUint32(end + 16, true);
+  const count = v.getUint16(end + 10, true);
+  for (let k = 0; k < count; k++) {
+    if (v.getUint32(p, true) !== 0x02014b50) break;
+    const method = v.getUint16(p + 10, true), size = v.getUint32(p + 20, true), nameLen = v.getUint16(p + 28, true), extra = v.getUint16(p + 30, true), comment = v.getUint16(p + 32, true), local = v.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nameLen));
+    files.set(name, { method, size, local });
+    p += 46 + nameLen + extra + comment;
+  }
+  return async name => {
+    const f = files.get(name);
+    if (!f) return null;
+    const start = f.local + 30 + v.getUint16(f.local + 26, true) + v.getUint16(f.local + 28, true);
+    const data = u8.subarray(start, start + f.size);
+    if (f.method === 0) return data;
+    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  };
+}
+const enBlocks = doc => [...doc.querySelectorAll("h1, h2, h3, p, li, blockquote")].map(n => n.textContent.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n\n");
+async function enParseBook(file) {
+  const name = file.name.replace(/\.[^.]+$/, "");
+  const buf = await file.arrayBuffer();
+  if (/\.epub$/i.test(file.name)) {
+    const read = await enUnzip(buf);
+    const text = async n => { const b = await read(n); return b ? new TextDecoder().decode(b) : ""; };
+    const container = new DOMParser().parseFromString(await text("META-INF/container.xml"), "application/xml");
+    const opfPath = container.querySelector("rootfile")?.getAttribute("full-path") || "";
+    const opf = new DOMParser().parseFromString(await text(opfPath), "application/xml");
+    const base = opfPath.includes("/") ? opfPath.slice(0, opfPath.lastIndexOf("/") + 1) : "";
+    const manifest = new Map([...opf.getElementsByTagName("item")].map(i => [i.getAttribute("id"), i.getAttribute("href")]));
+    const parts = [];
+    for (const ref of opf.getElementsByTagName("itemref")) {
+      const href = manifest.get(ref.getAttribute("idref"));
+      if (!href) continue;
+      const html = await text(decodeURIComponent(base + href).replace(/[^/]+\/\.\.\//g, ""));
+      parts.push(enBlocks(new DOMParser().parseFromString(html, "text/html")));
+    }
+    const meta = t => opf.getElementsByTagName(t)[0]?.textContent?.trim();
+    return { title: meta("dc:title") || name, author: meta("dc:creator") || "", text: parts.filter(Boolean).join("\n\n") };
+  }
+  const raw = enDecode(new Uint8Array(buf));
+  if (/\.fb2$/i.test(file.name) || /<FictionBook/i.test(raw.slice(0, 500))) {
+    const enc = raw.slice(0, 200).match(/encoding="([^"]+)"/i)?.[1];
+    const xml = enc && !/utf-?8/i.test(enc) ? new TextDecoder(enc).decode(new Uint8Array(buf)) : raw;
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    const body = [...doc.getElementsByTagName("body")].filter(b => b.getAttribute("name") !== "notes");
+    const text = body.map(b => [...b.getElementsByTagName("p")].map(p => p.textContent.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n\n")).join("\n\n");
+    const first = doc.getElementsByTagName("first-name")[0]?.textContent || "", last = doc.getElementsByTagName("last-name")[0]?.textContent || "";
+    return { title: doc.getElementsByTagName("book-title")[0]?.textContent?.trim() || name, author: `${first} ${last}`.trim(), text };
+  }
+  // Простой текст: одиночные переносы строк внутри абзаца склеиваем.
+  return { title: name, author: "", text: raw.replace(/\r/g, "").replace(/([^\n])\n(?=[^\n\s])/g, "$1 ") };
+}
+document.addEventListener("change", async event => {
+  const input = event.target.closest?.("[data-en-upload]");
+  if (!input?.files?.[0]) return;
+  const s = enState(), file = input.files[0];
+  if (file.size > 30 * 1024 * 1024) { toast("Файл больше 30 МБ"); return; }
+  s.uploading = true; render();
+  try {
+    const book = await enParseBook(file);
+    if (!book.text || book.text.length < 200) throw new Error("empty");
+    const latin = (book.text.slice(0, 5000).match(/[a-z]/gi) || []).length, cyr = (book.text.slice(0, 5000).match(/[а-яё]/gi) || []).length;
+    if (cyr > latin) toast("Похоже, книга не на английском — всё равно загружаю");
+    const answer = await enCall("bookadd", { title: book.title, author: book.author, text: book.text.slice(0, 3_000_000) });
+    if (answer?.error) throw new Error(answer.error);
+    s.books = null; s.uploading = false;
+    toast(`«${book.title}» — ${answer.pages} ${enPlural(answer.pages, "страница", "страницы", "страниц")}`);
+    enBookOpen(answer.id, 0);
+  } catch (_) { s.uploading = false; render(); toast("Не получилось прочитать файл — попробуйте txt, fb2 или epub"); }
+});
+
 // ------------------------------------------------------------ фразы и прогресс
 
 function enPhrasesScreen() {
@@ -725,7 +968,7 @@ function enProgressScreen() {
 function englishAction(action, control) {
   if (!action.startsWith("en-")) return false;
   const s = enState();
-  if (action === "en-tab") { s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; render(); return true; }
+  if (action === "en-tab") { s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
   if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") { s.tab = "today"; navigate("english"); if (s.today && !s.today.plan.doneToday) enLessonStart(); else render(); return true; }
   if (action === "en-say") { enSpeak(control.dataset.text, control); return true; }
@@ -757,7 +1000,14 @@ function englishAction(action, control) {
     return true;
   }
   if (action === "en-live-stop") { enStopPcm(); enLiveStop(); render(); return true; }
-  if (action === "en-chat-type") { s.chat.typing = !s.chat.typing; render(); setTimeout(() => document.querySelector("[data-en-chat] input")?.focus(), 30); return true; }
+  if (action === "en-tone") {
+    // Друг без цензуры ↔ вежливый тренер (когда рядом люди).
+    const tone = s.today?.tone === "polite" ? "friend" : "polite";
+    if (s.today) s.today.tone = tone;
+    render(); toast(tone === "friend" ? "Эмма — друг: сленг, шутки, без цензуры" : "Эмма — вежливый тренер");
+    enCall("tone", { tone }).catch(() => {});
+    return true;
+  }
   if (action === "en-chat-reset") { enStopPcm(); enLiveStop(); s.chat = null; render(); return true; }
   // упражнения
   if (action === "en-ex") { enExStart(control.dataset.mode, control.dataset.unit); return true; }
@@ -794,10 +1044,28 @@ function englishAction(action, control) {
     const m = s.chat?.msgs[Number(control.dataset.index)];
     const w = control.dataset.word;
     if (!m || !w) return true;
-    m.word = { loading: true };
+    const at = Number(control.dataset.at);
+    // То же слово ещё раз — закрыть облачко.
+    if (m.word && m.word.at === at && !m.word.loading) { m.word = null; render(); return true; }
+    m.word = { loading: true, at };
     render();
-    enCall("word", { word: w, sentence: m.text }).then(answer => { m.word = answer?.error ? { error: true } : answer; if (!answer?.error) toast(answer.deck ? `«${answer.lemma}» — в колоде, выйдет на занятии` : `«${answer.lemma}» — во «Фразах»`); })
-      .catch(() => { m.word = { error: true }; }).finally(() => { render(); });
+    enCall("word", { word: w, sentence: m.text }).then(answer => { m.word = answer?.error ? { error: true, at } : { ...answer, at }; if (!answer?.error) toast(answer.deck ? `«${answer.lemma}» — в колоде, выйдет на занятии` : `«${answer.lemma}» — во «Фразах»`); })
+      .catch(() => { m.word = { error: true, at }; }).finally(() => { render(); });
+    return true;
+  }
+  if (action === "en-book") { enBookOpen(Number(control.dataset.id)); return true; }
+  if (action === "en-book-close") { s.book = null; s.pop = null; s.books = null; s.readerSet = false; render(); return true; }
+  if (action === "en-page") { const b = s.book; if (b && !b.loading) enBookOpen(b.id, b.page + Number(control.dataset.d)); return true; }
+  if (action === "en-rword") { enReadWord(control); return true; }
+  if (action === "en-rset") { s.readerSet = !s.readerSet; s.pop = null; render(); return true; }
+  if (action === "en-rtheme") { enReaderSave({ theme: control.dataset.theme }); return true; }
+  if (action === "en-rfont") { enReaderSave({ font: control.dataset.font }); return true; }
+  if (action === "en-rreset") { enReaderSave({ ...EN_READER_DEFAULT }); return true; }
+  if (action === "en-unmark") {
+    const b = s.book, w = s.pop?.w;
+    if (!b || !w) return true;
+    b.marks = b.marks.filter(m => m.toLowerCase() !== w); s.pop = null; render();
+    enCall("bookunmark", { id: b.id, word: w }).catch(() => {});
     return true;
   }
   if (action === "en-filter") { s.filter = control.dataset.filter; s.list = null; render(); return true; }
