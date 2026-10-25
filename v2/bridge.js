@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=748f4012ee","integrity":null},{"src":"./loop-deck.js?v=63bf7fc664","integrity":null},{"src":"./movie-carousel.js?v=74a8aa2c3a","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8e7e1e19ab","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./english.js?v=f089d7c97b","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=5de55c1224","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=d8d3161ac7","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=9176dd74a6","integrity":null},{"src":"./app.js?v=7f686d3272","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=748f4012ee","integrity":null},{"src":"./loop-deck.js?v=63bf7fc664","integrity":null},{"src":"./movie-carousel.js?v=74a8aa2c3a","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=8e7e1e19ab","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./english.js?v=84ba75ae6d","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=5de55c1224","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=d8d3161ac7","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=9176dd74a6","integrity":null},{"src":"./app.js?v=27b0ef7b52","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -996,6 +996,34 @@
   }
   window.sorokaCardStores = (title, lat, lng) => call({ action: "card_stores", title, lat, lng }, 30000);
   /** Раздел «VPN»: действия с сервером идут через приложение бота к сервису управления. */
+  // Ответ тренера потоком: onEvent(type, data) на каждое событие SSE.
+  // Сеть Android-приложения поток не отдаёт — тогда бросаем, и экран
+  // переходит на обычный ответ с озвучкой следом.
+  window.sorokaEnglishStream = async (args, onEvent) => {
+    const init = tg && tg.initData;
+    const device = init ? "" : deviceKey();
+    if (useNative || (!init && !device)) throw new Error("no-stream");
+    const response = await fetch(API, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...(init ? { initData: init } : { device }), action: "english_stream", args: args || {} }),
+    });
+    if (!response.ok || !response.body) throw new Error("stream-failed");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let cut;
+      while ((cut = buffer.indexOf("\n\n")) >= 0) {
+        const block = buffer.slice(0, cut); buffer = buffer.slice(cut + 2);
+        const type = (block.match(/^event: (.+)$/m) || [])[1];
+        const data = (block.match(/^data: (.*)$/m) || [])[1] || "";
+        if (type) onEvent(type, type === "audio" ? data : (() => { try { return JSON.parse(data); } catch (_) { return {}; } })());
+      }
+    }
+  };
   window.sorokaEnglish = (op, args) => call({ action: "english", op, args: args || {} }, ["chat", "speech", "check"].includes(op) ? 45000 : 20000);
   window.sorokaVpn = (op, args) => call({ action: "vpn", op, args: args || {} }, 30000);
   let pcStateSource = null;
