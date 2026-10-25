@@ -37,7 +37,22 @@ function enState() {
   ui.en ||= { tab: "today", today: null, run: null, chat: null, list: null, filter: "due", q: "", progress: null };
   return ui.en;
 }
-function enRerender() { if (ui.page === "english") render(); }
+function enRerender() { if (ui.page === "english" || ui.page === "today") render(); }
+
+/** Плитка на «Плане»: напоминание о занятии там, где человек и так смотрит каждый день. */
+function enHomeTile() {
+  const s = enState();
+  if (!s.today || Date.now() - (s.todayAt || 0) > 10 * 60_000) {
+    if (!s.todayLoading) { s.todayAt = Date.now(); enLoad("today", "today"); }
+    if (!s.today) return "";
+  }
+  const t = s.today, p = t.plan;
+  const fresh = !t.stats.total;
+  const left = p.reviews + p.newOnes;
+  const title = fresh ? "Начать английский" : left ? `${left} ${enPlural(left, "фраза", "фразы", "фраз")} · ≈ ${p.minutes} мин` : "На сегодня всё";
+  const sub = fresh ? "5–10 минут в день · фразы для поездок" : left ? `${esc(t.situation.title)}${t.streak ? ` · серия ${t.streak} ${enPlural(t.streak, "день", "дня", "дней")}` : ""}` : `серия ${t.streak} ${enPlural(t.streak, "день", "дня", "дней")} · можно поговорить`;
+  return `<section class="section"><button type="button" class="en-home ${left || fresh ? "" : "done"}" data-action="en-home"><span class="en-step-ic">${icon(left || fresh ? "study" : "check", "icon-sm")}</span><span class="en-home-text"><small>Английский</small><b>${title}</b><span>${sub}</span></span>${icon("arrow", "icon-sm")}</button></section>`;
+}
 function enLoad(key, op, args = {}) {
   const s = enState();
   if (s[`${key}Loading`]) return;
@@ -120,9 +135,12 @@ async function enStart() {
     // Новая фраза: показ, а в конце — проверка её же (вспомнить сразу после показа).
     const items = [];
     const recalls = [];
+    let familiar = 0;
     for (const item of answer.items || []) {
       if (item.kind === "new") { items.push({ ...item, step: "intro" }); recalls.push({ ...item, step: "recall" }); }
-      else items.push({ ...item, step: "recall" });
+      // Знакомые фразы — вперемешку: каждая третья начинается со звука (понять на слух),
+      // остальные — сказать самому. Разные стороны одной фразы закрепляют её прочнее.
+      else items.push({ ...item, step: item.strength >= .3 && ++familiar % 3 === 0 ? "listen" : "recall" });
     }
     s.run = { items: [...items, ...recalls], index: 0, done: 0, ok: 0, situation: answer.situation, mode: "idle" };
   } catch (error) { s.run = null; toast("Не получилось собрать занятие"); }
@@ -138,6 +156,13 @@ function enRunScreen(run) {
   if (item.step === "intro") {
     return `<div class="en-run">${bar}<p class="en-kicker">Новая фраза</p><div class="en-card"><div class="en-en"><b>${esc(item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><p class="en-ru">${esc(item.ru)}</p>${run.said ? enVerdict(run) : `<p class="section-note">Послушайте и повторите вслух — так фраза запомнится быстрее.</p>`}</div>
       <div class="en-actions"><button class="ghost-button" type="button" data-action="en-speak">${icon("mic", "icon-sm")}Повторить вслух</button><button class="primary-button" type="button" data-action="en-next">Дальше</button></div></div>`;
+  }
+  if (item.step === "listen") {
+    const shown = run.mode === "answered";
+    return `<div class="en-run">${bar}<p class="en-kicker">Послушайте и поймите смысл</p>
+      <div class="en-listen"><button class="en-mic" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать ещё раз">${icon("play")}</button><small>Нажмите, чтобы послушать ещё раз</small></div>
+      ${shown ? `<div class="en-card"><div class="en-en"><b>${esc(item.en)}</b></div><p class="en-ru">${esc(item.ru)}</p></div><p class="en-ask">Поняли на слух?</p><div class="en-rate">${[[1, "Не понял"], [2, "С трудом"], [3, "Понял"]].map(([r, label]) => `<button type="button" data-action="en-rate" data-rating="${r}">${label}</button>`).join("")}</div>`
+      : `<div class="en-answer"><button class="primary-button" type="button" data-action="en-reveal">Показать текст</button></div>`}</div>`;
   }
   const answered = run.mode === "answered";
   const writing = run.mode === "write";
@@ -193,7 +218,7 @@ function enNext() {
   run.index++; run.mode = "idle"; run.check = null; run.said = ""; run.checking = false;
   render();
   const item = run.items[run.index];
-  if (item?.step === "intro") enSpeak(item.en);
+  if (item?.step === "intro" || item?.step === "listen") enSpeak(item.en);
 }
 
 function enDoneScreen(run) {
@@ -225,20 +250,60 @@ function enChatScreen() {
     <div class="en-msgs">${msgs}${c.busy ? `<div class="en-bub ai typing"><span class="live-spin"></span></div>` : ""}</div>${input}
     <div class="en-chat-controls"><button class="icon-button" type="button" data-action="en-chat-type" aria-label="Написать">${icon("pen", "icon-sm")}</button><button class="en-mic" type="button" data-action="en-chat-speak" aria-label="Сказать">${icon("mic")}</button><button class="icon-button" type="button" data-action="en-chat-ru" aria-label="Спросить по-русски">RU</button></div></section>`;
 }
+// ------------------------------------------------------------ живой голос
+// Ответ тренера приходит кусками PCM (24 кГц) и играется сразу: до первого
+// звука ~1–2 с вместо «дождаться всей записи». Звук включаем по нажатию
+// (микрофон, «Отправить») — иначе браузер телефона его не пустит.
+let enCtx = null, enNextAt = 0, enSources = [];
+function enAudioCtx() {
+  if (!enCtx) { const C = window.AudioContext || window.webkitAudioContext; if (C) enCtx = new C(); }
+  enCtx?.resume?.().catch(() => {});
+  return enCtx;
+}
+function enPlayPcm(b64) {
+  const ctx = enAudioCtx();
+  if (!ctx) return;
+  const bin = atob(b64), n = bin.length >> 1;
+  if (!n) return;
+  const buffer = ctx.createBuffer(1, n, 24000);
+  const ch = buffer.getChannelData(0);
+  for (let i = 0; i < n; i++) { let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v >= 32768) v -= 65536; ch[i] = v / 32768; }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer; src.connect(ctx.destination);
+  const at = Math.max(ctx.currentTime + 0.06, enNextAt);
+  src.start(at); enNextAt = at + buffer.duration; enSources.push(src);
+}
+function enStopPcm() { enSources.forEach(s => { try { s.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enPlayer?.pause(); }
+
 async function enChatSend(text) {
   const c = enState().chat;
   if (!c || !text.trim() || c.busy) return;
   const mine = { role: "me", text: text.trim() };
+  const history = c.msgs.map(m => ({ role: m.role, text: m.text }));
   c.msgs.push(mine); c.busy = true; c.typing = false;
+  enStopPcm();
   render(); enScrollChat();
-  try {
-    const answer = await enCall("chat", { situation: c.situation, history: c.msgs.slice(0, -1).map(m => ({ role: m.role, text: m.text })), text: mine.text });
+  const apply = answer => {
     if (answer.correction) { mine.correction = answer.correction; mine.explain = answer.explain; }
     c.msgs.push({ role: "ai", text: answer.reply, ru: answer.replyRu });
-    enSpeak(answer.reply);
-  } catch (_) { toast("Тренер не ответил — попробуйте ещё раз"); }
-  c.busy = false;
-  render(); enScrollChat();
+    c.busy = false; render(); enScrollChat();
+  };
+  try {
+    if (typeof window.sorokaEnglishStream !== "function") throw new Error("no-stream");
+    let got = false;
+    await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text }, (type, data) => {
+      if (type === "text") { got = true; apply(data); }
+      else if (type === "audio") enPlayPcm(data);
+      else if (type === "error" && !got) throw new Error(data.error || "stream");
+    });
+    if (!got) throw new Error("stream-empty");
+  } catch (_) {
+    // Без потока: обычный ответ, озвучка следом (файлом).
+    try {
+      const answer = await enCall("chat", { situation: c.situation, history, text: mine.text });
+      apply(answer); enSpeak(answer.reply);
+    } catch (__) { c.busy = false; render(); toast("Тренер не ответил — попробуйте ещё раз"); }
+  }
 }
 function enScrollChat() { requestAnimationFrame(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = box.scrollHeight; window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }); }
 
@@ -273,20 +338,27 @@ function englishAction(action, control) {
   const s = enState();
   if (action === "en-tab") { s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; render(); return true; }
   if (action === "en-start") { enStart(); return true; }
+  if (action === "en-home") {
+    const left = s.today ? s.today.plan.reviews + s.today.plan.newOnes : 0;
+    s.tab = left || !s.today?.stats.total ? "today" : "chat";
+    navigate("english");
+    if (left) enStart(); else render();
+    return true;
+  }
   if (action === "en-quit") { s.run = null; s.today = null; render(); return true; }
   if (action === "en-say") { enSpeak(control.dataset.text, control); return true; }
   if (action === "en-speak") { startVoice(text => enAnswer(text), "Скажите по-английски"); return true; }
   if (action === "en-write") { s.run.mode = "write"; render(); setTimeout(() => document.querySelector("[data-en-write] input")?.focus(), 30); return true; }
-  if (action === "en-reveal") { s.run.check = { verdict: "shown", correction: s.run.items[s.run.index].en, explain: "" }; s.run.mode = "answered"; render(); enSpeak(s.run.items[s.run.index].en); return true; }
+  if (action === "en-reveal") { const it = s.run.items[s.run.index]; s.run.check = { verdict: "shown", correction: it.en, explain: "" }; s.run.mode = "answered"; render(); if (it.step !== "listen") enSpeak(it.en); return true; }
   if (action === "en-rate") { enRate(Number(control.dataset.rating)); return true; }
   if (action === "en-next") {
     // Показ новой фразы — без оценки: её спросим в конце занятия.
     enNext(); return true;
   }
   if (action === "en-dialog") { const key = s.run?.situation?.key; s.run = null; s.tab = "chat"; s.chat = null; s.today = null; enLoad("today", "today"); if (key) s.pendingChat = key; render(); return true; }
-  if (action === "en-chat-speak") { startVoice(text => enChatSend(text), "Говорите по-английски или по-русски"); return true; }
+  if (action === "en-chat-speak") { enAudioCtx(); enStopPcm(); startVoice(text => enChatSend(text), "Говорите по-английски или по-русски"); return true; }
   if (action === "en-chat-type") { s.chat.typing = !s.chat.typing; render(); setTimeout(() => document.querySelector("[data-en-chat] input")?.focus(), 30); return true; }
-  if (action === "en-chat-ru") { startVoice(text => enChatSend(`(по-русски) ${text}`), "Спросите по-русски"); return true; }
+  if (action === "en-chat-ru") { enAudioCtx(); enStopPcm(); startVoice(text => enChatSend(`(по-русски) ${text}`), "Спросите по-русски"); return true; }
   if (action === "en-chat-reset") { s.chat = null; render(); return true; }
   if (action === "en-bubble") { const m = s.chat?.msgs[Number(control.dataset.index)]; if (m) { m.open = !m.open; render(); } return true; }
   if (action === "en-filter") { s.filter = control.dataset.filter; s.list = null; render(); return true; }
@@ -299,6 +371,7 @@ document.addEventListener("submit", event => {
   const write = event.target.closest?.("[data-en-write]");
   const chat = event.target.closest?.("[data-en-chat]");
   if (!write && !chat) return;
+  if (chat) enAudioCtx();
   event.preventDefault(); event.stopImmediatePropagation();
   const value = new FormData(event.target).get(write ? "answer" : "text");
   if (write) enAnswer(String(value || "")); else enChatSend(String(value || ""));
