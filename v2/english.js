@@ -27,6 +27,16 @@ function enDemo(op, args) {
   if (op === "phrases") return { items: [{ id: 2, en: "I'd like a coffee, please.", ru: "Я бы хотел кофе", source: "mistake", strength: .25 }, { id: 3, en: "Is there a pharmacy nearby?", ru: "Рядом есть аптека?", source: "lesson", strength: 1, learned: true }], counts: { due: 8, mistakes: 9, learned: 12 } };
   if (op === "progress") return { streak: 4, total: 40, learned: 12, learning: 28, mistakes: 9, days: [...Array(28)].map((_, i) => ({ day: "", count: i % 3 ? 6 : 0 })), situations: [{ key: "meet", title: "Знакомство", done: 15, total: 15 }, { key: "cafe", title: "В кафе", done: 9, total: 15 }] };
   if (op === "speech") return { error: "demo" };
+  if (op === "lesson") return { situation: sit, steps: [
+    { id: 2, en: "I'd like a coffee, please.", ru: "Я бы хотел кофе, пожалуйста.", mode: "recall", section: "Разминка", introduced: true },
+    { mode: "theory", section: "Новое", grammar: "a / an / some", theory: { title: "Почему a coffee, но some water", text: "A/an — один исчисляемый предмет. Water — вещество: some water.", examples: [["Can I have some water?", "Можно немного воды?"]] } },
+    { id: 1, en: "Can I have the bill, please?", ru: "Можно счёт, пожалуйста?", mode: "intro", section: "Новое" },
+    { id: 1, en: "Can I have the bill, please?", ru: "Можно счёт, пожалуйста?", mode: "build", tiles: ["the", "Can", "bill", "have", "please", "I"], section: "Тренировка" },
+    { id: 1, en: "Can I have the bill, please?", ru: "Можно счёт, пожалуйста?", mode: "dictation", section: "Аудирование" },
+    { id: 1, en: "Can I have the bill, please?", ru: "Можно счёт, пожалуйста?", mode: "recall", section: "Проверка", first: true },
+    { mode: "talk", section: "Разговор", goal: sit.goal, title: sit.title, situation: "cafe", targets: ["Can I have the bill, please?"] },
+  ] };
+  if (op === "word") return { lemma: "latte", ru: "латте", phrase: "a latte", phraseRu: "латте", saved: 1 };
   if (op === "theory") return { key: "cafe", title: "В кафе", heading: "Как заказать и звучать естественно", goal: "Заказать напиток и попросить счёт.", parts: [{ title: "I want и I would like", text: "I want — «я хочу»: звучит прямо. I would like — вежливое «я хотел бы».", examples: [["I'd like a coffee, please.", "Я хотел бы кофе, пожалуйста."]] }] };
   if (op === "practice") {
     const base = [{ id: 1, en: "Can I have the bill, please?", ru: "Можно счёт, пожалуйста?", introduced: true }, { id: 2, en: "I'd like a coffee, please.", ru: "Я бы хотел кофе, пожалуйста.", introduced: true }];
@@ -45,6 +55,7 @@ function enState() {
   return ui.en;
 }
 function enRerender() { if (ui.page === "english" || ui.page === "today") render(); }
+
 
 /** Плитка на «Плане»: напоминание о занятии там, где человек и так смотрит каждый день. */
 function enHomeTile() {
@@ -114,11 +125,13 @@ function enTodayScreen() {
   if (!s.today) { enLoad("today", "today"); return enWait(); }
   const t = s.today, p = t.plan, sit = t.situation;
   const nothing = !p.reviews && !p.newOnes;
-  const step = (ic, title, sub, min) => `<div class="en-step"><span class="en-step-ic">${icon(ic, "icon-sm")}</span><div><b>${title}</b><small>${sub}</small></div><em>${min}</em></div>`;
+  const step = (ic, title, sub) => `<div class="en-step"><span class="en-step-ic">${icon(ic, "icon-sm")}</span><div><b>${title}</b><small>${sub}</small></div></div>`;
   const steps = [
-    p.reviews ? step("reset", `Повторить ${p.reviews} ${enPlural(p.reviews, "фразу", "фразы", "фраз")}`, p.fromMistakes ? `${p.fromMistakes} из ваших ошибок` : "пора освежить", `${Math.max(1, Math.round(p.reviews * .4))} мин`) : "",
-    p.newOnes ? step("spark", `${p.newOnes} ${enPlural(p.newOnes, "новая фраза", "новые фразы", "новых фраз")}`, esc(sit.goal.toLowerCase()), `${p.newOnes} мин`) : "",
-    step("mic", `Диалог · ${esc(sit.title)}`, "голосом, с подсказками", "3 мин"),
+    p.reviews ? step("reset", `Разминка · ${p.reviews} ${enPlural(p.reviews, "фраза", "фразы", "фраз")}`, p.fromMistakes ? `вспомнить; ${p.fromMistakes} из ваших ошибок` : "вспомнить то, что пора повторить") : "",
+    p.newOnes ? step("study", "Новое", `${esc(sit.grammar)} · ${p.newOnes} ${enPlural(p.newOnes, "фраза", "фразы", "фраз")}`) : "",
+    p.newOnes ? step("grip", "Тренировка и аудирование", "собрать, вставить пропуск, диктант") : "",
+    p.newOnes ? step("check", "Проверка", "сказать новые фразы самому") : "",
+    step("mic", `Разговор · ${esc(sit.title)}`, "роль-игра с новыми фразами"),
   ].join("");
   const streak = t.streak ? `<span class="en-streak">${icon("star", "icon-sm")}${t.streak} ${enPlural(t.streak, "день", "дня", "дней")}</span>` : "";
   return `<section class="en-hero"><div class="en-hero-top"><div><h2>${nothing ? "На сегодня всё" : "Занятие на сегодня"}</h2><small>${nothing ? "Новые фразы и повторения появятся завтра" : `≈ ${p.minutes} мин · ${esc(sit.title)}`}</small></div>${streak}</div>
@@ -251,16 +264,21 @@ function enChatStart(situationKey) {
 }
 const EN_LIVE_LABEL = { off: "Нажмите, чтобы начать разговор", listen: "Слушаю — говорите", hear: "Слышу вас…", think: "Думаю…", speak: "Тренер говорит · нажмите, чтобы перебить" };
 function enChatScreen() {
+  // Перерисовали чат — окно сообщений остаётся у последней реплики.
   const s = enState();
+  const old = document.querySelector(".en-msgs"), count = s.chat?.msgs.length ?? 0;
+  const keep = old && s.chat?.seen === count ? old.scrollTop : null;
+  if (s.chat) s.chat.seen = count;
+  queueMicrotask(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = keep ?? box.scrollHeight; });
   if (!s.today) { enLoad("today", "today"); return enWait(); }
   if (!s.chat) enChatStart(s.today.situation.key);
   const c = s.chat;
   const live = enLive.state;
   const msgs = c.msgs.map((m, i) => m.role === "me"
     ? `<div class="en-bub me">${esc(m.text)}${m.correction ? `<div class="en-fixline">Лучше: <b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}${m.saved ? `<small>В повторениях</small>` : ""}</div>` : ""}</div>`
-    : `<button type="button" class="en-bub ai" data-action="en-bubble" data-index="${i}"><span class="en-say" data-say="${i}">${esc(m.shown ?? m.text)}</span>${m.open && m.ru ? `<small>${esc(m.ru)}</small>` : ""}</button>`).join("");
+    : `<div class="en-bub ai" data-action="en-bubble" data-index="${i}"><span class="en-say" data-say="${i}">${m.streaming ? esc(m.shown || "") : enWords(m.text, i)}</span>${m.word ? `<span class="en-wordcard">${m.word.loading ? `<span class="live-spin"></span>` : m.word.error ? "Не получилось перевести" : `<b>${esc(m.word.lemma)}</b> — ${esc(m.word.ru)}${m.word.phrase && m.word.phrase !== m.word.lemma ? `<small>${esc(m.word.phrase)} — ${esc(m.word.phraseRu)}</small>` : ""}<small>${icon("check", "icon-sm")}Добавлено в «Фразы»</small>`}</span>` : ""}${m.open && m.ru ? `<small>${esc(m.ru)}</small>` : ""}</div>`).join("");
   const input = c.typing ? `<form class="en-write" data-en-chat><input name="text" autocomplete="off" placeholder="Напишите реплику" aria-label="Реплика"><button class="primary-button" type="submit">${icon("arrow", "icon-sm")}</button></form>` : "";
-  return `<section class="en-chat"><div class="en-chat-head"><span class="en-step-ic">${icon("message", "icon-sm")}</span><div><b>${esc(c.title || "Разговор")}</b><small>Тренер играет роль · нажмите на реплику — перевод</small></div><button class="text-action" type="button" data-action="en-chat-reset">Заново</button></div>
+  return `<section class="en-chat"><div class="en-chat-head"><span class="en-step-ic">${icon("message", "icon-sm")}</span><div><b>${esc(c.title || "Разговор")}</b><small>Нажмите слово — перевод и в «Фразы»</small></div><button class="text-action" type="button" data-action="en-chat-reset">Заново</button></div>
     <div class="en-msgs">${msgs}${c.busy && !c.msgs.some(m => m.streaming) ? `<div class="en-bub ai typing"><span class="live-spin"></span></div>` : ""}</div>${input}
     <div class="en-live ${live}"><button class="en-orb" type="button" data-action="en-live" aria-label="${esc(EN_LIVE_LABEL[live])}"><i></i>${icon(live === "speak" ? "play" : live === "think" ? "spark" : "mic")}</button><small class="en-live-state">${esc(EN_LIVE_LABEL[live])}</small>
       <div class="en-live-tools"><button class="text-action" type="button" data-action="en-chat-type">${c.typing ? "Скрыть клавиатуру" : "Написать"}</button>${live !== "off" ? `<button class="text-action danger" type="button" data-action="en-live-stop">Закончить</button>` : ""}</div></div></section>`;
@@ -361,6 +379,12 @@ function enLiveHear(data, rate) {
   }
 }
 
+/** Реплика тренера словами-кнопками: нажали слово — перевод и в изучение. */
+function enWords(text, index) {
+  return String(text || "").split(/(\s+)/).map(part => /[A-Za-z]/.test(part)
+    ? `<span class="en-w" data-action="en-word" data-index="${index}" data-word="${esc(part.replace(/[^A-Za-z'’-]/g, ""))}">${esc(part)}</span>` : esc(part)).join("");
+}
+
 /** Показать кусок ответа тогда, когда он прозвучит. */
 function enRevealAt(msg, index, words) {
   const ctx = enCtx;
@@ -394,7 +418,7 @@ async function enChatSend(text) {
   try {
     if (typeof window.sorokaEnglishStream !== "function") throw new Error("no-stream");
     let ai = null, index = -1;
-    await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text }, (type, data) => {
+    await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text, targets: c.targets || [] }, (type, data) => {
       if (type === "say") {
         if (!ai) { ai = { role: "ai", text: "", shown: "", streaming: true }; c.msgs.push(ai); index = c.msgs.length - 1; render(); if (enLive.state !== "off") enLiveSet("speak"); }
         ai.text += data.text; enRevealAt(ai, index, data.text);
@@ -419,7 +443,7 @@ async function enChatSend(text) {
     } catch (__) { c.busy = false; render(); toast("Тренер не ответил — попробуйте ещё раз"); if (enLive.state !== "off") enLiveSet("listen"); }
   }
 }
-function enScrollChat() { requestAnimationFrame(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = box.scrollHeight; const live = document.querySelector(".en-live"); live?.scrollIntoView({ block: "end", behavior: "smooth" }); }); }
+function enScrollChat() { requestAnimationFrame(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" }); }); }
 
 // ------------------------------------------------------------ практика
 // Теория темы и пять видов упражнений на одних и тех же фразах. Разные пути
@@ -456,6 +480,31 @@ async function enExStart(mode) {
   render();
 }
 
+async function enLessonStart() {
+  const s = enState();
+  s.ex = { mode: "lesson", loading: true };
+  render();
+  try {
+    const data = await enCall("lesson");
+    if (data?.error) throw new Error(data.error);
+    s.ex = { mode: "lesson", situation: data.situation, items: data.steps || [], index: 0, ok: 0, done: 0, picked: [], answer: null };
+    enLessonEnter();
+  } catch (_) { s.ex = null; toast("Не получилось собрать урок"); }
+  render();
+}
+/** Звук при входе в шаг: новая фраза, «на слух», диктант. */
+function enLessonEnter() {
+  const ex = enState().ex, item = ex?.items[ex.index];
+  if (item && ["intro", "listen", "dictation"].includes(item.mode)) setTimeout(() => enSpeak(item.en), 150);
+}
+const EN_SECTIONS = ["Разминка", "Новое", "Тренировка", "Аудирование", "Проверка", "Разговор"];
+function enLessonTop(ex) {
+  const present = EN_SECTIONS.filter(name => ex.items.some(i => i.section === name));
+  const current = ex.items[ex.index]?.section;
+  const at = present.indexOf(current);
+  return `<div class="en-sections">${present.map((name, k) => `<span class="${k < at ? "done" : k === at ? "on" : ""}">${name}</span>`).join("")}</div>`;
+}
+
 function enExScreen(ex) {
   if (ex.loading) return `<div class="en-run">${enWait()}</div>`;
   if (ex.mode === "theory") return enTheoryScreen(ex.theory);
@@ -465,34 +514,57 @@ function enExScreen(ex) {
       <button class="primary-button en-go" type="button" data-action="en-ex" data-mode="${ex.mode}">Ещё раз</button><button class="ghost-button" type="button" data-action="en-ex-quit">К практике</button></div>`;
   }
   const item = ex.items[ex.index];
-  const title = EN_MODES.find(m => m[0] === ex.mode)?.[1] || "";
-  const top = `<div class="en-run-top"><button class="icon-button" type="button" data-action="en-ex-quit" aria-label="Закончить">${icon("close", "icon-sm")}</button><div class="en-bar"><i style="width:${Math.round(ex.index / total * 100)}%"></i></div><small>${ex.index + 1}/${total}</small></div><p class="en-kicker">${esc(title)}</p>`;
+  const mode = item.mode || ex.mode;
+  const lessonRun = ex.mode === "lesson";
+  const title = lessonRun ? "" : EN_MODES.find(m => m[0] === mode)?.[1] || "";
+  const skip = lessonRun && item.section !== "Разговор" ? `<button class="text-action en-skip" type="button" data-action="en-skip">Пропустить</button>` : `<small>${ex.index + 1}/${total}</small>`;
+  const top = `<div class="en-run-top"><button class="icon-button" type="button" data-action="en-ex-quit" aria-label="Закончить">${icon("close", "icon-sm")}</button><div class="en-bar"><i style="width:${Math.round(ex.index / total * 100)}%"></i></div>${skip}</div>${lessonRun ? enLessonTop(ex) : ""}${title ? `<p class="en-kicker">${esc(title)}</p>` : ""}`;
+  if (mode === "theory") {
+    const t = item.theory || {};
+    return `<div class="en-run">${top}<p class="en-kicker">Правило · ${esc(item.grammar || "")}</p><h2 class="en-prompt">${esc(t.title || "")}</h2><section class="en-theory-part"><p>${esc(t.text || "")}</p>${(t.examples || []).map(([en, ru]) => `<div class="en-example"><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button><div><b>${esc(en)}</b><small>${esc(ru)}</small></div></div>`).join("")}</section><button class="primary-button en-go" type="button" data-action="en-ex-next">Понятно</button></div>`;
+  }
+  if (mode === "intro") {
+    const a2 = ex.answer;
+    return `<div class="en-run">${top}<p class="en-kicker">Новая фраза</p><div class="en-card"><div class="en-en"><b>${esc(item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><p class="en-ru">${esc(item.ru)}</p>${a2?.said ? `<p class="en-said">Вы сказали: «${esc(a2.said)}»</p>${a2.verdict === "correct" ? `<p class="en-ok">${icon("check", "icon-sm")}Похоже!</p>` : a2.explain ? `<p class="en-fix">${esc(a2.explain)}</p>` : ""}` : `<p class="section-note">Послушайте и повторите вслух — так фраза запомнится быстрее.</p>`}</div>
+      <div class="en-actions"><button class="ghost-button" type="button" data-action="en-intro-speak">${icon("mic", "icon-sm")}Повторить вслух</button><button class="primary-button" type="button" data-action="en-ex-next">Дальше</button></div></div>`;
+  }
+  if (mode === "listen") {
+    const a2 = ex.answer;
+    return `<div class="en-run">${top}<p class="en-kicker">Послушайте и поймите смысл</p><div class="en-listen"><button class="en-mic" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать ещё раз">${icon("play")}</button><small>Нажмите, чтобы послушать ещё раз</small></div>
+      ${a2 ? `<div class="en-card"><div class="en-en"><b>${esc(item.en)}</b></div><p class="en-ru">${esc(item.ru)}</p></div><p class="en-ask">Поняли на слух?</p><div class="en-rate">${[[1, "Не понял"], [2, "С трудом"], [3, "Понял"]].map(([r, l]) => `<button type="button" data-action="en-ex-rate" data-rating="${r}">${l}</button>`).join("")}</div>` : `<div class="en-answer"><button class="primary-button" type="button" data-action="en-ex-show">Показать текст</button></div>`}</div>`;
+  }
+  if (mode === "talk") {
+    return `<div class="en-run en-done"><div class="en-done-mark">${icon("mic")}</div><h2>Разговор</h2><p class="muted">${esc(item.title)}: ${esc(item.goal)}</p>${ex.done ? `<p class="muted">Ответов за урок: ${ex.done}, верно ${ex.ok}</p>` : ""}
+      ${item.targets?.length ? `<div class="en-targets"><small>Постарайтесь сказать:</small>${item.targets.map(t => `<b>${esc(t)}</b>`).join("")}</div>` : ""}
+      <button class="primary-button en-go" type="button" data-action="en-talk">${icon("mic", "icon-sm")}Начать разговор</button><button class="ghost-button" type="button" data-action="en-ex-quit">Закончить урок</button></div>`;
+  }
+  const mo = mode === "recall" ? "translate" : mode;
   const a = ex.answer;
   const next = `<button class="primary-button en-go" type="button" data-action="en-ex-next">Дальше</button>`;
   const result = ok => `<div class="en-card"><div class="en-en"><b>${esc(item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><p class="en-ru">${esc(item.ru)}</p>${ok ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : ""}${a?.explain ? `<p class="en-fix">${esc(a.explain)}</p>` : ""}</div>`;
-  if (ex.mode === "cards") {
+  if (mo === "cards") {
     return `<div class="en-run">${top}<h2 class="en-prompt">${esc(item.ru)}</h2>${a ? result(false) + `<p class="en-ask">Как вспомнилось?</p><div class="en-rate">${EN_RATINGS.map(([r, l]) => `<button type="button" data-action="en-ex-rate" data-rating="${r}">${l}</button>`).join("")}</div>`
       : `<p class="section-note">Вспомните фразу по-английски — вслух или про себя.</p><div class="en-answer"><button class="primary-button" type="button" data-action="en-ex-show">Показать</button></div>`}</div>`;
   }
-  if (ex.mode === "build") {
+  if (mo === "build") {
     const used = new Set(ex.picked);
     const line = ex.picked.map((ti, k) => `<button type="button" class="en-tile on" data-action="en-tile-back" data-k="${k}">${esc(item.tiles[ti])}</button>`).join("");
     const pool = item.tiles.map((w, ti) => used.has(ti) ? `<span class="en-tile ghost">${esc(w)}</span>` : `<button type="button" class="en-tile" data-action="en-tile" data-ti="${ti}">${esc(w)}</button>`).join("");
     return `<div class="en-run">${top}<h2 class="en-prompt">${esc(item.ru)}</h2><div class="en-line ${a ? (a.ok ? "ok" : "bad") : ""}">${line || `<small>Нажимайте слова по порядку</small>`}</div>${a ? result(a.ok) + next : `<div class="en-tiles">${pool}</div>${ex.picked.length ? `<button class="text-action" type="button" data-action="en-tile-clear">Сначала</button>` : ""}`}</div>`;
   }
-  if (ex.mode === "gap") {
+  if (mo === "gap") {
     const opts = item.options.map(o => `<button type="button" class="en-opt ${a ? (o.toLowerCase() === item.answer ? "right" : o === a.pick ? "wrong" : "") : ""}" data-action="en-gap" data-opt="${esc(o)}" ${a ? "disabled" : ""}>${esc(o)}</button>`).join("");
     return `<div class="en-run">${top}<h2 class="en-prompt en-gap-text">${esc(item.text).replace("___", `<span class="en-blank">${a ? esc(a.pick) : "&nbsp;"}</span>`)}</h2><p class="en-ru">${esc(item.ru)}</p><div class="en-opts">${opts}</div>${a ? `${a.ok ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : `<p class="en-fix">${esc(item.tip || "")}</p>`}${next}` : ""}</div>`;
   }
-  if (ex.mode === "dictation") {
+  if (mo === "dictation") {
     return `<div class="en-run">${top}<div class="en-listen"><button class="en-mic" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать ещё раз">${icon("play")}</button><small>Послушайте и запишите по-английски</small></div>
       ${a ? `${a.typed ? `<p class="en-said">Вы написали: «${esc(a.typed)}»</p>` : ""}${result(a.ok)}${next}` : `<form class="en-write" data-en-dict><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Что вы услышали" aria-label="Что вы услышали"><button class="primary-button" type="submit">Проверить</button></form><button class="text-action" type="button" data-action="en-ex-show">Не разобрал — показать</button>`}</div>`;
   }
-  // translate
-  return `<div class="en-run">${top}<p class="en-kicker">Скажите или напишите по-английски</p><h2 class="en-prompt">${esc(item.ru)}</h2>
+  // translate / recall
+  return `<div class="en-run">${top}<p class="en-kicker">${item.source === "mistake" ? "Из ваших ошибок · " : ""}Скажите или напишите по-английски</p><h2 class="en-prompt">${esc(item.ru)}</h2>
     ${a ? `${a.said ? `<p class="en-said">Вы сказали: «${esc(a.said)}»</p>` : ""}<div class="en-card"><div class="en-en"><b>${esc(a.correction || item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(a.correction || item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div>${a.verdict === "correct" ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : a.explain ? `<p class="en-fix">${esc(a.explain)}</p>` : ""}</div>${next}`
     : ex.checking ? `<div class="en-wait small"><span class="live-spin"></span><small>Проверяю…</small></div>`
-    : `<form class="en-write" data-en-tr><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Напишите по-английски" aria-label="Перевод"><button class="primary-button" type="submit">Проверить</button></form><div class="en-answer"><button class="en-mic" type="button" data-action="en-tr-speak" aria-label="Сказать">${icon("mic")}</button></div>`}</div>`;
+    : `<form class="en-write" data-en-tr><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Напишите по-английски" aria-label="Перевод"><button class="primary-button" type="submit">Проверить</button></form><div class="en-answer"><button class="en-mic" type="button" data-action="en-tr-speak" aria-label="Сказать">${icon("mic")}</button><button class="text-action" type="button" data-action="en-ex-show">Не помню — показать</button></div>`}</div>`;
 }
 
 function enTheoryScreen(t) {
@@ -510,16 +582,20 @@ function enExAnswer(ok, extra = {}) {
   ex.answer = { ok, ...extra };
   ex.done++; if (ok) ex.ok++;
   // В расписание — только фразы, которые уже учатся; раньше срока сервер интервал не двигает.
-  if (item.introduced) enCall("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: true, attempt: `${item.id}-${Date.now()}` }).catch(() => {});
+  const mode = item.mode || ex.mode;
+  const real = ex.mode === "lesson" && mode === "recall"; // проверка без подсказки — настоящая оценка
+  if (item.introduced || real) enCall("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
+  // Не вспомнили в уроке — ещё раз перед разговором (один раз).
+  if (real && !ok && !item.again) { const talk = ex.items.findIndex(i => i.mode === "talk"); ex.items.splice(talk < 0 ? ex.items.length : talk, 0, { ...item, again: true }); }
   render();
-  if (ok || ex.mode === "dictation" || ex.mode === "cards") enSpeak(item.en);
+  if (ok || ["dictation", "cards"].includes(mode)) enSpeak(item.en);
 }
 function enExNext() {
   const ex = enState().ex;
   ex.index++; ex.answer = null; ex.picked = []; ex.checking = false;
   render();
-  const item = ex.items[ex.index];
-  if (item && ex.mode === "dictation") enSpeak(item.en);
+  if (ex.mode === "lesson") enLessonEnter();
+  else if (ex.items[ex.index] && ex.mode === "dictation") enSpeak(ex.items[ex.index].en);
 }
 
 // ------------------------------------------------------------ фразы и прогресс
@@ -552,12 +628,12 @@ function englishAction(action, control) {
   if (!action.startsWith("en-")) return false;
   const s = enState();
   if (action === "en-tab") { s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; render(); return true; }
-  if (action === "en-start") { enStart(); return true; }
+  if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") {
     const left = s.today ? s.today.plan.reviews + s.today.plan.newOnes : 0;
     s.tab = left || !s.today?.stats.total ? "today" : "chat";
     navigate("english");
-    if (left) enStart(); else render();
+    if (left) enLessonStart(); else render();
     return true;
   }
   if (action === "en-quit") { s.run = null; s.today = null; render(); return true; }
@@ -580,13 +656,28 @@ function englishAction(action, control) {
   if (action === "en-chat-type") { s.chat.typing = !s.chat.typing; render(); setTimeout(() => document.querySelector("[data-en-chat] input")?.focus(), 30); return true; }
   if (action === "en-chat-reset") { enStopPcm(); enLiveStop(); s.chat = null; render(); return true; }
   if (action === "en-ex") { enExStart(control.dataset.mode); return true; }
-  if (action === "en-ex-quit") { s.ex = null; s.tab = "practice"; render(); return true; }
+  if (action === "en-ex-quit") { const wasLesson = s.ex?.mode === "lesson"; s.ex = null; s.tab = wasLesson ? "today" : "practice"; if (wasLesson) s.today = null; render(); return true; }
   if (action === "en-ex-next") { enExNext(); return true; }
-  if (action === "en-ex-show") { const ex = s.ex; if (ex.mode === "cards") { ex.answer = { ok: false, shown: true }; render(); enSpeak(ex.items[ex.index].en); } else enExAnswer(false); return true; }
+  if (action === "en-ex-show") {
+    const ex = s.ex, mode = ex.items[ex.index].mode || ex.mode;
+    if (mode === "cards" || mode === "listen") { ex.answer = { ok: false, shown: true }; render(); if (mode === "cards") enSpeak(ex.items[ex.index].en); }
+    else enExAnswer(false, { verdict: "shown", rating: 1 });
+    return true;
+  }
+  if (action === "en-skip") { const ex = s.ex, sec = ex.items[ex.index].section; while (ex.index < ex.items.length && ex.items[ex.index].section === sec) ex.index++; ex.answer = null; ex.picked = []; render(); enLessonEnter(); return true; }
+  if (action === "en-intro-speak") { startVoice(async text => { const ex = s.ex, item = ex.items[ex.index]; let c; try { c = await enCall("check", { id: item.id, answer: text }); } catch (_) { c = {}; } ex.answer = { said: text, ...c }; render(); }, "Повторите фразу"); return true; }
+  if (action === "en-talk") {
+    const item = s.ex.items[s.ex.index];
+    s.ex = null; s.tab = "chat";
+    enChatStart(item.situation); s.chat.targets = item.targets || [];
+    render(); enLiveStart();
+    return true;
+  }
   if (action === "en-ex-rate") {
     const r = Number(control.dataset.rating), ex = s.ex, item = ex.items[ex.index];
     ex.done++; if (r >= 3) ex.ok++;
-    if (item.introduced) enCall("grade", { id: item.id, rating: r, practice: true, attempt: `${item.id}-${Date.now()}` }).catch(() => {});
+    const real = ex.mode === "lesson" && (item.mode === "listen" || item.mode === "recall");
+    if (item.introduced) enCall("grade", { id: item.id, rating: r, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
     enExNext(); return true;
   }
   if (action === "en-tile") { const ex = s.ex; ex.picked.push(Number(control.dataset.ti)); const item = ex.items[ex.index]; if (ex.picked.length === item.tiles.length) { const said = ex.picked.map(i => item.tiles[i]).join(" "); enExAnswer(enNorm(said) === enNorm(item.en), { typed: said }); } else render(); return true; }
@@ -595,6 +686,16 @@ function englishAction(action, control) {
   if (action === "en-gap") { const ex = s.ex; const item = ex.items[ex.index]; const pick = control.dataset.opt; enExAnswer(pick.toLowerCase() === item.answer, { pick }); return true; }
   if (action === "en-tr-speak") { startVoice(text => enTranslate(text, true), "Скажите по-английски"); return true; }
   if (action === "en-bubble") { const m = s.chat?.msgs[Number(control.dataset.index)]; if (m) { m.open = !m.open; render(); } return true; }
+  if (action === "en-word") {
+    const m = s.chat?.msgs[Number(control.dataset.index)];
+    const w = control.dataset.word;
+    if (!m || !w) return true;
+    m.word = { loading: true };
+    render();
+    enCall("word", { word: w, sentence: m.text }).then(answer => { m.word = answer?.error ? { error: true } : answer; if (!answer?.error) toast(`«${answer.lemma}» — в «Фразах»`); })
+      .catch(() => { m.word = { error: true }; }).finally(() => { render(); });
+    return true;
+  }
   if (action === "en-filter") { s.filter = control.dataset.filter; s.list = null; render(); return true; }
   if (action === "en-phrase") { const id = Number(control.dataset.id); s.open = s.open === id ? null : id; render(); return true; }
   if (action === "en-delete") { const id = Number(control.dataset.id); enCall("delete", { id }).then(() => { s.list = null; render(); toast("Фраза удалена"); }); return true; }
