@@ -74,10 +74,11 @@
 @keyframes en-pop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* Разговор */
-.en-chat { display: flex; flex-direction: column; gap: 12px; min-height: calc(100vh - 230px); }
+.en-chat { display: flex; flex-direction: column; gap: 10px; height: calc(100dvh - 300px); min-height: 360px; }
 .en-chat-head { display: flex; align-items: center; gap: 10px; }
 .en-chat-head > div { flex: 1; display: grid; }
-.en-msgs { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.en-msgs { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -6px; padding: 2px 6px 6px; scrollbar-width: none; }
+.en-msgs::-webkit-scrollbar { display: none; }
 .en-bub { max-width: 84%; padding: 10px 13px; border-radius: 17px; font-size: 15px; line-height: 1.45; text-align: left; animation: en-in .2s ease; }
 .en-bub.ai { align-self: flex-start; background: var(--surface-soft); border: 1px solid var(--line); border-bottom-left-radius: 6px; color: var(--text); font: inherit; cursor: pointer; }
 .en-bub.ai small { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; }
@@ -159,7 +160,7 @@
 .en-example small { color: var(--muted); font-size: 12px; }
 
 /* Живой разговор */
-.en-live { display: grid; justify-items: center; gap: 8px; padding: 8px 0 4px; position: sticky; bottom: 76px; background: var(--surface); }
+.en-live { display: grid; justify-items: center; gap: 8px; padding: 8px 0 4px; flex: none; border-top: 1px solid var(--line); }
 .en-orb { position: relative; width: 78px; height: 78px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink, #102426); display: grid; place-items: center; cursor: pointer; }
 .en-orb .icon { width: 30px; height: 30px; position: relative; }
 .en-orb i { position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; transform: scale(calc(1 + var(--level, 0) * .35)); transition: transform .08s; }
@@ -174,3 +175,21 @@
 .en-live-tools { display: flex; gap: 22px; }
 .en-say { white-space: pre-wrap; }
 .en-run > .en-go, .en-run > .primary-button { flex: none; min-height: 52px; height: auto; }
+
+/* Урок: этапы и разговор с целями */
+.en-sections { display: flex; flex-wrap: wrap; gap: 4px; margin: -4px 0 2px; }
+.en-skip { flex: none; font-size: 13px; }
+.en-sections span { flex: none; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 99px; color: var(--muted); background: var(--surface-soft); }
+.en-sections span.done { color: var(--accent); background: transparent; }
+.en-sections span.on { color: var(--accent); background: var(--accent-soft); }
+.en-targets { display: grid; gap: 6px; width: 100%; text-align: left; background: var(--surface-soft); border-radius: 16px; padding: 12px 14px; }
+.en-targets small { color: var(--muted); }
+.en-targets b { font-size: 15px; }
+.en-said { color: var(--muted); font-size: 14px; }
+
+/* Слово в чате: нажал — перевод и в «Фразы» */
+.en-w { cursor: pointer; border-radius: 4px; transition: background .15s; }
+.en-w:hover, .en-w:active { background: var(--accent-soft); }
+.en-wordcard { display: block; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.en-wordcard small { display: flex; align-items: center; gap: 4px; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.en-wordcard small .icon { color: var(--accent); }
