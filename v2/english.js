@@ -27,10 +27,17 @@ function enDemo(op, args) {
   if (op === "phrases") return { items: [{ id: 2, en: "I'd like a coffee, please.", ru: "Я бы хотел кофе", source: "mistake", strength: .25 }, { id: 3, en: "Is there a pharmacy nearby?", ru: "Рядом есть аптека?", source: "lesson", strength: 1, learned: true }], counts: { due: 8, mistakes: 9, learned: 12 } };
   if (op === "progress") return { streak: 4, total: 40, learned: 12, learning: 28, mistakes: 9, days: [...Array(28)].map((_, i) => ({ day: "", count: i % 3 ? 6 : 0 })), situations: [{ key: "meet", title: "Знакомство", done: 15, total: 15 }, { key: "cafe", title: "В кафе", done: 9, total: 15 }] };
   if (op === "speech") return { error: "demo" };
+  if (op === "theory") return { key: "cafe", title: "В кафе", heading: "Как заказать и звучать естественно", goal: "Заказать напиток и попросить счёт.", parts: [{ title: "I want и I would like", text: "I want — «я хочу»: звучит прямо. I would like — вежливое «я хотел бы».", examples: [["I'd like a coffee, please.", "Я хотел бы кофе, пожалуйста."]] }] };
+  if (op === "practice") {
+    const base = [{ id: 1, en: "Can I have the bill, please?", ru: "Можно счёт, пожалуйста?", introduced: true }, { id: 2, en: "I'd like a coffee, please.", ru: "Я бы хотел кофе, пожалуйста.", introduced: true }];
+    if (args.mode === "gap") return { mode: "gap", situation: sit, items: [{ ...base[0], text: "Can I have ___ bill, please?", answer: "the", options: ["the", "an"], tip: "Счёт конкретный — the." }] };
+    if (args.mode === "build") return { mode: "build", situation: sit, items: [{ ...base[0], tiles: ["the", "Can", "bill,", "have", "please", "I"] }] };
+    return { mode: args.mode, situation: sit, items: base };
+  }
   return { ok: true };
 }
 
-const EN_TABS = [["today", "Сегодня"], ["chat", "Разговор"], ["phrases", "Фразы"], ["progress", "Прогресс"]];
+const EN_TABS = [["today", "Сегодня"], ["practice", "Практика"], ["chat", "Разговор"], ["phrases", "Фразы"]];
 const EN_RATINGS = [[1, "Не вспомнил"], [2, "С трудом"], [3, "Легко"]];
 
 function enState() {
@@ -96,8 +103,9 @@ async function enSpeak(text, button) {
 function renderEnglishPage() {
   const s = enState();
   if (s.run) return enRunScreen(s.run);
+  if (s.ex) return enExScreen(s.ex);
   const tabs = `<div class="en-tabs" role="tablist">${EN_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="en-tab" data-tab="${key}">${label}</button>`).join("")}</div>`;
-  const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : enTodayScreen();
+  const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : s.tab === "practice" ? enPracticeScreen() : enTodayScreen();
   return `${header("Английский", "", "")}<div class="en-page">${tabs}${body}</div>`;
 }
 
@@ -118,7 +126,7 @@ function enTodayScreen() {
     ${nothing ? `<button class="primary-button en-go" type="button" data-action="en-tab" data-tab="chat">${icon("mic", "icon-sm")}Поговорить</button>` : `<button class="primary-button en-go" type="button" data-action="en-start">Начать</button>`}</section>
     <section class="en-situation"><div class="en-row"><b>${esc(sit.title)}</b><small>${sit.done} из ${sit.total} фраз</small></div><div class="en-bar"><i style="width:${Math.round(sit.done / sit.total * 100)}%"></i></div><p class="en-tip">${icon("study", "icon-sm")}<span><b>${esc(sit.grammar)}.</b> ${esc(sit.tip)}</span></p>
     <label class="en-switch"><span>Ситуация</span><select data-en-situation>${t.situations.map(x => `<option value="${esc(x.key)}" ${x.key === sit.key ? "selected" : ""}>${esc(x.title)}</option>`).join("")}</select></label></section>
-    <button class="ghost-button en-free" type="button" data-action="en-tab" data-tab="chat">${icon("message", "icon-sm")}Просто поговорить</button>`;
+    <div class="en-today-links"><button class="ghost-button" type="button" data-action="en-ex" data-mode="theory">${icon("study", "icon-sm")}Теория темы</button><button class="ghost-button" type="button" data-action="en-tab" data-tab="progress">${icon("chart", "icon-sm")}Прогресс</button></div>`;
 }
 
 function enWait() { return `<div class="en-wait"><span class="live-spin"></span></div>${enState().error ? `<p class="section-note">${esc(enState().error)}</p>` : ""}`; }
@@ -229,31 +237,36 @@ function enDoneScreen(run) {
 }
 
 // ------------------------------------------------------------ разговор
+// Живой режим: после реплики тренера микрофон слушает сам, пауза ~1,6 с —
+// реплика уходит, тренер отвечает голосом, и снова слушаем. Пока тренер
+// говорит, микрофон не пишет (чтобы не услышать его же). Нажатие на круг во
+// время ответа — перебить. Текст ответа — расшифровка речи самой голосовой
+// модели и появляется по словам, когда они звучат.
 
 function enChatStart(situationKey) {
   const s = enState();
   const sit = s.today?.situation?.key === situationKey || !situationKey ? s.today?.situation : null;
   s.chat = { situation: situationKey || s.today?.situation?.key || "cafe", title: sit?.title || "", msgs: [], busy: false, typing: false };
-  const opener = sit?.opener;
-  if (opener) { s.chat.msgs.push({ role: "ai", text: opener }); setTimeout(() => enSpeak(opener), 50); }
+  if (sit?.opener) s.chat.msgs.push({ role: "ai", text: sit.opener, opener: true });
 }
+const EN_LIVE_LABEL = { off: "Нажмите, чтобы начать разговор", listen: "Слушаю — говорите", hear: "Слышу вас…", think: "Думаю…", speak: "Тренер говорит · нажмите, чтобы перебить" };
 function enChatScreen() {
   const s = enState();
   if (!s.today) { enLoad("today", "today"); return enWait(); }
   if (!s.chat) enChatStart(s.today.situation.key);
   const c = s.chat;
+  const live = enLive.state;
   const msgs = c.msgs.map((m, i) => m.role === "me"
-    ? `<div class="en-bub me">${esc(m.text)}${m.correction ? `<div class="en-fixline">Лучше: <b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}</div>` : ""}</div>`
-    : `<button type="button" class="en-bub ai" data-action="en-bubble" data-index="${i}">${esc(m.text)}${m.open && m.ru ? `<small>${esc(m.ru)}</small>` : ""}</button>`).join("");
+    ? `<div class="en-bub me">${esc(m.text)}${m.correction ? `<div class="en-fixline">Лучше: <b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}${m.saved ? `<small>В повторениях</small>` : ""}</div>` : ""}</div>`
+    : `<button type="button" class="en-bub ai" data-action="en-bubble" data-index="${i}"><span class="en-say" data-say="${i}">${esc(m.shown ?? m.text)}</span>${m.open && m.ru ? `<small>${esc(m.ru)}</small>` : ""}</button>`).join("");
   const input = c.typing ? `<form class="en-write" data-en-chat><input name="text" autocomplete="off" placeholder="Напишите реплику" aria-label="Реплика"><button class="primary-button" type="submit">${icon("arrow", "icon-sm")}</button></form>` : "";
   return `<section class="en-chat"><div class="en-chat-head"><span class="en-step-ic">${icon("message", "icon-sm")}</span><div><b>${esc(c.title || "Разговор")}</b><small>Тренер играет роль · нажмите на реплику — перевод</small></div><button class="text-action" type="button" data-action="en-chat-reset">Заново</button></div>
-    <div class="en-msgs">${msgs}${c.busy ? `<div class="en-bub ai typing"><span class="live-spin"></span></div>` : ""}</div>${input}
-    <div class="en-chat-controls"><button class="icon-button" type="button" data-action="en-chat-type" aria-label="Написать">${icon("pen", "icon-sm")}</button><button class="en-mic" type="button" data-action="en-chat-speak" aria-label="Сказать">${icon("mic")}</button><button class="icon-button" type="button" data-action="en-chat-ru" aria-label="Спросить по-русски">RU</button></div></section>`;
+    <div class="en-msgs">${msgs}${c.busy && !c.msgs.some(m => m.streaming) ? `<div class="en-bub ai typing"><span class="live-spin"></span></div>` : ""}</div>${input}
+    <div class="en-live ${live}"><button class="en-orb" type="button" data-action="en-live" aria-label="${esc(EN_LIVE_LABEL[live])}"><i></i>${icon(live === "speak" ? "play" : live === "think" ? "spark" : "mic")}</button><small class="en-live-state">${esc(EN_LIVE_LABEL[live])}</small>
+      <div class="en-live-tools"><button class="text-action" type="button" data-action="en-chat-type">${c.typing ? "Скрыть клавиатуру" : "Написать"}</button>${live !== "off" ? `<button class="text-action danger" type="button" data-action="en-live-stop">Закончить</button>` : ""}</div></div></section>`;
 }
+
 // ------------------------------------------------------------ живой голос
-// Ответ тренера приходит кусками PCM (24 кГц) и играется сразу: до первого
-// звука ~1–2 с вместо «дождаться всей записи». Звук включаем по нажатию
-// (микрофон, «Отправить») — иначе браузер телефона его не пустит.
 let enCtx = null, enNextAt = 0, enSources = [];
 function enAudioCtx() {
   if (!enCtx) { const C = window.AudioContext || window.webkitAudioContext; if (C) enCtx = new C(); }
@@ -273,7 +286,91 @@ function enPlayPcm(b64) {
   const at = Math.max(ctx.currentTime + 0.06, enNextAt);
   src.start(at); enNextAt = at + buffer.duration; enSources.push(src);
 }
-function enStopPcm() { enSources.forEach(s => { try { s.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enPlayer?.pause(); }
+let enTimers = [];
+function enStopPcm() { enSources.forEach(x => { try { x.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enPlayer?.pause(); enTimers.forEach(clearTimeout); enTimers = []; }
+/** Когда отзвучит всё, что поставлено в очередь (и файл озвучки), — cb. */
+function enWhenQuiet(cb) {
+  const check = () => {
+    const ctx = enCtx;
+    const pcmBusy = ctx && ctx.currentTime < enNextAt - 0.05;
+    const fileBusy = enPlayer && !enPlayer.paused && !enPlayer.ended;
+    if (pcmBusy || fileBusy) setTimeout(check, 150); else cb();
+  };
+  setTimeout(check, 250);
+}
+
+// Микрофон в живом режиме: слушаем постоянно, пишем от начала речи до паузы.
+const enLive = { state: "off", stream: null, node: null, source: null, chunks: [], pre: [], silence: 0, voiced: 0, total: 0 };
+function enLiveSet(state) {
+  enLive.state = state;
+  const box = document.querySelector(".en-live");
+  if (box) {
+    box.className = `en-live ${state}`;
+    const label = box.querySelector(".en-live-state");
+    if (label) label.textContent = EN_LIVE_LABEL[state];
+  }
+}
+async function enLiveStart() {
+  const ctx = enAudioCtx();
+  if (!ctx || !navigator.mediaDevices?.getUserMedia || typeof window.sorokaHear !== "function") { toast("Живой разговор работает в приложении Flow"); return; }
+  try { enLive.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+  catch (error) { toast(error?.name === "NotAllowedError" ? "Нет доступа к микрофону — разрешите его в настройках" : "Микрофон не включился"); return; }
+  enLive.source = ctx.createMediaStreamSource(enLive.stream);
+  enLive.node = ctx.createScriptProcessor(4096, 1, 1);
+  enLive.node.onaudioprocess = event => enLiveHear(event.inputBuffer.getChannelData(0), ctx.sampleRate);
+  enLive.source.connect(enLive.node); enLive.node.connect(ctx.destination);
+  render();
+  // Первая реплика тренера (приветствие) ещё не звучала — озвучиваем, потом слушаем.
+  const c = enState().chat;
+  const first = c?.msgs.length === 1 && c.msgs[0].opener && !c.msgs[0].spoken ? c.msgs[0] : null;
+  if (first) { first.spoken = true; enLiveSet("speak"); await enSpeak(first.text); enWhenQuiet(() => enLive.state !== "off" && enLiveSet("listen")); }
+  else enLiveSet("listen");
+}
+function enLiveStop() {
+  enLive.node?.disconnect(); enLive.source?.disconnect();
+  enLive.stream?.getTracks().forEach(t => t.stop());
+  Object.assign(enLive, { stream: null, node: null, source: null, chunks: [], pre: [] });
+  enLiveSet("off");
+}
+function enLiveHear(data, rate) {
+  if (enLive.state !== "listen" && enLive.state !== "hear") return;
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 4) sum += data[i] * data[i];
+  const rms = Math.sqrt(sum / (data.length / 4));
+  const dt = data.length / rate;
+  const chunk = new Float32Array(data);
+  if (enLive.state === "listen") {
+    // Пара кусков до начала речи — чтобы не съесть первый звук.
+    enLive.pre.push(chunk); if (enLive.pre.length > 3) enLive.pre.shift();
+    if (rms > 0.02) { enLive.chunks = [...enLive.pre]; enLive.pre = []; enLive.silence = 0; enLive.voiced = 0; enLive.total = 0; enLiveSet("hear"); }
+    return;
+  }
+  enLive.chunks.push(chunk);
+  enLive.total += dt;
+  if (rms > 0.015) { enLive.voiced += dt; enLive.silence = 0; } else enLive.silence += dt;
+  document.querySelector(".en-orb i")?.style.setProperty("--level", Math.min(1, rms * 12).toFixed(2));
+  if (enLive.silence > 1.6 || enLive.total > 30) {
+    const chunks = enLive.chunks; enLive.chunks = [];
+    if (enLive.voiced < 0.35) { enLiveSet("listen"); return; } // кашель, шум — не реплика
+    enLiveSet("think");
+    window.sorokaHear(wavBase64(chunks, rate)).then(answer => {
+      const text = String(answer?.text || "").trim();
+      if (!text || enLive.state === "off") { if (enLive.state !== "off") enLiveSet("listen"); return; }
+      enChatSend(text);
+    }).catch(() => { toast("Не расслышал — скажите ещё раз"); if (enLive.state !== "off") enLiveSet("listen"); });
+  }
+}
+
+/** Показать кусок ответа тогда, когда он прозвучит. */
+function enRevealAt(msg, index, words) {
+  const ctx = enCtx;
+  const delay = ctx ? Math.max(0, (Math.max(ctx.currentTime, enNextAt) - ctx.currentTime) * 1000) : 0;
+  enTimers.push(setTimeout(() => {
+    msg.shown = (msg.shown || "") + words;
+    const el = document.querySelector(`[data-say="${index}"]`);
+    if (el) { el.textContent = msg.shown; enScrollChat(); } else if (ui.page === "english") render();
+  }, delay));
+}
 
 async function enChatSend(text) {
   const c = enState().chat;
@@ -282,30 +379,148 @@ async function enChatSend(text) {
   const history = c.msgs.map(m => ({ role: m.role, text: m.text }));
   c.msgs.push(mine); c.busy = true; c.typing = false;
   enStopPcm();
+  if (enLive.state !== "off") enLiveSet("think");
   render(); enScrollChat();
-  const apply = answer => {
-    if (answer.correction) { mine.correction = answer.correction; mine.explain = answer.explain; }
-    c.msgs.push({ role: "ai", text: answer.reply, ru: answer.replyRu });
-    c.busy = false; render(); enScrollChat();
+  const done = () => {
+    c.busy = false;
+    enWhenQuiet(() => {
+      // Всё отзвучало — показываем текст целиком и снова слушаем.
+      const last = c.msgs[c.msgs.length - 1];
+      if (last?.role === "ai") { last.shown = last.text; last.streaming = false; }
+      if (ui.page === "english") render();
+      if (enLive.state !== "off") enLiveSet("listen");
+    });
   };
   try {
     if (typeof window.sorokaEnglishStream !== "function") throw new Error("no-stream");
-    let got = false;
+    let ai = null, index = -1;
     await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text }, (type, data) => {
-      if (type === "text") { got = true; apply(data); }
-      else if (type === "audio") enPlayPcm(data);
-      else if (type === "error" && !got) throw new Error(data.error || "stream");
+      if (type === "say") {
+        if (!ai) { ai = { role: "ai", text: "", shown: "", streaming: true }; c.msgs.push(ai); index = c.msgs.length - 1; render(); if (enLive.state !== "off") enLiveSet("speak"); }
+        ai.text += data.text; enRevealAt(ai, index, data.text);
+      } else if (type === "audio") enPlayPcm(data);
+      else if (type === "fix") { if (data.correction) { Object.assign(mine, { correction: data.correction, explain: data.explain, saved: data.saved }); render(); } }
+      else if (type === "reply" && ai) ai.text = data.reply || ai.text;
+      else if (type === "ru" && ai) ai.ru = data.ru;
+      else if (type === "error" && !ai) throw new Error(data.error || "stream");
     });
-    if (!got) throw new Error("stream-empty");
+    if (!ai) throw new Error("stream-empty");
+    done();
   } catch (_) {
     // Без потока: обычный ответ, озвучка следом (файлом).
     try {
       const answer = await enCall("chat", { situation: c.situation, history, text: mine.text });
-      apply(answer); enSpeak(answer.reply);
-    } catch (__) { c.busy = false; render(); toast("Тренер не ответил — попробуйте ещё раз"); }
+      if (answer.correction) Object.assign(mine, { correction: answer.correction, explain: answer.explain, saved: answer.saved });
+      c.msgs.push({ role: "ai", text: answer.reply, ru: answer.replyRu });
+      render(); enScrollChat();
+      if (enLive.state !== "off") enLiveSet("speak");
+      await enSpeak(answer.reply);
+      done();
+    } catch (__) { c.busy = false; render(); toast("Тренер не ответил — попробуйте ещё раз"); if (enLive.state !== "off") enLiveSet("listen"); }
   }
 }
-function enScrollChat() { requestAnimationFrame(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = box.scrollHeight; window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }); }
+function enScrollChat() { requestAnimationFrame(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTop = box.scrollHeight; const live = document.querySelector(".en-live"); live?.scrollIntoView({ block: "end", behavior: "smooth" }); }); }
+
+// ------------------------------------------------------------ практика
+// Теория темы и пять видов упражнений на одних и тех же фразах. Разные пути
+// к одной фразе (вспомнить перевод, собрать, вставить пропуск, услышать,
+// сказать) закрепляют её прочнее, чем один способ много раз.
+const EN_MODES = [
+  ["theory", "Теория", "Правила темы с примерами", "study"],
+  ["cards", "Карточки", "Вспомнить перевод и оценить", "copy"],
+  ["build", "Собери фразу", "Слова по порядку", "grip"],
+  ["gap", "Вставь пропуск", "Грамматика: a/an, is/are, do…", "pen"],
+  ["dictation", "Диктант", "Услышать и записать", "play"],
+  ["translate", "Перевод", "Сказать или написать по-английски", "message"],
+];
+function enPracticeScreen() {
+  const s = enState();
+  if (!s.today) { enLoad("today", "today"); return enWait(); }
+  const sit = s.today.situation;
+  return `<p class="en-practice-sit">${icon("study", "icon-sm")}Тема: <b>${esc(sit.title)}</b> · ${esc(sit.grammar)}</p><div class="en-modes">${EN_MODES.map(([key, title, sub, ic]) => `<button type="button" class="en-mode" data-action="en-ex" data-mode="${key}"><span class="en-step-ic">${icon(ic, "icon-sm")}</span><b>${title}</b><small>${sub}</small></button>`).join("")}</div>
+    <p class="section-note">Упражнения берут фразы, которые пора повторить и которые держатся слабее, плюс фразы текущей темы.</p>`;
+}
+
+async function enExStart(mode) {
+  const s = enState();
+  s.ex = { mode, loading: true };
+  render();
+  try {
+    const situation = s.today?.situation?.key || "";
+    const data = await enCall(mode === "theory" ? "theory" : "practice", { mode, situation });
+    if (data?.error) throw new Error(data.error);
+    s.ex = mode === "theory" ? { mode, theory: data } : { mode, situation: data.situation, items: data.items || [], index: 0, ok: 0, done: 0, picked: [], answer: null };
+    if (mode !== "theory" && !s.ex.items.length) { s.ex = null; toast("Пока не из чего — пройдите занятие на «Сегодня»"); }
+    else if (mode === "dictation") setTimeout(() => enSpeak(s.ex.items[0].en), 200);
+  } catch (_) { s.ex = null; toast("Не получилось загрузить упражнение"); }
+  render();
+}
+
+function enExScreen(ex) {
+  if (ex.loading) return `<div class="en-run">${enWait()}</div>`;
+  if (ex.mode === "theory") return enTheoryScreen(ex.theory);
+  const total = ex.items.length;
+  if (ex.index >= total) {
+    return `<div class="en-run en-done"><div class="en-done-mark">${icon("check")}</div><h2>Готово</h2><p class="muted">Верно ${ex.ok} из ${ex.done}</p>
+      <button class="primary-button en-go" type="button" data-action="en-ex" data-mode="${ex.mode}">Ещё раз</button><button class="ghost-button" type="button" data-action="en-ex-quit">К практике</button></div>`;
+  }
+  const item = ex.items[ex.index];
+  const title = EN_MODES.find(m => m[0] === ex.mode)?.[1] || "";
+  const top = `<div class="en-run-top"><button class="icon-button" type="button" data-action="en-ex-quit" aria-label="Закончить">${icon("close", "icon-sm")}</button><div class="en-bar"><i style="width:${Math.round(ex.index / total * 100)}%"></i></div><small>${ex.index + 1}/${total}</small></div><p class="en-kicker">${esc(title)}</p>`;
+  const a = ex.answer;
+  const next = `<button class="primary-button en-go" type="button" data-action="en-ex-next">Дальше</button>`;
+  const result = ok => `<div class="en-card"><div class="en-en"><b>${esc(item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><p class="en-ru">${esc(item.ru)}</p>${ok ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : ""}${a?.explain ? `<p class="en-fix">${esc(a.explain)}</p>` : ""}</div>`;
+  if (ex.mode === "cards") {
+    return `<div class="en-run">${top}<h2 class="en-prompt">${esc(item.ru)}</h2>${a ? result(false) + `<p class="en-ask">Как вспомнилось?</p><div class="en-rate">${EN_RATINGS.map(([r, l]) => `<button type="button" data-action="en-ex-rate" data-rating="${r}">${l}</button>`).join("")}</div>`
+      : `<p class="section-note">Вспомните фразу по-английски — вслух или про себя.</p><div class="en-answer"><button class="primary-button" type="button" data-action="en-ex-show">Показать</button></div>`}</div>`;
+  }
+  if (ex.mode === "build") {
+    const used = new Set(ex.picked);
+    const line = ex.picked.map((ti, k) => `<button type="button" class="en-tile on" data-action="en-tile-back" data-k="${k}">${esc(item.tiles[ti])}</button>`).join("");
+    const pool = item.tiles.map((w, ti) => used.has(ti) ? `<span class="en-tile ghost">${esc(w)}</span>` : `<button type="button" class="en-tile" data-action="en-tile" data-ti="${ti}">${esc(w)}</button>`).join("");
+    return `<div class="en-run">${top}<h2 class="en-prompt">${esc(item.ru)}</h2><div class="en-line ${a ? (a.ok ? "ok" : "bad") : ""}">${line || `<small>Нажимайте слова по порядку</small>`}</div>${a ? result(a.ok) + next : `<div class="en-tiles">${pool}</div>${ex.picked.length ? `<button class="text-action" type="button" data-action="en-tile-clear">Сначала</button>` : ""}`}</div>`;
+  }
+  if (ex.mode === "gap") {
+    const opts = item.options.map(o => `<button type="button" class="en-opt ${a ? (o.toLowerCase() === item.answer ? "right" : o === a.pick ? "wrong" : "") : ""}" data-action="en-gap" data-opt="${esc(o)}" ${a ? "disabled" : ""}>${esc(o)}</button>`).join("");
+    return `<div class="en-run">${top}<h2 class="en-prompt en-gap-text">${esc(item.text).replace("___", `<span class="en-blank">${a ? esc(a.pick) : "&nbsp;"}</span>`)}</h2><p class="en-ru">${esc(item.ru)}</p><div class="en-opts">${opts}</div>${a ? `${a.ok ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : `<p class="en-fix">${esc(item.tip || "")}</p>`}${next}` : ""}</div>`;
+  }
+  if (ex.mode === "dictation") {
+    return `<div class="en-run">${top}<div class="en-listen"><button class="en-mic" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать ещё раз">${icon("play")}</button><small>Послушайте и запишите по-английски</small></div>
+      ${a ? `${a.typed ? `<p class="en-said">Вы написали: «${esc(a.typed)}»</p>` : ""}${result(a.ok)}${next}` : `<form class="en-write" data-en-dict><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Что вы услышали" aria-label="Что вы услышали"><button class="primary-button" type="submit">Проверить</button></form><button class="text-action" type="button" data-action="en-ex-show">Не разобрал — показать</button>`}</div>`;
+  }
+  // translate
+  return `<div class="en-run">${top}<p class="en-kicker">Скажите или напишите по-английски</p><h2 class="en-prompt">${esc(item.ru)}</h2>
+    ${a ? `${a.said ? `<p class="en-said">Вы сказали: «${esc(a.said)}»</p>` : ""}<div class="en-card"><div class="en-en"><b>${esc(a.correction || item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(a.correction || item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div>${a.verdict === "correct" ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : a.explain ? `<p class="en-fix">${esc(a.explain)}</p>` : ""}</div>${next}`
+    : ex.checking ? `<div class="en-wait small"><span class="live-spin"></span><small>Проверяю…</small></div>`
+    : `<form class="en-write" data-en-tr><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Напишите по-английски" aria-label="Перевод"><button class="primary-button" type="submit">Проверить</button></form><div class="en-answer"><button class="en-mic" type="button" data-action="en-tr-speak" aria-label="Сказать">${icon("mic")}</button></div>`}</div>`;
+}
+
+function enTheoryScreen(t) {
+  const parts = (t.parts || []).map(p => `<section class="en-theory-part"><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p>${(p.examples || []).map(([en, ru]) => `<div class="en-example"><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button><div><b>${esc(en)}</b><small>${esc(ru)}</small></div></div>`).join("")}</section>`).join("");
+  return `<div class="en-run"><div class="en-run-top"><button class="icon-button" type="button" data-action="en-ex-quit" aria-label="Закрыть">${icon("close", "icon-sm")}</button><small>${esc(t.title)}</small></div>
+    <h2 class="en-prompt">${esc(t.heading)}</h2><p class="en-ru">${esc(t.goal)}</p>${parts}
+    <div class="en-actions"><button class="ghost-button" type="button" data-action="en-ex" data-mode="gap">Вставь пропуск</button><button class="primary-button" type="button" data-action="en-ex" data-mode="build">Собери фразу</button></div></div>`;
+}
+
+const enNorm = v => String(v || "").toLowerCase().replace(/[’`]/g, "'").replace(/\bi'm\b/g, "i am").replace(/\b(\w+)n't\b/g, "$1 not").replace(/\bi'd\b/g, "i would").replace(/[.,!?;:"]/g, " ").replace(/\s+/g, " ").trim();
+
+function enExAnswer(ok, extra = {}) {
+  const ex = enState().ex;
+  const item = ex.items[ex.index];
+  ex.answer = { ok, ...extra };
+  ex.done++; if (ok) ex.ok++;
+  // В расписание — только фразы, которые уже учатся; раньше срока сервер интервал не двигает.
+  if (item.introduced) enCall("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: true, attempt: `${item.id}-${Date.now()}` }).catch(() => {});
+  render();
+  if (ok || ex.mode === "dictation" || ex.mode === "cards") enSpeak(item.en);
+}
+function enExNext() {
+  const ex = enState().ex;
+  ex.index++; ex.answer = null; ex.picked = []; ex.checking = false;
+  render();
+  const item = ex.items[ex.index];
+  if (item && ex.mode === "dictation") enSpeak(item.en);
+}
 
 // ------------------------------------------------------------ фразы и прогресс
 
@@ -356,10 +571,29 @@ function englishAction(action, control) {
     enNext(); return true;
   }
   if (action === "en-dialog") { const key = s.run?.situation?.key; s.run = null; s.tab = "chat"; s.chat = null; s.today = null; enLoad("today", "today"); if (key) s.pendingChat = key; render(); return true; }
-  if (action === "en-chat-speak") { enAudioCtx(); enStopPcm(); startVoice(text => enChatSend(text), "Говорите по-английски или по-русски"); return true; }
+  if (action === "en-live") {
+    if (enLive.state === "off") enLiveStart();
+    else if (enLive.state === "speak") { enStopPcm(); enLiveSet("listen"); } // перебить тренера
+    return true;
+  }
+  if (action === "en-live-stop") { enStopPcm(); enLiveStop(); render(); return true; }
   if (action === "en-chat-type") { s.chat.typing = !s.chat.typing; render(); setTimeout(() => document.querySelector("[data-en-chat] input")?.focus(), 30); return true; }
-  if (action === "en-chat-ru") { enAudioCtx(); enStopPcm(); startVoice(text => enChatSend(`(по-русски) ${text}`), "Спросите по-русски"); return true; }
-  if (action === "en-chat-reset") { s.chat = null; render(); return true; }
+  if (action === "en-chat-reset") { enStopPcm(); enLiveStop(); s.chat = null; render(); return true; }
+  if (action === "en-ex") { enExStart(control.dataset.mode); return true; }
+  if (action === "en-ex-quit") { s.ex = null; s.tab = "practice"; render(); return true; }
+  if (action === "en-ex-next") { enExNext(); return true; }
+  if (action === "en-ex-show") { const ex = s.ex; if (ex.mode === "cards") { ex.answer = { ok: false, shown: true }; render(); enSpeak(ex.items[ex.index].en); } else enExAnswer(false); return true; }
+  if (action === "en-ex-rate") {
+    const r = Number(control.dataset.rating), ex = s.ex, item = ex.items[ex.index];
+    ex.done++; if (r >= 3) ex.ok++;
+    if (item.introduced) enCall("grade", { id: item.id, rating: r, practice: true, attempt: `${item.id}-${Date.now()}` }).catch(() => {});
+    enExNext(); return true;
+  }
+  if (action === "en-tile") { const ex = s.ex; ex.picked.push(Number(control.dataset.ti)); const item = ex.items[ex.index]; if (ex.picked.length === item.tiles.length) { const said = ex.picked.map(i => item.tiles[i]).join(" "); enExAnswer(enNorm(said) === enNorm(item.en), { typed: said }); } else render(); return true; }
+  if (action === "en-tile-back") { s.ex.picked.splice(Number(control.dataset.k), 1); render(); return true; }
+  if (action === "en-tile-clear") { s.ex.picked = []; render(); return true; }
+  if (action === "en-gap") { const ex = s.ex; const item = ex.items[ex.index]; const pick = control.dataset.opt; enExAnswer(pick.toLowerCase() === item.answer, { pick }); return true; }
+  if (action === "en-tr-speak") { startVoice(text => enTranslate(text, true), "Скажите по-английски"); return true; }
   if (action === "en-bubble") { const m = s.chat?.msgs[Number(control.dataset.index)]; if (m) { m.open = !m.open; render(); } return true; }
   if (action === "en-filter") { s.filter = control.dataset.filter; s.list = null; render(); return true; }
   if (action === "en-phrase") { const id = Number(control.dataset.id); s.open = s.open === id ? null : id; render(); return true; }
@@ -367,6 +601,29 @@ function englishAction(action, control) {
   return false;
 }
 
+function enExAnswerSilent(ok) { const ex = enState().ex; ex.done++; if (ok) ex.ok++; }
+async function enTranslate(text, spoken) {
+  const ex = enState().ex;
+  const item = ex.items[ex.index];
+  ex.checking = true; render();
+  let c;
+  try { c = await enCall("check", { id: item.id, answer: text }); } catch (_) { c = { verdict: "unknown", correction: item.en, explain: "" }; }
+  ex.checking = false;
+  enExAnswer(c.verdict === "correct", { ...c, [spoken ? "said" : "typed"]: text, rating: c.verdict === "correct" ? 3 : c.verdict === "close" ? 2 : 1 });
+}
+document.addEventListener("submit", event => {
+  const dict = event.target.closest?.("[data-en-dict]");
+  const tr = event.target.closest?.("[data-en-tr]");
+  if (dict || tr) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    const value = String(new FormData(event.target).get("answer") || "").trim();
+    if (!value) return;
+    if (tr) { enTranslate(value, false); return; }
+    const item = enState().ex.items[enState().ex.index];
+    enExAnswer(enNorm(value) === enNorm(item.en), { typed: value });
+    return;
+  }
+}, true);
 document.addEventListener("submit", event => {
   const write = event.target.closest?.("[data-en-write]");
   const chat = event.target.closest?.("[data-en-chat]");
@@ -390,3 +647,7 @@ document.addEventListener("input", event => {
   clearTimeout(enSearchTimer);
   enSearchTimer = setTimeout(() => { s.list = null; enLoad("list", "phrases", { filter: s.filter === "all" ? "" : s.filter, q: s.q }); }, 350);
 });
+
+// Ушли из раздела — живой микрофон выключаем (иначе он слушал бы на других экранах).
+window.addEventListener("hashchange", () => { if (!location.hash.includes("english") && enLive.state !== "off") { enStopPcm(); enLiveStop(); } });
+document.addEventListener("visibilitychange", () => { if (document.hidden && enLive.state !== "off") { enStopPcm(); enLiveStop(); } });
