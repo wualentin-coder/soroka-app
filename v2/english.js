@@ -20,7 +20,20 @@ function enDemo(op, args) {
   const w = (id, en, ru, pos, ex, exRu, level, status = "new") => ({ id, en, ru, pos, ex, exRu, ipa: "", level, status, isNew: status === "new", strength: 0 });
   const fresh = [w(312, "pick", "выбирать, собирать", "гл.", "Pick a card, any card.", "Выбери карту, любую.", "A2"), w(313, "wall", "стена", "сущ.", "The picture is on the wall.", "Картина на стене.", "A1"), w(314, "dream", "мечта, сон", "сущ., гл.", "I had a strange dream.", "Мне приснился странный сон.", "A2"), w(315, "sell", "продавать", "гл.", "They sell fresh bread here.", "Здесь продают свежий хлеб.", "A1")];
   const due = [w(120, "still", "всё ещё", "нареч.", "Are you still at work?", "Ты всё ещё на работе?", "A2", "learning")];
-  if (op === "today") return { streak: 4, unit, plan: { wordReviews: 12, newWords: 10, phraseReviews: 4, fromMistakes: 2, minutes: 16, doneToday: false }, words: { known: 1240, total: 4380, learning: 36, seen: 1300 }, placed: null };
+  const rule = { id: 7, key: "a2-perfect", title: "Present Perfect: I have been, have you ever…?", formula: "have / has + 3-я форма", status: "assigned", errors: 3, uses: 0, need: 3, course: true, example: { said: "I was never in London.", correction: "I've never been to London.", explain: "Опыт за всю жизнь — Present Perfect: have been." } };
+  if (op === "today") return { streak: 4, unit, plan: { wordReviews: 12, newWords: 10, phraseReviews: 4, fromMistakes: 2, minutes: 16, doneToday: false }, words: { known: 1240, total: 4380, learning: 36, seen: 1300 }, placed: null, facts: 3,
+    rules: { assigned: [rule, { ...rule, id: 8, key: "articles-unique", title: "Артикль the с единственными в своём роде", formula: "the + sun / moon / world", errors: 1, course: false, example: { said: "Sun is hot today.", correction: "The sun is hot today.", explain: "" } }], studied: [{ ...rule, id: 9, title: "Past Simple: did в вопросах", status: "studied", uses: 1, errors: 2 }], counts: { assigned: 2, studied: 1, mastered: 4 } } };
+  if (op === "facts") return { facts: ["Работает видеографом", "Есть кот по имени Боря", "Летом хочет в Грузию"] };
+  if (op === "forget") return { facts: ["Работает видеографом", "Летом хочет в Грузию"] };
+  if (op === "rule") return { rule, steps: [
+    { mode: "theory", section: "Правило", grammar: rule.title, theory: { title: "Опыт — have been", text: "Когда важен сам опыт за всю жизнь, а не когда именно, — Present Perfect: have / has + третья форма.", examples: [["I've been to Paris.", "Я был в Париже."], ["Have you ever tried sushi?", "Ты когда-нибудь пробовал суши?"]] } },
+    { mode: "theory", section: "Правило", grammar: rule.title, theory: { title: "Ваша ошибка", text: `Вы сказали: «${rule.example.said}». ${rule.example.explain}`, examples: [[rule.example.correction, "Так правильно"]] } },
+    { en: "I have never seen this film.", ru: "Я никогда не видел этот фильм.", mode: "gap", text: "I have never ___ this film.", answer: "seen", options: ["saw", "seen", "see"], tip: rule.formula, section: "Тренировка" },
+    { en: "She has been to Rome twice.", ru: "Она была в Риме дважды.", mode: "gap", text: "She ___ been to Rome twice.", answer: "has", options: ["has", "have", "was"], tip: rule.formula, section: "Тренировка" },
+    { en: "Have you ever lost your phone?", ru: "Ты когда-нибудь терял телефон?", mode: "build", tiles: ["lost", "Have", "phone", "you", "your", "ever"], section: "Тренировка" },
+  ] };
+  if (op === "ruledone") return { passed: args.score >= .8, status: args.score >= .8 ? "studied" : "assigned", need: 3 };
+  if (op === "debrief") return { good: ["Уверенно рассказали про выходные: «We went to the lake»"], work: ["Опыт за жизнь — Present Perfect: «I've never been to London», а не «I was never in London»"], next: "Расскажите Эмме о трёх местах, где вы уже были, — через I've been." };
   if (op === "deck") return { due, fresh, newGoal: 3 };
   if (op === "words") return { total: 4380, known: 1240, learning: 36, seen: 1300, perDay: 9.5, forecast: "2027-09-01", newWords: 10, placed: null, bands: [{ from: 1, to: 1000, known: 860, size: 1000 }, { from: 1001, to: 2000, known: 310, size: 1000 }, { from: 2001, to: 3000, known: 60, size: 1000 }, { from: 3001, to: 4000, known: 10, size: 1000 }, { from: 4001, to: 4380, known: 0, size: 380 }] };
   if (op === "wordlist") return { items: [...due, w(1, "the", "определённый артикль", "артикль", "", "", "A1", "known")] };
@@ -28,7 +41,7 @@ function enDemo(op, args) {
   if (op === "placed") return { estimate: 1650, level: "A2", unit: { ...unit, key: "a2-compare", number: 13, title: "Выбор и покупки", grammar: "Сравнение", level: "A2" } };
   if (op === "course") return { current: 9, units: [...Array(42)].map((_, i) => ({ key: `u${i}`, number: i + 1, level: i < 12 ? "A1" : i < 24 ? "A2" : i < 34 ? "B1" : "B2", title: `Урок ${i + 1}`, grammar: i === 9 ? unit.grammar : "Тема", status: i < 9 ? "done" : i === 9 ? "current" : "next", score: i < 9 ? .85 : null })) };
   if (op === "check") return { verdict: String(args.answer).toLowerCase().includes("went") ? "correct" : "close", correction: "We went to the country.", explain: "Go в прошедшем — went." };
-  if (op === "chat") return { reply: "Sounds great! Where did you go?", replyRu: "Звучит здорово! Куда вы ездили?", correction: "", explain: "" };
+  if (op === "chat") return { reply: "Ooh, almost — 'I've never been there'. Say it again?", replyRu: "О, почти — «I've never been there». Скажешь ещё раз?", correction: "I've never been to London.", explain: "Опыт за всю жизнь — Present Perfect.", saved: 3, rule: { id: 7, title: rule.title, errors: 3, isNew: false, again: false }, words: [{ en: "abroad", ru: "за границей", deck: 2210 }], used: [] };
   if (op === "phrases") return { items: [{ id: 2, en: "I'd like a coffee, please.", ru: "Я бы хотел кофе", source: "mistake", strength: .25 }], counts: { due: 4, mistakes: 9, learned: 12 } };
   if (op === "progress") return { streak: 4, days: [...Array(28)].map((_, i) => ({ day: "", count: i % 3 ? 20 : 0 })), words: enDemo("words"), phrases: { total: 60, learned: 14, mistakes: 9 }, course: { done: 9, total: 42, level: "A1", passed: 9 } };
   if (op === "speech") return { error: "demo" };
@@ -149,7 +162,7 @@ function enTodayScreen() {
   const streak = t.streak ? `<span class="en-streak">${icon("star", "icon-sm")}${t.streak} ${enPlural(t.streak, "день", "дня", "дней")}</span>` : "";
   const place = t.placed ? "" : `<section class="en-place"><div><b>Узнайте свой уровень</b><small>40 слов свайпом, 3 минуты: сколько слов вы уже знаете и с какого урока начать</small></div><button class="primary-button" type="button" data-action="en-place">Пройти</button></section>`;
   const wordsPct = Math.round(t.words.known / t.words.total * 100);
-  return `${place}<section class="en-hero"><div class="en-hero-top"><div><h2>${p.doneToday ? "Урок пройден" : "Занятие на сегодня"}</h2><small>${p.doneToday ? "Можно повторить слова или поговорить" : `≈ ${p.minutes} мин · ${u.level}`}</small></div>${streak}</div>
+  return `${place}${enRulesCard(t)}<section class="en-hero"><div class="en-hero-top"><div><h2>${p.doneToday ? "Урок пройден" : "Занятие на сегодня"}</h2><small>${p.doneToday ? "Можно повторить слова или поговорить" : `≈ ${p.minutes} мин · ${u.level}`}</small></div>${streak}</div>
     <div class="en-steps">${steps}</div>
     <button class="primary-button en-go" type="button" data-action="en-start">${p.doneToday ? "Ещё занятие" : "Начать"}</button></section>
     <div class="en-goals">
@@ -157,6 +170,42 @@ function enTodayScreen() {
       <button type="button" class="en-goal" data-action="en-tab" data-tab="course"><small>Курс · ${u.level}</small><b>${u.number} <span>из ${u.total}</span></b><div class="en-bar slim"><i style="width:${Math.max(2, Math.round((u.number - 1) / u.total * 100))}%"></i></div></button>
     </div>
     <div class="en-today-links"><button class="ghost-button" type="button" data-action="en-ex" data-mode="theory">${icon("study", "icon-sm")}Правило урока</button><button class="ghost-button" type="button" data-action="en-tab" data-tab="progress">${icon("chart", "icon-sm")}Прогресс</button></div>`;
+}
+
+/**
+ * «Задано Эммой»: правила по вашим ошибкам в разговоре. Разобрать — объяснение,
+ * ваша ошибка и упражнения; разобранное Эмма проверяет в речи, три верных
+ * употребления — освоено. Тут же — что Эмма помнит о вас (можно стереть).
+ */
+function enRulesCard(t) {
+  const s = enState(), r = t.rules;
+  if (!r || (!r.assigned.length && !r.studied.length && !t.facts)) return "";
+  const assigned = r.assigned.map(x => `<button type="button" class="en-rule-row" data-action="en-rule" data-id="${x.id}"><span><b>${esc(x.title)}</b><small>${x.errors} ${enPlural(x.errors, "ошибка", "ошибки", "ошибок")} в разговоре${x.example?.correction ? ` · «${esc(x.example.correction)}»` : ""}</small></span><span class="en-rule-go">Разобрать</span></button>`).join("");
+  const studied = r.studied.map(x => `<div class="en-rule-row studied"><span><b>${esc(x.title)}</b><small>Разобрано · Эмма проверяет в разговоре: верно ${x.uses} из ${x.need}</small></span><span class="en-rule-meter">${[...Array(x.need)].map((_, i) => `<i class="${i < x.uses ? "on" : ""}"></i>`).join("")}</span></div>`).join("");
+  const facts = s.facts ? `<div class="en-facts">${s.facts.loading ? `<span class="live-spin"></span>` : s.facts.list.length ? s.facts.list.map((f, i) => `<span>${esc(f)}<button type="button" class="icon-button" data-action="en-forget" data-index="${i}" aria-label="Забыть">${icon("close", "icon-sm")}</button></span>`).join("") : `<small>Пока ничего — расскажите о себе в разговоре.</small>`}</div>` : "";
+  return `<section class="en-rules"><div class="en-rules-head"><div><h3>Задано Эммой</h3><small>${r.assigned.length ? "По вашим ошибкам в разговоре — разберите, и она проверит в речи" : "Новых правил нет — Эмма проверяет разобранное"}</small></div>${r.counts.mastered ? `<span class="en-rules-done">${icon("check", "icon-sm")}${r.counts.mastered}</span>` : ""}</div>
+    ${assigned}${studied}${t.facts ? `<button type="button" class="text-action en-facts-toggle" data-action="en-facts">${s.facts ? "Скрыть" : `Что Эмма знает обо мне · ${t.facts}`}</button>${facts}` : ""}</section>`;
+}
+
+async function enRuleStart(id) {
+  const s = enState();
+  enStopPcm(); if (enLive.state !== "off") enLiveStop();
+  const back = s.tab;
+  s.ex = { mode: "rule", loading: true };
+  render();
+  try {
+    const data = await enCall("rule", { id });
+    if (data?.error || !data?.steps?.length) throw new Error(data?.error || "empty");
+    s.ex = { mode: "rule", rule: data.rule, items: data.steps, index: 0, ok: 0, done: 0, picked: [], answer: null, back };
+  } catch (_) { s.ex = null; toast("Не получилось открыть правило — попробуйте ещё раз"); }
+  render();
+}
+/** Конец разбора: от 80% верных — «разобрано», дальше Эмма проверит в разговоре. */
+function enRuleFinish(ex) {
+  if (ex.sent) return;
+  ex.sent = true;
+  if (ex.done < 3) { ex.result = { few: true }; return; }
+  enCall("ruledone", { id: ex.rule.id, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().rulesStale = true; render(); }).catch(() => {});
 }
 
 // ------------------------------------------------------------ колода слов
@@ -387,14 +436,15 @@ function enChatScreen() {
   const live = enLive.state;
   const tone = s.today.tone || "friend";
   const wordCard = m => !m.word ? "" : `<div class="en-pop">${m.word.loading ? `<span class="live-spin"></span>` : m.word.error ? "Не получилось перевести" : `<span><b>${esc(m.word.lemma)}</b> — ${esc(m.word.ru)}</span>${m.word.phrase && m.word.phrase !== m.word.lemma ? `<small>${esc(m.word.phrase)} — ${esc(m.word.phraseRu)}</small>` : ""}<small class="en-pop-saved">${icon("check", "icon-sm")}${m.word.deck ? `В колоде слов · №${m.word.deck}` : "Во «Фразах»"}</small>`}</div>`;
-  const msgs = c.msgs.map((m, i) => m.role === "me"
-    ? `<div class="en-msg me"><div class="en-bub me">${esc(m.text)}</div>${m.correction ? `<div class="en-fixline"><span>Лучше сказать</span><b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}${m.saved ? `<small class="en-pop-saved">${icon("check", "icon-sm")}В повторениях</small>` : ""}</div>` : ""}</div>`
+  const msgs = c.msgs.map((m, i) => m.role === "debrief" ? enDebriefCard(m)
+    : m.role === "me"
+    ? `<div class="en-msg me"><div class="en-bub me">${esc(m.text)}</div>${m.correction ? `<div class="en-fixline"><span>Лучше сказать</span><b>${esc(m.correction)}</b>${m.explain ? `<small>${esc(m.explain)}</small>` : ""}${m.saved ? `<small class="en-pop-saved">${icon("check", "icon-sm")}В повторениях</small>` : ""}</div>` : ""}${enCoachChips(m)}</div>`
     : `<div class="en-msg ai"><div class="en-bub ai"><span class="en-say" data-say="${i}">${m.streaming ? esc(m.shown || "") : enWords(m.text, i, m.word?.at)}</span>${m.open && m.ru ? `<div class="en-bub-ru">${esc(m.ru)}</div>` : ""}</div>${wordCard(m)}${!m.streaming && m.ru && !m.ruOnly ? `<button type="button" class="en-bub-tr" data-action="en-bubble" data-index="${i}">${m.open ? "Скрыть перевод" : "Перевод"}</button>` : ""}</div>`).join("");
   const status = live === "off" ? esc(c.title || "Разговор") : esc(EN_LIVE_LABEL[live]);
   const aims = c.targets?.length ? `<div class="en-aims">${c.targets.map(t => `<span>${esc(t)}</span>`).join("")}</div>` : "";
   return `<section class="en-chat">
     <div class="en-chat-head"><span class="en-avatar">E</span><div><b>Эмма</b><small class="en-chat-status">${status}</small></div>
-      <button type="button" class="en-tone ${tone}" data-action="en-tone" title="Тон тренера">${tone === "friend" ? "Друг" : "Вежливо"}</button>
+      ${c.msgs.filter(m => m.role === "me").length >= 2 && !c.busy ? `<button type="button" class="en-tone" data-action="en-debrief" title="Итоги разговора">Итоги</button>` : ""}<button type="button" class="en-tone ${tone}" data-action="en-tone" title="Тон тренера">${tone === "friend" ? "Друг" : "Вежливо"}</button>
       <button class="icon-button" type="button" data-action="en-chat-reset" aria-label="Начать заново">${icon("reset", "icon-sm")}</button></div>${aims}
     <div class="en-msgs">${msgs}${c.busy && !c.msgs.some(m => m.streaming) ? `<div class="en-msg ai"><div class="en-bub ai typing"><i></i><i></i><i></i></div></div>` : ""}</div>
     <div class="en-live ${live}">
@@ -500,6 +550,30 @@ function enLiveHear(data, rate) {
   }
 }
 
+/** Что тренер сделал с репликой: правило в план, слова в колоду, верное употребление. */
+function enCoachChips(m) {
+  const chips = [];
+  if (m.rule) chips.push(`<button type="button" class="en-chip rule" data-action="en-rule" data-id="${m.rule.id}">${icon("study", "icon-sm")}<span>${m.rule.again ? "Снова задано" : m.rule.isNew ? "Задано правило" : `Правило в работе · ${m.rule.errors}-я ошибка`}: <b>${esc(m.rule.title)}</b></span></button>`);
+  if (m.words?.length) chips.push(`<span class="en-chip word">${icon("plus", "icon-sm")}<span>В слова: ${m.words.map(w => `<b>${esc(w.en)}</b> — ${esc(w.ru)}`).join(", ")}</span></span>`);
+  for (const u of m.used || []) chips.push(`<span class="en-chip used">${icon("check", "icon-sm")}<span>${u.mastered ? `Освоено: <b>${esc(u.title)}</b>` : `Верно: ${esc(u.title)}`}</span></span>`);
+  return chips.length ? `<div class="en-coach">${chips.join("")}</div>` : "";
+}
+function enApplyFix(mine, f) {
+  if (!f) return;
+  if (f.correction) Object.assign(mine, { correction: f.correction, explain: f.explain, saved: f.saved });
+  if (f.rule) mine.rule = f.rule;
+  if (f.words?.length) mine.words = f.words;
+  if (f.used?.length) mine.used = f.used;
+  if (f.rule || f.used?.length) enState().rulesStale = true;
+}
+/** Итоги разговора: что получилось, над чем работать, что дальше, что добавилось. */
+function enDebriefCard(m) {
+  if (m.loading) return `<div class="en-debrief"><b>Итоги разговора</b><span class="live-spin"></span></div>`;
+  const list = (title, items) => items?.length ? `<h4>${title}</h4><ul>${items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+  const added = [m.words ? `${m.words} ${enPlural(m.words, "слово", "слова", "слов")} в колоду` : "", m.rules ? `${m.rules} ${enPlural(m.rules, "правило", "правила", "правил")} задано` : ""].filter(Boolean).join(" · ");
+  return `<div class="en-debrief"><b>Итоги разговора</b>${list("Получилось", m.good)}${list("Поработать", m.work)}${m.next ? `<h4>В следующий раз</h4><p>${esc(m.next)}</p>` : ""}${added ? `<small>${added}</small>` : ""}</div>`;
+}
+
 /** Реплика тренера словами-кнопками: нажали слово — перевод и в изучение. */
 function enWords(text, index, selected) {
   return String(text || "").split(/(\s+)/).map((part, at) => /[A-Za-z]/.test(part)
@@ -521,7 +595,8 @@ async function enChatSend(text) {
   const c = enState().chat;
   if (!c || !text.trim() || c.busy) return;
   const mine = { role: "me", text: text.trim() };
-  const history = c.msgs.map(m => ({ role: m.role, text: m.text }));
+  // Тренер видит и поправки, которые уже показали, — чтобы дать сказать правильно.
+  const history = c.msgs.filter(m => m.role !== "debrief").map(m => ({ role: m.role, text: m.text, ...(m.correction ? { correction: m.correction, rule: m.rule?.title } : {}) }));
   c.msgs.push(mine); c.busy = true; c.sent = true;
   enStopPcm();
   if (enLive.state !== "off") enLiveSet("think");
@@ -544,7 +619,7 @@ async function enChatSend(text) {
         if (!ai) { ai = { role: "ai", text: "", shown: "", streaming: true }; c.msgs.push(ai); index = c.msgs.length - 1; render(); if (enLive.state !== "off") enLiveSet("speak"); }
         ai.text += data.text; enRevealAt(ai, index, data.text);
       } else if (type === "audio") enPlayPcm(data);
-      else if (type === "fix") { if (data.correction) { Object.assign(mine, { correction: data.correction, explain: data.explain, saved: data.saved }); render(); } }
+      else if (type === "fix") { enApplyFix(mine, data); render(); }
       else if (type === "reply" && ai) { ai.text = data.reply || ai.text; ai.ruOnly = /[а-яё]/i.test(ai.text) && (ai.text.match(/[а-яё]/gi) || []).length > (ai.text.match(/[a-z]/gi) || []).length; }
       else if (type === "ru" && ai) ai.ru = data.ru;
       else if (type === "error" && !ai) throw new Error(data.error || "stream");
@@ -555,7 +630,7 @@ async function enChatSend(text) {
     // Без потока: обычный ответ, озвучка следом (файлом).
     try {
       const answer = await enCall("chat", { situation: c.situation, history, text: mine.text, targets: c.targets || [], tone: enState().today?.tone });
-      if (answer.correction) Object.assign(mine, { correction: answer.correction, explain: answer.explain, saved: answer.saved });
+      enApplyFix(mine, answer);
       c.msgs.push({ role: "ai", text: answer.reply, ru: answer.replyRu });
       render(); enScrollChat();
       if (enLive.state !== "off") enLiveSet("speak");
@@ -628,23 +703,29 @@ function enLessonTop(ex) {
 }
 
 function enExScreen(ex) {
-  if (ex.loading) return `<div class="en-run">${enWait()}</div>`;
+  if (ex.loading) return `<div class="en-run">${enWait()}${ex.mode === "rule" ? `<p class="section-note en-center">Эмма готовит объяснение и упражнения — новое правило до минуты</p>` : ""}</div>`;
   if (ex.mode === "theory") return enTheoryScreen(ex.theory);
   const total = ex.items.length;
+  if (ex.mode === "rule" && ex.index >= total) {
+    const r = ex.result;
+    const verdict = !r ? `<span class="live-spin"></span>` : r.few ? `<p class="section-note">Засчитывается по упражнениям — сделайте хотя бы три.</p>` : r.passed ? `<p class="en-ok">${icon("check", "icon-sm")}Разобрано. Теперь Эмма проверит его в разговоре: ${r.need} верных употребления — и правило освоено.</p>` : `<p class="en-fix">Верно меньше 80% — давайте ещё раз, предложения будут другие.</p>`;
+    return `<div class="en-run en-done"><div class="en-done-mark">${icon("study")}</div><h2>${esc(ex.rule.title)}</h2><p class="muted">Верно ${ex.ok} из ${ex.done}</p>${verdict}
+      ${r?.passed ? `<button class="primary-button en-go" type="button" data-action="en-rule-talk">${icon("mic", "icon-sm")}Проверить в разговоре</button>` : r && !r.few ? `<button class="primary-button en-go" type="button" data-action="en-rule" data-id="${ex.rule.id}">Ещё раз</button>` : ""}<button class="ghost-button" type="button" data-action="en-ex-quit">Готово</button></div>`;
+  }
   if (ex.index >= total) {
     return `<div class="en-run en-done"><div class="en-done-mark">${icon("check")}</div><h2>Готово</h2><p class="muted">Верно ${ex.ok} из ${ex.done}</p>
       <button class="primary-button en-go" type="button" data-action="en-ex" data-mode="${ex.mode}">Ещё раз</button><button class="ghost-button" type="button" data-action="en-ex-quit">К курсу</button></div>`;
   }
   const item = ex.items[ex.index];
   const mode = item.mode || ex.mode;
-  const lessonRun = ex.mode === "lesson";
+  const lessonRun = ex.mode === "lesson" || ex.mode === "rule";
   const title = lessonRun ? "" : EN_MODES.find(m => m[0] === mode)?.[1] || "";
   const skip = lessonRun && item.section !== "Разговор" ? `<button class="text-action en-skip" type="button" data-action="en-skip">Пропустить</button>` : `<small>${ex.index + 1}/${total}</small>`;
   const top = `<div class="en-run-top"><button class="icon-button" type="button" data-action="en-ex-quit" aria-label="Закончить">${icon("close", "icon-sm")}</button><div class="en-bar"><i style="width:${Math.round(ex.index / total * 100)}%"></i></div>${skip}</div>${lessonRun ? enLessonTop(ex) : ""}${title ? `<p class="en-kicker">${esc(title)}</p>` : ""}`;
   if (mode === "words") return `<div class="en-run">${top}${ex.deck ? enDeckScreen(ex.deck) : enWait()}</div>`;
   if (mode === "theory") {
     const t = item.theory || {};
-    return `<div class="en-run">${top}<p class="en-kicker">Урок ${ex.unit?.number || ""} · ${esc(item.grammar || "")}</p><h2 class="en-prompt">${esc(t.title || "")}</h2><section class="en-theory-part"><p>${esc(t.text || "")}</p>${(t.examples || []).map(([en, ru]) => `<div class="en-example"><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button><div><b>${esc(en)}</b><small>${esc(ru)}</small></div></div>`).join("")}</section><button class="primary-button en-go" type="button" data-action="en-ex-next">Понятно</button></div>`;
+    return `<div class="en-run">${top}<p class="en-kicker">${ex.mode === "rule" ? "Задано Эммой" : `Урок ${ex.unit?.number || ""}`} · ${esc(item.grammar || "")}</p><h2 class="en-prompt">${esc(t.title || "")}</h2><section class="en-theory-part"><p>${esc(t.text || "")}</p>${(t.examples || []).map(([en, ru]) => `<div class="en-example"><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button><div><b>${esc(en)}</b><small>${esc(ru)}</small></div></div>`).join("")}</section><button class="primary-button en-go" type="button" data-action="en-ex-next">Понятно</button></div>`;
   }
   if (mode === "listen") {
     const a2 = ex.answer;
@@ -714,6 +795,7 @@ function enExNext() {
   const ex = enState().ex;
   ex.index++; ex.answer = null; ex.picked = []; ex.checking = false;
   if (ex.mode === "lesson") enLessonEnter();
+  if (ex.mode === "rule" && ex.index >= ex.items.length) enRuleFinish(ex);
   render();
   if (ex.mode !== "lesson" && ex.items[ex.index] && ex.mode === "dictation") enSpeak(ex.items[ex.index].en);
 }
@@ -968,7 +1050,38 @@ function enProgressScreen() {
 function englishAction(action, control) {
   if (!action.startsWith("en-")) return false;
   const s = enState();
-  if (action === "en-tab") { s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
+  if (action === "en-rule") { enRuleStart(Number(control.dataset.id)); return true; }
+  if (action === "en-rule-talk") {
+    const rule = s.ex?.rule;
+    s.ex = null; s.tab = "chat";
+    if (!s.chat) enChatStart();
+    if (s.chat && rule?.example?.correction) s.chat.targets = [rule.example.correction];
+    s.rulesStale = true;
+    render(); return true;
+  }
+  if (action === "en-facts") {
+    if (s.facts) { s.facts = null; render(); return true; }
+    s.facts = { loading: true, list: [] }; render();
+    enCall("facts").then(r => { s.facts = { list: r?.facts || [] }; render(); }).catch(() => { s.facts = null; render(); });
+    return true;
+  }
+  if (action === "en-forget") {
+    const index = Number(control.dataset.index);
+    if (s.facts) { s.facts.list.splice(index, 1); if (s.today) s.today.facts = s.facts.list.length; render(); }
+    enCall("forget", { index }).catch(() => toast("Не получилось стереть"));
+    return true;
+  }
+  if (action === "en-debrief") {
+    const c = s.chat;
+    if (!c || c.busy) return true;
+    const history = c.msgs.filter(m => m.role !== "debrief").map(m => ({ role: m.role, text: m.text, ...(m.correction ? { correction: m.correction } : {}) }));
+    const card = { role: "debrief", loading: true, words: c.msgs.reduce((n, m) => n + (m.words?.length || 0), 0), rules: c.msgs.filter(m => m.rule?.isNew || m.rule?.again).length };
+    c.msgs.push(card); render(); enScrollChat();
+    enCall("debrief", { history }).then(r => Object.assign(card, { loading: false, good: r?.good || [], work: r?.work || [], next: r?.next || "" }))
+      .catch(() => Object.assign(card, { loading: false, next: "Не получилось подвести итоги — попробуйте ещё раз." })).finally(() => { render(); enScrollChat(); });
+    return true;
+  }
+  if (action === "en-tab") { if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
   if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") { s.tab = "today"; navigate("english"); if (s.today && !s.today.plan.doneToday) enLessonStart(); else render(); return true; }
   if (action === "en-say") { enSpeak(control.dataset.text, control); return true; }
@@ -1011,7 +1124,7 @@ function englishAction(action, control) {
   if (action === "en-chat-reset") { enStopPcm(); enLiveStop(); s.chat = null; render(); return true; }
   // упражнения
   if (action === "en-ex") { enExStart(control.dataset.mode, control.dataset.unit); return true; }
-  if (action === "en-ex-quit") { const wasLesson = s.ex?.mode === "lesson"; s.ex = null; s.tab = wasLesson ? "today" : "course"; s.today = null; render(); return true; }
+  if (action === "en-ex-quit") { const back = s.ex?.mode === "rule" ? s.ex.back || "today" : s.ex?.mode === "lesson" ? "today" : "course"; s.ex = null; s.tab = back; s.today = null; render(); return true; }
   if (action === "en-ex-next") { enExNext(); return true; }
   if (action === "en-ex-show") {
     const ex = s.ex, mode = ex.items[ex.index].mode || ex.mode;
@@ -1019,7 +1132,7 @@ function englishAction(action, control) {
     else enExAnswer(false, { verdict: "shown", rating: 1 });
     return true;
   }
-  if (action === "en-skip") { const ex = s.ex, sec = ex.items[ex.index].section; ex.deck = null; while (ex.index < ex.items.length && ex.items[ex.index].section === sec) ex.index++; ex.answer = null; ex.picked = []; enLessonEnter(); render(); return true; }
+  if (action === "en-skip") { const ex = s.ex, sec = ex.items[ex.index].section; ex.deck = null; while (ex.index < ex.items.length && ex.items[ex.index].section === sec) ex.index++; ex.answer = null; ex.picked = []; if (ex.mode === "rule") { if (ex.index >= ex.items.length) enRuleFinish(ex); } else enLessonEnter(); render(); return true; }
   if (action === "en-talk") {
     const item = s.ex.items[s.ex.index], unit = s.ex.unit;
     s.ex = null; s.tab = "chat";
