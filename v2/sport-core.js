@@ -35,6 +35,7 @@ var SportCore = (() => {
     MAX_EQUIPMENT_KG: () => MAX_EQUIPMENT_KG,
     MAX_GOAL_TARGET: () => MAX_GOAL_TARGET,
     MAX_IMPORT_BYTES: () => MAX_IMPORT_BYTES,
+    MAX_LOGGED_SETS: () => MAX_LOGGED_SETS,
     MAX_REMINDERS: () => MAX_REMINDERS,
     MAX_STRIP_DAYS: () => MAX_STRIP_DAYS,
     MEASUREMENT_LABELS: () => MEASUREMENT_LABELS,
@@ -61,6 +62,7 @@ var SportCore = (() => {
     answeredProfileFields: () => answeredProfileFields,
     applyStateChanges: () => applyStateChanges,
     baselinePoint: () => baselinePoint,
+    bestRepsSet: () => bestRepsSet,
     bodyShapeFor: () => bodyShapeFor,
     buildTrainingContext: () => buildTrainingContext,
     buildTrainingPacket: () => buildTrainingPacket,
@@ -93,6 +95,7 @@ var SportCore = (() => {
     estimateWorkoutSeconds: () => estimateWorkoutSeconds,
     exerciseEquipment: () => exerciseEquipment,
     exerciseKey: () => exerciseKey,
+    exerciseSetLogs: () => exerciseSetLogs,
     exerciseSets: () => exerciseSets,
     exerciseStats: () => exerciseStats,
     exerciseVideoId: () => exerciseVideoId,
@@ -156,6 +159,7 @@ var SportCore = (() => {
     playTick: () => playTick,
     pluralDays: () => pluralDays,
     pluralTimes: () => pluralTimes,
+    previousSetLogs: () => previousSetLogs,
     profileGaps: () => profileGaps,
     programDayForDate: () => programDayForDate,
     programDaySince: () => programDaySince,
@@ -163,6 +167,7 @@ var SportCore = (() => {
     programSummaries: () => programSummaries,
     raiseProgram: () => raiseProgram,
     recentTrainingWeek: () => recentTrainingWeek,
+    recordSets: () => recordSets,
     recordWorkingWeight: () => recordWorkingWeight,
     removeFavorite: () => removeFavorite,
     removeGymMovement: () => removeGymMovement,
@@ -199,6 +204,7 @@ var SportCore = (() => {
     validReminderTime: () => validReminderTime,
     validVideo: () => validVideo,
     validatePlan: () => validatePlan,
+    validateSets: () => validateSets,
     validateWorkingWeight: () => validateWorkingWeight,
     videoSearchUrl: () => videoSearchUrl,
     videoUrl: () => videoUrl,
@@ -2229,6 +2235,61 @@ ${JSON.stringify(context, null, 2)}
   }
   function selectWorkoutLoad(state, option, index, load) {
     return { ...state, workoutWeights: { ...state.workoutWeights, [workoutExerciseKey(option, index)]: load } };
+  }
+  var MAX_LOGGED_SETS = 20;
+  function exerciseSetLogs(state, option, index) {
+    const prefix = `${workoutExerciseKey(option, index)}|`;
+    return Object.entries(state.workoutSetLogs ?? {}).filter(([key]) => key.startsWith(prefix)).map(([, log]) => log).sort((a, b) => a.setNumber - b.setNumber);
+  }
+  function previousSetLogs(state, exerciseName, exceptWorkout) {
+    const key = exerciseKey(exerciseName);
+    const logs = Object.values(state.workoutSetLogs ?? {}).filter((log) => exerciseKey(log.exercise) === key && log.workout !== exceptWorkout);
+    if (!logs.length) return [];
+    const last = logs.reduce((a, b) => b.date > a.date || b.date === a.date && b.recordedAt > a.recordedAt ? b : a);
+    return logs.filter((log) => log.workout === last.workout && log.exerciseId === last.exerciseId).sort((a, b) => a.setNumber - b.setNumber);
+  }
+  function bestRepsSet(state, exerciseName) {
+    const key = exerciseKey(exerciseName);
+    return Object.values(state.workoutSetLogs ?? {}).filter((log) => exerciseKey(log.exercise) === key && log.kilograms === null && log.actualReps).reduce((best, log) => !best || (log.actualReps ?? 0) > (best.actualReps ?? 0) ? log : best, null);
+  }
+  function validateSets(sets) {
+    if (!sets.length) throw new Error("Добавьте хотя бы один подход.");
+    if (sets.length > MAX_LOGGED_SETS) throw new Error(`Не больше ${MAX_LOGGED_SETS} подходов.`);
+    for (const set of sets) {
+      if (!(Number.isInteger(set.reps) && set.reps >= 1 && set.reps <= 1e3)) throw new Error("Повторения: целое число от 1 до 1000 в каждом подходе.");
+      if (set.kilograms !== null && !(Number.isFinite(set.kilograms) && set.kilograms >= 0 && set.kilograms <= 2e3)) throw new Error("Вес: число от 0 до 2000 кг.");
+    }
+  }
+  function recordSets(state, option, index, sets, basis, now = /* @__PURE__ */ new Date()) {
+    validateSets(sets);
+    const exercise2 = option.plan.exercises[index];
+    const base = workoutExerciseKey(option, index);
+    const kept = Object.fromEntries(Object.entries(state.workoutSetLogs ?? {}).filter(([key]) => !key.startsWith(`${base}|`)));
+    const weighted = sets.some((set) => set.kilograms !== null);
+    const recordedAt = now.toISOString();
+    sets.forEach((set, i) => {
+      kept[`${base}|${i + 1}`] = {
+        workout: option.key,
+        exerciseId: exercise2.id ?? `index:${index}`,
+        exercise: exercise2.name,
+        date: option.date,
+        setNumber: i + 1,
+        kilograms: set.kilograms,
+        basis: set.kilograms !== null ? basis ?? null : null,
+        weightSource: set.kilograms !== null ? "selected" : null,
+        actualReps: set.reps,
+        recordedAt
+      };
+    });
+    let next = { ...state, workoutSetLogs: kept };
+    next = confirmWorkoutSet(next, option, index, sets.length);
+    if (weighted) {
+      const top = sets.filter((set) => set.kilograms !== null).reduce((a, b) => (b.kilograms ?? 0) > (a.kilograms ?? 0) || (b.kilograms ?? 0) === (a.kilograms ?? 0) && b.reps > a.reps ? b : a);
+      const entry = { exercise: exercise2.name, date: option.date, kilograms: top.kilograms ?? 0, sets: sets.length, reps: top.reps, ...basis ? { basis } : {} };
+      next = recordWorkingWeight(next, entry);
+      next = selectWorkoutLoad(next, option, index, { kilograms: entry.kilograms, ...basis ? { basis } : {}, actualReps: top.reps });
+    }
+    return next;
   }
   return __toCommonJS(core_exports);
 })();
