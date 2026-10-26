@@ -493,3 +493,17 @@ body.sp-has-bar .fab { transform: translateY(-64px); }
 .sp-free-nums input { width: 100%; min-width: 0; }
 .sp-hero-card { gap: 4px; }
 .sp-free-ex > .text-action { justify-self: start; }
+
+/* Профиль: шапка и фокус — строки внутри одной карточки, а не отдельные кнопки. */
+.sp-hero, .sp-muscle-card { display: grid; width: 100%; gap: 12px; padding: 4px 0; border: 0; border-radius: 0; background: none; color: var(--text); font: inherit; text-align: left; }
+.sp-hero strong, .sp-muscle-card strong { font-size: 16px; }
+.sp-muscle-card { padding-top: 12px; border-top: 1px solid var(--line); }
+.sp-muscle-card small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sp-muscle-thumb svg { display: block; width: 100%; height: auto; }
+/* Колонка страницы не шире экрана: числа и степперы сжимаются, а не раздвигают карточки. */
+.sp-page { grid-template-columns: minmax(0, 1fr); }
+.sp-page > * { min-width: 0; }
+.sp-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sp-stats dd { overflow-wrap: anywhere; }
+.sp-goal-entry { flex-wrap: wrap; }
+.sp-goal-entry .sp-stepper { min-width: 0; }
