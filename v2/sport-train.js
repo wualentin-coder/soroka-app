@@ -314,18 +314,21 @@ function spMuscleGlyph(muscles) {
 
 // ------------------------------------------------------------ экран «Тренировка»
 
+// «Тренировка» — программа: где вы в ней, занятие выбранного дня целиком и что
+// дальше по плану. Дата — из той же полосы недели, что на «Сегодня».
 function spTrainingScreen() {
   const s = spState(), C = SP();
-  const today = C.todayKey(), date = s.date;
   const { visible } = spOptions();
-  const sub = date === today ? "Сегодня" : date > today ? "План" : s.kind === "splits" ? "Журнал растяжки" : "Журнал тренировки";
-  return `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>
-    <div class="sp-pager"><button class="icon-button" type="button" data-action="sp-day-shift" data-d="-1" aria-label="Предыдущий день">${icon("left")}</button><div><b>${spDateLong(date)}</b><small>${sub}</small></div><button class="icon-button" type="button" data-action="sp-day-shift" data-d="1" aria-label="Следующий день">${icon("right")}</button></div>
-    ${date !== today ? `<button class="text-action sp-center" type="button" data-action="sp-today">Вернуться к сегодня</button>` : ""}
-    ${spDayWorkout(visible, date, s.kind)}
-    <details class="sp-card sp-details"><summary>${s.kind === "splits" ? "Правила растяжки" : "Правила тренировки"} <small>${(s.kind === "splits" ? C.STRETCHING_RULES : C.TRAINING_RULES).length} пунктов</small></summary><ul class="sp-rules">${(s.kind === "splits" ? C.STRETCHING_RULES : C.TRAINING_RULES).map(r => `<li>${spEsc(r)}</li>`).join("")}</ul></details>`;
+  const programs = spProgramProgress(visible, s.state);
+  const hasSplits = visible.some(o => o.kind === "splits");
+  if (!hasSplits) s.kind = "main";
+  const progress = programs.length ? `<section class="sp-card sp-program-card">${programs.slice(0, 2).map(p => `<div class="sp-card-head"><p class="sp-kicker">${spEsc(p.title)}</p><span>${p.day > 0 ? `день ${Math.min(p.day, p.span)} из ${p.span}` : `старт ${spDateShort(p.first)}`}</span></div><span class="sp-progress"><i style="width:${Math.round(p.done / Math.max(1, p.sessions) * 100)}%"></i></span><span class="section-note">Сделано ${p.done} из ${p.sessions} ${spPlural(p.sessions, "занятия", "занятий", "занятий")} · до ${spDateShort(p.last)}</span>`).join("")}${programs.length > 2 ? `<button class="text-action" type="button" data-action="sp-programs">Ещё программы · ${programs.length - 2}</button>` : ""}</section>` : "";
+  const upcoming = spUpcoming(visible, s.state, s.date);
+  const next = upcoming.length ? `<section class="sp-card"><p class="sp-kicker">Дальше по плану</p>${upcoming.map(o => `<button type="button" class="sp-list-row" data-action="sp-date" data-date="${o.date}"><span><b>${spDateShort(o.date)}</b><small>${spEsc(o.plan.title)}${o.kind === "splits" ? " · растяжка" : o.kind === "test" ? " · тест" : ""}</small></span><small>${o.kind === "test" ? "" : C.formatDuration(C.estimateWorkoutSeconds(o.plan))}</small></button>`).join("")}</section>` : "";
+  return `${spWeekStrip(visible)}${progress}${hasSplits ? `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>` : ""}
+    ${spDayWorkout(visible, s.date, s.kind)}${next}
+    <div class="sp-row-actions sp-center"><button class="text-action" type="button" data-action="sp-free-new">+ Свободная тренировка</button><button class="text-action" type="button" data-action="sp-rules">Правила ${s.kind === "splits" ? "растяжки" : "тренировки"}</button></div>`;
 }
-
 function spDayWorkout(options, date, kind) {
   const s = spState(), C = SP();
   const variants = options.filter(o => o.date === date && o.kind === kind);
@@ -335,7 +338,7 @@ function spDayWorkout(options, date, kind) {
   }
   const newest = variants.length > 1 ? variants.reduce((best, o) => (o.addedAt || "") > (best.addedAt || "") ? o : best).addedAt : undefined;
   const chosen = C.selectedOption(options, date, kind, s.state);
-  const picker = variants.length > 1 ? `<section class="sp-card"><p class="sp-kicker">${kind === "splits" ? "Растяжка" : "Тренировка"} · выбери вариант</p><p class="section-note">На эту дату ${variants.length} варианта. Подходы каждого сохраняются отдельно.</p>${variants.map(o => `<button type="button" class="sp-variant ${chosen?.key === o.key ? "on" : ""}" data-action="sp-choose" data-key="${spEsc(o.key)}"><span><strong>${spEsc(o.plan.title)}</strong>${newest && o.addedAt === newest ? `<em>Новая программа</em>` : ""}<small>${spEsc(o.programTitle)}</small></span><b>${C.optionCompletion(o, s.state) === 100 ? "✓" : chosen?.key === o.key ? "Выбран" : "Выбрать"}</b></button>`).join("")}</section>` : "";
+  const picker = variants.length > 1 ? `<section class="sp-card"><p class="sp-kicker">${kind === "splits" ? "Растяжка" : "Тренировка"} · выбери вариант</p><p class="section-note">На эту дату ${variants.length} варианта. Подходы каждого сохраняются отдельно.</p>${variants.map(o => `<button type="button" class="sp-variant ${chosen?.key === o.key ? "on" : ""}" data-action="sp-choose" data-key="${spEsc(o.key)}"><span><strong>${spEsc(o.plan.title)}</strong>${newest && o.addedAt === newest && !o.key.startsWith("free|") ? `<em>Новая программа</em>` : ""}<small>${spEsc(o.programTitle)}</small></span><b>${C.optionCompletion(o, s.state) === 100 ? "✓" : chosen?.key === o.key ? "Выбран" : "Выбрать"}</b></button>`).join("")}</section>` : "";
   if (!chosen) return picker;
   const readOnly = date > C.todayKey() || Boolean(chosen.historyOnly);
   const finished = Boolean(s.state.workouts?.[chosen.key]);
@@ -358,26 +361,27 @@ function spWorkoutCard(option, readOnly, finished) {
   const expanded = !finished || s.open[`workout:${option.key}`];
   const seconds = C.workoutSeconds(s.state, option);
   const splits = plan.routine_type === "splits";
+  const free = option.key.startsWith("free|");
   const head = finished
     ? `<div class="sp-finished"><button type="button" data-action="sp-toggle-open" data-key="workout:${spEsc(option.key)}"><small>✓ ${splits ? "Растяжка завершена" : "Тренировка завершена"} · ${done}/${total}${seconds ? ` · ${C.formatDuration(seconds)}` : ""}</small><strong>${spEsc(plan.title)}</strong><span>${expanded ? "Свернуть упражнения" : "Показать упражнения"}</span></button><button class="text-action" type="button" data-action="sp-unfinish" ${readOnly ? "disabled" : ""}>Отменить завершение</button></div>`
-    : `<div class="sp-workout-head"><div><p class="sp-kicker">${splits ? "Растяжка" : "Тренировка"}</p><h2>${spEsc(plan.title)}</h2>${plan.focus ? `<p class="section-note">${spEsc(plan.focus)}</p>` : ""}</div>${!readOnly && !allDone ? `<button type="button" class="sp-start" data-action="sp-runner" title="Работа, отдых и перерывы">${SP_ICON.play}<b>${C.formatDuration(C.estimateWorkoutSeconds(plan))}</b><small>Запустить</small></button>` : `<span class="sp-start static"><b>${C.formatDuration(C.estimateWorkoutSeconds(plan))}</b></span>`}</div>`;
+    : `<div class="sp-workout-head"><div><p class="sp-kicker">${free ? "Свободная тренировка" : spEsc(option.programTitle)}</p><h2>${spEsc(plan.title)}</h2>${plan.focus ? `<p class="section-note">${spEsc(plan.focus)}</p>` : ""}${free ? `<button class="text-action" type="button" data-action="sp-free-edit" data-id="${spEsc(option.key.slice(5))}">Изменить</button>` : ""}</div>${!readOnly && !allDone ? `<button type="button" class="sp-start" data-action="sp-runner" title="Работа, отдых и перерывы">${SP_ICON.play}<b>${C.formatDuration(C.estimateWorkoutSeconds(plan))}</b><small>${done ? "Дальше" : "Запустить"}</small></button>` : `<span class="sp-start static"><b>${C.formatDuration(C.estimateWorkoutSeconds(plan))}</b></span>`}</div>`;
   const rows = expanded ? plan.exercises.map((e, i) => {
     const sets = C.exerciseSets(e), doneSets = C.completedSets(checks[i], sets), complete = doneSets >= sets;
     const disabled = readOnly || finished || (phase !== null && phase.index !== i);
     const kitId = C.exerciseEquipment(e.name);
     const last = C.latestWeight(s.state, e.name);
+    const record = spRecordFor(s.state, e.name);
     const liked = C.isFavorite(s.state, e.name);
-    const weighable = !splits && !C.isBodyweight(e) && !readOnly;
+    const weighable = !splits && !C.isBodyweight(e);
+    const weight = weighable && last ? `<span class="sp-ex-weight"><b>${spKg(last.kilograms)} кг${last.reps ? ` × ${last.reps}` : ""}</b>${record && record.kilograms > last.kilograms ? `<small>рекорд ${spKg(record.kilograms)}</small>` : ""}</span>` : "";
     return `<div class="sp-ex ${complete ? "done" : ""} ${!finished && !readOnly && i === shown ? "active" : ""}">
-      <div class="sp-ex-body"><button type="button" class="sp-ex-tap" data-action="sp-tap" data-i="${i}" ${disabled || complete ? "disabled" : ""} aria-pressed="${complete}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}</strong><small>${kitId ? spEquipIcon(kitId) : ""}Подход ${Math.min(doneSets + 1, sets)}/${sets} · ${spEsc(e.sets_reps)}</small></span></button>
-        <div class="sp-ex-actions">${!readOnly ? `<button type="button" class="sp-like ${liked ? "on" : ""}" data-action="sp-like" data-i="${i}" aria-pressed="${liked}" aria-label="${liked ? "Убрать из любимых" : "Нравится"}">${liked ? SP_ICON.heartOn : SP_ICON.heart}</button>` : ""}${e.technique || C.hasVideo(e) ? `<button type="button" class="sp-chip" data-action="sp-technique" data-i="${i}">${C.hasVideo(e) ? SP_ICON.play : SP_ICON.technique}<b>Техника</b></button>` : ""}${weighable ? `<button type="button" class="sp-chip ${last ? "value" : ""}" data-action="sp-weight" data-i="${i}">${SP_ICON.dumbbell}<b>${last ? spKg(last.kilograms) : "Вес"}</b></button>` : ""}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
-      ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-muscles" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
+      <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-tap" data-i="${i}" ${disabled || complete ? "disabled" : ""} aria-pressed="${complete}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong><small>${kitId ? spEquipIcon(kitId) : ""}${doneSets ? `Подход ${Math.min(doneSets + 1, sets)}/${sets} · ` : ""}${spEsc(e.sets_reps)}${e.swappedFrom ? " · замена" : ""}</small></span></button>${weight}</div>
+        <div class="sp-ex-actions"><button type="button" class="sp-chip" data-action="sp-exercise" data-i="${i}">${C.hasVideo(e) ? SP_ICON.play : SP_ICON.technique}<b>Как делать</b></button>${weighable && !readOnly ? `<button type="button" class="sp-chip ${last ? "value" : ""}" data-action="sp-weight" data-i="${i}">${SP_ICON.dumbbell}<b>${last ? "Вес" : "Записать вес"}</b></button>` : ""}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
+      ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
   }).join("") : "";
   const finish = !finished && expanded ? `<button class="primary-button sp-wide ${allDone ? "" : "soft"}" type="button" data-action="sp-finish" ${readOnly || phase ? "disabled" : ""}>${readOnly ? (option.historyOnly ? "История · только просмотр" : "План на будущий день") : `Завершить ${splits ? "растяжку" : "тренировку"} · ${done}/${total}`}</button>` : "";
   return `<section class="sp-card sp-workout ${finished ? "is-finished" : ""}">${head}${rows ? `<div class="sp-ex-list">${rows}</div>` : ""}${finish}</section>`;
 }
-
-/** Опция, к которой относится нажатие на экране «Тренировка». */
 function spCurrentOption() {
   const s = spState(), C = SP();
   return C.selectedOption(spOptions().visible, s.date, s.kind, s.state);
@@ -386,10 +390,18 @@ function spCurrentOption() {
 // ------------------------------------------------------------ окна тренировки
 
 SP_SHEETS.technique = sheet => {
-  const C = SP();
+  const C = SP(), s = spState();
   const exercise = sheet.exercise;
   const video = C.exerciseVideoId(exercise);
-  return { title: exercise.name, body: `<p class="sp-runner-scheme">${spEsc(exercise.sets_reps)}</p>${exercise.technique ? `<p class="sp-tech">${spEsc(exercise.technique)}</p>` : ""}${video ? spVideoHtml(video, exercise) : `<button class="text-action" type="button" data-action="sp-external" data-url="${spEsc(C.videoSearchUrl(exercise))}">Найти видео на YouTube →</button>`}${spMuscleMap(exercise.muscles)}<button class="ghost-button sp-wide" type="button" data-action="sp-close">Закрыть</button>` };
+  const liked = C.isFavorite(s.state, exercise.name);
+  const record = spRecordFor(s.state, exercise.name);
+  const actions = sheet.option ? `<div class="sp-ex-sheet-actions"><button class="ghost-button" type="button" data-action="sp-swap-open">Заменить</button>${!C.isBodyweight(exercise) && s.kind !== "splits" ? `<button class="ghost-button" type="button" data-action="sp-weight-from-sheet">Записать вес</button>` : ""}<button class="ghost-button ${liked ? "on" : ""}" type="button" data-action="sp-like-sheet">${liked ? SP_ICON.heartOn : SP_ICON.heart} ${liked ? "Нравится" : "Нравится?"}</button></div>` : "";
+  return { title: exercise.name, body: `<p class="sp-runner-scheme">${spEsc(exercise.sets_reps)}${exercise.swappedFrom ? ` · вместо «${spEsc(exercise.swappedFrom)}»` : ""}</p>${record ? `<p class="section-note">Рекорд: ${spKg(record.kilograms)} кг${record.reps ? ` × ${record.reps}` : ""} · ${spDateShort(record.date)}</p>` : ""}${actions}${exercise.technique ? `<p class="sp-tech">${spEsc(exercise.technique)}</p>` : ""}${video ? spVideoHtml(video, exercise) : `<button class="text-action" type="button" data-action="sp-external" data-url="${spEsc(C.videoSearchUrl(exercise))}">Найти видео на YouTube →</button>`}${spMuscleMap(exercise.muscles)}` };
+};
+SP_SHEETS.rules = () => {
+  const C = SP(), kind = spState().kind;
+  const rules = kind === "splits" ? C.STRETCHING_RULES : C.TRAINING_RULES;
+  return { title: kind === "splits" ? "Правила растяжки" : "Правила тренировки", body: `<ul class="sp-rules">${rules.map(r => `<li>${spEsc(r)}</li>`).join("")}</ul>` };
 };
 SP_SHEETS.muscles = sheet => ({ title: sheet.exercise.name, body: spMuscleMap(sheet.exercise.muscles) });
 SP_SHEETS.weight = sheet => {
@@ -443,6 +455,20 @@ Object.assign(SP_ACTIONS, {
   "sp-unfinish": () => { const option = spCurrentOption(); if (option) spUpdate(prev => SP().finishOption(prev, option, false)).catch(() => {}); },
   "sp-reset-ex": control => { if (spTimer.phase) return; const option = spCurrentOption(); if (option) spUpdate(prev => SP().setOptionExercise(prev, option, Number(control.dataset.i), 0)).catch(() => {}); },
   "sp-like": control => { const option = spCurrentOption(); const e = option?.plan.exercises[Number(control.dataset.i)]; if (e) spUpdate(prev => SP().toggleFavorite(prev, e.name)).catch(() => {}); },
+  "sp-exercise": control => {
+    const option = spCurrentOption();
+    const exercise = option?.plan.exercises[Number(control.dataset.i)];
+    if (!exercise) return;
+    spTimer.videoOpen = false;
+    spOpen("technique", { exercise, option: option.key, program: SP().optionProgramKey(option), id: exercise.id ?? control.dataset.i, index: Number(control.dataset.i) });
+  },
+  "sp-swap-open": () => {
+    const sheet = spState().sheet;
+    spOpen("swap", { from: sheet.exercise.name, original: sheet.exercise.swappedFrom || sheet.exercise.name, swapped: Boolean(sheet.exercise.swappedFrom), option: sheet.option, program: sheet.program, id: sheet.id });
+  },
+  "sp-weight-from-sheet": () => { const sheet = spState().sheet; spOpen("weight", { exercise: sheet.exercise }); },
+  "sp-like-sheet": () => { const sheet = spState().sheet; spUpdate(prev => SP().toggleFavorite(prev, sheet.exercise.name)).catch(() => {}); },
+  "sp-rules": () => spOpen("rules"),
   "sp-technique": control => {
     const option = spCurrentOption();
     const list = control.dataset.from === "warmup" ? option?.warmup?.exercises : option?.plan.exercises;
