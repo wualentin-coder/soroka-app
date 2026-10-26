@@ -45,8 +45,8 @@ function giftSummary(e) {
 
 function giftEditorRow(g = {}) {
   const products = data.saved.products || [];
-  const picker = flowChoicePicker({value:g.productRef || '',label:'Прикрепить товар',attrs:'data-gift-product',options:[{value:'',label:'Без товара'},...products.map(p => ({value:p.id,label:p.title}))]});
-  return `<div class="gift-editor-row check-row"><label class="gift-check"><input type="checkbox" data-gift-done aria-label="Куплено" ${g.done ? "checked" : ""}><span class="task-check">${icon('check','icon-sm')}</span></label><div class="gift-editor-copy"><label class="field"><input data-gift-text value="${esc(g.text || '')}" maxlength="200" placeholder="Идея подарка"></label>${picker}<div class="gift-product-preview">${giftProductPreview(g.productRef)}</div></div><button type="button" class="icon-button" data-gift-remove aria-label="Удалить идею">${icon('close')}</button></div>`;
+  const picker = products.length ? flowChoicePicker({value:g.productRef || '',label:g.productRef ? 'Другой товар' : 'Прикрепить товар',attrs:'data-gift-product',options:[{value:'',label:'Без товара'},...products.map(p => ({value:p.id,label:p.title}))]}) : `<input type="hidden" data-gift-product value="">`;
+  return `<div class="gift-editor-row"><label class="gift-check"><input type="checkbox" data-gift-done aria-label="Куплено" ${g.done ? "checked" : ""}><span class="task-check">${icon('check','icon-sm')}</span></label><div class="gift-editor-copy"><textarea data-gift-text rows="1" maxlength="200" placeholder="Идея подарка" aria-label="Идея подарка">${esc(g.text || '')}</textarea><div class="gift-product-preview">${giftProductPreview(g.productRef)}</div><div class="gift-attach">${picker}</div></div><button type="button" class="icon-button" data-gift-remove aria-label="Удалить идею">${icon('close','icon-sm')}</button></div>`;
 }
 function giftProductPreview(ref) {
   const product = (data.saved.products || []).find(p => p.id === ref);
@@ -54,14 +54,42 @@ function giftProductPreview(ref) {
   const image = /^https:\/\//.test(product.image || '') ? `<img src="${esc(product.image)}" alt="">` : '';
   return `${image}<span>${esc(product.title)}${product.price ? `<small>${esc(String(product.price))} ${esc(product.currency || '₽')}</small>` : ''}</span>`;
 }
+/** Поле идеи растёт по тексту: длинная идея видна целиком, а не обрезана. */
+function giftFit(area) { area.style.height = 'auto'; area.style.height = `${area.scrollHeight}px`; }
+function giftFitAll(root = document) { root.querySelectorAll('[data-gift-text]').forEach(giftFit); }
+function giftAddFrom(input) {
+  const text = input.value.trim();
+  const list = input.closest('.gift-field').querySelector('.gift-editor-list');
+  if (!text || list.children.length >= 30) return;
+  list.insertAdjacentHTML('beforeend', giftEditorRow({ text }));
+  giftFit(list.lastElementChild.querySelector('[data-gift-text]'));
+  input.value = '';
+  giftCount(input.closest('.gift-field'));
+}
+function giftCount(field) {
+  const rows = [...field.querySelectorAll('.gift-editor-row')];
+  const count = field.querySelector('.gift-count');
+  if (count) count.textContent = rows.length ? `${rows.filter(r => r.querySelector('[data-gift-done]').checked).length} из ${rows.length} куплено` : '';
+}
 document.addEventListener('change', event => {
   const select = event.target.closest?.('[data-gift-product]');
   if (select) select.closest('.gift-editor-row').querySelector('.gift-product-preview').innerHTML = giftProductPreview(select.value);
+  if (event.target.matches?.('[data-gift-done]')) giftCount(event.target.closest('.gift-field'));
+});
+document.addEventListener('input', event => { if (event.target.matches?.('[data-gift-text]')) giftFit(event.target); });
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.isComposing) return;
+  if (event.target.matches?.('[data-gift-new]')) { event.preventDefault(); giftAddFrom(event.target); }
+  else if (event.target.matches?.('[data-gift-text]')) { event.preventDefault(); event.target.blur(); }
 });
 function renderGiftFields(item) {
-  return `<section class="gift-field"><input type="hidden" name="gifts" value="list"><div class="section-heading"><h3>Идеи подарков</h3><button type="button" class="text-action" data-gift-add>${icon('plus')}Добавить</button></div><div class="gift-editor-list">${(item?.gifts || []).map(giftEditorRow).join('')}</div><p class="section-note">Отмечайте купленное. К каждой идее можно прикрепить товар из сохранённых.</p></section>`;
+  const gifts = item?.gifts || [];
+  queueMicrotask(() => giftFitAll());
+  return `<section class="gift-field"><input type="hidden" name="gifts" value="list"><div class="gift-head"><h3>Идеи подарков</h3><small class="gift-count">${gifts.length ? `${gifts.filter(g => g.done).length} из ${gifts.length} куплено` : ''}</small></div><div class="gift-editor-list">${gifts.map(giftEditorRow).join('')}</div><div class="gift-new"><input data-gift-new maxlength="200" placeholder="Новая идея подарка" enterkeyhint="done" aria-label="Новая идея подарка"><button type="button" class="icon-button" data-gift-add aria-label="Добавить идею">${icon('plus','icon-sm')}</button></div></section>`;
 }
 function readGiftFields(form) {
+  const pending = form.querySelector('[data-gift-new]');
+  if (pending?.value.trim()) giftAddFrom(pending);
   return [...form.querySelectorAll('.gift-editor-row')].slice(0, 30).map(row => {
     const productRef = row.querySelector('[data-gift-product]').value;
     const product = (data.saved.products || []).find(p => p.id === productRef);
@@ -70,12 +98,9 @@ function readGiftFields(form) {
 }
 document.addEventListener('click', event => {
   const add = event.target.closest?.('[data-gift-add]');
-  if (add) {
-    const list = add.closest('.gift-field').querySelector('.gift-editor-list');
-    if (list.children.length < 30) { list.insertAdjacentHTML('beforeend', giftEditorRow()); list.lastElementChild.querySelector('[data-gift-text]').focus(); }
-    return;
-  }
-  event.target.closest?.('[data-gift-remove]')?.closest('.gift-editor-row')?.remove();
+  if (add) { const input = add.closest('.gift-field').querySelector('[data-gift-new]'); if (input.value.trim()) giftAddFrom(input); else input.focus(); return; }
+  const remove = event.target.closest?.('[data-gift-remove]');
+  if (remove) { const field = remove.closest('.gift-field'); remove.closest('.gift-editor-row')?.remove(); giftCount(field); }
 });
 function birthdayRow(b) {
   const soon = b.days <= 7;
