@@ -128,10 +128,10 @@ document.addEventListener("visibilitychange", () => {
 function spDay() { const s = spState(); return SP().programDaySince(s.startedOn || SP().todayKey()); }
 function spOptions() {
   const s = spState(), C = SP();
-  const all = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined);
+  const programs = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined);
+  const all = spApplySwaps([...programs, ...spFreeOptions(s.state)], s.state);
   return { all, visible: C.visibleWorkoutOptions(all, s.state) };
 }
-
 // ------------------------------------------------------------ значки (из WooSport)
 
 const SP_ICON = {
@@ -177,11 +177,8 @@ function renderSportPage() {
   const body = s.tab === "training" ? spTrainingScreen() : s.tab === "goals" ? spGoalsScreen() : s.tab === "profile" ? spProfileScreen() : spTodayScreen();
   const banner = s.demo ? `<p class="sp-demo">Демо WooSport · данные не сохраняются</p>` : "";
   const failed = s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "";
-  // Программу добавляют чаще, чем меняют настройки: плюс — в шапке, рядом с поиском.
-  const head = header("Спорт", "", "").replace('<div class="header-actions">', `<div class="header-actions"><button class="icon-button" type="button" data-action="sp-import-open" aria-label="Добавить программу">${icon("plus")}</button><button class="icon-button" type="button" data-action="sp-settings-open" aria-label="Настройки спорта">${icon("settings")}</button>`);
-  return `${head}<div class="sp-page">${banner}${failed}${tabs}${body}</div>${spSheetHtml()}`;
+  return `${header("Спорт", "", "")}<div class="sp-page">${banner}${failed}${tabs}${body}</div>${spSheetHtml()}`;
 }
-
 // ------------------------------------------------------------ окна (шторки Flow)
 
 function spOpen(kind, extra = {}) { const s = spState(); s.sheet = { kind, ...extra }; s.sheetError = ""; render(); }
@@ -197,42 +194,101 @@ function spSheetError(message) { spState().sheetError = message; render(); }
 
 // ------------------------------------------------------------ «Сегодня»
 
+// «Сегодня» — что сделать в этот день: тренировка, отметки, счётчики. Дата —
+// из полосы недели; месяц раскрывается по нажатию.
 function spTodayScreen() {
   const s = spState(), C = SP();
-  const today = C.todayKey();
-  const date = s.date;
+  const today = C.todayKey(), date = s.date;
   const { visible } = spOptions();
-  const label = spDateLong(date);
-  const parts = [spCalendar(visible)];
-  if (date > today) parts.push(`<p class="sp-marker">${label} · план</p>`);
-  else {
-    if (date !== today) parts.push(`<p class="sp-marker">${label} · журнал</p>`);
-    parts.push(spHabitsCard(date));
-    const mobility = ["main", "splits", "test"].map(kind => C.selectedOption(visible, date, kind, s.state)?.mobility).find(Boolean);
-    parts.push(spWarmupCard(date, mobility));
-    if (date === today) parts.push(spWakeCard(), spCountersCard());
-  }
+  const parts = [spWeekStrip(visible)];
+  parts.push(spDayWorkoutCard(visible, date));
   parts.push(spTestCard(visible, date));
-  // Вопрос «во сколько проснулся?» — один раз за запуск, после часа из настроек.
+  if (date <= today) parts.push(spDayList(visible, date));
+  if (date === today) parts.push(spCountersCard());
   if (!s.wakeAsked && date === today && C.shouldAskWakeTime(s.state) && !s.sheet) {
     s.wakeAsked = true;
     queueMicrotask(() => spOpen("wake", { date: today, asked: true }));
   }
-  if (!visible.length && !s.demo) parts.unshift(spStartPrompt());
   return parts.join("");
 }
-
-// Первый запуск: без программы тренировок нечего показывать — три шага по порядку.
-function spStartPrompt() {
-  const gaps = SP().profileGaps(spState().state);
-  return `<section class="sp-card sp-start"><p class="sp-kicker">Первый шаг</p><h2>Начнём с вашей программы</h2><p class="section-note">Три шага по порядку: рассказать о себе, забрать инструкцию для ИИ, вставить готовый план.</p>
-    <ol class="sp-steps">
-      <li><b>01</b><span><strong>Профиль</strong><small>Анкета, фокус мышц, инвентарь и замеры</small></span><button class="ghost-button" type="button" data-action="sp-tab" data-tab="profile">${gaps.any ? "Заполнить" : "Проверить"}</button></li>
-      <li><b>02</b><span><strong>Инструкция для ИИ</strong><small>Правила и ваши данные одним текстом</small></span><button class="ghost-button" type="button" data-action="sp-copy-packet">Скопировать</button></li>
-      <li><b>03</b><span><strong>Программа</strong><small>Вставьте JSON, который вернул ИИ</small></span><button class="primary-button" type="button" data-action="sp-import-open">Добавить</button></li>
-    </ol></section>`;
+/** Неделя полосой: выбор дня для «Сегодня» и «Тренировки». Месяц — по нажатию. */
+function spWeekStrip(options) {
+  const s = spState(), C = SP(), today = C.todayKey();
+  const monday = C.startOfWeekKey(s.date);
+  const days = Array.from({ length: 7 }, (_, i) => C.offsetDateKey(monday, i));
+  const names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  const status = date => {
+    const main = options.filter(o => o.date === date && (o.kind === "main" || o.kind === "splits"));
+    if (!main.length) return "";
+    const pct = Math.max(...main.map(o => C.optionCompletion(o, s.state)));
+    return date > today ? "plan" : pct === 100 ? "done" : date < today ? "missed" : pct > 0 ? "part" : "plan";
+  };
+  const label = s.date === today ? "Сегодня" : s.date === C.offsetDateKey(today, -1) ? "Вчера" : s.date === C.offsetDateKey(today, 1) ? "Завтра" : "";
+  const month = s.monthOpen ? spCalendar(options) : "";
+  return `<section class="sp-week"><div class="sp-week-head"><button class="icon-button" type="button" data-action="sp-week-shift" data-d="-1" aria-label="Неделя назад">${icon("left", "icon-sm")}</button><button type="button" class="sp-week-title" data-action="sp-month" aria-expanded="${Boolean(s.monthOpen)}"><b>${label ? `${label} · ` : ""}${spDateLong(s.date)}</b><small>${s.monthOpen ? "Скрыть месяц" : "Месяц"}</small></button><button class="icon-button" type="button" data-action="sp-week-shift" data-d="1" aria-label="Неделя вперёд">${icon("right", "icon-sm")}</button></div>
+    <div class="sp-week-days">${days.map((d, i) => `<button type="button" class="${[d === s.date ? "on" : "", d === today ? "today" : "", status(d)].join(" ")}" data-action="sp-date" data-date="${d}" aria-pressed="${d === s.date}"><small>${names[i]}</small><b>${Number(d.slice(8))}</b><i></i></button>`).join("")}</div>
+    ${s.date !== today ? `<button class="text-action sp-center" type="button" data-action="sp-today">Вернуться к сегодня</button>` : ""}</section>${month}`;
 }
 
+/** Тренировка выбранного дня одной карточкой: начать или продолжить в один шаг. */
+function spDayWorkoutCard(options, date) {
+  const s = spState(), C = SP(), today = C.todayKey();
+  const kinds = ["main", "splits"].map(kind => C.selectedOption(options, date, kind, s.state)).filter(Boolean);
+  if (!kinds.length) {
+    if (C.withinProgram(options, date)) return `<section class="sp-card sp-today-workout rest"><p class="sp-kicker">Тренировка дня</p><h2>День отдыха</h2><p class="section-note">Мышцы растут между тренировками. Лёгкое движение, сон и вода — лучшее, что можно сделать сегодня.</p><button class="text-action" type="button" data-action="sp-free-new">+ Всё-таки потренироваться</button></section>`;
+    const programs = spProgramProgress(options, s.state).length;
+    return `<section class="sp-card sp-today-workout empty"><p class="sp-kicker">Тренировка дня</p><h2>${programs ? "На этот день ничего нет" : "Программы ещё нет"}</h2><p class="section-note">${programs ? "Можно записать свободную тренировку." : "Составьте её с ИИ: анкета и инвентарь в профиле уйдут ему вместе с инструкцией. Или запишите тренировку сами."}</p><div class="sp-row-actions">${programs ? "" : `<button class="primary-button" type="button" data-action="sp-import-open">Новая программа с ИИ</button>`}<button class="ghost-button" type="button" data-action="sp-free-new">Свободная тренировка</button></div></section>`;
+  }
+  return kinds.map(option => {
+    const checks = C.optionChecks(option, s.state);
+    const total = option.plan.exercises.length;
+    const done = option.plan.exercises.filter((e, i) => C.completedSets(checks[i], C.exerciseSets(e)) >= C.exerciseSets(e)).length;
+    const pct = C.optionCompletion(option, s.state);
+    const finished = Boolean(s.state.workouts?.[option.key]) || pct === 100;
+    const seconds = C.workoutSeconds(s.state, option);
+    const future = date > today;
+    const action = finished ? `<span class="sp-pill done">${icon("check", "icon-sm")}Готово${seconds ? ` · ${C.formatDuration(seconds)}` : ""}</span>`
+      : future ? `<span class="sp-pill">${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}</span>`
+      : option.historyOnly ? "" : `<button class="primary-button" type="button" data-action="sp-start-day" data-key="${spEsc(option.key)}">${pct > 0 ? "Продолжить" : "Начать"}</button>`;
+    return `<section class="sp-card sp-today-workout"><div class="sp-card-head"><p class="sp-kicker">${option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</p><span>${spEsc(option.programTitle)}</span></div><button type="button" class="sp-today-title" data-action="sp-tab" data-tab="training"><h2>${spEsc(option.plan.title)}</h2>${option.plan.focus ? `<small>${spEsc(option.plan.focus)}</small>` : ""}</button>
+      <span class="sp-progress"><i style="width:${pct}%"></i></span><div class="sp-card-head"><span class="section-note">${done} из ${total} упражнений · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}</span>${action}</div></section>`;
+  }).join("");
+}
+
+/** Всё, что отмечается за день, — одним списком: подъём, подвижность, душ, свои привычки. */
+function spDayList(options, date) {
+  const s = spState(), C = SP(), today = C.todayKey();
+  const rows = [];
+  if (date === today || s.state.wakeups?.[date]) {
+    const time = s.state.wakeups?.[date];
+    rows.push(`<div class="sp-habit ${time ? "done" : ""}"><div class="sp-habit-row"><button type="button" class="sp-habit-name" data-action="sp-wake-log"><i class="sp-caret"></i>Подъём${time ? ` · ${time}` : ""}</button>${spWakeAverage()}<button type="button" class="sp-check ${time ? "on" : ""}" data-action="sp-wake-edit" data-date="${date}" aria-label="Время подъёма">${time ? icon("check", "icon-sm") : SP_ICON.sun}</button></div></div>`);
+  }
+  const mobility = ["main", "splits", "test"].map(kind => C.selectedOption(options, date, kind, s.state)?.mobility).find(Boolean);
+  rows.push(spMobilityRow(date, mobility));
+  rows.push(spHabitRow({ id: "shower", label: "Контрастный душ", marks: s.state.showers || {}, date }));
+  for (const [id, habit] of Object.entries(s.state.customHabits || {})) {
+    if (habit.archived || habit.createdOn > date) continue;
+    rows.push(spHabitRow({ id, label: habit.name, marks: s.state.habitChecks?.[id] || {}, date, total: C.habitTarget(habit), dayParts: C.isMorningEvening(habit), since: habit.createdOn, reminders: C.habitReminders(habit).map(r => r.time), editable: true }));
+  }
+  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">${date === today ? "Отметить сегодня" : "Отметки дня"}</p><button class="text-action" type="button" data-action="sp-habit-new">+ привычка</button></div>${rows.join("")}</section>`;
+}
+function spWakeAverage() {
+  const C = SP(), avg = C.wakeAverage(C.wakeSeries(spState().state, 14));
+  return avg === null ? "" : `<span class="sp-streak">в среднем ${C.formatMinutes(avg)}</span>`;
+}
+/** Утренняя подвижность — не разминка перед занятием: она про тело, одинаковая в любой день. */
+function spMobilityRow(date, plan) {
+  const s = spState(), C = SP();
+  const exercises = plan?.exercises || [];
+  const total = exercises.length || 5;
+  const value = s.state.warmups?.[date];
+  const complete = typeof value === "number" ? value >= total : Boolean(value);
+  const flags = Object.fromEntries(Object.entries(s.state.warmups || {}).map(([k, v]) => [k, typeof v === "number" ? v >= total : Boolean(v)]));
+  const st = spStreak(flags, date);
+  const open = s.open.mobility;
+  return `<div class="sp-habit ${complete ? "done" : ""}"><div class="sp-habit-row"><button type="button" class="sp-habit-name" data-action="sp-toggle-open" data-key="mobility" aria-expanded="${Boolean(open)}"><i class="sp-caret"></i>Утренняя подвижность</button><span class="sp-streak ${st.atRisk ? "risk" : ""}"><b>${st.days}</b> ${st.atRisk ? `${spPlural(st.days, "день", "дня", "дней")} сгорит` : spPlural(st.days, "день", "дня", "дней")}</span><button type="button" class="sp-check ${complete ? "on" : ""}" data-action="sp-warmup" aria-pressed="${complete}" aria-label="Утренняя подвижность">${complete ? icon("check", "icon-sm") : ""}</button></div>
+    ${open ? `<div class="sp-habit-more">${exercises.length ? `<ol class="sp-steps-list">${exercises.map(e => `<li><span>${spEsc(e.name)}</span><b>${spEsc(e.sets_reps)}</b></li>`).join("")}</ol>` : `<p class="section-note">В программе нет блока подвижности — отметьте по факту: суставная гимнастика, растяжка, 5–10 минут.</p>`}</div>` : ""}</div>`;
+}
 function spCalendar(options) {
   const s = spState(), C = SP();
   const today = C.todayKey();
@@ -289,43 +345,8 @@ function spStrip(days, began) {
   return `<div class="sp-strip-wrap"><div class="sp-strip" data-sp-strip>${days.map(d => `<span class="is-${d.state}" title="${spDateLong(d.date)}">${Number(d.date.slice(8))}</span>`).join("")}</div><small>С ${spDateLong(began)} · сегодня справа</small></div>`;
 }
 
-function spHabitsCard(date) {
-  const s = spState(), C = SP();
-  const rows = [spHabitRow({ id: "shower", label: "Контрастный душ", marks: s.state.showers || {}, date })];
-  for (const [id, habit] of Object.entries(s.state.customHabits || {})) {
-    if (habit.archived || habit.createdOn > date) continue;
-    rows.push(spHabitRow({ id, label: habit.name, marks: s.state.habitChecks?.[id] || {}, date, total: C.habitTarget(habit), dayParts: C.isMorningEvening(habit), since: habit.createdOn, reminders: C.habitReminders(habit).map(r => r.time), editable: true }));
-  }
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">01 · Привычки</p><span>${date === C.todayKey() ? "Сегодня" : "Журнал дня"}<button class="sp-add" type="button" data-action="sp-habit-new" aria-label="Добавить привычку">${icon("plus", "icon-sm")}</button></span></div>${rows.join("")}</section>`;
-}
 
-function spWarmupCard(date, plan) {
-  const s = spState(), C = SP();
-  const exercises = plan?.exercises || [];
-  const total = exercises.length || 5;
-  const value = s.state.warmups?.[date];
-  const done = typeof value === "number" ? Math.min(total, value) : value ? total : 0;
-  const complete = done >= total;
-  const flags = Object.fromEntries(Object.entries(s.state.warmups || {}).map(([k, v]) => [k, (typeof v === "number" ? v >= total : Boolean(v))]));
-  const st = spStreak(flags, date);
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">02 · Утренняя разминка</p><span class="sp-streak ${st.atRisk ? "risk" : ""}"><b>${st.days}</b> ${spPlural(st.days, "день", "дня", "дней")}${st.atRisk ? " сгорит" : ""}</span></div>
-    <div class="sp-habit ${complete ? "done" : ""}"><div class="sp-habit-row"><span class="sp-habit-name plain">Разминка сделана</span><button type="button" class="sp-check ${complete ? "on" : ""}" data-action="sp-warmup" aria-pressed="${complete}" aria-label="Утренняя разминка: ${complete ? "снять отметку" : "отметить"}">${complete ? icon("check", "icon-sm") : ""}</button></div></div>
-    ${exercises.length ? `<details class="sp-details"><summary>Что делать · ${exercises.length}</summary><ol class="sp-steps-list">${exercises.map(e => `<li><span>${spEsc(e.name)}</span><b>${spEsc(e.sets_reps)}</b></li>`).join("")}</ol></details>` : `<p class="section-note">Разминка на подвижность не задана в программе — отметьте просто по факту.</p>`}</section>`;
-}
 
-function spWakeCard() {
-  const s = spState(), C = SP();
-  const points = C.wakeSeries(s.state, 14);
-  const logged = points.filter(p => p.minutes !== null).map(p => p.minutes);
-  const average = C.wakeAverage(points);
-  const today = points[points.length - 1];
-  const low = logged.length ? Math.min(...logged) - 45 : 300, high = logged.length ? Math.max(...logged) + 45 : 600;
-  const span = Math.max(60, high - low);
-  const bars = points.map(p => `<span class="${p.minutes === null ? "empty" : ""}"><i>${p.minutes !== null ? `<b style="top:${Math.min(92, Math.max(0, (p.minutes - low) / span * 100))}%"></b>` : ""}</i><small>${C.weekdayLabel(p.date)}</small></span>`).join("");
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">03 · Подъём</p><span>${today?.time ? `Сегодня в ${today.time}` : "Сегодня не отмечено"}</span></div>
-    <button type="button" class="sp-wake" data-action="sp-wake-log" aria-label="Журнал подъёмов"><span class="sp-wake-sum"><b>${average === null ? "—" : C.formatMinutes(average)}</b><small>в среднем за 14 дней</small></span><span class="sp-wake-bars">${bars}</span></button>
-    ${!today?.time ? `<button class="ghost-button sp-wide" type="button" data-action="sp-wake-edit" data-date="${C.todayKey()}">Отметить подъём</button>` : ""}</section>`;
-}
 
 function spCountersCard() {
   const s = spState(), C = SP();
@@ -345,9 +366,9 @@ function spCountersCard() {
     }
     return `<div class="sp-counter ${open ? "open" : ""}"><button type="button" class="sp-counter-row" data-action="sp-toggle-open" data-key="counter:${spEsc(id)}" aria-expanded="${Boolean(open)}"><span><strong><i class="sp-caret"></i>${spEsc(counter.name)}</strong><small>С ${new Date(counter.startedAt).toLocaleDateString("ru-RU")}</small></span><span class="sp-clock"><b>${t.days} <small>${spPlural(t.days, "день", "дня", "дней")}</small></b><span data-sp-clock="${spEsc(counter.startedAt)}">${[t.hours, t.minutes, t.seconds].map(n => String(n).padStart(2, "0")).join(":")}</span></span></button>${goal}${more}</div>`;
   }).join("");
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">04 · Счётчики</p><button class="sp-add" type="button" data-action="sp-counter-new" aria-label="Добавить счётчик">${icon("plus", "icon-sm")}</button></div>${rows || `<p class="section-note">«Не курю», «Без алкоголя» или любое событие — плюсом сверху.</p>`}</section>`;
+  if (!rows) return `<button type="button" class="sp-card sp-ghost-card" data-action="sp-counter-new"><span><strong>Счётчик без срывов</strong><small>«Не курю», «Без сладкого» — сколько дней держитесь</small></span>${icon("plus", "icon-sm")}</button>`;
+  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Без срывов</p><button class="text-action" type="button" data-action="sp-counter-new">+ счётчик</button></div>${rows}</section>`;
 }
-// Часы счётчиков тикают без перерисовки страницы.
 setInterval(() => {
   if (ui.page !== "sport" || !SP()) return;
   for (const el of document.querySelectorAll("[data-sp-clock]")) {
@@ -457,9 +478,15 @@ SP_FORMS.wake = form => {
   spClose();
 };
 SP_SHEETS["wake-log"] = () => {
-  const C = SP();
-  const rows = C.wakeSeries(spState().state, 30).slice().reverse().map(p => `<button type="button" class="sp-list-row ${p.time ? "" : "muted"}" data-action="sp-wake-edit" data-date="${p.date}"><span>${spDateShort(p.date)} <small>${C.weekdayLabel(p.date)}</small></span><b>${p.time || "—"}</b></button>`).join("");
-  return { title: "Журнал подъёмов", body: `<p class="section-note">Нажмите на день, чтобы поставить или исправить время.</p><div class="sp-list">${rows}</div>` };
+  const C = SP(), state = spState().state;
+  const points = C.wakeSeries(state, 14);
+  const logged = points.filter(p => p.minutes !== null).map(p => p.minutes);
+  const average = C.wakeAverage(points);
+  const low = logged.length ? Math.min(...logged) - 45 : 300, high = logged.length ? Math.max(...logged) + 45 : 600;
+  const span = Math.max(60, high - low);
+  const bars = points.map(p => `<span class="${p.minutes === null ? "empty" : ""}"><i>${p.minutes !== null ? `<b style="top:${Math.min(92, Math.max(0, (p.minutes - low) / span * 100))}%"></b>` : ""}</i><small>${C.weekdayLabel(p.date)}</small></span>`).join("");
+  const rows = C.wakeSeries(state, 30).slice().reverse().map(p => `<button type="button" class="sp-list-row ${p.time ? "" : "muted"}" data-action="sp-wake-edit" data-date="${p.date}"><span>${spDateShort(p.date)} <small>${C.weekdayLabel(p.date)}</small></span><b>${p.time || "—"}</b></button>`).join("");
+  return { title: "Подъёмы", body: `<div class="sp-wake"><span class="sp-wake-sum"><b>${average === null ? "—" : C.formatMinutes(average)}</b><small>в среднем за 14 дней</small></span><span class="sp-wake-bars">${bars}</span></div><p class="section-note">Нажмите на день, чтобы поставить или исправить время.</p><div class="sp-list">${rows}</div>` };
 };
 
 // ------------------------------------------------------------ плитка на «Плане»
@@ -487,6 +514,15 @@ Object.assign(SP_ACTIONS, {
   "sp-close": () => spClose(),
   "sp-date": control => { if (spTimerGuard()) return; const s = spState(); s.date = control.dataset.date; render(); },
   "sp-today": () => { if (spTimerGuard()) return; const s = spState(), C = SP(); s.date = C.todayKey(); s.weekStart = C.startOfWeekKey(s.date); render(); },
+  "sp-week-shift": control => { if (spTimerGuard()) return; const s = spState(), C = SP(); s.date = C.offsetDateKey(s.date, Number(control.dataset.d) * 7); s.weekStart = C.startOfWeekKey(s.date); render(); },
+  "sp-month": () => { const s = spState(); s.monthOpen = !s.monthOpen; s.weekStart = SP().startOfWeekKey(s.date); render(); },
+  "sp-start-day": control => {
+    const option = spOptions().visible.find(o => o.key === control.dataset.key);
+    if (!option) return;
+    const s = spState(), C = SP();
+    spTimerRegister(option, option.date > C.todayKey() || Boolean(option.historyOnly), Boolean(s.state.workouts?.[option.key]));
+    spTimer.runner = true; spTimer.dismissed = false; spOverlay(true);
+  },
   "sp-weeks": control => { const s = spState(); s.weekStart = SP().offsetDateKey(s.weekStart, Number(control.dataset.d) * 7); render(); },
   "sp-toggle-open": control => { const s = spState(), key = control.dataset.key; s.open[key] = !s.open[key]; render(); },
   "sp-habit": control => {
