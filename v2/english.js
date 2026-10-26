@@ -101,12 +101,15 @@ function enHomeTile() {
 }
 function enLoad(key, op, args = {}) {
   const s = enState();
-  if (s[`${key}Loading`]) return;
+  if (s[`${key}Loading`]) { s[`${key}Next`] = { op, args }; return; }
   s[`${key}Loading`] = true;
-  enCall(op, args).then(answer => { if (answer?.error) throw new Error(answer.error); s[key] = answer; s.error = ""; })
+  const token = Symbol(); s[`${key}Token`] = token;
+  enCall(op, args).then(answer => { if (answer?.error) throw new Error(answer.error); if (!s[`${key}Next`] && s[`${key}Token`] === token) s[key] = answer; s.error = ""; })
     .catch(error => { s.error = String(error?.message || error); })
     .finally(() => {
       s[`${key}Loading`] = false;
+      const next = s[`${key}Next`];
+      if (next) { delete s[`${key}Next`]; s[key] = null; enLoad(key, next.op, next.args); return; }
       // Поиск: после перерисовки курсор остаётся в поле, а не пропадает.
       const typing = document.activeElement?.id;
       enRerender();
@@ -140,14 +143,15 @@ async function enSpeak(text, button) {
 // ------------------------------------------------------------ страница
 
 function renderEnglishPage() {
+  queueMicrotask(enFlush);
   const s = enState();
-  if (s.deck) return `<div class="en-run">${s.deck.loading ? enWait() : enDeckTop(s.deck) + enDeckScreen(s.deck)}</div>`;
+  if (s.deck) return `<div class="en-run">${enSyncBanner()}${s.deck.loading ? enWait() : enDeckTop(s.deck) + enDeckScreen(s.deck)}</div>`;
   if (s.ex) return enExScreen(s.ex);
   const tabs = `<div class="en-tabs" role="tablist">${EN_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="en-tab" data-tab="${key}">${label}</button>`).join("")}</div>`;
   if (s.tab === "read" && s.book) return enReaderScreen();
   const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : s.tab === "read" ? enBooksScreen()
     : s.tab === "words" ? enWordsScreen() : s.tab === "course" ? enCourseScreen() : enTodayScreen();
-  return `${header("Английский", "", "")}<div class="en-page">${tabs}${body}</div>`;
+  return `${header("Английский", "", "")}<div class="en-page">${enSyncBanner()}${tabs}${body}</div>`;
 }
 
 function enTodayScreen() {
@@ -207,7 +211,7 @@ function enRuleFinish(ex) {
   if (ex.sent) return;
   ex.sent = true;
   if (ex.done < 3) { ex.result = { few: true }; return; }
-  enCall("ruledone", { id: ex.rule.id, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().rulesStale = true; render(); }).catch(() => {});
+  enQueue("ruledone", { id: ex.rule.id, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().rulesStale = true; render(); }).catch(() => {});
 }
 
 // ------------------------------------------------------------ колода слов
@@ -254,7 +258,7 @@ function enDeckAnswer(know) {
   // В расписание — только первый ответ на слово за сессию.
   if (!d.graded.has(w.id)) {
     d.graded.add(w.id);
-    enCall("swipe", { id: w.id, know, attempt: `w${w.id}-${Date.now()}` }).catch(() => {});
+    enQueue("swipe", { id: w.id, know, attempt: `w${w.id}-${Date.now()}` }).catch(() => {});
     if (w.isNew && !know) { d.newUnknown++; d.learned.push(w.en); }
     if (d.placement && w.layer) { const key = w.layer.join("-"); const r = d.results[key] ||= { from: w.layer[0], to: w.layer[1], known: 0, shown: 0 }; r.shown++; if (know) r.known++; }
   }
@@ -293,7 +297,7 @@ function enDeckDone(d) {
 function enPlacementDone(d) {
   if (!d.sent) {
     d.sent = true;
-    enCall("placed", { results: Object.values(d.results) }).then(r => { d.outcome = r; enState().today = null; enState().course = null; render(); }).catch(() => { d.outcome = { error: true }; render(); });
+    enQueue("placed", { results: Object.values(d.results) }).then(r => { d.outcome = r; enState().today = null; enState().course = null; render(); }).catch(() => { d.outcome = { error: true }; render(); });
   }
   const r = d.outcome;
   if (!r) return enWait();
@@ -692,7 +696,7 @@ function enLessonEnter() {
     ex.sent = true;
     // Пропустили почти всё — урок не засчитываем: проходят упражнениями, а не кнопкой «Пропустить».
     if (ex.done < 4) { ex.result = { few: true }; return; }
-    enCall("unitdone", { unit: ex.unit.key, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().today = null; enState().course = null; render(); }).catch(() => {});
+    enQueue("unitdone", { unit: ex.unit.key, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().today = null; enState().course = null; render(); }).catch(() => {});
   }
   if (["listen", "dictation"].includes(item.mode)) setTimeout(() => enSpeak(item.en), 150);
 }
@@ -787,7 +791,7 @@ function enExAnswer(ok, extra = {}) {
   // В расписание — только фразы, которые уже учатся; раньше срока сервер интервал не двигает.
   const mode = item.mode || ex.mode;
   const real = ex.mode === "lesson" && mode === "recall"; // проверка без подсказки — настоящая оценка
-  if (item.introduced || real) enCall("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
+  if (item.introduced || real) enQueue("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
   // Не вспомнили в уроке — ещё раз перед разговором (один раз).
   if (real && !ok && !item.again) { const talk = ex.items.findIndex(i => i.mode === "talk"); ex.items.splice(talk < 0 ? ex.items.length : talk, 0, { ...item, again: true }); }
   render();
@@ -903,12 +907,15 @@ function enWholeBook(b) {
 
 // Страницы, которые уже видели или подгрузили заранее: листание без ожидания.
 const enPages = new Map();
+let enBookRequest = 0;
 async function enBookOpen(id, page, dir = 0) {
+  const request = ++enBookRequest;
   const s = enState();
   s.pop = null;
   const marks = s.book?.id === id ? s.book.marks : null;
   const hit = page !== undefined && enPages.get(`${id}:${page}`);
   const show = data => {
+    if (request !== enBookRequest) return;
     s.book = { ...data, marks: marks ? [...new Set([...marks, ...(data.marks || [])])] : data.marks || [], enter: dir };
     render();
     document.querySelector(".en-reader-scroll")?.scrollTo({ top: 0 });
@@ -921,8 +928,9 @@ async function enBookOpen(id, page, dir = 0) {
     const data = await enCall("book", page === undefined ? { id } : { id, page });
     if (data?.error) throw new Error(data.error);
     enPages.set(`${id}:${data.page}`, data);
+    if (enPages.size > 80) enPages.delete(enPages.keys().next().value);
     show(data);
-  } catch (_) { s.book = null; toast("Не получилось открыть книгу"); render(); }
+  } catch (_) { if (request === enBookRequest) { s.book = null; toast("Не получилось открыть книгу"); render(); } }
 }
 function enBookPeek(id, page) {
   const s = enState();
@@ -1190,7 +1198,7 @@ document.addEventListener("change", async event => {
     if (!book.text || book.text.length < 200) throw new Error(/\.pdf$/i.test(file.name) ? "scan" : "empty");
     const latin = (book.text.slice(0, 5000).match(/[a-z]/gi) || []).length, cyr = (book.text.slice(0, 5000).match(/[а-яё]/gi) || []).length;
     if (cyr > latin) toast("Похоже, книга не на английском — всё равно загружаю");
-    const answer = await enCall("bookadd", { title: book.title, author: book.author, text: book.text.slice(0, 3_000_000) });
+    const answer = await enCall("bookadd", { title: book.title, author: book.author, text: book.text.slice(0, 3_000_000), attempt: crypto.randomUUID() });
     if (answer?.error) throw new Error(answer.error);
     s.books = null; s.uploading = false;
     toast(`«${book.title}» — ${answer.pages} ${enPlural(answer.pages, "страница", "страницы", "страниц")}`);
@@ -1245,8 +1253,9 @@ function englishAction(action, control) {
   }
   if (action === "en-forget") {
     const index = Number(control.dataset.index);
+    const fact = s.facts?.list[index];
     if (s.facts) { s.facts.list.splice(index, 1); if (s.today) s.today.facts = s.facts.list.length; render(); }
-    enCall("forget", { index }).catch(() => toast("Не получилось стереть"));
+    enQueue("forget", { index, fact }).catch(() => toast("Не получилось стереть"));
     return true;
   }
   if (action === "en-debrief") {
@@ -1259,7 +1268,7 @@ function englishAction(action, control) {
       .catch(() => Object.assign(card, { loading: false, next: "Не получилось подвести итоги — попробуйте ещё раз." })).finally(() => { render(); enScrollChat(); });
     return true;
   }
-  if (action === "en-tab") { if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
+  if (action === "en-tab") { if (s.tab === "chat" && control.dataset.tab !== "chat") { enStopPcm(); enLiveStop(); } if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
   if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") { s.tab = "today"; navigate("english"); if (s.today && !s.today.plan.doneToday) enLessonStart(); else render(); return true; }
   if (action === "en-say") { enSpeak(control.dataset.text, control); return true; }
@@ -1274,7 +1283,7 @@ function englishAction(action, control) {
     if (s.ex?.deck) { s.ex.deck = null; s.ex.index++; enLessonEnter(); render(); return true; }
     s.deck = null; s.words = null; s.wordlist = null; s.today = null; render(); return true;
   }
-  if (action === "en-newwords") { const n = Number(control.dataset.n); if (s.words) s.words.newWords = n; render(); enCall("newwords", { n }).then(() => { s.today = null; }); return true; }
+  if (action === "en-newwords") { const n = Number(control.dataset.n); if (s.words) s.words.newWords = n; render(); enQueue("newwords", { n }).then(() => { s.today = null; }); return true; }
   if (action === "en-wfilter") { s.wfilter = control.dataset.filter; s.wordlist = null; render(); return true; }
   // курс
   if (action === "en-unit") { s.openUnit = s.openUnit === control.dataset.key ? null : control.dataset.key; render(); return true; }
@@ -1296,7 +1305,7 @@ function englishAction(action, control) {
     const tone = s.today?.tone === "polite" ? "friend" : "polite";
     if (s.today) s.today.tone = tone;
     render(); toast(tone === "friend" ? "Эмма — друг: сленг, шутки, без цензуры" : "Эмма — вежливый тренер");
-    enCall("tone", { tone }).catch(() => {});
+    enQueue("tone", { tone }).catch(() => {});
     return true;
   }
   if (action === "en-chat-reset") { enStopPcm(); enLiveStop(); s.chat = null; render(); return true; }
@@ -1322,7 +1331,7 @@ function englishAction(action, control) {
     const r = Number(control.dataset.rating), ex = s.ex, item = ex.items[ex.index];
     ex.done++; if (r >= 3) ex.ok++;
     const real = ex.mode === "lesson" && (item.mode === "listen" || item.mode === "recall");
-    if (item.introduced) enCall("grade", { id: item.id, rating: r, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
+    if (item.introduced) enQueue("grade", { id: item.id, rating: r, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
     enExNext(); return true;
   }
   if (action === "en-tile") { const ex = s.ex; ex.picked.push(Number(control.dataset.ti)); const item = ex.items[ex.index]; if (ex.picked.length === item.tiles.length) { const said = ex.picked.map(i => item.tiles[i]).join(" "); enExAnswer(enNorm(said) === enNorm(item.en), { typed: said }); } else render(); return true; }
