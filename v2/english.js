@@ -257,8 +257,8 @@ function enDeckAnswer(know) {
   const w = d.queue[d.i];
   // В расписание — только первый ответ на слово за сессию.
   if (!d.graded.has(w.id)) {
+    if (!enRecord("swipe", { id: w.id, know, attempt: `w${w.id}-${Date.now()}` })) return;
     d.graded.add(w.id);
-    enQueue("swipe", { id: w.id, know, attempt: `w${w.id}-${Date.now()}` }).catch(() => {});
     if (w.isNew && !know) { d.newUnknown++; d.learned.push(w.en); }
     if (d.placement && w.layer) { const key = w.layer.join("-"); const r = d.results[key] ||= { from: w.layer[0], to: w.layer[1], known: 0, shown: 0 }; r.shown++; if (know) r.known++; }
   }
@@ -786,12 +786,11 @@ const enNorm = v => String(v || "").toLowerCase().replace(/[’`]/g, "'").replac
 function enExAnswer(ok, extra = {}) {
   const ex = enState().ex;
   const item = ex.items[ex.index];
-  ex.answer = { ok, ...extra };
-  ex.done++; if (ok) ex.ok++;
-  // В расписание — только фразы, которые уже учатся; раньше срока сервер интервал не двигает.
+// В расписание — только фразы, которые уже учатся; раньше срока сервер интервал не двигает.
   const mode = item.mode || ex.mode;
   const real = ex.mode === "lesson" && mode === "recall"; // проверка без подсказки — настоящая оценка
-  if (item.introduced || real) enQueue("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
+  if ((item.introduced || real) && !enRecord("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` })) return;
+  ex.answer = { ok, ...extra }; ex.done++; if (ok) ex.ok++;
   // Не вспомнили в уроке — ещё раз перед разговором (один раз).
   if (real && !ok && !item.again) { const talk = ex.items.findIndex(i => i.mode === "talk"); ex.items.splice(talk < 0 ? ex.items.length : talk, 0, { ...item, again: true }); }
   render();
@@ -1329,9 +1328,10 @@ function englishAction(action, control) {
   }
   if (action === "en-ex-rate") {
     const r = Number(control.dataset.rating), ex = s.ex, item = ex.items[ex.index];
-    ex.done++; if (r >= 3) ex.ok++;
+
     const real = ex.mode === "lesson" && (item.mode === "listen" || item.mode === "recall");
-    if (item.introduced) enQueue("grade", { id: item.id, rating: r, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` }).catch(() => {});
+    if (item.introduced && !enRecord("grade", { id: item.id, rating: r, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` })) return true;
+    ex.done++; if (r >= 3) ex.ok++;
     enExNext(); return true;
   }
   if (action === "en-tile") { const ex = s.ex; ex.picked.push(Number(control.dataset.ti)); const item = ex.items[ex.index]; if (ex.picked.length === item.tiles.length) { const said = ex.picked.map(i => item.tiles[i]).join(" "); enExAnswer(enNorm(said) === enNorm(item.en), { typed: said }); } else render(); return true; }
