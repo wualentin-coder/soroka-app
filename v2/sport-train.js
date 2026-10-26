@@ -10,7 +10,7 @@
  * таймер переживает перезапуск приложения (timerStorage — только этот телефон).
  */
 
-const spTimer = { session: null, phase: null, clock: null, lastTap: null, dismissed: false, runner: false, ticked: null, videoOpen: false };
+const spTimer = { session: null, phase: null, clock: null, lastTap: null, dismissed: false, runner: false, ticked: null, videoOpen: false, nativeToken: null };
 
 /** Тренировка на экране регистрирует себя как текущую — если таймер не занят другой. */
 function spTimerRegister(option, readOnly, finished) {
@@ -21,7 +21,9 @@ function spTimerRegister(option, readOnly, finished) {
     spTimer.session = { key: option.key, option, readOnly, finished };
     // Восстановить таймер, если приложение перезапускали посреди подхода.
     if (!readOnly && !finished) {
-      const saved = C.loadTimer(option.key);
+      const native = window.sorokaSportTimer?.read();
+      const saved = native?.key === option.key && native.phase ? native : C.loadTimer(option.key);
+      if (native?.key === option.key) spTimer.nativeToken = native.token;
       if (saved && option.plan.exercises[saved.phase.index]) {
         spTimer.phase = saved.phase;
         spTimer.clock = C.Countdown.restore(saved.clock);
@@ -40,13 +42,15 @@ function spSetPhase(next, existing) {
   const C = SP();
   spTimer.phase = next;
   spTimer.ticked = null;
-  if (!next) { spTimer.clock = null; C.clearTimer(); spOverlay(true); return; }
+  if (!next) { window.sorokaSportTimer?.stop(); spTimer.nativeToken = null; spTimer.clock = null; C.clearTimer(); spOverlay(true); return; }
   spTimer.clock = existing || new C.Countdown(spSecondsFor(next));
+  spTimer.nativeToken = crypto.randomUUID();
   C.saveTimer({ workout: spTimer.session.key, phase: next, clock: spTimer.clock.snapshot() });
+  spPublishTimer();
   spOverlay(true);
 }
 function spNoteClock() {
-  if (spTimer.phase && spTimer.clock) SP().saveTimer({ workout: spTimer.session.key, phase: spTimer.phase, clock: spTimer.clock.snapshot() });
+  if (spTimer.phase && spTimer.clock) { SP().saveTimer({ workout: spTimer.session.key, phase: spTimer.phase, clock: spTimer.clock.snapshot() }); spPublishTimer(); }
 }
 function spNextUnfinished(after) {
   const C = SP(), plan = spTimer.session?.option.plan, checks = spChecks();
@@ -145,6 +149,7 @@ function spPhaseStatus(phase) {
 
 // Счёт времени — по дедлайну, а не тиками: фоновая вкладка ничего не теряет.
 setInterval(() => {
+  spPollNativeTimer();
   const C = SP();
   if (!C || !spTimer.phase || !spTimer.clock) return;
   const expected = spTimer.phase, clock = spTimer.clock;
@@ -380,7 +385,7 @@ function spWorkoutCard(option, readOnly, finished) {
       ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
   }).join("") : "";
   const finish = !finished && expanded ? `<button class="primary-button sp-wide ${allDone ? "" : "soft"}" type="button" data-action="sp-finish" ${readOnly || phase ? "disabled" : ""}>${readOnly ? (option.historyOnly ? "История · только просмотр" : "План на будущий день") : `Завершить ${splits ? "растяжку" : "тренировку"} · ${done}/${total}`}</button>` : "";
-  return `<section class="sp-card sp-workout ${finished ? "is-finished" : ""}">${head}${rows ? `<div class="sp-ex-list">${rows}</div>` : ""}${finish}</section>`;
+  return `<section class="sp-card sp-workout ${finished ? "is-finished" : ""}">${head}${rows ? `<div class="sp-ex-list">${rows}</div>` : ""}${expanded && !readOnly ? `<button class="ghost-button sp-wide" type="button" data-action="sp-extra-open" data-key="${spEsc(option.key)}" ${phase ? "disabled" : ""}>+ Добавить упражнение</button>` : ""}${finish}</section>`;
 }
 function spCurrentOption() {
   const s = spState(), C = SP();
@@ -493,3 +498,23 @@ Object.assign(SP_ACTIONS, {
 // Уход из Flow на минуту не должен оставлять «Сегодня» без полосы: перерисовка
 // полосы и после смены страницы приложения.
 window.addEventListener("hashchange", () => setTimeout(() => spOverlay(true), 50));
+
+// Native owns only the current wall-clock interval. Completing sets remains in the workout state.
+function spPublishTimer() {
+  if (!spTimer.phase || !spTimer.clock || !spTimer.session) return;
+  const exercise = spTimer.session.option.plan.exercises[spTimer.phase.index];
+  const ok = window.sorokaSportTimer?.update({ key: spTimer.session.key, token: spTimer.nativeToken,
+    date: spTimer.session.option.date, kind: spTimer.session.option.kind, title: exercise.name, stage: SP_PHASE_LABEL[spTimer.phase.kind], total: Math.max(1, spSecondsFor(spTimer.phase)),
+    phase: spTimer.phase, clock: spTimer.clock.snapshot() });
+  if (window.sorokaSportTimer?.available && !ok) toast("Не удалось показать таймер в уведомлении. Проверьте разрешение уведомлений Flow.");
+}
+function spPollNativeTimer() {
+  if (!spTimer.phase || !spTimer.clock || !spTimer.nativeToken || !window.sorokaSportTimer?.available) return;
+  const saved = window.sorokaSportTimer.read();
+  if (saved?.token !== spTimer.nativeToken || saved?.key !== spTimer.session?.key || !saved.clock) return;
+  const local = spTimer.clock.snapshot();
+  if (local.deadline !== saved.clock.deadline || local.pausedMs !== saved.clock.pausedMs) {
+    spTimer.clock = SP().Countdown.restore(saved.clock);
+    SP().saveTimer({ workout: saved.key, phase: spTimer.phase, clock: saved.clock });
+  }
+}
