@@ -529,3 +529,19 @@ body.sp-has-bar .fab { transform: translateY(-64px); }
 .sp-program-profile > span:first-child { flex: 1; min-width: 0; }
 .sp-program-profile .sp-progress { display: block; width: 100%; height: 4px; margin: 5px 0 3px; flex: none; }
 .sp-program-profile > .icon { flex: none; }
+
+/* Результат подходов: строка как «Подходы» — плитка со значком, нажимается */
+button.sp-ex-load { width: 100%; margin-top: 4px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; padding-top: 0; padding-bottom: 0; }
+button.sp-ex-load .sp-set-count { color: var(--text); }
+button.sp-ex-load.hint .sp-set-count, button.sp-ex-load.empty .sp-set-count { color: var(--muted); font-weight: 600; }
+button.sp-ex-load.empty .sp-set-count { color: var(--accent); }
+button.sp-ex-load:disabled { cursor: default; }
+/* Окно «Подходы»: строка на подход — номер, вес, повторения */
+.sp-setlog { display: grid; gap: 8px; }
+.sp-setlog-row { display: flex; align-items: center; gap: 8px; }
+.sp-setlog-n { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: var(--surface-soft); color: var(--muted); font-size: 12px; font-weight: 800; }
+.sp-setlog-kg { flex: none; display: flex; align-items: center; gap: 4px; }
+.sp-setlog-kg input { width: 64px; height: 40px; padding: 0 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); font: inherit; font-size: 16px; font-weight: 800; text-align: center; }
+.sp-setlog-kg small { color: var(--muted); font-size: 12px; }
+.sp-setlog-reps { flex: 1; min-width: 0; }
+.sp-setlog-reps input { width: 100%; }
