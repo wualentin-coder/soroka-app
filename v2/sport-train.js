@@ -367,7 +367,7 @@ function spWorkoutCard(option, readOnly, finished) {
     const liked = C.isFavorite(s.state, e.name);
     return `<div class="sp-ex ${complete ? "done" : ""} ${!finished && !readOnly && i === shown ? "active" : ""}">
       <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-exercise" data-i="${i}" aria-label="Техника: ${spEsc(e.name)}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong>${e.swappedFrom ? `<small>Замена</small>` : ""}</span></button></div>
-        <div class="sp-ex-meta">${kitId ? `<span class="sp-ex-kit" aria-hidden="true">${spEquipIcon(kitId)}</span>` : ""}<span class="sp-set-count">Подходы ${doneSets}/${sets} · ${spEsc(repsText)}</span></div><div class="sp-ex-actions">${spLoadControl(option, i)}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
+        <div class="sp-ex-meta"><span class="sp-ex-kit" aria-hidden="true">${spEquipIcon(kitId || (C.isBodyweight(e) ? "bodyweight" : "sets"))}</span><span class="sp-set-count">Подходы ${doneSets}/${sets} · ${spEsc(repsText)}</span></div>${splits ? "" : spResultLine(option, i, readOnly)}${doneSets > 0 && !readOnly && !finished ? `<div class="sp-ex-actions"><button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button></div>` : ""}</div>
       ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
   }).join("") : "";
   const finish = !finished && expanded ? `<button class="primary-button sp-wide ${allDone ? "" : "soft"}" type="button" data-action="sp-finish" ${readOnly || phase ? "disabled" : ""}>${readOnly ? (option.historyOnly ? "История · только просмотр" : "План на будущий день") : `Завершить ${splits ? "растяжку" : "тренировку"} · ${done}/${total}`}</button>` : "";
@@ -386,8 +386,8 @@ SP_SHEETS.technique = sheet => {
   const video = C.exerciseVideoId(exercise);
   const liked = C.isFavorite(s.state, exercise.name);
   const record = spRecordFor(s.state, exercise.name);
-  const actions = sheet.option ? `<div class="sp-ex-sheet-actions"><button class="ghost-button" type="button" data-action="sp-swap-open">Заменить</button>${!C.isBodyweight(exercise) && s.kind !== "splits" ? `<button class="ghost-button" type="button" data-action="sp-weight-from-sheet">Записать вес</button>` : ""}<button class="ghost-button ${liked ? "on" : ""}" type="button" data-action="sp-like-sheet">${liked ? SP_ICON.heartOn : SP_ICON.heart} ${liked ? "Нравится" : "Нравится?"}</button></div>` : "";
-  return { title: exercise.name, body: `<p class="sp-runner-scheme">${spEsc(exercise.sets_reps)}${exercise.swappedFrom ? ` · вместо «${spEsc(exercise.swappedFrom)}»` : ""}</p>${record ? `<p class="section-note">Рекорд: ${spKg(record.kilograms)} кг${record.reps ? ` × ${record.reps}` : ""} · ${spDateShort(record.date)}</p>` : ""}${actions}${exercise.technique ? `<p class="sp-tech">${spEsc(exercise.technique)}</p>` : ""}${video ? spVideoHtml(video, exercise) : `<button class="text-action" type="button" data-action="sp-external" data-url="${spEsc(C.videoSearchUrl(exercise))}">Найти видео на YouTube →</button>`}${spMuscleMap(exercise.muscles)}` };
+  const actions = sheet.option ? `<div class="sp-ex-sheet-actions"><button class="ghost-button" type="button" data-action="sp-swap-open">Заменить</button>${s.kind !== "splits" ? `<button class="ghost-button" type="button" data-action="sp-weight-from-sheet">${C.isBodyweight(exercise) ? "Записать подходы" : "Вес и подходы"}</button>` : ""}<button class="ghost-button ${liked ? "on" : ""}" type="button" data-action="sp-like-sheet">${liked ? SP_ICON.heartOn : SP_ICON.heart} ${liked ? "Нравится" : "Нравится?"}</button></div>` : "";
+  return { title: exercise.name, body: `<p class="sp-runner-scheme">${spEsc(exercise.sets_reps)}${exercise.swappedFrom ? ` · вместо «${spEsc(exercise.swappedFrom)}»` : ""}</p>${record ? `<p class="section-note">Рекорд: ${record.bodyweight ? `${record.reps} повт. за подход` : `${spKg(record.kilograms)} кг${record.reps ? ` × ${record.reps}` : ""}`} · ${spDateShort(record.date)}</p>` : ""}${actions}${exercise.technique ? `<p class="sp-tech">${spEsc(exercise.technique)}</p>` : ""}${video ? spVideoHtml(video, exercise) : `<button class="text-action" type="button" data-action="sp-external" data-url="${spEsc(C.videoSearchUrl(exercise))}">Найти видео на YouTube →</button>`}${spMuscleMap(exercise.muscles)}` };
 };
 SP_SHEETS.rules = () => {
   const C = SP(), kind = spState().kind;
@@ -396,31 +396,82 @@ SP_SHEETS.rules = () => {
 };
 SP_SHEETS.muscles = sheet => ({ title: sheet.exercise.name, body: spMuscleMap(sheet.exercise.muscles) });
 function spLoadControl(option, index) {
-  const C = SP(), exercise = option.plan.exercises[index], s = spState();
-  if (C.isBodyweight(exercise)) return `<span class="sp-set-count">Свой вес</span>`;
-  const load = C.workoutLoad(s.state, option, index);
+  const C = SP(), exercise = option.plan.exercises[index];
+  const sum = spSetsSummary(option, index);
   const readOnly = option.historyOnly || option.date > C.todayKey();
-  const label = load ? `${spKg(load.kilograms)} кг${load.actualReps ? ` × ${load.actualReps} повт.` : ""}` : "Вес и повторения";
-  return readOnly ? `<span class="sp-set-count">${label}</span>` : `<button type="button" class="sp-chip sp-load" data-action="sp-weight" data-i="${index}" aria-label="Вес: ${spEsc(exercise.name)}">${SP_ICON.dumbbell}<b>${label}</b></button>`;
+  const ic = C.isBodyweight(exercise) ? spEquipIcon("sets") : spEquipIcon("load");
+  return readOnly ? `<span class="sp-set-count">${spEsc(sum.text)}</span>` : `<button type="button" class="sp-chip sp-load" data-action="sp-weight" data-i="${index}" aria-label="Подходы: ${spEsc(exercise.name)}">${ic}<b>${spEsc(sum.text)}</b></button>`;
 }
+
+// Результат по подходам: у упражнения с весом — вес и повторения каждого
+// подхода, без веса (подтягивания, отжимания) — повторения по подходам.
+const spRepsUnit = e => (SP().holdSecondsFor(e) > 0 ? "сек" : "повт.");
+function spSetsSummary(option, index) {
+  const C = SP(), s = spState(), e = option.plan.exercises[index], unit = spRepsUnit(e);
+  const logs = C.exerciseSetLogs(s.state, option, index);
+  const weighted = !C.isBodyweight(e);
+  const reps = list => list.map(l => l.actualReps).join(" · ");
+  if (logs.length) {
+    if (!weighted || logs.every(l => l.kilograms === null)) return { text: `${reps(logs)} ${unit}`, mine: true };
+    const kgs = [...new Set(logs.map(l => l.kilograms ?? 0))];
+    return { text: kgs.length === 1 ? `${spKg(kgs[0])} кг × ${reps(logs)}` : `${logs.map(l => `${spKg(l.kilograms ?? 0)}×${l.actualReps}`).join(" · ")} кг`, mine: true };
+  }
+  if (weighted) {
+    const load = C.workoutLoad(s.state, option, index);
+    return load ? { text: `${spKg(load.kilograms)} кг${load.actualReps ? ` × ${load.actualReps} ${unit}` : ""}`, hint: load.source !== "selected" } : { text: "Записать вес и повторения", empty: true };
+  }
+  const prev = C.previousSetLogs(s.state, e.name, option.key);
+  return prev.length ? { text: `В прошлый раз ${reps(prev)} ${unit}`, hint: true } : { text: "Записать повторения", empty: true };
+}
+function spResultLine(option, index, readOnly) {
+  const C = SP(), e = option.plan.exercises[index], sum = spSetsSummary(option, index);
+  const ic = C.isBodyweight(e) ? spEquipIcon("sets") : spEquipIcon("load");
+  if (readOnly && sum.empty) return "";
+  return `<button type="button" class="sp-ex-meta sp-ex-load ${sum.empty ? "empty" : sum.hint ? "hint" : ""}" data-action="sp-weight" data-i="${index}" ${readOnly ? "disabled" : ""} aria-label="Подходы: ${spEsc(e.name)}"><span class="sp-ex-kit" aria-hidden="true">${ic}</span><span class="sp-set-count">${spEsc(sum.text)}</span></button>`;
+}
+/** Повторения по плану: «3 × 8–12» → 8, «4 × 10» → 10. */
+const spPlanReps = e => Number(String(e.sets_reps || "").match(/[×xх]\s*(\d+)/i)?.[1]) || 10;
 function spOpenWeight(option, index) {
-  const exercise = option?.plan.exercises[index];
+  const C = SP(), s = spState(), exercise = option?.plan.exercises[index];
   if (!exercise) return;
-  const load = SP().workoutLoad(spState().state, option, index);
-  spOpen("weight", { exercise, option: option.key, index, kg: load?.kilograms ?? 0, basis: load?.basis || "", reps: load?.actualReps ?? 1 });
+  const weighted = !C.isBodyweight(exercise);
+  const mine = C.exerciseSetLogs(s.state, option, index);
+  const prev = mine.length ? [] : C.previousSetLogs(s.state, exercise.name, option.key);
+  const load = weighted ? C.workoutLoad(s.state, option, index) : null;
+  const reps = load?.actualReps || spPlanReps(exercise), kg = load?.kilograms ?? 0;
+  const from = mine.length ? mine : prev;
+  const sets = from.length
+    ? from.map(l => ({ reps: l.actualReps || reps, kg: weighted ? l.kilograms ?? kg : null }))
+    : Array.from({ length: C.exerciseSets(exercise) }, () => ({ reps, kg: weighted ? kg : null }));
+  spOpen("weight", { exercise, option: option.key, index, weighted, basis: mine.find(l => l.basis)?.basis || load?.basis || "", sets,
+    hint: !mine.length && prev.length ? "Подставлено как в прошлый раз — поправьте под сегодня" : "" });
 }
 SP_SHEETS.weight = sheet => {
-  const C = SP(), s = spState();
-  const last = C.latestWeight(s.state, sheet.exercise.name);
-  sheet.kg ??= last?.kilograms ?? 0; sheet.basis ??= last?.basis || ""; sheet.reps ??= last?.reps ?? 1;
-  const max = Math.max(30, Math.ceil(((last?.kilograms ?? sheet.kg) * 1.5) / 5) * 5, sheet.kg);
-  return { title: "Результат одного подхода", body: `<p class="section-note">${spEsc(sheet.exercise.name)}</p>
-    <label class="field">Вес, кг<input type="number" min="0" max="2000" step="0.5" inputmode="decimal" value="${sheet.kg}" data-sp-kg-number></label>
-    <div class="sp-weight-slider"><button type="button" data-action="sp-kg" data-d="-0.5" aria-label="Меньше на полкило">−</button><input type="range" min="0" max="${max}" step="0.5" value="${sheet.kg}" data-sp-kg-range aria-label="Вес в килограммах"><button type="button" data-action="sp-kg" data-d="0.5" aria-label="Больше на полкило">+</button></div>
-    <label class="field">Повторения<input type="number" min="1" max="1000" step="1" value="${sheet.reps}" placeholder="Не указано" data-sp-reps-number></label>
-    <div class="sp-weight-slider"><button type="button" data-action="sp-reps" data-d="-1" aria-label="Меньше на одно повторение">−</button><input type="range" min="1" max="${Math.max(50, Math.min(1000, Number(sheet.reps) || 1))}" step="1" value="${sheet.reps || 1}" data-sp-reps-range aria-label="Количество повторений в подходе"><button type="button" data-action="sp-reps" data-d="1" aria-label="Больше на одно повторение">+</button></div>
+  const unit = spRepsUnit(sheet.exercise) === "сек" ? "сек" : "повт.";
+  const rows = sheet.sets.map((set, k) => `<div class="sp-setlog-row"><span class="sp-setlog-n">${k + 1}</span>
+    ${sheet.weighted ? `<label class="sp-setlog-kg"><input type="number" min="0" max="2000" step="0.5" inputmode="decimal" value="${set.kg ?? 0}" data-sp-set="kg" data-k="${k}" aria-label="Вес, подход ${k + 1}"><small>кг</small></label>` : ""}
+    <div class="sp-stepper sp-setlog-reps"><button type="button" data-action="sp-set-step" data-k="${k}" data-d="-1" aria-label="Меньше">−</button><input type="number" min="1" max="1000" step="1" inputmode="numeric" value="${set.reps}" data-sp-set="reps" data-k="${k}" aria-label="Повторения, подход ${k + 1}"><span>${unit}</span><button type="button" data-action="sp-set-step" data-k="${k}" data-d="1" aria-label="Больше">+</button></div>
+    ${sheet.sets.length > 1 ? `<button type="button" class="icon-button" data-action="sp-set-del" data-k="${k}" aria-label="Убрать подход ${k + 1}">${icon("close", "icon-sm")}</button>` : ""}</div>`).join("");
+  return { title: "Подходы", body: `<p class="section-note">${spEsc(sheet.exercise.name)} · план ${spEsc(sheet.exercise.sets_reps)}</p>${sheet.hint ? `<p class="section-note">${spEsc(sheet.hint)}</p>` : ""}
+    <div class="sp-setlog">${rows}</div>
+    ${sheet.sets.length < SP().MAX_LOGGED_SETS ? `<button class="text-action" type="button" data-action="sp-set-add">+ Подход</button>` : ""}
     <button class="primary-button sp-wide" type="button" data-action="sp-weight-save">Сохранить</button>` };
 };
+document.addEventListener("input", event => {
+  const field = event.target.dataset?.spSet;
+  if (!field) return;
+  const sets = spState().sheet?.sets, k = Number(event.target.dataset.k);
+  if (!sets?.[k]) return;
+  // Поправили подход — нижние подходы с тем же старым значением идут следом:
+  // вес выставляют один раз, а не в каждой строке. Без перерисовки — поле не прыгает под пальцем.
+  const was = String(sets[k][field]);
+  sets[k][field] = event.target.value;
+  for (let i = k + 1; i < sets.length && String(sets[i][field]) === was; i++) {
+    sets[i][field] = event.target.value;
+    const input = document.querySelector(`[data-sp-set="${field}"][data-k="${i}"]`);
+    if (input) input.value = event.target.value;
+  }
+});
 
 document.addEventListener("input", event => {
   if (event.target.matches?.("[data-sp-reps-number], [data-sp-reps-range]")) {
@@ -493,17 +544,17 @@ Object.assign(SP_ACTIONS, {
   "sp-weight-basis": control => { spState().sheet.basis = control.dataset.basis; render(); },
   "sp-kg": control => { const sheet = spState().sheet; sheet.kg = Math.max(0, Math.round((sheet.kg + Number(control.dataset.d)) * 2) / 2); render(); },
   "sp-reps": control => { const sheet = spState().sheet; sheet.reps = sheet.reps === "" ? 1 : Math.max(1, Math.min(1000, Number(sheet.reps) + Number(control.dataset.d))); render(); },
+  "sp-set-step": control => { const set = spState().sheet.sets[Number(control.dataset.k)]; set.reps = Math.max(1, Math.min(1000, (Number(set.reps) || 0) + Number(control.dataset.d))); render(); },
+  "sp-set-add": () => { const sets = spState().sheet.sets, last = sets[sets.length - 1]; sets.push({ ...last }); render(); },
+  "sp-set-del": control => { spState().sheet.sets.splice(Number(control.dataset.k), 1); render(); },
   "sp-weight-save": async () => {
     const C = SP(), sheet = spState().sheet;
-    const option = spOptions().all.find(o => o.key === sheet.option);
-    const entry = { exercise: sheet.exercise.name, date: option?.date || C.todayKey(), kilograms: sheet.kg, sets: 1, reps: Number(sheet.reps), ...(sheet.basis ? { basis: sheet.basis } : {}) };
-    if (!Number.isInteger(entry.reps) || entry.reps < 1) return spSheetError("Укажите количество повторений от 1.");
-    try { C.validateWorkingWeight(entry); } catch (error) { return spSheetError(error.message); }
-    try { await spUpdate(prev => {
-      const next = C.recordWorkingWeight(prev, entry);
-      return option ? C.selectWorkoutLoad(next, option, sheet.index, { kilograms: entry.kilograms, basis: entry.basis, ...(entry.reps ? { actualReps: entry.reps } : {}) }) : next;
-    }); if (spState().sheet === sheet) spClose(); }
-    catch (error) { if (error?.message === "outbox_storage") spSheetError("Не удалось сохранить вес. Освободите место и повторите."); else if (spState().sheet === sheet) spClose(); }
+    const option = spOptions().all.find(o => o.key === sheet.option) || (spTimer.session?.option.key === sheet.option ? spTimer.session.option : null);
+    if (!option) return spSheetError("Тренировка не найдена — откройте её заново.");
+    const sets = sheet.sets.map(x => ({ reps: Math.round(Number(x.reps)), kilograms: sheet.weighted ? Number(String(x.kg).replace(",", ".")) : null }));
+    try { C.validateSets(sets); } catch (error) { return spSheetError(error.message); }
+    try { await spUpdate(prev => C.recordSets(prev, option, sheet.index, sets, sheet.basis || undefined)); if (spState().sheet === sheet) spClose(); }
+    catch (error) { if (error?.message === "outbox_storage") spSheetError("Не удалось сохранить подходы. Освободите место и повторите."); else if (spState().sheet === sheet) spClose(); }
   },
   "sp-video-play": control => { spTimer.videoOpen = control.dataset.id; spOverlay(true); if (spState().sheet) render(); },
   "sp-video-full": control => { const box = control.closest("[data-sp-video]"); box?.requestFullscreen?.().catch(() => box.classList.add("expanded")); },
