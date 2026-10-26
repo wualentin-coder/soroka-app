@@ -421,12 +421,19 @@ SP_SHEETS.weight = sheet => {
     <div class="sp-weight-slider"><button type="button" data-action="sp-kg" data-d="-0.5" aria-label="Меньше на полкило">−</button><input type="range" min="0" max="${max}" step="0.5" value="${sheet.kg}" data-sp-kg-range aria-label="Вес в килограммах"><button type="button" data-action="sp-kg" data-d="0.5" aria-label="Больше на полкило">+</button></div>
     <p class="sp-kicker">Как считаем вес</p><div class="sp-choice">${Object.entries(C.WEIGHT_BASIS).map(([basis, label]) => `<button type="button" class="${sheet.basis === basis ? "on" : ""}" data-action="sp-weight-basis" data-basis="${basis}">${spEsc(label)}</button>`).join("")}</div>
     <label class="field">Повторы в следующих подходах, если известно<input type="number" min="1" max="1000" step="1" value="${sheet.reps}" placeholder="Не указано" data-sp-reps-number></label>
+    <div class="sp-weight-slider"><button type="button" data-action="sp-reps" data-d="-1" aria-label="Меньше на одно повторение">−</button><input type="range" min="1" max="${Math.max(50, Math.min(1000, Number(sheet.reps) || 1))}" step="1" value="${sheet.reps || 1}" data-sp-reps-range aria-label="Количество повторений в подходе"><button type="button" data-action="sp-reps" data-d="1" aria-label="Больше на одно повторение">+</button></div>
     <p class="section-note">Вес запишется отдельно для каждого подтверждённого подхода. Изменение веса не переписывает уже выполненные подходы.</p>
     <button class="primary-button sp-wide" type="button" data-action="sp-weight-save">Сохранить</button>` };
 };
 
 document.addEventListener("input", event => {
-  if (event.target.matches?.("[data-sp-reps-number]")) { spState().sheet.reps = event.target.value; return; }
+  if (event.target.matches?.("[data-sp-reps-number], [data-sp-reps-range]")) {
+    spState().sheet.reps = event.target.value;
+    const number = document.querySelector("[data-sp-reps-number]"), range = document.querySelector("[data-sp-reps-range]");
+    if (event.target === range && number) number.value = event.target.value;
+    if (event.target === number && range) { range.max = Math.max(50, Math.min(1000, Number(event.target.value) || 1)); range.value = event.target.value || 1; }
+    return;
+  }
   if (!event.target.matches?.("[data-sp-kg-range], [data-sp-kg-number]")) return;
   const sheet = spState().sheet;
   sheet.kg = Number(event.target.value);
@@ -489,7 +496,7 @@ Object.assign(SP_ACTIONS, {
   "sp-weight": control => { spOpenWeight(spTimer.runner ? spTimer.session?.option : spCurrentOption(), Number(control.dataset.i)); },
   "sp-weight-basis": control => { spState().sheet.basis = control.dataset.basis; render(); },
   "sp-kg": control => { const sheet = spState().sheet; sheet.kg = Math.max(0, Math.round((sheet.kg + Number(control.dataset.d)) * 2) / 2); render(); },
-  "sp-reps": control => { const sheet = spState().sheet; sheet.reps = Math.max(1, Math.min(50, sheet.reps + Number(control.dataset.d))); render(); },
+  "sp-reps": control => { const sheet = spState().sheet; sheet.reps = sheet.reps === "" ? 1 : Math.max(1, Math.min(1000, Number(sheet.reps) + Number(control.dataset.d))); render(); },
   "sp-weight-save": async () => {
     const C = SP(), sheet = spState().sheet;
     if (!Object.hasOwn(C.WEIGHT_BASIS, sheet.basis)) return spSheetError("Выберите, как считаем вес.");
