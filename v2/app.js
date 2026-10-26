@@ -215,7 +215,7 @@ function save() {
   try { const safe = { ...data }; delete safe.vault; localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); return true; } catch (_) { return false; }
 }
 let data = load();
-const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs"];
+const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english"];
 function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 const ui = {
   page: currentPage(),
@@ -405,7 +405,9 @@ function todayPage() {
     const last = ui.lastOpened;
     return `<section class="section plan-glance"><button type="button" class="glance-tile" data-action="navigate" data-page="finance"><small>Доступно</small><strong>${demoMoney(rubBalance())}</strong>${pending[0] ? `<span>${esc(financeTitle(pending[0].title))} · ${esc(dateLabel(pending[0].nextOn))}</span>` : ""}</button>${last?.title ? `<button type="button" class="glance-tile" data-action="overview-continue"><small>Продолжить</small><strong>${esc(last.title)}</strong><span>Последняя открытая запись</span></button>` : ""}</section>`;
   })() : "";
-  const body = isToday ? `${overdue}${tasks}${events}${free}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
+  // Английский — короткое занятие дня (english.js): сколько повторить и серия.
+  const english = isToday && typeof enHomeTile === "function" ? enHomeTile() : "";
+  const body = isToday ? `${overdue}${tasks}${events}${free}${english}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
