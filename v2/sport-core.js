@@ -1003,6 +1003,7 @@ var SportCore = (() => {
     { id: "plates", label: "Диски", weighed: true, hint: "Максимум на один диск" },
     { id: "band", label: "Резинка" },
     { id: "pullup_bar", label: "Турник" },
+    { id: "pushup_bars", label: "Упоры для отжиманий", hint: "Глубже отжимания, легче запястьям" },
     { id: "bench", label: "Скамья" },
     { id: "expander", label: "Эспандер", hint: "Кистевой или грудной" },
     { id: "powerball", label: "Повербол", hint: "Кистевой тренажёр-гироскоп" }
@@ -1016,6 +1017,7 @@ var SportCore = (() => {
     ["expander", /эспандер/i],
     ["powerball", /повербол/i],
     ["pullup_bar", /турник|подтягивани|вис на перекладине/i],
+    ["pushup_bars", /на упорах|упор(ы|ах) для отжиман/i],
     ["bench", /скамь/i]
   ];
   function exerciseEquipment(name) {
