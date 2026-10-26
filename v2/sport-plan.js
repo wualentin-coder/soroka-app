@@ -126,7 +126,7 @@ function spWeekStats(options, state) {
 }
 
 /** Активные программы: сколько занятий сделано, где мы по календарю, когда конец. */
-function spProgramProgress(options, state) {
+function spProgramProgress(options, state, includeCompleted = false) {
   const C = SP(), today = C.todayKey();
   const groups = new Map();
   for (const o of options) {
@@ -144,7 +144,7 @@ function spProgramProgress(options, state) {
     const span = Math.round((C.dateFromKey(last) - C.dateFromKey(first)) / 86400000) + 1;
     const day = Math.max(0, Math.min(span, Math.round((C.dateFromKey(today) - C.dateFromKey(first)) / 86400000) + 1));
     return { ...g, sessions: slots.size, done, first, last, span, day, rank: C.programRank(g.key, g.addedAt, state) };
-  }).filter(p => p.last >= today || p.done < p.sessions).sort((a, b) => a.rank - b.rank);
+  }).filter(p => includeCompleted || p.last >= today || p.done < p.sessions).sort((a, b) => a.rank - b.rank);
 }
 
 /** Ближайшие занятия после выбранной даты (по одному на дату и вид, с учётом выбора варианта). */
