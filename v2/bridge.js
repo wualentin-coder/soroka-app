@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=748f4012ee","integrity":null},{"src":"./loop-deck.js?v=53482c5d58","integrity":null},{"src":"./movie-carousel.js?v=c8c6666684","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./english.js?v=83ce0f971c","integrity":null},{"src":"./sport-core.js?v=3297d9fd2d","integrity":null},{"src":"./sport.js?v=40bd1109f1","integrity":null},{"src":"./sport-train.js?v=18f38252aa","integrity":null},{"src":"./sport-plan.js?v=3d80a69200","integrity":null},{"src":"./sport-more.js?v=758d8af175","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=5de55c1224","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=c7df86f48b","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=65122bb326","integrity":null},{"src":"./app.js?v=2760f30930","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=ed97f34cdc","integrity":null},{"src":"./saved.js?v=748f4012ee","integrity":null},{"src":"./loop-deck.js?v=53482c5d58","integrity":null},{"src":"./movie-carousel.js?v=c8c6666684","integrity":null},{"src":"./movies.js?v=d480164057","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=e6dce3ce4e","integrity":null},{"src":"./english-sync.js?v=e2a299c3dd","integrity":null},{"src":"./english.js?v=8e74778cd0","integrity":null},{"src":"./sport-core.js?v=3297d9fd2d","integrity":null},{"src":"./sport.js?v=84cc078ab2","integrity":null},{"src":"./sport-train.js?v=d8831d5221","integrity":null},{"src":"./sport-plan.js?v=a578316676","integrity":null},{"src":"./sport-more.js?v=758d8af175","integrity":null},{"src":"./render-queue.js?v=964566dd70","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=5de55c1224","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=c7df86f48b","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=65122bb326","integrity":null},{"src":"./app.js?v=2760f30930","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=8f3d9f5083","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=38463cce39","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1002,10 +1002,11 @@
   window.sorokaEnglishStream = async (args, onEvent) => {
     const init = tg && tg.initData;
     const device = init ? "" : deviceKey();
-    if (useNative || (!init && !device)) throw new Error("no-stream");
+    if (!init && !device) throw new Error("no-stream");
     const response = await fetch(API, {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...(init ? { initData: init } : { device }), action: "english_stream", args: args || {} }),
+      signal: AbortSignal.timeout(90000),
     });
     if (!response.ok || !response.body) throw new Error("stream-failed");
     const reader = response.body.getReader();
@@ -1024,8 +1025,15 @@
       }
     }
   };
-  window.sorokaEnglish = (op, args) => call({ action: "english", op, args: args || {} }, ["chat", "speech", "check"].includes(op) ? 45000 : 20000);
+  window.sorokaEnglish = (op, args) => call({ action: "english", op, args: args || {} }, ["rule", "booktr", "bookadd"].includes(op) ? 150000 : ["chat", "speech", "check", "debrief"].includes(op) ? 60000 : 20000);
   // Спорт (перенос WooSport): состояние, правки путями, импорт программы от ИИ.
+  window.sorokaSportTimer = {
+    available: Boolean(android && android.sportTimerUpdate),
+    update: state => { try { return android?.sportTimerUpdate?.(JSON.stringify(state)) === true; } catch (_) { return false; } },
+    read: () => { try { return JSON.parse(android?.sportTimerState?.() || "{}"); } catch (_) { return {}; } },
+    stop: () => { try { android?.sportTimerStop?.(); } catch (_) {} },
+  };
+  window.sorokaOpenSport = () => { navigate("sport"); if (typeof spState === "function") { const s = spState(), saved = window.sorokaSportTimer?.read(); s.tab = "training"; if (saved?.date) s.date = saved.date; if (saved?.kind) s.kind = saved.kind; } render(); };
   window.sorokaSport = (op, args) => call({ action: "sport", op, args: args || {} }, op === "import" ? 30000 : 20000);
   window.sorokaVpn = (op, args) => call({ action: "vpn", op, args: args || {} }, 30000);
   let pcStateSource = null;
