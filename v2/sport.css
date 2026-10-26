@@ -513,3 +513,10 @@ body.sp-has-bar .fab { transform: translateY(-64px); }
 .sp-card > *, .sp-goal-body > *, .sp-group > * { min-width: 0; }
 .sp-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .sp-stat-grid b { overflow-wrap: anywhere; }
+
+.sp-set-count { display: inline-flex; align-items: center; min-height: 30px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.sp-runner-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--muted); font-size: 13px; }
+.sp-ex-actions .sp-load { max-width: 100%; }
+.sp-load b { white-space: normal; text-align: left; }
+
+.modal-backdrop.sp-backdrop { z-index: 240; }
