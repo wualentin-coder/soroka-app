@@ -73,10 +73,9 @@ function sizeMovieCarousel(track) {
   if(!filters)return;
   filters.hidden=false;
   const viewport=window.visualViewport?.height || innerHeight;
-  const counter=document.getElementById('movie-deck-count');
-  const footer=(counter?.offsetHeight || 22)+8;
   const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
-  const room=()=>viewport-track.getBoundingClientRect().top-footer-30;
+  const safeBottom=typeof getComputedStyle === "function" ? parseFloat(getComputedStyle(track.closest(".main") || track).paddingBottom) || 8 : 8;
+  const room=()=>viewport-track.getBoundingClientRect().top-Math.max(6,safeBottom-2);
   filters.hidden=movieFiltersOpen===null ? width*1.5+240>room() : !movieFiltersOpen;
   toggle?.setAttribute('aria-expanded',String(!filters.hidden));
   track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
