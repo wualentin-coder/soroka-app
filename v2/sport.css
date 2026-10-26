@@ -521,3 +521,7 @@ body.sp-has-bar .fab { transform: translateY(-64px); }
 .sp-load b { white-space: normal; text-align: left; }
 
 .modal-backdrop.sp-backdrop { z-index: 240; }
+
+.sp-ex-meta { position: relative; display: flex; align-items: center; min-height: 34px; padding-left: 44px; }
+.sp-ex-kit { position: absolute; left: 0; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: var(--surface-soft); color: var(--muted); }
+.sp-ex-kit .sp-ic { width: 18px; height: 18px; }
