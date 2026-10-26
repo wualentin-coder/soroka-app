@@ -507,3 +507,9 @@ body.sp-has-bar .fab { transform: translateY(-64px); }
 .sp-stats dd { overflow-wrap: anywhere; }
 .sp-goal-entry { flex-wrap: wrap; }
 .sp-goal-entry .sp-stepper { min-width: 0; }
+/* Неявная колонка сетки по умолчанию не уже содержимого: на узком экране или с крупным
+   шрифтом телефона карточка распиралась. Явная колонка minmax(0, 1fr) даёт ей сжиматься. */
+.sp-card, .sp-goal-body, .sp-group, .sp-sheet-body { grid-template-columns: minmax(0, 1fr); }
+.sp-card > *, .sp-goal-body > *, .sp-group > * { min-width: 0; }
+.sp-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sp-stat-grid b { overflow-wrap: anywhere; }
