@@ -172,6 +172,7 @@ function spProfileScreen() {
   const selected = C.knownMuscles(state.targetMuscles);
   const { all, visible } = spOptions();
   const programs = C.programSummaries(s.catalog, all, state).filter(p => (state.programLifecycle?.[p.key]?.status ?? "active") === "active");
+  const progressByProgram = new Map(spProgramProgress(all, state, true).map(p => [p.key, p]));
   const archived = C.programSummaries(s.catalog, all, state).filter(p => state.programLifecycle?.[p.key]?.status === "archived").length;
   const journal = C.workoutJournal(visible, state);
   const owned = C.EQUIPMENT.filter(item => C.hasEquipment(state, item.id));
@@ -182,7 +183,12 @@ function spProfileScreen() {
   return `<section class="sp-card sp-hero-card"><button type="button" class="sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc((profile.name?.trim() || tgName) ? name.slice(0, 1).toUpperCase() : "?")}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : name)}</strong><small>${gaps.profile ? "Анкета не заполнена" : "Анкета"}</small></span>${gaps.profile ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>
       <button type="button" class="sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Выберите мышцы, которые хотите развивать")}</small></span>${gaps.muscles ? '<i class="sp-dot"></i>' : ""}</button></section>
     <section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Программы</p>${archived ? `<button class="text-action" type="button" data-action="sp-programs" data-archive="1">Архив · ${archived}</button>` : ""}</div>
-      ${programs.length ? programs.map(p => { const dates = [...p.dates].sort(); return `<button type="button" class="sp-list-row" data-action="sp-programs"><span><b>${spEsc(p.title)}</b><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])}` : ""}</small></span>${icon("arrow", "icon-sm")}</button>`; }).join("") : `<p class="section-note">Пока нет. Ниже — составить с ИИ по вашим данным.</p>`}
+      ${programs.length ? programs.map(p => {
+        const dates = [...p.dates].sort(), progress = progressByProgram.get(p.key);
+        const percent = progress ? Math.round(progress.done / Math.max(1, progress.sessions) * 100) : 0;
+        const day = progress ? progress.day > 0 ? `день ${progress.day} из ${progress.span}` : `старт ${spDateShort(progress.first)}` : "";
+        return `<button type="button" class="sp-list-row sp-program-profile" data-action="sp-programs"><span><b>${spEsc(p.title)}</b><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])}` : ""}</small>${progress ? `<span class="sp-progress" role="progressbar" aria-label="Прогресс программы ${spEsc(p.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${percent}%"></i></span><small>Сделано ${progress.done} из ${progress.sessions} · ${day}</small>` : ""}</span>${icon("arrow", "icon-sm")}</button>`;
+      }).join("") : `<p class="section-note">Пока нет. Ниже — составить с ИИ по вашим данным.</p>`}
       <button class="primary-button sp-wide" type="button" data-action="sp-import-open">Новая программа с ИИ</button></section>
     <div class="sp-card sp-links">
       ${row('data-action="sp-profile-section" data-section="body"', "Замеры", gaps.measurements.length ? `не хватает: ${gaps.measurements.map(f => f.label.toLocaleLowerCase()).join(", ")}` : "вес, обхваты, свои параметры", gaps.measurements.length > 0)}
