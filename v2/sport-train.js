@@ -368,8 +368,8 @@ function spWorkoutCard(option, readOnly, finished) {
     const repsText = e.sets_reps.replace(/^\s*\d+\s*[×xх]\s*/i, "");
     const liked = C.isFavorite(s.state, e.name);
     return `<div class="sp-ex ${complete ? "done" : ""} ${!finished && !readOnly && i === shown ? "active" : ""}">
-      <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-exercise" data-i="${i}" aria-label="Техника: ${spEsc(e.name)}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong>${kitId || e.swappedFrom ? `<small>${kitId ? spEquipIcon(kitId) : ""}${e.swappedFrom ? "Замена" : ""}</small>` : ""}</span></button></div>
-        <div class="sp-ex-actions"><span class="sp-set-count">Подходы ${doneSets}/${sets} · ${spEsc(repsText)}</span>${spLoadControl(option, i)}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
+      <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-exercise" data-i="${i}" aria-label="Техника: ${spEsc(e.name)}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong>${e.swappedFrom ? `<small>Замена</small>` : ""}</span></button></div>
+        <div class="sp-ex-meta">${kitId ? `<span class="sp-ex-kit" aria-hidden="true">${spEquipIcon(kitId)}</span>` : ""}<span class="sp-set-count">Подходы ${doneSets}/${sets} · ${spEsc(repsText)}</span></div><div class="sp-ex-actions">${spLoadControl(option, i)}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
       ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
   }).join("") : "";
   const finish = !finished && expanded ? `<button class="primary-button sp-wide ${allDone ? "" : "soft"}" type="button" data-action="sp-finish" ${readOnly || phase ? "disabled" : ""}>${readOnly ? (option.historyOnly ? "История · только просмотр" : "План на будущий день") : `Завершить ${splits ? "растяжку" : "тренировку"} · ${done}/${total}`}</button>` : "";
@@ -397,33 +397,30 @@ SP_SHEETS.rules = () => {
   return { title: kind === "splits" ? "Правила растяжки" : "Правила тренировки", body: `<ul class="sp-rules">${rules.map(r => `<li>${spEsc(r)}</li>`).join("")}</ul>` };
 };
 SP_SHEETS.muscles = sheet => ({ title: sheet.exercise.name, body: spMuscleMap(sheet.exercise.muscles) });
-const SP_BASIS_SHORT = { per_dumbbell: "на гантель", total: "с грифом", machine: "тренажёр", additional: "доп. вес" };
 function spLoadControl(option, index) {
   const C = SP(), exercise = option.plan.exercises[index], s = spState();
   if (C.isBodyweight(exercise)) return `<span class="sp-set-count">Свой вес</span>`;
   const load = C.workoutLoad(s.state, option, index);
   const readOnly = option.historyOnly || option.date > C.todayKey();
-  const label = load ? `Вес ${spKg(load.kilograms)} кг · ${SP_BASIS_SHORT[load.basis]}` : "Вес · указать";
+  const label = load ? `${spKg(load.kilograms)} кг${load.actualReps ? ` × ${load.actualReps} повт.` : ""}` : "Вес и повторения";
   return readOnly ? `<span class="sp-set-count">${label}</span>` : `<button type="button" class="sp-chip sp-load" data-action="sp-weight" data-i="${index}" aria-label="Вес: ${spEsc(exercise.name)}">${SP_ICON.dumbbell}<b>${label}</b></button>`;
 }
 function spOpenWeight(option, index) {
   const exercise = option?.plan.exercises[index];
   if (!exercise) return;
   const load = SP().workoutLoad(spState().state, option, index);
-  spOpen("weight", { exercise, option: option.key, index, kg: load?.kilograms ?? 0, basis: load?.basis || "", reps: load?.actualReps ?? "" });
+  spOpen("weight", { exercise, option: option.key, index, kg: load?.kilograms ?? 0, basis: load?.basis || "", reps: load?.actualReps ?? 1 });
 }
 SP_SHEETS.weight = sheet => {
   const C = SP(), s = spState();
   const last = C.latestWeight(s.state, sheet.exercise.name);
-  sheet.kg ??= last?.kilograms ?? 0; sheet.basis ??= last?.basis || ""; sheet.reps ??= "";
+  sheet.kg ??= last?.kilograms ?? 0; sheet.basis ??= last?.basis || ""; sheet.reps ??= last?.reps ?? 1;
   const max = Math.max(30, Math.ceil(((last?.kilograms ?? sheet.kg) * 1.5) / 5) * 5, sheet.kg);
-  return { title: "Вес упражнения", body: `<p class="section-note">${spEsc(sheet.exercise.name)}</p>
+  return { title: "Результат одного подхода", body: `<p class="section-note">${spEsc(sheet.exercise.name)}</p>
     <label class="field">Вес, кг<input type="number" min="0" max="2000" step="0.5" inputmode="decimal" value="${sheet.kg}" data-sp-kg-number></label>
     <div class="sp-weight-slider"><button type="button" data-action="sp-kg" data-d="-0.5" aria-label="Меньше на полкило">−</button><input type="range" min="0" max="${max}" step="0.5" value="${sheet.kg}" data-sp-kg-range aria-label="Вес в килограммах"><button type="button" data-action="sp-kg" data-d="0.5" aria-label="Больше на полкило">+</button></div>
-    <p class="sp-kicker">Как считаем вес</p><div class="sp-choice">${Object.entries(C.WEIGHT_BASIS).map(([basis, label]) => `<button type="button" class="${sheet.basis === basis ? "on" : ""}" data-action="sp-weight-basis" data-basis="${basis}">${spEsc(label)}</button>`).join("")}</div>
-    <label class="field">Повторы в следующих подходах, если известно<input type="number" min="1" max="1000" step="1" value="${sheet.reps}" placeholder="Не указано" data-sp-reps-number></label>
+    <label class="field">Повторения<input type="number" min="1" max="1000" step="1" value="${sheet.reps}" placeholder="Не указано" data-sp-reps-number></label>
     <div class="sp-weight-slider"><button type="button" data-action="sp-reps" data-d="-1" aria-label="Меньше на одно повторение">−</button><input type="range" min="1" max="${Math.max(50, Math.min(1000, Number(sheet.reps) || 1))}" step="1" value="${sheet.reps || 1}" data-sp-reps-range aria-label="Количество повторений в подходе"><button type="button" data-action="sp-reps" data-d="1" aria-label="Больше на одно повторение">+</button></div>
-    <p class="section-note">Вес запишется отдельно для каждого подтверждённого подхода. Изменение веса не переписывает уже выполненные подходы.</p>
     <button class="primary-button sp-wide" type="button" data-action="sp-weight-save">Сохранить</button>` };
 };
 
@@ -500,10 +497,9 @@ Object.assign(SP_ACTIONS, {
   "sp-reps": control => { const sheet = spState().sheet; sheet.reps = sheet.reps === "" ? 1 : Math.max(1, Math.min(1000, Number(sheet.reps) + Number(control.dataset.d))); render(); },
   "sp-weight-save": async () => {
     const C = SP(), sheet = spState().sheet;
-    if (!Object.hasOwn(C.WEIGHT_BASIS, sheet.basis)) return spSheetError("Выберите, как считаем вес.");
     const option = spOptions().all.find(o => o.key === sheet.option);
-    const entry = { exercise: sheet.exercise.name, date: option?.date || C.todayKey(), kilograms: sheet.kg, basis: sheet.basis,
-      ...(sheet.reps !== "" ? { reps: Number(sheet.reps) } : {}) };
+    const entry = { exercise: sheet.exercise.name, date: option?.date || C.todayKey(), kilograms: sheet.kg, sets: 1, reps: Number(sheet.reps), ...(sheet.basis ? { basis: sheet.basis } : {}) };
+    if (!Number.isInteger(entry.reps) || entry.reps < 1) return spSheetError("Укажите количество повторений от 1.");
     try { C.validateWorkingWeight(entry); } catch (error) { return spSheetError(error.message); }
     try { await spUpdate(prev => {
       const next = C.recordWorkingWeight(prev, entry);
