@@ -166,7 +166,7 @@ function extendedPage(page) {
     tasks: renderTasksPage, saved: renderSavedPage, finance: renderFinancePage,
     vault: renderVaultPage, inbox: renderInboxPage, overview: renderOverviewPage,
     projects: renderProjectsPage, metrics: renderMetricsPage, archive: renderArchivePage,
-    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage, english: renderEnglishPage
+    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage
   };
   return (pages[page] || renderMorePage)();
 }
@@ -217,7 +217,7 @@ function renderExtendedSheet() {
   return renderAddMenu();
 }
 function handleExtendedAction(action, control, event) {
-  return englishAction(action, control) || docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
+  return docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
   return loyaltySubmit(event) || mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
