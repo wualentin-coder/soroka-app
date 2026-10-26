@@ -16,10 +16,8 @@ body.sp-has-bar .app-shell { padding-bottom: 64px; }
 .sp-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .sp-card-head > span { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .sp-kicker { margin: 0; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .02em; }
-.sp-add { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-soft); color: var(--accent); cursor: pointer; }
 .sp-wide { width: 100%; }
 .sp-center { justify-self: center; }
-.sp-marker { margin: 0; text-align: center; color: var(--muted); font-size: 12px; font-weight: 700; }
 .primary-button.soft { background: var(--accent-soft); color: var(--accent); }
 .text-action.danger { color: var(--warn); }
 
@@ -150,9 +148,6 @@ details.sp-details:not(.sp-card) { border-top: 1px solid var(--line); padding: 1
 .sp-segment.small { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
 .sp-segment button { height: 34px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .sp-segment button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 0 var(--line); }
-.sp-pager { display: flex; align-items: center; justify-content: space-between; }
-.sp-pager > div { display: grid; text-align: center; }
-.sp-pager small { color: var(--muted); font-size: 11px; }
 .sp-empty { justify-items: start; color: var(--muted); }
 .sp-empty p { margin: 0; }
 .sp-rest { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
@@ -421,13 +416,6 @@ body.sp-runner-open { overflow: hidden; }
 .sp-weight-bar span { color: var(--muted); }
 .sp-weight-bar i { height: 6px; border-radius: 3px; background: var(--surface-soft); overflow: hidden; }
 .sp-weight-bar i b { display: block; height: 100%; background: var(--accent); }
-.sp-settings-part { border-top: 1px solid var(--line); }
-.sp-settings-part:first-of-type { border-top: 0; }
-.sp-settings-part > button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.sp-settings-part > button span { display: grid; }
-.sp-settings-part > button small { color: var(--muted); font-size: 12px; }
-.sp-settings-part > button i { font-style: normal; color: var(--muted); font-weight: 800; }
-.sp-settings-part > div { padding-bottom: 14px; display: grid; gap: 8px; }
 .sp-notify { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; font-weight: 700; }
 .sp-notify input[type=time] { min-height: 38px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
 .sp-toggle { position: relative; width: 44px; height: 26px; }
@@ -444,3 +432,64 @@ body.sp-runner-open { overflow: hidden; }
 .sp-preview dl { margin: 6px 0; }
 @media (prefers-reduced-motion: reduce) { .sp-card, .sp-bar { animation: none; } }
 body.sp-has-bar .fab { transform: translateY(-64px); }
+
+/* Редизайн: неделя, карточка дня, программа, рекорды, свободная тренировка. */
+.sp-week { display: grid; gap: 8px; padding: 12px; border-radius: 22px; background: var(--surface); border: 1px solid var(--line); }
+.sp-week-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.sp-week-head .icon-button:last-child { transform: scaleX(-1); }
+.sp-week-title { flex: 1; display: grid; gap: 1px; border: 0; background: none; color: var(--text); font: inherit; text-align: center; cursor: pointer; padding: 2px 0; }
+.sp-week-title b { font-size: 15px; }
+.sp-week-title small { color: var(--muted); font-size: 11px; font-weight: 700; }
+.sp-week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.sp-week-days button { position: relative; display: grid; justify-items: center; gap: 2px; padding: 7px 0 9px; border: 1px solid transparent; border-radius: 13px; background: none; color: var(--text); font: inherit; cursor: pointer; }
+.sp-week-days small { color: var(--muted); font-size: 10px; font-weight: 700; }
+.sp-week-days b { font-size: 15px; }
+.sp-week-days i { width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+.sp-week-days .plan i { background: var(--line); }
+.sp-week-days .part i { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.sp-week-days .done i { background: var(--accent); }
+.sp-week-days .missed i { background: var(--warn); }
+.sp-week-days .today { border-color: var(--line); }
+.sp-week-days .today b { color: var(--accent); }
+.sp-week-days .on { background: var(--accent); }
+.sp-week-days .on b, .sp-week-days .on small { color: var(--accent-ink); }
+.sp-week-days .on i { background: var(--accent-ink); opacity: .7; }
+.sp-week-days .on.plan i, .sp-week-days .on:not(.plan):not(.part):not(.done):not(.missed) i { opacity: 0; }
+.sp-week-days .on.plan i { opacity: .45; }
+.sp-center { justify-self: center; }
+
+.sp-today-workout { gap: 8px; }
+.sp-today-title { display: grid; gap: 3px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; padding: 0; cursor: pointer; }
+.sp-today-title small { color: var(--muted); font-size: 12px; }
+.sp-today-workout .primary-button { min-width: 128px; }
+.sp-today-workout.rest h2, .sp-today-workout.empty h2 { color: var(--muted); }
+.sp-pill { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 15px; background: var(--surface-soft); color: var(--muted); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.sp-pill.done { background: var(--accent-soft); color: var(--accent); }
+.sp-ghost-card { background: none; border-style: dashed; }
+
+.sp-program-card { gap: 6px; }
+.sp-program-card .sp-card-head:not(:first-child) { margin-top: 8px; }
+.sp-program-card .sp-progress { height: 6px; border-radius: 3px; }
+.sp-list-row > span:first-child:has(> small) { flex-direction: column; align-items: flex-start; gap: 1px; }
+.sp-list-row > span b { font-size: 14px; }
+.sp-list-row > b { font-size: 13px; white-space: nowrap; }
+
+.sp-ex-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-ex-line .sp-ex-tap { flex: 1; min-width: 0; }
+.sp-ex-weight { flex: none; display: grid; justify-items: end; gap: 1px; text-align: right; }
+.sp-ex-weight b { font-size: 13px; }
+.sp-ex-weight small { color: var(--accent); font-size: 10px; font-weight: 800; }
+.sp-liked { display: inline-flex; color: #ff6b81; vertical-align: -2px; }
+.sp-liked .sp-ic { width: 12px; height: 12px; }
+.sp-ex-sheet-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-ex-sheet-actions .ghost-button { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; }
+.sp-ex-sheet-actions .ghost-button.on { color: #ff6b81; }
+
+.sp-free-ex { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+.sp-free-ex:first-of-type { border-top: 0; }
+.sp-free-ex > input { width: 100%; }
+.sp-free-nums { display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; gap: 6px; }
+.sp-free-nums label { display: grid; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.sp-free-nums input { width: 100%; min-width: 0; }
+.sp-hero-card { gap: 4px; }
+.sp-free-ex > .text-action { justify-self: start; }
