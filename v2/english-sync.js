@@ -9,10 +9,17 @@ function enQueue(op, args) {
   const id = crypto.randomUUID();
   const entry = { id, op, args: { ...args, attempt: args.attempt || id } };
   enOutbox.push(entry);
-  try { enStoreOutbox(); } catch (_) { enOutbox.pop(); toast("Не хватает места для сохранения ответа. Освободите память и повторите."); return Promise.reject(new Error("outbox_storage")); }
+  try { enStoreOutbox(); } catch (_) {
+    enOutbox.pop(); toast("Не хватает места для сохранения ответа. Освободите память и повторите.");
+    const rejected = Promise.reject(new Error("outbox_storage")); rejected.accepted = false; return rejected;
+  }
   const result = new Promise((resolve, reject) => enSyncWaiters.set(id, { resolve, reject }));
   enFlush();
   return result;
+}
+function enRecord(op, args) {
+  const result = enQueue(op, args); result.catch(() => {});
+  return result.accepted !== false;
 }
 async function enFlush() {
   if (enSyncRunning || enSyncTimer || !enOutbox.length || typeof window.sorokaEnglish !== "function") return;
