@@ -93,6 +93,13 @@ function spRecords(state) {
     const was = best.get(key);
     if (!was || entry.kilograms > was.kilograms || (entry.kilograms === was.kilograms && (entry.reps || 0) > (was.reps || 0))) best.set(key, entry);
   }
+  for (const log of Object.values(state.workoutSetLogs || {})) {
+    if (log.kilograms !== null || !log.actualReps) continue;
+    const key = C.exerciseKey(log.exercise);
+    const was = best.get(key);
+    if (was && !was.bodyweight) continue; // есть рекорд с весом — он главнее
+    if (!was || log.actualReps > was.reps) best.set(key, { exercise: log.exercise, date: log.date, kilograms: 0, reps: log.actualReps, bodyweight: true });
+  }
   return [...best.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
 function spRecordFor(state, name) {
