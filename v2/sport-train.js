@@ -6,7 +6,7 @@
  * позу) → hold (удержание) → rest (отдых между подходами) → between (перерыв
  * перед следующим упражнением). Одна на приложение и не привязана к экрану:
  * уходя на «Сегодня» или в другой раздел Flow, отсчёт идёт дальше, а полоса
- * висит над меню. Двойное касание засчитывает подход без таймеров. Идущий
+ * висит над меню. Открытие упражнения показывает технику; подход подтверждается в режиме тренировки. Идущий
  * таймер переживает перезапуск приложения (timerStorage — только этот телефон).
  */
 
@@ -71,7 +71,7 @@ function spSecondsFor(phase) {
 }
 function spCompleteSet(index, total, target) {
   const C = SP(), option = spTimer.session.option;
-  spUpdate(prev => C.setOptionExercise(prev, option, index, Math.max(C.completedSets(C.optionChecks(option, prev)[index], total), target))).catch(() => {});
+  spUpdate(prev => C.confirmWorkoutSet(prev, option, index, Math.max(C.completedSets(C.optionChecks(option, prev)[index], total), target))).catch(() => {});
 }
 function spCommitSet(index, total, before) {
   const C = SP(), plan = spTimer.session.option.plan;
@@ -96,20 +96,11 @@ function spStartSet(index, total) {
   if (spIsHold(index)) return spSetPhase({ index, kind: "prep", setNumber: current + 1 });
   spCommitSet(index, total, current);
 }
-function spFastForward(index, total) {
-  const session = spTimer.session;
-  if (!session || session.readOnly || session.finished) return;
-  const running = spTimer.phase;
-  if (running?.index === index && (running.kind === "hold" || running.kind === "prep")) spCompleteSet(index, total, running.setNumber);
-  spSetPhase(null);
-}
 function spTap(index, total) {
-  spTimer.dismissed = false;
   const now = Date.now();
-  const double = spTimer.lastTap?.index === index && now - spTimer.lastTap.at < 320;
-  spTimer.lastTap = { index, at: now };
-  if (double && spTimer.session.option.plan.exercises[index].mode) return;
-  if (double) spFastForward(index, total); else spStartSet(index, total);
+  if (spTimer.lastTap?.index === index && now - spTimer.lastTap.at < 500) return;
+  spTimer.lastTap = { index, at: now }; spTimer.dismissed = false;
+  spStartSet(index, total);
 }
 function spPhaseDone(expected) {
   const C = SP(), running = spTimer.phase, session = spTimer.session;
@@ -213,7 +204,7 @@ function spBarHtml(active) {
   const anyProgress = plan.exercises.some((e, i) => C.completedSets(checks[i], C.exerciseSets(e)) > 0);
   const controls = phase
     ? `<span class="sp-bar-actions"><button type="button" data-action="sp-pause" data-sp-pause aria-label="Пауза">${SP_ICON.pause}</button><button type="button" data-action="sp-skip" aria-label="Пропустить">${SP_ICON.skip}</button></span>`
-    : exercise ? `<button type="button" class="sp-bar-mark" data-action="sp-tap" data-i="${index}">${!anyProgress ? "Начнём" : C.holdSecondsFor(exercise) > 0 ? "Начать" : "Выполнил"}${anyProgress ? ` <b>${Math.min(done + 1, total)}/${total}</b>` : ""}</button>` : "";
+    : exercise ? `<button type="button" class="sp-bar-mark" data-action="sp-runner">Открыть</button>` : "";
   return `<div class="sp-bar ${phase && (phase.kind === "hold" || phase.kind === "prep") ? "work" : ""}"><button type="button" class="sp-bar-open" data-action="sp-runner" aria-label="Открыть таймер">${phase ? `<span class="sp-bar-clock"><small>${SP_PHASE_LABEL[phase.kind]}</small><b data-sp-time>--:--</b></span>` : ""}<span class="sp-bar-name">${spEsc(exercise?.name || plan.title)}</span></button>${controls}<button type="button" class="sp-bar-close" data-action="sp-dismiss" aria-label="Прекратить тренировку">${icon("close", "icon-sm")}</button></div>`;
 }
 
@@ -238,9 +229,9 @@ function spRunnerHtml() {
     ? `<p class="sp-runner-status">${spPhaseStatus(phase)}</p><div class="sp-timer ${phase.kind === "hold" || phase.kind === "prep" ? "work" : ""}"><div class="sp-dial"><svg viewBox="0 0 120 120"><circle class="sp-dial-track" cx="60" cy="60" r="${R}"/><circle class="sp-dial-arc" data-sp-arc cx="60" cy="60" r="${R}" stroke-dasharray="${L}"/></svg><div class="sp-dial-clock"><small>${SP_PHASE_LABEL[phase.kind]}</small><b data-sp-time>--:--</b></div></div>
         <div class="sp-timer-controls"><button type="button" data-action="sp-adjust" data-d="-15">−15</button><button type="button" data-action="sp-pause"><span data-sp-pause-label>Пауза</span></button><button type="button" data-action="sp-adjust" data-d="15">+15</button></div>
         <div class="sp-timer-controls"><button type="button" class="wide" data-action="sp-skip">${SP_SKIP_LABEL[phase.kind]}</button>${phase.kind === "hold" || phase.kind === "prep" ? `<button type="button" data-action="sp-cancel-set">Отменить подход</button>` : ""}</div></div>${upNext ? `<p class="sp-runner-next"><span>Далее</span><b>${upNext}</b></p>` : ""}`
-    : `<button class="primary-button sp-runner-go" type="button" data-action="sp-tap" data-i="${shown}">${!anyProgress ? "Начнём" : C.holdSecondsFor(exercise) > 0 ? "Начать выполнение" : "Выполнил подход"}${anyProgress ? ` · ${Math.min(done + 1, total)}/${total}` : ""}</button>`;
+    : `<button class="primary-button sp-runner-go" type="button" data-action="sp-tap" data-i="${shown}">${C.holdSecondsFor(exercise) > 0 ? "Начать удержание" : "Выполнил подход"} · ${Math.min(done + 1, total)}/${total}</button>`;
   return `<div class="sp-runner" role="dialog" aria-modal="true">${head}<div class="sp-runner-body"><h2>${spEsc(exercise.name)}</h2><p class="sp-runner-scheme">${spEsc(exercise.sets_reps)}</p>${exercise.technique ? `<p class="sp-runner-tech">${spEsc(exercise.technique)}</p>` : ""}
-      <div class="sp-sets">${Array.from({ length: total }, (_, i) => `<i class="${i < done ? "on" : ""}"></i>`).join("")}</div>
+      <div class="sp-runner-meta"><span>Подходы ${done}/${total}</span>${spLoadControl(session.option, shown)}</div><div class="sp-sets">${Array.from({ length: total }, (_, i) => `<i class="${i < done ? "on" : ""}"></i>`).join("")}</div>
       <section class="sp-card">${video ? spVideoHtml(video, exercise) : `<button class="text-action" type="button" data-action="sp-external" data-url="${spEsc(C.videoSearchUrl(exercise))}">Найти видео на YouTube →</button>`}</section>
       ${tagged ? `<section class="sp-card"><p class="sp-kicker">Мышцы</p>${spMuscleMap(exercise.muscles)}</section>` : ""}</div>
     <div class="sp-runner-zone">${zone}<div class="sp-runner-session"><button type="button" data-action="sp-finish" data-close="1">Завершить · ${doneCount}/${plan.exercises.length}</button><button type="button" data-action="sp-dismiss">Прекратить</button></div></div></div>`;
@@ -374,14 +365,10 @@ function spWorkoutCard(option, readOnly, finished) {
     const sets = C.exerciseSets(e), doneSets = C.completedSets(checks[i], sets), complete = doneSets >= sets;
     const disabled = readOnly || finished || (phase !== null && phase.index !== i);
     const kitId = C.exerciseEquipment(e.name);
-    const last = C.latestWeight(s.state, e.name);
-    const record = spRecordFor(s.state, e.name);
     const liked = C.isFavorite(s.state, e.name);
-    const weighable = !splits && !C.isBodyweight(e);
-    const weight = weighable && last ? `<span class="sp-ex-weight"><b>${spKg(last.kilograms)} кг${last.reps ? ` × ${last.reps}` : ""}</b>${record && record.kilograms > last.kilograms ? `<small>рекорд ${spKg(record.kilograms)}</small>` : ""}</span>` : "";
     return `<div class="sp-ex ${complete ? "done" : ""} ${!finished && !readOnly && i === shown ? "active" : ""}">
-      <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-tap" data-i="${i}" ${disabled || complete ? "disabled" : ""} aria-pressed="${complete}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong><small>${kitId ? spEquipIcon(kitId) : ""}${doneSets ? `Подход ${Math.min(doneSets + 1, sets)}/${sets} · ` : ""}${spEsc(e.sets_reps)}${e.swappedFrom ? " · замена" : ""}</small></span></button>${weight}</div>
-        <div class="sp-ex-actions"><button type="button" class="sp-chip" data-action="sp-exercise" data-i="${i}">${C.hasVideo(e) ? SP_ICON.play : SP_ICON.technique}<b>Как делать</b></button>${weighable && !readOnly ? `<button type="button" class="sp-chip ${last ? "value" : ""}" data-action="sp-weight" data-i="${i}">${SP_ICON.dumbbell}<b>${last ? "Вес" : "Записать вес"}</b></button>` : ""}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
+      <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-exercise" data-i="${i}" aria-label="Техника: ${spEsc(e.name)}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong><small>${kitId ? spEquipIcon(kitId) : ""}${spEsc(e.sets_reps)}${e.swappedFrom ? " · замена" : ""}</small></span></button></div>
+        <div class="sp-ex-actions"><span class="sp-set-count">Подходы ${doneSets}/${sets}</span>${spLoadControl(option, i)}${doneSets > 0 && !readOnly && !finished ? `<button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : ""}</div></div>
       ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
   }).join("") : "";
   const finish = !finished && expanded ? `<button class="primary-button sp-wide ${allDone ? "" : "soft"}" type="button" data-action="sp-finish" ${readOnly || phase ? "disabled" : ""}>${readOnly ? (option.historyOnly ? "История · только просмотр" : "План на будущий день") : `Завершить ${splits ? "растяжку" : "тренировку"} · ${done}/${total}`}</button>` : "";
@@ -409,23 +396,41 @@ SP_SHEETS.rules = () => {
   return { title: kind === "splits" ? "Правила растяжки" : "Правила тренировки", body: `<ul class="sp-rules">${rules.map(r => `<li>${spEsc(r)}</li>`).join("")}</ul>` };
 };
 SP_SHEETS.muscles = sheet => ({ title: sheet.exercise.name, body: spMuscleMap(sheet.exercise.muscles) });
+const SP_BASIS_SHORT = { per_dumbbell: "на гантель", total: "с грифом", machine: "тренажёр", additional: "доп. вес" };
+function spLoadControl(option, index) {
+  const C = SP(), exercise = option.plan.exercises[index], s = spState();
+  if (C.isBodyweight(exercise)) return `<span class="sp-set-count">Свой вес</span>`;
+  const load = C.workoutLoad(s.state, option, index);
+  const readOnly = option.historyOnly || option.date > C.todayKey();
+  const label = load ? `Вес ${spKg(load.kilograms)} кг · ${SP_BASIS_SHORT[load.basis]}` : "Вес · указать";
+  return readOnly ? `<span class="sp-set-count">${label}</span>` : `<button type="button" class="sp-chip sp-load" data-action="sp-weight" data-i="${index}" aria-label="Вес: ${spEsc(exercise.name)}">${SP_ICON.dumbbell}<b>${label}</b></button>`;
+}
+function spOpenWeight(option, index) {
+  const exercise = option?.plan.exercises[index];
+  if (!exercise) return;
+  const load = SP().workoutLoad(spState().state, option, index);
+  spOpen("weight", { exercise, option: option.key, index, kg: load?.kilograms ?? 0, basis: load?.basis || "", reps: load?.actualReps ?? "" });
+}
 SP_SHEETS.weight = sheet => {
   const C = SP(), s = spState();
   const last = C.latestWeight(s.state, sheet.exercise.name);
-  sheet.kg ??= last?.kilograms ?? 10;
-  sheet.reps ??= last?.reps ?? 10;
-  const max = Math.max(30, Math.ceil(((last?.kilograms ?? 0) * 1.5) / 5) * 5);
-  return { title: "Рабочий вес", body: `<p class="section-note">${spEsc(sheet.exercise.name)}</p><div class="sp-weight-readout"><b data-sp-kg>${spKg(sheet.kg)}</b><span>кг на одну руку</span></div>
+  sheet.kg ??= last?.kilograms ?? 0; sheet.basis ??= last?.basis || ""; sheet.reps ??= "";
+  const max = Math.max(30, Math.ceil(((last?.kilograms ?? sheet.kg) * 1.5) / 5) * 5, sheet.kg);
+  return { title: "Вес упражнения", body: `<p class="section-note">${spEsc(sheet.exercise.name)}</p>
+    <label class="field">Вес, кг<input type="number" min="0" max="2000" step="0.5" inputmode="decimal" value="${sheet.kg}" data-sp-kg-number></label>
     <div class="sp-weight-slider"><button type="button" data-action="sp-kg" data-d="-0.5" aria-label="Меньше на полкило">−</button><input type="range" min="0" max="${max}" step="0.5" value="${sheet.kg}" data-sp-kg-range aria-label="Вес в килограммах"><button type="button" data-action="sp-kg" data-d="0.5" aria-label="Больше на полкило">+</button></div>
-    <div class="sp-reps"><span>Повторений в подходе</span><div><button type="button" data-action="sp-reps" data-d="-1">−</button><b>${sheet.reps}</b><button type="button" data-action="sp-reps" data-d="1">+</button></div></div>
-    <p class="section-note">Записывается сегодняшним числом. Если упражнение делается двумя руками сразу — указывайте вес одной гантели.</p>
+    <p class="sp-kicker">Как считаем вес</p><div class="sp-choice">${Object.entries(C.WEIGHT_BASIS).map(([basis, label]) => `<button type="button" class="${sheet.basis === basis ? "on" : ""}" data-action="sp-weight-basis" data-basis="${basis}">${spEsc(label)}</button>`).join("")}</div>
+    <label class="field">Повторы в следующих подходах, если известно<input type="number" min="1" max="1000" step="1" value="${sheet.reps}" placeholder="Не указано" data-sp-reps-number></label>
+    <p class="section-note">Вес запишется отдельно для каждого подтверждённого подхода. Изменение веса не переписывает уже выполненные подходы.</p>
     <button class="primary-button sp-wide" type="button" data-action="sp-weight-save">Сохранить</button>` };
 };
+
 document.addEventListener("input", event => {
-  if (!event.target.matches?.("[data-sp-kg-range]")) return;
+  if (event.target.matches?.("[data-sp-reps-number]")) { spState().sheet.reps = event.target.value; return; }
+  if (!event.target.matches?.("[data-sp-kg-range], [data-sp-kg-number]")) return;
   const sheet = spState().sheet;
   sheet.kg = Number(event.target.value);
-  const out = document.querySelector("[data-sp-kg]"); if (out) out.textContent = spKg(sheet.kg);
+  const other = document.querySelector(event.target.matches("[data-sp-kg-number]") ? "[data-sp-kg-range]" : "[data-sp-kg-number]"); if (other) other.value = sheet.kg;
 });
 
 Object.assign(SP_ACTIONS, {
@@ -442,7 +447,7 @@ Object.assign(SP_ACTIONS, {
     spTap(i, SP().exerciseSets(spTimer.session.option.plan.exercises[i]));
     spOverlay(true); render();
   },
-  "sp-runner": () => { if (!spTimer.session) return; spTimer.runner = true; spTimer.dismissed = false; spOverlay(true); },
+  "sp-runner": () => { if (!spTimer.session) return; const session = spTimer.session; if (!session.readOnly && !session.finished) spUpdate(prev => SP().startOption(prev, session.option)).catch(() => {}); spTimer.runner = true; spTimer.dismissed = false; spOverlay(true); },
   "sp-runner-close": () => { spTimer.runner = false; spTimer.videoOpen = false; spOverlay(true); render(); },
   "sp-dismiss": () => { if (spTimer.phase) spSetPhase(null); spTimer.dismissed = true; spTimer.runner = false; spOverlay(true); render(); },
   "sp-pause": () => { const c = spTimer.clock; if (!c) return; if (c.running) c.pause(); else c.resume(); spNoteClock(); spTimerPaint(); },
@@ -471,7 +476,7 @@ Object.assign(SP_ACTIONS, {
     const sheet = spState().sheet;
     spOpen("swap", { from: sheet.exercise.name, original: sheet.exercise.swappedFrom || sheet.exercise.name, swapped: Boolean(sheet.exercise.swappedFrom), option: sheet.option, program: sheet.program, id: sheet.id });
   },
-  "sp-weight-from-sheet": () => { const sheet = spState().sheet; spOpen("weight", { exercise: sheet.exercise }); },
+  "sp-weight-from-sheet": () => { const sheet = spState().sheet; spOpenWeight(spOptions().all.find(o => o.key === sheet.option), sheet.index); },
   "sp-like-sheet": () => { const sheet = spState().sheet; spUpdate(prev => SP().toggleFavorite(prev, sheet.exercise.name)).catch(() => {}); },
   "sp-rules": () => spOpen("rules"),
   "sp-technique": control => {
@@ -481,15 +486,22 @@ Object.assign(SP_ACTIONS, {
     if (exercise) { spTimer.videoOpen = false; spOpen("technique", { exercise }); }
   },
   "sp-muscles": control => { const e = spCurrentOption()?.plan.exercises[Number(control.dataset.i)]; if (e) spOpen("muscles", { exercise: e }); },
-  "sp-weight": control => { const e = spCurrentOption()?.plan.exercises[Number(control.dataset.i)]; if (e) spOpen("weight", { exercise: e }); },
+  "sp-weight": control => { spOpenWeight(spTimer.runner ? spTimer.session?.option : spCurrentOption(), Number(control.dataset.i)); },
+  "sp-weight-basis": control => { spState().sheet.basis = control.dataset.basis; render(); },
   "sp-kg": control => { const sheet = spState().sheet; sheet.kg = Math.max(0, Math.round((sheet.kg + Number(control.dataset.d)) * 2) / 2); render(); },
   "sp-reps": control => { const sheet = spState().sheet; sheet.reps = Math.max(1, Math.min(50, sheet.reps + Number(control.dataset.d))); render(); },
-  "sp-weight-save": () => {
+  "sp-weight-save": async () => {
     const C = SP(), sheet = spState().sheet;
-    const entry = { exercise: sheet.exercise.name, date: C.todayKey(), kilograms: sheet.kg, basis: "per_dumbbell", reps: sheet.reps };
+    if (!Object.hasOwn(C.WEIGHT_BASIS, sheet.basis)) return spSheetError("Выберите, как считаем вес.");
+    const entry = { exercise: sheet.exercise.name, date: C.todayKey(), kilograms: sheet.kg, basis: sheet.basis,
+      ...(sheet.reps !== "" ? { reps: Number(sheet.reps) } : {}) };
     try { C.validateWorkingWeight(entry); } catch (error) { return spSheetError(error.message); }
-    spUpdate(prev => C.recordWorkingWeight(prev, entry)).catch(() => {});
-    spClose();
+    const option = spOptions().all.find(o => o.key === sheet.option);
+    try { await spUpdate(prev => {
+      const next = C.recordWorkingWeight(prev, entry);
+      return option ? C.selectWorkoutLoad(next, option, sheet.index, { kilograms: entry.kilograms, basis: entry.basis, ...(entry.reps ? { actualReps: entry.reps } : {}) }) : next;
+    }); if (spState().sheet === sheet) spClose(); }
+    catch (error) { if (error?.message === "outbox_storage") spSheetError("Не удалось сохранить вес. Освободите место и повторите."); else if (spState().sheet === sheet) spClose(); }
   },
   "sp-video-play": control => { spTimer.videoOpen = control.dataset.id; spOverlay(true); if (spState().sheet) render(); },
   "sp-video-full": control => { const box = control.closest("[data-sp-video]"); box?.requestFullscreen?.().catch(() => box.classList.add("expanded")); },
