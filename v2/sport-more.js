@@ -6,12 +6,41 @@
 
 // ------------------------------------------------------------ цели
 
+// «Цели» — весь прогресс: неделя, цели, тело, рекорды.
 function spGoalsScreen() {
   const s = spState(), C = SP();
+  const { visible } = spOptions();
+  const week = spWeekStats(visible, s.state);
   const builtIn = C.visibleBuiltInGoals(s.state);
   const custom = C.activeCustomGoals(s.state);
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Цели</p><span>${builtIn.length + custom.length} в работе<button class="sp-add" type="button" data-action="sp-goal-new" aria-label="Добавить свою цель">${icon("plus", "icon-sm")}</button></span></div>
-    ${builtIn.map(key => spBuiltInGoal(key)).join("")}${custom.map(([id, goal]) => spCustomGoal(id, goal)).join("")}</section>`;
+  const weekCard = `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Эта неделя</p><span>${spDateShort(C.startOfWeekKey(C.todayKey()))} — ${spDateShort(C.offsetDateKey(C.startOfWeekKey(C.todayKey()), 6))}</span></div><dl class="sp-stats"><div><dt>Тренировок</dt><dd>${week.done}<small>из ${week.planned}</small></dd></div><div><dt>Время</dt><dd>${week.seconds ? C.formatDuration(week.seconds) : "—"}</dd></div><div><dt>Отметки</dt><dd>${week.habits}<small>%</small></dd></div></dl></section>`;
+  const goals = `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Цели</p><button class="text-action" type="button" data-action="sp-goal-new">+ цель</button></div>${builtIn.map(key => spBuiltInGoal(key)).join("")}${custom.map(([id, goal]) => spCustomGoal(id, goal)).join("")}</section>`;
+  return `${weekCard}${goals}${spBodyCard()}${spRecordsCard()}`;
+}
+
+/** Тело: главные замеры с изменением за месяц. Полный список — по «Все замеры». */
+function spBodyCard() {
+  const s = spState(), C = SP();
+  const fields = C.measurementFields(s.state).filter(f => !f.archived);
+  const order = ["Вес", "Талия", "Грудь", "Бёдра", "Бицепс"];
+  const shown = fields.filter(f => C.measurementHistory(s.state, f.id).length).sort((a, b) => (order.indexOf(a.label) + 1 || 99) - (order.indexOf(b.label) + 1 || 99)).slice(0, 4);
+  const rows = shown.map(field => {
+    const points = C.measurementSeries(C.measurementHistory(s.state, field.id), field.unit);
+    const latest = C.measurementHistory(s.state, field.id)[0];
+    const base = C.baselinePoint(points, 30);
+    const last = points[points.length - 1];
+    const delta = base && last && base.id !== last.id ? last.numericValue - base.numericValue : null;
+    return `<button type="button" class="sp-list-row" data-action="sp-measure-open" data-id="${spEsc(field.id)}"><span><b>${spEsc(field.label)}</b><small>${spEsc(C.measurementValue(latest.value, field.unit))}</small></span><small>${delta === null ? "" : `${delta > 0 ? "+" : ""}${delta.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} за месяц`}</small></button>`;
+  }).join("");
+  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Тело</p><button class="text-action" type="button" data-action="sp-profile-section" data-section="body">${rows ? "Все замеры" : "+ замер"}</button></div>${rows || `<p class="section-note">Вес, талия и другие замеры с изменением за месяц появятся здесь после первой записи.</p>`}</section>`;
+}
+
+function spRecordsCard() {
+  const s = spState(), C = SP();
+  const records = spRecords(s.state).slice(0, s.open.records ? 50 : 5);
+  if (!records.length) return `<section class="sp-card"><p class="sp-kicker">Рекорды</p><p class="section-note">Записывайте вес в строке упражнения — лучший результат по каждому появится здесь.</p></section>`;
+  const total = spRecords(s.state).length;
+  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Рекорды</p><span>${total} ${spPlural(total, "упражнение", "упражнения", "упражнений")}</span></div>${records.map(r => `<div class="sp-list-row"><span><b>${spEsc(r.exercise)}</b><small>${spDateShort(r.date)} · ${spEsc(C.WEIGHT_BASIS[r.basis || "per_dumbbell"]).toLocaleLowerCase()}</small></span><b>${spKg(r.kilograms)} кг${r.reps ? ` × ${r.reps}` : ""}</b></div>`).join("")}${total > 5 ? `<button class="text-action" type="button" data-action="sp-toggle-open" data-key="records">${s.open.records ? "Свернуть" : `Все рекорды · ${total}`}</button>` : ""}</section>`;
 }
 function spTestHistory(tests, key) {
   return Object.keys(tests).map(Number).sort((a, b) => a - b).map(day => ({ day, value: tests[String(day)][key] })).filter(p => p.value !== undefined);
@@ -131,6 +160,7 @@ Object.assign(SP_ACTIONS, {
 // ------------------------------------------------------------ профиль
 
 const SP_SECTIONS = { profile: "Анкета", body: "Замеры", equipment: "Инвентарь", favorites: "Любимые упражнения", history: "История" };
+// «Профиль» — всё про вас и все настройки раздела в одном месте.
 function spProfileScreen() {
   const s = spState(), C = SP(), state = s.state;
   const profile = state.trainingProfile || {};
@@ -139,27 +169,30 @@ function spProfileScreen() {
   const tgName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || "";
   const name = profile.name?.trim() || tgName || "Профиль";
   const years = C.ageFromBirthDate(profile.birthDate, today) ?? (profile.age?.trim() ? Number(profile.age) : null);
-  const journal = C.workoutJournal(spOptions().visible, state);
-  const recent = journal.filter(entry => entry.date >= C.offsetDateKey(today, -29)).length;
-  const shower = spStreak(state.showers || {}, today).days;
-  const fields = C.measurementFields(state).filter(f => !f.archived);
-  const latest = label => { const field = fields.find(f => f.label === label); const row = field && C.measurementHistory(state, field.id)[0]; return row ? C.measurementValue(row.value, field.unit) : null; };
+  const selected = C.knownMuscles(state.targetMuscles);
+  const { all, visible } = spOptions();
+  const programs = C.programSummaries(s.catalog, all, state).filter(p => (state.programLifecycle?.[p.key]?.status ?? "active") === "active");
+  const archived = C.programSummaries(s.catalog, all, state).filter(p => state.programLifecycle?.[p.key]?.status === "archived").length;
+  const journal = C.workoutJournal(visible, state);
   const owned = C.EQUIPMENT.filter(item => C.hasEquipment(state, item.id));
   const liked = C.favoriteExercises(state);
-  const selected = C.knownMuscles(state.targetMuscles);
-  const rows = [
-    ["body", gaps.measurements.length ? `не хватает: ${gaps.measurements.map(f => f.label.toLocaleLowerCase()).join(", ")}` : "", `<span class="sp-facts"><span>${spEquipIcon("weight")}<b>${spEsc(latest("Вес") || "—")}</b></span><span>${spEquipIcon("height")}<b>${spEsc(latest("Рост") || "—")}</b></span></span>`, gaps.measurements.length > 0],
-    ["equipment", gaps.equipment ? "не указан" : "", gaps.equipment ? "" : `<span class="sp-facts">${owned.map(item => `<span title="${spEsc(item.label)}">${spEquipIcon(item.id)}${item.weighed && C.equipmentKg(state, item.id) ? `<b>${C.equipmentKg(state, item.id)} кг</b>` : ""}</span>`).join("")}</span>`, gaps.equipment],
-    ["favorites", liked.length ? liked.slice(0, 3).map(i => i.name).join(", ") + (liked.length > 3 ? ` и ещё ${liked.length - 3}` : "") : "пока пусто", "", false],
-    ["history", journal.length ? `${journal.length} ${spPlural(journal.length, "занятие", "занятия", "занятий")}` : "пока пусто", "", false],
-  ];
-  return `<button type="button" class="sp-card sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc(name.slice(0, 2).toUpperCase())}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : name)}</strong><small>${[years !== null ? spPlural(years, "год", "года", "лет") : "", `день ${spDay()}`, "анкета"].filter(Boolean).join(" · ")}</small></span>${gaps.profile ? `<i class="sp-dot"></i>` : ""}${icon("arrow", "icon-sm")}</button>
-    <button type="button" class="sp-card sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Выберите мышцы, которые хотите развивать")}</small><b>Карта мышц ↗</b></span>${gaps.muscles ? `<i class="sp-dot"></i>` : ""}</button>
-    <dl class="sp-card sp-stats wide"><div><dt>Занятий за 30 дней</dt><dd>${recent}</dd></div><div><dt>Душ подряд</dt><dd>${shower}<small>${spPlural(shower, "день", "дня", "дней")}</small></dd></div><div><dt>Занятий всего</dt><dd>${journal.length}</dd></div></dl>
-    <div class="sp-card sp-links">${rows.map(([id, note, facts, need]) => `<button type="button" data-action="sp-profile-section" data-section="${id}"><span><strong>${SP_SECTIONS[id]}</strong>${note ? `<small>${spEsc(note)}</small>` : ""}${facts}</span>${need ? `<i class="sp-dot"></i>` : ""}${icon("arrow", "icon-sm")}</button>`).join("")}</div>`;
+  const n = C.notificationSettings(state.notificationSettings);
+  const on = ["wake", "shower", "workout"].filter(k => n[k].enabled).length + Object.values(state.customHabits || {}).filter(h => !h.archived && C.habitNotifies(h) && C.habitReminders(h).length).length;
+  const row = (action, title, note, need, extra = "") => `<button type="button" ${action}><span><strong>${title}</strong>${note ? `<small>${note}</small>` : ""}${extra}</span>${need ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>`;
+  return `<section class="sp-card sp-hero-card"><button type="button" class="sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc((profile.name?.trim() || tgName) ? name.slice(0, 1).toUpperCase() : "?")}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : name)}</strong><small>${gaps.profile ? "Анкета не заполнена" : "Анкета"}</small></span>${gaps.profile ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>
+      <button type="button" class="sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Выберите мышцы, которые хотите развивать")}</small></span>${gaps.muscles ? '<i class="sp-dot"></i>' : ""}</button></section>
+    <section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Программы</p>${archived ? `<button class="text-action" type="button" data-action="sp-programs" data-archive="1">Архив · ${archived}</button>` : ""}</div>
+      ${programs.length ? programs.map(p => { const dates = [...p.dates].sort(); return `<button type="button" class="sp-list-row" data-action="sp-programs"><span><b>${spEsc(p.title)}</b><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])}` : ""}</small></span>${icon("arrow", "icon-sm")}</button>`; }).join("") : `<p class="section-note">Пока нет. Ниже — составить с ИИ по вашим данным.</p>`}
+      <button class="primary-button sp-wide" type="button" data-action="sp-import-open">Новая программа с ИИ</button></section>
+    <div class="sp-card sp-links">
+      ${row('data-action="sp-profile-section" data-section="body"', "Замеры", gaps.measurements.length ? `не хватает: ${gaps.measurements.map(f => f.label.toLocaleLowerCase()).join(", ")}` : "вес, обхваты, свои параметры", gaps.measurements.length > 0)}
+      ${row('data-action="sp-profile-section" data-section="equipment"', "Инвентарь и рабочие веса", gaps.equipment ? "не указан" : "", gaps.equipment, gaps.equipment ? "" : `<span class="sp-facts">${owned.map(item => `<span title="${spEsc(item.label)}">${spEquipIcon(item.id)}${item.weighed && C.equipmentKg(state, item.id) ? `<b>${C.equipmentKg(state, item.id)} кг</b>` : ""}</span>`).join("")}</span>`)}
+      ${row('data-action="sp-profile-section" data-section="favorites"', "Любимые упражнения", liked.length ? liked.slice(0, 3).map(i => spEsc(i.name)).join(", ") + (liked.length > 3 ? ` и ещё ${liked.length - 3}` : "") : "отмечаются в окне упражнения", false)}
+      ${row('data-action="sp-profile-section" data-section="history"', "История занятий", journal.length ? `${journal.length} ${spPlural(journal.length, "занятие", "занятия", "занятий")}` : "пока пусто", false)}
+      ${row('data-action="sp-sizes"', "Размеры одежды", "по меркам стопы, талии, груди и росту", false)}
+      ${row('data-action="sp-reminders"', "Напоминания", on ? `${on} ${spPlural(on, "включено", "включено", "включено")} · ${spEsc(n.timeZone)}` : "все выключены", false)}
+    </div>`;
 }
-
-// Анкета
 SP_SHEETS.profile = () => {
   const C = SP(), profile = spState().state.trainingProfile || {};
   const row = field => {
@@ -247,8 +280,7 @@ function spMeasurements(sheet) {
     const series = C.measurementHistory(state, field.id);
     return `<button type="button" class="sp-metric" data-action="sp-measure-open" data-id="${spEsc(field.id)}"><span>${C.isRequiredField(field) && !series.length ? '<i class="sp-dot"></i>' : ""}${spEsc(field.label)}</span><b>${series[0] ? spEsc(C.measurementValue(series[0].value, field.unit)) : "—"}</b><small>${series.length ? `${series.length} ${spPlural(series.length, "запись", "записи", "записей")}` : "Добавить первый"}</small></button>`;
   }).join("");
-  const sizes = sheet.archived ? "" : spSizes();
-  return `<div class="sp-toolbar-line"><span class="section-note">Нажмите на параметр — график и история</span><button class="text-action" type="button" data-action="sp-measure-archive">${sheet.archived ? "Активные" : "Архив"}</button></div><div class="sp-metrics">${cards}</div><button class="ghost-button sp-wide" type="button" data-action="sp-field-new">+ Свой параметр</button>${sizes}`;
+  return `<div class="sp-toolbar-line"><span class="section-note">Нажмите на параметр — график и история</span><button class="text-action" type="button" data-action="sp-measure-archive">${sheet.archived ? "Активные" : "Архив"}</button></div><div class="sp-metrics">${cards}</div><button class="ghost-button sp-wide" type="button" data-action="sp-field-new">+ Свой параметр</button>`;
 }
 function spSizes() {
   const C = SP(), state = spState().state;
@@ -259,9 +291,9 @@ function spSizes() {
     ["Брюки", [waist, height], C.pantsSizeRu(waist.value), C.pantsSize(waist.value), "EU"],
     ["Футболка", [chest], C.topSizeRu(chest.value), C.topSize(chest.value), "INT"],
   ];
-  return `<details class="sp-details"><summary>Мои размеры одежды <small>≈</small></summary><p class="section-note">Российский размер — крупно, EU / INT — рядом для сравнения. Нажмите на мерку, чтобы обновить её.</p>
+  return `<p class="section-note">Российский размер — крупно, EU / INT — рядом. Нажмите на мерку, чтобы обновить её.</p>
     ${rows.map(([label, measures, ru, other, system]) => `<div class="sp-size"><div><b>${label}</b>${measures.map(m => `<button type="button" class="text-action" data-action="sp-measure-open" data-id="${spEsc(m.field.id)}">${spEsc(m.field.label)}: ${m.raw ? spEsc(C.measurementValue(m.raw, m.field.unit)) : "указать"}</button>`).join("")}${label === "Брюки" ? `<small>${length ? `${length} · ${length === "Short" ? "укороченные" : length === "Tall" ? "удлинённые" : "стандартные"}` : "Укажите рост для подбора длины"}</small>` : ""}</div><div class="sp-size-result"><small>RU</small><strong>${ru ? `≈ ${ru}` : "—"}</strong><span>${system} · ${other ? `≈ ${other}` : "—"}</span></div></div>`).join("")}
-    <p class="section-note">Ориентир по мужским сеткам adidas. Это оценка по меркам, а не точный перевод между системами; перед покупкой сверяйте сетку конкретной модели.</p></details>`;
+    <p class="section-note">Ориентир по мужским сеткам adidas. Это оценка по меркам, а не точный перевод между системами; перед покупкой сверяйте сетку конкретной модели.</p>`;
 }
 function spMeasureField(sheet, field) {
   const C = SP(), state = spState().state;
@@ -433,31 +465,33 @@ function spHistory(sheet) {
     const delta = last && first ? last.kilograms - first.kilograms : 0;
     return `<details class="sp-details"><summary>${spEsc(stat.name)} <small>${stat.sessions} ${spPlural(stat.sessions, "раз", "раза", "раз")}</small></summary><p class="section-note">Подходов: ${stat.completedSets} из ${stat.plannedSets} · последний раз ${spDateShort(stat.lastDate)}</p>
       ${weights.length ? `<div class="sp-weights"><p><span>${spEsc(C.WEIGHT_BASIS[last.basis || "per_dumbbell"])}</span><b>${spKg(last.kilograms)} кг${weights.length > 1 && !mixed && delta ? ` <em class="${delta > 0 ? "up" : "down"}">${delta > 0 ? "+" : "−"}${spKg(Math.abs(delta))}</em>` : ""}</b></p>${weights.slice(-8).map(w => `<div class="sp-weight-bar"><span>${spDateShort(w.date)}</span><i><b style="width:${Math.max(6, w.kilograms / peak * 100)}%"></b></i><strong>${spKg(w.kilograms)} кг${w.reps ? ` × ${w.reps}` : ""}</strong></div>`).join("")}</div>` : `<p class="section-note">Вес ещё не записан.</p>`}
-      <form class="sp-gym-row" data-sp-form="gym" data-name="${spEsc(stat.name)}" data-basis="${last?.basis || "per_dumbbell"}"><span><strong>Записать сегодня</strong><small>${spEsc(C.WEIGHT_BASIS[last?.basis || "per_dumbbell"])}</small></span><input name="kg" type="number" min="0" max="2000" step="any" inputmode="decimal" placeholder="кг" value="${last ? last.kilograms : ""}"><input name="reps" type="number" min="1" max="1000" inputmode="numeric" placeholder="раз" value="${last?.reps || ""}"><button class="icon-button" type="submit" aria-label="Записать">${icon("check", "icon-sm")}</button></form></details>`;
+</details>`;
   }).join("") : `<p class="section-note">Пока нечего показать. Отметьте подход или запишите вес.</p>`}`;
 }
 SP_ACTIONS["sp-history-view"] = control => { spState().sheet.view = control.dataset.view; render(); };
 
 // ------------------------------------------------------------ настройки, программы, экспорт
 
-SP_SHEETS.settings = sheet => {
+SP_SHEETS.reminders = () => {
   const C = SP(), s = spState();
-  const section = sheet.section || null;
   const n = C.notificationSettings(s.state.notificationSettings);
   const zones = [...new Set([n.timeZone, Intl.DateTimeFormat().resolvedOptions().timeZone, "Europe/Moscow", "Europe/Kaliningrad", "Europe/Samara", "Asia/Yekaterinburg", "Asia/Omsk", "Asia/Krasnoyarsk", "Asia/Irkutsk", "Asia/Yakutsk", "Asia/Vladivostok", "Asia/Magadan", "Asia/Kamchatka", "Europe/Berlin", "UTC"])];
-  const part = (id, title, hint, body) => `<section class="sp-settings-part ${section === id ? "open" : ""}"><button type="button" data-action="sp-settings-section" data-section="${id}"><span><strong>${title}</strong><small>${hint}</small></span><i>${section === id ? "−" : "+"}</i></button>${section === id ? `<div>${body}</div>` : ""}</section>`;
-  const notifications = `<form data-sp-form="notifications">${["wake", "shower", "workout"].map(kind => `<div class="sp-notify"><span>${kind === "wake" ? "Подъём" : kind === "shower" ? "Контрастный душ" : "Тренировка"}</span><input type="time" name="${kind}-time" value="${n[kind].time}" required><label class="sp-toggle"><input type="checkbox" name="${kind}-on" ${n[kind].enabled ? "checked" : ""}><span></span></label></div>`).join("")}
+  const habits = Object.entries(s.state.customHabits || {}).filter(([, h]) => !h.archived);
+  return { title: "Напоминания", body: `<form data-sp-form="notifications">${["wake", "shower", "workout"].map(kind => `<div class="sp-notify"><span>${kind === "wake" ? "Подъём" : kind === "shower" ? "Контрастный душ" : "Тренировка дня"}</span><input type="time" name="${kind}-time" value="${n[kind].time}" required><label class="sp-toggle"><input type="checkbox" name="${kind}-on" ${n[kind].enabled ? "checked" : ""}><span></span></label></div>`).join("")}
+    ${habits.length ? `<p class="sp-kicker">Свои привычки</p>${habits.map(([id, h]) => `<button type="button" class="sp-list-row" data-action="sp-habit-edit" data-id="${spEsc(id)}"><span><b>${spEsc(h.name)}</b><small>${C.habitReminders(h).length ? C.habitReminders(h).map(r => r.time).join(", ") + (C.habitNotifies(h) ? "" : " · без сообщений") : "без напоминаний"}</small></span>${icon("arrow", "icon-sm")}</button>`).join("")}` : ""}
     <label class="field">Часовой пояс<select name="zone">${zones.map(z => `<option ${z === n.timeZone ? "selected" : ""}>${spEsc(z)}</option>`).join("")}</select></label>
-    <p class="section-note">Выполненное не напоминаем. «Подъём» задаёт и время вопроса «проснулся?», и час, с которого приложение спросит при открытии. Напоминания приходят от бота Flow. Свои привычки — на «Сегодня», плюсом в блоке привычек.</p><button class="primary-button sp-wide" type="submit">Сохранить уведомления</button></form>`;
-  return { title: "Настройки спорта", wide: true, body: `${part("notifications", "Уведомления", "Время и напоминания в Telegram", notifications)}${part("programs", "Программы", "Порядок планов, архив, удаление", spProgramManager(sheet))}${part("export", "Экспорт данных + инструкция", "Текст для ИИ: правила и ваши данные", spExport(sheet))}` };
+    <p class="section-note">Приходят от бота Flow. Выполненное не напоминаем. «Подъём» задаёт и время вопроса «проснулся?» при открытии приложения.</p><button class="primary-button sp-wide" type="submit">Сохранить</button></form>` };
 };
+SP_SHEETS.programs = sheet => ({ title: sheet.archive ? "Архив программ" : "Программы", body: spProgramManager(sheet) });
+SP_SHEETS.sizes = () => ({ title: "Размеры одежды", body: spSizes() });
 SP_FORMS.notifications = form => {
   const C = SP(), get = name => form.elements[name];
   const settings = { timeZone: get("zone").value };
   for (const kind of ["wake", "shower", "workout"]) settings[kind] = { enabled: get(`${kind}-on`).checked, time: get(`${kind}-time`).value };
   if (![settings.wake.time, settings.shower.time, settings.workout.time].every(t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) return spSheetError("Укажите время в формате ЧЧ:ММ.");
   try { new Intl.DateTimeFormat("ru-RU", { timeZone: settings.timeZone }); } catch (_) { return spSheetError("Неизвестный часовой пояс."); }
-  spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings(settings) })).then(() => toast("Уведомления сохранены")).catch(() => toast("Не сохранилось — проверьте связь"));
+  spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings(settings) })).then(() => toast("Напоминания сохранены")).catch(() => toast("Не сохранилось — проверьте связь"));
+  spClose();
 };
 function spProgramManager(sheet) {
   const C = SP(), s = spState();
@@ -475,15 +509,12 @@ function spProgramManager(sheet) {
   }).join("");
   return `${!archive && shown.length > 1 ? `<p class="section-note">Сверху — приоритетная: если планы совпали по датам, показывается она; прошедшие дни остаются за прежней программой.</p>` : ""}${rows || `<p class="section-note">${archive ? "Архив пуст." : "Нет активных программ."}</p>`}
     ${archive || archivedCount ? `<button class="text-action" type="button" data-action="sp-program-archive">${archive ? "К активным программам" : `Архив · ${archivedCount}`}</button>` : ""}
-    <button class="ghost-button sp-wide" type="button" data-action="sp-import-open">+ Добавить программу · JSON</button>`;
+    <button class="ghost-button sp-wide" type="button" data-action="sp-import-open">Новая программа с ИИ</button>`;
 }
 function spExport(sheet) {
-  return `<p class="section-note">Инструкция, профиль, замеры, фокус мышц, инвентарь и история — одним текстом для ИИ. Приложение ничего не отправляет само.</p>
-    <label class="field">Период<select data-sp-export="period"><option value="30" ${sheet.period === "30" || !sheet.period ? "selected" : ""}>30 дней</option><option value="90" ${sheet.period === "90" ? "selected" : ""}>90 дней</option><option value="all" ${sheet.period === "all" ? "selected" : ""}>Вся история</option></select></label>
-    <label class="sp-check-line"><input type="checkbox" data-sp-export="profile" ${sheet.withProfile !== false ? "checked" : ""}>Включить данные из профиля</label>
-    <label class="sp-check-line"><input type="checkbox" data-sp-export="health" ${sheet.withHealth ? "checked" : ""} ${sheet.withProfile === false ? "disabled" : ""}>Включить сведения о здоровье и дополнительные замеры</label>
-    <button class="primary-button sp-wide" type="button" data-action="sp-export-copy">Скопировать инструкцию + данные</button>
-    ${sheet.packet ? `<label class="field">Предпросмотр<textarea rows="10" readonly>${spEsc(sheet.packet)}</textarea></label>` : ""}`;
+  return `<label class="field">Период истории<select data-sp-export="period"><option value="30" ${sheet.period === "30" || !sheet.period ? "selected" : ""}>30 дней</option><option value="90" ${sheet.period === "90" ? "selected" : ""}>90 дней</option><option value="all" ${sheet.period === "all" ? "selected" : ""}>Вся история</option></select></label>
+    <label class="sp-check-line"><input type="checkbox" data-sp-export="profile" ${sheet.withProfile !== false ? "checked" : ""}>Данные профиля: анкета, замеры, инвентарь, фокус</label>
+    <label class="sp-check-line"><input type="checkbox" data-sp-export="health" ${sheet.withHealth ? "checked" : ""} ${sheet.withProfile === false ? "disabled" : ""}>Здоровье и дополнительные замеры</label>`;
 }
 document.addEventListener("change", event => {
   const key = event.target.dataset?.spExport;
@@ -507,8 +538,9 @@ async function spCopyPacket(options) {
   } catch (_) { toast("Не получилось собрать инструкцию — проверьте связь"); return ""; }
 }
 Object.assign(SP_ACTIONS, {
-  "sp-settings-open": () => spOpen("settings"),
-  "sp-settings-section": control => { const sheet = spState().sheet; sheet.section = sheet.section === control.dataset.section ? null : control.dataset.section; render(); },
+  "sp-programs": control => spOpen("programs", { archive: control.dataset.archive === "1" }),
+  "sp-reminders": () => spOpen("reminders"),
+  "sp-sizes": () => spOpen("sizes"),
   "sp-program-open": control => { const sheet = spState().sheet; sheet.program = sheet.program === control.dataset.key ? null : control.dataset.key; render(); },
   "sp-program-archive": () => { const sheet = spState().sheet; sheet.archive = !sheet.archive; sheet.program = null; render(); },
   "sp-program-raise": control => {
@@ -526,18 +558,22 @@ Object.assign(SP_ACTIONS, {
     const packet = await spCopyPacket({ periodDays: sheet.period === "all" ? null : Number(sheet.period || 30), profile: sheet.withProfile !== false, health: Boolean(sheet.withHealth) });
     if (packet && spState().sheet === sheet) { sheet.packet = packet; render(); }
   },
-  "sp-copy-packet": () => spCopyPacket(),
+  "sp-copy-packet": () => spOpen("import"),
 });
 
 // Добавить программу: инструкция для ИИ и JSON, который он вернул.
 SP_SHEETS.import = sheet => {
   const preview = sheet.preview;
-  return { title: "Добавить программу", wide: true, body: `<section class="sp-group"><p class="section-note">Правила для ИИ и ваши данные — одним текстом: профиль, замеры, фокус мышц, инвентарь и история (без сведений о здоровье — их можно добавить в настройках, «Экспорт»).</p><button class="ghost-button sp-wide" type="button" data-action="sp-copy-packet">Скопировать инструкцию + данные</button></section>
-    <p class="section-note">Вставьте JSON v2, который вернул ИИ. Совпадения дат добавятся как варианты — старые планы и подходы остаются.</p>
+  const gaps = SP().profileGaps(spState().state);
+  return { title: "Новая программа с ИИ", wide: true, body: `<section class="sp-group"><p class="sp-kicker">1 · Инструкция и ваши данные</p>${gaps.any ? `<p class="sp-error">В профиле не заполнено: ${[gaps.profile ? "анкета" : "", gaps.equipment ? "инвентарь" : "", gaps.muscles ? "фокус мышц" : "", gaps.measurements.length ? "замеры" : ""].filter(Boolean).join(", ")} — ИИ спросит это сам или составит план вслепую.</p>` : ""}
+    <p class="section-note">Правила формата и ваш профиль, замеры, инвентарь, фокус мышц и историю — одним текстом. Вставьте его в ИИ одним сообщением.</p>
+    <details class="sp-details"><summary>Что включить</summary>${spExport(sheet)}</details>
+    <button class="primary-button sp-wide" type="button" data-action="sp-export-copy">Скопировать инструкцию + данные</button>${sheet.packet ? `<label class="field">Скопированный текст<textarea rows="6" readonly>${spEsc(sheet.packet)}</textarea></label>` : ""}</section>
+    <section class="sp-group"><p class="sp-kicker">2 · Ответ ИИ</p><p class="section-note">Вставьте JSON, который он вернул. Совпадения дат добавятся вариантами — старые планы и подходы останутся.</p>
     <label class="field">Файл .json<input type="file" accept=".json,application/json" data-sp-import-file></label>
-    <label class="field">Или вставьте JSON<textarea rows="7" spellcheck="false" data-sp-import-text placeholder='{"schema_version": 2, "program": …, "workouts": […]}'>${spEsc(sheet.text || "")}</textarea></label>
-    <button class="primary-button sp-wide" type="button" data-action="sp-import-check" ${sheet.text?.trim() ? "" : "disabled"}>Проверить JSON</button>
-    ${preview ? `<section class="sp-group sp-preview"><strong>${spEsc(preview.title)}</strong><p>${spDateShort(preview.dates[0])} — ${spDateShort(preview.dates[preview.dates.length - 1])}</p><dl class="sp-stats"><div><dt>Новых занятий</dt><dd>${preview.added}</dd></div><div><dt>Варианты на занятую дату</dt><dd>${preview.alternatives}</dd></div><div><dt>Уже добавлено</dt><dd>${preview.duplicates}</dd></div></dl>${preview.timezone !== preview.myZone ? `<p class="section-note">Пояс программы: ${spEsc(preview.timezone)}; ваш: ${spEsc(preview.myZone)}. Даты останутся такими, как в JSON.</p>` : ""}${preview.added ? `<button class="primary-button sp-wide" type="button" data-action="sp-import-save" ${sheet.saving ? "disabled" : ""}>${sheet.saving ? "Добавляю…" : "Добавить программу"}</button>` : `<p class="section-note">Все занятия уже добавлены — сохранять повторно не нужно.</p>`}</section>` : ""}` };
+    <label class="field">Или текст<textarea rows="6" spellcheck="false" data-sp-import-text placeholder='{"schema_version": 2, "program": …, "workouts": […]}'>${spEsc(sheet.text || "")}</textarea></label>
+    <button class="ghost-button sp-wide" type="button" data-action="sp-import-check" ${sheet.text?.trim() ? "" : "disabled"}>Проверить</button>
+    ${preview ? `<section class="sp-group sp-preview"><strong>${spEsc(preview.title)}</strong><p>${spDateShort(preview.dates[0])} — ${spDateShort(preview.dates[preview.dates.length - 1])}</p><dl class="sp-stats"><div><dt>Новых занятий</dt><dd>${preview.added}</dd></div><div><dt>Варианты на занятую дату</dt><dd>${preview.alternatives}</dd></div><div><dt>Уже добавлено</dt><dd>${preview.duplicates}</dd></div></dl>${preview.timezone !== preview.myZone ? `<p class="section-note">Пояс программы: ${spEsc(preview.timezone)}; ваш: ${spEsc(preview.myZone)}. Даты останутся такими, как в JSON.</p>` : ""}${preview.added ? `<button class="primary-button sp-wide" type="button" data-action="sp-import-save" ${sheet.saving ? "disabled" : ""}>${sheet.saving ? "Добавляю…" : "Добавить программу"}</button>` : `<p class="section-note">Все занятия уже добавлены.</p>`}</section>` : ""}</section>` };
 };
 document.addEventListener("input", event => {
   if (!event.target.matches?.("[data-sp-import-text]")) return;
