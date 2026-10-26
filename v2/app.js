@@ -665,9 +665,12 @@ function sheetDragEnd(event) {
   drag.sheet.classList.remove("sheet-dragging");
   drag.sheet.style.transition = "transform .2s ease";
   const backdrop = drag.sheet.parentElement;
-  if (drag.dy > Math.min(160, drag.sheet.offsetHeight * 0.3) || speed > 0.7) {
+  if (event.type !== "touchcancel" && (drag.dy > Math.min(160, drag.sheet.offsetHeight * 0.3) || speed > 0.7)) {
     drag.sheet.style.transform = "translateY(100%)";
     setTimeout(() => {
+      if (!drag.sheet.isConnected) return;
+      const componentClose = drag.sheet.querySelector('[data-action="sp-close"]');
+      if (componentClose) { componentClose.click(); return; }
       // Окна моста (ход разбора) живут вне ui.sheet — их просто убираем.
       if (backdrop && !backdrop.hasAttribute("data-action") && backdrop.parentElement === document.body) backdrop.remove();
       else closeSheet();
