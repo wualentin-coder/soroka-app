@@ -412,3 +412,8 @@ body:has(.en-reader) { overflow: hidden; }
 .en-rset-whole > span { display: grid; gap: 2px; }
 .en-rset-whole small { color: var(--r-muted); font-size: 11px; line-height: 1.35; }
 .en-rset-whole .ghost-button { flex: none; min-height: 34px; padding: 0 14px; color: var(--r-text); border-color: var(--r-line); }
+
+/* Выход из книги — всегда на виду, внизу слева (вверху мешают кнопки Telegram) */
+.en-exit-fab { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 14px 0 10px; border-radius: 17px; border: 1px solid var(--r-line); background: color-mix(in srgb, var(--r-panel) 88%, transparent); color: var(--r-text); font: 700 12px "Manrope", "Segoe UI", sans-serif; backdrop-filter: blur(8px); filter: var(--rfilter, none); cursor: pointer; opacity: .85; }
+html.tg-fs .en-reader-bar.top { padding-top: calc(var(--tg-top, 0px) + 10px); }
+html.tg-fs .en-page-text { padding-top: calc(var(--tg-top, 0px) + 28px); }
