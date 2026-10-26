@@ -21,8 +21,47 @@ function spFreeOptions(state) {
 function spFreeExercise(e, i) {
   const sets = Math.max(1, Number(e.sets) || 1);
   const timed = Number(e.seconds) > 0;
-  return { id: `e${i + 1}`, name: e.name, sets, mode: timed ? "timed" : "reps", sets_reps: timed ? `${sets} × ${e.seconds} сек` : `${sets} × ${e.reps || "10"}`, hold: timed ? Number(e.seconds) : 0, rest: Number(e.rest ?? 90), technique: e.technique || "", bodyweight: e.bodyweight };
+  return { id: e.id || `e${i + 1}`, name: e.name, sets, mode: timed ? "timed" : "reps", sets_reps: timed ? `${sets} × ${e.seconds} сек` : `${sets} × ${e.reps || "10"}`, hold: timed ? Number(e.seconds) : 0, rest: Number(e.rest ?? 90), technique: e.technique || "", bodyweight: e.bodyweight };
 }
+
+function spApplyExtras(options, state) {
+  return options.map(option => {
+    const extra = Object.entries(state.workoutExtras?.[option.key] || {}).map(([id, e], i) => spFreeExercise({ ...e, id }, i));
+    return extra.length ? { ...option, plan: { ...option.plan, exercises: [...option.plan.exercises, ...extra] } } : option;
+  });
+}
+
+SP_SHEETS.extra = sheet => ({ title: "Добавить упражнение", body: `<form data-sp-form="extra">
+  <label class="field">Упражнение<input name="name" maxlength="160" required placeholder="Например, подъём гантелей"></label>
+  <div class="field-row"><label class="field">Подходы<input name="sets" type="number" min="1" max="20" value="3" required></label><label class="field">Повторения<input name="reps" maxlength="10" value="10"></label></div>
+  <div class="field-row"><label class="field">Или время, сек<input name="seconds" type="number" min="0" max="3600" placeholder="Для удержания"></label><label class="field">Отдых, сек<input name="rest" type="number" min="0" max="600" value="90" required></label></div>
+  <p class="section-note">Добавится в конец этого занятия. Подходы, таймер и история работают как у упражнений плана.</p>
+  <button class="primary-button sp-wide" type="submit" ${sheet.saving ? "disabled" : ""}>Добавить</button></form>` });
+SP_ACTIONS["sp-extra-open"] = control => {
+  if (spTimerGuard()) return;
+  spOpen("extra", { option: control.dataset.key, id: `extra_${crypto.randomUUID()}` });
+};
+SP_FORMS.extra = async form => {
+  const s = spState(), sheet = s.sheet;
+  if (sheet?.saving || spTimerGuard()) return;
+  const option = spOptions().visible.find(o => o.key === sheet.option);
+  if (!option || option.historyOnly || option.date > SP().todayKey()) return spSheetError("Это занятие нельзя изменить.");
+  const fields = new FormData(form);
+  const name = String(fields.get("name") || "").trim();
+  const sets = Number(fields.get("sets")), seconds = Number(fields.get("seconds") || 0), rest = Number(fields.get("rest"));
+  const reps = String(fields.get("reps") || "").trim();
+  if (!name || !Number.isInteger(sets) || sets < 1 || sets > 20 || !Number.isFinite(seconds) || seconds < 0 || seconds > 3600 || !Number.isFinite(rest) || rest < 0 || rest > 600 || (!seconds && !reps)) return spSheetError("Проверьте название, подходы и повторения либо время.");
+  sheet.saving = true;
+  try {
+    await spUpdate(prev => ({ ...SP().finishOption(prev, option, false), workoutExtras: { ...prev.workoutExtras,
+      [option.key]: { ...prev.workoutExtras?.[option.key], [sheet.id]: { name: name.slice(0, 160), sets, reps: reps.slice(0, 10), seconds, rest } } } }));
+    if (s.sheet === sheet) spClose();
+  } catch (error) {
+    sheet.saving = false;
+    if (error?.message === "outbox_storage") { spSheetError("Не удалось сохранить упражнение на устройстве. Освободите место и повторите."); return; }
+    if (s.sheet === sheet) { spClose(); toast("Упражнение сохранено на устройстве, отправлю при восстановлении связи"); }
+  }
+};
 
 /** Замены упражнений поверх плана. Id упражнения не меняется — отмеченные подходы остаются. */
 function spApplySwaps(options, state) {
