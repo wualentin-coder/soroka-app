@@ -192,8 +192,9 @@ details.sp-details:not(.sp-card) { border-top: 1px solid var(--line); padding: 1
 .sp-chip.value { color: var(--accent); border-color: var(--accent-soft); }
 .sp-like { width: 28px; height: 28px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0; }
 .sp-like.on { color: #ff6b81; }
-.sp-glyph-open { flex: none; width: 46px; border: 0; background: none; padding: 0; cursor: pointer; align-self: center; }
-.sp-glyph svg { width: 46px; height: 52px; display: block; }
+.sp-glyph-open { position: relative; flex: none; width: clamp(68px, 22vw, 100px); border: 0; background: none; padding: 0; cursor: pointer; align-self: stretch; }
+.sp-glyph { position: absolute; inset: 0; display: block; }
+.sp-glyph svg { width: 100%; height: 100%; display: block; }
 
 /* Рисунок мышц */
 .sp-figure { width: 100%; height: auto; display: block; }
