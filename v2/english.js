@@ -59,7 +59,7 @@ function enDemo(op, args) {
   ] };
   if (op === "books") return { items: [{ id: 1, key: "a1-flat", title: "A New Flat", author: "Flow", level: "A1", source: "builtin", pages: 2, page: 0, marks: 0, opened_at: null }, { id: 2, key: "b1-market", title: "The Night Market", author: "Flow", level: "B1", source: "builtin", pages: 4, page: 1, marks: 3, opened_at: "2026-10-26" }] };
   if (op === "book") return { id: args.id, title: "The Night Market", author: "Flow", level: "B1", page: args.page ?? 1, pages: 4, marks: ["stalls"], body: "I had been living in Bangkok for three weeks before I found the night market. To be honest, I hadn't been looking for it.\n\nIt was almost ten o'clock, but the street was full of light and noise. Hundreds of small stalls stretched as far as I could see." };
-  if (op === "booktrall") return { trAll: args.on !== false, trPages: 0, pages: 4 };
+  if (op === "booktrall") return { trAll: args.on !== false, trPages: 0, pages: 4, part: { from: 0, to: 1, ready: 0 } };
   if (op === "booktr") return { page: args.page, tr: ["Я прожил в Бангкоке три недели, прежде чем нашёл ночной рынок.", "Это был перевод второго абзаца.", "И третьего.", "И четвёртого."] };
   if (op === "bookword") return { lemma: "stretch", ru: "тянуться, простираться", phrase: "stretched as far as I could see", phraseRu: "тянулись насколько хватало глаз", deck: 1460 };
   if (op === "bookadd") return { id: 3, pages: 10 };
@@ -837,8 +837,16 @@ function enReaderSave(patch) {
   try { localStorage.setItem("flow-en-reader", JSON.stringify(r)); } catch (_) {}
   render();
 }
+// Кнопка «назад» Telegram (стрелка в шапке и «назад» на Android) закрывает книгу.
+function enTgBack(show) {
+  const back = window.Telegram?.WebApp?.BackButton;
+  if (!back) return;
+  if (!enTgBack.bound) { enTgBack.bound = true; back.onClick(() => { const s = enState(); if (s.readerSet || s.pop) { s.readerSet = false; s.pop = null; render(); } else if (s.book) { s.book = null; s.pop = null; s.books = null; render(); enTgBack(false); } }); }
+  show ? back.show() : back.hide();
+}
 function enReaderScreen() {
   const s = enState(), b = s.book, r = enReaderPrefs();
+  enTgBack(true);
   const style = `--rs:${r.size}px;--rl:${r.lh};--rfilter:brightness(${r.bright}) contrast(${r.contrast})`;
   if (b.loading) return `<div class="en-reader theme-${r.theme}" style="${style}"><div class="en-reader-wait">${enWait()}</div></div>`;
   const marks = new Set((b.marks || []).map(w => w.toLowerCase()));
@@ -872,18 +880,25 @@ function enReaderScreen() {
   return `<div class="en-reader theme-${r.theme} font-${r.font} ${s.readerUi ? "ui" : ""}" style="${style}">
     <header class="en-reader-bar top"><button class="icon-button" type="button" data-action="en-book-close" aria-label="К книгам">${icon("left", "icon-sm")}</button><div class="en-reader-title"><b>${esc(b.title)}</b><small>${esc(b.author || "")}${b.level ? ` · ${esc(b.level)}` : ""}</small></div><button class="icon-button" type="button" data-action="en-say" data-text="${esc(String(b.body || "").split(/\n\s*\n/)[0].slice(0, 480))}" aria-label="Послушать начало страницы">${icon("play", "icon-sm")}</button><button class="en-aa ${r.tr ? "on" : ""}" type="button" data-action="en-rtr" aria-pressed="${Boolean(r.tr)}" aria-label="Перевод страницы">RU</button><button class="en-aa" type="button" data-action="en-rset" aria-label="Настройки чтения">Aa</button></header>
     <div class="en-reader-scroll"><article class="en-page-text ${enter}" data-reader-tap>${b.trError && r.tr ? `<p class="en-tr-error">Перевод не получился — <button type="button" class="text-action" data-action="en-rtr-retry">ещё раз</button></p>` : ""}${paras}${pop}<p class="en-page-num">${b.page + 1} / ${b.pages}</p></article></div>
-    ${!s.readerUi && !s.readerSet ? `<button type="button" class="en-tr-fab ${r.tr ? "on" : ""}" data-action="en-rtr" aria-pressed="${Boolean(r.tr)}">${r.tr ? "Скрыть перевод" : "Перевод"}</button>` : ""}
+    ${!s.readerUi && !s.readerSet ? `<button type="button" class="en-exit-fab" data-action="en-book-close" aria-label="Закрыть книгу">${icon("left", "icon-sm")}Книги</button><button type="button" class="en-tr-fab ${r.tr ? "on" : ""}" data-action="en-rtr" aria-pressed="${Boolean(r.tr)}">${r.tr ? "Скрыть перевод" : "Перевод"}</button>` : ""}
     <footer class="en-reader-bar bottom"><button class="icon-button" type="button" data-action="en-page" data-d="-1" ${b.page ? "" : "disabled"} aria-label="Назад">${icon("left", "icon-sm")}</button><input type="range" min="1" max="${b.pages}" value="${b.page + 1}" data-en-pageslider aria-label="Страница"><small>${b.page + 1}/${b.pages} · ${Math.round((b.page + 1) / b.pages * 100)}%</small><button class="icon-button" type="button" data-action="en-page" data-d="1" ${b.page + 1 < b.pages ? "" : "disabled"} aria-label="Дальше">${icon("right", "icon-sm")}</button></footer>
     ${settings}</div>`;
 }
 const enIsRu = p => (p.match(/[а-яё]/gi) || []).length > (p.match(/[a-z]/gi) || []).length;
-/** «Перевести всю книгу»: сервер переводит в фоне по 10 страниц в минуту. */
+/**
+ * «Переводить книгу»: частями по 15% — та часть, где вы читаете; следующая —
+ * когда до неё дойдёте. Переводит сервер в фоне, приложение можно закрыть.
+ */
 function enWholeBook(b) {
   if (b.bilingual) return `<div class="en-rset-whole"><span>Перевод уже в книге<small>Русские абзацы показываются по кнопке «Перевод», без машинного перевода</small></span></div>`;
-  const left = Math.max(0, b.pages - (b.trPages || 0));
-  if (!left) return `<div class="en-rset-whole"><span>${icon("check", "icon-sm")} Вся книга переведена<small>Перевод каждой страницы открывается сразу</small></span></div>`;
-  if (b.trAll) return `<div class="en-rset-whole"><span>Перевожу книгу в фоне<small>${b.trPages || 0} из ${b.pages} стр. · ≈ ${Math.ceil(left / 10)} мин, приложение можно закрыть</small></span><button type="button" class="text-action" data-action="en-trall" data-on="0">Остановить</button></div>`;
-  return `<div class="en-rset-whole"><span>Перевести всю книгу<small>${b.pages} стр. · на сервере в фоне, ≈ ${Math.ceil(left / 10)} мин · можно закрыть приложение</small></span><button type="button" class="ghost-button" data-action="en-trall" data-on="1">Перевести</button></div>`;
+  if ((b.trPages || 0) >= b.pages) return `<div class="en-rset-whole"><span>${icon("check", "icon-sm")} Вся книга переведена<small>Перевод каждой страницы открывается сразу</small></span></div>`;
+  const pct = n => Math.round(n / b.pages * 100);
+  if (b.trAll) {
+    const p = b.part, left = p ? p.to - p.from - p.ready : 0;
+    const now = p ? left ? `Сейчас ${pct(p.from)}–${pct(p.to)}% книги: готово ${p.ready} из ${p.to - p.from} стр., ≈ ${Math.ceil(left / 10)} мин` : `${pct(p.from)}–${pct(p.to)}% готово. Следующая часть — когда дочитаете до ${pct(p.to)}%` : "Включено";
+    return `<div class="en-rset-whole"><span>Перевожу по частям<small>${now}</small></span><button type="button" class="text-action" data-action="en-trall" data-on="0">Выключить</button></div>`;
+  }
+  return `<div class="en-rset-whole"><span>Переводить книгу по частям<small>По 15% — та часть, где вы читаете; следующая — когда до неё дойдёте. На сервере в фоне</small></span><button type="button" class="ghost-button" data-action="en-trall" data-on="1">Включить</button></div>`;
 }
 
 // Страницы, которые уже видели или подгрузили заранее: листание без ожидания.
@@ -1330,7 +1345,7 @@ function englishAction(action, control) {
     return true;
   }
   if (action === "en-book") { enBookOpen(Number(control.dataset.id)); return true; }
-  if (action === "en-book-close") { s.book = null; s.pop = null; s.books = null; s.readerSet = false; render(); return true; }
+  if (action === "en-book-close") { s.book = null; s.pop = null; s.books = null; s.readerSet = false; enTgBack(false); render(); return true; }
   if (action === "en-page") { const b = s.book; if (b && !b.loading) enTurn(Number(control.dataset.d)); return true; }
   if (action === "en-rword") { enReadWord(control); return true; }
   if (action === "en-rtr") {
@@ -1345,7 +1360,7 @@ function englishAction(action, control) {
     if (!b) return true;
     b.trAll = on; render();
     enCall("booktrall", { id: b.id, on }).then(r => { if (r && !r.error) { Object.assign(b, r); s.books = null; render(); } }).catch(() => toast("Не получилось — попробуйте ещё раз"));
-    toast(on ? "Перевожу всю книгу в фоне — по 10 страниц в минуту" : "Перевод книги остановлен");
+    toast(on ? "Перевожу по 15% книги — следующую часть, когда до неё дойдёте" : "Перевод по частям выключен");
     return true;
   }
   if (action === "en-rtr-retry") { if (s.book) { s.book.trError = false; enBookTr(s.book); render(); } return true; }
