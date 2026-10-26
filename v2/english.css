@@ -385,3 +385,23 @@ body:has(.en-reader) { overflow: hidden; }
 .en-facts .icon-button { width: 24px; height: 24px; }
 .en-facts small { color: var(--muted); font-size: 12px; }
 .en-center { text-align: center; }
+
+/* Читалка: перевод под абзацами, листание с анимацией */
+.en-page-text { touch-action: pan-y; will-change: transform; }
+.en-reader-scroll { overflow-x: hidden; }
+.en-page-text.enter-next { animation: en-page-next .28s cubic-bezier(.2, .8, .2, 1); }
+.en-page-text.enter-prev { animation: en-page-prev .28s cubic-bezier(.2, .8, .2, 1); }
+@keyframes en-page-next { from { transform: translateX(32%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes en-page-prev { from { transform: translateX(-32%); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .en-page-text.enter-next, .en-page-text.enter-prev { animation: none; } }
+.en-page-text p.en-tr { margin: -.55em 0 1.3em; padding-left: 12px; border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); color: var(--r-muted); font-family: "Manrope", "Segoe UI", sans-serif; font-size: .8em; line-height: 1.5; text-align: left; hyphens: manual; animation: en-tr-in .3s ease; }
+@keyframes en-tr-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.en-page-text p.en-tr.wait { display: grid; gap: 6px; padding-top: 2px; }
+.en-page-text p.en-tr.wait i { display: block; height: .7em; border-radius: 4px; background: var(--r-line); animation: en-tr-shimmer 1.2s ease-in-out infinite; }
+.en-page-text p.en-tr.wait i:last-child { width: 62%; }
+@keyframes en-tr-shimmer { 50% { opacity: .45; } }
+.en-tr-error { font: 13px/1.4 "Manrope", sans-serif; color: var(--r-muted); text-align: center !important; }
+.en-aa.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-family: "Manrope", sans-serif; font-size: 12px; }
+.en-reader-bar .en-aa:not(.on)[data-action="en-rtr"] { font: 800 12px "Manrope", sans-serif; }
+.en-tr-fab { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2; height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid var(--r-line); background: color-mix(in srgb, var(--r-panel) 88%, transparent); color: var(--r-text); font: 700 12px "Manrope", "Segoe UI", sans-serif; backdrop-filter: blur(8px); filter: var(--rfilter, none); cursor: pointer; opacity: .85; }
+.en-tr-fab.on { color: var(--accent); }
