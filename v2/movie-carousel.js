@@ -27,8 +27,21 @@ function movieCarouselMetadata(item) {
   const text=[item.year,genres.slice(0,2).join(", "),(item.countries || []).join(", ")].filter(Boolean).join(" · ");
   return text ? `<span class="movie-deck-metadata">${esc(text)}</span>` : "";
 }
+function movieCarouselSeries(item) {
+  if (!isSeries(item)) return "";
+  const seasons=[...(item.episodes || [])].sort((a,b)=>a.n-b.n);
+  let label="";
+  for (const season of seasons) {
+    for(let e=1;e<=season.count;e++) if(!(season.seen || []).includes(e)) {
+      label=`С${season.n} · Е${e}`;break;
+    }
+    if(label)break;
+  }
+  if(!label && seasons.length)label="Досмотрен";
+  return label ? `<span class="movie-deck-series" aria-label="Прогресс сериала">${esc(label)}</span>` : "";
+}
 function movieCarouselCard(item, index, slot) {
-  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button><button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong>${movieCarouselMetadata(item)}${movieCarouselScores(item)}<span class="movie-deck-description">${esc(movieCardBlurb(item))}</span></button></article>`;
+  return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button>${movieCarouselSeries(item)}<button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong>${movieCarouselMetadata(item)}${movieCarouselScores(item)}<span class="movie-deck-description">${esc(movieCardBlurb(item))}</span></button></article>`;
 }
 function mountMovieCarousel() {
   const track = document.getElementById("movie-deck");
@@ -63,7 +76,7 @@ function sizeMovieCarousel(track) {
   const counter=document.getElementById('movie-deck-count');
   const footer=(counter?.offsetHeight || 22)+8;
   const width=Math.min(480,innerWidth*.8,track.clientWidth*.94);
-  const room=()=>viewport-(track.getBoundingClientRect().top+window.scrollY)-footer;
+  const room=()=>viewport-track.getBoundingClientRect().top-footer-30;
   filters.hidden=movieFiltersOpen===null ? width*1.5+240>room() : !movieFiltersOpen;
   toggle?.setAttribute('aria-expanded',String(!filters.hidden));
   track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
