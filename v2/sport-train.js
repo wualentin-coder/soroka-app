@@ -367,11 +367,19 @@ function spWorkoutCard(option, readOnly, finished) {
     const liked = C.isFavorite(s.state, e.name);
     return `<div class="sp-ex ${complete ? "done" : ""} ${!finished && !readOnly && i === shown ? "active" : ""}">
       <div class="sp-ex-body"><div class="sp-ex-line"><button type="button" class="sp-ex-tap" data-action="sp-exercise" data-i="${i}" aria-label="Техника: ${spEsc(e.name)}"><span class="sp-ex-num">${complete ? icon("check", "icon-sm") : String(i + 1).padStart(2, "0")}</span><span class="sp-ex-main"><strong>${spEsc(e.name)}${liked ? ` <i class="sp-liked">${SP_ICON.heartOn}</i>` : ""}</strong>${e.swappedFrom ? `<small>Замена</small>` : ""}</span></button></div>
-        <div class="sp-ex-meta"><span class="sp-ex-kit" aria-hidden="true">${spEquipIcon(kitId || (C.isBodyweight(e) ? "bodyweight" : "sets"))}</span><span class="sp-set-count">Подходы ${doneSets}/${sets} · ${spEsc(repsText)}</span></div>${splits ? "" : spResultLine(option, i, readOnly)}${doneSets > 0 && !readOnly && !finished ? `<div class="sp-ex-actions"><button type="button" class="sp-chip" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button></div>` : ""}</div>
-      ${(C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length) ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : ""}</div>`;
+        <div class="sp-ex-meta"><span class="sp-ex-kit" aria-hidden="true">${spEquipIcon(kitId || (C.isBodyweight(e) ? "bodyweight" : "sets"))}</span><span class="sp-set-count">Подходы ${doneSets}/${sets} · ${spEsc(repsText)}</span></div>${splits ? "" : spResultLine(option, i, readOnly)}</div>
+      ${spExSide(e, i, doneSets > 0 && !readOnly && !finished, disabled)}</div>`;
   }).join("") : "";
   const finish = !finished && expanded ? `<button class="primary-button sp-wide ${allDone ? "" : "soft"}" type="button" data-action="sp-finish" ${readOnly || phase ? "disabled" : ""}>${readOnly ? (option.historyOnly ? "История · только просмотр" : "План на будущий день") : `Завершить ${splits ? "растяжку" : "тренировку"} · ${done}/${total}`}</button>` : "";
   return `<section class="sp-card sp-workout ${finished ? "is-finished" : ""}">${head}${rows ? `<div class="sp-ex-list">${rows}</div>` : ""}${expanded && !readOnly ? `<button class="ghost-button sp-wide" type="button" data-action="sp-extra-open" data-key="${spEsc(option.key)}" ${phase ? "disabled" : ""}>+ Добавить упражнение</button>` : ""}${finish}</section>`;
+}
+/** Справа — фигурка мышц, под ней «Сброс»: карточка сделанного упражнения той же высоты, что и остальные. */
+function spExSide(e, i, canReset, disabled) {
+  const C = SP();
+  const glyph = C.knownMuscles(e.muscles?.primary).length || C.knownMuscles(e.muscles?.secondary).length
+    ? `<button type="button" class="sp-glyph-open" data-action="sp-exercise" data-i="${i}" aria-label="Карта мышц">${spMuscleGlyph(e.muscles)}</button>` : "";
+  const reset = canReset ? `<button type="button" class="sp-chip sp-ex-reset" data-action="sp-reset-ex" data-i="${i}" ${disabled ? "disabled" : ""}>${SP_ICON.reset}<b>Сброс</b></button>` : "";
+  return glyph || reset ? `<div class="sp-ex-side">${glyph}${reset}</div>` : "";
 }
 function spCurrentOption() {
   const s = spState(), C = SP();
