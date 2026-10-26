@@ -493,10 +493,10 @@ Object.assign(SP_ACTIONS, {
   "sp-weight-save": async () => {
     const C = SP(), sheet = spState().sheet;
     if (!Object.hasOwn(C.WEIGHT_BASIS, sheet.basis)) return spSheetError("Выберите, как считаем вес.");
-    const entry = { exercise: sheet.exercise.name, date: C.todayKey(), kilograms: sheet.kg, basis: sheet.basis,
+    const option = spOptions().all.find(o => o.key === sheet.option);
+    const entry = { exercise: sheet.exercise.name, date: option?.date || C.todayKey(), kilograms: sheet.kg, basis: sheet.basis,
       ...(sheet.reps !== "" ? { reps: Number(sheet.reps) } : {}) };
     try { C.validateWorkingWeight(entry); } catch (error) { return spSheetError(error.message); }
-    const option = spOptions().all.find(o => o.key === sheet.option);
     try { await spUpdate(prev => {
       const next = C.recordWorkingWeight(prev, entry);
       return option ? C.selectWorkoutLoad(next, option, sheet.index, { kilograms: entry.kilograms, basis: entry.basis, ...(entry.reps ? { actualReps: entry.reps } : {}) }) : next;
