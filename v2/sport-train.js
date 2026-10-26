@@ -315,13 +315,11 @@ function spMuscleGlyph(muscles) {
 function spTrainingScreen() {
   const s = spState(), C = SP();
   const { visible } = spOptions();
-  const programs = spProgramProgress(visible, s.state);
   const hasSplits = visible.some(o => o.kind === "splits");
   if (!hasSplits) s.kind = "main";
-  const progress = programs.length ? `<section class="sp-card sp-program-card">${programs.slice(0, 2).map(p => `<div class="sp-card-head"><p class="sp-kicker">${spEsc(p.title)}</p><span>${p.day > 0 ? `день ${Math.min(p.day, p.span)} из ${p.span}` : `старт ${spDateShort(p.first)}`}</span></div><span class="sp-progress"><i style="width:${Math.round(p.done / Math.max(1, p.sessions) * 100)}%"></i></span><span class="section-note">Сделано ${p.done} из ${p.sessions} ${spPlural(p.sessions, "занятия", "занятий", "занятий")} · до ${spDateShort(p.last)}</span>`).join("")}${programs.length > 2 ? `<button class="text-action" type="button" data-action="sp-programs">Ещё программы · ${programs.length - 2}</button>` : ""}</section>` : "";
   const upcoming = spUpcoming(visible, s.state, s.date);
   const next = upcoming.length ? `<section class="sp-card"><p class="sp-kicker">Дальше по плану</p>${upcoming.map(o => `<button type="button" class="sp-list-row" data-action="sp-date" data-date="${o.date}"><span><b>${spDateShort(o.date)}</b><small>${spEsc(o.plan.title)}${o.kind === "splits" ? " · растяжка" : o.kind === "test" ? " · тест" : ""}</small></span><small>${o.kind === "test" ? "" : C.formatDuration(C.estimateWorkoutSeconds(o.plan))}</small></button>`).join("")}</section>` : "";
-  return `${spWeekStrip(visible)}${progress}${hasSplits ? `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>` : ""}
+  return `${spWeekStrip(visible)}${hasSplits ? `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>` : ""}
     ${spDayWorkout(visible, s.date, s.kind)}${next}
     <div class="sp-row-actions sp-center"><button class="text-action" type="button" data-action="sp-free-new">+ Свободная тренировка</button><button class="text-action" type="button" data-action="sp-rules">Правила ${s.kind === "splits" ? "растяжки" : "тренировки"}</button></div>`;
 }
