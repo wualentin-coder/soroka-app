@@ -545,3 +545,8 @@ button.sp-ex-load:disabled { cursor: default; }
 .sp-setlog-kg small { color: var(--muted); font-size: 12px; }
 .sp-setlog-reps { flex: 1; min-width: 0; }
 .sp-setlog-reps input { width: 100%; }
+
+/* Правая колонка упражнения: фигурка мышц, под ней «Сброс» */
+.sp-ex-side { flex: none; width: clamp(68px, 22vw, 100px); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sp-ex-side .sp-glyph-open { width: 100%; flex: 1; min-height: 0; }
+.sp-ex-side .sp-ex-reset { height: 26px; padding: 0 8px; font-size: 11px; }
