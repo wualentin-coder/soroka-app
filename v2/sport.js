@@ -37,7 +37,7 @@ function spDemo(op, args) {
 }
 
 function spState() {
-  ui.sp ||= { tab: "today", state: null, catalog: {}, planDays: [], startedOn: null, date: null, weekStart: null, kind: "main", sheet: null, pending: [], open: {}, wakeAsked: false };
+  ui.sp ||= { tab: "today", state: null, catalog: {}, planDays: [], startedOn: null, date: null, weekStart: null, kind: "main", sheet: null, pending: spReadPending(), open: {}, wakeAsked: false };
   return ui.sp;
 }
 const spEsc = value => esc(value ?? "");
@@ -55,7 +55,7 @@ function spLoad() {
   spCall("load").then(answer => {
     if (!answer || answer.error) throw new Error(answer?.error || "load");
     const C = SP();
-    s.state = answer.state || {};
+    s.state = C.applyStateChanges(answer.state || {}, s.pending);
     for (const key of ["notes", "tests", "checks", "showers", "readiness"]) s.state[key] ||= {};
     s.catalog = answer.catalog || {};
     s.startedOn = answer.startedOn;
@@ -66,11 +66,12 @@ function spLoad() {
     s.date ||= C.todayKey();
     s.weekStart ||= C.startOfWeekKey(s.date);
     s.error = "";
+    if (s.pending.length) spFlush().catch(() => {});
     // Первый вход в раздел заводит настройки уведомлений (как в WooSport):
     // с ними сервер начинает напоминать о душе, подъёме и тренировке.
     if (!s.state.notificationSettings) {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Moscow";
-      spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings({ timeZone: zone }) }));
+      spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings({ timeZone: zone }) })).catch(() => {});
     }
   }).catch(error => { s.error = "Не удалось загрузить данные спорта. Проверьте связь."; console.warn(error); })
     .finally(() => { s.loading = false; spRerender(true); });
@@ -80,37 +81,48 @@ function spZone() {
   C.setCalendarTimeZone(C.notificationSettings(s.state?.notificationSettings).timeZone);
 }
 
-let spFlushing = Promise.resolve();
-/** Правка состояния: сразу на экране, на сервер — разницей путями. Возвращает
- *  обещание записи: формы ждут его, чтобы честно сказать «сохранено». */
+const SP_PENDING_KEY = "flow.sport.pending.v1";
+let spFlushing = null, spInFlight = [], spRetryTimer = null, spRevision = 0;
+function spReadPending() { try { const v = JSON.parse(localStorage.getItem(SP_PENDING_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+function spPersistPending() { localStorage.setItem(SP_PENDING_KEY, JSON.stringify([...spInFlight, ...spState().pending])); }
+function spRetry() { clearTimeout(spRetryTimer); spRetryTimer = setTimeout(() => spFlush().catch(() => {}), 10000); }
 function spUpdate(fn) {
-  const s = spState(), C = SP();
-  const prev = s.state;
-  const next = fn(prev);
+  const s = spState(), C = SP(), prev = s.state, next = fn(prev);
   if (!next || next === prev) return Promise.resolve();
-  s.state = next;
-  spZone();
-  if (!s.demo) s.pending.push(...C.stateChanges(prev, next));
-  spRerender();
-  if (s.demo) return Promise.resolve();
-  const run = spFlushing.then(async () => {
-    if (!s.pending.length) return;
-    const sent = s.pending; s.pending = [];
-    try {
-      const answer = await spCall("patch", { changes: sent });
-      if (!answer || answer.error) throw new Error(answer?.error || "patch");
-      // Что успели поменять, пока шёл ответ, накладываем поверх серверного.
-      s.state = C.applyStateChanges(answer.state, s.pending);
-      s.saveError = "";
-    } catch (error) {
-      s.pending = [...sent, ...s.pending];
-      s.saveError = "Изменения не сохранились — проверьте связь, они отправятся при следующей правке.";
-      throw error;
-    } finally { spRerender(); }
-  });
-  spFlushing = run.catch(() => {});
-  return run;
+  if (!s.demo) {
+    const before = s.pending.length;
+    s.pending.push(...C.stateChanges(prev, next));
+    try { spPersistPending(); } catch (_) { s.pending.length = before; toast("Не хватает места для сохранения. Повторите после освобождения памяти."); return Promise.reject(new Error("outbox_storage")); }
+  }
+  spRevision++; s.state = next; spZone(); spRerender();
+  return s.demo ? Promise.resolve() : spFlush();
 }
+function spFlush() {
+  if (spFlushing) return spFlushing;
+  const s = spState(), C = SP();
+  if (s.demo || !s.pending.length || !s.state) return Promise.resolve();
+  clearTimeout(spRetryTimer);
+  spFlushing = (async () => {
+    // Yield once so the shared promise is installed before a fast failure.
+    await Promise.resolve();
+    try {
+      while (s.pending.length) {
+        spInFlight = s.pending; s.pending = [];
+        const answer = await spCall("patch", { changes: spInFlight });
+        if (!answer?.state || answer.error) throw new Error(answer?.error || "patch");
+        s.state = C.applyStateChanges(answer.state, s.pending);
+        spInFlight = []; spPersistPending(); s.saveError = "";
+      }
+    } catch (error) {
+      s.pending = [...spInFlight, ...s.pending]; spInFlight = [];
+      try { spPersistPending(); } catch (_) {}
+      s.saveError = "Изменения сохранены на устройстве. Отправлю автоматически, когда появится связь.";
+      spRetry(); throw error;
+    } finally { spFlushing = null; spRerender(); }
+  })();
+  return spFlushing;
+}
+window.addEventListener("online", () => spFlush().catch(() => {}));
 /** Перерисовка без потери набранного: пока курсор в поле окна, ждём. */
 function spRerender(force = false) {
   if (!["sport", "today"].includes(ui.page)) return;
@@ -121,15 +133,21 @@ function spRerender(force = false) {
 // Вернулись в приложение — подтянуть то, что отметили кнопкой в Telegram.
 document.addEventListener("visibilitychange", () => {
   const s = spState();
-  if (document.hidden || !s.state || s.demo || s.pending.length || typeof window.sorokaSport !== "function") return;
-  spCall("load").then(answer => { if (answer?.state && !s.pending.length) { s.state = answer.state; s.catalog = answer.catalog || {}; spZone(); spRerender(); } }).catch(() => {});
+  if (document.hidden || !s.state || s.demo || typeof window.sorokaSport !== "function") return;
+  if (s.pending.length || spFlushing) { spFlush().catch(() => {}); return; }
+  const revision = spRevision;
+  spCall("load").then(answer => {
+    if (answer?.state && !s.pending.length && !spFlushing && revision === spRevision) {
+      s.state = answer.state; s.catalog = answer.catalog || {}; spZone(); spRerender();
+    }
+  }).catch(() => {});
 });
 
 function spDay() { const s = spState(); return SP().programDaySince(s.startedOn || SP().todayKey()); }
 function spOptions() {
   const s = spState(), C = SP();
   const programs = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined);
-  const all = spApplySwaps([...programs, ...spFreeOptions(s.state)], s.state);
+  const all = spApplySwaps(spApplyExtras([...programs, ...spFreeOptions(s.state)], s.state), s.state);
   return { all, visible: C.visibleWorkoutOptions(all, s.state) };
 }
 // ------------------------------------------------------------ значки (из WooSport)
