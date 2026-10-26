@@ -2456,3 +2456,56 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 .flow-choice{min-width:0;width:100%}.flow-choice>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:38px;cursor:pointer;background:var(--surface-soft);border:1px solid var(--line);border-radius:12px;padding:8px 11px;color:var(--text);font:inherit;font-size:12px}.flow-choice>summary::-webkit-details-marker{display:none}.flow-choice-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flow-choice-options{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow:auto;padding:10px 0}.flow-choice-options .map-category-chip{white-space:normal;text-align:left}.flow-choice[data-busy=true]{opacity:.65;pointer-events:none}
 .gift-editor-row.check-row{display:grid;grid-template-columns:26px minmax(0,1fr) 30px;align-items:start;padding:12px 0;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}.gift-editor-copy .field{margin:0}.gift-editor-copy .field input{margin:0;background:var(--surface-soft)}.gift-check{position:relative;display:block;margin-top:8px}.gift-check input{position:absolute;opacity:0;width:26px;height:26px;inset:0;margin:0;z-index:1;cursor:pointer}.gift-check:has(input:checked) .task-check{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}.gift-check:has(input:focus-visible) .task-check{outline:2px solid var(--accent);outline-offset:3px}.gift-editor-row.check-row>.icon-button{margin-top:3px}.gift-editor-list{padding:0 12px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}.gift-editor-list:empty{display:none}.gift-editor-list>.gift-editor-row:last-child{border-bottom:0}
 .expense-category-picker .flow-choice{max-width:100%}.expense-category-picker .flow-choice>summary{color:var(--accent);background:var(--accent-soft);border-color:transparent}.vault-biometric-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;margin-bottom:12px;border-top:1px solid var(--line);text-align:left;font-size:13px}.vault-biometric-setting small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+
+/* Пароли: поиск и замок в одну строку, сервисы — список с копированием пароля в один тап. */
+.vault-search { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.vault-search .filter-input { flex: 1; min-width: 0; }
+.vault-list { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.vault-list > .empty-card { border: 0; }
+.vault-item + .vault-item { border-top: 1px solid var(--line); }
+.vault-head { display: flex; align-items: center; gap: 4px; padding-right: 8px; }
+.vault-row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 4px 12px 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.vault-avatar { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 12px; background: hsl(var(--h) 55% 92%); color: hsl(var(--h) 45% 32%); font-weight: 800; font-size: 16px; }
+.vault-name { min-width: 0; display: grid; gap: 1px; }
+.vault-name b { font-size: 15px; line-height: 1.25; overflow-wrap: anywhere; }
+.vault-name small { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-quick { flex: none; color: var(--accent); }
+.vault-detail { display: grid; gap: 8px; padding: 0 14px 14px 64px; }
+.vault-field { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; column-gap: 2px; padding: 6px 4px 6px 12px; border-radius: 12px; background: var(--surface-soft); }
+.vault-field small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; font-weight: 700; }
+.vault-field span { min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.vault-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .02em; }
+.vault-field small + span:last-child { padding: 6px 0; }
+.vault-detail .text-action { justify-self: start; }
+.vault-add { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; }
+.vault-security { margin-top: 22px; display: grid; }
+.vault-security h3 { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+.vault-security-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.vault-security-row span { display: grid; gap: 2px; }
+.vault-security-row b { font-size: 14px; }
+.vault-security-row small { color: var(--muted); font-size: 12px; }
+
+/* Окно записи: заголовок — тип записи; у дня рождения — сколько дней осталось. */
+.entry-when { margin: -4px 0 12px; color: var(--accent); font-size: 13px; font-weight: 700; }
+/* Нижняя панель того же цвета, что окно, и без щели под ней, где просвечивали поля. */
+.sheet:has(> form .sheet-actions), .sheet:has(> .sheet-form .sheet-actions) { padding-bottom: 0; }
+.sheet .sheet-actions { background: var(--surface-raised, var(--surface)); padding-bottom: max(16px, env(safe-area-inset-bottom)); box-shadow: 0 -10px 14px -12px rgba(0, 0, 0, .18); }
+
+/* Идеи подарков: строка = отметка, текст во всю ширину (переносится), удалить. */
+.gift-field { margin-top: 18px; }
+.gift-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.gift-head h3 { margin: 0; font-size: 16px; }
+.gift-count { color: var(--muted); font-size: 12px; }
+.gift-editor-list { display: grid; }
+.gift-editor-row, .gift-editor-row.check-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) 32px; align-items: start; gap: 10px; margin: 0; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.gift-editor-copy { display: grid; gap: 6px; min-width: 0; }
+.gift-editor-copy textarea { width: 100%; min-height: 26px; margin: 0; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; line-height: 1.4; resize: none; overflow: hidden; outline: none; }
+.gift-editor-row:has([data-gift-done]:checked) [data-gift-text] { text-decoration: line-through; color: var(--muted); }
+.gift-check { margin-top: 1px; }
+.gift-editor-row > .icon-button { width: 32px; height: 32px; color: var(--muted); }
+.gift-attach .flow-choice > summary { width: auto; min-height: 0; display: inline-flex; padding: 0; border: 0; background: none; color: var(--accent); font-size: 12px; font-weight: 700; }
+.gift-attach .flow-choice > summary .icon { width: 12px; height: 12px; }
+.gift-product-preview { padding: 6px; border-radius: 12px; background: var(--surface-soft); }
+.gift-new { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 4px 4px 4px 14px; border: 1px dashed var(--line); border-radius: 14px; }
+.gift-new input { flex: 1; min-width: 0; height: 36px; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; outline: none; }
+.gift-new .icon-button { color: var(--accent); }
