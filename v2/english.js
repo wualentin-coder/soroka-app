@@ -59,6 +59,7 @@ function enDemo(op, args) {
   ] };
   if (op === "books") return { items: [{ id: 1, key: "a1-flat", title: "A New Flat", author: "Flow", level: "A1", source: "builtin", pages: 2, page: 0, marks: 0, opened_at: null }, { id: 2, key: "b1-market", title: "The Night Market", author: "Flow", level: "B1", source: "builtin", pages: 4, page: 1, marks: 3, opened_at: "2026-10-26" }] };
   if (op === "book") return { id: args.id, title: "The Night Market", author: "Flow", level: "B1", page: args.page ?? 1, pages: 4, marks: ["stalls"], body: "I had been living in Bangkok for three weeks before I found the night market. To be honest, I hadn't been looking for it.\n\nIt was almost ten o'clock, but the street was full of light and noise. Hundreds of small stalls stretched as far as I could see." };
+  if (op === "booktr") return { page: args.page, tr: ["Я прожил в Бангкоке три недели, прежде чем нашёл ночной рынок.", "Это был перевод второго абзаца.", "И третьего.", "И четвёртого."] };
   if (op === "bookword") return { lemma: "stretch", ru: "тянуться, простираться", phrase: "stretched as far as I could see", phraseRu: "тянулись насколько хватало глаз", deck: 1460 };
   if (op === "bookadd") return { id: 3, pages: 10 };
   if (op === "word") return { lemma: "weekend", ru: "выходные", phrase: "last weekend", phraseRu: "в прошлые выходные", deck: 900 };
@@ -815,8 +816,8 @@ function enBooksScreen() {
   const mine = items.filter(b => b.source === "upload");
   const ready = EN_BOOK_LEVELS.map(level => { const list = items.filter(b => b.source === "builtin" && b.level === level); return list.length ? `<p class="en-book-level">${EN_LEVEL_NAMES[level]}</p>${list.map(card).join("")}` : ""; }).join("");
   return `${last ? `<section class="en-hero en-continue"><small>Продолжить</small>${card(last)}</section>` : ""}
-    <section class="en-hero"><div class="en-hero-top"><div><h2>Своя книга</h2><small>txt, fb2 или epub · нажимайте незнакомые слова — перевод и в колоду</small></div></div>
-      <label class="primary-button en-go en-upload">${icon("upload", "icon-sm")}${s.uploading ? "Загружаю…" : "Загрузить книгу"}<input type="file" accept=".txt,.fb2,.epub,text/plain,application/epub+zip" data-en-upload hidden></label>
+    <section class="en-hero"><div class="en-hero-top"><div><h2>Своя книга</h2><small>txt, fb2, epub или pdf · незнакомое слово — нажать, вся страница — «Перевод»</small></div></div>
+      <label class="primary-button en-go en-upload">${icon("upload", "icon-sm")}${s.uploading ? esc(typeof s.uploading === "string" ? s.uploading : "Загружаю…") : "Загрузить книгу"}<input type="file" accept=".txt,.fb2,.epub,.pdf,text/plain,application/epub+zip,application/pdf" data-en-upload hidden></label>
       ${mine.map(card).join("")}</section>
     <section class="en-situation"><div class="en-row"><b>Рассказы по уровням</b><small>написаны для Flow</small></div>${ready}</section>`;
 }
@@ -824,7 +825,7 @@ function enBooksScreen() {
 // Читалка на весь экран: тап в середину — панели, у краёв или свайп — листать.
 // Настройки внешнего вида — только на этом телефоне (localStorage).
 const EN_READER_THEMES = [["dark", "Тёмный"], ["black", "Чёрный"], ["sepia", "Сепия"], ["light", "Светлый"]];
-const EN_READER_DEFAULT = { theme: "dark", size: 19, lh: 1.7, font: "serif", bright: 1, contrast: 1 };
+const EN_READER_DEFAULT = { theme: "dark", size: 19, lh: 1.7, font: "serif", bright: 1, contrast: 1, tr: false };
 function enReaderPrefs() {
   const s = enState();
   if (!s.readerPrefs) { let saved = {}; try { saved = JSON.parse(localStorage.getItem("flow-en-reader") || "{}"); } catch (_) {} s.readerPrefs = { ...EN_READER_DEFAULT, ...saved }; }
@@ -840,11 +841,16 @@ function enReaderScreen() {
   const style = `--rs:${r.size}px;--rl:${r.lh};--rfilter:brightness(${r.bright}) contrast(${r.contrast})`;
   if (b.loading) return `<div class="en-reader theme-${r.theme}" style="${style}"><div class="en-reader-wait">${enWait()}</div></div>`;
   const marks = new Set((b.marks || []).map(w => w.toLowerCase()));
-  const paras = String(b.body || "").split(/\n\s*\n/).map(p => `<p>${p.split(/(\s+)/).map(part => {
+  // Перевод — под каждым абзацем, как в двуязычных книгах: сверять предложение с предложением.
+  const tr = r.tr ? b.tr : null;
+  const paras = String(b.body || "").split(/\n\s*\n/).map((p, i) => `<p>${p.split(/(\s+)/).map(part => {
     const w = part.replace(/[^A-Za-z'’-]/g, "").replace(/^['’-]+|['’-]+$/g, "");
     if (!w) return esc(part);
     return `<span class="en-rw ${marks.has(w.toLowerCase()) ? "mark" : ""} ${s.pop?.w === w.toLowerCase() ? "on" : ""}" data-action="en-rword" data-w="${esc(w)}">${esc(part)}</span>`;
-  }).join("")}</p>`).join("");
+  }).join("")}</p>${r.tr ? tr ? `<p class="en-tr">${esc(tr[i] || "")}</p>` : b.trError ? "" : `<p class="en-tr wait"><i></i><i></i></p>` : ""}`).join("");
+  const enter = b.enter ? `enter-${b.enter > 0 ? "next" : "prev"}` : "";
+  b.enter = 0; // анимация — один раз, при следующей перерисовке страница уже стоит на месте
+  if (r.tr) enBookTr(b);
   const pop = s.pop ? `<div class="en-pop en-rpop" style="top:${s.pop.y}px;left:${s.pop.x}px">${s.pop.loading ? `<span class="live-spin"></span>` : s.pop.error ? "Не получилось перевести" : `<div class="en-pop-head"><b>${esc(s.pop.lemma)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(s.pop.lemma)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><span>${esc(s.pop.ru)}</span>${s.pop.phrase && s.pop.phrase !== s.pop.lemma ? `<small>${esc(s.pop.phrase)} — ${esc(s.pop.phraseRu)}</small>` : ""}<div class="en-pop-foot"><small class="en-pop-saved">${icon("check", "icon-sm")}${s.pop.deck ? "В колоде слов" : "Во «Фразах»"}</small><button class="text-action" type="button" data-action="en-unmark">Снять</button></div>`}</div>` : "";
   const range = (key, label, min, max, step, val, fmt) => `<label class="en-rset-row"><span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${val}" data-en-rset="${key}"><small>${fmt(val)}</small></label>`;
   const settings = s.readerSet ? `<div class="en-rset" data-en-rsheet>
@@ -857,23 +863,66 @@ function enReaderScreen() {
       <button type="button" class="text-action" data-action="en-rreset">Сбросить</button>
     </div>` : "";
   return `<div class="en-reader theme-${r.theme} font-${r.font} ${s.readerUi ? "ui" : ""}" style="${style}">
-    <header class="en-reader-bar top"><button class="icon-button" type="button" data-action="en-book-close" aria-label="К книгам">${icon("left", "icon-sm")}</button><div class="en-reader-title"><b>${esc(b.title)}</b><small>${esc(b.author || "")}${b.level ? ` · ${esc(b.level)}` : ""}</small></div><button class="icon-button" type="button" data-action="en-say" data-text="${esc(String(b.body || "").split(/\n\s*\n/)[0].slice(0, 480))}" aria-label="Послушать начало страницы">${icon("play", "icon-sm")}</button><button class="en-aa" type="button" data-action="en-rset" aria-label="Настройки чтения">Aa</button></header>
-    <div class="en-reader-scroll"><article class="en-page-text" data-reader-tap>${paras}${pop}<p class="en-page-num">${b.page + 1} / ${b.pages}</p></article></div>
-    <footer class="en-reader-bar bottom"><button class="icon-button" type="button" data-action="en-page" data-d="-1" ${b.page ? "" : "disabled"} aria-label="Назад">${icon("left", "icon-sm")}</button><input type="range" min="1" max="${b.pages}" value="${b.page + 1}" data-en-pageslider aria-label="Страница"><small>${b.page + 1}/${b.pages}</small><button class="icon-button" type="button" data-action="en-page" data-d="1" ${b.page + 1 < b.pages ? "" : "disabled"} aria-label="Дальше">${icon("right", "icon-sm")}</button></footer>
+    <header class="en-reader-bar top"><button class="icon-button" type="button" data-action="en-book-close" aria-label="К книгам">${icon("left", "icon-sm")}</button><div class="en-reader-title"><b>${esc(b.title)}</b><small>${esc(b.author || "")}${b.level ? ` · ${esc(b.level)}` : ""}</small></div><button class="icon-button" type="button" data-action="en-say" data-text="${esc(String(b.body || "").split(/\n\s*\n/)[0].slice(0, 480))}" aria-label="Послушать начало страницы">${icon("play", "icon-sm")}</button><button class="en-aa ${r.tr ? "on" : ""}" type="button" data-action="en-rtr" aria-pressed="${Boolean(r.tr)}" aria-label="Перевод страницы">RU</button><button class="en-aa" type="button" data-action="en-rset" aria-label="Настройки чтения">Aa</button></header>
+    <div class="en-reader-scroll"><article class="en-page-text ${enter}" data-reader-tap>${b.trError && r.tr ? `<p class="en-tr-error">Перевод не получился — <button type="button" class="text-action" data-action="en-rtr-retry">ещё раз</button></p>` : ""}${paras}${pop}<p class="en-page-num">${b.page + 1} / ${b.pages}</p></article></div>
+    ${!s.readerUi && !s.readerSet ? `<button type="button" class="en-tr-fab ${r.tr ? "on" : ""}" data-action="en-rtr" aria-pressed="${Boolean(r.tr)}">${r.tr ? "Скрыть перевод" : "Перевод"}</button>` : ""}
+    <footer class="en-reader-bar bottom"><button class="icon-button" type="button" data-action="en-page" data-d="-1" ${b.page ? "" : "disabled"} aria-label="Назад">${icon("left", "icon-sm")}</button><input type="range" min="1" max="${b.pages}" value="${b.page + 1}" data-en-pageslider aria-label="Страница"><small>${b.page + 1}/${b.pages} · ${Math.round((b.page + 1) / b.pages * 100)}%</small><button class="icon-button" type="button" data-action="en-page" data-d="1" ${b.page + 1 < b.pages ? "" : "disabled"} aria-label="Дальше">${icon("right", "icon-sm")}</button></footer>
     ${settings}</div>`;
 }
-async function enBookOpen(id, page) {
+// Страницы, которые уже видели или подгрузили заранее: листание без ожидания.
+const enPages = new Map();
+async function enBookOpen(id, page, dir = 0) {
   const s = enState();
   s.pop = null;
+  const marks = s.book?.id === id ? s.book.marks : null;
+  const hit = page !== undefined && enPages.get(`${id}:${page}`);
+  const show = data => {
+    s.book = { ...data, marks: marks ? [...new Set([...marks, ...(data.marks || [])])] : data.marks || [], enter: dir };
+    render();
+    document.querySelector(".en-reader-scroll")?.scrollTo({ top: 0 });
+    enBookPeek(s.book.id, s.book.page + 1); enBookPeek(s.book.id, s.book.page - 1);
+  };
+  if (hit) { show(hit); enCall("book", { id, page }).catch(() => {}); return; } // закладка — на сервере, без ожидания
   s.book = { ...(s.book?.id === id ? s.book : {}), id, loading: !s.book || s.book.id !== id };
   render();
   try {
     const data = await enCall("book", page === undefined ? { id } : { id, page });
     if (data?.error) throw new Error(data.error);
-    s.book = data;
-    requestAnimationFrame(() => document.querySelector(".en-reader-scroll")?.scrollTo({ top: 0 }));
-  } catch (_) { s.book = null; toast("Не получилось открыть книгу"); }
-  render();
+    enPages.set(`${id}:${data.page}`, data);
+    show(data);
+  } catch (_) { s.book = null; toast("Не получилось открыть книгу"); render(); }
+}
+function enBookPeek(id, page) {
+  const s = enState();
+  if (page < 0 || page >= (s.book?.pages ?? 0) || enPages.has(`${id}:${page}`)) return;
+  enPages.set(`${id}:${page}`, null);
+  enCall("book", { id, page, peek: true }).then(data => { if (data && !data.error) { enPages.set(`${id}:${page}`, data); if (enReaderPrefs().tr) enBookTr(data, true); } else enPages.delete(`${id}:${page}`); })
+    .catch(() => enPages.delete(`${id}:${page}`));
+}
+/** Перевод страницы: один раз на сервере, потом из базы; следующая — заранее, пока читаете эту. */
+function enBookTr(b, quiet = false) {
+  if (!b || b.tr || b.trLoading || b.trError || b.loading || !b.body) return;
+  b.trLoading = true;
+  enCall("booktr", { id: b.id, page: b.page }).then(r => {
+    if (r?.error || !Array.isArray(r?.tr)) throw new Error(r?.error || "tr");
+    b.tr = r.tr;
+    const cached = enPages.get(`${b.id}:${b.page}`); if (cached) cached.tr = r.tr;
+    const cur = enState().book;
+    if (cur && cur.id === b.id && cur.page === b.page) { cur.tr = r.tr; if (!quiet || cur === b) render(); }
+  }).catch(() => { b.trError = true; if (!quiet) render(); }).finally(() => { b.trLoading = false; });
+}
+/** Перелистнуть с анимацией: страница уезжает, новая въезжает с другой стороны. */
+const enReduceMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+function enTurn(d) {
+  const s = enState(), b = s.book;
+  const art = document.querySelector(".en-page-text");
+  const next = b ? b.page + d : -1;
+  if (!b || b.loading || next < 0 || next >= b.pages) { if (art) { art.style.transition = "transform .25s cubic-bezier(.2,.8,.2,1)"; art.style.transform = ""; art.style.opacity = ""; } return; }
+  s.pop = null;
+  if (!art || enReduceMotion()) { enBookOpen(b.id, next, 0); return; }
+  art.style.transition = "transform .17s ease-in, opacity .17s ease-in";
+  art.style.transform = `translateX(${d > 0 ? -38 : 38}%)`; art.style.opacity = "0";
+  setTimeout(() => enBookOpen(b.id, next, d), 150);
 }
 /** Предложение вокруг слова — для перевода по смыслу. */
 function enSentenceAround(span) {
@@ -891,21 +940,47 @@ document.addEventListener("click", event => {
   if (!page || event.target.closest(".en-rw, .en-rpop") || enReaderSwiped) return;
   if (s.pop || s.readerSet) { s.pop = null; s.readerSet = false; render(); return; }
   const x = event.clientX / window.innerWidth;
-  if (x < .22 && s.book.page > 0) enBookOpen(s.book.id, s.book.page - 1);
-  else if (x > .78 && s.book.page + 1 < s.book.pages) enBookOpen(s.book.id, s.book.page + 1);
+  if (x < .22 && s.book.page > 0) enTurn(-1);
+  else if (x > .78 && s.book.page + 1 < s.book.pages) enTurn(1);
   else { s.readerUi = !s.readerUi; render(); }
 });
 let enReaderTouch = null, enReaderSwiped = false;
-document.addEventListener("pointerdown", event => { if (event.target.closest?.("[data-reader-tap]")) { enReaderTouch = { x: event.clientX, y: event.clientY }; enReaderSwiped = false; } });
-document.addEventListener("pointerup", event => {
-  if (!enReaderTouch) return;
-  const dx = event.clientX - enReaderTouch.x, dy = event.clientY - enReaderTouch.y, s = enState();
+document.addEventListener("pointerdown", event => { if (event.target.closest?.("[data-reader-tap]")) { enReaderTouch = { x: event.clientX, y: event.clientY, t: Date.now(), drag: false }; enReaderSwiped = false; } });
+// Свайп: страница идёт за пальцем; на первой и последней — тянется туго и возвращается.
+document.addEventListener("pointermove", event => {
+  const t = enReaderTouch;
+  if (!t || enReduceMotion()) return;
+  const dx = event.clientX - t.x, dy = event.clientY - t.y, b = enState().book;
+  if (!t.drag) { if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) t.drag = true; else return; }
+  const art = document.querySelector(".en-page-text");
+  if (!art || !b) return;
+  const edge = (dx > 0 && b.page === 0) || (dx < 0 && b.page + 1 >= b.pages);
+  art.style.transition = "none";
+  art.style.transform = `translateX(${edge ? dx * .22 : dx}px)`;
+  art.style.opacity = String(1 - Math.min(.45, Math.abs(dx) / window.innerWidth * .55));
+});
+const enSwipeEnd = event => {
+  const t = enReaderTouch;
+  if (!t) return;
   enReaderTouch = null;
-  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5 && s.book && !s.book.loading) {
+  const dx = event.clientX - t.x, dy = event.clientY - t.y, s = enState();
+  const fast = Math.abs(dx) / Math.max(1, Date.now() - t.t) > .5;
+  if (event.type !== "pointercancel" && (t.drag || Math.abs(dx) > 70) && (Math.abs(dx) > 70 || (fast && Math.abs(dx) > 30)) && Math.abs(dx) > Math.abs(dy) * 1.5 && s.book && !s.book.loading) {
     enReaderSwiped = true; setTimeout(() => { enReaderSwiped = false; }, 300);
-    const next = s.book.page + (dx < 0 ? 1 : -1);
-    if (next >= 0 && next < s.book.pages) enBookOpen(s.book.id, next);
+    enTurn(dx < 0 ? 1 : -1);
+  } else if (t.drag) {
+    enReaderSwiped = true; setTimeout(() => { enReaderSwiped = false; }, 300);
+    const art = document.querySelector(".en-page-text");
+    if (art) { art.style.transition = "transform .25s cubic-bezier(.2,.8,.2,1), opacity .25s"; art.style.transform = ""; art.style.opacity = ""; }
   }
+};
+document.addEventListener("pointerup", enSwipeEnd);
+document.addEventListener("pointercancel", enSwipeEnd);
+document.addEventListener("keydown", event => {
+  const s = enState();
+  if (!s.book || s.book.loading || ui.page !== "english" || s.tab !== "read" || event.target.closest?.("input, textarea")) return;
+  if (event.key === "ArrowRight" || event.key === "PageDown") { event.preventDefault(); enTurn(1); }
+  if (event.key === "ArrowLeft" || event.key === "PageUp") { event.preventDefault(); enTurn(-1); }
 });
 document.addEventListener("input", event => {
   const key = event.target.dataset?.enRset;
@@ -966,10 +1041,81 @@ async function enUnzip(buf) {
     return new Uint8Array(await new Response(stream).arrayBuffer());
   };
 }
+// PDF: текст достаёт pdf.js (грузится только когда выбрали pdf). Строки
+// собираем по высоте, абзац — где межстрочный пропуск заметно больше обычного;
+// перенос «exam-/ple» склеиваем, номера страниц и повторяющиеся колонтитулы убираем.
+const EN_PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let enPdfLib = null;
+function enPdfJs() {
+  return enPdfLib ||= new Promise((ok, fail) => {
+    const tag = document.createElement("script");
+    tag.src = `${EN_PDFJS}pdf.min.js`;
+    tag.onload = () => { const lib = window.pdfjsLib; if (!lib) { fail(new Error("pdfjs")); return; } lib.GlobalWorkerOptions.workerSrc = `${EN_PDFJS}pdf.worker.min.js`; ok(lib); };
+    tag.onerror = () => { enPdfLib = null; fail(new Error("pdfjs")); };
+    document.head.append(tag);
+  });
+}
+function enPdfLines(items) {
+  const lines = [];
+  let cur = null;
+  for (const it of items) {
+    if (typeof it.str !== "string") continue;
+    const y = it.transform[5], h = Math.abs(it.transform[3]) || it.height || 10;
+    if (!cur || Math.abs(cur.y - y) > h * .5) { cur = { y, h, text: "" }; lines.push(cur); }
+    // Слова в PDF бывают отдельными кусками без пробела между ними — пробел по зазору.
+    const space = cur.text && !/\s$/.test(cur.text) && !/^\s/.test(it.str) && it.transform[4] - (cur.x ?? it.transform[4]) > h * .15;
+    cur.text += (space ? " " : "") + it.str;
+    cur.x = it.transform[4] + (it.width || 0);
+    if (it.hasEOL) cur = null;
+  }
+  return lines.map(l => ({ ...l, text: l.text.replace(/\s+/g, " ").trim() })).filter(l => l.text);
+}
+function enPdfParas(lines, drop) {
+  const kept = lines.filter(l => !/^\d{1,4}$/.test(l.text) && !drop.has(l.text.replace(/\d+/g, "#")));
+  const gaps = kept.slice(1).map((l, i) => kept[i].y - l.y).filter(g => g > 0).sort((a, b) => a - b);
+  const usual = gaps[Math.floor(gaps.length / 2)] || 14;
+  const width = Math.max(...kept.map(l => l.text.length), 1);
+  const paras = [];
+  let cur = "";
+  kept.forEach((l, i) => {
+    const prev = kept[i - 1];
+    const gap = prev ? prev.y - l.y : 0;
+    const shortEnd = prev && prev.text.length < width * .7 && /[.!?:"”»)]$/.test(prev.text);
+    if (cur && (gap > usual * 1.45 || gap < 0 || shortEnd)) { paras.push(cur); cur = ""; }
+    cur = !cur ? l.text : /[A-Za-z]-$/.test(cur) && /^[a-z]/.test(l.text) ? cur.slice(0, -1) + l.text : `${cur} ${l.text}`;
+  });
+  if (cur) paras.push(cur);
+  return paras;
+}
+async function enParsePdf(buf, name, progress) {
+  const lib = await enPdfJs();
+  const doc = await lib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const pages = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    pages.push(enPdfLines((await page.getTextContent()).items));
+    page.cleanup();
+    if (i % 5 === 0 || i === doc.numPages) progress?.(`Читаю PDF: ${i} из ${doc.numPages}`);
+  }
+  // Колонтитулы — строка (без цифр) на трети страниц и больше.
+  const seen = new Map();
+  for (const lines of pages) for (const t of new Set(lines.map(l => l.text.replace(/\d+/g, "#")))) seen.set(t, (seen.get(t) || 0) + 1);
+  const drop = new Set([...seen].filter(([t, n]) => pages.length >= 6 && n >= pages.length / 3 && t.length < 90).map(([t]) => t));
+  const paras = [];
+  for (const lines of pages) {
+    const list = enPdfParas(lines, drop);
+    // Абзац, оборванный на краю страницы, продолжается на следующей.
+    if (paras.length && list.length && !/[.!?:"”»)]$/.test(paras[paras.length - 1]) && /^[a-z]/.test(list[0])) paras[paras.length - 1] += " " + list.shift();
+    paras.push(...list);
+  }
+  const meta = await doc.getMetadata().catch(() => null);
+  return { title: meta?.info?.Title?.trim() || name, author: meta?.info?.Author?.trim() || "", text: paras.join("\n\n") };
+}
 const enBlocks = doc => [...doc.querySelectorAll("h1, h2, h3, p, li, blockquote")].map(n => n.textContent.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n\n");
-async function enParseBook(file) {
-  const name = file.name.replace(/\.[^.]+$/, "");
+async function enParseBook(file, progress) {
+  const name = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\s+pdf$/i, "").trim();
   const buf = await file.arrayBuffer();
+  if (/\.pdf$/i.test(file.name) || new TextDecoder().decode(new Uint8Array(buf, 0, Math.min(5, buf.byteLength))) === "%PDF-") return await enParsePdf(buf, name, progress);
   if (/\.epub$/i.test(file.name)) {
     const read = await enUnzip(buf);
     const text = async n => { const b = await read(n); return b ? new TextDecoder().decode(b) : ""; };
@@ -1005,11 +1151,11 @@ document.addEventListener("change", async event => {
   const input = event.target.closest?.("[data-en-upload]");
   if (!input?.files?.[0]) return;
   const s = enState(), file = input.files[0];
-  if (file.size > 30 * 1024 * 1024) { toast("Файл больше 30 МБ"); return; }
-  s.uploading = true; render();
+  if (file.size > 60 * 1024 * 1024) { toast("Файл больше 60 МБ"); return; }
+  s.uploading = /\.pdf$/i.test(file.name) ? "Открываю PDF…" : true; render();
   try {
-    const book = await enParseBook(file);
-    if (!book.text || book.text.length < 200) throw new Error("empty");
+    const book = await enParseBook(file, text => { s.uploading = text; render(); });
+    if (!book.text || book.text.length < 200) throw new Error(/\.pdf$/i.test(file.name) ? "scan" : "empty");
     const latin = (book.text.slice(0, 5000).match(/[a-z]/gi) || []).length, cyr = (book.text.slice(0, 5000).match(/[а-яё]/gi) || []).length;
     if (cyr > latin) toast("Похоже, книга не на английском — всё равно загружаю");
     const answer = await enCall("bookadd", { title: book.title, author: book.author, text: book.text.slice(0, 3_000_000) });
@@ -1017,7 +1163,7 @@ document.addEventListener("change", async event => {
     s.books = null; s.uploading = false;
     toast(`«${book.title}» — ${answer.pages} ${enPlural(answer.pages, "страница", "страницы", "страниц")}`);
     enBookOpen(answer.id, 0);
-  } catch (_) { s.uploading = false; render(); toast("Не получилось прочитать файл — попробуйте txt, fb2 или epub"); }
+  } catch (error) { s.uploading = false; render(); toast(error?.message === "scan" ? "В этом PDF нет текста — похоже, это скан страниц" : error?.message === "pdfjs" ? "Не загрузился модуль PDF — проверьте интернет" : "Не получилось прочитать файл — попробуйте txt, fb2, epub или pdf"); }
 });
 
 // ------------------------------------------------------------ фразы и прогресс
@@ -1168,8 +1314,16 @@ function englishAction(action, control) {
   }
   if (action === "en-book") { enBookOpen(Number(control.dataset.id)); return true; }
   if (action === "en-book-close") { s.book = null; s.pop = null; s.books = null; s.readerSet = false; render(); return true; }
-  if (action === "en-page") { const b = s.book; if (b && !b.loading) enBookOpen(b.id, b.page + Number(control.dataset.d)); return true; }
+  if (action === "en-page") { const b = s.book; if (b && !b.loading) enTurn(Number(control.dataset.d)); return true; }
   if (action === "en-rword") { enReadWord(control); return true; }
+  if (action === "en-rtr") {
+    const on = !enReaderPrefs().tr;
+    if (s.book) s.book.trError = false;
+    enReaderSave({ tr: on });
+    if (on && s.book) enBookPeek(s.book.id, s.book.page + 1);
+    return true;
+  }
+  if (action === "en-rtr-retry") { if (s.book) { s.book.trError = false; enBookTr(s.book); render(); } return true; }
   if (action === "en-rset") { s.readerSet = !s.readerSet; s.pop = null; render(); return true; }
   if (action === "en-rtheme") { enReaderSave({ theme: control.dataset.theme }); return true; }
   if (action === "en-rfont") { enReaderSave({ font: control.dataset.font }); return true; }
