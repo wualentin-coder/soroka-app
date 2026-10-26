@@ -2,7 +2,7 @@ class LoopDeck {
   constructor(track,{count,index,card,onChange,onAction}) {
     this.track=track;this.count=count;this.position=index;this.card=card;this.onChange=onChange;
     this.onAction=onAction;
-    this.velocity=0;this.frame=0;this.base=null;this.drag=null;this.ignoreClickUntil=0;
+    this.velocity=0;this.frame=0;this.base=null;this.drag=null;this.ignoreClickUntil=0;this.lift=0;
     this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.abort=new AbortController();const options={signal:this.abort.signal};
     track.addEventListener('dragstart',e=>e.preventDefault(),options);
@@ -42,7 +42,7 @@ class LoopDeck {
     for(const node of this.track.children){
       const slot=Number(node.dataset.slot),distance=slot-this.position,depth=Math.min(Math.abs(distance),2);
       node.style.width=`${width}px`;
-      const lift=this.drag?.axis==='y'&&slot===nearest?Math.max(-95,Math.min(95,this.drag.dy||0)):0;
+      const lift=slot===nearest?(this.drag?.axis==='y'?Math.max(-95,Math.min(95,this.drag.dy||0)):(this.lift||0)):0;
       node.style.transform=`translate3d(calc(-50% + ${distance*step}px), ${depth*14+lift}px, 0) scale(${1-depth*.075})`;
       node.style.opacity=String(Math.max(0,1-Math.max(0,depth-.15)*.2));
       node.style.visibility=Math.abs(distance)>2.3?'hidden':'visible';
@@ -82,9 +82,16 @@ class LoopDeck {
     if(this.track.hasPointerCapture(e.pointerId))this.track.releasePointerCapture(e.pointerId);
     if(d.moved)this.ignoreClickUntil=performance.now()+350;
     if(d.axis==='y'){
-      this.paint();
-      if(!cancelled&&Math.abs(d.dy||0)>78)this.onAction?.(d.dy<0?'viewed':'menu',this.wrap(Math.round(this.position)));
-      return;
+      const action=!cancelled && Math.abs(d.dy||0)>78 ? (d.dy<0?'viewed':'menu') : null;
+      this.lift=Math.max(-95,Math.min(95,d.dy||0));
+      const from=this.lift,to=action?(d.dy<0?-160:160):0,start=performance.now();
+      const finish=()=>{this.lift=0;this.paint();if(action)this.onAction?.(action,this.wrap(Math.round(this.position)));};
+      if(this.reduced){finish();return;}
+      const tick=now=>{
+        const t=Math.min(1,(now-start)/240);this.lift=from+(to-from)*(1-Math.pow(1-t,3));this.paint();
+        if(t<1)this.frame=requestAnimationFrame(tick);else {this.frame=0;finish();}
+      };
+      this.frame=requestAnimationFrame(tick);return;
     }
     if(cancelled||performance.now()-d.lastAt>100)this.velocity=0;
     if(this.reduced){this.position=Math.round(this.position);this.paint();return;}
