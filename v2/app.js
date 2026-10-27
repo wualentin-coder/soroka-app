@@ -215,7 +215,7 @@ function save() {
   try { const safe = { ...data }; delete safe.vault; localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); return true; } catch (_) { return false; }
 }
 let data = load();
-const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport"];
+const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "sleep"];
 function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 const ui = {
   page: currentPage(),
@@ -407,9 +407,11 @@ function todayPage() {
   })() : "";
   // Английский — короткое занятие дня (english.js): сколько повторить и серия.
   const english = isToday && typeof enHomeTile === "function" ? enHomeTile() : "";
+  // Сон — подъём на сегодня и отмечена ли ночь (sleep.js).
+  const sleep = isToday && typeof slHomeTile === "function" ? slHomeTile() : "";
   // Спорт — тренировка дня и привычки (sport.js, перенос WooSport).
   const sport = isToday && typeof spHomeTile === "function" ? spHomeTile() : "";
-  const body = isToday ? `${overdue}${tasks}${events}${free}${sport}${english}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
+  const body = isToday ? `${overdue}${tasks}${events}${free}${sleep}${sport}${english}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
