@@ -1,0 +1,74 @@
+/* «Сон» — те же карточки, акцент и шрифт, что у «Спорта» и «Английского». */
+.sl-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-bottom: 28px; }
+.app-shell:has(.sl-page) .fab { display: none; }
+.sl-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.sl-card > * { min-width: 0; }
+.sl-card h2 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.sl-card h3 { margin: 0; font-size: 16px; }
+.sl-card p { margin: 0; line-height: 1.45; }
+.sl-kicker { margin: 0; color: var(--accent); font-size: 12px; font-weight: 800; }
+.sl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sl-row > div { display: grid; gap: 3px; min-width: 0; }
+.sl-wide { width: 100%; }
+.sl-ic { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: var(--surface-soft); color: var(--muted); }
+.sl-bar { display: block; height: 6px; border-radius: 3px; background: var(--surface-soft); overflow: hidden; }
+.sl-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.sl-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sl-stats div { display: grid; gap: 2px; padding: 9px 11px; border-radius: 13px; background: var(--surface-soft); }
+.sl-stats small { color: var(--muted); font-size: 11px; font-weight: 700; }
+.sl-stats b { font-size: 17px; overflow-wrap: anywhere; }
+.sl-night.empty { border-style: dashed; }
+/* Ночь на оси 18:00 → 18:00 */
+.sl-tl { position: relative; height: 34px; border-radius: 10px; background: var(--surface-soft); overflow: hidden; }
+.sl-tl i { position: absolute; top: 6px; bottom: 14px; border-radius: 5px; }
+.sl-tl i.bed { background: var(--line); }
+.sl-tl i.sleep { background: var(--accent); opacity: .85; }
+.sl-tl span { position: absolute; bottom: 1px; transform: translateX(2px); color: var(--muted); font-size: 9px; font-weight: 700; }
+/* План дня */
+.sl-plan-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.sl-kicker + .sl-plan-row { border-top: 0; }
+.sl-plan-row > div { display: grid; gap: 2px; min-width: 0; }
+.sl-plan-row b { font-size: 15px; }
+.sl-plan-row small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.sl-rules summary, .sl-how summary { cursor: pointer; color: var(--accent); font-size: 13px; font-weight: 700; list-style: none; }
+.sl-rules summary::-webkit-details-marker, .sl-how summary::-webkit-details-marker { display: none; }
+.sl-rules ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; line-height: 1.4; }
+.sl-how summary { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--text); font-size: 15px; }
+.sl-how summary small { color: var(--muted); font-size: 12px; font-weight: 600; }
+.sl-how[open] summary { margin-bottom: 4px; }
+.sl-how p { font-size: 14px; }
+/* Неделя */
+.sl-chart { display: flex; align-items: flex-end; gap: 4px; height: 86px; }
+.sl-col { flex: 1; min-width: 0; height: 100%; display: grid; grid-template-rows: 1fr auto; justify-items: center; gap: 3px; }
+.sl-col i { align-self: end; width: 100%; max-width: 22px; border-radius: 5px 5px 2px 2px; background: var(--line); }
+.sl-col i.good { background: var(--accent); }
+.sl-col small { color: var(--muted); font-size: 9px; font-weight: 700; }
+.sl-debrief { padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); font-size: 14px; line-height: 1.5; }
+/* Списки и настройки */
+.sl-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sl-list-row > span:first-child { display: grid; gap: 2px; min-width: 0; }
+.sl-list-row b { font-size: 14px; }
+.sl-list-row small { color: var(--muted); font-size: 12px; }
+.sl-list-val { flex: none; display: grid; justify-items: end; font-weight: 800; font-size: 14px; }
+.sl-toggle-row input { width: 20px; height: 20px; accent-color: var(--accent); }
+/* Настройка и анкеты */
+.sl-chips, .sl-tags, .sl-quality { display: flex; flex-wrap: wrap; gap: 6px; }
+.sl-chip { height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.sl-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.35; }
+.sl-check input { flex: none; width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); }
+.sl-form { display: grid; gap: 12px; }
+.sl-field { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; font-weight: 700; }
+.sl-field > input { width: 100%; min-width: 0; height: 42px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); font: inherit; font-size: 16px; font-weight: 700; }
+.sl-field .sp-stepper { display: flex; align-items: center; gap: 6px; }
+.sl-field .sp-stepper input { flex: 1; min-width: 0; }
+.sl-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sl-tags label, .sl-quality label, .sl-isi label { position: relative; }
+.sl-tags input, .sl-quality input, .sl-isi input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.sl-tags span, .sl-quality span, .sl-isi span { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); font-size: 13px; font-weight: 700; }
+.sl-quality span { min-width: 44px; }
+.sl-tags input:checked + span, .sl-quality input:checked + span, .sl-isi input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.sl-isi { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+.sl-isi legend { margin-bottom: 6px; font-size: 14px; font-weight: 700; color: var(--text); }
+.sl-isi > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.sl-error { margin: 0; padding: 9px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 700; }
+.modal-backdrop.sl-backdrop { z-index: 240; }
