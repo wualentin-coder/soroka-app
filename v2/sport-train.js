@@ -316,12 +316,28 @@ function spTrainingScreen() {
   const s = spState(), C = SP();
   const { visible } = spOptions();
   const hasSplits = visible.some(o => o.kind === "splits");
-  if (!hasSplits) s.kind = "main";
+  s.kind = spAutoKind(visible, s.date);
   const upcoming = spUpcoming(visible, s.state, s.date);
   const next = upcoming.length ? `<section class="sp-card"><p class="sp-kicker">Дальше по плану</p>${upcoming.map(o => `<button type="button" class="sp-list-row" data-action="sp-date" data-date="${o.date}"><span><b>${spDateShort(o.date)}</b><small>${spEsc(o.plan.title)}${o.kind === "splits" ? " · растяжка" : o.kind === "test" ? " · тест" : ""}</small></span><small>${o.kind === "test" ? "" : C.formatDuration(C.estimateWorkoutSeconds(o.plan))}</small></button>`).join("")}</section>` : "";
   return `${spWeekStrip(visible)}${hasSplits ? `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>` : ""}
     ${spDayWorkout(visible, s.date, s.kind)}${next}
     <div class="sp-row-actions sp-center"><button class="text-action" type="button" data-action="sp-free-new">+ Свободная тренировка</button><button class="text-action" type="button" data-action="sp-rules">Правила ${s.kind === "splits" ? "растяжки" : "тренировки"}</button></div>`;
+}
+/**
+ * Сила или растяжка — по дню, а не всегда «Сила»: в день только с растяжкой
+ * сразу растяжка; есть оба — сила, а сделана сила — растяжка. Выбрали сами —
+ * держим выбор для этого дня.
+ */
+function spAutoKind(options, date) {
+  const s = spState(), C = SP();
+  if (s.kindPick?.date === date) return s.kindPick.kind;
+  const pick = kind => C.selectedOption(options, date, kind, s.state);
+  const main = pick("main"), splits = pick("splits");
+  if (!main) return splits ? "splits" : "main";
+  // Только после «Завершить»: все подходы отмечены, а кнопку ещё не нажали — силовую не уводим с экрана.
+  const done = Boolean(s.state.workouts?.[main.key]);
+  const splitsDone = splits && Boolean(s.state.workouts?.[splits.key]);
+  return done && splits && !splitsDone ? "splits" : "main";
 }
 function spDayWorkout(options, date, kind) {
   const s = spState(), C = SP();
@@ -496,7 +512,7 @@ document.addEventListener("input", event => {
 });
 
 Object.assign(SP_ACTIONS, {
-  "sp-kind": control => { if (spTimerGuard()) return; spState().kind = control.dataset.kind; render(); },
+  "sp-kind": control => { if (spTimerGuard()) return; const s = spState(); s.kind = control.dataset.kind; s.kindPick = { date: s.date, kind: s.kind }; render(); },
   "sp-day-shift": control => { if (spTimerGuard()) return; const s = spState(); s.date = SP().offsetDateKey(s.date, Number(control.dataset.d)); render(); },
   "sp-choose": control => {
     if (spTimerGuard()) return;
