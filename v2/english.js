@@ -400,7 +400,7 @@ function enCourseScreen() {
     return `<section class="en-level"><div class="en-row"><b>${EN_LEVEL_NAMES[level]}</b><small>${done} из ${list.length}</small></div>${list.map(u => `<button type="button" class="en-unit ${u.status}" data-action="en-unit" data-key="${esc(u.key)}"><span class="en-unit-n">${u.status === "done" ? icon("check", "icon-sm") : u.number}</span><span><b>${esc(u.title)}</b><small>${esc(u.grammar)}</small></span>${u.score != null ? `<small class="en-unit-score">${Math.round(u.score * 100)}%</small>` : ""}</button>${s.openUnit === u.key ? `<div class="en-unit-more"><button class="primary-button" type="button" data-action="en-unit-go" data-key="${esc(u.key)}">Пройти урок</button><button class="ghost-button" type="button" data-action="en-ex" data-mode="theory" data-unit="${esc(u.key)}">Правило</button></div>` : ""}`).join("")}</section>`;
   }).join("");
   return `<section class="en-hero"><div class="en-hero-top"><div><small>Урок ${cur.number} из ${c.units.length} · ${cur.level}</small><h2>${esc(cur.title)}</h2><small>${esc(cur.grammar)}</small></div></div>
-      <div class="en-modes">${EN_MODES.map(([key, title, sub, ic]) => `<button type="button" class="en-mode" data-action="en-ex" data-mode="${key}"><span class="en-step-ic">${icon(ic, "icon-sm")}</span><b>${title}</b><small>${sub}</small></button>`).join("")}</div>
+      <div class="en-modes">${EN_MODES.map(([key, title, sub, ic]) => `<button type="button" class="en-mode" data-action="en-ex" data-mode="${key}"><span class="en-step-ic">${icon(ic, "icon-sm")}</span><b>${title}</b><small>${sub}</small></button>`).join("")}<button type="button" class="en-mode" data-action="en-ex" data-mode="theory" data-unit="${esc(cur.key)}"><span class="en-step-ic">${icon("study", "icon-sm")}</span><b>Теория</b><small>Правила, листать по урокам</small></button></div>
       <p class="section-note">Упражнения — на предложениях текущего урока и на том, что пора повторить. Урок засчитывается от 70% верных ответов.</p></section>
     ${levels}`;
 }
@@ -776,8 +776,13 @@ function enExScreen(ex) {
 
 function enTheoryScreen(t) {
   const parts = (t.parts || []).map(p => `<section class="en-theory-part"><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p>${(p.examples || []).map(([en, ru]) => `<div class="en-example"><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button><div><b>${esc(en)}</b><small>${esc(ru)}</small></div></div>`).join("")}</section>`).join("");
+  // Теорию можно читать подряд, как учебник: соседние уроки — стрелками.
+  const units = enState().course?.units || [];
+  const at = units.findIndex(u => u.key === t.key);
+  const prev = at > 0 ? units[at - 1] : null, next = at >= 0 && at < units.length - 1 ? units[at + 1] : null;
+  const nav = at >= 0 ? `<div class="en-theory-nav">${prev ? `<button class="ghost-button" type="button" data-action="en-ex" data-mode="theory" data-unit="${esc(prev.key)}">${icon("left", "icon-sm")}Урок ${prev.number}</button>` : "<span></span>"}${next ? `<button class="ghost-button" type="button" data-action="en-ex" data-mode="theory" data-unit="${esc(next.key)}">Урок ${next.number}${icon("right", "icon-sm")}</button>` : "<span></span>"}</div>` : "";
   return `<div class="en-run"><div class="en-run-top"><button class="icon-button" type="button" data-action="en-ex-quit" aria-label="Закрыть">${icon("close", "icon-sm")}</button><small>${esc(t.title)}</small></div>
-    <h2 class="en-prompt">${esc(t.heading)}</h2><p class="en-ru">${esc(t.goal)}</p>${parts}
+    <h2 class="en-prompt">${esc(t.heading)}</h2><p class="en-ru">${esc(t.goal)}</p>${parts}${nav}
     <div class="en-actions"><button class="ghost-button" type="button" data-action="en-ex" data-mode="gap" data-unit="${esc(t.key)}">Пропуск</button><button class="primary-button" type="button" data-action="en-ex" data-mode="build" data-unit="${esc(t.key)}">Собери фразу</button></div></div>`;
 }
 
