@@ -178,7 +178,7 @@ function spProfileScreen() {
   const owned = C.EQUIPMENT.filter(item => C.hasEquipment(state, item.id));
   const liked = C.favoriteExercises(state);
   const n = C.notificationSettings(state.notificationSettings);
-  const on = ["wake", "shower", "workout"].filter(k => n[k].enabled).length + Object.values(state.customHabits || {}).filter(h => !h.archived && C.habitNotifies(h) && C.habitReminders(h).length).length;
+  const on = ["shower", "workout"].filter(k => n[k].enabled).length + Object.values(state.customHabits || {}).filter(h => !h.archived && C.habitNotifies(h) && C.habitReminders(h).length).length;
   const row = (action, title, note, need, extra = "") => `<button type="button" ${action}><span><strong>${title}</strong>${note ? `<small>${note}</small>` : ""}${extra}</span>${need ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>`;
   return `<section class="sp-card sp-hero-card"><button type="button" class="sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc((profile.name?.trim() || tgName) ? name.slice(0, 1).toUpperCase() : "?")}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : name)}</strong><small>${gaps.profile ? "Анкета не заполнена" : "Анкета"}</small></span>${gaps.profile ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>
       <button type="button" class="sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Выберите мышцы, которые хотите развивать")}</small></span>${gaps.muscles ? '<i class="sp-dot"></i>' : ""}</button></section>
@@ -483,17 +483,18 @@ SP_SHEETS.reminders = () => {
   const n = C.notificationSettings(s.state.notificationSettings);
   const zones = [...new Set([n.timeZone, Intl.DateTimeFormat().resolvedOptions().timeZone, "Europe/Moscow", "Europe/Kaliningrad", "Europe/Samara", "Asia/Yekaterinburg", "Asia/Omsk", "Asia/Krasnoyarsk", "Asia/Irkutsk", "Asia/Yakutsk", "Asia/Vladivostok", "Asia/Magadan", "Asia/Kamchatka", "Europe/Berlin", "UTC"])];
   const habits = Object.entries(s.state.customHabits || {}).filter(([, h]) => !h.archived);
-  return { title: "Напоминания", body: `<form data-sp-form="notifications">${["wake", "shower", "workout"].map(kind => `<div class="sp-notify"><span>${kind === "wake" ? "Подъём" : kind === "shower" ? "Контрастный душ" : "Тренировка дня"}</span><input type="time" name="${kind}-time" value="${n[kind].time}" required><label class="sp-toggle"><input type="checkbox" name="${kind}-on" ${n[kind].enabled ? "checked" : ""}><span></span></label></div>`).join("")}
+  return { title: "Напоминания", body: `<form data-sp-form="notifications">${["shower", "workout"].map(kind => `<div class="sp-notify"><span>${kind === "wake" ? "Подъём" : kind === "shower" ? "Контрастный душ" : "Тренировка дня"}</span><input type="time" name="${kind}-time" value="${n[kind].time}" required><label class="sp-toggle"><input type="checkbox" name="${kind}-on" ${n[kind].enabled ? "checked" : ""}><span></span></label></div>`).join("")}
     ${habits.length ? `<p class="sp-kicker">Свои привычки</p>${habits.map(([id, h]) => `<button type="button" class="sp-list-row" data-action="sp-habit-edit" data-id="${spEsc(id)}"><span><b>${spEsc(h.name)}</b><small>${C.habitReminders(h).length ? C.habitReminders(h).map(r => r.time).join(", ") + (C.habitNotifies(h) ? "" : " · без сообщений") : "без напоминаний"}</small></span>${icon("arrow", "icon-sm")}</button>`).join("")}` : ""}
     <label class="field">Часовой пояс<select name="zone">${zones.map(z => `<option ${z === n.timeZone ? "selected" : ""}>${spEsc(z)}</option>`).join("")}</select></label>
-    <p class="section-note">Приходят от бота Flow. Выполненное не напоминаем. «Подъём» задаёт и время вопроса «проснулся?» при открытии приложения.</p><button class="primary-button sp-wide" type="submit">Сохранить</button></form>` };
+    <p class="section-note">Приходят от бота Flow. Выполненное не напоминаем. Подъём и сон — в разделе «Сон».</p><button class="primary-button sp-wide" type="submit">Сохранить</button></form>` };
 };
 SP_SHEETS.programs = sheet => ({ title: sheet.archive ? "Архив программ" : "Программы", body: spProgramManager(sheet) });
 SP_SHEETS.sizes = () => ({ title: "Размеры одежды", body: spSizes() });
 SP_FORMS.notifications = form => {
   const C = SP(), get = name => form.elements[name];
   const settings = { timeZone: get("zone").value };
-  for (const kind of ["wake", "shower", "workout"]) settings[kind] = { enabled: get(`${kind}-on`).checked, time: get(`${kind}-time`).value };
+  for (const kind of ["shower", "workout"]) settings[kind] = { enabled: get(`${kind}-on`).checked, time: get(`${kind}-time`).value };
+  settings.wake = { ...C.notificationSettings(spState().state.notificationSettings).wake, enabled: false };
   if (![settings.wake.time, settings.shower.time, settings.workout.time].every(t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) return spSheetError("Укажите время в формате ЧЧ:ММ.");
   try { new Intl.DateTimeFormat("ru-RU", { timeZone: settings.timeZone }); } catch (_) { return spSheetError("Неизвестный часовой пояс."); }
   spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings(settings) })).then(() => toast("Напоминания сохранены")).catch(() => toast("Не сохранилось — проверьте связь"));
