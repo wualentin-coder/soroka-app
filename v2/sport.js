@@ -226,10 +226,6 @@ function spTodayScreen() {
   parts.push(spTestCard(visible, date));
   if (date <= today) parts.push(spDayList(visible, date));
   if (date === today) parts.push(spCountersCard());
-  if (!s.wakeAsked && date === today && C.shouldAskWakeTime(s.state) && !s.sheet) {
-    s.wakeAsked = true;
-    queueMicrotask(() => spOpen("wake", { date: today, asked: true }));
-  }
   return parts.join("");
 }
 /** Неделя полосой: выбор дня для «Сегодня» и «Тренировки». Месяц — по нажатию. */
@@ -276,14 +272,10 @@ function spDayWorkoutCard(options, date) {
   }).join("");
 }
 
-/** Всё, что отмечается за день, — одним списком: подъём, подвижность, душ, свои привычки. */
+/** Всё, что отмечается за день, — одним списком: подвижность, душ, свои привычки. Подъём и сон — в разделе «Сон». */
 function spDayList(options, date) {
   const s = spState(), C = SP(), today = C.todayKey();
   const rows = [];
-  if (date === today || s.state.wakeups?.[date]) {
-    const time = s.state.wakeups?.[date];
-    rows.push(`<div class="sp-habit ${time ? "done" : ""}"><div class="sp-habit-row"><button type="button" class="sp-habit-name" data-action="sp-wake-log"><i class="sp-caret"></i>Подъём${time ? ` · ${time}` : ""}</button>${spWakeAverage()}<button type="button" class="sp-check ${time ? "on" : ""}" data-action="sp-wake-edit" data-date="${date}" aria-label="Время подъёма">${time ? icon("check", "icon-sm") : SP_ICON.sun}</button></div></div>`);
-  }
   const mobility = ["main", "splits", "test"].map(kind => C.selectedOption(options, date, kind, s.state)?.mobility).find(Boolean);
   rows.push(spMobilityRow(date, mobility));
   rows.push(spHabitRow({ id: "shower", label: "Контрастный душ", marks: s.state.showers || {}, date }));
@@ -292,10 +284,6 @@ function spDayList(options, date) {
     rows.push(spHabitRow({ id, label: habit.name, marks: s.state.habitChecks?.[id] || {}, date, total: C.habitTarget(habit), dayParts: C.isMorningEvening(habit), since: habit.createdOn, reminders: C.habitReminders(habit).map(r => r.time), editable: true }));
   }
   return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">${date === today ? "Отметить сегодня" : "Отметки дня"}</p><button class="text-action" type="button" data-action="sp-habit-new">+ привычка</button></div>${rows.join("")}</section>`;
-}
-function spWakeAverage() {
-  const C = SP(), avg = C.wakeAverage(C.wakeSeries(spState().state, 14));
-  return avg === null ? "" : `<span class="sp-streak">в среднем ${C.formatMinutes(avg)}</span>`;
 }
 /** Утренняя подвижность — не разминка перед занятием: она про тело, одинаковая в любой день. */
 function spMobilityRow(date, plan) {
