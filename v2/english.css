@@ -417,3 +417,7 @@ body:has(.en-reader) { overflow: hidden; }
 .en-exit-fab { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 14px 0 10px; border-radius: 17px; border: 1px solid var(--r-line); background: color-mix(in srgb, var(--r-panel) 88%, transparent); color: var(--r-text); font: 700 12px "Manrope", "Segoe UI", sans-serif; backdrop-filter: blur(8px); filter: var(--rfilter, none); cursor: pointer; opacity: .85; }
 html.tg-fs .en-reader-bar.top { padding-top: calc(var(--tg-top, 0px) + 10px); }
 html.tg-fs .en-page-text { padding-top: calc(var(--tg-top, 0px) + 28px); }
+
+/* Теория: листать по урокам */
+.en-theory-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.en-theory-nav .ghost-button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; }
