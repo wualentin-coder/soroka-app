@@ -246,8 +246,8 @@ function slIsiSheet() {
 function sleepAction(action, control, event) {
   if (!action.startsWith("sl-")) return false;
   const s = slState();
-  if (action === "sl-backdrop") { if (event?.target === control) { s.sheet = null; render(); } return true; }
-  if (action === "sl-close") { s.sheet = null; s.sheetError = ""; render(); return true; }
+  if (action === "sl-backdrop") { if (event?.target === control && confirmSheetDiscard(document.querySelector(".sl-sheet"))) { s.sheet = null; render(); } return true; }
+  if (action === "sl-close") { if (!confirmSheetDiscard(document.querySelector(".sl-sheet"))) return true; s.sheet = null; s.sheetError = ""; render(); return true; }
   if (action === "sl-reload") { s.error = ""; slLoad(); render(); return true; }
   if (action === "sl-home") { navigate("sleep"); render(); return true; }
   if (action === "sl-pick") { const input = control.closest("form")?.querySelector('[name="target"]'); if (input) input.value = control.dataset.time; return true; }
