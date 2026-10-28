@@ -189,7 +189,11 @@ function rmSettings() {
 function rmSegments(key, list, value) {
   return `<div class="segmented rm-seg" style="--n:${list.length}">${list.map(([v, label]) => `<button type="button" class="segment ${value === v ? "active" : ""}" data-action="rm-opt" data-key="${key}" data-value="${v}" aria-pressed="${value === v}">${label}</button>`).join("")}</div>`;
 }
-const rmField = (label, html, note = "") => `<div class="rm-field"><p class="pc-after-label">${label}</p>${html}${note ? `<p class="section-note">${note}</p>` : ""}</div>`;
+const rmField = (label, html, note = "") => {
+  const id = `rm-label-${encodeURIComponent(label)}`;
+  const controls = html.replace(/<(input|select|textarea)\b([^>]*)>/g, (tag, name, attrs) => /aria-label(?:ledby)?=/.test(attrs) ? tag : `<${name} aria-labelledby="${id}"${attrs}>`);
+  return `<div class="rm-field" role="group" aria-labelledby="${id}"><p id="${id}" class="pc-after-label">${label}</p>${controls}${note ? `<p class="section-note">${note}</p>` : ""}</div>`;
+};
 const RM_PRESET_KEYS = ['output_mode','output_dir','deliver','ae_backend','parallel','mfr_in_parts','ae_mfr','ae_resolution','ae_template'];
 const RM_RESOLUTION = [['inherit','Как в AE'],['full','Полное'],['half','½'],['quarter','¼']];
 function rmPresets(app) {
