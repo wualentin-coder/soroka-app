@@ -41,10 +41,12 @@
   const closeBefore = closeSheet;
   closeSheet = function () {
     const backdrop = document.querySelector(".modal-backdrop");
+    if (!confirmSheetDiscard(backdrop?.querySelector(".sheet"))) return;
     if (!backdrop || calm() || backdrop.classList.contains("sheet-leave")) return closeBefore.apply(this, arguments);
     backdrop.classList.remove("sheet-enter");
     backdrop.classList.add("sheet-leave");
     const args = arguments, self = this;
-    setTimeout(() => closeBefore.apply(self, args), 200);
+    const owner = sheetOwner(backdrop.querySelector(".sheet"));
+    setTimeout(() => { if (sheetOwner(activeSheet()) === owner) closeBefore.apply(self, args); }, 200);
   };
 })();
