@@ -86,7 +86,7 @@ document.addEventListener("click", event => {
     if(movieDeck.spinning)return;
     const items=savedVisibleItems(),current=movieDeck.wrap(Math.round(movieDeck.position));
     const index=items.length>1?(current+1+Math.floor(Math.random()*(items.length-1)))%items.length:0;
-    if(items.length)movieDeck.spinTo(index,3600);return;
+    if(items.length)movieDeck.spinTo(index,2400);return;
   }
   const filters=event.target.closest('[data-action="movie-filters-toggle"]');
   if(filters){
