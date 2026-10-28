@@ -49,7 +49,7 @@
 .saved-section-grid-compact .saved-section-copy { grid-column: 2; grid-row: 1; padding: 0; }
 .saved-section-grid-compact .saved-section-copy strong { font-size: 13px; }
 .saved-section-grid-compact .saved-section-copy small { font-size: 11px; }
-.saved-section-grid-compact .saved-section-count { grid-column: 3; grid-row: 1; min-width: 22px; height: 22px; font-size: 10px; }
+.saved-section-grid-compact .saved-section-count { grid-column: 3; grid-row: 1; min-width: 22px; height: 22px; font-size: 11px; }
 .saved-section-grid-compact .saved-section-arrow { display: none; }
 .saved-add-options { display: grid; gap: 8px; margin: 14px 0 20px; }
 .saved-add-options.is-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -770,9 +770,9 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 :root[data-theme="light"][data-accent="indigo"] { --accent: #3f46c9; --accent-strong: #3f46c9; --accent-soft: rgba(63,70,201,.1); }
 :root[data-theme="light"][data-accent="pink"] { --accent: #b8336c; --accent-strong: #b8336c; --accent-soft: rgba(184,51,108,.1); }
 :root[data-theme="light"][data-accent="red"] { --accent: #c2383a; --accent-strong: #c2383a; --accent-soft: rgba(194,56,58,.1); }
-:root[data-theme="light"][data-accent="orange"] { --accent: #c25e12; --accent-strong: #c25e12; --accent-soft: rgba(194,94,18,.1); }
+:root[data-theme="light"][data-accent="orange"] { --accent: #b95610; --accent-strong: #b95610; --accent-soft: rgba(185,86,16,.1); }
 :root[data-theme="light"][data-accent="amber"] { --accent: #9a6b00; --accent-strong: #9a6b00; --accent-soft: rgba(154,107,0,.1); }
-:root[data-theme="light"][data-accent="green"] { --accent: #1f8a3b; --accent-strong: #1f8a3b; --accent-soft: rgba(31,138,59,.1); }
+:root[data-theme="light"][data-accent="green"] { --accent: #1b8135; --accent-strong: #1b8135; --accent-soft: rgba(27,129,53,.1); }
 /* Настройки. */
 .settings-row-wide { flex-wrap: wrap; }
 .accent-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1018,7 +1018,7 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .reco-body p { margin: 2px 0 0; color: var(--text); font-size: 12.5px; line-height: 1.4; }
 .reco-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .reco-actions .small-button { display: inline-flex; align-items: center; gap: 5px; }
-.reco-actions .small-button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.reco-actions .small-button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .reco-load { width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; }
 
 /* Билеты на этой неделе — на экране «Сегодня». */
@@ -1054,12 +1054,12 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .rules-auto.on { border-color: var(--accent); background: var(--surface-soft); }
 .rules-auto input { position: absolute; opacity: 0; pointer-events: none; }
 .rules-auto-box { display: grid; place-items: center; width: 26px; height: 26px; border: 2px solid var(--line); border-radius: 8px; color: transparent; }
-.rules-auto.on .rules-auto-box { border-color: var(--accent); background: var(--accent); color: #fff; }
+.rules-auto.on .rules-auto-box { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 .rules-auto-copy { display: grid; gap: 3px; }
 .rules-auto-copy strong { font-size: 14px; }
 .rules-auto-copy small { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
 
-.taste-chip.top { background: var(--accent); color: #fff; }
+.taste-chip.top { background: var(--accent); color: var(--accent-ink); }
 .reco-actions .small-button { min-height: 34px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
 .kpi-grid .kpi:nth-child(3):last-child { grid-column: 1 / -1; }
 
@@ -1091,7 +1091,7 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .movie-card-scores { flex-wrap: nowrap; }
 .movie-card-scores .score { padding: 0 7px; white-space: nowrap; }
 /* Кнопка «Подобрать»: плавная, с бегущей полоской и сменой подписи. */
-.reco-load { position: relative; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 0 16px 0 10px; overflow: hidden; border: 0; border-radius: 18px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 62%, #ffcf70)); color: #fff; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 32%, transparent); transition: transform .2s ease, box-shadow .3s ease, filter .3s ease; }
+.reco-load { position: relative; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 0 16px 0 10px; overflow: hidden; border: 0; border-radius: 18px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 62%, #ffcf70)); color: var(--accent-ink); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 32%, transparent); transition: transform .2s ease, box-shadow .3s ease, filter .3s ease; }
 .reco-load:active:not(:disabled) { transform: scale(.985); }
 .reco-load:disabled { cursor: progress; opacity: 1; }
 .reco-load-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, .18); }
@@ -2379,7 +2379,7 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 
 /* Лицевая сторона: бумага, а не тема приложения — одинаково в светлой и тёмной. */
 .doc-face { --ink: #2b2730; position: relative; border-radius: 14px; color: var(--ink); overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.18); font-family: inherit; }
-.doc-face small { display: block; font-size: 9px; letter-spacing: .02em; opacity: .7; }
+.doc-face small { display: block; font-size: 11px; letter-spacing: .02em; opacity: .7; }
 .doc-face b { font-size: 13px; font-weight: 700; }
 .df-row { min-width: 0; }
 .df-row b { display: block; overflow-wrap: anywhere; }
@@ -2389,7 +2389,7 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 .df-photo svg { width: 46px; fill: none; stroke: rgba(0,0,0,.3); stroke-width: 2; }
 .df-data { display: grid; gap: 6px; min-width: 0; flex: 1; }
 .df-title { margin: 0; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-.df-sub { margin: 2px 0 0; font-size: 10px; opacity: .75; }
+.df-sub { margin: 2px 0 0; font-size: 11px; opacity: .75; }
 
 .df-passport { background: #f3e6e4; }
 .df-passport .df-page { padding: 14px 16px; background:
@@ -2403,9 +2403,9 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 .df-foreign { background: linear-gradient(170deg, #e9eef6, #d9e2ef); }
 .df-band { display: flex; flex-direction: column; padding: 10px 16px; background: #1f3a68; color: #f2d98c; }
 .df-band b { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
-.df-band span { font-size: 10px; color: #dbe4f5; }
+.df-band span { font-size: 11px; color: #dbe4f5; }
 .df-foreign .df-body { display: flex; gap: 12px; padding: 12px 16px; }
-.df-lat { margin-top: -3px; font-size: 10px !important; opacity: .65 !important; letter-spacing: .06em !important; }
+.df-lat { margin-top: -3px; font-size: 11px !important; opacity: .65 !important; letter-spacing: .06em !important; }
 .df-mrz { display: grid; padding: 8px 12px 12px; background: rgba(255,255,255,.55); font: 600 10.5px/1.45 ui-monospace, "OCR-B", Menlo, monospace; letter-spacing: .08em; white-space: pre; overflow: hidden; }
 
 .df-inn { padding: 8px; background: #f7f4e8; }
