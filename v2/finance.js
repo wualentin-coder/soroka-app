@@ -557,7 +557,7 @@ document.addEventListener("input", event => {
  */
 function amountSlider(label, name, value, max, extra = "", unit = "₽") {
   const steps = [1000, 100, 10, 1].map(n => `<button type="button" class="amount-step" data-amount-add="${n}" data-for="${esc(name)}">+${n.toLocaleString("ru-RU")}</button>`).join("");
-  return `<div class="field amount-steps"><span>${label}</span><div class="amount-input-row"><input name="${name}" type="number" inputmode="decimal" ${extra} min="0" step="0.01" value="${esc(value ?? "")}" data-amount-range><button type="button" class="amount-clear" data-amount-clear data-for="${esc(name)}" aria-label="Очистить сумму">${icon("close", "icon-sm")}</button></div><div class="amount-step-row">${steps}</div></div>`;
+  return `<div class="field amount-steps"><label for="finance-amount-${esc(name)}">${label}</label><div class="amount-input-row"><input id="finance-amount-${esc(name)}" name="${name}" type="number" inputmode="decimal" ${extra} min="0" step="0.01" value="${esc(value ?? "")}" data-amount-range><button type="button" class="amount-clear" data-amount-clear data-for="${esc(name)}" aria-label="Очистить сумму">${icon("close", "icon-sm")}</button></div><div class="amount-step-row">${steps}</div></div>`;
 }
 document.addEventListener("click", event => {
   const add = event.target.closest?.("[data-amount-add], [data-amount-clear]");
