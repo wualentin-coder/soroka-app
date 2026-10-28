@@ -335,7 +335,7 @@ function pcFindResultsHtml(raw) {
 
 function pcLinkBlock() {
   const q = ui.pc.find || "";
-  return `<section class="pc-card pc-find"><div class="pc-card-head"><h3>${pcIcon("link")}Открыть на компьютере</h3></div><div class="pc-find-box"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.search}</svg><input id="pc-find" type="search" enterkeyhint="go" placeholder="Программа, файл, сайт или запрос" autocomplete="off" value="${esc(q)}"></div><div class="pc-find-results">${pcFindResultsHtml(q)}</div><p class="section-note">Файл на компьютер — пришлите боту с подписью «на комп» (сохранит в «Загрузки\\Flow»). С компьютера — «скинь D:\\путь\\к\\файлу».</p></section>`;
+  return `<section class="pc-card pc-find"><div class="pc-card-head"><h3>${pcIcon("link")}Открыть на компьютере</h3></div><div class="pc-find-box"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.search}</svg><input id="pc-find" type="search" aria-label="Программа, файл, сайт или запрос на компьютере" enterkeyhint="go" placeholder="Программа, файл, сайт или запрос" autocomplete="off" value="${esc(q)}"></div><div class="pc-find-results">${pcFindResultsHtml(q)}</div><p class="section-note">Файл на компьютер — пришлите боту с подписью «на комп» (сохранит в «Загрузки\\Flow»). С компьютера — «скинь D:\\путь\\к\\файлу».</p></section>`;
 }
 
 // Варианты меняются по мере набора — перерисовываем только список, поле остаётся в фокусе.
