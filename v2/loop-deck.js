@@ -126,10 +126,10 @@ class LoopDeck {
   spinTo(index,duration=3600,onDone=()=>{}){
     this.stop();index=this.wrap(index);
     if(this.reduced||this.count<2||duration<120){this.position=index;this.base=null;this.paint();onDone();return;}
-    const start=this.position,first=Math.floor(start),last=Math.round(start)+12;
+    const start=this.position,first=Math.floor(start),last=Math.round(start)+(Math.random()<.5?-12:12);
     this.spinMap=new Map();
     // A bounded reel keeps large libraries from requesting hundreds of posters.
-    for(let slot=first-3;slot<=last+3;slot++)this.spinMap.set(slot,slot<=first+3?this.wrap(slot):Math.floor(Math.random()*this.count));
+    for(let slot=Math.min(first,last)-3;slot<=Math.max(first,last)+3;slot++)this.spinMap.set(slot,Math.abs(slot-start)<=3?this.wrap(slot):Math.floor(Math.random()*this.count));
     for(let offset=-3;offset<=3;offset++)this.spinMap.set(last+offset,this.wrap(index+offset));
     this.base=null;this.spinning=true;const began=performance.now();
     const tick=now=>{
