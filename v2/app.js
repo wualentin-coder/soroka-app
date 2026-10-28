@@ -540,6 +540,7 @@ function syncModalScrollLock() {
 new MutationObserver(syncModalScrollLock).observe(document.body, { childList: true, subtree: true });
 let renderedShell = "";
 function render() {
+  captureSheetState();
   scrollBeforeRender = modalPageLock ? null : { x: window.scrollX, y: window.scrollY };
   const scroll = captureSheetScroll();
   document.documentElement.dataset.theme = themeTone();
@@ -581,12 +582,7 @@ function afterRender(scroll) {
   scrollBeforeRender = null;
   restoreSheetScroll(scroll);
   renderedScrollIdentity = sheetScrollIdentity();
-  if (ui.sheet && !ui.sheet.justRendered) {
-    const input = app.querySelector(ui.sheet.kind === "search" ? "#search-input" : ui.sheet.kind === "entry" ? '#entry-form input[name="title"]' : '.sheet [autofocus], .sheet input');
-    // На телефоне фокус открыл бы клавиатуру поверх окна — ставим его только в поиске.
-    if (ui.sheet.kind === "search" || !window.matchMedia("(pointer: coarse)").matches) requestAnimationFrame(() => input?.focus({ preventScroll: true }));
-    ui.sheet.justRendered = true;
-  }
+  restoreSheetState();
 }
 function toast(message) {
   ui.toast = message;
@@ -602,6 +598,7 @@ function toggleTask(recordId) {
   toast(task.done ? "Задача завершена" : "Задача снова в плане");
 }
 function navigate(page) {
+  if (!confirmSheetDiscard()) return;
   if (!validPages.includes(page)) return;
   // «Предстоящие» и «Обзор» теперь внутри «Плана».
   if (page === "upcoming" || page === "overview") page = "today";
@@ -621,6 +618,7 @@ function openEntry(type = "task", date = ui.page === "upcoming" ? ui.selected : 
   render();
 }
 function closeSheet() {
+  if (!confirmSheetDiscard()) return;
   // Закрыли поиск — в следующий раз он открывается пустым.
   if (ui.sheet?.kind === "search") { ui.searchQuery = ""; ui.searchPage = 1; ui.searchType = "all"; }
   ui.sheet = null; render();
@@ -667,11 +665,11 @@ function sheetDragEnd(event) {
   drag.sheet.classList.remove("sheet-dragging");
   drag.sheet.style.transition = "transform .2s ease";
   const backdrop = drag.sheet.parentElement;
-  if (event.type !== "touchcancel" && (drag.dy > Math.min(160, drag.sheet.offsetHeight * 0.3) || speed > 0.7)) {
+  if (event.type !== "touchcancel" && (drag.dy > Math.min(160, drag.sheet.offsetHeight * 0.3) || speed > 0.7) && confirmSheetDiscard(drag.sheet)) {
     drag.sheet.style.transform = "translateY(100%)";
     setTimeout(() => {
       if (!drag.sheet.isConnected) return;
-      const componentClose = drag.sheet.querySelector('[data-action="sp-close"]');
+      const componentClose = drag.sheet.querySelector('[data-action="sp-close"], [data-action="sl-close"]');
       if (componentClose) { componentClose.click(); return; }
       // Окна моста (ход разбора) живут вне ui.sheet — их просто убираем.
       if (backdrop && !backdrop.hasAttribute("data-action") && backdrop.parentElement === document.body) backdrop.remove();
@@ -790,18 +788,7 @@ document.addEventListener("submit", event => {
 });
 document.addEventListener("input", event => { handleExtendedInput(event); });
 document.addEventListener("change", event => { handleExtendedChange(event); });
-document.addEventListener("keydown", event => {
-  if (!ui.sheet) return;
-  if (event.key === "Escape") { closeSheet(); return; }
-  if (event.key !== "Tab") return;
-  const focusable = [...document.querySelectorAll('.sheet button, .sheet input, .sheet textarea, .sheet select')].filter(element => !element.disabled && element.getClientRects().length);
-  if (!focusable.length) return;
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-});
-window.addEventListener("hashchange", () => { const page = currentPage(); if (page !== ui.page) { ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
+window.addEventListener("hashchange", () => { const page = currentPage(); if (page !== ui.page) { if (!confirmSheetDiscard()) { history.replaceState(null, "", `#${ui.page}`); return; } ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
 let calendarPointerStart = null;
 let suppressCalendarClick = false;
 document.addEventListener("pointerdown", event => {
