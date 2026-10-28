@@ -83,8 +83,10 @@ function sizeMovieCarousel(track) {
 document.addEventListener("click", event => {
   if(event.target.closest('[data-action="movie-random"]') && movieCarouselEnabled() && movieDeck){
     event.preventDefault();event.stopImmediatePropagation();
-    const items=savedVisibleItems(),index=Math.floor(Math.random()*items.length);
-    if(items.length)movieDeck.select(index);return;
+    if(movieDeck.spinning)return;
+    const items=savedVisibleItems(),current=movieDeck.wrap(Math.round(movieDeck.position));
+    const index=items.length>1?(current+1+Math.floor(Math.random()*(items.length-1)))%items.length:0;
+    if(items.length)movieDeck.spinTo(index,3600);return;
   }
   const filters=event.target.closest('[data-action="movie-filters-toggle"]');
   if(filters){
