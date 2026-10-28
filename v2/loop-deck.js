@@ -123,7 +123,7 @@ class LoopDeck {
     if(!smooth){this.position=target;this.paint();}else this.animate('snap',target);
   }
   nudge(direction){this.stop();this.animate('snap',Math.round(this.position)+direction);}
-  spinTo(index,duration=3600,onDone=()=>{}){
+  spinTo(index,duration=2400,onDone=()=>{}){
     this.stop();index=this.wrap(index);
     if(this.reduced||this.count<2||duration<120){this.position=index;this.base=null;this.paint();onDone();return;}
     const start=this.position,first=Math.floor(start),last=Math.round(start)+(Math.random()<.5?-12:12);
