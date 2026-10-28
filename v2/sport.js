@@ -203,7 +203,7 @@ function renderSportPage() {
 // ------------------------------------------------------------ окна (шторки Flow)
 
 function spOpen(kind, extra = {}) { const s = spState(); s.sheet = { kind, ...extra }; s.sheetError = ""; render(); }
-function spClose() { const s = spState(); s.sheet = null; s.sheetError = ""; render(); }
+function spClose() { if (!confirmSheetDiscard(document.querySelector(".sp-sheet"))) return; const s = spState(); s.sheet = null; s.sheetError = ""; render(); }
 function spSheetHtml() {
   const s = spState();
   if (!s.sheet || !SP_SHEETS[s.sheet.kind]) return "";
