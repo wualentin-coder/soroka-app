@@ -101,9 +101,12 @@ h1 { margin-bottom: 4px; font-size: clamp(31px, 7vw, 43px); line-height: 1.13; l
 .task-card:hover { border-color: var(--subtle); transform: translateY(-1px); }
 .task-card.overdue { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 31%, var(--line)); }
 .task-card + .task-card { margin-top: 8px; }
-.task-check { flex: none; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; border: 1.7px solid var(--subtle); color: transparent; background: transparent; margin-top: 2px; padding: 0; }
-.task-check:hover { border-color: var(--accent); background: var(--accent-soft); }
-.task-check.checked { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.task-check { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; color: transparent; background: transparent; margin: -7px 0 0; padding: 0; }
+.task-check::before { content:""; position:absolute; inset:9px; border:1.7px solid var(--subtle); border-radius:50%; }
+.task-check:hover::before { border-color:var(--accent); background:var(--accent-soft); }
+.task-check.checked { color: var(--accent-ink); }
+.task-check.checked::before { border-color:var(--accent); background:var(--accent); }
+.task-check > svg { position:relative; z-index:1; }
 .task-main { flex: 1; min-width: 0; display: block; border: 0; background: transparent; color: inherit; text-align: left; padding: 0; }
 .task-title { display: block; font-size: 14px; line-height: 1.45; font-weight: 700; overflow-wrap: anywhere; }
 .task-card.is-done .task-title { color: var(--subtle); text-decoration: line-through; text-decoration-color: var(--subtle); }
@@ -143,7 +146,7 @@ h1 { margin-bottom: 4px; font-size: clamp(31px, 7vw, 43px); line-height: 1.13; l
 .calendar-expand-title { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0; border: 0; background: transparent; color: var(--text); font-size: 18px; font-weight: 800; letter-spacing: -.035em; text-transform: capitalize; text-align: left; }
 .calendar-expand-title .icon { color: var(--accent); }
 .calendar-controls { display: flex; gap: 2px; }
-.calendar-controls button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--muted); }
+.calendar-controls button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--muted); }
 .calendar-controls button:hover { background: var(--surface-soft); color: var(--text); }
 .calendar-toolbar { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding: 12px 6px 13px; }
 .segmented { display: inline-flex; gap: 3px; padding: 3px; background: var(--page); border: 1px solid var(--line); border-radius: 11px; }
@@ -280,3 +283,5 @@ h1 { margin-bottom: 4px; font-size: clamp(31px, 7vw, 43px); line-height: 1.13; l
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+[data-action="move-overdue"], [data-action="calendar-mode"], [data-action="server-chart"] { min-height:44px; }
