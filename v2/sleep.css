@@ -23,7 +23,7 @@
 .sl-tl i { position: absolute; top: 6px; bottom: 14px; border-radius: 5px; }
 .sl-tl i.bed { background: var(--line); }
 .sl-tl i.sleep { background: var(--accent); opacity: .85; }
-.sl-tl span { position: absolute; bottom: 1px; transform: translateX(2px); color: var(--muted); font-size: 9px; font-weight: 700; }
+.sl-tl span { position: absolute; bottom: 1px; transform: translateX(2px); color: var(--muted); font-size: 11px; font-weight: 700; }
 /* План дня */
 .sl-plan-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
 .sl-kicker + .sl-plan-row { border-top: 0; }
@@ -42,7 +42,7 @@
 .sl-col { flex: 1; min-width: 0; height: 100%; display: grid; grid-template-rows: 1fr auto; justify-items: center; gap: 3px; }
 .sl-col i { align-self: end; width: 100%; max-width: 22px; border-radius: 5px 5px 2px 2px; background: var(--line); }
 .sl-col i.good { background: var(--accent); }
-.sl-col small { color: var(--muted); font-size: 9px; font-weight: 700; }
+.sl-col small { color: var(--muted); font-size: 11px; font-weight: 700; }
 .sl-debrief { padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); font-size: 14px; line-height: 1.5; }
 /* Списки и настройки */
 .sl-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
