@@ -50,7 +50,7 @@ function universeCard(d) {
 }
 function renderMovieDiscovery() {
   const worlds = universeUi.tab === "universes";
-  const tabs = `<div class="mu-discovery-tabs" role="group" aria-label="Что смотреть"><button type="button" data-action="mu-tab" data-tab="personal" aria-pressed="${!worlds}">Для вас</button><button type="button" data-action="mu-tab" data-tab="universes" aria-pressed="${worlds}">${icon("archive", "icon-sm")}Киновселенные</button></div>${renderUniverseOperations()}`;
+  const tabs = `<div class="mu-discovery-tabs" role="group" aria-label="Подборки"><button type="button" data-action="mu-tab" data-tab="personal" aria-pressed="${!worlds}">Для вас</button><button type="button" data-action="mu-tab" data-tab="universes" aria-pressed="${worlds}">${icon("archive", "icon-sm")}Киновселенные</button></div>${renderUniverseOperations()}`;
   if (!worlds) return tabs + renderMovieReco();
   if (!universeUi.loaded && !universeUi.loading && !universeUi.error) setTimeout(() => void universeLoad(), 0);
   const s = universeUi;
