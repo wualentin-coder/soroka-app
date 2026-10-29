@@ -415,8 +415,8 @@ function movieAction(action, control) {
   if(action==='movie-card-actions'){ui.sheet={kind:'saved',category:'movies',id:control.dataset.id,mode:'carousel-actions',justRendered:false};render();return true;}
   if(action==='movie-dialog-confirm'){const s=ui.sheet;ui.sheet=s.previous||null;s.confirm?.();render();return true;}
   if(action==='movie-dialog-cancel'){ui.sheet=ui.sheet.previous||null;render();return true;}
-  if(action==='movie-reco-genre'){ui.sheet={kind:'movie-dialog',title:'Жанр',genres:true};render();return true;}
-  if(action==='movie-genre-pick'){recoFilter().genre=control.dataset.genre||'';keepRecoFilter();ui.sheet=null;render();return true;}
+  if(action==='movie-reco-genre'){ui.sheet={kind:'movie-dialog',title:'Жанры',genres:true};render();return true;}
+  if(action==='movie-genre-pick'){const g=control.dataset.genre||'',selected=recoSelectedGenres();recoFilter().genre=g?(selected.includes(g)?selected.filter(x=>x!==g):[...selected,g]).join(', '):'';keepRecoFilter();render();return true;}
   if(typeof movieMarathonAction==='function'&&movieMarathonAction(action,control))return true;
   if (typeof universeAction === "function" && universeAction(action, control)) return true;
   if (typeof movieSeriesAction === "function" && movieSeriesAction(action, control)) return true;
@@ -481,7 +481,8 @@ function movieAction(action, control) {
 function movieConfirm(message,confirm){ui.sheet={kind:'movie-dialog',title:'Подтверждение',message,confirm,previous:ui.sheet};render();}
 function renderMovieDialog(){
  const s=ui.sheet,genres=['',...new Set([...movieTaste().filter(g=>g.score>0).map(g=>g.name),...RECO_GENRES].map(g=>g.charAt(0).toUpperCase()+g.slice(1)))];
- const body=s.genres?`<div class="movie-genre-options">${genres.map(g=>`<button type="button" class="small-button" data-action="movie-genre-pick" data-genre="${esc(g)}" aria-pressed="${recoFilter().genre===g}">${esc(g||'Любой жанр')}</button>`).join('')}</div>`:`<p>${esc(s.message)}</p><div class="sheet-actions"><button class="ghost-button" data-action="movie-dialog-cancel">Отмена</button><button class="primary-button" data-action="movie-dialog-confirm">Подтвердить</button></div>`;
+ const selected=recoSelectedGenres();
+ const body=s.genres?`<div class="movie-genre-options">${genres.map(g=>`<button type="button" class="small-button" data-action="movie-genre-pick" data-genre="${esc(g)}" aria-pressed="${g?selected.includes(g):!selected.length}">${esc(g||'Любой жанр')}</button>`).join('')}</div><div class="sheet-actions"><button type="button" class="primary-button" data-action="movie-dialog-cancel">Готово</button></div>`:`<p>${esc(s.message)}</p><div class="sheet-actions"><button class="ghost-button" data-action="movie-dialog-cancel">Отмена</button><button class="primary-button" data-action="movie-dialog-confirm">Подтвердить</button></div>`;
  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(s.title)}</h2><button class="icon-button" data-action="movie-dialog-cancel" aria-label="Закрыть">${icon('close')}</button></div>${body}</section></div>`;
 }
 
@@ -788,12 +789,13 @@ function recoFilter() {
   return ui.recoFilter;
 }
 
+function recoSelectedGenres(){return [...new Set(String(recoFilter().genre||'').split(',').map(g=>g.trim()).filter(Boolean))];}
 function recoFilterBar(taste) {
   const f = recoFilter();
   const kinds = [["any", "Всё"], ["movie", "Фильмы"], ["series", "Сериалы"]];
   // Жанры: сначала любимые по оценкам, потом остальные частые.
   const genres = [...new Set([...taste.filter(g => g.score > 0).map(g => g.name), ...RECO_GENRES].map(g => g.charAt(0).toUpperCase() + g.slice(1)))].slice(0, 20);
-  return `<div class="reco-filter"><div class="segmented reco-kind" role="group" aria-label="Что подбирать">${kinds.map(([value, label]) => `<button type="button" class="${f.kind === value ? "active" : ""}" data-action="reco-kind" data-value="${value}" aria-pressed="${f.kind === value}">${label}</button>`).join("")}</div><button type="button" class="small-button" data-action="movie-reco-genre">${esc(f.genre||"Любой жанр")}${icon("down","icon-sm")}</button></div>`;
+  return `<div class="reco-filter"><div class="segmented reco-kind" role="group" aria-label="Что подбирать">${kinds.map(([value, label]) => `<button type="button" class="${f.kind === value ? "active" : ""}" data-action="reco-kind" data-value="${value}" aria-pressed="${f.kind === value}">${label}</button>`).join("")}</div><button type="button" class="reco-genre" data-action="movie-reco-genre"><span>${esc(f.genre||"Любой жанр")}</span>${icon("down","icon-sm")}</button></div>`;
 }
 
 function keepRecoFilter() { try { localStorage.setItem(RECO_FILTER_KEY, JSON.stringify(recoFilter())); } catch (_) {} }
