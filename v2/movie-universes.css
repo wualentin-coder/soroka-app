@@ -127,3 +127,8 @@
 .mm-deck-progress { color:var(--accent); font-size:12px; font-weight:800; }
 .mm-deck-open { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:24px; margin-top:4px; color:var(--accent); font-size:12px; font-weight:800; }
 .mm-front .movie-deck-description { -webkit-line-clamp:3; }
+.movie-deck-menu { position:absolute; z-index:4; left:12px; top:12px; display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid var(--line); border-radius:13px; color:var(--text); background:var(--surface); }
+.movie-genre-options { display:flex; flex-wrap:wrap; gap:8px; }
+.movie-genre-options [aria-pressed="true"] { color:var(--accent-ink); background:var(--accent); }
+.mu-cache-state { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px; margin:12px 0; color:var(--muted); }
+.mu-source-state { color:var(--accent); }
