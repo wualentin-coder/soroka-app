@@ -1,7 +1,8 @@
 class LoopDeck {
-  constructor(track,{count,index,card,onChange,onAction}) {
+  constructor(track,{count,index,card,onChange,onAction,actionLabel}) {
     this.track=track;this.count=count;this.position=index;this.card=card;this.onChange=onChange;
     this.onAction=onAction;
+    this.actionLabel=actionLabel;
     this.velocity=0;this.frame=0;this.base=null;this.drag=null;this.ignoreClickUntil=0;this.lift=0;
     this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.abort=new AbortController();const options={signal:this.abort.signal};
@@ -10,6 +11,7 @@ class LoopDeck {
     track.addEventListener('pointermove',e=>this.move(e),options);
     track.addEventListener('pointerup',e=>this.up(e),options);
     track.addEventListener('pointercancel',e=>this.up(e,true),options);
+    track.addEventListener('pointerleave',e=>{if(this.drag&&!this.drag.moved)this.up(e,true);},options);
     track.addEventListener('lostpointercapture',e=>{if(this.drag)this.up(e,true);},options);
     track.addEventListener('click',e=>{if(performance.now()<this.ignoreClickUntil){e.preventDefault();e.stopImmediatePropagation();}},{...options,capture:true});
     track.addEventListener('wheel',e=>{
@@ -56,8 +58,7 @@ class LoopDeck {
   down(e){
     if(e.button!==0||(!this.onAction&&this.count<2)||this.drag||this.spinning)return;
     this.stop();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastAt:performance.now(),start:this.position,moved:false};
-    // Capture on the stable track before paint replaces the touched card.
-    this.track.setPointerCapture(e.pointerId);
+    // A tap must keep its button target. Capture in move(), just before repainting a drag.
   }
   move(e){
     const d=this.drag;if(!d||d.id!==e.pointerId)return;
@@ -69,7 +70,7 @@ class LoopDeck {
       d.moved=true;this.track.setPointerCapture(e.pointerId);this.track.classList.add('dragging');
     }
     if(d.axis==='y'){
-      d.dy=dy;this.track.dataset.cardAction=dy<0?'Просмотрено':'Действия';this.paint();return;
+      d.dy=dy;this.track.dataset.cardAction=this.actionLabel?.(dy<0?'viewed':'menu',this.itemIndex(Math.round(this.position))) || (dy<0?'Просмотрено':'Действия');this.paint();return;
     }
     const now=performance.now(),dt=Math.max(8,now-d.lastAt);
     this.velocity=this.velocity*.25+(-(e.clientX-d.lastX)/dt*1000/this.step)*.75;
