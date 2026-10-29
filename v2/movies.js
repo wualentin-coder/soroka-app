@@ -312,7 +312,8 @@ function renderMovieRateSheet() {
   const item = sheet.movieId ? savedItem("movies", sheet.movieId) : null;
   const title = pick ? pick.title : item?.title || "Фильм";
   const stars = Array.from({ length: 10 }, (_, i) => `<button type="button" class="star big" data-action="movie-rate-pick" data-value="${i + 1}" aria-label="${i + 1} из 10"><span>${icon("star")}</span><b>${i + 1}</b></button>`).join("");
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet movie-rate-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Как вам «${esc(title)}»?</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">Оценка от 1 до 10 — по ней я подбираю дальше.</p><div class="star-pad">${stars}</div><div class="sheet-actions"><button class="ghost-button" type="button" data-action="movie-rate-pick" data-value="0">Смотрел, без оценки</button></div></section></div>`;
+  const later = sheet.afterPlayback ? `<button class="ghost-button" type="button" data-action="close-sheet">Позже</button>` : "";
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet movie-rate-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Как вам «${esc(title)}»?</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">Оценка от 1 до 10 — по ней я подбираю дальше.</p><div class="star-pad">${stars}</div><div class="sheet-actions">${later}<button class="ghost-button" type="button" data-action="movie-rate-pick" data-value="0">Смотрел, без оценки</button></div></section></div>`;
 }
 
 /** Подробности предложения: постер, почему, три действия. */
