@@ -544,7 +544,7 @@ function renderSavedPage() {
     : category === "movies" && ui.savedFilter === "viewed" ? `${seenTabs}${movieSeenFilters()}${renderSavedSectionChips(category, movieTools + sortSelect)}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
     : `${seenTabs}${category === 'movies' && movieCarouselEnabled() ? `<div class="movie-carousel-filters">${renderSavedSectionChips(category,movieTools + sortSelect)}</div>` : renderSavedSectionChips(category, movieTools + sortSelect)}${toolbar}${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`;
   const aside = `<div class="side-card"><h3>Библиотека</h3><div class="side-row"><span>Всего сохранено</span><b>${savedCount()}</b></div><div class="side-row"><span>В очереди</span><b>${allMinutes} мин</b></div><p class="side-note">Ссылки, посты и файлы остаются рядом с заметками и списками.</p></div>`;
-  return `<div class="saved-section-screen ${category === "movies" ? "movie-library-screen" : ""}">${heading}<div class="content-grid"><div class="content-main">${category==="movies"&&!movieCarouselEnabled()&&moviePlansTab()&&typeof universeUi!=="undefined"&&universeUi.lists.length?`<p class="section-note">В счётчиках — карточки: каждый марафон считается одной.</p>`:""}${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
+  return `<div class="saved-section-screen ${category === "movies" ? "movie-library-screen" : ""}">${heading}<div class="content-grid"><div class="content-main">${main}</div><aside class="content-aside">${aside}</aside></div></div>`;
 }
 /** Фильмы: что посмотреть и что уже посмотрено — две вкладки, а не пункт в меню. */
 function movieSeenTabs() {
