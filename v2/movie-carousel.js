@@ -41,6 +41,7 @@ function movieCarouselSeries(item) {
   return label ? `<span class="movie-deck-series" aria-label="Прогресс сериала">${esc(label)}</span>` : "";
 }
 function movieCarouselCard(item, index, slot) {
+  if(typeof movieMarathonIsCard==='function'&&movieMarathonIsCard(item))return movieMarathonCarouselCard(item,index,slot);
   return `<article class="movie-deck-card" data-index="${index}" data-slot="${slot}"><button type="button" class="movie-deck-poster" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}" aria-label="Открыть ${esc(item.title)}">${movieCoverMarkup(item)}</button>${movieCarouselSeries(item)}<button type="button" class="movie-deck-pin ${item.pinned ? "is-pinned" : ""}" data-action="saved-pin-card" data-category="movies" data-id="${esc(item.id)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}" aria-pressed="${Boolean(item.pinned)}">${icon("bookmark", "icon-sm")}</button><button type="button" class="movie-deck-info" data-action="saved-open" data-category="movies" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong>${movieCarouselMetadata(item)}${movieCarouselScores(item)}<span class="movie-deck-description">${esc(movieCardBlurb(item))}</span></button></article>`;
 }
 function mountMovieCarousel() {
@@ -49,15 +50,16 @@ function mountMovieCarousel() {
   movieLayoutObserver?.disconnect();movieLayoutObserver=null;
   movieDeck?.destroy(); movieDeck = null;
   if (!track || !movieCarouselEnabled()) return;
-  const items = savedVisibleItems();
+  const items = typeof movieMarathonEntries==='function'?movieMarathonEntries(savedVisibleItems()):savedVisibleItems();
   if (!items.length) return;
-  const index = Math.max(0, items.findIndex(item => item.id === movieDeckId));
+  const index = Math.max(0, items.findIndex(item => item.id === movieDeckId || item.memberIds?.includes(movieDeckId)));
   sizeMovieCarousel(track);
   movieDeck = new LoopDeck(track, {count: items.length, index, card: (i, slot) => movieCarouselCard(items[i], i, slot), onAction: (action,i)=>{
+    if(items[i]?._movieMarathon){movieMarathonOpen(items[i]);return;}
     const item=savedItem('movies',items[i].id);if(!item)return;
     if(action==='viewed')toggleMovieViewed(item);
     else {ui.sheet={kind:'saved',category:'movies',id:item.id,mode:'carousel-actions',justRendered:false};render();}
-  }, onChange: i => {
+  }, actionLabel:(action,i)=>items[i]?._movieMarathon?'Открыть марафон':action==='viewed'?'Просмотрено':'Действия', onChange: i => {
     movieDeckId = items[i].id;
     const count = document.getElementById("movie-deck-count");
     if (count) count.textContent = `${i + 1} из ${items.length}`;
@@ -84,7 +86,7 @@ document.addEventListener("click", event => {
   if(event.target.closest('[data-action="movie-random"]') && movieCarouselEnabled() && movieDeck){
     event.preventDefault();event.stopImmediatePropagation();
     if(movieDeck.spinning)return;
-    const items=savedVisibleItems(),current=movieDeck.wrap(Math.round(movieDeck.position));
+    const items=typeof movieMarathonEntries==='function'?movieMarathonEntries(savedVisibleItems()):savedVisibleItems(),current=movieDeck.wrap(Math.round(movieDeck.position));
     const choice=movieRandomPick(items,items[current]?.id),index=items.findIndex(item=>item.id===choice?.id);
     if(items.length)movieDeck.spinTo(index,2400);return;
   }
