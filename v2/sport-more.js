@@ -565,28 +565,17 @@ Object.assign(SP_ACTIONS, {
     const packet = await spCopyPacket({ periodDays: sheet.period === "all" ? null : Number(sheet.period || 30), profile: sheet.withProfile !== false, health: Boolean(sheet.withHealth) });
     if (packet && spState().sheet === sheet) { sheet.packet = packet; render(); }
   },
-  "sp-copy-packet": () => spOpen("import"),
+  "sp-copy-packet": () => spAiOpen(),
 });
 
-// Добавить программу: инструкция для ИИ и JSON, который он вернул.
-SP_SHEETS.import = sheet => {
-  const preview = sheet.preview;
-  const gaps = SP().profileGaps(spState().state);
-  return { title: "Новая программа с ИИ", wide: true, body: `<section class="sp-group"><p class="sp-kicker">1 · Инструкция и ваши данные</p>${gaps.any ? `<p class="sp-error">В профиле не заполнено: ${[gaps.profile ? "анкета" : "", gaps.equipment ? "инвентарь" : "", gaps.muscles ? "фокус мышц" : "", gaps.measurements.length ? "замеры" : ""].filter(Boolean).join(", ")} — ИИ спросит это сам или составит план вслепую.</p>` : ""}
-    <p class="section-note">Правила формата и ваш профиль, замеры, инвентарь, фокус мышц и историю — одним текстом. Вставьте его в ИИ одним сообщением.</p>
-    <details class="sp-details"><summary>Что включить</summary>${spExport(sheet)}</details>
-    <button class="primary-button sp-wide" type="button" data-action="sp-export-copy">Скопировать инструкцию + данные</button>${sheet.packet ? `<label class="field">Скопированный текст<textarea rows="6" readonly>${spEsc(sheet.packet)}</textarea></label>` : ""}</section>
-    <section class="sp-group"><p class="sp-kicker">2 · Ответ ИИ</p><p class="section-note">Вставьте JSON, который он вернул. Совпадения дат добавятся вариантами — старые планы и подходы останутся.</p>
-    <label class="field">Файл .json<input type="file" accept=".json,application/json" data-sp-import-file></label>
-    <label class="field">Или текст<textarea rows="6" spellcheck="false" data-sp-import-text placeholder='{"schema_version": 2, "program": …, "workouts": […]}'>${spEsc(sheet.text || "")}</textarea></label>
-    <button class="ghost-button sp-wide" type="button" data-action="sp-import-check" ${sheet.text?.trim() ? "" : "disabled"}>Проверить</button>
-    ${preview ? `<section class="sp-group sp-preview"><strong>${spEsc(preview.title)}</strong><p>${spDateShort(preview.dates[0])} — ${spDateShort(preview.dates[preview.dates.length - 1])}</p><dl class="sp-stats"><div><dt>Новых занятий</dt><dd>${preview.added}</dd></div><div><dt>Варианты на занятую дату</dt><dd>${preview.alternatives}</dd></div><div><dt>Уже добавлено</dt><dd>${preview.duplicates}</dd></div></dl>${preview.timezone !== preview.myZone ? `<p class="section-note">Пояс программы: ${spEsc(preview.timezone)}; ваш: ${spEsc(preview.myZone)}. Даты останутся такими, как в JSON.</p>` : ""}${preview.added ? `<button class="primary-button sp-wide" type="button" data-action="sp-import-save" ${sheet.saving ? "disabled" : ""}>${sheet.saving ? "Добавляю…" : "Добавить программу"}</button>` : `<p class="section-note">Все занятия уже добавлены.</p>`}</section>` : ""}</section>` };
-};
+// AI generation and optional manual import share the same validated preview.
+SP_SHEETS.import = sheet => spAiSheet(sheet);
+
 document.addEventListener("input", event => {
   if (!event.target.matches?.("[data-sp-import-text]")) return;
   const sheet = spState().sheet;
   const had = Boolean(sheet.text?.trim());
-  sheet.text = event.target.value; sheet.preview = null; spState().sheetError = "";
+  sheet.text = event.target.value; sheet.generated = false; sheet.preview = null; spState().sheetError = "";
   const button = document.querySelector('[data-action="sp-import-check"]'); if (button) button.disabled = !sheet.text.trim();
   if (had !== Boolean(sheet.text.trim())) return;
 });
@@ -595,7 +584,7 @@ document.addEventListener("change", async event => {
   const file = event.target.files?.[0];
   if (!file) return;
   if (file.size > SP().MAX_IMPORT_BYTES) return spSheetError("Файл больше 2 МиБ.");
-  try { const sheet = spState().sheet; sheet.text = await file.text(); sheet.preview = null; render(); }
+  try { const sheet = spState().sheet; const text = await file.text(); if (spState().sheet !== sheet) return; sheet.text = text; sheet.generated = false; sheet.preview = null; render(); }
   catch (_) { spSheetError("Не удалось прочитать файл. Попробуйте вставить текст."); }
 });
 function spImportCheck(text) {
@@ -616,7 +605,7 @@ function spImportCheck(text) {
   return { added: result.added, duplicates: result.duplicates, alternatives, title: input.program.title, dates: input.workouts.map(w => w.date).sort(), timezone: input.program.timezone, myZone: C.notificationSettings(s.state.notificationSettings).timeZone };
 }
 Object.assign(SP_ACTIONS, {
-  "sp-import-open": () => spOpen("import"),
+  "sp-import-open": () => spAiOpen(),
   "sp-import-check": () => {
     const sheet = spState().sheet;
     try { sheet.preview = spImportCheck(sheet.text || ""); spState().sheetError = ""; render(); }
@@ -624,7 +613,7 @@ Object.assign(SP_ACTIONS, {
   },
   "sp-import-save": async () => {
     const s = spState(), sheet = s.sheet;
-    if (!sheet.preview || sheet.saving) return;
+    if (!sheet.preview || sheet.saving || sheet.generating) return;
     sheet.saving = true; render();
     try {
       spImportCheck(sheet.text);
@@ -632,7 +621,7 @@ Object.assign(SP_ACTIONS, {
       if (!answer || answer.error) throw new Error(answer?.error || "Сервер не подтвердил импорт. Можно безопасно повторить.");
       s.catalog = answer.catalog || s.catalog;
       toast(answer.added ? `Добавлено занятий: ${answer.added}` : "Этот план уже добавлен");
-      s.sheet = null; s.tab = "training"; render();
-    } catch (error) { sheet.saving = false; spSheetError(error.message); }
+      if (s.sheet === sheet) { s.sheet = null; s.tab = "training"; } render();
+    } catch (error) { sheet.saving = false; if (s.sheet === sheet) spSheetError(error.message); }
   },
 });
