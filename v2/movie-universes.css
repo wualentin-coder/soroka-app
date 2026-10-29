@@ -38,7 +38,8 @@
 .mu-hero-art { display:flex; gap:8px; height:156px; }
 .mu-hero-art .mu-poster { flex:1; min-width:0; height:100%; border-radius:13px; }
 .mu-part-row { display:flex; align-items:center; gap:9px; border-bottom:1px solid var(--line); padding:9px 0; }
-.mu-tick { flex:0 0 44px; width:44px; height:44px; border:1px solid var(--line); border-radius:13px; color:var(--muted); background:var(--surface); font:inherit; font-size:12px; font-variant-numeric:tabular-nums; }
+.mu-tick { display:grid; place-items:center; padding:0; flex:0 0 44px; width:44px; height:44px; border:1px solid var(--line); border-radius:13px; color:var(--muted); background:var(--surface); font:inherit; font-size:12px; font-variant-numeric:tabular-nums; }
+.mu-tick svg { display:block; width:16px; height:16px; margin:0; }
 .mu-tick[aria-pressed="true"] { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
 .mu-part-open { display:flex; align-items:center; gap:10px; padding:0; flex:1; min-width:0; border:0; background:transparent; color:var(--text); text-align:left; font:inherit; }
 .mu-part-open>.mu-poster,.mu-film-results .mu-poster { width:44px; height:64px; flex:0 0 44px; }
@@ -82,3 +83,26 @@
 .mu-phase summary .mu-phase-count { margin-left:0; flex-shrink:0; }
 .mu-part-row.is-series { position:relative; margin-left:18px; }
 .mu-part-row.is-series::before { content:""; position:absolute; left:-18px; top:0; width:12px; height:50%; border-left:1px solid var(--line); border-bottom:1px solid var(--line); border-bottom-left-radius:5px; }
+.mu-operation { display:flex; align-items:center; gap:10px; min-height:66px; padding:12px; margin:10px 0; border:1px solid var(--line); border-radius:16px; background:var(--surface-soft); }
+.mu-operation>span:nth-child(2) { display:grid; gap:5px; min-width:0; flex:1; }
+.mu-operation b { font-size:13px; overflow-wrap:anywhere; }
+.mu-operation small { color:var(--muted); font-size:11px; line-height:1.5; }
+.mu-operation>[data-mu-elapsed] { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mu-spinner { width:20px; height:20px; flex:0 0 20px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:mu-spin 1s linear infinite; }
+@keyframes mu-spin { to { transform:rotate(360deg); } }
+.mu-episode-panel { margin:0 0 12px 18px; padding:8px 0 0 8px; border-left:1px solid var(--line); }
+.mu-season { margin:6px 0; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--surface); }
+.mu-season-head { display:flex; align-items:center; gap:7px; padding:6px; }
+.mu-episode-tick { display:grid; place-items:center; flex:0 0 44px; width:44px; height:44px; border:1px solid var(--line); border-radius:13px; background:var(--surface-soft); color:var(--muted); font:inherit; font-size:12px; }
+.mu-episode-tick[aria-pressed="true"],.mu-episode-row[aria-pressed="true"] .mu-episode-tick { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+.mu-season-open { display:flex; gap:8px; align-items:center; flex:1; min-width:0; min-height:44px; padding:6px 3px; background:transparent; border:0; color:var(--text); font:inherit; text-align:left; }
+.mu-season-open b { font-size:13px; }
+.mu-season-open small { margin-left:auto; font-size:11px; color:var(--muted); white-space:nowrap; }
+.mu-episode-list { border-top:1px solid var(--line); padding:4px 6px; }
+.mu-episode-row { display:flex; align-items:center; gap:10px; width:100%; min-height:54px; padding:5px 0; border:0; background:transparent; color:var(--text); text-align:left; font:inherit; }
+.mu-episode-row>span:last-child { display:grid; gap:4px; }
+.mu-episode-row b { font-size:13px; }
+.mu-episode-row small { font-size:11px; color:var(--muted); }
+.mu-series-info { flex:0 0 44px; width:44px; min-width:44px; min-height:44px; padding:0; }
+.mu-hero .mu-episode-total { display:block; margin-top:6px; }
+@media(prefers-reduced-motion:reduce){ .mu-spinner { animation:none; } }
