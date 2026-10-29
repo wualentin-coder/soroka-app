@@ -74,3 +74,11 @@
 .mu-phase:not([open]) summary>svg { transform:rotate(-90deg); }
 .mu-manage { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
 .mu-manage button { min-height:44px; }
+
+.mu-phase summary .mu-phase-name { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 8px; margin-left:0; color:var(--accent); }
+.mu-phase-name b { font-size:13px; }
+.mu-phase-name small { font-size:11px; color:var(--muted); }
+.mu-phase-rule { flex:1; height:1px; min-width:8px; background:var(--line); }
+.mu-phase summary .mu-phase-count { margin-left:0; flex-shrink:0; }
+.mu-part-row.is-series { position:relative; margin-left:18px; }
+.mu-part-row.is-series::before { content:""; position:absolute; left:-18px; top:0; width:12px; height:50%; border-left:1px solid var(--line); border-bottom:1px solid var(--line); border-bottom-left-radius:5px; }
