@@ -552,3 +552,15 @@ button.sp-ex-load:disabled { cursor: default; }
 .sp-ex-side .sp-ex-reset { min-height: 44px; padding: 0 8px; font-size: 11px; }
 
 [data-action="sp-toggle-open"] { min-height:44px; }
+.sp-ai-fields { border:0; padding:0; margin:0; display:grid; gap:14px; min-width:0; }
+.sp-ai-directions { display:flex; padding:4px; gap:4px; border-radius:14px; background:var(--surface-soft); }
+.sp-ai-directions button { flex:1; min-width:0; min-height:44px; padding:6px; border:0; border-radius:11px; background:none; color:var(--muted); font:inherit; font-size:12px; font-weight:800; }
+.sp-ai-directions button[aria-pressed="true"] { background:var(--accent); color:var(--accent-ink); }
+.sp-ai-status { border:1px solid var(--line); padding:14px; border-radius:16px; color:var(--accent); font-weight:800; }
+.sp-ai-status small { display:block; margin-top:6px; color:var(--muted); font-size:12px; font-weight:400; }
+.sp-ai-manual { display:grid; gap:12px; padding-top:12px; }
+.sp-ai-preview h3 { margin:6px 0; }
+.sp-ai-exercises { list-style:none; padding:0; margin:0; }
+.sp-ai-exercises li { display:grid; gap:4px; padding:12px 0; border-bottom:1px solid var(--line); }
+.sp-ai-exercises span { color:var(--accent); font-size:12px; }
+.sp-ai-exercises small { color:var(--muted); font-size:12px; line-height:1.5; }
