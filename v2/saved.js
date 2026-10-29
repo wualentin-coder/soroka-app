@@ -125,6 +125,37 @@ function sortSavedItems(a, b, mode = ui.savedSort) {
   if (mode === "time") return Number(b.minutes || 0) - Number(a.minutes || 0) || (b.created || "").localeCompare(a.created || "");
   return (b.created || "").localeCompare(a.created || "");
 }
+// Shared shuffle cycle: a visual reel may repeat posters, its selected results do not.
+let movieRandomCycle = null;
+function movieRandomInt(size) {
+  if (globalThis.crypto?.getRandomValues) {
+    const word = new Uint32Array(1), limit = Math.floor(4294967296 / size) * size;
+    do { crypto.getRandomValues(word); } while (word[0] >= limit);
+    return word[0] % size;
+  }
+  return Math.floor(Math.random() * size);
+}
+function movieRandomPick(items, currentId) {
+  const pool = [...new Map(items.map(item => [item.id, item])).values()];
+  if (!pool.length) return null;
+  const ids = pool.map(item => item.id).sort(), signature = JSON.stringify(ids);
+  if (!movieRandomCycle) {
+    try { movieRandomCycle = JSON.parse(localStorage.getItem('flow.movie-random.v2')); } catch { /* Memory-only cycle remains usable. */ }
+  }
+  if (movieRandomCycle?.pool !== signature || !Array.isArray(movieRandomCycle.remaining)
+    || movieRandomCycle.remaining.some(id => !ids.includes(id)) || new Set(movieRandomCycle.remaining).size !== movieRandomCycle.remaining.length) {
+    movieRandomCycle = {pool: signature, remaining: ids.filter(id => id !== currentId), last: currentId};
+  }
+  if (!movieRandomCycle.remaining.length) movieRandomCycle.remaining = [...ids];
+  const remaining = movieRandomCycle.remaining;
+  // Every remaining candidate has equal probability; avoid the visible card at cycle boundaries.
+  const choices = remaining.length > 1 ? remaining.filter(id => id !== currentId && id !== movieRandomCycle.last) : remaining;
+  const available = choices.length ? choices : remaining;
+  const selected = available[movieRandomInt(available.length)];
+  remaining.splice(remaining.indexOf(selected), 1); movieRandomCycle.last = selected;
+  try { localStorage.setItem('flow.movie-random.v2', JSON.stringify(movieRandomCycle)); } catch { /* Continue this session if storage is full. */ }
+  return pool.find(item => item.id === selected);
+}
 function savedVisibleItems() {
   if (ui.savedCategory === "movies" && typeof movieBuiltinSection === "function" && movieBuiltinSection(savedSection("movies", ui.savedSection))) ui.savedSection = "";
   const q = ui.savedQuery.trim().toLocaleLowerCase("ru-RU");
@@ -814,8 +845,7 @@ function savedAction(action, control) {
     if (!pool.length) pool = savedItems("movies").filter(fresh);
     ui.savedFilter = was;
     if (!pool.length) { toast("В планах пусто"); return true; }
-    const last = ui.randomMovie;
-    const choice = pool.length > 1 ? pool.filter(item => item.id !== last)[Math.floor(Math.random() * (pool.length - 1))] : pool[0];
+    const choice = movieRandomPick(pool, ui.randomMovie);
     ui.randomMovie = choice.id;
     openSavedRecord("movies", choice.id);
     if (ui.sheet) ui.sheet.random = true;
