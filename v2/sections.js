@@ -188,6 +188,7 @@ function renderExtendedSheet() {
   if (ui.sheet.kind === "vpn-exceptions") return renderVpnExceptionsSheet();
   if (ui.sheet.kind === "goal-deposit") return renderGoalDepositSheet();
   if (ui.sheet.kind === "movie-rate") return renderMovieRateSheet();
+  if (ui.sheet.kind === "movie-series-part") return renderMovieSeriesPartSheet();
   if (ui.sheet.kind === "movie-run") return renderMovieRunSheet();
   if (ui.sheet.kind === "cook") return renderCookSheet();
   if (ui.sheet.kind === "finance-reconcile") return renderReconcileSheet();
