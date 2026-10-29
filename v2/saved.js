@@ -375,6 +375,7 @@ function multipartCard(group) {
   return `<div class="record-card file-group ${open ? "is-open" : ""} ${missing.length ? "has-gap" : ""}"><button type="button" class="file-group-head" data-action="file-group-toggle" data-key="${esc(key)}" aria-expanded="${open}"><span class="record-kicker">${icon("archive", "icon-sm")}Архив · ${parts.length} ${word(parts.length)}</span><span class="record-title">${esc(parts[0].name)}</span><span class="record-meta"><span>${esc(state)}</span><span>${icon(open ? "up" : "down", "icon-sm")}</span></span></button>${rows}</div>`;
 }
 function savedRecordCard(item, category) {
+  if(category==='movies' && typeof movieMarathonIsCard==='function' && movieMarathonIsCard(item))return movieMarathonListCard(item);
   return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}${(category === "movies" ? movieIsViewed(item) : item.viewed) ? `<span class="record-seen" title="Просмотрено" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon(category === "products" ? "heart" : "bookmark", "icon-sm")}</button></div>`;
 }
 /** Самолёт, поезд или концерт — по типу билета. */
@@ -425,13 +426,16 @@ function ticketCodeBlock(item) {
 }
 function renderSavedResults() {
   let all = savedVisibleItems();
-  if (typeof movieCarouselEnabled === "function" && movieCarouselEnabled() && all.length) return `<div class="movie-deck" id="movie-deck" tabindex="0" role="region" aria-roledescription="карусель" aria-label="Фильмы в планах"></div><div id="movie-deck-count" class="movie-deck-count"></div>`;
+  if(typeof movieMarathonEntries==='function'){movieMarathonEnsure();all=movieMarathonEntries(all);}
+  const marathonStatus=typeof movieMarathonStatus==='function'?movieMarathonStatus():'';
+  if(!all.length && marathonStatus && (movieMarathonPlans.loading||movieMarathonPlans.queued))return marathonStatus;
+  if (typeof movieCarouselEnabled === "function" && movieCarouselEnabled() && all.length) return marathonStatus+`<div class="movie-deck" id="movie-deck" tabindex="0" role="region" aria-roledescription="карусель" aria-label="Фильмы и марафоны в планах"></div><div id="movie-deck-count" class="movie-deck-count"></div>`;
   // Сотни карточек разом тормозят телефон: показываем порциями.
   const limit = Math.max(60, Number(ui.savedLimit) || 60);
   const items = all.slice(0, limit);
   const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
   if (ui.savedCategory === "products" && ui.productTab === "wishes") return `<div class="product-wishes-list">${items.map(productWishRow).join("") || emptyCard("Хотелок пока нет", "Запишите, что хотите купить. Ссылку или конкретный товар можно выбрать позже.")}</div>${more}<button class="ghost-button" type="button" data-action="product-wish-new">${icon("plus", "icon-sm")}Добавить хотелку</button>`;
-  return items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись.");
+  return marathonStatus+(items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись."));
 }
 function noteDateLabel(item) {
   if (item.updated) return shortDate(localIso(new Date(item.updated)));
@@ -491,11 +495,12 @@ function renderSavedSectionChips(category, tail = "") {
   const sections = savedSections(category).filter(section => category !== "movies" || !movieBuiltinSection(section));
   const pool = savedChipPool(category);
   const manage = category === "movies" ? `<button type="button" class="map-category-chip" data-action="saved-sections-manage">${icon("plus","icon-sm")}Раздел</button>` : "";
-  const unassigned = pool.filter(item => !item.categoryId).length;
+  const movieCount=section=>typeof movieMarathonCount==='function'&&category==='movies'?movieMarathonCount(pool,section,ui.movieType||''):pool.filter(item=>!section || (section==='__none__'?!item.categoryId:item.categoryId===section)).length;
+  const unassigned = movieCount('__none__');
   // Одна папка или ни одной — выбирать не из чего, ряд не нужен.
   // Папки видны всегда, когда хоть одна не пуста: по ним и ходят внутри раздела.
   if (!sections.some(section => savedItems(category).some(item => item.categoryId === section.id))) return base+(manage ? `<div class="movie-folder-chips" ${movieFiltersOpen === false ? "hidden" : ""}>${manage}${category === "movies" ? tail : ""}</div>` : "")+(tail && category !== "movies" ? `<div class="saved-sort-row">${tail}</div>` : "");
-  return base+`<div class="map-categories saved-subcategories ${category === "movies" ? "movie-folder-chips" : ""}" ${category === "movies" && movieFiltersOpen === false ? "hidden" : ""} aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${pool.length}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(sectionIcon(section, savedIcon(category)), "icon-sm")}${esc(section.name)}<span>${pool.filter(item => item.categoryId === section.id).length}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${manage}${category === "movies" ? tail : ""}</div>${tail && category !== "movies" ? `<div class="saved-sort-row">${tail}</div>` : ""}`;
+  return base+`<div class="map-categories saved-subcategories ${category === "movies" ? "movie-folder-chips" : ""}" ${category === "movies" && movieFiltersOpen === false ? "hidden" : ""} aria-label="Разделы: ${esc(SAVED_NAMES[category])}"><button class="map-category-chip ${!ui.savedSection ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="" aria-pressed="${!ui.savedSection}">Все <span>${movieCount('')}</span></button>${sections.filter(section => pool.some(item => item.categoryId === section.id)).map(section => `<button class="map-category-chip ${ui.savedSection === section.id ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="${esc(section.id)}" aria-pressed="${ui.savedSection === section.id}" style="--map-color:${esc(section.color)}">${icon(sectionIcon(section, savedIcon(category)), "icon-sm")}${esc(section.name)}<span>${movieCount(section.id)}</span></button>`).join("")}${unassigned ? `<button class="map-category-chip ${ui.savedSection === "__none__" ? "active" : ""}" type="button" data-action="saved-section-filter" data-id="__none__" aria-pressed="${ui.savedSection === "__none__"}">Без раздела <span>${unassigned}</span></button>` : ""}${manage}${category === "movies" ? tail : ""}</div>${tail && category !== "movies" ? `<div class="saved-sort-row">${tail}</div>` : ""}`;
 }
 /** Разделы лентой — только непустые (и открытый), открытый — по центру. */
 function savedSwitch() {
@@ -843,10 +848,12 @@ function savedAction(action, control) {
     ui.savedFilter = "all";
     let pool = savedVisibleItems().filter(fresh);
     if (!pool.length) pool = savedItems("movies").filter(fresh);
+    if(typeof movieMarathonEntries==='function')pool=movieMarathonEntries(pool);
     ui.savedFilter = was;
     if (!pool.length) { toast("В планах пусто"); return true; }
     const choice = movieRandomPick(pool, ui.randomMovie);
     ui.randomMovie = choice.id;
+    if(typeof movieMarathonIsCard==='function'&&movieMarathonIsCard(choice)){movieMarathonOpen(choice);return true;}
     openSavedRecord("movies", choice.id);
     if (ui.sheet) ui.sheet.random = true;
     render();
