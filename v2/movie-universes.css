@@ -66,7 +66,12 @@
 .mu-heading-actions { display:flex; align-items:center; gap:6px; }
 
 .mu-own-row { position:relative; }
-.mu-own-row .mu-card { padding-right:56px; }
+.mu-own-row .mu-card { gap:12px; padding:16px; }
+.mu-own-row .mu-card-art { flex:0 0 96px; width:96px; min-width:0; height:100px; padding-left:12px; }
+.mu-own-row .mu-card-art .mu-poster { flex:0 0 44px; height:80px; margin-left:-12px; align-self:center; }
+.mu-own-row .mu-card-copy strong { padding-right:28px; overflow-wrap:normal; word-break:normal; }
+.mu-own-row .mu-card>svg { display:none; }
+.mu-own-row .mu-card-copy { gap:8px; }
 .mu-card-delete { position:absolute; right:8px; top:8px; color:var(--muted); }
 .mu-phase { border-bottom:1px solid var(--line); margin:12px 0; }
 .mu-phase summary { display:flex; align-items:center; gap:8px; min-height:44px; color:var(--accent); font-size:13px; font-weight:800; cursor:pointer; list-style:none; }
