@@ -101,8 +101,13 @@ async function universeSave(d, done) {
 async function universeLoadStory(d, retry = false) {
   const key = universeStoryKey(d);
   if (universeUi.story.has(key) && !retry) return;
+  const cacheKey=movieStoryCacheKey(d.parts),stored=!retry&&movieLookupRead(cacheKey);
+  if(movieStoryValid(stored,d.parts)){universeUi.story.set(key,{...stored,loading:false});return;}
   const state = { loading: true }; universeUi.story.set(key, state); universeOperationStart("story","Проверяю сюжетный порядок","Ищу источники и сверяю хронологию частей"); universePaint();
-  try { Object.assign(state, await universeApi("order", { parts: d.parts })); } catch { state.error = true; }
+  try {
+    Object.assign(state, await universeApi("order", { parts: d.parts }));
+    if(movieStoryValid(state,d.parts))movieLookupWrite(cacheKey,{status:state.status,order:state.order,unplaced:state.unplaced,sources:state.sources},30*86400000);
+  } catch { state.error = true; }
   state.loading = false; universeOperationEnd("story"); universePaint();
 }
 function universeDraft(d) {
