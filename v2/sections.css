@@ -1000,8 +1000,9 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .reco-block { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .reco-block h2 { margin: 0; font-size: 15px; }
 .reco-hint { color: var(--subtle); font-size: 12px; line-height: 1.4; }
-.taste-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.taste-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--surface-soft); font-size: 12.5px; font-weight: 700; }
+.taste-chips { display: flex; flex-wrap: nowrap; gap: 6px; min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding: 2px 0; }
+.taste-chips:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.taste-chip { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--surface-soft); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
 .taste-chip b { color: var(--accent); font-size: 12px; }
 .reco-list, .reco-picks { display: grid; gap: 8px; }
 .reco-row { display: grid; grid-template-columns: 44px 1fr 20px; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-raised); color: inherit; font: inherit; text-align: left; cursor: pointer; }
