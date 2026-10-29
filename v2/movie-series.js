@@ -1,7 +1,7 @@
 /* Film-series navigation is a preview, never an automatic library import. */
 const movieSeriesCache = new Map();
 const moviePartCache = new Map();
-let movieSeriesOrder = (() => { try { return localStorage.getItem("flow.movie-series.order.v1") === "story" ? "story" : "release"; } catch { return "release"; } })();
+let movieSeriesOrder = (() => { try { return localStorage.getItem("flow.movie-series.order.v1") === "release" ? "release" : "story"; } catch { return "story"; } })();
 function movieSeriesEligible(item) { return !!item && !movieIsViewed(item) && !item.skipped && !isSeries(item); }
 function movieSeriesKey(item) { return JSON.stringify([item.id, item.title, item.year, item.imdbUrl, item.kinopoiskUrl]); }
 function movieSeriesCachePut(cache, key, value) {
@@ -79,8 +79,8 @@ function renderMovieSeries(item) {
   if (!movieSeriesEligible(item) || typeof window.sorokaMovieSeries !== "function") return "";
   const state = movieSeriesState(item);
   if (!state.loading && !state.error && state.parts.length < 2) return "";
-  const head = `<div class="movie-series-head"><h3>Серия фильмов</h3></div>`;
-  const tabs = state.loading || state.error ? "" : `<div class="movie-series-order" role="group" aria-label="Порядок просмотра">${[["release", "По выходу"], ["story", "По сюжету"]].map(([mode, label]) => `<button type="button" data-action="movie-series-order" data-id="${esc(item.id)}" data-order="${mode}" aria-pressed="${movieSeriesOrder === mode}">${label}</button>`).join("")}</div>`;
+  const head = `<div class="movie-series-head"><h3>Серия фильмов</h3>${!state.loading && !state.error && state.parts.length > 1 ? `<button class="small-button" type="button" data-action="movie-series-marathon" data-id="${esc(item.id)}">${icon('plus','icon-sm')}В марафон</button>` : ''}</div>`;
+  const tabs = state.loading || state.error ? "" : `<div class="movie-series-order" role="group" aria-label="Порядок просмотра">${[["story", "По сюжету"], ["release", "По выходу"]].map(([mode, label]) => `<button type="button" data-action="movie-series-order" data-id="${esc(item.id)}" data-order="${mode}" aria-pressed="${movieSeriesOrder === mode}">${label}</button>`).join("")}</div>`;
   const body = state.loading ? `<p class="section-note" role="status">Ищу связанные части…</p>`
     : state.error ? `<p class="section-note">Не удалось загрузить части.</p><button class="small-button" type="button" data-action="movie-series-retry" data-id="${esc(item.id)}">Повторить</button>`
     : movieSeriesOrder === "story" ? movieStoryBody(item, state) : movieSeriesTrack(item, state, state.parts, "Части серии по порядку выхода");
@@ -129,6 +129,11 @@ function renderMovieSeriesPartSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet movie-series-preview" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item?.title || sheet.title)}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${back}${body}</section></div>`;
 }
 function movieSeriesAction(action, control) {
+  if (action === 'movie-series-marathon') {
+    const item = savedItem('movies', control.dataset.id), state = item && movieSeriesCache.get(movieSeriesKey(item));
+    if (movieSeriesEligible(item) && state && !state.loading && !state.error && state.parts.length > 1 && confirmSheetDiscard()) universeFromSeries(item,state);
+    return true;
+  }
   if (action === "movie-series-order" || action === "movie-series-story-retry") {
     const item = savedItem("movies", control.dataset.id);
     if (!movieSeriesEligible(item)) return true;
