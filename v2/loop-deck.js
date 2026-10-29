@@ -12,7 +12,8 @@ class LoopDeck {
     track.addEventListener('pointerup',e=>this.up(e),options);
     track.addEventListener('pointercancel',e=>this.up(e,true),options);
     track.addEventListener('pointerleave',e=>{if(this.drag&&!this.drag.moved)this.up(e,true);},options);
-    track.addEventListener('lostpointercapture',e=>{if(this.drag)this.up(e,true);},options);
+    // Touch transfers implicit capture from the pressed button to this track.
+    track.addEventListener('lostpointercapture',e=>{if(e.target===track&&this.drag&&!track.hasPointerCapture(e.pointerId))this.up(e,true);},options);
     track.addEventListener('click',e=>{if(performance.now()<this.ignoreClickUntil){e.preventDefault();e.stopImmediatePropagation();}},{...options,capture:true});
     track.addEventListener('wheel',e=>{
       const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.shiftKey?e.deltaY:0;
