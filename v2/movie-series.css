@@ -2,6 +2,13 @@
 .movie-series-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .movie-series-head h3 { margin: 0; font-size: 14px; }
 .movie-series-head small { color: var(--muted); font-size: 11px; }
+.movie-series-order { display: flex; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 14px; background: var(--surface-soft); }
+.movie-series-order button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 800; }
+.movie-series-order button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px var(--line); }
+.movie-series-order button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.movie-series-sources { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.movie-series-sources a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; max-width: 100%; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.movie-series-unplaced { margin: 16px 0 8px; color: var(--muted); font-size: 12px; }
 .movie-series-track { display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-inline: contain; padding: 2px 2px 8px; -webkit-overflow-scrolling: touch; }
 .movie-series-part { flex: 0 0 112px; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--text); text-align: left; font: inherit; }
 .movie-series-part b { font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
