@@ -620,6 +620,7 @@ Object.assign(SP_ACTIONS, {
       const answer = await spCall("import", { json: sheet.text });
       if (!answer || answer.error) throw new Error(answer?.error || "Сервер не подтвердил импорт. Можно безопасно повторить.");
       s.catalog = answer.catalog || s.catalog;
+      if (answer.state) { s.state = SP().applyStateChanges(answer.state, s.pending); spRevision++; }
       toast(answer.added ? `Добавлено занятий: ${answer.added}` : "Этот план уже добавлен");
       if (s.sheet === sheet) { s.sheet = null; s.tab = "training"; } render();
     } catch (error) { sheet.saving = false; if (s.sheet === sheet) spSheetError(error.message); }
