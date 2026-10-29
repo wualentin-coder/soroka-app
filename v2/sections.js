@@ -176,6 +176,7 @@ document.addEventListener("submit", event => {
   goalDepositApply(1);
 }, true);
 function renderExtendedSheet() {
+  if (ui.sheet.kind === "universe-edit" || ui.sheet.kind === "universe-part") return renderUniverseSheet();
   if (ui.sheet.kind === "doc") return renderDocSheet();
   if (ui.sheet.kind === "doc-edit") return renderDocEditSheet();
   if (ui.sheet.kind === "doc-photo") return renderDocPhotoSheet();
@@ -221,9 +222,11 @@ function handleExtendedAction(action, control, event) {
   return sleepAction(action, control, event) || sportAction(action, control, event) || englishAction(action, control) || docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
+  if (typeof universeSubmit === "function" && universeSubmit(event)) return true;
   return loyaltySubmit(event) || mapSubmit(event) || savedSubmit(event) || financeSubmit(event) || moreSubmit(event);
 }
 function handleExtendedInput(event) {
+  if (typeof universeInput === "function" && universeInput(event)) return true;
   return loyaltyInput(event) || savedInput(event) || financeInput(event) || moreInput(event);
 }
 function handleExtendedChange(event) {
