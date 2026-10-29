@@ -1,5 +1,8 @@
 // Display groups only: marathon cards never become movie records or own their marks.
 const movieMarathonPlans = {loading:false,at:0,error:'',queued:false,back:null};
+let movieMarathonFrame=null;
+function movieMarathonBegin(){movieMarathonFrame={identities:null};}
+function movieMarathonEnd(){movieMarathonFrame=null;}
 const movieMarathonIsCard = item => Boolean(item?._movieMarathon);
 const movieMarathonPlansActive = settings => settings.savedCategory==='movies' && !['viewed','reco','skipped'].includes(settings.savedFilter);
 function movieMarathonEntries(items,settings=ui) {
@@ -9,10 +12,11 @@ function movieMarathonEntries(items,settings=ui) {
   const lists=universeUi.lists.filter(d=>!d.deleted_at);
   // Parse each library link once per calculation, not for every part of every list.
   // Rebuild from current records so in-place edits and refreshed lists stay visible.
-  const identities=lists.length?all.map(item=>({item,
+  const identities=movieMarathonFrame?.identities || (lists.length?all.map(item=>({item,
     imdb:item.imdbUrl?.match(/\/title\/(tt\d+)/)?.[1] || item.imdbId,
     kp:typeof moviePlayerKinopoiskId==='function'?moviePlayerKinopoiskId(item):''
-  })):[];
+  })):[]);
+  if(movieMarathonFrame)movieMarathonFrame.identities=identities;
   for(const d of lists) {
     const parts=universePartsVisible(d),imdbIds=new Set(parts.map(p=>p.imdbId).filter(Boolean)),kpIds=new Set(parts.map(p=>String(p.kpId||'')).filter(Boolean));
     const members=identities.filter(m=>(m.imdb&&imdbIds.has(m.imdb))||(m.kp&&kpIds.has(m.kp))).map(m=>m.item);
