@@ -82,7 +82,7 @@ document.addEventListener("click", event => {
   if (!/^https:\/\/reyoho\.ru\/film\/[1-9]\d{0,9}$/.test(url)) return;
   if (event.defaultPrevented) return;
   const item = savedItem("movies", link.dataset.id);
-  if (item && movieWatchUrl(item) === url) movieWatchRemember(item);
+  movieWatchRemember(item && movieWatchUrl(item) === url ? item : null);
   const tg = window.Telegram?.WebApp;
   if (!tg?.initData || typeof tg.openLink !== "function") return;
   try {
