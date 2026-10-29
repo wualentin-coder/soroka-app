@@ -598,7 +598,7 @@ function movieSeenFilters() {
 // ------------------------------------------------------------ отзыв и «Пересмотреть» в карточке
 
 function movieReviewBlock(item) {
-  if (!movieIsViewed(item) && !Number(item.rating)) return "";
+  if (!(Number(item.rating) > 0)) return "";
   const rated = Number(item.rating) > 0;
   return `<form class="movie-review ${rated && !item.review ? "invite" : ""}" data-id="${esc(item.id)}"><label><span>${rated ? "Пара слов о фильме" : "Ваш отзыв"}</span><textarea name="review" rows="2" maxlength="2000" placeholder="Что зацепило, что нет — учту, когда буду подбирать">${esc(item.review || "")}</textarea></label><button type="button" class="movie-rewatch ${item.rewatch ? "on" : ""}" data-action="movie-rewatch" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.rewatch)}">${icon("reset", "icon-sm")}${item.rewatch ? "В планах пересмотреть" : "Пересмотреть"}</button></form>`;
 }
