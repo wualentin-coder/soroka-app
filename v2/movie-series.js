@@ -7,14 +7,14 @@ function movieLookupRead(key) {
   try {
     const rows=JSON.parse(localStorage.getItem(movieLookupStorage)||'[]');
     const row=Array.isArray(rows)&&rows.find(r=>r.key===key&&r.until>Date.now());
-    return row?row.value:null;
+    return row?{...row.value,cachedUntil:row.until,checkedAt:row.at||row.until-30*86400000}:null;
   } catch { return null; }
 }
 function movieLookupWrite(key,value,ttl) {
   try {
     const stored=JSON.parse(localStorage.getItem(movieLookupStorage)||'[]');
     const rows=(Array.isArray(stored)?stored:[]).filter(r=>r.key!==key&&r.until>Date.now());
-    rows.push({key,value,until:Date.now()+ttl});
+    rows.push({key,value,at:Date.now(),until:Date.now()+ttl});
     while(rows.length>48||JSON.stringify(rows).length>600000)rows.shift();
     localStorage.setItem(movieLookupStorage,JSON.stringify(rows));
   } catch { /* Full/disabled storage must not prevent opening a film. */ }
@@ -39,13 +39,13 @@ function movieSeriesVisible(sourceId) {
 function movieSeriesState(item, retry = false) {
   const key = movieSeriesKey(item);
   let state = movieSeriesCache.get(key);
-  if (state && !retry) return state;
+  if (state && !retry && (state.loading||state.until>Date.now())) return state;
   const stored=!retry&&movieLookupRead('series:'+key);
   if(stored&&Array.isArray(stored.parts)) {
-    state={loading:false,error:false,parts:stored.parts,currentId:stored.currentId};
+    state={loading:false,error:false,parts:stored.parts,currentId:stored.currentId,until:stored.cachedUntil};
     movieSeriesCachePut(movieSeriesCache,key,state);return state;
   }
-  state = { loading: true, error: false, parts: [], currentId: "" };
+  state = { loading: true, error: false, parts: [], currentId: "",until:Date.now()+6*3600000 };
   movieSeriesCachePut(movieSeriesCache, key, state);
   setTimeout(async () => {
     try {
@@ -54,7 +54,7 @@ function movieSeriesState(item, retry = false) {
       state.parts = answer.parts;
       state.currentId = answer.currentId;
       movieLookupWrite('series:'+key,{parts:state.parts,currentId:state.currentId},6*3600000);
-    } catch { state.error = true; }
+    } catch { state.error = true;state.until=Date.now()+60000; }
     state.loading = false;
     const current = savedItem("movies", item.id);
     if (current && movieSeriesKey(current) === key && movieSeriesCache.get(key) === state && movieSeriesVisible(item.id)) render();
@@ -62,6 +62,7 @@ function movieSeriesState(item, retry = false) {
   return state;
 }
 function movieSeriesOwn(part) {
+  if(typeof movieSameIdentity==='function')return savedItems('movies').find(item=>movieSameIdentity(item,part));
   return savedItems("movies").find(item => item.imdbUrl?.match(/\/title\/(tt\d+)/)?.[1] === part.imdbId
     || (part.kinopoiskUrl && item.kinopoiskUrl === part.kinopoiskUrl)
     || (!item.imdbUrl && part.title && part.year && item.year === part.year && [item.title, item.originalTitle].filter(Boolean).some(t => [part.title, part.originalTitle].filter(Boolean).some(p => t.toLocaleLowerCase("ru") === p.toLocaleLowerCase("ru")))));
@@ -71,7 +72,7 @@ function movieStoryState(item, state, retry = false) {
   const cacheKey=movieStoryCacheKey(state.parts),stored=!retry&&movieLookupRead(cacheKey);
   if(movieStoryValid(stored,state.parts))return state.story={...stored,at:Date.now(),loading:false,error:false};
   if (state.story && !retry && (state.story.loading || Date.now() - state.story.at < (state.story.status === "ready" ? 6 * 3600000 : 900000))) return state.story;
-  const story = { at: Date.now(), loading: true, error: false, status: "unavailable", order: [], unplaced: [], sources: [] };
+  const story = { at: Date.now(), checkedAt:Date.now(), loading: true, error: false, status: "unavailable", order: [], unplaced: [], sources: [] };
   state.story = story;
   setTimeout(async () => {
     try {
@@ -107,7 +108,7 @@ function movieStoryBody(item, state) {
   const links = story.sources.map(source => {
     try { const u = new URL(source.url); return u.protocol === "https:" ? `<a href="${esc(u.href)}" target="_blank" rel="noopener noreferrer">${esc(u.hostname.replace(/^www\./, ""))}${icon("external", "icon-sm")}</a>` : ""; } catch { return ""; }
   }).filter(Boolean).join("");
-  return `${same ? '<p class="section-note">Сюжетный порядок совпадает с порядком выхода.</p>' : ""}${movieSeriesTrack(item, state, story.order.map(byId), "Части по хронологии сюжета")}${story.unplaced.length ? `<p class="movie-series-unplaced">Без подтверждённого места в сюжете</p>${movieSeriesTrack(item, state, story.unplaced.map(byId), "Части без подтверждённого места в сюжете", true)}` : ""}${links ? `<div class="movie-series-sources" aria-label="Источники хронологии">${links}</div>` : ""}`;
+  return `<div class="mu-cache-state"><small>Сохранённая хронология${story.checkedAt?" · "+new Date(story.checkedAt).toLocaleDateString("ru-RU"):""}</small><button type="button" class="text-action" data-action="movie-series-story-retry" data-id="${esc(item.id)}">Проверить заново</button></div>${same ? '<p class="section-note">Сюжетный порядок совпадает с порядком выхода.</p>' : ""}${movieSeriesTrack(item, state, story.order.map(byId), "Части по хронологии сюжета")}${story.unplaced.length ? `<p class="movie-series-unplaced">Без подтверждённого места в сюжете</p>${movieSeriesTrack(item, state, story.unplaced.map(byId), "Части без подтверждённого места в сюжете", true)}` : ""}${links ? `<div class="movie-series-sources" aria-label="Источники хронологии">${links}</div>` : ""}`;
 }
 function renderMovieSeries(item) {
   if (!movieSeriesEligible(item) || typeof window.sorokaMovieSeries !== "function") return "";
@@ -158,7 +159,7 @@ function renderMovieSeriesPartSheet() {
   if (state?.error) body = `<p class="section-note">Не удалось загрузить сведения.</p><button class="ghost-button" type="button" data-action="movie-series-part-retry">Повторить</button>`;
   if (item) {
     const facts = [item.year, [item.genre, ...item.tags].join(", "), item.countries.join(", ")].filter(Boolean).map(esc).join(" · ");
-    body = `<div class="movie-detail-hero">${movieCoverMarkup(item, "detail")}<div class="movie-detail-intro"><span class="movie-detail-meta">${facts}</span><span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director || "Нет данных")}</b></span></div></div><div class="movie-ratings"><div class="movie-rating"><span class="movie-rating-label">Кинопоиск</span><strong>${movieScore(item.kinopoiskRating)}</strong></div><div class="movie-rating"><span class="movie-rating-label">IMDb</span><strong>${movieScore(item.imdbRating)}</strong></div></div><section class="movie-hook"><h3>Без спойлеров</h3><p ${state.hookLoading ? 'role="status"' : ""}>${esc(state.hook || (state.hookLoading ? "Готовлю короткий хук…" : "Краткий хук пока недоступен."))}</p></section><div class="sheet-actions">${own ? `<button class="primary-button" type="button" data-action="movie-series-library" data-id="${esc(own.id)}">${movieIsViewed(own) ? "Открыть просмотренный фильм" : "Открыть карточку"}</button>` : `<button class="primary-button" type="button" data-action="movie-series-add">${icon("plus", "icon-sm")}В планы</button>`}</div>`;
+    body = `${movieDetailHero({...item,id:own?.id||""})}<div class="movie-ratings"><div class="movie-rating"><span class="movie-rating-label">Кинопоиск</span><strong>${movieScore(item.kinopoiskRating)}</strong></div><div class="movie-rating"><span class="movie-rating-label">IMDb</span><strong>${movieScore(item.imdbRating)}</strong></div></div><section class="movie-hook"><h3>Без спойлеров</h3><p ${state.hookLoading ? 'role="status"' : ""}>${esc(state.hook || (state.hookLoading ? "Готовлю короткий хук…" : "Краткий хук пока недоступен."))}</p></section><div class="sheet-actions">${own ? `<button class="primary-button" type="button" data-action="movie-series-library" data-id="${esc(own.id)}">${movieIsViewed(own) ? "Открыть просмотренный фильм" : "Открыть карточку"}</button>` : `<button class="primary-button" type="button" data-action="movie-series-add">${icon("plus", "icon-sm")}В планы</button>`}</div>`;
   }
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet movie-series-preview" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item?.title || sheet.title)}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${back}${body}</section></div>`;
 }
