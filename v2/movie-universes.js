@@ -3,9 +3,9 @@ const universeUi = { tab: "personal", loaded: false, loading: false, error: "", 
 const universeApi = (action, fields) => window.sorokaUniverse ? window.sorokaUniverse(action, fields) : Promise.reject(Error("preview_only"));
 const universeUuid = () => crypto.randomUUID();
 const universeOwn = p => movieSeriesOwn(p);
-const universeSeen = p => { const own = universeOwn(p); return own ? movieIsViewed(own) : false; };
+const universeSeen = (p,d=universeUi.detail) => { if (typeof d?.progress?.[p.imdbId] === 'boolean') return d.progress[p.imdbId]; const own = universeOwn(p); return own ? movieIsViewed(own) : false; };
 const universePartsVisible = d => (d.parts || []).filter(p => d.include_series !== false || p.kind !== "series");
-const universeProgress = d => { const all = universePartsVisible(d); return { all: all.length, seen: all.filter(universeSeen).length, next: universeOrdered(d).find(p => !universeSeen(p) && !p.unplaced) }; };
+const universeProgress = d => { const all = universePartsVisible(d); return { all: all.length, seen: all.filter(p=>universeSeen(p,d)).length, next: universeOrdered(d).find(p => !universeSeen(p,d) && !p.unplaced && !(p.released && p.released>new Date().toISOString().slice(0,10))) }; };
 const universePaint = () => { if (ui.page === "saved" && ui.savedCategory === "movies" && ui.savedFilter === "reco" || ui.sheet?.kind?.startsWith("universe-")) render(); };
 function universeError(error) {
   return /stale_list|409/.test(String(error)) ? "Список изменился на другом устройстве. Черновик сохранён здесь. Обновите списки и повторите правку."
@@ -28,7 +28,7 @@ async function universeLoad(retry = false) {
   if (universeUi.loading || universeUi.loaded && !retry) return;
   universeUi.loading = true; universeUi.error = "";
   try {
-    const [own, catalog] = await Promise.all([universeApi("lists"), universeApi("search", { query: universeUi.query })]);
+    const [own, catalog] = await Promise.all([universeApi("lists",{force:retry}), universeApi("search", { query: universeUi.query })]);
     universeUi.lists = own.lists || []; universeUi.catalog = catalog.items || []; universeUi.loaded = true;
   } catch (e) { universeUi.error = universeError(e); }
   universeUi.loading = false; universePaint();
@@ -38,7 +38,7 @@ function universePoster(p, cls = "") {
 }
 function universeCard(d) {
   const progress = universeProgress(d);
-  return `<button class="mu-card" type="button" data-action="mu-own" data-id="${esc(d.id)}"><span class="mu-card-art">${d.parts.slice(0, 3).map(p => universePoster(p)).join("")}</span><span class="mu-card-copy"><strong>${esc(d.title)}</strong><small>${progress.seen} из ${progress.all} просмотрено</small><span class="mu-progress"><i style="width:${progress.all ? progress.seen / progress.all * 100 : 0}%"></i></span><small>${d.order_mode === "manual" ? "Свой порядок" : d.order_mode === "story" ? "По сюжету" : "По выходу"}</small></span>${icon("right", "icon-sm")}</button>`;
+  return `<div class="mu-own-row"><button class="mu-card" type="button" data-action="mu-own" data-id="${esc(d.id)}"><span class="mu-card-art">${d.parts.slice(0, 3).map(p => universePoster(p)).join("")}</span><span class="mu-card-copy"><strong>${esc(d.title)}</strong><small>${progress.seen} из ${progress.all} просмотрено</small><span class="mu-progress"><i style="width:${progress.all ? progress.seen / progress.all * 100 : 0}%"></i></span><small>${d.order_mode === "manual" ? "Свой порядок" : d.order_mode === "story" ? "По сюжету" : "По выходу"}</small></span>${icon("right", "icon-sm")}</button><button class="icon-button mu-card-delete" type="button" data-action="mu-delete" data-id="${esc(d.id)}" aria-label="Удалить марафон ${esc(d.title)}">${icon("trash")}</button></div>`;
 }
 function renderMovieDiscovery() {
   const worlds = universeUi.tab === "universes";
@@ -53,8 +53,12 @@ function renderUniverseDetail(d) {
   if (d.loading) return `<button class="text-action" type="button" data-action="mu-back">${icon("left")}Киновселенные</button><p class="section-note" role="status">Собираю порядок просмотра…</p>`;
   if (d.error) return `<button class="text-action" type="button" data-action="mu-back">${icon("left")}Киновселенные</button><p class="form-error" role="alert">${esc(d.error)}</p><button class="small-button" type="button" data-action="mu-source" data-source="${esc(d.source)}">Повторить</button>`;
   const progress = universeProgress(d), ordered = universeOrdered(d), story = universeUi.story.get(universeStoryKey(d));
-  const rows = ordered.map((p, i) => `<div class="mu-part-row ${universeSeen(p) ? "is-seen" : ""}"><button class="mu-tick" type="button" data-action="mu-seen" data-imdb="${esc(p.imdbId)}" aria-label="${universeSeen(p) ? "Снять просмотр" : "Отметить просмотренным"}: ${esc(p.title)}" aria-pressed="${universeSeen(p)}">${universeSeen(p) ? icon("check", "icon-sm") : p.unplaced ? "?" : i + 1}</button><button class="mu-part-open" type="button" data-action="mu-part" data-imdb="${esc(p.imdbId)}">${universePoster(p)}<span><b>${esc(p.title)}</b><small>${[p.year, p.kind === "series" ? "Сериал" : "Фильм", p.unplaced ? "Место в сюжете не подтверждено" : universeSeen(p) ? "Просмотрено" : ""].filter(Boolean).map(esc).join(" · ")}</small></span>${icon("right", "icon-sm")}</button></div>`).join("");
-  return `<section class="mu-workspace"><div class="mu-heading"><button class="text-action" type="button" data-action="mu-back">${icon("left", "icon-sm")}Киновселенные</button>${d.version !== undefined ? '<button type="button" class="small-button" data-action="mu-edit">Изменить</button>' : ""}</div><div class="mu-hero"><div class="mu-hero-art">${d.parts.slice(0, 3).map(p => universePoster(p)).join("")}</div><h2>${esc(d.title)}</h2><p>${esc(d.description || "Личный порядок просмотра")}</p><div class="mu-progress"><i style="width:${progress.all ? progress.seen / progress.all * 100 : 0}%"></i></div><small>${progress.seen} из ${progress.all} просмотрено</small>${d.version === undefined ? `<button class="primary-button" type="button" data-action="mu-start" ${universeUi.busy || !d.parts.length ? "disabled" : ""}>${universeUi.busy ? "Сохраняю…" : "Начать марафон"}</button>` : progress.next ? `<button class="primary-button" type="button" data-action="mu-part" data-imdb="${esc(progress.next.imdbId)}">Продолжить · ${esc(progress.next.title)}</button>` : progress.all && progress.seen === progress.all ? '<p class="mu-complete">Марафон завершён</p>' : ""}</div>${universeUi.error ? `<p class="form-error" role="alert">${esc(universeUi.error)}</p><button class="small-button" type="button" data-action="mu-save-retry" ${universeUi.busy ? "disabled" : ""}>Повторить сохранение</button>` : ""}<div class="movie-series-order" role="group" aria-label="Порядок просмотра">${[["release", "По выходу"], ["story", "По сюжету"], ...(!d.source ? [["manual", "Свой порядок"]] : [])].map(([mode, label]) => `<button type="button" data-action="mu-order" data-order="${mode}" aria-pressed="${d.order_mode === mode}">${label}</button>`).join("")}</div>${d.parts.some(p => p.kind === "series") ? `<button class="small-button mu-series" type="button" data-action="mu-series" aria-pressed="${d.include_series !== false}">${icon(d.include_series !== false ? "check" : "plus", "icon-sm")}Включать сериалы</button>` : ""}${d.order_mode === "story" && story?.loading ? '<p class="section-note" role="status">Проверяю сюжетную хронологию по источникам…</p>' : d.order_mode === "story" && story?.status !== "ready" ? `<p class="section-note">${story?.error ? "Не удалось проверить хронологию." : "Единая сюжетная хронология не подтверждена. Можно смотреть по выходу."}</p><button class="small-button" type="button" data-action="mu-story-retry">Повторить проверку</button>` : ""}${!d.parts.length ? '<p class="section-note">В каталоге не нашлись подтверждённые части. Можно собрать свой список через поиск фильмов.</p><button class="small-button" type="button" data-action="mu-new">Создать свой список</button>' : ""}${d.limited ? '<p class="section-note">Показаны первые 200 частей. Полный состав смотрите в источнике.</p>' : ""}<div class="mu-route">${rows}</div>${story?.status === "ready" && d.order_mode === "story" ? `<div class="movie-series-sources">${story.sources.filter(s => /^https:\/\//.test(s.url)).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title || "Источник хронологии")}</a>`).join("")}</div>` : ""}<p class="section-note">Просмотренные части связаны с вашей библиотекой Flow. ${d.source ? "Состав каталога может быть неполным; при необходимости измените свой марафон." : "Порядок этого списка выбираете вы."}</p>${d.sourceUrl ? `<a class="text-action" href="${esc(d.sourceUrl)}" target="_blank" rel="noopener noreferrer">Источник состава${icon("external", "icon-sm")}</a>` : ""}</section>`;
+  const rows = ordered.map((p, i) => `<div class="mu-part-row ${universeSeen(p) ? "is-seen" : ""}"><button class="mu-tick" type="button" data-action="mu-seen" data-imdb="${esc(p.imdbId)}" aria-label="${universeSeen(p) ? "Снять просмотр" : "Отметить просмотренным"}: ${esc(p.title)}" aria-pressed="${universeSeen(p)}">${universeSeen(p) ? icon("check", "icon-sm") : p.unplaced ? "?" : i + 1}</button><button class="mu-part-open" type="button" data-action="mu-part" data-imdb="${esc(p.imdbId)}">${universePoster(p)}<span><b>${esc(p.title)}</b><small>${[p.year, p.kind === "series" ? "Сериал" : "Фильм", p.released && p.released>new Date().toISOString().slice(0,10) ? "Скоро" : "", p.unplaced ? "Место в сюжете не подтверждено" : universeSeen(p) ? "Просмотрено" : ""].filter(Boolean).map(esc).join(" · ")}</small></span>${icon("right", "icon-sm")}</button></div>`);
+  const route=d.order_mode==='release'&&d.parts.some(p=>p.phase) ? [...new Set(ordered.map(p=>p.phase||'Другие части'))].map(phase=>{
+    const indices=ordered.map((p,i)=>[p,i]).filter(([p])=>(p.phase||'Другие части')===phase);
+    return `<details class="mu-phase" open><summary>${esc(phase)}<span>${indices.filter(([p])=>universeSeen(p,d)).length} / ${indices.length}</span>${icon('down','icon-sm')}</summary>${indices.map(([,i])=>rows[i]).join('')}</details>`;
+  }).join('') : rows.join('');
+  return `<section class="mu-workspace"><div class="mu-heading"><button class="text-action" type="button" data-action="mu-back">${icon("left", "icon-sm")}Киновселенные</button>${d.version !== undefined ? '<button type="button" class="small-button" data-action="mu-edit">Изменить</button>' : ""}</div><div class="mu-hero"><div class="mu-hero-art">${d.parts.slice(0, 3).map(p => universePoster(p)).join("")}</div><h2>${esc(d.title)}</h2><small>${d.parts.filter(p=>p.kind!=="series").length} фильмов · ${d.parts.filter(p=>p.kind==="series").length} сериалов</small><p>${esc(d.description || "Личный порядок просмотра")}</p><div class="mu-progress"><i style="width:${progress.all ? progress.seen / progress.all * 100 : 0}%"></i></div><small>${progress.seen} из ${progress.all} просмотрено</small>${d.version === undefined ? `<button class="primary-button" type="button" data-action="mu-start" ${universeUi.busy || !d.parts.length ? "disabled" : ""}>${universeUi.busy ? "Сохраняю…" : "Начать марафон"}</button>` : progress.next ? `<button class="primary-button" type="button" data-action="mu-part" data-imdb="${esc(progress.next.imdbId)}">Продолжить · ${esc(progress.next.title)}</button>` : progress.all && progress.seen === progress.all ? '<p class="mu-complete">Марафон завершён</p>' : ""}</div>${universeUi.error ? `<p class="form-error" role="alert">${esc(universeUi.error)}</p><button class="small-button" type="button" data-action="mu-save-retry" ${universeUi.busy ? "disabled" : ""}>Повторить сохранение</button>` : ""}<div class="movie-series-order" role="group" aria-label="Порядок просмотра">${[["release", "По выходу"], ["story", "По сюжету"], ...(!d.source ? [["manual", "Свой порядок"]] : [])].map(([mode, label]) => `<button type="button" data-action="mu-order" data-order="${mode}" aria-pressed="${d.order_mode === mode}">${label}</button>`).join("")}</div>${d.parts.some(p => p.kind === "series") ? `<button class="small-button mu-series" type="button" data-action="mu-series" aria-pressed="${d.include_series !== false}">${icon(d.include_series !== false ? "check" : "plus", "icon-sm")}Включать сериалы</button>` : ""}${d.order_mode === "story" && story?.loading ? '<p class="section-note" role="status">Проверяю сюжетную хронологию по источникам…</p>' : d.order_mode === "story" && story?.status !== "ready" ? `<p class="section-note">${story?.error ? "Не удалось проверить хронологию." : "Единая сюжетная хронология не подтверждена. Можно смотреть по выходу."}</p><button class="small-button" type="button" data-action="mu-story-retry">Повторить проверку</button>` : ""}${!d.parts.length ? '<p class="section-note">В каталоге не нашлись подтверждённые части. Можно собрать свой список через поиск фильмов.</p><button class="small-button" type="button" data-action="mu-new">Создать свой список</button>' : ""}${d.limited ? '<p class="section-note">Показаны первые 200 частей. Полный состав смотрите в источнике.</p>' : ""}<div class="mu-route">${route}</div>${story?.status === "ready" && d.order_mode === "story" ? `<div class="movie-series-sources">${story.sources.filter(s => /^https:\/\//.test(s.url)).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title || "Источник хронологии")}</a>`).join("")}</div>` : ""}<p class="section-note">${d.source ? 'Состав обновляется при открытии, с проверкой раз в 6 часов. Новые части добавляются без сброса прогресса.' : 'Личный список: порядок и состав выбираете вы.'} Отметки марафона сохраняются отдельно от истории библиотеки.</p>${d.sync_error?'<p class="form-error" role="status">Сейчас источник недоступен или ответил не полностью. Сохранённый состав и прогресс на месте; повторить проверку можно кнопкой обновления.</p>':''}${d.version!==undefined?`<div class="mu-manage"><button class="small-button" type="button" data-action="mu-reset" ${universeUi.busy?'disabled':''}>Сбросить прогресс</button><button class="small-button danger-button" type="button" data-action="mu-delete" ${universeUi.busy?'disabled':''}>${icon('trash','icon-sm')}Удалить вселенную</button></div>`:''}${d.sourceUrl ? `<a class="text-action" href="${esc(d.sourceUrl)}" target="_blank" rel="noopener noreferrer">Источник состава${icon("external", "icon-sm")}</a>` : ""}</section>`;
 }
 async function universeOpenSource(source) {
   const detail = { source, loading: true }; universeUi.detail = detail; universeUi.error = ""; universePaint();
@@ -116,15 +120,33 @@ async function universePartLoad(p, retry = false) {
   }
   if (universeUi.part.size > 64) universeUi.part.delete(universeUi.part.keys().next().value);
 }
-function universeAdd(p, viewed = false) {
+function universeAdd(p) {
   let own = universeOwn(p);
   if (!own) {
     const state = universeUi.part.get(p.imdbId), info = state?.info;
     own = { ...(info ? moviePartDto(info) : p), id: id(), kind: info?.kind || p.kind, imdbUrl: `https://www.imdb.com/title/${p.imdbId}/`, hook: state?.hook || "", status: "Хочу посмотреть", viewed: false, source: "Киновселенные", created: new Date().toISOString() };
     data.saved.movies.push(own);
   }
-  if (viewed) { own.viewed = !movieIsViewed(own); own.status = own.viewed ? "Посмотрел" : "Хочу посмотреть"; if (!own.viewed) { own.rating = 0; own.viewedByRating = false; } }
   save(); return own;
+}
+async function universeToggleProgress(p) {
+  const d=universeUi.detail;if(!d||universeUi.busy)return;
+  d.progress={...d.progress,[p.imdbId]:!universeSeen(p,d)};
+  await universeSave(d);
+}
+async function universeListMutation(op,d) {
+  if(!d||d.version===undefined||universeUi.busy)return;
+  const prompt=op==='reset'?'Сбросить прогресс этого марафона? История фильмов в библиотеке сохранится.':'Удалить марафон? Фильмы и история в библиотеке сохранятся.';
+  if(!window.confirm(prompt))return;
+  universeUi.busy=true;universeUi.error='';universePaint();
+  try {
+    const {list}=await universeApi(op,{id:d.id,version:d.version});
+    if(op==='delete'){universeUi.lists=universeUi.lists.filter(x=>x.id!==d.id);if(universeUi.detail?.id===d.id)universeUi.detail=null;}
+    else {universeUi.lists=universeUi.lists.map(x=>x.id===list.id?list:x);if(universeUi.detail?.id===list.id)universeUi.detail=structuredClone(list);}
+    if(ui.sheet?.kind==='universe-edit')ui.sheet=null;
+    toast(op==='reset'?'Прогресс сброшен':'Марафон удалён');
+  }catch(e){universeUi.error=universeError(e);}
+  universeUi.busy=false;universePaint();
 }
 function universeAction(action, control) {
   if (!action.startsWith("mu-")) return false;
@@ -144,15 +166,13 @@ function universeAction(action, control) {
   else if (action === "mu-pick" && s.draft) { const p = s.found[Number(key.index)]; if (p && !s.draft.parts.some(x => x.imdbId === p.imdbId) && s.draft.parts.length < 200) { s.draft.parts.push(p); s.draft.source = null; s.draft.order_mode = "manual"; } render(); }
   else if (action === "mu-move" && s.draft) { const i = Number(key.index), to = i + Number(key.direction), a = s.draft.parts; if (a[i] && to >= 0 && to < a.length) { [a[i], a[to]] = [a[to], a[i]]; s.draft.source = null; s.draft.order_mode = "manual"; } render(); }
   else if (action === "mu-remove" && s.draft) { s.draft.parts.splice(Number(key.index), 1); s.draft.source = null; render(); }
-  else if (action === "mu-delete" && s.draft && !s.busy && window.confirm("Удалить марафон? Фильмы и история просмотров останутся в Flow.")) {
-    const draft = s.draft; s.busy = true;
-    void universeApi("delete", { id: draft.id, version: draft.version }).then(() => { s.lists = s.lists.filter(x => x.id !== draft.id); if (s.detail?.id === draft.id) s.detail = null; if (ui.sheet?.kind === "universe-edit") { ui.sheet = null; render(); } toast("Марафон удалён"); }).catch(e => s.error = universeError(e)).finally(() => { s.busy = false; universePaint(); });
-  } else if (["mu-part", "mu-seen", "mu-add", "mu-part-retry"].includes(action)) {
+  else if (action === 'mu-delete' || action === 'mu-reset') void universeListMutation(action==='mu-delete'?'delete':'reset', key.id?s.lists.find(x=>x.id===key.id):ui.sheet?.kind==='universe-edit'?s.draft:d);
+  else if (["mu-part", "mu-seen", "mu-add", "mu-part-retry"].includes(action)) {
     const p = ui.sheet?.kind === "universe-part" ? ui.sheet.part : d?.parts?.find(x => x.imdbId === key.imdb);
     if (!p) return true;
     if (action === "mu-part") { ui.sheet = { kind: "universe-part", part: p }; void universePartLoad(p); render(); }
     else if (action === "mu-part-retry") void universePartLoad(p, true);
-    else if (action === "mu-seen") { universeAdd(p, true); render(); }
+    else if (action === "mu-seen") void universeToggleProgress(p);
     else { const own = universeOwn(p); if (own) openSavedRecord("movies", own.id); else { universeAdd(p); render(); toast("Добавил в планы"); } }
   }
   return true;
