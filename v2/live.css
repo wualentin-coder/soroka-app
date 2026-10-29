@@ -40,9 +40,7 @@ body[data-page="inbox"] .main, body[data-page="metrics"] .main, body[data-page="
 /* 9–10. Два поля в ряд на телефоне обрезали значения («Основная карта ·», адрес). */
 @media (max-width: 420px) { .sheet .field-row { grid-template-columns: 1fr; } }
 
-/* 16. Кружок «выполнено» 25 px — меньше пальца; зона нажатия шире круга. */
-.task-check { position: relative; }
-.task-check::before { content: ""; position: absolute; inset: -9px; }
+/* 16. Кнопка выполнения уже 44×44; её видимый круг задаётся в styles.css. */
 .text-action { min-height: 36px; }
 /* Стрелки месяца, «Неделя/Месяц», вкладки графика сервера и «Перенести на сегодня» в баннере —
    27–30 px (баннер — 19). Вид прежний, палец попадает по ~44 px. */
