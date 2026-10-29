@@ -551,7 +551,7 @@ function movieSeenTabs() {
   const seen = all.filter(movieIsViewed).length;
   const now = ui.savedFilter === "viewed" ? "viewed" : ui.savedFilter === "reco" ? "reco" : "all";
   const tab = (filter, label, count) => `<button type="button" class="${filter === now ? "active" : ""}" data-action="saved-filter" data-filter="${filter}" aria-pressed="${filter === now}">${label}${count === "" ? "" : `<span>${count}</span>`}</button>`;
-  const tabs = `<div class="movie-seen-tabs three" role="group" aria-label="Фильмы">${tab("all", "В планах", "")}${tab("viewed", "Просмотрено", "")}${tab("reco", "Что смотреть", "")}</div>`;
+  const tabs = `<div class="movie-seen-tabs three" role="group" aria-label="Фильмы">${tab("all", "В планах", "")}${tab("viewed", "Просмотрено", "")}${tab("reco", "Подборки", "")}</div>`;
   return tabs;
 }
 /** Подсказка про свайп — один раз: дальше она только занимает место. */
