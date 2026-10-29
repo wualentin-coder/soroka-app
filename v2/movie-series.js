@@ -1,6 +1,7 @@
 /* Film-series navigation is a preview, never an automatic library import. */
 const movieSeriesCache = new Map();
 const moviePartCache = new Map();
+let movieSeriesOrder = (() => { try { return localStorage.getItem("flow.movie-series.order.v1") === "story" ? "story" : "release"; } catch { return "release"; } })();
 function movieSeriesEligible(item) { return !!item && !movieIsViewed(item) && !item.skipped && !isSeries(item); }
 function movieSeriesKey(item) { return JSON.stringify([item.id, item.title, item.year, item.imdbUrl, item.kinopoiskUrl]); }
 function movieSeriesCachePut(cache, key, value) {
@@ -35,18 +36,55 @@ function movieSeriesOwn(part) {
     || (part.kinopoiskUrl && item.kinopoiskUrl === part.kinopoiskUrl)
     || (!item.imdbUrl && part.title && part.year && item.year === part.year && [item.title, item.originalTitle].filter(Boolean).some(t => [part.title, part.originalTitle].filter(Boolean).some(p => t.toLocaleLowerCase("ru") === p.toLocaleLowerCase("ru")))));
 }
+function movieStoryState(item, state, retry = false) {
+  if (state.story && !retry) return state.story;
+  const story = { loading: true, error: false, status: "unavailable", order: [], unplaced: [], sources: [] };
+  state.story = story;
+  setTimeout(async () => {
+    try {
+      const answer = await window.sorokaMovieSeriesOrder(item.id);
+      if (!["ready", "unavailable"].includes(answer?.status)) throw Error("invalid-story-order");
+      if (answer.status === "ready") {
+        const all = [...(answer.order || []), ...(answer.unplaced || [])];
+        if (!Array.isArray(answer.order) || !Array.isArray(answer.unplaced) || answer.order.length < 2 || all.length !== state.parts.length
+          || new Set(all).size !== all.length || all.some(id => !state.parts.some(p => p.imdbId === id))) throw Error("invalid-story-order");
+      }
+      Object.assign(story, { status: answer.status, order: answer.order || [], unplaced: answer.unplaced || [], sources: answer.sources || [] });
+    } catch { story.error = true; }
+    story.loading = false;
+    const current = savedItem("movies", item.id);
+    if (current && movieSeriesEligible(current) && movieSeriesCache.get(movieSeriesKey(current)) === state && state.story === story && movieSeriesVisible(item.id)) render();
+  }, 0);
+  return story;
+}
+function movieSeriesTrack(item, state, parts, label, unplaced = false) {
+  return `<div class="movie-series-track" tabindex="0" role="group" aria-label="${label}">${parts.map((part, i) => {
+    const current = part.imdbId === state.currentId, own = movieSeriesOwn(part);
+    return `<button type="button" class="movie-series-part ${current ? "is-current" : ""}" data-action="movie-series-open" data-id="${esc(item.id)}" data-imdb="${esc(part.imdbId)}" ${current ? 'aria-current="true"' : ""}><span class="movie-series-cover">${part.coverPath ? `<img src="${esc(part.coverPath)}" alt="" loading="lazy" onerror="this.hidden=true">` : icon("event")}<span class="movie-series-number">${unplaced ? "?" : i + 1}</span></span><b>${esc(part.title)}</b><small>${esc(part.year || "Год не указан")}</small><small class="movie-series-status">${current ? "Этот фильм" : own && movieIsViewed(own) ? "Просмотрено" : own ? "В планах" : ""}</small></button>`;
+  }).join("")}</div>`;
+}
+function movieStoryBody(item, state) {
+  const story = movieStoryState(item, state);
+  if (story.loading) return `<p class="section-note" role="status">Проверяю сюжетную хронологию по источникам…</p>`;
+  if (story.error) return `<p class="section-note" role="status">Не удалось загрузить хронологию.</p><button class="small-button" type="button" data-action="movie-series-story-retry" data-id="${esc(item.id)}">Повторить</button>`;
+  if (story.status !== "ready") return `<p class="section-note" role="status">Единая сюжетная хронология не подтверждена. Можно смотреть по порядку выхода.</p>`;
+  const byId = id => state.parts.find(p => p.imdbId === id);
+  const same = !story.unplaced.length && state.parts.every((p, i) => p.imdbId === story.order[i]);
+  const links = story.sources.map(source => {
+    try { const u = new URL(source.url); return u.protocol === "https:" ? `<a href="${esc(u.href)}" target="_blank" rel="noopener noreferrer">${esc(u.hostname.replace(/^www\./, ""))}${icon("external", "icon-sm")}</a>` : ""; } catch { return ""; }
+  }).filter(Boolean).join("");
+  return `${same ? '<p class="section-note">Сюжетный порядок совпадает с порядком выхода.</p>' : ""}${movieSeriesTrack(item, state, story.order.map(byId), "Части по хронологии сюжета")}${story.unplaced.length ? `<p class="movie-series-unplaced">Без подтверждённого места в сюжете</p>${movieSeriesTrack(item, state, story.unplaced.map(byId), "Части без подтверждённого места в сюжете", true)}` : ""}${links ? `<div class="movie-series-sources" aria-label="Источники хронологии">${links}</div>` : ""}`;
+}
 function renderMovieSeries(item) {
   if (!movieSeriesEligible(item) || typeof window.sorokaMovieSeries !== "function") return "";
   const state = movieSeriesState(item);
   if (!state.loading && !state.error && state.parts.length < 2) return "";
-  const head = `<div class="movie-series-head"><h3>Серия фильмов</h3><small>Порядок выхода</small></div>`;
+  const head = `<div class="movie-series-head"><h3>Серия фильмов</h3></div>`;
+  const tabs = state.loading || state.error ? "" : `<div class="movie-series-order" role="group" aria-label="Порядок просмотра">${[["release", "По выходу"], ["story", "По сюжету"]].map(([mode, label]) => `<button type="button" data-action="movie-series-order" data-id="${esc(item.id)}" data-order="${mode}" aria-pressed="${movieSeriesOrder === mode}">${label}</button>`).join("")}</div>`;
   const body = state.loading ? `<p class="section-note" role="status">Ищу связанные части…</p>`
     : state.error ? `<p class="section-note">Не удалось загрузить части.</p><button class="small-button" type="button" data-action="movie-series-retry" data-id="${esc(item.id)}">Повторить</button>`
-    : `<div class="movie-series-track" tabindex="0" role="group" aria-label="Части серии по порядку выхода">${state.parts.map((part, i) => {
-      const current = part.imdbId === state.currentId, own = movieSeriesOwn(part);
-      return `<button type="button" class="movie-series-part ${current ? "is-current" : ""}" data-action="movie-series-open" data-id="${esc(item.id)}" data-imdb="${esc(part.imdbId)}" ${current ? 'aria-current="true"' : ""}><span class="movie-series-cover">${part.coverPath ? `<img src="${esc(part.coverPath)}" alt="" loading="lazy" onerror="this.hidden=true">` : icon("event")}<span class="movie-series-number">${i + 1}</span></span><b>${esc(part.title)}</b><small>${esc(part.year || "Год не указан")}</small><small class="movie-series-status">${current ? "Этот фильм" : own && movieIsViewed(own) ? "Просмотрено" : own ? "В планах" : ""}</small></button>`;
-    }).join("")}</div>`;
-  return `<section class="movie-series-block">${head}${body}</section>`;
+    : movieSeriesOrder === "story" ? movieStoryBody(item, state) : movieSeriesTrack(item, state, state.parts, "Части серии по порядку выхода");
+  return `<section class="movie-series-block">${head}${tabs}${body}</section>`;
 }
 function moviePartDto(info) {
   return { title: info.title || info.original_title || "Фильм", originalTitle: info.original_title || "", year: info.year,
@@ -91,6 +129,23 @@ function renderMovieSeriesPartSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet movie-series-preview" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item?.title || sheet.title)}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${back}${body}</section></div>`;
 }
 function movieSeriesAction(action, control) {
+  if (action === "movie-series-order" || action === "movie-series-story-retry") {
+    const item = savedItem("movies", control.dataset.id);
+    if (!movieSeriesEligible(item)) return true;
+    const state = movieSeriesCache.get(movieSeriesKey(item));
+    if (!state || state.loading || state.error || state.parts.length < 2) return true;
+    if (action === "movie-series-order") {
+      if (!["release", "story"].includes(control.dataset.order)) return true;
+      movieSeriesOrder = control.dataset.order;
+      try { localStorage.setItem("flow.movie-series.order.v1", movieSeriesOrder); } catch { /* The selection still lasts for this session. */ }
+    }
+    if (action === "movie-series-story-retry") movieStoryState(item, state, true);
+    const node = activeSheet(), scroll = node?.scrollTop || 0;
+    render();
+    if (activeSheet()) activeSheet().scrollTop = scroll;
+    document.querySelectorAll?.(".movie-series-track").forEach(track => { track.scrollLeft = 0; });
+    return true;
+  }
   if (action === "movie-series-retry") {
     const item = savedItem("movies", control.dataset.id);
     if (movieSeriesEligible(item)) { movieSeriesState(item, true); render(); }
