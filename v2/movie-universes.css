@@ -63,3 +63,14 @@
 @media (prefers-reduced-motion:reduce) { .mu-progress i { transition:none; } }
 
 .mu-heading-actions { display:flex; align-items:center; gap:6px; }
+
+.mu-own-row { position:relative; }
+.mu-own-row .mu-card { padding-right:56px; }
+.mu-card-delete { position:absolute; right:8px; top:8px; color:var(--muted); }
+.mu-phase { border-bottom:1px solid var(--line); margin:12px 0; }
+.mu-phase summary { display:flex; align-items:center; gap:8px; min-height:44px; color:var(--accent); font-size:13px; font-weight:800; cursor:pointer; list-style:none; }
+.mu-phase summary::-webkit-details-marker { display:none; }
+.mu-phase summary span { margin-left:auto; color:var(--muted); font-size:11px; }
+.mu-phase:not([open]) summary>svg { transform:rotate(-90deg); }
+.mu-manage { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.mu-manage button { min-height:44px; }
