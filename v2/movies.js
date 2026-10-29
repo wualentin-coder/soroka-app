@@ -11,7 +11,19 @@ const MOVIE_RECO_KEY = "soroka-movie-reco";
 function movieDetailHero(item,extra='') {
   const genres=[...new Set([item.genre,...(item.tags||[])].filter(Boolean))].join(', ');
   const facts=[item.year,genres,(item.countries||[]).join(', '),item.minutes?`${item.minutes} мин`:null].filter(Boolean).map(esc).join(' · ');
-  return `<div class="movie-detail-hero">${movieCoverMarkup(item,'detail')}<div class="movie-detail-intro"><span class="movie-detail-meta">${facts}</span>${item.director?`<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>`:''}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Просмотр">${typeof movieWatchMarkup==='function'?movieWatchMarkup(item):''}${extra}</div></div></div>`;
+  return `<div class="movie-detail-hero">${movieCoverMarkup(item,'detail')}<div class="movie-detail-intro"><span class="movie-detail-meta">${facts}</span>${item.director?`<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>`:''}${extra ? `<div class="movie-detail-secondary">${extra}</div>` : ''}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Просмотр">${movieDetailScores(item)}${typeof movieWatchMarkup==='function'?movieWatchMarkup(item):''}</div></div></div>`;
+}
+
+function movieDetailScores(item) {
+  const badge = (label,value,url) => { const content=`<small>${label}</small><strong>${esc(movieScore(value))}</strong>`; return /^https?:\/\//i.test(url||'') ? `<a class="movie-detail-score" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${content}</a>` : `<span class="movie-detail-score">${content}</span>`; };
+  return badge('КП',item.kinopoiskRating,item.kinopoiskUrl)+badge('IMDb',item.imdbRating,item.imdbUrl);
+}
+function moviePersonalRating(item,action='movie-rate') {
+  const value=Number(item?.rating)||0;
+  return `<section class="movie-personal-rating"><div class="movie-personal-rating-head"><span>Моя оценка</span><b>${value ? value+' / 10' : '—'}</b></div>${starsRow(value,true,'Моя оценка',action)}</section>`;
+}
+function movieStarIcon() {
+  return '<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.78 5.63 6.22.91-4.5 4.38 1.06 6.19L12 17.18l-5.56 2.93 1.06-6.19L3 9.54l6.22-.91Z"/></svg>';
 }
 
 /** Оценка звёздами: десять кнопок, нажатие на текущую оценку снимает её. */
@@ -21,8 +33,8 @@ function starsRow(rating, interactive = true, label = "Моя оценка", act
     const n = i + 1;
     const on = n <= value;
     return interactive
-      ? `<button type="button" class="star ${on ? "on" : ""}" data-action="${action}" data-value="${n}" aria-label="${label}: ${n} из 10" aria-pressed="${n === value}">${icon("star", "icon-sm")}</button>`
-      : `<span class="star ${on ? "on" : ""}">${icon("star", "icon-sm")}</span>`;
+      ? `<button type="button" class="star ${on ? "on" : ""}" data-action="${action}" data-value="${n}" aria-label="${label}: ${n} из 10" aria-pressed="${n === value}">${movieStarIcon()}</button>`
+      : `<span class="star ${on ? "on" : ""}">${movieStarIcon()}</span>`;
   }).join("");
   return `<div class="stars ${interactive ? "" : "static"}" role="group" aria-label="${label}">${stars}</div>`;
 }
@@ -333,12 +345,8 @@ function renderRecoDetailSheet() {
   const p = findPick(ui.sheet.pickKey);
   if (!p) return "";
   const m = pickAsMovie(p);
-  const score = v => movieScore(v);
-  const kp = `<span class="movie-rating-label">Кинопоиск</span><strong>${esc(score(p.kpRating))}</strong>`;
-  const imdb = `<span class="movie-rating-label">IMDb</span><strong>${esc(score(p.imdbRating))}</strong>`;
-  const ratings = `<div class="movie-ratings">${p.kpUrl ? `<a class="movie-rating movie-rating-link" href="${esc(p.kpUrl)}" target="_blank" rel="noopener noreferrer">${kp}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${kp}</div>`}${p.imdbUrl ? `<a class="movie-rating movie-rating-link" href="${esc(p.imdbUrl)}" target="_blank" rel="noopener noreferrer">${imdb}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${imdb}</div>`}</div>`;
   const key = esc(pickKey(p));
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet reco-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(p.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${icon("event", "icon-sm")}Фильмы · Предложение</p>${movieDetailHero({...m,id:libraryMatch(p)?.id||""})}${ratings}${p.why ? `<p class="saved-prose movie-detail-description">${esc(p.why)}</p>` : ""}<div class="inline-actions saved-view-actions"><button class="primary-button" type="button" data-action="reco-plans" data-key="${key}">${icon("plus")}В планы</button><button type="button" data-action="reco-seen" data-key="${key}">${icon("eye")}Смотрел</button><button type="button" data-action="reco-skip" data-key="${key}">${icon("thumbDown")}Не интересно</button></div></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet reco-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(p.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${icon("event", "icon-sm")}Фильмы · Предложение</p>${movieDetailHero({...m,...(libraryMatch(p)||{}),id:libraryMatch(p)?.id||""})}${p.why ? `<blockquote class="movie-summary">${esc(p.why)}</blockquote>` : ""}${moviePersonalRating(libraryMatch(p)||m)}<div class="inline-actions saved-view-actions"><button class="primary-button" type="button" data-action="reco-plans" data-key="${key}">${icon("plus")}В планы</button><button type="button" data-action="reco-seen" data-key="${key}">${icon("eye")}Смотрел</button><button type="button" data-action="reco-skip" data-key="${key}">${icon("thumbDown")}Не интересно</button></div></section></div>`;
 }
 
 // ------------------------------------------------------------ жесты по карточкам предложений
@@ -421,8 +429,27 @@ function movieAction(action, control) {
   if (typeof universeAction === "function" && universeAction(action, control)) return true;
   if (typeof movieSeriesAction === "function" && movieSeriesAction(action, control)) return true;
   if (action === "movie-rate") {
-    const item = ui.sheet?.kind === "saved" && ui.sheet.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
-    if (item) { setMovieRating(item, Number(control.dataset.value)); return true; }
+    let item = ui.sheet?.kind === "saved" && ui.sheet.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
+    if (!item && ui.sheet?.kind === 'movie-series-part') {
+      const state=moviePartCache.get(`${ui.sheet.sourceId}|${ui.sheet.imdbId}`);
+      if(state?.item) {
+        item=movieSeriesOwn({imdbId:ui.sheet.imdbId,...state.item});
+        if(!item){item={...state.item,id:id(),hook:state.hook,status:'Хочу посмотреть',created:new Date().toISOString()};data.saved.movies.push(item);}
+      }
+    }
+    if (!item && ui.sheet?.kind === 'universe-part') item = universeAdd(ui.sheet.part);
+    if (!item && ui.sheet?.kind === 'reco-detail') { const p=findPick(ui.sheet.pickKey); if(p){commitPick(ui.sheet.pickKey,'plans');item=libraryMatch(p);} }
+    if (item) {
+      const part=ui.sheet?.kind==='universe-part' ? ui.sheet.part : null;
+      const wasSeen=part ? universeSeen(part) : false;
+      setMovieRating(item, Number(control.dataset.value));
+      if(part && part.kind!=='series' && item.rating && !wasSeen && universeUi.detail?.progress?.[part.imdbId]===false) {
+        const d=universeUi.detail;
+        d.progress={...d.progress,[part.imdbId]:true};
+        void universeSave(d);
+      }
+      return true;
+    }
     return false;
   }
   if (action === "movie-rate-form") {
@@ -813,3 +840,6 @@ document.addEventListener("click", event => {
   keepRecoFilter();
   render();
 }, true);
+
+
+
