@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=1d07279e8c","integrity":null},{"src":"./saved.js?v=335b783325","integrity":null},{"src":"./movie-series.js?v=964b3be86d","integrity":null},{"src":"./movie-universes.js?v=e111bc4fe4","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=d8b022515e","integrity":null},{"src":"./loop-deck.js?v=fdb0689cdf","integrity":null},{"src":"./movie-carousel.js?v=fc3f450853","integrity":null},{"src":"./movies.js?v=ffb1a4428a","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=f3f0de8b9b","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english.js?v=871c80600c","integrity":null},{"src":"./sport-core.js?v=819a71dc88","integrity":null},{"src":"./sport.js?v=46363923d9","integrity":null},{"src":"./sport-train.js?v=9c7fbd1905","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=bb6d6c7374","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sleep.js?v=9dacc5e92b","integrity":null},{"src":"./render-queue.js?v=bc9bc7c945","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=d6659b411e","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=90fd55be19","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=696620ac92","integrity":null},{"src":"./sheet-state.js?v=40a3046ceb","integrity":null},{"src":"./app.js?v=f8f82dfd35","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=78effb6c7c","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=ca8559eed2","integrity":null}];
+  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=bbf8df711a","integrity":null},{"src":"./movie-series.js?v=cd275959a4","integrity":null},{"src":"./movie-universes.js?v=734a9b899d","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=61760ebbfe","integrity":null},{"src":"./loop-deck.js?v=fdb0689cdf","integrity":null},{"src":"./movie-carousel.js?v=e93de7a676","integrity":null},{"src":"./movies.js?v=d194e210f4","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=f3f0de8b9b","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english.js?v=871c80600c","integrity":null},{"src":"./sport-core.js?v=819a71dc88","integrity":null},{"src":"./sport.js?v=46363923d9","integrity":null},{"src":"./sport-train.js?v=9c7fbd1905","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=bb6d6c7374","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sleep.js?v=9dacc5e92b","integrity":null},{"src":"./render-queue.js?v=bc9bc7c945","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=a25d21a433","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=984a959754","integrity":null},{"src":"./finance.js?v=d6659b411e","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=90fd55be19","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./sections.js?v=f920f11e23","integrity":null},{"src":"./sheet-state.js?v=40a3046ceb","integrity":null},{"src":"./app.js?v=5ec9f60f74","integrity":null},{"src":"./notes.js?v=f411f92b63","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=78effb6c7c","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=ca8559eed2","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1752,11 +1752,11 @@
     const layer = document.createElement("div");
     layer.className = "composer-layer";
     layer.innerHTML = `<div class="composer-scrim" data-close></div>
-      <section class="composer" role="dialog" aria-label="Добавить: ${escape(conf.label)}">
+      <section class="composer" role="dialog" aria-label="${ctx==="movies"?"Поиск фильмов":"Добавить: "+escape(conf.label)}">
         <div class="composer-results" aria-live="polite"></div>
         <div class="composer-head"><span class="composer-chip">${escape(conf.label)}</span>${off ? '<span class="composer-off">без ИИ</span>' : ""}${conf.manual || off ? '<button type="button" class="composer-manual" data-manual>Вручную</button>' : ""}</div>
         <div class="composer-attach-row" hidden></div>
-        <form class="composer-row"><button type="button" class="composer-clip" data-clip aria-label="Прикрепить фото или файл">${icon("clip")}</button><input type="file" class="composer-file" accept="image/*,application/pdf,text/plain" hidden><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="button" class="composer-mic" data-mic aria-label="Надиктовать">${icon("mic")}</button><button type="submit" class="composer-send" aria-label="${off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
+        <form class="composer-row"><button type="button" class="composer-clip" data-clip aria-label="Прикрепить фото или файл">${icon("clip")}</button><input type="file" class="composer-file" accept="image/*,application/pdf,text/plain" hidden><textarea rows="1" placeholder="${escape(conf.placeholder)}" aria-label="${escape(conf.placeholder)}"></textarea><button type="button" class="composer-mic" data-mic aria-label="Надиктовать">${icon("mic")}</button><button type="submit" class="composer-send" aria-label="${ctx==="movies"&&!off?"Найти в каталоге":off ? "Открыть форму" : "Добавить"}" disabled>${off ? icon("note") : icon("arrow")}</button></form>
       </section>`;
     document.body.appendChild(layer);
     document.documentElement.classList.add("composer-open");
@@ -1803,10 +1803,10 @@
       grow();
       if (composer.found.length) return;
       const hits = composeMatches(ctx, text);
-      results.innerHTML = hits.length ? `<p class="composer-caption">Уже есть</p>` + hits.map((h, i) => `<button type="button" class="composer-hit" data-hit="${i}">${h.cover ? `<img src="${escape(h.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span><b>${escape(h.title)}</b>${h.meta ? `<small>${escape(h.meta)}</small>` : ""}</span>${icon("right", "icon-sm")}</button>`).join("") : "";
+      results.innerHTML = hits.length ? `<p class="composer-caption">${ctx==="movies"?"У вас":"Уже есть"}</p>` + hits.map((h, i) => `<button type="button" class="composer-hit" data-hit="${i}">${h.cover ? `<img src="${escape(h.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span><b>${escape(h.title)}</b>${h.meta ? `<small>${escape(h.meta)}</small>` : ""}</span>${icon("right", "icon-sm")}</button>`).join("") : "";
       composer.hits = hits;
     };
-    field.addEventListener("input", () => { if (composer.found.length) { composer.found = []; } show(); });
+    field.addEventListener("input", () => { composer.movieSearchRevision=(composer.movieSearchRevision||0)+1; if (ctx === "movies") send.innerHTML=icon("arrow"); if (composer.found.length) { composer.found = []; } show(); });
     field.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey && !/Android|iPhone|iPad/.test(navigator.userAgent)) { event.preventDefault(); layer.querySelector("form").requestSubmit(); }
       if (event.key === "Escape") closeComposer();
@@ -1912,22 +1912,25 @@
   /** Фильм по названию или описанию: модель предлагает, IMDb подтверждает. */
   function findMovie(text) {
     const c = composer;
+    const revision=c.movieSearchRevision=(c.movieSearchRevision||0)+1;
     const send = c.layer.querySelector(".composer-send");
     send.disabled = true;
     send.innerHTML = '<span class="live-spin"></span>';
     c.results.innerHTML = `<p class="composer-caption composer-wait"><span class="live-spin"></span>Ищу «${escape(text.slice(0, 60))}»…</p>`;
     call({ action: "movie_find", query: text }, 65000).then((answer) => {
-      if (composer !== c) return;
+      if (composer !== c || c.movieSearchRevision !== revision) return;
       send.disabled = false; send.innerHTML = icon("arrow");
       c.found = answer.found || [];
-      if (!c.found.length) { c.results.innerHTML = `<p class="composer-caption">${escape(answer.note || "Не нашёл.")}</p><button type="button" class="composer-hit composer-manual-row" data-manual><span><b>Добавить вручную</b><small>${escape(text.slice(0, 60))}</small></span>${icon("right", "icon-sm")}</button>`; return; }
-      c.results.innerHTML = `<p class="composer-caption">${c.found.length > 1 ? "Нашёл — выберите" : "Нашёл"}</p>` + c.found.map((f, i) => {
+      c.hits=composeMatches("movies",text);
+      const ownHits=c.hits.length?`<p class="composer-caption">У вас</p>`+c.hits.map((h,i)=>`<button type="button" class="composer-hit" data-hit="${i}"><span><b>${escape(h.title)}</b><small>${escape(h.meta||"")}</small></span>${icon("right","icon-sm")}</button>`).join(""):"";
+      if (!c.found.length) { c.results.innerHTML = ownHits+`<p class="composer-caption">${escape(answer.note || "Не нашёл.")}</p><button type="button" class="composer-hit composer-manual-row" data-manual><span><b>Добавить вручную</b><small>${escape(text.slice(0, 60))}</small></span>${icon("right", "icon-sm")}</button>`; return; }
+      c.results.innerHTML = ownHits+`<p class="composer-caption">В каталоге</p>` + c.found.map((f, i) => {
         const facts = [f.year, f.genre, f.kind === "series" ? "сериал" : ""].filter(Boolean).join(" · ");
         const scores = [f.kpRating ? `КП ${String(f.kpRating).replace(".", ",")}` : "", f.imdbRating ? `IMDb ${String(f.imdbRating).replace(".", ",")}` : ""].filter(Boolean).join(" · ");
         return `<article class="composer-movie">${f.poster ? `<img src="${escape(f.poster)}" alt="" loading="lazy" onerror="this.remove()">` : '<span class="composer-movie-blank"></span>'}<div><b>${escape(f.title)}</b>${f.originalTitle && f.originalTitle !== f.title ? `<small>${escape(f.originalTitle)}</small>` : ""}<small>${escape(facts)}${scores ? ` · ${escape(scores)}` : ""}</small>${f.why ? `<p>${escape(f.why)}</p>` : ""}</div>${f.existing ? `<button type="button" class="ghost-button" data-own="${f.existing}">Уже есть — открыть</button>` : `<span class="composer-movie-acts"><button type="button" class="primary-button" data-add="${i}">В планы</button><button type="button" class="ghost-button" data-add="${i}" data-mode="seen">Смотрел</button></span>`}</article>`;
       }).join("");
     }).catch(() => {
-      if (composer !== c) return;
+      if (composer !== c || c.movieSearchRevision !== revision) return;
       send.disabled = false; send.innerHTML = icon("arrow");
       c.results.innerHTML = `<p class="composer-caption">Поиск не ответил — попробуйте ещё раз.</p>`;
     });
@@ -1979,8 +1982,7 @@
     const c = composer;
     const f = c && c.found[index];
     if (!f) return;
-    const key = (s) => norm(s).replace(/[^a-zа-я0-9]+/g, " ").trim();
-    const twin = (data.saved.movies || []).find((m) => (f.imdbUrl && m.imdbUrl===f.imdbUrl) || m.id===`movie:${f.existing}` || ((key(m.title) === key(f.title) || (f.originalTitle && key(m.originalTitle) === key(f.originalTitle))) && (!m.year || !f.year || Math.abs(Number(m.year) - Number(f.year)) <= 1)));
+    const twin = (data.saved.movies || []).find(m=>m.id===`movie:${f.existing}`||movieSameIdentity(m,f));
     const seen = mode === "seen";
     if (twin || seen) { closeComposer(); navigate("saved"); }
     if (twin) { openSavedRecord("movies", twin.id); say("Этот фильм уже есть"); return; }
