@@ -584,6 +584,7 @@ function afterRender(scroll) {
   restoreSheetScroll(scroll);
   renderedScrollIdentity = sheetScrollIdentity();
   restoreSheetState();
+  if (typeof movieWatchReturnCheck === "function") movieWatchReturnCheck();
 }
 function toast(message) {
   ui.toast = message;
