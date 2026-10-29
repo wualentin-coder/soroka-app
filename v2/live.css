@@ -1277,3 +1277,33 @@ body:has(.movie-deck) .fab { bottom:max(8px,env(safe-area-inset-bottom)); }
   .movie-prototype-tools .icon-button { flex-basis:34px; width:34px; min-width:34px; }
   .movie-brand-row .head-pill { padding:0 8px; font-size:12px; }
 }
+/* Shared detail layout: library, recommendations and marathon parts. */
+.movie-view-sheet .sheet-head { padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+.movie-view-sheet > .eyebrow { display:none; }
+.movie-view-sheet .movie-detail-hero { display:grid; grid-template-columns:106px minmax(0,1fr); gap:14px; align-items:stretch; margin:0 0 20px; }
+.movie-view-sheet .movie-detail-hero .movie-cover-detail { width:106px; height:100%; min-height:159px; object-fit:cover; border-radius:13px; }
+.movie-view-sheet .movie-detail-intro { display:flex; flex-direction:column; min-width:0; gap:8px; }
+.movie-view-sheet .movie-detail-meta { font-size:12px; font-weight:400; line-height:1.55; color:var(--muted); }
+.movie-view-sheet .movie-detail-director { display:flex; flex-direction:column; gap:2px; }
+.movie-view-sheet .movie-detail-director b { font-size:13px; }
+.movie-view-sheet .movie-detail-buttons { display:flex; flex-wrap:nowrap; gap:5px; align-items:center; margin-top:auto; }
+.movie-view-sheet .movie-detail-score { box-sizing:border-box; display:flex; flex:1; min-width:0; height:44px; align-items:center; justify-content:center; gap:4px; padding:0 5px; border:0; border-radius:12px; background:var(--surface-soft); text-decoration:none; }
+.movie-detail-score small { font-size:9px; color:var(--muted); }
+.movie-detail-score strong { font-size:12px; color:var(--accent); }
+.movie-view-sheet .movie-detail-buttons > :last-child:not(.movie-detail-score) { box-sizing:border-box; width:44px; height:44px; min-height:44px; padding:0; flex:none; border-radius:12px; }
+.movie-detail-secondary { display:flex; gap:6px; }
+.movie-personal-rating { margin:20px 0; }
+.movie-personal-rating-head { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--muted); }
+.movie-personal-rating-head b { color:var(--accent); font-size:16px; }
+.movie-personal-rating .stars { display:flex; gap:2px; margin-top:8px; }
+.movie-personal-rating .stars .star { display:grid; place-items:center; flex:1; min-width:0; width:auto; height:44px; min-height:44px; padding:0; border:0; border-radius:9px; background:transparent; color:var(--subtle); }
+.movie-personal-rating .stars .star svg { width:24px; height:24px; max-width:100%; fill:transparent; stroke:currentColor; stroke-width:1.55; }
+.movie-personal-rating .stars .star.on { color:var(--accent); }
+.movie-personal-rating .stars .star.on svg { fill:var(--accent); fill-opacity:.85; }
+.movie-personal-rating .stars .star:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.movie-view-sheet .movie-summary,.movie-view-sheet .mu-hook { margin:20px 0; padding:14px 16px; border-left:3px solid var(--accent); border-radius:0 14px 14px 0; background:var(--surface-soft); font-size:14px; font-style:normal; line-height:1.65; }
+.movie-view-sheet details.movie-plot { border-top:1px solid var(--line); padding:14px 0; }
+.movie-view-sheet details.movie-plot summary { cursor:pointer; font-size:14px; font-weight:700; }
+@media(max-width:350px) { .movie-view-sheet .movie-detail-hero { grid-template-columns:86px minmax(0,1fr); gap:10px; } .movie-view-sheet .movie-detail-hero .movie-cover-detail { width:86px; min-height:129px; } .movie-view-sheet .movie-detail-score { flex-direction:column; gap:0; padding:0 2px; } }
+
+
