@@ -1,6 +1,30 @@
 /* Film-series navigation is a preview, never an automatic library import. */
 const movieSeriesCache = new Map();
 const moviePartCache = new Map();
+// Public catalogue results only; never store library progress or user notes here.
+const movieLookupStorage = 'flow.movie-lookups.v1';
+function movieLookupRead(key) {
+  try {
+    const rows=JSON.parse(localStorage.getItem(movieLookupStorage)||'[]');
+    const row=Array.isArray(rows)&&rows.find(r=>r.key===key&&r.until>Date.now());
+    return row?row.value:null;
+  } catch { return null; }
+}
+function movieLookupWrite(key,value,ttl) {
+  try {
+    const stored=JSON.parse(localStorage.getItem(movieLookupStorage)||'[]');
+    const rows=(Array.isArray(stored)?stored:[]).filter(r=>r.key!==key&&r.until>Date.now());
+    rows.push({key,value,until:Date.now()+ttl});
+    while(rows.length>48||JSON.stringify(rows).length>600000)rows.shift();
+    localStorage.setItem(movieLookupStorage,JSON.stringify(rows));
+  } catch { /* Full/disabled storage must not prevent opening a film. */ }
+}
+const movieStoryCacheKey = parts => 'story:'+JSON.stringify(parts.map(p=>[p.imdbId,p.year||'',p.released||'']).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+function movieStoryValid(answer,parts) {
+  if(answer?.status!=='ready'||!Array.isArray(answer.order)||!Array.isArray(answer.unplaced)||!Array.isArray(answer.sources))return false;
+  const ids=[...answer.order,...answer.unplaced];
+  return ids.length===parts.length&&new Set(ids).size===ids.length&&ids.every(id=>parts.some(p=>p.imdbId===id));
+}
 let movieSeriesOrder = (() => { try { return localStorage.getItem("flow.movie-series.order.v1") === "release" ? "release" : "story"; } catch { return "story"; } })();
 function movieSeriesEligible(item) { return !!item && !movieIsViewed(item) && !item.skipped && !isSeries(item); }
 function movieSeriesKey(item) { return JSON.stringify([item.id, item.title, item.year, item.imdbUrl, item.kinopoiskUrl]); }
@@ -16,6 +40,11 @@ function movieSeriesState(item, retry = false) {
   const key = movieSeriesKey(item);
   let state = movieSeriesCache.get(key);
   if (state && !retry) return state;
+  const stored=!retry&&movieLookupRead('series:'+key);
+  if(stored&&Array.isArray(stored.parts)) {
+    state={loading:false,error:false,parts:stored.parts,currentId:stored.currentId};
+    movieSeriesCachePut(movieSeriesCache,key,state);return state;
+  }
   state = { loading: true, error: false, parts: [], currentId: "" };
   movieSeriesCachePut(movieSeriesCache, key, state);
   setTimeout(async () => {
@@ -24,6 +53,7 @@ function movieSeriesState(item, retry = false) {
       if (!Array.isArray(answer?.parts)) throw Error("invalid-series");
       state.parts = answer.parts;
       state.currentId = answer.currentId;
+      movieLookupWrite('series:'+key,{parts:state.parts,currentId:state.currentId},6*3600000);
     } catch { state.error = true; }
     state.loading = false;
     const current = savedItem("movies", item.id);
@@ -37,6 +67,9 @@ function movieSeriesOwn(part) {
     || (!item.imdbUrl && part.title && part.year && item.year === part.year && [item.title, item.originalTitle].filter(Boolean).some(t => [part.title, part.originalTitle].filter(Boolean).some(p => t.toLocaleLowerCase("ru") === p.toLocaleLowerCase("ru")))));
 }
 function movieStoryState(item, state, retry = false) {
+  if(state.story?.loading&&!retry)return state.story;
+  const cacheKey=movieStoryCacheKey(state.parts),stored=!retry&&movieLookupRead(cacheKey);
+  if(movieStoryValid(stored,state.parts))return state.story={...stored,at:Date.now(),loading:false,error:false};
   if (state.story && !retry && (state.story.loading || Date.now() - state.story.at < (state.story.status === "ready" ? 6 * 3600000 : 900000))) return state.story;
   const story = { at: Date.now(), loading: true, error: false, status: "unavailable", order: [], unplaced: [], sources: [] };
   state.story = story;
@@ -50,6 +83,7 @@ function movieStoryState(item, state, retry = false) {
           || new Set(all).size !== all.length || all.some(id => !state.parts.some(p => p.imdbId === id))) throw Error("invalid-story-order");
       }
       Object.assign(story, { status: answer.status, order: answer.order || [], unplaced: answer.unplaced || [], sources: answer.sources || [] });
+      if(movieStoryValid(story,state.parts))movieLookupWrite(cacheKey,{status:story.status,order:story.order,unplaced:story.unplaced,sources:story.sources},30*86400000);
     } catch { story.error = true; }
     story.loading = false;
     const current = savedItem("movies", item.id);
