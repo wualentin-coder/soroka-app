@@ -130,11 +130,9 @@ function renderMovieReco() {
   const state = movieRecoState();
   const taste = movieTaste();
   const loved = taste.filter(g => g.score > 0).slice(0, 6);
-  const seen = savedItems("movies").filter(movieIsViewed);
-  const rated = seen.filter(m => m.rating).length;
   const chips = loved.length
     ? loved.map((g, i) => `<span class="taste-chip ${i < 3 ? "top" : ""}">${esc(g.name)}</span>`).join("")
-    : `<p class="section-note">Пока не хватает оценок: поставьте их просмотренным фильмам — вкус посчитается сам.</p>`;
+    : "";
   const picks = recoVisible();
   const ready = typeof window.sorokaRecommend === "function";
   const button = ready
@@ -144,8 +142,7 @@ function renderMovieReco() {
   try { seenHint = Boolean(localStorage.getItem("soroka-reco-hint")); if (picks.length && !seenHint) localStorage.setItem("soroka-reco-hint", "1"); } catch (_) {}
   const hint = picks.length && !seenHint ? `<p class="swipe-hint">Свайп вправо — в планы · влево — «Смотрел» или «Не интересно» (до конца)</p>` : "";
   return `<div class="movie-reco">
-    <section class="reco-block"><h2>Ваш вкус</h2><div class="taste-chips">${chips}</div><small class="reco-hint">Считаю по ${seen.length} просмотренным, из них ${rated} с оценкой. Оценка выше 6 поднимает жанр, ниже — опускает, «не интересно» опускает сильнее.</small></section>
-    <section class="reco-block reco-new"><h2>Новое для вас</h2>${recoFilterBar(taste)}${button}${state.note && !state.loading ? `<p class="section-note">${esc(state.note)}</p>` : ""}${hint}<div class="reco-picks">${state.loading && !picks.length ? recoSkeleton() : picks.map(recoCard).join("")}</div></section>
+    <section class="reco-block reco-new"><h2>Новое для вас</h2>${recoFilterBar(taste)}${chips ? `<div class="taste-chips" tabindex="0" role="group" aria-label="Любимые жанры по вашим оценкам">${chips}</div>` : ""}${button}${state.note && !state.loading ? `<p class="section-note">${esc(state.note)}</p>` : ""}${hint}<div class="reco-picks">${state.loading && !picks.length ? recoSkeleton() : picks.map(recoCard).join("")}</div></section>
   </div>`;
 }
 
