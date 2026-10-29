@@ -106,3 +106,17 @@
 .mu-series-info { flex:0 0 44px; width:44px; min-width:44px; min-height:44px; padding:0; }
 .mu-hero .mu-episode-total { display:block; margin-top:6px; }
 @media(prefers-reduced-motion:reduce){ .mu-spinner { animation:none; } }
+.mm-list-card { width:100%; grid-column:1/-1; border-color:color-mix(in srgb,var(--accent) 32%,var(--line)); }
+.mm-kicker { display:flex; align-items:center; gap:6px; color:var(--accent)!important; font-weight:800; }
+.mm-kicker .icon-sm { width:16px; height:16px; }
+.movie-deck-card.is-marathon { height:calc(100% - 24px); border:0; background:transparent; box-shadow:none; overflow:visible; }
+.mm-front { position:relative; z-index:3; display:flex; flex-direction:column; width:100%; height:100%; min-height:0; border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line)); border-radius:23px; overflow:hidden; background:var(--surface); box-shadow:0 10px 25px color-mix(in srgb,var(--line) 40%,transparent); }
+.mm-stack-sheet { position:absolute; inset:0; z-index:1; border:1px solid var(--line); border-radius:23px; overflow:hidden; background:var(--surface); pointer-events:none; }
+.mm-stack-sheet img { width:100%; height:68%; object-fit:cover; opacity:.8; }
+.mm-stack-1 { transform:translate3d(-8px,8px,0) rotate(-3deg) scale(.98); }
+.mm-stack-2 { z-index:0; transform:translate3d(10px,13px,0) rotate(3deg) scale(.98); }
+.mm-deck-label { position:absolute; top:12px; left:12px; z-index:4; display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:6px 10px; border-radius:11px; background:var(--accent); color:var(--accent-ink); font-size:11px; font-weight:800; pointer-events:none; }
+.mm-deck-label .icon-sm { width:16px; height:16px; }
+.mm-deck-progress { color:var(--accent); font-size:12px; font-weight:800; }
+.mm-deck-open { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:24px; margin-top:4px; color:var(--accent); font-size:12px; font-weight:800; }
+.mm-front .movie-deck-description { -webkit-line-clamp:3; }
