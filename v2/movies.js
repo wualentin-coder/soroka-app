@@ -8,6 +8,11 @@
  */
 
 const MOVIE_RECO_KEY = "soroka-movie-reco";
+function movieDetailHero(item,extra='') {
+  const genres=[...new Set([item.genre,...(item.tags||[])].filter(Boolean))].join(', ');
+  const facts=[item.year,genres,(item.countries||[]).join(', '),item.minutes?`${item.minutes} мин`:null].filter(Boolean).map(esc).join(' · ');
+  return `<div class="movie-detail-hero">${movieCoverMarkup(item,'detail')}<div class="movie-detail-intro"><span class="movie-detail-meta">${facts}</span>${item.director?`<span class="movie-detail-director"><small>Режиссёр</small><b>${esc(item.director)}</b></span>`:''}<div class="movie-detail-buttons movie-detail-icon-actions" aria-label="Просмотр">${typeof movieWatchMarkup==='function'?movieWatchMarkup(item):''}${extra}</div></div></div>`;
+}
 
 /** Оценка звёздами: десять кнопок, нажатие на текущую оценку снимает её. */
 function starsRow(rating, interactive = true, label = "Моя оценка", action = "movie-rate") {
@@ -103,7 +108,7 @@ function recoVisible() {
 /** Предложение как «запись фильма» — чтобы рисовать его теми же карточками, что и библиотеку. */
 function pickAsMovie(p) {
   return { id: `pick:${pickKey(p)}`, title: p.title, year: p.year || undefined, genre: p.genre || "", description: p.why || "", status: "Предложение",
-    kinopoiskRating: p.kpRating ?? "", imdbRating: p.imdbRating ?? "", coverPath: p.poster || "", tags: [] };
+    kinopoiskRating: p.kpRating ?? "", imdbRating: p.imdbRating ?? "", coverPath: p.poster || "", tags: [],kinopoiskUrl:p.kpUrl||"",imdbUrl:p.imdbUrl||"",kind:p.kind,director:p.director||"",countries:p.countries||[] };
 }
 
 function recoCard(p) {
@@ -248,8 +253,18 @@ function openSimilar(item) {
 }
 
 function libraryMatch(p) {
-  const keys = new Set([`${p.title.toLocaleLowerCase("ru-RU")}|${p.year || ""}`, `${String(p.originalTitle || "").toLocaleLowerCase("ru-RU")}|${p.year || ""}`]);
-  return savedItems("movies").find(m => keys.has(libraryKey(m)) || (m.originalTitle && keys.has(`${m.originalTitle.toLocaleLowerCase("ru-RU")}|${m.year || ""}`)));
+  return savedItems("movies").find(m => movieSameIdentity(m,p));
+}
+function movieIdentity(item) {
+  return {imdb:String(item.imdbId||item.imdb_id||item.imdbUrl?.match(/tt\d+/)?.[0]||''),
+    kp:String(item.kpId||item.kp_id||item.kinopoiskId||(item.kinopoiskUrl||item.kpUrl||'').match(/\/(?:film|series)\/(\d+)/)?.[1]||'')};
+}
+function movieSameIdentity(a,b) {
+  const x=movieIdentity(a),y=movieIdentity(b);
+  if(x.imdb&&y.imdb)return x.imdb===y.imdb;
+  if(x.kp&&y.kp)return x.kp===y.kp;
+  const norm=s=>String(s||'').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[\s–—-]+/g,' ');
+  return Boolean(a.year&&b.year&&Number(a.year)===Number(b.year)&&[a.title,a.originalTitle].filter(Boolean).some(t=>[b.title,b.originalTitle].filter(Boolean).some(u=>norm(t)===norm(u))));
 }
 
 function renderMovieSimilarSheet() {
@@ -272,7 +287,7 @@ function renderMovieSimilarSheet() {
 function commitPick(key, mode, rating = 0) {
   const p = findPick(key);
   if (!p) return;
-  if (!savedItems("movies").some(m => libraryKey(m) === `${p.title.toLocaleLowerCase("ru-RU")}|${p.year || ""}`)) {
+  if (!libraryMatch(p)) {
     const seen = mode === "seen";
     data.saved.movies.push({
       id: id(), title: p.title, description: p.why || "", kind: p.kind === "series" ? "series" : "movie", topic: p.kind === "series" ? "Сериалы" : "Кино", tags: [], genre: p.genre || "", year: p.year || undefined,
@@ -307,7 +322,7 @@ function renderMovieRateSheet() {
   const sheet = ui.sheet;
   const pick = sheet.pickKey ? findPick(sheet.pickKey) : null;
   const item = sheet.movieId ? savedItem("movies", sheet.movieId) : null;
-  const title = pick ? pick.title : item?.title || "Фильм";
+  const title = pick ? pick.title : item?.title || sheet.movieCandidate?.title || "Фильм";
   const stars = Array.from({ length: 10 }, (_, i) => `<button type="button" class="star big" data-action="movie-rate-pick" data-value="${i + 1}" aria-label="${i + 1} из 10"><span>${icon("star")}</span><b>${i + 1}</b></button>`).join("");
   const later = sheet.afterPlayback ? `<button class="ghost-button" type="button" data-action="close-sheet">Позже</button>` : "";
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet movie-rate-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Как вам «${esc(title)}»?</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">Оценка от 1 до 10 — по ней я подбираю дальше.</p><div class="star-pad">${stars}</div><div class="sheet-actions">${later}<button class="ghost-button" type="button" data-action="movie-rate-pick" data-value="0">Смотрел, без оценки</button></div></section></div>`;
@@ -323,7 +338,7 @@ function renderRecoDetailSheet() {
   const imdb = `<span class="movie-rating-label">IMDb</span><strong>${esc(score(p.imdbRating))}</strong>`;
   const ratings = `<div class="movie-ratings">${p.kpUrl ? `<a class="movie-rating movie-rating-link" href="${esc(p.kpUrl)}" target="_blank" rel="noopener noreferrer">${kp}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${kp}</div>`}${p.imdbUrl ? `<a class="movie-rating movie-rating-link" href="${esc(p.imdbUrl)}" target="_blank" rel="noopener noreferrer">${imdb}${icon("external", "icon-sm")}</a>` : `<div class="movie-rating">${imdb}</div>`}</div>`;
   const key = esc(pickKey(p));
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet reco-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(p.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${icon("event", "icon-sm")}Фильмы · Предложение</p><div class="movie-detail-hero">${movieCoverMarkup(m, "detail")}<div class="movie-detail-intro"><span class="movie-detail-status">Предложение</span><span class="movie-detail-meta">${[p.year, p.genre].filter(Boolean).map(esc).join(" · ")}</span>${ratings}</div></div>${p.why ? `<p class="saved-prose movie-detail-description">${esc(p.why)}</p>` : ""}<div class="inline-actions saved-view-actions"><button class="primary-button" type="button" data-action="reco-plans" data-key="${key}">${icon("plus")}В планы</button><button type="button" data-action="reco-seen" data-key="${key}">${icon("eye")}Смотрел</button><button type="button" data-action="reco-skip" data-key="${key}">${icon("thumbDown")}Не интересно</button></div></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet reco-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(p.title)}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${icon("event", "icon-sm")}Фильмы · Предложение</p>${movieDetailHero({...m,id:libraryMatch(p)?.id||""})}${ratings}${p.why ? `<p class="saved-prose movie-detail-description">${esc(p.why)}</p>` : ""}<div class="inline-actions saved-view-actions"><button class="primary-button" type="button" data-action="reco-plans" data-key="${key}">${icon("plus")}В планы</button><button type="button" data-action="reco-seen" data-key="${key}">${icon("eye")}Смотрел</button><button type="button" data-action="reco-skip" data-key="${key}">${icon("thumbDown")}Не интересно</button></div></section></div>`;
 }
 
 // ------------------------------------------------------------ жесты по карточкам предложений
@@ -397,6 +412,11 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function movieAction(action, control) {
+  if(action==='movie-card-actions'){ui.sheet={kind:'saved',category:'movies',id:control.dataset.id,mode:'carousel-actions',justRendered:false};render();return true;}
+  if(action==='movie-dialog-confirm'){const s=ui.sheet;ui.sheet=s.previous||null;s.confirm?.();render();return true;}
+  if(action==='movie-dialog-cancel'){ui.sheet=ui.sheet.previous||null;render();return true;}
+  if(action==='movie-reco-genre'){ui.sheet={kind:'movie-dialog',title:'Жанр',genres:true};render();return true;}
+  if(action==='movie-genre-pick'){recoFilter().genre=control.dataset.genre||'';keepRecoFilter();ui.sheet=null;render();return true;}
   if(typeof movieMarathonAction==='function'&&movieMarathonAction(action,control))return true;
   if (typeof universeAction === "function" && universeAction(action, control)) return true;
   if (typeof movieSeriesAction === "function" && movieSeriesAction(action, control)) return true;
@@ -433,10 +453,11 @@ function movieAction(action, control) {
   if (action === "movie-rate-open") { ui.sheet = { kind: "movie-rate", movieId: control.dataset.id, justRendered: false }; render(); return true; }
   if (action === "movie-rate-pick" && ui.sheet?.kind === "movie-rate") {
     const value = Number(control.dataset.value) || 0;
-    const { pickKey: key, movieId } = ui.sheet;
+    const { pickKey: key, movieId,movieCandidate } = ui.sheet;
     ui.sheet = null;
     if (key) { commitPick(key, "seen", value); toast(value ? `Оценка ${value} из 10 — учту в подборке` : "Отметил просмотренным"); return true; }
-    const item = savedItem("movies", movieId);
+    let item = savedItem("movies", movieId);
+    if(!item&&movieCandidate){item=libraryMatch(movieCandidate);if(!item){item={...movieCandidate,id:id(),created:new Date().toISOString(),status:'Хочу посмотреть',viewed:false};data.saved.movies.push(item);}}
     if (item) {
       item.rating = value;
       if (!movieIsViewed(item)) { item.statusBeforeViewed = item.status || "Хочу посмотреть"; item.status = "Посмотрел"; item.viewed = true; }
@@ -456,6 +477,12 @@ function movieAction(action, control) {
     return true;
   }
   return false;
+}
+function movieConfirm(message,confirm){ui.sheet={kind:'movie-dialog',title:'Подтверждение',message,confirm,previous:ui.sheet};render();}
+function renderMovieDialog(){
+ const s=ui.sheet,genres=['',...new Set([...movieTaste().filter(g=>g.score>0).map(g=>g.name),...RECO_GENRES].map(g=>g.charAt(0).toUpperCase()+g.slice(1)))];
+ const body=s.genres?`<div class="movie-genre-options">${genres.map(g=>`<button type="button" class="small-button" data-action="movie-genre-pick" data-genre="${esc(g)}" aria-pressed="${recoFilter().genre===g}">${esc(g||'Любой жанр')}</button>`).join('')}</div>`:`<p>${esc(s.message)}</p><div class="sheet-actions"><button class="ghost-button" data-action="movie-dialog-cancel">Отмена</button><button class="primary-button" data-action="movie-dialog-confirm">Подтвердить</button></div>`;
+ return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(s.title)}</h2><button class="icon-button" data-action="movie-dialog-cancel" aria-label="Закрыть">${icon('close')}</button></div>${body}</section></div>`;
 }
 
 /*
@@ -666,12 +693,19 @@ const seriesFilled = new Set();
 function seriesFillOnce(item) {
   if (!window.sorokaSeriesFill || seriesFilled.has(item.id)) return;
   seriesFilled.add(item.id);
+  const baseline=new Map((item.episodes||[]).map(s=>[s.n,new Set(s.seen)]));
   window.sorokaSeriesFill(item.id).then(answer => {
+    if(savedItem('movies',item.id)!==item)return;
     if (Array.isArray(answer?.episodes) && answer.episodes.length) {
-      item.episodes = answer.episodes;
+      item.episodes = answer.episodes.map(s=>{
+        const before=baseline.get(s.n)||new Set(),current=new Set(item.episodes?.find(x=>x.n===s.n)?.seen||[]),seen=new Set(s.seen||[]);
+        for(const e of before)if(!current.has(e))seen.delete(e);
+        for(const e of current)if(!before.has(e))seen.add(e);
+        return {...s,seen:[...seen].filter(e=>Number.isInteger(e)&&e>0&&e<=s.count).sort((a,b)=>a-b)};
+      });
       save(); render();
     }
-  }).catch(() => {});
+  }).catch(() => {seriesFilled.delete(item.id);});
 }
 function seriesTracker(item) {
   if (!isSeries(item)) return "";
@@ -706,6 +740,7 @@ function seriesAction(action, control) {
   // Всё просмотрено — сериал «Посмотрел».
   const total = item.episodes.reduce((a, x) => a + x.count, 0), seen = item.episodes.reduce((a, x) => a + x.seen.length, 0);
   if (total && seen === total && !movieIsViewed(item)) { item.status = "Посмотрел"; item.viewed = true; toast("Сериал досмотрен"); }
+  else if(total&&seen<total&&movieIsViewed(item)){item.status='Хочу посмотреть';item.viewed=false;}
   save(); render();
   return true;
 }
@@ -758,7 +793,7 @@ function recoFilterBar(taste) {
   const kinds = [["any", "Всё"], ["movie", "Фильмы"], ["series", "Сериалы"]];
   // Жанры: сначала любимые по оценкам, потом остальные частые.
   const genres = [...new Set([...taste.filter(g => g.score > 0).map(g => g.name), ...RECO_GENRES].map(g => g.charAt(0).toUpperCase() + g.slice(1)))].slice(0, 20);
-  return `<div class="reco-filter"><div class="segmented reco-kind" role="group" aria-label="Что подбирать">${kinds.map(([value, label]) => `<button type="button" class="${f.kind === value ? "active" : ""}" data-action="reco-kind" data-value="${value}" aria-pressed="${f.kind === value}">${label}</button>`).join("")}</div><select id="reco-genre" class="filter-input saved-sort-pill" aria-label="Жанр"><option value="">Любой жанр</option>${genres.map(g => `<option value="${esc(g)}" ${f.genre === g ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>`;
+  return `<div class="reco-filter"><div class="segmented reco-kind" role="group" aria-label="Что подбирать">${kinds.map(([value, label]) => `<button type="button" class="${f.kind === value ? "active" : ""}" data-action="reco-kind" data-value="${value}" aria-pressed="${f.kind === value}">${label}</button>`).join("")}</div><button type="button" class="small-button" data-action="movie-reco-genre">${esc(f.genre||"Любой жанр")}${icon("down","icon-sm")}</button></div>`;
 }
 
 function keepRecoFilter() { try { localStorage.setItem(RECO_FILTER_KEY, JSON.stringify(recoFilter())); } catch (_) {} }
