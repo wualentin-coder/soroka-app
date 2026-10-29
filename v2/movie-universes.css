@@ -132,3 +132,15 @@
 .movie-genre-options [aria-pressed="true"] { color:var(--accent-ink); background:var(--accent); }
 .mu-cache-state { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px; margin:12px 0; color:var(--muted); }
 .mu-source-state { color:var(--accent); }
+.reco-filter { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:8px; }
+.reco-filter .reco-kind, .reco-filter .reco-genre { box-sizing:border-box; height:44px; min-width:0; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--text); }
+.reco-filter .reco-kind { display:flex; padding:3px; }
+.reco-filter .reco-kind button { flex:1; min-width:0; padding:0 6px; font-size:12px; white-space:nowrap; }
+.reco-filter .reco-kind button.active { background:var(--surface-2,var(--bg)); box-shadow:none; }
+.reco-filter .reco-genre { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:0 10px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+.reco-genre span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reco-genre .icon { flex:none; }
+.movie-summary { margin:18px 0; padding:16px; border-left:3px solid var(--accent); background:var(--surface-soft); border-radius:0 13px 13px 0; font-size:14px; font-style:normal; line-height:1.6; }
+.movie-summary::before { content:none; }
+.mu-part-sheet .movie-detail-buttons { flex-wrap:wrap; align-items:center; }
+.movie-detail-buttons .movie-card-scores { margin:0; gap:4px; flex-wrap:wrap; }
