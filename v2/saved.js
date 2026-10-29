@@ -501,7 +501,7 @@ function renderSavedPage() {
   const main = category === "materials" ? `${materialKindTabs()}<div class="saved-sort-row">${sortSelect}</div>${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
     : category === "addresses" ? renderAddressWorkspace()
     : category === "cards" ? renderWallet()
-    : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieReco()}`
+    : category === "movies" && ui.savedFilter === "reco" ? `${seenTabs}${renderMovieDiscovery()}`
     : category === "recipes" && ui.savedFilter === "whatcook" ? `${recipeTabs()}${renderWhatToCook()}`
     : category === "products" ? `${productWishTabs()}${renderSavedSectionChips(category, movieTools + sortSelect)}${hint}<div id="saved-results" class="saved-results ${ui.productTab === "wishes" ? "" : "recipe-grid"}">${renderSavedResults()}</div>`
     : category === "recipes" ? `${recipeTabs()}${renderSavedSectionChips(category, movieTools + sortSelect)}${hint}<div id="saved-results" class="saved-results recipe-grid">${renderSavedResults()}</div>`
