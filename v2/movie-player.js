@@ -18,10 +18,11 @@ function movieWatchUrl(item) {
 function movieWatchMarkup(item) {
   const url = movieWatchUrl(item);
   if (!url) return `<button type="button" class="movie-similar-btn movie-watch-btn movie-compact-action" disabled aria-label="Смотреть на Reyoho — добавьте ссылку на Кинопоиск" title="Добавьте ссылку на Кинопоиск в карточку фильма">${icon("play")}</button>`;
-  return `<a class="movie-similar-btn movie-watch-btn movie-compact-action" data-action="movie-watch" data-id="${esc(item.id)}" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Смотреть на Reyoho" title="Смотреть на Reyoho">${icon("play")}</a>`;
+  const candidate={title:item.title,year:item.year,kind:item.kind,imdbUrl:item.imdbUrl|| (item.imdbId?`https://www.imdb.com/title/${item.imdbId}/`:''),kinopoiskUrl:item.kinopoiskUrl,kpId:moviePlayerKinopoiskId(item),coverPath:item.coverPath,genre:item.genre};
+  return `<a class="movie-similar-btn movie-watch-btn movie-compact-action" data-action="movie-watch" data-id="${esc(item.id||'')}" data-movie="${esc(JSON.stringify(candidate))}" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Смотреть на Reyoho" title="Смотреть на Reyoho">${icon("play")}</a>`;
 }
 
-// Only the movie ID is retained in this tab; playback is not proof of viewing.
+// Retain an ID or public catalogue metadata in this tab; playback is not proof of viewing.
 const MOVIE_WATCH_RETURN_KEY = "flow.movie.watch-return.v1";
 let movieWatchPending = (() => {
   try {
@@ -32,9 +33,9 @@ let movieWatchPending = (() => {
 })();
 let movieWatchPromptQueued = false;
 function movieWatchRemember(item) {
-  movieWatchPending = item && !Number(item.rating) ? { id: String(item.id), at: Date.now(), away: false, returned: false } : null;
+  movieWatchPending = item && !Number(item.rating) ? { id: String(item.id||`external:${moviePlayerKinopoiskId(item)}`),candidate:item.id?undefined:item, at: Date.now(), away: false, returned: false } : null;
   try {
-    if (movieWatchPending) sessionStorage.setItem(MOVIE_WATCH_RETURN_KEY, JSON.stringify({ id: movieWatchPending.id, at: movieWatchPending.at }));
+    if (movieWatchPending) sessionStorage.setItem(MOVIE_WATCH_RETURN_KEY, JSON.stringify({ id: movieWatchPending.id, at: movieWatchPending.at,candidate:movieWatchPending.candidate }));
     else sessionStorage.removeItem(MOVIE_WATCH_RETURN_KEY);
   } catch { /* The prompt still works for this session without storage. */ }
 }
@@ -56,10 +57,11 @@ function movieWatchReturnCheck() {
     if (!movieWatchCanPrompt()) return;
     const item = savedItem("movies", movieWatchPending.id);
     // The live library may still be loading. Never open a prompt for a missing item.
-    if (!item) return;
+    if (!item&&!movieWatchPending.candidate) return;
+    const candidate=movieWatchPending.candidate;
     movieWatchRemember(null);
-    if (Number(item.rating)) return;
-    ui.sheet = { kind: "movie-rate", movieId: item.id, afterPlayback: true, justRendered: false };
+    if (Number(item?.rating)) return;
+    ui.sheet = { kind: "movie-rate", movieId: item?.id,movieCandidate:candidate, afterPlayback: true, justRendered: false };
     render();
   });
 }
@@ -82,7 +84,8 @@ document.addEventListener("click", event => {
   if (!/^https:\/\/reyoho\.ru\/film\/[1-9]\d{0,9}$/.test(url)) return;
   if (event.defaultPrevented) return;
   const item = savedItem("movies", link.dataset.id);
-  movieWatchRemember(item && movieWatchUrl(item) === url ? item : null);
+  let candidate=null;try{candidate=JSON.parse(link.dataset.movie||'null');}catch{}
+  movieWatchRemember(item && movieWatchUrl(item) === url ? item : candidate?.title&&movieWatchUrl(candidate)===url?candidate:null);
   const tg = window.Telegram?.WebApp;
   if (!tg?.initData || typeof tg.openLink !== "function") return;
   try {
