@@ -158,8 +158,7 @@ function renderMovieSeriesPartSheet() {
   let body = `<p class="section-note" role="status">Загружаю сведения о фильме…</p>`;
   if (state?.error) body = `<p class="section-note">Не удалось загрузить сведения.</p><button class="ghost-button" type="button" data-action="movie-series-part-retry">Повторить</button>`;
   if (item) {
-    const facts = [item.year, [item.genre, ...item.tags].join(", "), item.countries.join(", ")].filter(Boolean).map(esc).join(" · ");
-    body = `${movieDetailHero({...item,id:own?.id||""})}<div class="movie-ratings"><div class="movie-rating"><span class="movie-rating-label">Кинопоиск</span><strong>${movieScore(item.kinopoiskRating)}</strong></div><div class="movie-rating"><span class="movie-rating-label">IMDb</span><strong>${movieScore(item.imdbRating)}</strong></div></div><section class="movie-hook"><h3>Без спойлеров</h3><p ${state.hookLoading ? 'role="status"' : ""}>${esc(state.hook || (state.hookLoading ? "Готовлю короткий хук…" : "Краткий хук пока недоступен."))}</p></section><div class="sheet-actions">${own ? `<button class="primary-button" type="button" data-action="movie-series-library" data-id="${esc(own.id)}">${movieIsViewed(own) ? "Открыть просмотренный фильм" : "Открыть карточку"}</button>` : `<button class="primary-button" type="button" data-action="movie-series-add">${icon("plus", "icon-sm")}В планы</button>`}</div>`;
+    body = `${movieDetailHero({...item,id:own?.id||""})}<blockquote class="movie-summary">${esc(state.hook || (state.hookLoading ? "Готовлю короткий хук…" : "Краткий хук пока недоступен."))}</blockquote>${moviePersonalRating(own||item)}<div class="sheet-actions">${own ? `<button class="primary-button" type="button" data-action="movie-series-library" data-id="${esc(own.id)}">${movieIsViewed(own) ? "Открыть просмотренный фильм" : "Открыть карточку"}</button>` : `<button class="primary-button" type="button" data-action="movie-series-add">${icon("plus", "icon-sm")}В планы</button>`}</div>`;
   }
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-view-sheet movie-view-sheet movie-series-preview" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(item?.title || sheet.title)}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${back}${body}</section></div>`;
 }
@@ -218,3 +217,5 @@ function movieSeriesAction(action, control) {
   }
   return false;
 }
+
+
