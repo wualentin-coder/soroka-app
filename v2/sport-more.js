@@ -613,7 +613,7 @@ Object.assign(SP_ACTIONS, {
   },
   "sp-import-save": async () => {
     const s = spState(), sheet = s.sheet;
-    if (!sheet.preview || sheet.saving || sheet.generating) return;
+    if (!sheet.preview || sheet.saving || sheet.generating || sheet.chat?.busy || sheet.chat?.draft?.trim()) return;
     sheet.saving = true; render();
     try {
       spImportCheck(sheet.text);
