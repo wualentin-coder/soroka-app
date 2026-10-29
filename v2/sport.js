@@ -63,6 +63,8 @@ function spLoad() {
     s.planDays = s.demo ? C.DEMO_PLAN_DAYS : [];
     C.setTimerIdentity("owner");
     spZone();
+    if (s.scheduleDay && s.date === s.scheduleDay) s.date = C.todayKey();
+    s.scheduleDay = C.todayKey();
     s.date ||= C.todayKey();
     s.weekStart ||= C.startOfWeekKey(s.date);
     s.error = "";
@@ -132,13 +134,15 @@ function spRerender(force = false) {
 }
 // Вернулись в приложение — подтянуть то, что отметили кнопкой в Telegram.
 document.addEventListener("visibilitychange", () => {
-  const s = spState();
+  const s = spState(), C = SP();
   if (document.hidden || !s.state || s.demo || typeof window.sorokaSport !== "function") return;
   if (s.pending.length || spFlushing) { spFlush().catch(() => {}); return; }
   const revision = spRevision;
   spCall("load").then(answer => {
     if (answer?.state && !s.pending.length && !spFlushing && revision === spRevision) {
-      s.state = answer.state; s.catalog = answer.catalog || {}; spZone(); spRerender();
+      s.state = answer.state; s.catalog = answer.catalog || {}; spZone();
+      if (s.scheduleDay && s.date === s.scheduleDay) s.date = C.todayKey();
+      s.scheduleDay = C.todayKey(); spRerender();
     }
   }).catch(() => {});
 });
@@ -146,11 +150,17 @@ document.addEventListener("visibilitychange", () => {
 function spDay() { const s = spState(); return SP().programDaySince(s.startedOn || SP().todayKey()); }
 function spOptions() {
   const s = spState(), C = SP();
-  const programs = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined);
+  const programs = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined, s.state);
   const all = spApplySwaps(spApplyExtras([...programs, ...spFreeOptions(s.state)], s.state), s.state);
   return { all, visible: C.visibleWorkoutOptions(all, s.state) };
 }
 // ------------------------------------------------------------ значки (из WooSport)
+
+setInterval(() => {
+  const s=spState();
+  if (document.hidden || !s.state || s.demo || s.loading || s.pending.length || spFlushing || !["sport","today"].includes(ui.page)) return;
+  if (s.scheduleDay && s.scheduleDay !== SP().todayKey()) spLoad();
+}, 60000);
 
 const SP_ICON = {
   dumbbell: '<svg class="sp-ic" viewBox="0 0 24 24" fill="currentColor"><rect x="1.6" y="8.6" width="2.6" height="6.8" rx=".8"/><rect x="4.8" y="6.4" width="3.2" height="11.2" rx="1"/><rect x="8" y="10.4" width="8" height="3.2"/><rect x="16" y="6.4" width="3.2" height="11.2" rx="1"/><rect x="19.8" y="8.6" width="2.6" height="6.8" rx=".8"/></svg>',
