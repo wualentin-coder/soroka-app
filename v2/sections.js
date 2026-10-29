@@ -176,6 +176,7 @@ document.addEventListener("submit", event => {
   goalDepositApply(1);
 }, true);
 function renderExtendedSheet() {
+  if(ui.sheet.kind==='movie-dialog')return renderMovieDialog();
   if (ui.sheet.kind === "universe-edit" || ui.sheet.kind === "universe-part" || ui.sheet.kind === "universe-from-series") return renderUniverseSheet();
   if (ui.sheet.kind === "doc") return renderDocSheet();
   if (ui.sheet.kind === "doc-edit") return renderDocEditSheet();
