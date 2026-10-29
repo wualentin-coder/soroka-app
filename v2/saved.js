@@ -250,8 +250,7 @@ function movieBlurbEmpty(text) { return /^(фильм|сериал|мультф�
 function movieCardBlurb(item) { return String(item.hook || (!movieBlurbEmpty(item.description || '') ? item.description : '') || '').trim(); }
 function movieHookBlock(item) {
   const hook = movieCardBlurb(item);
-  const note = !movieBlurbEmpty(item.description || '') ? String(item.description || '').trim() : '';
-  return `${hook ? `<blockquote class="movie-summary">${esc(hook)}</blockquote>` : ''}${item.hook && note && note !== hook ? `<div class="detail-block movie-personal-note"><h3>Моя заметка</h3><p>${esc(note)}</p></div>` : ''}`;
+  return hook ? `<blockquote class="movie-summary">${esc(hook)}</blockquote>` : '';
 }
 function movieIsViewed(item) { return item.status === "Посмотрел" || Boolean(item.viewed); }
 function movieDemoInfo(item) {
