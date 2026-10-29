@@ -144,3 +144,4 @@
 .movie-summary::before { content:none; }
 .mu-part-sheet .movie-detail-buttons { flex-wrap:wrap; align-items:center; }
 .movie-detail-buttons .movie-card-scores { margin:0; gap:4px; flex-wrap:wrap; }
+.movie-detail-buttons .movie-card-scores .score { box-sizing:border-box; height:44px; min-height:44px; border-radius:12px; }
