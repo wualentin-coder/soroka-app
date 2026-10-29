@@ -39,6 +39,7 @@ const icons = {
   link: '<path d="M10 13a5 5 0 0 0 7 .4l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7-.4l-2 2a5 5 0 0 0 7 7l1-1"/>',
   wallet: '<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M16 14h2"/>',
   moon: '<path d="M20 15.5A8 8 0 0 1 8.5 4 8 8 0 1 0 20 15.5Z"/>',
+  zzz: '<path d="M3 14h7l-7 7h7M10 8h6l-6 6h6M17 2h5l-5 5h5"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   reset: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/>',
   event: '<path d="M4 20h16M6 20V7l6-4 6 4v13M9 12h6M9 16h6"/>',
