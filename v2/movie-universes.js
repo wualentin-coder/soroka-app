@@ -25,11 +25,12 @@ function universeOrdered(d) {
 }
 const universeStoryKey = d => d.parts.map(p => p.imdbId).sort().join("|");
 async function universeLoad(retry = false) {
-  if (universeUi.loading || universeUi.loaded && !retry) return;
+  if (universeUi.loading || universeUi.loaded && !retry && Date.now()-(universeUi.loadedAt||0)<6*3600000) return;
   universeUi.loading = true; universeUi.error = "";
   try {
     const [own, catalog] = await Promise.all([universeApi("lists",{force:retry}), universeApi("search", { query: universeUi.query })]);
-    universeUi.lists = own.lists || []; universeUi.catalog = catalog.items || []; universeUi.loaded = true;
+    universeUi.lists = own.lists || []; universeUi.catalog = catalog.items || []; universeUi.loaded = true; universeUi.loadedAt=Date.now();
+    if(universeUi.detail?.id && !universeUi.busy && !ui.sheet){const current=universeUi.lists.find(x=>x.id===universeUi.detail.id);if(current)universeUi.detail=structuredClone(current);}
   } catch (e) { universeUi.error = universeError(e); }
   universeUi.loading = false; universePaint();
 }
