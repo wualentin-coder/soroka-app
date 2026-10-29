@@ -4,11 +4,26 @@
   const finite = value => (typeof value === "number" || (typeof value === "string" && value.trim() !== "")) && Number.isFinite(Number(value)) ? Number(value) : null;
   const percent = value => { const n = finite(value); return n === null ? null : Math.round(Math.max(0, Math.min(100, n))); };
   const escape = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  let zoneFormatter = null, formatterZone = null;
+  const eventTimes = new WeakMap();
   function zonedParts(at, timezone) {
-    try { return Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(at).map(p => [p.type, p.value])); }
+    try {
+      if (!zoneFormatter || formatterZone !== timezone) {
+        zoneFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+        formatterZone = timezone;
+      }
+      return Object.fromEntries(zoneFormatter.formatToParts(at).map(p => [p.type, p.value]));
+    }
     catch (_) { return null; }
   }
   function eventStart(event, timezone) {
+    const cached = eventTimes.get(event);
+    if (cached && cached.timezone === timezone && cached.due === event.due && cached.time === event.time && cached.startsAt === event.startsAt) return cached.at;
+    const at = calculateEventStart(event, timezone);
+    eventTimes.set(event, { timezone, due: event.due, time: event.time, startsAt: event.startsAt, at });
+    return at;
+  }
+  function calculateEventStart(event, timezone) {
     if (event.startsAt) { const at = Date.parse(event.startsAt); return Number.isFinite(at) ? at : null; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(event.due || "") || !/^\d{2}:\d{2}$/.test(event.time || "") || !timezone) return null;
     const target = Date.parse(`${event.due}T${event.time}:00Z`);
