@@ -22,6 +22,7 @@ function sheetFieldRows(node) {
 }
 function sheetHasChanges(node = activeSheet()) {
   if (!node) return false;
+  if (typeof universeSheetDirty === "function" && universeSheetDirty()) return true;
   return sheetFieldRows(node).some(row => {
     const el = row.el;
     if (el.tagName === 'SELECT') {
