@@ -163,7 +163,7 @@ var SportCore = (() => {
     profileGaps: () => profileGaps,
     programDayForDate: () => programDayForDate,
     programDaySince: () => programDaySince,
-    programRank: () => programRank,
+    programRank: () => scheduledProgramRank,
     programSummaries: () => programSummaries,
     raiseProgram: () => raiseProgram,
     recentTrainingWeek: () => recentTrainingWeek,
@@ -172,9 +172,13 @@ var SportCore = (() => {
     removeFavorite: () => removeFavorite,
     removeGymMovement: () => removeGymMovement,
     removeMeasurement: () => removeMeasurement,
+    rescheduleMissedWorkouts: () => rescheduleMissedWorkouts,
     restBetweenExercisesFor: () => restBetweenExercisesFor,
     restSecondsFor: () => restSecondsFor,
     saveTimer: () => saveTimer,
+    scheduledProgramRank: () => scheduledProgramRank,
+    scheduledWorkoutComplete: () => scheduledWorkoutComplete,
+    scheduledWorkoutDate: () => scheduledWorkoutDate,
     selectWorkoutLoad: () => selectWorkoutLoad,
     selectedOption: () => selectedOption,
     setCalendarTimeZone: () => setCalendarTimeZone,
@@ -688,6 +692,110 @@ var SportCore = (() => {
     return new Date(date.getTime() - date.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
   }
 
+  // supabase/functions/_shared/sport-schedule.ts
+  function scheduledProgramRank(key, addedAt, state, newestFirst = true) {
+    const order = state.programOrder ?? [], manual = order.indexOf(key);
+    if (manual >= 0) return manual;
+    const added = Date.parse(addedAt ?? "") || 0;
+    return order.length + (newestFirst ? -added : added) / 1e13;
+  }
+  function scheduledWorkoutDate(state, key, original) {
+    const value = state.workoutDates?.[key];
+    return value && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && (/* @__PURE__ */ new Date(value + "T12:00:00Z")).toISOString().slice(0, 10) === value ? value : original;
+  }
+  function scheduledWorkoutComplete(state, key, w) {
+    if (state.workouts?.[key]) return true;
+    const exercises = [
+      ...w.blocks.filter((b) => !["warmup", "mobility"].includes(b.type)).flatMap(
+        (b) => b.exercises
+      ),
+      ...Object.entries(state.workoutExtras?.[key] || {}).map(([id2, e]) => ({
+        id: id2,
+        sets: Math.max(1, Number(e.sets) || 1)
+      }))
+    ];
+    return exercises.length > 0 && exercises.every(
+      (e) => (state.programChecks?.[`${key}|${e.id}`] || 0) >= e.sets
+    );
+  }
+  function rescheduleMissedWorkouts(catalog, state, today) {
+    const rows = Object.values(catalog).filter(
+      (p) => (state.programLifecycle?.[`v2|${p.program.id}`]?.status ?? "active") === "active"
+    ).flatMap(
+      (p) => Object.values(p.workouts).map((w) => {
+        const key = `v2|${p.program.id}|${w.id}`, program = `v2|${p.program.id}`;
+        const done = scheduledWorkoutComplete(state, key, w);
+        const recorded = done || w.blocks.some(
+          (b) => b.exercises.some(
+            (e) => (state.programChecks?.[`${key}|${e.id}`] || 0) > 0
+          )
+        );
+        return {
+          key,
+          program,
+          w,
+          date: scheduledWorkoutDate(state, key, w.date),
+          done,
+          recorded,
+          addedAt: p.addedAt
+        };
+      })
+    );
+    const slots = /* @__PURE__ */ new Map();
+    for (const row of rows) {
+      const slot = `${row.date}|${row.w.kind}`;
+      slots.set(slot, [...slots.get(slot) || [], row]);
+    }
+    const chosen = /* @__PURE__ */ new Set();
+    for (const [slot, variants] of slots) {
+      const explicit = variants.find(
+        (r) => r.key === state.workoutSelections?.[slot]
+      );
+      const started = variants.filter((r) => r.recorded);
+      const winner = explicit || (started.length === 1 ? started[0] : started.length > 1 ? void 0 : [...variants].sort(
+        (a, b) => scheduledProgramRank(a.program, a.addedAt, state, a.date >= today) - scheduledProgramRank(b.program, b.addedAt, state, b.date >= today)
+      )[0]);
+      if (winner) chosen.add(winner.key);
+    }
+    let dates = state.workoutDates, selections = state.workoutSelections;
+    for (const program of new Set(rows.map((r) => r.program))) {
+      const items = rows.filter((r) => r.program === program);
+      const first = items.filter(
+        (r) => chosen.has(r.key) && !r.done && ["main", "splits"].includes(r.w.kind) && r.date < today
+      ).sort(
+        (a, b) => a.date.localeCompare(b.date)
+      )[0];
+      if (!first) continue;
+      const delay = Math.round(
+        (Date.parse(today + "T12:00:00Z") - Date.parse(first.date + "T12:00:00Z")) / 864e5
+      );
+      for (const row of items) {
+        if (row.done || row.date < first.date) continue;
+        const date = new Date(
+          Date.parse(row.date + "T12:00:00Z") + delay * 864e5
+        ).toISOString().slice(0, 10);
+        dates ?? (dates = {});
+        if (dates === state.workoutDates) dates = { ...dates };
+        dates[row.key] = date;
+        const oldSlot = `${row.date}|${row.w.kind}`;
+        if (state.workoutSelections?.[oldSlot] === row.key) {
+          selections ?? (selections = {});
+          if (selections === state.workoutSelections) {
+            selections = {
+              ...selections
+            };
+          }
+          selections[`${date}|${row.w.kind}`] = row.key;
+        }
+      }
+    }
+    return dates === state.workoutDates ? state : {
+      ...state,
+      workoutDates: dates,
+      ...selections !== state.workoutSelections ? { workoutSelections: selections } : {}
+    };
+  }
+
   // sport/core/src/programs.ts
   function exercise(e) {
     return {
@@ -708,7 +816,7 @@ var SportCore = (() => {
       weight_basis: e.weight_basis
     };
   }
-  function workoutOptions(planDays, catalog, currentDay, startedOn) {
+  function workoutOptions(planDays, catalog, currentDay, startedOn, state = {}) {
     const options = [];
     for (const day of [...new Set(planDays.map((p) => p.day_number))]) {
       const rows = planDays.filter((p) => p.day_number === day);
@@ -744,9 +852,11 @@ var SportCore = (() => {
         focus: workout.focus,
         exercises: workout.blocks.filter((b) => b.type !== "warmup" && b.type !== "mobility").flatMap((b) => b.exercises.map(exercise))
       };
+      const key = `v2|${item.program.id}|${workout.id}`;
       options.push({
-        key: `v2|${item.program.id}|${workout.id}`,
-        date: workout.date,
+        key,
+        date: scheduledWorkoutDate(state, key, workout.date),
+        originalDate: workout.date,
         kind: workout.kind,
         programTitle: item.program.title,
         legacy: false,
@@ -768,15 +878,8 @@ var SportCore = (() => {
     const done = option.plan.exercises.reduce((sum, e, i) => sum + completedSets(checks[i], exerciseSets(e)), 0);
     return total && done === total ? 100 : total ? Math.min(99, Math.round(done / total * 100)) : 0;
   }
-  function programRank(key, addedAt, state, newestFirst = true) {
-    const order = state.programOrder ?? [];
-    const manual = order.indexOf(key);
-    if (manual >= 0) return manual;
-    const added = Date.parse(addedAt ?? "") || 0;
-    return order.length + (newestFirst ? -added : added) / 1e13;
-  }
   function optionPriority(option, state, date, today) {
-    return programRank(optionProgramKey(option), option.addedAt, state, date >= today);
+    return scheduledProgramRank(optionProgramKey(option), option.addedAt, state, date >= today);
   }
   function programSummaries(catalog, options, state) {
     const legacy = options.filter((o) => o.legacy);
@@ -786,11 +889,11 @@ var SportCore = (() => {
         key: `v2|${p.program.id}`,
         title: p.program.title,
         addedAt: p.addedAt,
-        dates: Object.values(p.workouts).map((w) => w.date),
+        dates: Object.values(p.workouts).map((w) => scheduledWorkoutDate(state, `v2|${p.program.id}|${w.id}`, w.date)),
         legacy: false
       }))
     ];
-    return items.sort((a, b) => programRank(a.key, a.addedAt, state) - programRank(b.key, b.addedAt, state));
+    return items.sort((a, b) => scheduledProgramRank(a.key, a.addedAt, state) - scheduledProgramRank(b.key, b.addedAt, state));
   }
   function selectedOption(options, date, kind, state, today = todayKey()) {
     const variants = options.filter((o) => o.date === date && o.kind === kind);
@@ -1408,6 +1511,7 @@ var SportCore = (() => {
   function workoutJournal(options, state) {
     return options.filter((o) => o.date <= todayKey() && (state.workouts?.[o.key] || optionChecks(o, state).some(Boolean))).sort((a, b) => b.date.localeCompare(a.date) || a.key.localeCompare(b.key)).map((o) => ({
       date: o.date,
+      rescheduledFrom: o.originalDate && o.originalDate !== o.date ? o.originalDate : void 0,
       title: o.plan.title,
       program: o.programTitle,
       kind: o.kind,
@@ -1425,7 +1529,7 @@ var SportCore = (() => {
           plannedScheme: e.sets_reps,
           actualReps: null,
           // Подход без веса — собственный вес, а не «вес неизвестен»: пустое поле ИИ читает как «неизвестно».
-          actualSets: actualSets.map((log) => ({ setNumber: log.setNumber, kilograms: log.kilograms, basis: log.basis ? WEIGHT_BASIS[log.basis] : log.kilograms === null ? "собственный вес" : null, actualReps: log.actualReps, weightSource: log.weightSource ?? (log.kilograms === null ? "bodyweight" : null) })),
+          actualSets: actualSets.map((log) => ({ date: log.date, setNumber: log.setNumber, kilograms: log.kilograms, basis: log.basis ? WEIGHT_BASIS[log.basis] : log.kilograms === null ? "собственный вес" : null, actualReps: log.actualReps, weightSource: log.weightSource ?? (log.kilograms === null ? "bodyweight" : null) })),
           setsWithoutDetailedLog: Math.max(0, done - actualSets.length)
         };
       })
@@ -1437,11 +1541,14 @@ var SportCore = (() => {
     const groups = /* @__PURE__ */ new Map();
     for (const w of workouts) for (const e of w.exercises) {
       const key = exerciseKey(e.name);
-      const group = groups.get(key) ?? { exercise: e.name, completedSets: 0, plannedSets: 0, setsWithoutDetailedLog: 0, sets: [] };
-      group.completedSets += e.completedSets;
+      const group = groups.get(key) ?? { exercise: e.name, completedSets: 0, plannedSets: 0, setsWithoutDetailedLog: 0, undatedCarriedSets: 0, sets: [] };
+      const recentSets = e.actualSets.filter((set) => set.date >= from && set.date <= to);
+      const undated = w.rescheduledFrom ? e.setsWithoutDetailedLog : 0;
+      group.completedSets += recentSets.length + e.setsWithoutDetailedLog - undated;
       group.plannedSets += e.plannedSets;
-      group.setsWithoutDetailedLog += e.setsWithoutDetailedLog;
-      group.sets.push(...e.actualSets.map((set) => ({ date: w.date, ...set })));
+      group.setsWithoutDetailedLog += e.setsWithoutDetailedLog - undated;
+      group.undatedCarriedSets += undated;
+      group.sets.push(...recentSets);
       groups.set(key, group);
     }
     const performanceSamples = Object.values(state.workingWeights ?? {}).filter((w) => w.date >= from && w.date <= to).map((w) => ({
@@ -1459,7 +1566,7 @@ var SportCore = (() => {
       workouts,
       exercises: [...groups.values()],
       performanceSamples,
-      interpretation: "Последние 7 календарных дней. completedSets — отмеченное выполнение; plannedSets и plannedScheme — только план. performanceSamples — отдельно записанные результаты: scope=one_set означает один подход, а не все подходы занятия. Не размножай его вес и повторы на весь выполненный объём. sets — прежний подробный журнал, если он есть. weightSource=previous означает подставленный предыдущий вес, plan — предложение ИИ, selected — явно выбранный вес занятия. actualReps неизвестны, если null. setsWithoutDetailedLog — старые отметки без подробностей; не восстанавливай для них вес задним числом из последнего значения."
+      interpretation: "Последние 7 календарных дней. Перенесённое занятие помечено rescheduledFrom; дата самого занятия — расписание, а actualSets[].date — фактическая дата подхода, которая не меняется при переносе. undatedCarriedSets — прежние отметки перенесённой тренировки без точной даты: не считай их новой нагрузкой этой недели и не повышай из-за них вес. В exercises.completedSets учтены только подходы внутри периода и старые отметки неперенесённых занятий. completedSets — отмеченное выполнение; plannedSets и plannedScheme — только план. performanceSamples — отдельно записанные результаты: scope=one_set означает один подход, а не все подходы занятия. Не размножай его вес и повторы на весь выполненный объём. sets — прежний подробный журнал, если он есть. weightSource=previous означает подставленный предыдущий вес, plan — предложение ИИ, selected — явно выбранный вес занятия. actualReps неизвестны, если null. setsWithoutDetailedLog — старые отметки без подробностей; не восстанавливай для них вес задним числом из последнего значения."
     };
   }
   function buildTrainingContext(state, options, currentDay, periodDays, includeHealth, includeProfile = true) {
