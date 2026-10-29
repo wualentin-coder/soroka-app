@@ -37,8 +37,8 @@ function movieSeriesOwn(part) {
     || (!item.imdbUrl && part.title && part.year && item.year === part.year && [item.title, item.originalTitle].filter(Boolean).some(t => [part.title, part.originalTitle].filter(Boolean).some(p => t.toLocaleLowerCase("ru") === p.toLocaleLowerCase("ru")))));
 }
 function movieStoryState(item, state, retry = false) {
-  if (state.story && !retry) return state.story;
-  const story = { loading: true, error: false, status: "unavailable", order: [], unplaced: [], sources: [] };
+  if (state.story && !retry && (state.story.loading || Date.now() - state.story.at < (state.story.status === "ready" ? 6 * 3600000 : 900000))) return state.story;
+  const story = { at: Date.now(), loading: true, error: false, status: "unavailable", order: [], unplaced: [], sources: [] };
   state.story = story;
   setTimeout(async () => {
     try {
