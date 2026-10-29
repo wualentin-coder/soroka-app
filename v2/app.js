@@ -541,6 +541,7 @@ function syncModalScrollLock() {
 new MutationObserver(syncModalScrollLock).observe(document.body, { childList: true, subtree: true });
 let renderedShell = "";
 function render() {
+  if(typeof movieMarathonBegin==='function')movieMarathonBegin();
   captureSheetState();
   scrollBeforeRender = modalPageLock ? null : { x: window.scrollX, y: window.scrollY };
   const scroll = captureSheetScroll();
@@ -551,6 +552,7 @@ function render() {
   document.body.classList.toggle("density-spacious", data.settings.density === "spacious");
   const page = ui.demoState !== "normal" && ui.page !== "settings" ? renderDemoStatePage() : ui.page === "today" ? todayPage() : ui.page === "upcoming" ? upcomingPage() : extendedPage(ui.page);
   const sheet = ui.sheet ? ui.sheet.kind === "search" ? searchSheet() : ui.sheet.kind === "entry" ? entrySheet() : renderExtendedSheet() : "";
+  if(typeof movieMarathonEnd==='function')movieMarathonEnd();
   const overlay = `${sheet}${ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : ""}`;
   // Открыли или закрыли окно, показали подсказку, а экран под ними тот же —
   // меняем только окно. Пересборка всего экрана с картами и свайпами давала
