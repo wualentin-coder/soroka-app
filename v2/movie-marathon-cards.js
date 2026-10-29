@@ -2,18 +2,20 @@
 const movieMarathonPlans = {loading:false,at:0,error:'',queued:false,back:null};
 const movieMarathonIsCard = item => Boolean(item?._movieMarathon);
 const movieMarathonPlansActive = settings => settings.savedCategory==='movies' && !['viewed','reco','skipped'].includes(settings.savedFilter);
-function movieMarathonMatches(item,part) {
-  const imdb=item.imdbUrl?.match(/\/title\/(tt\d+)/)?.[1] || item.imdbId;
-  if(imdb && imdb===part.imdbId)return true;
-  const kp=typeof moviePlayerKinopoiskId==='function'?moviePlayerKinopoiskId(item):'';
-  return Boolean(kp && String(part.kpId||'')===kp);
-}
 function movieMarathonEntries(items,settings=ui) {
   if(!movieMarathonPlansActive(settings))return items;
   const all=savedItems('movies'),q=String(settings.savedQuery||'').trim().toLocaleLowerCase('ru-RU'),section=settings.savedSection||'',type=settings.movieType||'';
   const rows=[],hidden=new Set();
-  for(const d of universeUi.lists.filter(d=>!d.deleted_at)) {
-    const parts=universePartsVisible(d),members=all.filter(m=>parts.some(p=>movieMarathonMatches(m,p)));
+  const lists=universeUi.lists.filter(d=>!d.deleted_at);
+  // Parse each library link once per calculation, not for every part of every list.
+  // Rebuild from current records so in-place edits and refreshed lists stay visible.
+  const identities=lists.length?all.map(item=>({item,
+    imdb:item.imdbUrl?.match(/\/title\/(tt\d+)/)?.[1] || item.imdbId,
+    kp:typeof moviePlayerKinopoiskId==='function'?moviePlayerKinopoiskId(item):''
+  })):[];
+  for(const d of lists) {
+    const parts=universePartsVisible(d),imdbIds=new Set(parts.map(p=>p.imdbId).filter(Boolean)),kpIds=new Set(parts.map(p=>String(p.kpId||'')).filter(Boolean));
+    const members=identities.filter(m=>(m.imdb&&imdbIds.has(m.imdb))||(m.kp&&kpIds.has(m.kp))).map(m=>m.item);
     const folderMatch=m=>!section || (section==='__none__'?!m.categoryId:m.categoryId===section);
     const scoped=members.filter(m=>folderMatch(m) && (!type || movieBaseType(m)===type) && (settings.savedFilter!=='pinned' || m.pinned));
     if(section && !scoped.length || settings.savedFilter==='pinned' && !scoped.length)continue;
