@@ -400,6 +400,7 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function movieAction(action, control) {
+  if (typeof universeAction === "function" && universeAction(action, control)) return true;
   if (typeof movieSeriesAction === "function" && movieSeriesAction(action, control)) return true;
   if (action === "movie-rate") {
     const item = ui.sheet?.kind === "saved" && ui.sheet.category === "movies" ? savedItem("movies", ui.sheet.id) : null;
