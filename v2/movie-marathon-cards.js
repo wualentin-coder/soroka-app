@@ -4,7 +4,7 @@ let movieMarathonFrame=null;
 function movieMarathonBegin(){movieMarathonFrame={identities:null};}
 function movieMarathonEnd(){movieMarathonFrame=null;}
 const movieMarathonIsCard = item => Boolean(item?._movieMarathon);
-const movieMarathonPlansActive = settings => settings.savedCategory==='movies' && !['viewed','reco','skipped'].includes(settings.savedFilter);
+const movieMarathonPlansActive = settings => settings.savedCategory==='movies' && !['reco','skipped'].includes(settings.savedFilter);
 function movieMarathonEntries(items,settings=ui) {
   if(!movieMarathonPlansActive(settings))return items;
   const all=savedItems('movies'),q=String(settings.savedQuery||'').trim().toLocaleLowerCase('ru-RU'),section=settings.savedSection||'',type=settings.movieType||'';
@@ -17,15 +17,31 @@ function movieMarathonEntries(items,settings=ui) {
     kp:typeof moviePlayerKinopoiskId==='function'?moviePlayerKinopoiskId(item):''
   })):[]);
   if(movieMarathonFrame)movieMarathonFrame.identities=identities;
+  const byImdb=new Map(identities.filter(m=>m.imdb).map(m=>[m.imdb,m.item]));
+  const byKp=new Map(identities.filter(m=>m.kp).map(m=>[String(m.kp),m.item]));
+  const viewed=settings.savedFilter==='viewed';
   for(const d of lists) {
     const parts=universePartsVisible(d),imdbIds=new Set(parts.map(p=>p.imdbId).filter(Boolean)),kpIds=new Set(parts.map(p=>String(p.kpId||'')).filter(Boolean));
     const members=identities.filter(m=>(m.imdb&&imdbIds.has(m.imdb))||(m.kp&&kpIds.has(m.kp))).map(m=>m.item);
+    const complete=parts.length>0 && parts.every(p=>{
+      const episodes=p.kind==='series' && d.episode_progress?.[p.imdbId];
+      if(episodes)return universeEpisodeSummary(episodes).fraction>=1;
+      if(typeof d.progress?.[p.imdbId]==='boolean')return d.progress[p.imdbId];
+      const own=byImdb.get(p.imdbId)||byKp.get(String(p.kpId||''));
+      return own ? movieIsViewed(own) : false;
+    });
+    if(viewed!==complete) {
+      if(!viewed)for(const m of members)hidden.add(m.id);
+      continue;
+    }
+    // Specific watched filters describe individual films, not a collection's rating/year.
+    if(viewed && settings.movieSeen)continue;
     const folderMatch=m=>!section || (section==='__none__'?!m.categoryId:m.categoryId===section);
     const scoped=members.filter(m=>folderMatch(m) && (!type || movieBaseType(m)===type) && (settings.savedFilter!=='pinned' || m.pinned));
     if(section && !scoped.length || settings.savedFilter==='pinned' && !scoped.length)continue;
     if(type && !scoped.length && !parts.some(p=>type==='series'?p.kind==='series':type==='movie'&&p.kind!=='series'))continue;
     if(q && ![d.title,...parts.flatMap(p=>[p.title,p.originalTitle]),...scoped.map(m=>`${m.title} ${m.description||''} ${(m.tags||[]).join(' ')}`)].some(t=>String(t||'').toLocaleLowerCase('ru-RU').includes(q)))continue;
-    for(const m of members)hidden.add(m.id);
+    if(!viewed)for(const m of members)hidden.add(m.id);
     rows.push({id:`marathon:${d.id}`,title:d.title,_movieMarathon:d,memberIds:members.map(m=>m.id),pinned:members.some(m=>m.pinned),created:d.created_at||'',updated:d.updated_at||''});
   }
   return [...items.filter(m=>!hidden.has(m.id)),...rows].sort((a,b)=>sortSavedItems(a,b));
