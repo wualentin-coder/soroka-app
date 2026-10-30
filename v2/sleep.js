@@ -222,28 +222,39 @@ function slSheetHtml() {
   return `<div class="modal-backdrop sl-backdrop" data-action="sl-backdrop"><section class="sheet sl-sheet" role="dialog" aria-modal="true" aria-label="${slEsc(view.title)}"><div class="sheet-handle"></div><div class="sheet-head"><h2>${slEsc(view.title)}</h2><button class="icon-button" type="button" data-action="sl-close" aria-label="Закрыть">${icon("close")}</button></div>${s.pending?`<fieldset class="sl-saving" disabled>${view.body}</fieldset>`:view.body}${s.sheetError ? `<p class="sl-error" role="alert">${slEsc(s.sheetError)}</p>` : ""}</section></div>`;
 }
 
+function slRememberNight(form) {
+  if(!form || !slState().sheet)return;
+  const draft={};
+  for(const input of form.querySelectorAll('input[name]')) {
+    if(input.name==='tag')continue;
+    if(input.type==='radio'){if(input.checked)draft[input.name]=Number(input.value);}
+    else draft[input.name]=input.type==='checkbox'?input.checked:input.value;
+  }
+  draft.tags=[...form.querySelectorAll('[name="tag"]:checked')].map(x=>x.value);
+  slState().sheet.draft=draft;
+}
 function slNightSheet(sheet) {
   const d=slState().data,day=sheet.day||d.today,have=(d.nights||[]).find(n=>n.day===day),lockedFull=have && have.detail!=="quick";
   const full=lockedFull || sheet.detail==="full",busy=slState().pending;
-  const v=have||{},detailAttrs=full?"required":"disabled";
+  const v={...(have||{}),...(sheet.draft||{})},detailAttrs=full?"required":"disabled";
   const time=(name,label,extra=false)=>`<label class="sl-field"><span>${label}</span><input type="time" name="${name}" value="${slEsc(v[name] ?? "")}" ${extra?detailAttrs:"required"}></label>`;
-  const stepper=(name,label,unit,step,max)=>`<div class="sl-field"><label for="sl-${name}">${label}</label><div class="sp-stepper"><button type="button" data-action="sl-step" data-name="${name}" data-d="-${step}" aria-label="Уменьшить: ${label}">−</button><input id="sl-${name}" type="number" name="${name}" min="0" max="${max}" inputmode="numeric" value="${slEsc(v[name] ?? "")}" ${detailAttrs}><span>${unit}</span><button type="button" data-action="sl-step" data-name="${name}" data-d="${step}" aria-label="Увеличить: ${label}">+</button></div></div>`;
+  const stepper=(name,label,unit,step,max)=>`<div class="sl-field"><label for="sl-${name}">${label}</label><div class="sl-stepper"><button type="button" data-action="sl-step" data-name="${name}" data-d="-${step}" aria-label="Уменьшить: ${label}">−</button><input id="sl-${name}" type="number" name="${name}" min="0" max="${max}" inputmode="numeric" value="${slEsc(v[name] ?? "")}" ${detailAttrs}><span>${unit}</span><button type="button" data-action="sl-step" data-name="${name}" data-d="${step}" aria-label="Увеличить: ${label}">+</button></div></div>`;
   const labels=["Очень плохо","Плохо","Средне","Хорошо","Отлично"];
-  return {title:day===d.today?"Как спалось":`Ночь на ${slDate(day)}`,body:`<form class="sl-form" data-sl-form="night" data-detail="${full?"full":"quick"}">
+  return {title:day===d.today?"Как спалось":`Ночь на ${slDate(day)}`,body:`<form class="sl-form" data-sl-form="night" novalidate data-detail="${full?"full":"quick"}">
     ${lockedFull?`<p class="section-note">Подробный дневник этой ночи сохранён. Его данные не заменяются короткой отметкой.</p>`:`<div class="sl-mode" role="group" aria-label="Подробность дневника"><button type="button" data-action="sl-detail" data-detail="quick" aria-pressed="${!full}">Коротко</button><button type="button" data-action="sl-detail" data-detail="full" aria-pressed="${Boolean(full)}">Подробно</button></div>`}
-    <label class="sl-field"><span>Дата утра</span><input type="date" name="day" value="${slEsc(day)}" max="${slEsc(d.today)}" required></label>
+    <label class="sl-field"><span>Дата утра</span><input type="date" name="day" value="${slEsc(v.day||day)}" max="${slEsc(d.today)}" required></label>
     <div class="sl-pair">${time("bed","Лёг в кровать")}${time("rise","Встал с кровати")}</div>
     <div class="sl-extra" ${full?"":"hidden"}>
       <div class="sl-pair">${time("lights","Начал пытаться уснуть",true)}${time("wake","Проснулся окончательно",true)}</div>
       ${stepper("sol","Время засыпания","мин",5,600)}
       <div class="sl-pair">${stepper("wakes","Пробуждений","раз",1,50)}${stepper("waso","Не спал ночью всего","мин",5,900)}</div>
-      <p class="section-note">Если пробуждений не было — укажите0. Не помните минуты — оставьте короткую отметку, без оценки эффективности.</p>
+      <p class="section-note">Если пробуждений не было — укажите 0. Не помните минуты — оставьте короткую отметку, без оценки эффективности.</p>
     </div>
-    <fieldset class="sl-quality-field"><legend>Как выспался</legend><div class="sl-quality">${labels.map((label,i)=>`<label><input type="radio" name="quality" value="${i+1}" ${v.quality===i+1?"checked":""} required><span>${i+1} · ${label}</span></label>`).join("")}</div></fieldset>
+    <fieldset class="sl-quality-field"><legend>Как выспался</legend><div class="sl-quality">${labels.map((label,i)=>`<label><input type="radio" name="quality" value="${i+1}" ${v.quality===i+1?"checked":""} required><span><b>${i+1}</b><small>${label}</small></span></label>`).join("")}</div></fieldset>
     <label class="sl-check"><input type="checkbox" name="sleepy" ${v.sleepy?"checked":""}><span>Выраженная сонливость мешает вниманию и безопасности</span></label>
     <details class="sl-night-tags"><summary>Что могло повлиять</summary><div class="sl-tags">${SL_TAGS.map(([k,label])=>`<label><input type="checkbox" name="tag" value="${k}" ${(v.tags||[]).includes(k)?"checked":""}><span>${label}</span></label>`).join("")}</div></details>
     <p class="section-note">${full?"Оценка сна будет рассчитана по вашим ответам.":"Это отметка времени в постели. Длительность сна и эффективность по ней не рассчитываются."}</p>
-    <button class="primary-button sl-wide" type="submit" ${busy?"disabled":""}>${busy?"Сохраняю…":"Сохранить"}</button>
+    <p class="sl-error sl-night-error" role="alert" hidden></p><button class="primary-button sl-wide" type="submit" ${busy?"disabled":""}>${busy?"Сохраняю…":"Сохранить"}</button>
     ${have?`<button class="text-action danger" type="button" data-action="sl-night-delete" data-day="${slEsc(day)}" ${busy?"disabled":""}>Удалить ночь</button>`:""}</form>`};
 }
 
@@ -261,7 +272,7 @@ function sleepAction(action, control, event) {
   if (!action.startsWith("sl-")) return false;
   const s = slState();
   if(action === "sl-tab"){if(["today","progress","more"].includes(control.dataset.tab)){s.tab=control.dataset.tab;render();}return true;}
-  if(action === "sl-detail"){s.sheet.detail=control.dataset.detail;render();return true;}
+  if(action === "sl-detail"){if(s.pending)return true;slRememberNight(control.closest('form'));s.sheet.detail=control.dataset.detail;render();return true;}
   if(s.pending)return true;
   if (action === "sl-backdrop") { if (event?.target === control && confirmSheetDiscard(document.querySelector(".sl-sheet"))) { s.sheet = null; render(); } return true; }
   if (action === "sl-close") { if (!confirmSheetDiscard(document.querySelector(".sl-sheet"))) return true; s.sheet = null; s.sheetError = ""; render(); return true; }
@@ -292,6 +303,14 @@ document.addEventListener("submit", event => {
   if (kind === "setup") {
     slDo("setup", { targetWake: f.target.value, snore: f.snore.checked, sleepy: f.sleepy.checked, condition: f.condition.checked, skipBaseline: Boolean(f.skip?.checked) });
   } else if (kind === "night") {
+    slRememberNight(form);
+    if(!form.checkValidity()) {
+      const invalid=form.querySelector(':invalid');
+      const label=invalid?.closest('.sl-field')?.querySelector('label,span')?.textContent || 'Как выспался';
+      const error=form.querySelector('.sl-night-error');
+      error.textContent=`Заполните поле «${label}». Если не помните подробности, выберите «Коротко».`;
+      error.hidden=false;invalid?.focus();return;
+    }
     const full=form.dataset.detail==="full";
     const observed={day:f.day.value,bed:f.bed.value,rise:f.rise.value,detail:full?"full":"quick",quality:Number(form.querySelector('[name="quality"]:checked')?.value),sleepy:f.sleepy.checked,tags:[...form.querySelectorAll('[name="tag"]:checked')].map(x=>x.value)};
     if(!Number.isInteger(observed.quality)||observed.quality<1||observed.quality>5){slState().sheetError="Укажите, как выспались.";render();return;}
@@ -321,3 +340,4 @@ function slHomeTile() {
 }
 
 document.addEventListener("visibilitychange",()=>{const s=slState();if(!document.hidden&&ui.page==="sleep"&&!s.pending&&!s.sheet)slLoad();});
+
