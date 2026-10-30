@@ -22,12 +22,22 @@ function rmVisibleJobs(queue) {
   return (queue.jobs || []).filter(j=>!rmPendingArchive.has(Number(j.id)));
 }
 const rmJobs = () => rmVisibleJobs(rmQueue());
-function rmArchive(ids) {
+let rmArchiveTimer=null,rmArchiveSending=false;
+const rmArchiveBatch=new Set();
+function rmArchive(ids, immediate=false) {
   ids=ids.filter(id=>rmJobs().some(j=>Number(j.id)===id && ['done','failed','cancelled'].includes(j.status)));
   if(!ids.length)return;
   ids.forEach(id=>rmPendingArchive.set(id,Date.now()+120000));
+  ids.forEach(id=>rmArchiveBatch.add(id));
   render();
-  pcQuick('rm_clear',{ids},'rm-clear',()=>{pcLoad(true);},()=>{ids.forEach(id=>rmPendingArchive.delete(id));render();});
+  clearTimeout(rmArchiveTimer);
+  if(immediate)rmFlushArchive();else rmArchiveTimer=setTimeout(rmFlushArchive,900);
+}
+function rmFlushArchive() {
+  if(rmArchiveSending || !rmArchiveBatch.size)return;
+  const ids=[...rmArchiveBatch];rmArchiveBatch.clear();rmArchiveSending=true;
+  const finish=()=>{rmArchiveSending=false;if(rmArchiveBatch.size)rmFlushArchive();};
+  pcQuick('rm_clear',{ids},'rm-clear',()=>{pcLoad(true);finish();},()=>{ids.forEach(id=>rmPendingArchive.delete(id));render();finish();});
 }
 /** Есть ли в очереди что-то идущее или ждущее — тогда «Когда закончится» управляет очередью. */
 const rmBusy = () => rmJobs().some(j => RM_ACTIVE.includes(j.status) || RM_WAITING.includes(j.status));
@@ -98,7 +108,7 @@ function rmWaitingRow(j, i) {
 }
 
 /** Законченная: итог одной строкой и действие, если оно есть. */
-function rmRecentRow(j) {
+function rmRecentDetails(j) {
   const deliveryFailed = j.status === "done" && j.delivery?.status === "failed";
   const mark = j.status === "done" && !deliveryFailed ? `<span class="rm-mark ok">${pcIcon("check")}</span>`
     : j.status === "cancelled" ? `<span class="rm-mark off">${pcIcon("x")}</span>` : `<span class="rm-mark bad">${pcIcon("x")}</span>`;
@@ -113,6 +123,27 @@ function rmRecentRow(j) {
       : (j.status === "failed" || j.status === "cancelled") && resumable ? act("retry", `Продолжить · ${j.done}/${j.total}`)
         : j.status === "failed" || j.status === "cancelled" ? act("retry", "Повторить") : "";
   return `<div class="rm-recent">${mark}<span class="rm-wait-text"><b>${esc(j.name)}</b><small>${esc(note)}</small>${j.resource_decision ? `<small>${esc(rmResourceText(j.resource_decision))}</small>` : ''}</span>${action}</div>`;
+}
+
+function rmElapsed(j) {
+  const seconds=Number(j.finished_at)-Number(j.started_at);
+  if(!j.started_at || !j.finished_at || !Number.isFinite(seconds) || seconds<0)return 'Время не записано';
+  return seconds<60?`${Math.round(seconds)} с`:rmMinutes(seconds);
+}
+function rmRecentRow(j) {
+  return `<button type="button" class="rm-history-open" data-action="rm-detail" data-id="${j.id}"><b>${esc(j.name)}</b><small>${esc(rmElapsed(j))}</small></button>`;
+}
+function rmFrameChart(stats) {
+  const points=(stats?.points||[]).filter(p=>Number.isFinite(p.frame)&&Number.isFinite(p.seconds)&&p.seconds>=0);
+  if(!points.length)return '<p class="section-note">Замеры кадров не сохранились. График появится у рендеров с покадровым журналом AE.</p>';
+  const max=Math.max(1,...points.map(p=>p.seconds)),first=points[0].frame,last=points.at(-1).frame;
+  const xy=points.map(p=>`${12+296*(p.frame-first)/Math.max(1,last-first)},${132-112*p.seconds/max}`).join(' ');
+  return `<div class="rm-frame-chart"><p class="section-note">Время кадра · секунды · максимум ${max.toFixed(1)}</p><svg viewBox="0 0 320 150" role="img" aria-label="Время рендера кадров в секундах"><path d="M12 16V132H308" class="rm-chart-axis"/><polyline points="${xy}" class="rm-chart-line"/></svg><div class="rm-chart-labels"><span>Кадр ${first}</span><span>${last}</span></div><p class="section-note">${Number(stats.count)||points.length} замеров. Точность журнала AE — до секунды; 0 означает менее секунды. Для длинного рендера график показывает пики групп кадров.</p></div><h3>Самые долгие кадры</h3><div class="rm-slow-frames">${(stats.slowest||[]).slice(0,5).map(p=>`<div><span>Кадр ${Number(p.frame)}</span><b>${Number(p.seconds).toFixed(1)} с</b></div>`).join('')}</div>`;
+}
+function renderRmDetailSheet() {
+  const j=rmJobs().find(j=>Number(j.id)===Number(ui.sheet.id))||ui.sheet.job;
+  if(!j)return '';
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rm-detail" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(j.name)}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div><p class="section-note">${esc(RM_APP[j.app]||j.app)} · ${esc(rmElapsed(j))} · от запуска до завершения</p>${rmRecentDetails(j)}${rmFrameChart(j.frame_stats)}<details class="rm-resource"><summary>Параметры и результат</summary><p class="section-note">Кадры: ${esc(j.frames||'—')}<br>${esc(j.output||'')}</p></details><button type="button" class="text-action" data-action="rm-archive" data-id="${j.id}">Убрать из истории</button></section></div>`;
 }
 
 function rmBlock(d) {
@@ -130,7 +161,7 @@ function rmBlock(d) {
     active.map(j => rmActiveRow(j, rmFresh(d))).join(""),
     waiting.length ? `<p class="pc-find-label">Дальше${waiting.length > 1 ? " — порядок можно менять, перетаскивая за ручку" : ""}</p><div class="rm-waiting">${waiting.map(rmWaitingRow).join("")}</div>` : "",
     empty && !d.render?.rendering ? `<p class="section-note">Сейчас в очереди ничего нет.</p>` : "",
-    recent.length ? `<details class="rm-history" ${ui.pc.rmHistoryOpen?'open':''}><summary data-action="rm-history-toggle">История · ${recent.length}</summary><div class="rm-recents">${recent.map(j=>`<div class="rm-history-swipe" data-history-id="${j.id}"><button type="button" class="rm-history-remove" data-action="rm-archive" data-id="${j.id}" aria-label="Убрать из истории: ${esc(j.name)}">${pcIcon('x')}</button><div class="rm-history-row">${rmRecentRow(j)}</div></div>`).join('')}</div><button type="button" class="text-action ${rmBusyCls("rm-clear")}" data-action="rm-clear">Очистить завершённые</button></details>` : "",
+    recent.length ? `<details class="rm-history" ${ui.pc.rmHistoryOpen?'open':''}><summary data-action="rm-history-toggle">История · ${recent.length}</summary><button type="button" class="text-action ${rmBusyCls("rm-clear")}" data-action="rm-clear">Очистить историю</button><div class="rm-recents">${recent.map(j=>`<div class="rm-history-swipe" data-history-id="${j.id}"><span class="rm-history-remove" aria-hidden="true">Убрать</span><div class="rm-history-row">${rmRecentRow(j)}</div></div>`).join('')}</div></details>` : "",
   ].join("");
   return `<section class="pc-card rm-card ${active.length ? "pc-rendering" : ""}"><div class="pc-card-head"><h3>${pcIcon("film")}Очередь рендеров</h3>${empty && !q.held ? "" : hold}</div>${body}<button type="button" class="primary-button rm-add" data-action="rm-scenes">Поставить сцену</button></section>`;
 }
@@ -862,9 +893,10 @@ function rmAction(action, control) {
   }
   if (action === 'rm-tools-toggle') { ui.pc.rmToolsOpen=!ui.pc.rmToolsOpen; return true; }
   if (action === 'rm-history-toggle') { ui.pc.rmHistoryOpen=!ui.pc.rmHistoryOpen; return true; }
-  if (action === 'rm-archive') { rmArchive([id]); return true; }
+  if (action === 'rm-detail') { ui.sheet={kind:'rm-detail',id,job:rmJobs().find(j=>Number(j.id)===id)};render();return true; }
+  if (action === 'rm-archive') { if(ui.sheet?.kind==='rm-detail')ui.sheet=null;rmArchive([id]); return true; }
   if (action === "rm-clear") {
-    rmArchive(rmJobs().filter(j=>['done','failed','cancelled'].includes(j.status)).map(j=>Number(j.id)));
+    rmArchive(rmJobs().filter(j=>['done','failed','cancelled'].includes(j.status)).map(j=>Number(j.id)),true);
     return true;
   }
   if (action === "rm-calibrate" || action === "rm-scenes") { ui.sheet = { kind: "rm-scenes", calibration:action==='rm-calibrate' || Boolean(ui.sheet?.calibration), justRendered: false }; render(); return true; }
