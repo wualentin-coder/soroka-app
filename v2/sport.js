@@ -415,14 +415,14 @@ function spTestCard(options, date) {
 SP_SHEETS.habit = sheet => {
   const s = spState(), C = SP();
   const habit = sheet.id ? s.state.customHabits?.[sheet.id] : null;
-  sheet.draft ||= { name: habit?.name || "", reminders: habit ? C.habitReminders(habit).map(r => r.time) : [], notify: habit ? C.habitNotifies(habit) : true };
+  sheet.draft ||= { name: habit?.name || "", reminders: habit ? C.habitReminders(habit).map(r => r.time) : [], notify: habit ? C.habitNotifies(habit) : true, deliveryMode:habit?.deliveryMode || (habit?.notify===false?'off':'') };
   const d = sheet.draft;
   const archived = sheet.id ? [] : Object.entries(s.state.customHabits || {}).filter(([, h]) => h.archived);
   return { title: "Ежедневная привычка", body: `<form data-sp-form="habit"><label class="field">Название<input name="name" maxlength="60" required value="${spEsc(d.name)}" placeholder="Например, читать 20 минут"></label>
     <p class="sp-kicker">Напоминания</p>${d.reminders.length ? "" : `<p class="section-note">Без напоминаний. Можно добавить, например, утро и вечер.</p>`}
     ${d.reminders.map((time, i) => `<div class="sp-reminder"><input type="time" name="r${i}" value="${spEsc(time)}" required aria-label="Напоминание ${i + 1}"><button class="text-action danger" type="button" data-action="sp-habit-rem-del" data-i="${i}">Убрать</button></div>`).join("")}
     ${d.reminders.length < C.MAX_REMINDERS ? `<button class="text-action" type="button" data-action="sp-habit-rem-add">+ Добавить напоминание</button>` : ""}
-    ${d.reminders.length ? `<label class="sp-switch"><span><strong>Напоминать в Telegram</strong><small>${d.notify ? "Придёт сообщение в каждое из времён выше" : `Сообщений не будет, но отметок за день по-прежнему ${d.reminders.length}`}</small></span><input type="checkbox" name="notify" ${d.notify ? "checked" : ""}></label>` : ""}
+    <label class="field">Уведомления<select name="deliveryMode">${[['','Как в настройках Flow'],['digest','В утренней сводке'],['timed','По расписанию'],['off','Не напоминать']].map(([key,label])=>`<option value="${key}" ${d.deliveryMode===key?'selected':''}>${label}</option>`).join('')}</select></label>
     <p class="section-note">Пояс: ${spEsc(C.notificationSettings(s.state.notificationSettings).timeZone)}. Каждое срабатывает раз в день, если привычка ещё не отмечена.</p>
     <div class="sheet-actions">${sheet.id ? `<button class="ghost-button" type="button" data-action="sp-archive" data-field="customHabits" data-id="${spEsc(sheet.id)}" data-value="1">В архив</button>` : ""}<button class="primary-button" type="submit">Сохранить</button></div></form>
     ${archived.length ? `<div class="sp-archive"><p class="sp-kicker">Архив</p>${archived.map(([id, h]) => `<div><span>${spEsc(h.name)}</span><button class="text-action" type="button" data-action="sp-archive" data-field="customHabits" data-id="${spEsc(id)}" data-value="0">Вернуть</button></div>`).join("")}</div>` : ""}` };
@@ -432,7 +432,7 @@ function spHabitDraftFromForm() {
   if (!form || !sheet?.draft) return;
   sheet.draft.name = form.elements.name.value;
   sheet.draft.reminders = sheet.draft.reminders.map((_, i) => form.elements[`r${i}`]?.value || "");
-  if (form.elements.notify) sheet.draft.notify = form.elements.notify.checked;
+  if(form.elements.deliveryMode){sheet.draft.deliveryMode=form.elements.deliveryMode.value;sheet.draft.notify=sheet.draft.deliveryMode!=='off';}
 }
 SP_ACTIONS["sp-habit-rem-add"] = () => { spHabitDraftFromForm(); const d = spState().sheet.draft; d.reminders.push(d.reminders.length ? "20:00" : "09:00"); render(); };
 SP_ACTIONS["sp-habit-rem-del"] = control => { spHabitDraftFromForm(); spState().sheet.draft.reminders.splice(Number(control.dataset.i), 1); render(); };
@@ -449,7 +449,7 @@ SP_FORMS.habit = form => {
   const reminders = [...d.reminders].sort().map(time => ({ time }));
   spUpdate(prev => {
     const { reminder: _old, notify: _quiet, ...rest } = prev.customHabits?.[key] || {};
-    return { ...prev, customHabits: { ...prev.customHabits, [key]: { ...rest, name, createdOn: prev.customHabits?.[key]?.createdOn || C.todayKey(), reminders, ...(d.notify ? {} : { notify: false }) } } };
+    return { ...prev, customHabits: { ...prev.customHabits, [key]: { ...rest, name, createdOn: prev.customHabits?.[key]?.createdOn || C.todayKey(), reminders, deliveryMode:d.deliveryMode || undefined, ...(d.notify ? {} : { notify: false }) } } };
   }).catch(() => {});
   spClose();
 };
