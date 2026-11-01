@@ -196,7 +196,39 @@
   }
   async function detectMetadata(videoId, options = {}) {
     if (!/^[\w-]{11}$/.test(videoId)) throw new Error('Некорректная ссылка YouTube.');
-    const data = await request(`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`, options);
+    let data;
+    try {
+      data = await request(`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`, options);
+      if (!data?.title?.trim()) throw new Error('YouTube не вернул название видео.');
+    } catch (error) {
+      if (error.name === 'AbortError') throw error;
+      checkAbort(options.signal);
+      let video = options.videoMetadata;
+      if (!video && typeof options.getVideoMetadata === 'function') {
+        const remaining = Math.min(6000, options.deadline ? options.deadline - Date.now() : Infinity);
+        if (remaining <= 0) throw error;
+        let timer, abort;
+        try {
+          video = await Promise.race([Promise.resolve().then(() => options.getVideoMetadata()), new Promise((_, reject) => {
+            timer = setTimeout(() => reject(error), remaining);
+            abort = () => reject(abortError());
+            options.signal?.addEventListener('abort', abort, { once: true });
+          })]);
+        } catch (fallbackError) { if (fallbackError.name === 'AbortError') throw fallbackError; throw error; }
+        finally { clearTimeout(timer); options.signal?.removeEventListener('abort', abort); }
+      }
+      checkAbort(options.signal);
+      // The embedded player is an independent official metadata path. Never use
+      // a stale player's title to search lyrics for the next video.
+      if (video?.video_id !== videoId || typeof video.title !== 'string' || !video.title.trim()) throw error;
+      const artistTitle = video.title.match(/^(.+?)\s[-–—]\s(.+)$/);
+      // Cued videos may expose a title but no author. Its explicit artist/title
+      // pair is sufficient; a title alone must never become a guessed artist.
+      if (!artistTitle?.[1]?.trim() || !cleanTitle(artistTitle[2]).trim()) {
+        if (typeof video.author !== 'string' || !video.author.trim()) throw error;
+      }
+      data = { title: video.title, author_name: typeof video.author === 'string' ? video.author : '' };
+    }
     const raw = String(data.title || '').slice(0, 500), split = raw.match(/^(.+?)\s[-–—]\s(.+)$/);
     const title = split ? split[2] : raw;
     const featured = title.match(/\s+(?:starring|featuring|feat\.?|ft\.?)\s+(.+)$/i)?.[1]?.replace(/[\[(].*$/, '').trim();
