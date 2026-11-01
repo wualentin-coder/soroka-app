@@ -581,6 +581,7 @@ function render() {
 }
 function afterRender(scroll) {
   syncModalScrollLock();
+  if (window.FlowEnglishMusic) FlowEnglishMusic.sync();
   if (typeof pcVolumeKeysSync === "function") pcVolumeKeysSync();
   scrollBeforeRender = null;
   restoreSheetScroll(scroll);
