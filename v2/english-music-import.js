@@ -3,7 +3,9 @@
   'use strict';
   const UNISON = 'https://unison.boidu.dev';
   const LYRICSPLUS = 'https://lyricsplus.prjktla.my.id';
-  const CACHE = 'flow-song-import-v3:';
+  const CACHE = 'flow-song-import-v4:';
+  const CLIP_MAP_SOURCE = 'https://wualentin-coder.github.io/soroka-app/v2/assets/music-alignments.json';
+  let clipManifest;
   const MAX_ROWS = 500, MAX_BYTES = 1500000, MAX_SECONDS = 7200;
   const cooldowns = new Map();
   const abortError = () => new DOMException('Отменено', 'AbortError');
@@ -218,8 +220,6 @@
         finally { clearTimeout(timer); options.signal?.removeEventListener('abort', abort); }
       }
       checkAbort(options.signal);
-      // The embedded player is an independent official metadata path. Never use
-      // a stale player's title to search lyrics for the next video.
       if (video?.video_id !== videoId || typeof video.title !== 'string' || !video.title.trim()) throw error;
       const artistTitle = video.title.match(/^(.+?)\s[-–—]\s(.+)$/);
       // Cued videos may expose a title but no author. Its explicit artist/title
@@ -283,8 +283,109 @@
     if (!recordingMatches(metadata, { song: identity.title, artist: identity.artist }) || (identity.isrc && identity.isrc !== candidate.isrc)) throw new Error('Источник вернул другую запись.');
     return { data: { song: identity.title, artist: identity.artist }, lines: parseLyricsPlus(body), source: { name: 'LyricsPlus', url, kind: body.type.toLowerCase(), exactVideo: false }, provider: identity.source };
   }
+  async function fingerprintLines(lines) {
+    const bytes = new TextEncoder().encode(JSON.stringify(lines.map(({ time, end, en, words }) => ({ time, end, en, words: words || [] }))));
+    const digest = await global.crypto.subtle.digest('SHA-256', bytes);
+    return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+  async function loadClipManifest(options) {
+    if (!global.location?.href) return null;
+    if (!clipManifest) {
+      const url = new URL('./assets/music-alignments.json', global.location.href).href;
+      clipManifest = request(url, { ...options, timeout: 3000 }).catch(error => {
+        clipManifest = null;
+        if (error.name === 'AbortError') throw error;
+        return null;
+      });
+    }
+    const manifest = await clipManifest;
+    checkAbort(options.signal);
+    if (manifest?.schema === 1 && manifest.videos && typeof manifest.videos === 'object') return manifest;
+    clipManifest = null;
+    return null;
+  }
+  function checkedClipMap(entry, expectedDuration) {
+    if (!entry || typeof entry.title !== 'string' || !entry.title.trim() || entry.title.length > 500
+        || typeof entry.artist !== 'string' || !entry.artist.trim() || entry.artist.length > 200
+        || !Number.isFinite(entry.duration) || entry.duration <= 0 || entry.duration > MAX_SECONDS
+        || (entry.timing !== undefined && !['line', 'word'].includes(entry.timing))
+        || (Number.isFinite(expectedDuration) && expectedDuration > 0 && Math.abs(expectedDuration - entry.duration) > 2)
+        || !Array.isArray(entry.parts) || !entry.parts.length || entry.parts.length > 6) throw new Error('Некорректная карта клипа.');
+    let targetEnd = -1, count = 0;
+    for (const part of entry.parts) {
+      if (!part || typeof part.title !== 'string' || !part.title.trim() || part.title.length > 500
+          || typeof part.artist !== 'string' || !part.artist.trim() || part.artist.length > 200
+          || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/i.test(part.isrc || '') || !/^[a-f\d]{64}$/.test(part.fingerprint || '')
+          || !Array.isArray(part.ranges) || !part.ranges.length || part.ranges.length > 100) throw new Error('Некорректная часть клипа.');
+      let sourceEnd = -1;
+      for (const range of part.ranges) {
+        if (++count > 100 || !range || !['sourceStart', 'sourceEnd', 'targetStart', 'confidence'].every(key => Number.isFinite(range[key]))
+            || range.sourceStart < 0 || range.sourceStart < sourceEnd || range.sourceEnd <= range.sourceStart || range.sourceEnd > MAX_SECONDS
+            || range.targetStart < 0 || range.targetStart < targetEnd || range.confidence < .7 || range.confidence > 1) throw new Error('Некорректный интервал клипа.');
+        sourceEnd = range.sourceEnd;
+        targetEnd = range.targetStart + range.sourceEnd - range.sourceStart;
+        if (targetEnd > entry.duration) throw new Error('Интервал выходит за длительность клипа.');
+      }
+    }
+    return entry;
+  }
+  function mapClipPart(lines, ranges) {
+    return lines.map(line => {
+      const range = ranges.find(item => Number.isFinite(line.time) && Number.isFinite(line.end)
+        && line.time >= item.sourceStart && line.end <= item.sourceEnd);
+      if (!range || line.end <= line.time) throw new Error('У строки нет проверенного интервала клипа.');
+      const shift = range.targetStart - range.sourceStart;
+      const mapped = { ...line, time: line.time + shift, end: line.end + shift };
+      if (line.words) mapped.words = line.words.map(word => {
+        if (word.start < range.sourceStart || word.end > range.sourceEnd) throw new Error('У слова нет проверенного интервала клипа.');
+        return { ...word, start: word.start + shift, end: word.end + shift };
+      });
+      return mapped;
+    });
+  }
+  async function getVerifiedMapInfo(videoId, options = {}) {
+    try {
+      const manifest = await loadClipManifest(options);
+      if (!manifest?.videos?.[videoId]) return null;
+      checkedClipMap(manifest.videos[videoId], options.videoDuration);
+      return { revision: 1 };
+    } catch (error) { if (error.name === 'AbortError') throw error; return null; }
+  }
+  async function fetchVerifiedClip(videoId, metadata, options) {
+    const manifest = await loadClipManifest(options), raw = manifest?.videos?.[videoId];
+    if (!raw) return null;
+    const entry = checkedClipMap(raw, options.videoDuration);
+    if (metadata?.artist && !artistMatches(metadata.artist, entry.artist)) throw new Error('Карта относится к другому исполнителю.');
+    let rows = [], firstURL;
+    for (const part of entry.parts) {
+      let url = `${LYRICSPLUS}/v2/lyrics/get?isrc=${encodeURIComponent(part.isrc)}`, body;
+      try { body = await request(url, options); }
+      catch (error) {
+        if (error.status !== 404) throw error;
+        url = `${LYRICSPLUS}/v2/lyrics/get?${new URLSearchParams({ title: part.title, artist: part.artist })}`;
+        body = await request(url, options);
+      }
+      firstURL ||= url;
+      const identity = lyricsPlusIdentity(body);
+      if ((identity.isrc && identity.isrc !== part.isrc) || !recordingMatches(part, { song: identity.title, artist: identity.artist })) throw new Error('Запись карты клипа изменилась.');
+      const lines = parseLyricsPlus(body);
+      if (await fingerprintLines(lines) !== part.fingerprint) throw new Error('Текст или таймкоды карты клипа изменились.');
+      checkAbort(options.signal);
+      rows.push(...mapClipPart(lines, part.ranges));
+      if (rows.length > MAX_ROWS) throw new Error('В клипе слишком много строк.');
+    }
+    rows = finish(rows);
+    if (entry.timing === 'line') rows = rows.map(({ words, ...line }) => line);
+    return { data: { song: entry.title, artist: entry.artist }, lines: rows,
+      source: { name: 'LyricsPlus', url: firstURL, kind: timingOf(rows), exactVideo: false },
+      alignment: { method: 'audio-correlation', sourceUrl: CLIP_MAP_SOURCE, videoDuration: entry.duration, mapId: videoId, revision: 1 } };
+  }
   async function fetchLyrics(videoId, metadata, options = {}) {
     const failures = [];
+    try {
+      const verified = await fetchVerifiedClip(videoId, metadata, options);
+      if (verified) return verified;
+    } catch (error) { if (error.name === 'AbortError') throw error; failures.push(error); }
     let exactPlain = null;
     try {
       const data = unwrap(await request(`${UNISON}/lyrics?v=${encodeURIComponent(videoId)}`, options));
@@ -397,7 +498,10 @@
       if(sourceURL.protocol!=='https:'||!['unison.boidu.dev','lrclib.net','lyricsplus.prjktla.my.id'].includes(sourceURL.hostname))return null;
       if (item.alignment) {
         const alignmentURL = new URL(item.alignment.sourceUrl);
-        if (item.alignment.method !== 'sponsorblock' || alignmentURL.origin !== 'https://sponsor.ajay.app'
+        if (item.alignment.method === 'audio-correlation') {
+          if (alignmentURL.href !== CLIP_MAP_SOURCE || item.alignment.mapId !== videoId || item.alignment.revision !== 1
+            || !Number.isFinite(item.alignment.videoDuration) || item.alignment.videoDuration <= 0 || item.alignment.videoDuration > MAX_SECONDS) return null;
+        } else if (item.alignment.method !== 'sponsorblock' || alignmentURL.origin !== 'https://sponsor.ajay.app'
           || !Array.isArray(item.alignment.segments) || item.alignment.segments.length > 100
           || !item.alignment.segments.every(segment => Array.isArray(segment) && segment.length === 2
             && segment.every(Number.isFinite) && segment[0] >= 0 && segment[1] > segment[0] && segment[1] <= MAX_SECONDS)) return null;
@@ -428,11 +532,11 @@
       if (metadata) options.onMetadata?.(metadata);
       progress(options, 'lyrics', 'Ищу текст с таймкодами');
       const found = await fetchLyrics(videoId, metadata, options);
-      let lines = found.lines, alignment = null;
+      let lines = found.lines, alignment = found.alignment || null;
       const warnings = [];
       const timing = timingOf(lines);
       if (timing === 'none') warnings.push('Текст найден без таймкодов. Перевод доступен, синхронизация по строкам пока отсутствует.');
-      if (!found.source.exactVideo && timing !== 'none') {
+      if (!alignment && !found.source.exactVideo && timing !== 'none') {
         progress(options, 'lyrics', 'Подстраиваю таймкоды под клип');
         try {
           alignment = await fetchMusicAlignment(videoId, options);
@@ -451,6 +555,6 @@
     saveCache(videoId, result);
     return result;
   }
-  global.FlowSongImport = { prepare, retryTranslate, detectMetadata, fetchLyrics, translateUnison, parseLRC, parseTTML, parsePlain, parseLyricsPlus, lyricsPlusIdentity, cleanTitle, recordingMatches, timingOf,
+  global.FlowSongImport = { prepare, retryTranslate, detectMetadata, fetchLyrics, translateUnison, parseLRC, parseTTML, parsePlain, parseLyricsPlus, lyricsPlusIdentity, cleanTitle, recordingMatches, timingOf, fingerprintLines, getVerifiedMapInfo,
     normalizeMusicSegments, mapCatalogTime, alignLines, fetchMusicAlignment };
 })(globalThis);
