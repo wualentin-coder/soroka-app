@@ -819,7 +819,7 @@ const EN_BOOK_LEVELS = ["A1", "A2", "B1", "B2"];
 function enMediaScreen() {
   const s = enState(), music = s.mediaTab === "music";
   const tabs = `<div class="en-media-tabs" role="tablist" aria-label="Медиатека"><button type="button" role="tab" aria-selected="${!music}" class="${!music ? "active" : ""}" data-action="en-media-tab" data-tab="books">Книги</button><button type="button" role="tab" aria-selected="${music}" class="${music ? "active" : ""}" data-action="en-media-tab" data-tab="music">Музыка</button></div>`;
-  return tabs + (music ? FlowEnglishMusic.screen() : enBooksScreen());
+  return tabs + `<div class="en-browser-link"><button type="button" class="text-action" data-action="en-browser-open">${icon('card','icon-sm')}Расширение Chrome</button></div>` + (music ? FlowEnglishMusic.screen() : enBooksScreen());
 }
 function enBooksScreen() {
   const s = enState();
@@ -1243,6 +1243,7 @@ function enProgressScreen() {
 // ------------------------------------------------------------ действия
 
 function englishAction(action, control) {
+  if(typeof enBrowserAction==='function'&&enBrowserAction(action,control))return true;
   if (!action.startsWith("en-")) return false;
   const s = enState();
   if (action === "en-rule") { enRuleStart(Number(control.dataset.id)); return true; }
