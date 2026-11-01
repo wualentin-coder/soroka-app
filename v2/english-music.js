@@ -94,8 +94,8 @@
  }
  function cancelImport(){controller?.abort();controller=null;if(state.track)state.track.importing=false;}
  async function importLyrics(track,force=false){cancelImport();const c=new AbortController();controller=c;track.importing=true;track.importError='';paintStatus();
-  try{const result=await FlowSongImport.prepare(track.youtubeId,{force,signal:c.signal,videoDuration:track.duration||undefined,onMetadata:meta=>{if(c.signal.aborted)return;track.title=meta.title;track.artist=meta.artist;scheduleSave();},onProgress:p=>{track.stage=p;if(state.track===track)paintStatus();}});if(c.signal.aborted)return;
-   track.lines=result.lines;track.title=result.title;track.artist=result.artist;track.lyricResult=result;track.timing=result.timing;track.lyricOffset=0;track.importing=false;const saved=await saveTrack(track);if(c.signal.aborted)return;Object.assign(track,saved);if(state.track===track){paintPlayer();notice(result.translationComplete?'Текст и перевод сохранены':'Текст сохранён. Перевод можно повторить');}state.items=null;loadLibrary(true);
+  try{const result=await FlowSongImport.prepare(track.youtubeId,{force,signal:c.signal,videoDuration:track.duration||undefined,getVideoMetadata:()=>state.track===track?media.getMetadata():null,onMetadata:meta=>{if(c.signal.aborted)return;track.title=meta.title;track.artist=meta.artist;scheduleSave();},onProgress:p=>{track.stage=p;if(state.track===track)paintStatus();}});if(c.signal.aborted)return;
+   track.lines=result.lines;track.title=result.title;track.artist=result.artist;track.lyricResult=result;track.timing=result.timing;track.lyricOffset=0;track.importing=false;await saveTrack(track);if(c.signal.aborted)return;if(state.track===track){paintPlayer();notice(result.translationComplete?'Текст и перевод сохранены':'Текст сохранён. Перевод можно повторить');}state.items=null;loadLibrary(true);
   }catch(e){if(c.signal.aborted)return;track.importing=false;track.importError=e.message;if(state.track===track)paintStatus();}finally{if(controller===c)controller=null;}
  }
  function stopFollow(){if(!hasTiming(state.track))return;state.follow=false;const b=q('[data-enm=follow]');if(b)b.hidden=false;}
