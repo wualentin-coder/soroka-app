@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "measuredAt": "2026-11-01",
+  "evidenceMethod": "measured-pcm-cross-correlation-and-local-asr",
+  "timingLimit": "Line timing; individual word precision was not verified. Confidence is reviewed alignment quality, not a probability or a correlation coefficient.",
+  "videos": {
+    "x6_mbnsh6VU": {
+      "title": "STORM I & II",
+      "artist": "GENER8ION, Yung Lean",
+      "duration": 454.621,
+      "timing": "line",
+      "parts": [
+        {
+          "title": "STORM I",
+          "artist": "GENER8ION, Yung Lean",
+          "isrc": "FRDWM2600160",
+          "fingerprint": "d9135fac733ee69ff0280b22b180a01c0ac855b1561b2409b5ec274538930186",
+          "referenceVideoId": "rWOigjNRNg4",
+          "ranges": [
+            {
+              "sourceStart": 2.19,
+              "sourceEnd": 23.56,
+              "targetStart": 27.32225,
+              "confidence": 0.9,
+              "evidence": {
+                "lineWindowSecondsAtMost": 0.4,
+                "localSearchRadiusSeconds": 0.03,
+                "medianLineWindowNcc": 0.675,
+                "minLineWindowNcc": 0.5308,
+                "medianPhaseAdjustmentSeconds": 0,
+                "confidence": "high",
+                "limits": "Voice/music mix differs, PCM establishes recording placement, not exact vocal syllable timing."
+              }
+            },
+            {
+              "sourceStart": 25.88,
+              "sourceEnd": 117.37,
+              "targetStart": 54.914625,
+              "confidence": 0.8,
+              "evidence": {
+                "lineWindowSecondsAtMost": 0.4,
+                "localSearchRadiusSeconds": 0.03,
+                "medianLineWindowNcc": 0.3491,
+                "minLineWindowNcc": 0.1201,
+                "medianPhaseAdjustmentSeconds": 0,
+                "confidence": "medium",
+                "limits": "Voice/music mix differs, PCM establishes recording placement, not exact vocal syllable timing."
+              }
+            },
+            {
+              "sourceStart": 150.57,
+              "sourceEnd": 152.37,
+              "targetStart": 166.050125,
+              "confidence": 0.8,
+              "evidence": {
+                "lineWindowSecondsAtMost": 0.4,
+                "localSearchRadiusSeconds": 0.03,
+                "medianLineWindowNcc": 0.684,
+                "minLineWindowNcc": 0.684,
+                "medianPhaseAdjustmentSeconds": 0.00062,
+                "confidence": "medium",
+                "limits": "Last spoken phrase: five of six short word windows share offset15.478..15.485, onset of first0.177s is less certain; line-level only."
+              }
+            }
+          ],
+          "lineCount": 31
+        },
+        {
+          "title": "STORM II",
+          "artist": "GENER8ION, Yung Lean",
+          "isrc": "FRDWM2600170",
+          "fingerprint": "b4ccd4c171517e484c372001b2ed2b1f022b153a27ef2d54269f7e0c520bc3a8",
+          "referenceVideoId": "yuIB3jmC_0M",
+          "ranges": [
+            {
+              "sourceStart": 0,
+              "sourceEnd": 156,
+              "targetStart": 263.78625,
+              "confidence": 0.9,
+              "evidence": {
+                "lineWindowSecondsAtMost": 0.4,
+                "localSearchRadiusSeconds": 0.03,
+                "medianLineWindowNcc": 0.4989,
+                "minLineWindowNcc": 0.3489,
+                "medianPhaseAdjustmentSeconds": 0,
+                "confidence": "high",
+                "limits": "Voice/music mix differs, PCM establishes recording placement, not exact vocal syllable timing."
+              }
+            }
+          ],
+          "lineCount": 48
+        }
+      ]
+    }
+  }
+}
