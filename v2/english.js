@@ -74,7 +74,7 @@ function enDemo(op, args) {
   return { ok: true };
 }
 
-const EN_TABS = [["today", "Сегодня"], ["words", "Слова"], ["course", "Курс"], ["read", "Чтение"], ["chat", "Разговор"]];
+const EN_TABS = [["today", "Сегодня"], ["words", "Слова"], ["course", "Курс"], ["read", "Медиатека"], ["chat", "Разговор"]];
 const EN_RATINGS = [[1, "Не вспомнил"], [2, "С трудом"], [3, "Легко"]];
 const EN_TOTAL = 4380;
 
@@ -148,8 +148,8 @@ function renderEnglishPage() {
   if (s.deck) return `<div class="en-run">${enSyncBanner()}${s.deck.loading ? enWait() : enDeckTop(s.deck) + enDeckScreen(s.deck)}</div>`;
   if (s.ex) return enExScreen(s.ex);
   const tabs = `<div class="en-tabs" role="tablist">${EN_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="en-tab" data-tab="${key}">${label}</button>`).join("")}</div>`;
-  if (s.tab === "read" && s.book) return enReaderScreen();
-  const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : s.tab === "read" ? enBooksScreen()
+  if (s.tab === "read" && s.mediaTab !== "music" && s.book) return enReaderScreen();
+  const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : s.tab === "read" ? enMediaScreen()
     : s.tab === "words" ? enWordsScreen() : s.tab === "course" ? enCourseScreen() : enTodayScreen();
   return `${header("Английский", "", "")}<div class="en-page">${enSyncBanner()}${tabs}${body}</div>`;
 }
@@ -816,6 +816,11 @@ function enExNext() {
 // слово подсвечивается во всей книге и уходит в колоду (её повторит FSRS).
 
 const EN_BOOK_LEVELS = ["A1", "A2", "B1", "B2"];
+function enMediaScreen() {
+  const s = enState(), music = s.mediaTab === "music";
+  const tabs = `<div class="en-media-tabs" role="tablist" aria-label="Медиатека"><button type="button" role="tab" aria-selected="${!music}" class="${!music ? "active" : ""}" data-action="en-media-tab" data-tab="books">Книги</button><button type="button" role="tab" aria-selected="${music}" class="${music ? "active" : ""}" data-action="en-media-tab" data-tab="music">Музыка</button></div>`;
+  return tabs + (music ? FlowEnglishMusic.screen() : enBooksScreen());
+}
 function enBooksScreen() {
   const s = enState();
   if (!s.books) { enLoad("books", "books"); return enWait(); }
@@ -849,7 +854,7 @@ function enReaderSave(patch) {
 function enTgBack(show) {
   const back = window.Telegram?.WebApp?.BackButton;
   if (!back) return;
-  if (!enTgBack.bound) { enTgBack.bound = true; back.onClick(() => { const s = enState(); if (s.readerSet || s.pop) { s.readerSet = false; s.pop = null; render(); } else if (s.book) { s.book = null; s.pop = null; s.books = null; render(); enTgBack(false); } }); }
+  if (!enTgBack.bound) { enTgBack.bound = true; back.onClick(() => { if (window.FlowEnglishMusic?.back()) return; const s = enState(); if (s.readerSet || s.pop) { s.readerSet = false; s.pop = null; render(); } else if (s.book) { s.book = null; s.pop = null; s.books = null; render(); enTgBack(false); } }); }
   show ? back.show() : back.hide();
 }
 function enReaderScreen() {
@@ -1272,6 +1277,7 @@ function englishAction(action, control) {
       .catch(() => Object.assign(card, { loading: false, next: "Не получилось подвести итоги — попробуйте ещё раз." })).finally(() => { render(); enScrollChat(); });
     return true;
   }
+  if (action === "en-media-tab") { s.mediaTab = control.dataset.tab === "music" ? "music" : "books"; s.book = null; s.pop = null; if (s.mediaTab === "books") s.books = null; render(); return true; }
   if (action === "en-tab") { if (s.tab === "chat" && control.dataset.tab !== "chat") { enStopPcm(); enLiveStop(); } if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
   if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") { s.tab = "today"; navigate("english"); if (s.today && !s.today.plan.doneToday) enLessonStart(); else render(); return true; }
