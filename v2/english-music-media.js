@@ -76,6 +76,13 @@ class SongMedia extends EventTarget {
   }catch(error){if(generation===this.generation){this.resolveReady?.(false);this.fail(error.message);}}
   finally{if(generation===this.generation)this.loading=false;}
  }
+ async getMetadata(){
+  const generation=this.generation;if(this.kind!=='youtube')return null;
+  if(!this.ready){if(!this.readyPromise||!await this.readyPromise)return null;}
+  if(generation!==this.generation||!this.ready)return null;
+  const data=this.player?.getVideoData?.();
+  return data?.video_id===this.track?.youtubeId?{video_id:data.video_id,title:data.title,author:data.author}:null;
+ }
  async play(){
   if(this.kind==='audio')return this.native.play();
   if(!this.ready){if(!this.readyPromise)throw new Error('Плеер ещё загружается');const ready=await Promise.race([this.readyPromise,new Promise(resolve=>setTimeout(()=>resolve(false),13000))]);if(!ready){this.fail(this.message||'YouTube не ответил. Попробуй подключиться ещё раз.');throw new Error(this.message);}}
