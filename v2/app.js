@@ -287,7 +287,7 @@ function brand() {
   return `<img class="brand-mark" src="./assets/flow-logo.svg" alt=""><div><span class="brand-name">FLOW</span><span class="brand-label">личное пространство</span></div>`;
 }
 function header(title, subtitle, eyebrow) {
-  return `<header class="page-header"><div><h1>${title}</h1></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu"><button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
+  return `<header class="page-header"><div><h1>${title}</h1></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu">${ui.page === "today" ? `<button type="button" data-action="today-cards">${icon("settings")}<span>Карточки на сегодня</span></button>` : ""}<button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
 }
 /*
  * Чек-лист в задаче: пункты отмечаются прямо в карточке. Все отмечены —
@@ -407,11 +407,11 @@ function todayPage() {
     return `<section class="section plan-glance"><button type="button" class="glance-tile" data-action="navigate" data-page="finance"><small>Доступно</small><strong>${demoMoney(rubBalance())}</strong>${pending[0] ? `<span>${esc(financeTitle(pending[0].title))} · ${esc(dateLabel(pending[0].nextOn))}</span>` : ""}</button>${last?.title ? `<button type="button" class="glance-tile" data-action="overview-continue"><small>Продолжить</small><strong>${esc(last.title)}</strong><span>Последняя открытая запись</span></button>` : ""}</section>`;
   })() : "";
   // Английский — короткое занятие дня (english.js): сколько повторить и серия.
-  const english = isToday && typeof enHomeTile === "function" ? enHomeTile() : "";
+  const english = isToday && todayCardVisible("english") && typeof enHomeTile === "function" ? enHomeTile() : "";
   // Сон — подъём на сегодня и отмечена ли ночь (sleep.js).
-  const sleep = isToday && typeof slHomeTile === "function" ? slHomeTile() : "";
+  const sleep = isToday && todayCardVisible("sleep") && typeof slHomeTile === "function" ? slHomeTile() : "";
   // Спорт — тренировка дня и привычки (sport.js, перенос WooSport).
-  const sport = isToday && typeof spHomeTile === "function" ? spHomeTile() : "";
+  const sport = isToday && todayCardVisible("sport") && typeof spHomeTile === "function" ? spHomeTile() : "";
   const body = isToday ? `${overdue}${tasks}${events}${free}${sleep}${sport}${english}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
@@ -707,6 +707,7 @@ document.addEventListener("click", event => {
   if (action === "backdrop") { if (event.target === control) closeSheet(); return; }
   if (action === "navigate") { if (control.dataset.page === "saved") ui.savedCategory = "overview"; if (control.dataset.page === "finance") { ui.financeTab = "overview"; ui.financeCategory = ""; } navigate(control.dataset.page); return; }
   if (action === "search") { if (!ui.sheet) { ui.searchQuery = ""; ui.searchPage = 1; ui.searchType = "all"; } ui.sheet = { kind: "search", justRendered: false }; ui.menu = false; render(); return; }
+  if (action === "today-cards") { ui.menu = false; ui.sheet = { kind: "today-cards" }; render(); return; }
   if (action === "menu") { ui.menu = !ui.menu; render(); return; }
   if (action === "theme") {
     ui.theme = themeTone() === "dark" ? "light" : "dark";
