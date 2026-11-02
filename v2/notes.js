@@ -56,6 +56,7 @@ function syncNoteDraft(field) {
 function saveNoteQuietly() {
   if (ui.sheet?.kind !== "saved" || ui.sheet.category !== "notes") return;
   const item = ui.sheet.id ? savedItem("notes", ui.sheet.id) : null;
+  if (typeof packingIsNote === "function" && packingIsNote(item)) { packingSaveQuietly(); return; }
   const d = noteDraft(item);
   const text = d.description.trim();
   let title = d.title.trim();
@@ -78,6 +79,7 @@ function saveNoteQuietly() {
 }
 
 function renderNoteSheet(item) {
+  if (typeof packingIsNote === "function" && packingIsNote(item)) return renderPackingSheet(item);
   const d = noteDraft(item);
   const reading = ui.sheet.mode === "read";
   const folder = savedSection("notes", d.categoryId)?.name || "Без раздела";
@@ -150,4 +152,12 @@ render = function () { const result = renderBeforeNotes.apply(this, arguments); 
 
 // Заметка закрывается свайпом вниз или тапом мимо — тоже сохраняем.
 const closeSheetBeforeNotes = closeSheet;
-closeSheet = function () { saveNoteQuietly(); return closeSheetBeforeNotes.apply(this, arguments); };
+closeSheet = function () {
+  const sheet=ui.sheet,item=sheet?.id?savedItem("notes",sheet.id):null;
+  if (typeof packingIsNote === "function" && packingIsNote(item,sheet)) {
+    const result=closeSheetBeforeNotes.apply(this,arguments);
+    if(ui.sheet!==sheet)packingDidClose(sheet);
+    return result;
+  }
+  saveNoteQuietly(); return closeSheetBeforeNotes.apply(this, arguments);
+};
