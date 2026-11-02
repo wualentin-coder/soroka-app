@@ -27,7 +27,7 @@
   new ResizeObserver(resizeVideo).observe(q('#enm-youtube-panel'));
   media.addEventListener('timeupdate',()=>{tick();sampleListening();});
   media.addEventListener('ratechange',()=>{state.rate=media.playbackRate;updateRate();});
-  for(const name of ['play','pause','ended'])media.addEventListener(name,()=>{if(name==='play')playbackState();sampleListening();if(name==='ended'&&!state.loop)quiz?.ended({loop:state.loop});const b=q('#enm-play');if(b){b.innerHTML=ic(media.paused?'play':'pause');b.setAttribute('aria-label',media.paused?'Воспроизвести':'Пауза');}if(media.paused){cancelAnimationFrame(frame);frame=0;persistProgress();}else if(!frame)frame=requestAnimationFrame(wordFrame);});
+  for(const name of ['play','pause','ended'])media.addEventListener(name,()=>{if(name==='play'){playbackState();followCurrent();}sampleListening();if(name==='ended'&&!state.loop)quiz?.ended({loop:state.loop});const b=q('#enm-play');if(b){b.innerHTML=ic(media.paused?'play':'pause');b.setAttribute('aria-label',media.paused?'Воспроизвести':'Пауза');}if(media.paused){cancelAnimationFrame(frame);frame=0;persistProgress();}else if(!frame)frame=requestAnimationFrame(wordFrame);});
   media.addEventListener('error',()=>playbackState(media.error?.message||'Не получилось загрузить аудио. Попробуй включить ещё раз.'));
   host.addEventListener('click',onClick);host.addEventListener('submit',onSubmit);
   host.addEventListener('input',e=>{if(e.target.id==='enm-seek')seek(Number(e.target.value));if(e.target.name==='url'&&e.target.form?.id==='enm-add-form'&&state.addKind==='youtube')resetAddSearch();});
@@ -161,12 +161,13 @@
    await applyResult(result);if(c.signal.aborted)return;track.importing=false;track.importError=result.translationComplete?'':result.translationError||'Перевод пока недоступен. Английский текст сохранён.';if(state.track===track){paintStatus();notice(result.translationComplete?'Текст и перевод сохранены':'Текст сохранён. Перевод можно повторить');}state.items=null;loadLibrary(true);
   }catch(e){if(c.signal.aborted)return;track.importing=false;track.importError=e.message;if(state.track===track)paintStatus();}finally{if(controller===c)controller=null;}
  }
+ function followCurrent(){state.follow=true;const b=q('[data-enm=follow]');if(b)b.hidden=true;tick(true);}
  function stopFollow(){if(!hasTiming(state.track))return;state.follow=false;const b=q('[data-enm=follow]');if(b)b.hidden=false;}
- function tick(){if(!state.track)return;const lines=state.track.lines||[],clock=media.currentTime;let at=0;for(let i=0;i<lines.length;i++)if(Number.isFinite(lines[i].time)&&clock>=lineTime(lines[i]))at=i;
+ function tick(forceFollow=false){if(!state.track)return;const lines=state.track.lines||[],clock=media.currentTime;let at=0;for(let i=0;i<lines.length;i++)if(Number.isFinite(lines[i].time)&&clock>=lineTime(lines[i]))at=i;
   if(state.loop&&!media.paused&&hasTiming(state.track)){const i=state.loopLine??at,end=lines[i+1]?lineTime(lines[i+1]):Math.min(state.track.duration||media.duration,(lines[i].end??media.duration)+(state.track.lyricOffset||0));if(clock>=end-.06)media.currentTime=lineTime(lines[i]);}
   const changed=at!==state.active;state.active=at;timedRows.forEach((r,i)=>r.classList.toggle('enm-active',hasTiming(state.track)&&i===at&&clock>=lineTime(lines[i])&&(lines[i].end==null||clock<lines[i].end+(state.track.lyricOffset||0))));
   if(activeWordRow!==at){activeWords=qa('.enm-timed-word',timedRows[at]);activeWordRow=at;}
-  if(changed&&state.follow&&hasTiming(state.track)){const row=q('.enm-lyric-row.enm-active',main),box=q('#enm-lyrics');if(row&&box)box.scrollTo({top:Math.max(0,row.offsetTop-box.clientHeight*.35),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});}
+  if((changed||forceFollow)&&state.follow&&hasTiming(state.track)){const row=q('.enm-lyric-row.enm-active',main),box=q('#enm-lyrics');if(row&&box)box.scrollTo({top:Math.max(0,row.offsetTop-box.clientHeight*.35),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});}
   const slider=q('#enm-seek');if(slider){slider.value=clock;slider.style.setProperty('--progress',`${clock/(state.track.duration||media.duration||1)*100}%`);q('#enm-elapsed').textContent=fmt(clock);}paintWord();
  }
  function paintWord(){const time=media.currentTime-(state.track?.lyricOffset||0),current=activeWords.find(el=>time>=Number(el.dataset.start)&&time<Number(el.dataset.end))||null;if(current===sungWord)return;sungWord?.classList.remove('enm-singing');current?.classList.add('enm-singing');sungWord=current;}
