@@ -502,7 +502,7 @@ function searchSheet() {
 }
 let renderedScrollIdentity = null;
 let modalPageLock = null;
-const sheetScrollSelectors = [".sheet", ".note-editor", ".note-reader", ".season-chips"];
+const sheetScrollSelectors = [".sheet", ".note-editor", ".note-reader", ".season-chips", ".pk-body"];
 function sheetScrollIdentity() {
   const s = ui.sheet;
   return s ? JSON.stringify([ui.page, s.kind, s.category, s.id, s.mode, s.type, s.index]) : null;
