@@ -15,7 +15,7 @@ function sheetFieldRows(node) {
   return [...node.querySelectorAll('form input:not([type="file"]):not([type="hidden"]), form textarea, form select')].map((el, i) => {
     const check = el.type === 'checkbox' || el.type === 'radio';
     const base = el.tagName === 'SELECT' ? [...el.options].map(o => o.defaultSelected ? o.value : '').join('|') : check ? el.defaultChecked : el.defaultValue;
-    return { key: `${el.form?.id || ''}|${el.name || el.id || i}|${el.type}|${i}`, base,
+    return { key: `${el.form?.id || ''}${el.form?.dataset?.stateKey ? ':' + el.form.dataset.stateKey : ''}|${el.name || el.id || i}|${el.type}|${i}`, base,
       value: el.tagName === 'SELECT' && el.multiple ? [...el.selectedOptions].map(o => o.value) : check ? el.checked : el.value,
       start: el.selectionStart, end: el.selectionEnd, el };
   });
