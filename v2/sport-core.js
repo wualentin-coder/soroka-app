@@ -30,6 +30,8 @@ var SportCore = (() => {
     DEMO_PROGRAM_DAY: () => DEMO_PROGRAM_DAY,
     EQUIPMENT: () => EQUIPMENT,
     EVENING_FROM: () => EVENING_FROM,
+    FINGER_HANDS: () => FINGER_HANDS,
+    FINGER_NAMES: () => FINGER_NAMES,
     GOALS: () => GOALS,
     GYM_REFERENCE: () => GYM_REFERENCE,
     MAX_EQUIPMENT_KG: () => MAX_EQUIPMENT_KG,
@@ -100,6 +102,8 @@ var SportCore = (() => {
     exerciseStats: () => exerciseStats,
     exerciseVideoId: () => exerciseVideoId,
     favoriteExercises: () => favoriteExercises,
+    fingerProfileValue: () => fingerProfileValue,
+    fingerProfiles: () => fingerProfiles,
     finishOption: () => finishOption,
     formatDuration: () => formatDuration,
     formatMinutes: () => formatMinutes,
@@ -170,11 +174,13 @@ var SportCore = (() => {
     recordSets: () => recordSets,
     recordWorkingWeight: () => recordWorkingWeight,
     removeFavorite: () => removeFavorite,
+    removeFingerProfile: () => removeFingerProfile,
     removeGymMovement: () => removeGymMovement,
     removeMeasurement: () => removeMeasurement,
     rescheduleMissedWorkouts: () => rescheduleMissedWorkouts,
     restBetweenExercisesFor: () => restBetweenExercisesFor,
     restSecondsFor: () => restSecondsFor,
+    saveFingerProfile: () => saveFingerProfile,
     saveTimer: () => saveTimer,
     scheduledProgramRank: () => scheduledProgramRank,
     scheduledWorkoutComplete: () => scheduledWorkoutComplete,
@@ -1681,6 +1687,90 @@ var SportCore = (() => {
     };
   }
 
+  // sport/core/src/fingers.ts
+  var FINGER_HANDS = [
+    { id: "left", label: "Левая" },
+    { id: "right", label: "Правая" }
+  ];
+  var FINGER_NAMES = [
+    { id: "thumb", label: "Большой" },
+    { id: "index", label: "Указательный" },
+    { id: "middle", label: "Средний" },
+    { id: "ring", label: "Безымянный" },
+    { id: "little", label: "Мизинец" }
+  ];
+  var unsafeIds = /* @__PURE__ */ new Set(["__proto__", "constructor", "prototype"]);
+  var own = (record, key) => Object.prototype.hasOwnProperty.call(record, key);
+  function checkedId(id2) {
+    if (typeof id2 !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(id2) || unsafeIds.has(id2)) throw new Error("Некорректная запись человека.");
+    return id2;
+  }
+  function emptyProfile() {
+    return { name: "Мои", updatedAt: "", ringSizes: {} };
+  }
+  function fingerProfiles(state) {
+    const saved = state.fingerProfiles ?? {};
+    return [
+      { ...emptyProfile(), ...saved.self, id: "self" },
+      ...Object.entries(saved).filter(([id2]) => id2 !== "self" && !unsafeIds.has(id2)).map(([id2, profile]) => ({ ...profile, id: id2 }))
+    ];
+  }
+  function fingerProfileValue(profile, kind, hand, finger) {
+    const value = profile?.[kind]?.[hand]?.[finger];
+    return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 1e3 ? value : null;
+  }
+  function parsedValue(raw) {
+    if (raw === void 0 || raw === null || typeof raw === "string" && !raw.trim()) return null;
+    if (typeof raw !== "number" && (typeof raw !== "string" || !/^\d+(?:[.,]\d+)?$/.test(raw.trim()))) throw new Error("Размер — число больше нуля и не больше 1000.");
+    const value = typeof raw === "number" ? raw : Number(raw.trim().replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0 || value > 1e3) throw new Error("Размер — число больше нуля и не больше 1000.");
+    return value;
+  }
+  function mergeMeasurements(previous = {}, patch) {
+    if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new Error("Некорректные размеры пальцев.");
+    const next = { ...previous };
+    for (const hand of FINGER_HANDS) {
+      if (!own(patch, hand.id)) continue;
+      const values = patch[hand.id];
+      if (!values || typeof values !== "object" || Array.isArray(values)) throw new Error("Некорректные размеры руки.");
+      const fingers = { ...previous[hand.id] };
+      for (const finger of FINGER_NAMES) {
+        if (!own(values, finger.id)) continue;
+        const value = parsedValue(values[finger.id]);
+        if (value === null) delete fingers[finger.id];
+        else fingers[finger.id] = value;
+      }
+      if (Object.keys(fingers).length) next[hand.id] = fingers;
+      else delete next[hand.id];
+    }
+    return next;
+  }
+  function saveFingerProfile(state, id2, patch, nowISO = (/* @__PURE__ */ new Date()).toISOString()) {
+    checkedId(id2);
+    if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new Error("Некорректная запись человека.");
+    const previous = state.fingerProfiles?.[id2] ?? emptyProfile();
+    if (own(patch, "name") && typeof patch.name !== "string") throw new Error("Укажите имя.");
+    const rawName = own(patch, "name") ? patch.name : state.fingerProfiles?.[id2]?.name ?? (id2 === "self" ? "Мои" : "");
+    const name = rawName.trim() || (id2 === "self" ? "Мои" : "");
+    if (!name || name.length > 60) throw new Error("Имя — от 1 до 60 символов.");
+    const time = new Date(nowISO);
+    if (!Number.isFinite(time.getTime())) throw new Error("Некорректная дата замера.");
+    const profile = {
+      ...previous,
+      name,
+      updatedAt: time.toISOString(),
+      ringSizes: own(patch, "ringSizes") ? mergeMeasurements(previous.ringSizes, patch.ringSizes) : previous.ringSizes ?? {}
+    };
+    return { ...state, fingerProfiles: { ...state.fingerProfiles, [id2]: profile } };
+  }
+  function removeFingerProfile(state, id2) {
+    checkedId(id2);
+    if (!state.fingerProfiles || !own(state.fingerProfiles, id2)) return state;
+    const fingerProfiles2 = { ...state.fingerProfiles };
+    delete fingerProfiles2[id2];
+    return { ...state, fingerProfiles: fingerProfiles2 };
+  }
+
   // sport/core/src/measurementProgress.ts
   function numericMeasurement(raw, unit) {
     let text = raw.trim().replace(/−/g, "-");
@@ -1754,8 +1844,8 @@ var SportCore = (() => {
   // sport/core/src/gymBasics.ts
   var GYM_REFERENCE = { name: "Жим штанги лёжа", basis: "total" };
   function gymMovements(state) {
-    const own = Object.entries(state.gymMovements ?? {}).filter(([, movement]) => exerciseKey(movement.name) !== exerciseKey(GYM_REFERENCE.name)).map(([id2, movement]) => ({ ...movement, id: id2 }));
-    return [GYM_REFERENCE, ...own];
+    const own2 = Object.entries(state.gymMovements ?? {}).filter(([, movement]) => exerciseKey(movement.name) !== exerciseKey(GYM_REFERENCE.name)).map(([id2, movement]) => ({ ...movement, id: id2 }));
+    return [GYM_REFERENCE, ...own2];
   }
   function addGymMovement(state, movement) {
     const key = exerciseKey(movement.name);
