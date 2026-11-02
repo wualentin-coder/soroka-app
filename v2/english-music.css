@@ -2,7 +2,7 @@
 .en-media-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:var(--surface-soft)}
 .en-media-tabs button{height:36px;border:0;border-radius:10px;padding:0 12px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .en-media-tabs button.active,.en-media-tabs button.enm-active,.en-media-tabs button[aria-selected=true]{background:var(--surface);color:var(--text);box-shadow:0 1px 0 var(--line)}
-#enm-library{min-width:0;display:grid;gap:12px}
+#enm-library{min-width:0;display:grid;gap:6px}
 .enm-library-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
 .enm-library-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.3px}
 .enm-library-head .enm-icon-btn{background:var(--accent-soft);color:var(--accent)}
@@ -64,8 +64,10 @@
 .enm-player-host #enm-overlay .enm-backdrop{pointer-events:auto;z-index:1;padding-top:max(30px,calc(var(--tg-top,0px) + 8px))}
 .enm-player-host .enm-song-sheet{box-sizing:border-box;max-height:calc(100dvh - max(30px,calc(var(--tg-top,0px) + 8px)));box-shadow:var(--shadow)}
 .enm-player-host .enm-song-sheet .enm-inline-icon{width:24px;height:24px}
-#enm-library .enm-song-card+.enm-song-card{margin-top:10px}
-#enm-library .enm-song-card .enm-song-info h2{font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+#enm-library .enm-song-card{min-height:64px;padding:12px 16px;border-radius:22px}
+#enm-library .enm-song-card+.enm-song-card{margin-top:0}
+#enm-library .enm-song-card .enm-song-info p{margin:0;font-size:12px;line-height:1.4}
+#enm-library .enm-song-card .enm-song-info h2{font-size:14px;line-height:1.4;margin:0 0 4px;overflow-wrap:anywhere}
 #enm-library .enm-song-card .enm-cover{width:68px;height:80px}
 #enm-library .enm-filters{margin:0}
 #enm-library .enm-library-note{margin:4px 3px 0}
