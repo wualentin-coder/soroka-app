@@ -810,6 +810,10 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .check-add-icon { display: grid; place-items: center; color: var(--accent); }
 .check-add input { height: 42px; padding: 0 4px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; outline: 0; }
 .check-add input::placeholder { color: var(--subtle); }
+.sheet .checklist .check-row { grid-template-columns: 44px minmax(0, 1fr) 44px; column-gap: 4px; }
+.checklist .check-remove { width: 44px; height: 44px; }
+.sheet .checklist .check-add { grid-template-columns: 44px minmax(0, 1fr); column-gap: 4px; }
+.checklist .check-add input { min-width: 0; padding-left: 2px; }
 .checklist-done-head { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .list-card-preview { display: grid; gap: 3px; margin: 6px 0 2px; }
 .list-card-preview span { position: relative; padding-left: 16px; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
