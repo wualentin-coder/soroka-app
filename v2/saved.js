@@ -594,14 +594,14 @@ function renderChecklist(item) {
   const open = items.filter(entry => !entry.done);
   const done = items.filter(entry => entry.done);
   const row = entry => ui.sheet.editItemId === entry.id
-    ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-label="Отметить">${icon("check", "icon-sm")}</button><input name="text" type="text" value="${esc(entry.text)}" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта"><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить пункт">${icon("trash", "icon-sm")}</button></form>`
+    ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}" data-state-key="${esc(item.id+':'+entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-label="Отметить">${icon("check", "icon-sm")}</button><input name="text" type="text" value="${esc(entry.text)}" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта"><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить пункт">${icon("trash", "icon-sm")}</button></form>`
     : `<div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить: ${esc(entry.text)}">${icon("close", "icon-sm")}</button></div>`;
   const percent = items.length ? Math.round(done.length / items.length * 100) : 0;
   const inToday = (data.tasks || []).some(task => task.listRef === item.id && !task.done);
   return `<div class="checklist"><div class="checklist-progress"><div class="progress-track"><span style="width:${percent}%"></span></div><span id="saved-list-progress">${done.length} из ${items.length}</span></div>` +
     `<button type="button" class="list-to-today ${inToday ? "is-on" : ""}" data-action="list-to-today">${icon("today", "icon-sm")}${inToday ? "В задачах на сегодня" : "Добавить в задачи на сегодня"}</button>` +
     `<div class="checklist-rows" data-list-order="${esc(item.id)}">${open.map(row).join("")}</div>` +
-    `<form id="list-item-form" class="check-add"><span class="check-add-icon">${icon("plus", "icon-sm")}</span><input name="text" type="text" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></form>` +
+    `<form id="list-item-form" class="check-add" data-state-key="${esc(item.id+':'+(ui.sheet.listAddRevision||0))}"><span class="check-add-icon">${icon("plus", "icon-sm")}</span><input name="text" type="text" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></form>` +
     (done.length ? `<div class="checklist-done-head"><span>Выполнено · ${done.length}</span><button class="text-action" type="button" data-action="list-clear-done">Очистить</button></div><div class="checklist-rows">${done.map(row).join("")}</div>` : "") +
     `</div>`;
 }
@@ -1078,7 +1078,7 @@ function savedSubmit(event) {
     const list = savedItem("lists", ui.sheet.id);
     const text = String(new FormData(event.target).get("text") || "").trim();
     // В просмотре поле внизу только добавляет — и остаётся в фокусе для следующего пункта.
-    if (list && text && ui.sheet.mode === "view") { list.items.push({ id: id(), text, done: false }); save(); renderKeepScroll(() => document.querySelector("#list-item-form input")?.focus()); return true; }
+    if (list && text && ui.sheet.mode === "view") { list.items.push({ id: id(), text, done: false }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => document.querySelector("#list-item-form input")?.focus()); return true; }
     if (list && text) { const existing = ui.sheet.editItemId ? list.items.find(x => x.id === ui.sheet.editItemId) : null; if (existing) existing.text = text; else list.items.push({ id: id(), text, done: false }); ui.sheet.editItemId = null; save(); render(); }
     return true;
   }
