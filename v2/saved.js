@@ -1,6 +1,8 @@
 function savedItems(category = ui.savedCategory) {
   if (category === "materials") return MATERIAL_KINDS.flatMap(([key]) => data.saved[key] || []);
-  return category === "notes" ? data.notes : (data.saved[category] || []);
+  if (category === "notes") return data.notes.filter(item => !item.packing);
+  if (category === "lists") return [...(data.saved.lists || []), ...data.notes.filter(item => item.packing)];
+  return data.saved[category] || [];
 }
 /**
  * «Материалы» — ссылки, посты и файлы одним списком: искать прочитанное по
@@ -104,13 +106,14 @@ function renderSavedOverview() {
 function renderSavedAddMenuSheet() {
   const category = ui.savedCategory;
   const overview = category === "overview";
-  const packing = (overview || category === "notes") && typeof packingOpen === "function" ? `<button type="button" data-action="packing-new">${icon("plane", "icon-sm")}<span>Сборы<small>Компактный список вещей под поездку</small></span>${icon("right", "icon-sm")}</button>` : "";
+  const packing = (overview || category === "lists") && typeof packingOpen === "function" ? `<button type="button" data-action="packing-new">${icon("plane", "icon-sm")}<span>Сборы<small>Компактный список вещей под поездку</small></span>${icon("right", "icon-sm")}</button>` : "";
   const ai = `<button type="button" class="saved-add-ai" data-action="universal-add">${icon("note", "icon-sm")}<span>Написать как боту — ИИ разберёт<small>Одно сообщение, одна или несколько записей</small></span>${icon("right", "icon-sm")}</button>`;
   const options = packing + ai + (overview || category === "materials" ? (overview ? SAVED_CATEGORIES.filter(([key]) => !MATERIAL_KINDS.some(([kind]) => kind === key)).concat(MATERIAL_KINDS) : MATERIAL_KINDS).map(([key, label]) => `<button type="button" data-action="saved-add-record" data-category="${key}">${icon(savedIcon(key), "icon-sm")}<span>${esc(label)}</span>${icon("right", "icon-sm")}</button>`).join("") : `<button type="button" data-action="saved-add-record" data-category="${category}">${icon(savedIcon(category), "icon-sm")}<span>${category === "lists" ? "Новый список" : category === "tickets" ? "Новый билет" : category === "notes" ? "Новая заметка" : `Новая запись · ${SAVED_NAMES[category]}`}</span>${icon("right", "icon-sm")}</button>${category === "addresses" ? `<button type="button" data-action="saved-add-map">${icon("pin", "icon-sm")}<span>Поставить метку на карте</span>${icon("right", "icon-sm")}</button>` : ""}`);
   const lists = !overview && category === "lists" && savedItems("lists").length ? `<form id="saved-add-list-item" class="saved-add-list-item"><h3>Пункт в существующий список</h3><label class="field">Список<select name="listId">${savedItems("lists").map(item => `<option value="${esc(item.id)}">${esc(item.title)}</option>`).join("")}</select></label><label class="field">Новый пункт<input name="text" type="text" placeholder="Что добавить?" maxlength="120" required></label><button class="primary-button" type="submit">Добавить пункт</button></form>` : "";
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-add-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${overview ? "Добавить в сохранённое" : `Добавить · ${esc(SAVED_NAMES[category])}`}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="saved-add-options ${overview ? "is-overview" : ""}">${options}</div>${lists}</section></div>`;
 }
 function openSavedRecord(category, recordId = null, mode = recordId ? "view" : "edit") {
+  if (recordId && data.notes.some(item => item.id === recordId && item.packing)) category = "lists";
   // Из «Материалов» запись открывается своим разделом, а после закрытия — снова «Материалы».
   if (ui.savedCategory === "materials" && MATERIAL_KINDS.some(([kind]) => kind === category)) ui.savedReturn = category;
   ui.savedCategory = category;
@@ -163,7 +166,7 @@ function savedVisibleItems() {
   const result = savedItems().filter(item => {
     if (ui.savedCategory === "products" && isProductWish(item) !== (ui.productTab === "wishes")) return false;
     if (ui.savedCategory === "materials" && ui.materialKind && materialCategoryOf(item) !== ui.materialKind) return false;
-    const sectionId = ui.savedCategory === "notes" ? noteFolderId(item) : item.categoryId;
+    const sectionId = item.packing && typeof pkFolderId === "function" ? pkFolderId(item) : ui.savedCategory === "notes" ? noteFolderId(item) : item.categoryId;
     if (ui.savedCategory !== "addresses" && !(ui.savedCategory === "movies" && ui.savedFilter === "viewed") && ui.savedSection === "__none__" && sectionId) return false;
     if (ui.savedCategory !== "addresses" && !(ui.savedCategory === "movies" && ui.savedFilter === "viewed") && ui.savedSection && ui.savedSection !== "__none__" && sectionId !== ui.savedSection) return false;
     if (ui.savedCategory === "tickets") {
@@ -375,6 +378,7 @@ function multipartCard(group) {
   return `<div class="record-card file-group ${open ? "is-open" : ""} ${missing.length ? "has-gap" : ""}"><button type="button" class="file-group-head" data-action="file-group-toggle" data-key="${esc(key)}" aria-expanded="${open}"><span class="record-kicker">${icon("archive", "icon-sm")}Архив · ${parts.length} ${word(parts.length)}</span><span class="record-title">${esc(parts[0].name)}</span><span class="record-meta"><span>${esc(state)}</span><span>${icon(open ? "up" : "down", "icon-sm")}</span></span></button>${rows}</div>`;
 }
 function savedRecordCard(item, category) {
+  if (item.packing && typeof packingNoteRow === "function") return packingNoteRow(item);
   if(category==='movies' && typeof movieMarathonIsCard==='function' && movieMarathonIsCard(item))return movieMarathonListCard(item);
   return `<div class="record-card-shell" data-category="${esc(category)}" data-id="${esc(item.id)}">${savedRecordCardBody(item, category)}${(category === "movies" ? movieIsViewed(item) : item.viewed) ? `<span class="record-seen" title="Просмотрено" aria-label="Просмотрено">${icon("eye", "icon-sm")}</span>` : ""}<button class="record-pin-toggle ${item.pinned ? "is-pinned" : ""}" type="button" data-action="saved-pin-card" data-category="${esc(category)}" data-id="${esc(item.id)}" aria-pressed="${Boolean(item.pinned)}" aria-label="${item.pinned ? "Открепить" : "Закрепить"}: ${esc(item.title)}">${icon(category === "products" ? "heart" : "bookmark", "icon-sm")}</button></div>`;
 }
@@ -779,6 +783,7 @@ function renderPostBotPreviewSheet(item) {
 function renderSavedSheet() {
   const { category, id: recordId } = ui.sheet;
   const item = recordId ? savedItem(category, recordId) : null;
+  if (typeof packingIsNote === "function" && packingIsNote(item)) return renderPackingSheet(item);
   if (category === "movies" && item && ui.sheet.mode === "carousel-actions") return movieCarouselActions(item);
   if (category === "notes") return renderNoteSheet(item);
   if (category === "posts" && item && ui.sheet.mode === "bot-preview") return renderPostBotPreviewSheet(item);
@@ -812,8 +817,9 @@ function renderSavedSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${item ? "Изменить запись" : "Новая запись"}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="eyebrow">${esc(SAVED_NAMES[category])}</p><form id="saved-form">${common}${extra}${flags}<p class="form-error" role="alert"></p><div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="saved-delete">Удалить</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form>${listDetails}${history}${category === "notes" && item ? `<div class="detail-block"><h3>Исходное сообщение</h3><p>${esc(item.sourceText || item.description || "Запись добавлена вручную")}</p><button class="small-button" type="button" data-action="saved-insert-source">Вставить в редактор</button></div>` : ""}${extraActions}</section></div>`;
 }
 function deleteSavedRecord(category, recordId) {
-  const item = savedItem(category, recordId);
+  const item = savedItem(category, recordId) || data.notes.find(row => row.id === recordId && row.packing);
   if (!item) return false;
+  if (item.packing) category = "notes";
   pushTrash(`saved:${category}`, item);
   if (category === "notes") data.notes = data.notes.filter(x => x.id !== recordId);
   else data.saved[category] = data.saved[category].filter(x => x.id !== recordId);
@@ -954,6 +960,7 @@ function savedSubmit(event) {
     const list = savedItem("lists", String(form.get("listId") || ""));
     const itemText = String(form.get("text") || "").trim();
     if (!list || !itemText) return true;
+    if (list.packing) { if (packingAddExternal(list, itemText)) { ui.sheet = null; toast("Пункт добавлен в сборы"); } return true; }
     list.items ||= [];
     list.items.push({ id: id(), text: itemText, done: false });
     save(); ui.sheet = null; toast("Пункт добавлен в список");
@@ -1051,7 +1058,7 @@ function savedSubmit(event) {
         item.lat = lat ? Number(lat) : null; item.lng = lng ? Number(lng) : null;
       }
       if (category !== "notes" && category !== "lists") { item.viewed = category === "movies" ? item.status === "Посмотрел" : Boolean(existing?.viewed); item.pinned = Boolean(existing?.pinned); }
-      if (!existing) savedItems(category).push(item);
+      if (!existing) (category === "notes" ? data.notes : data.saved[category]).push(item);
       if (!save()) { data = before; if (error) error.textContent = "Не хватило места в браузере для сохранения. Выберите файл меньше или удалите тестовые записи."; return; }
       if (category === "notes") { ui.sheet = { kind: "saved", category: "notes", id: item.id, mode: "view", justRendered: true }; render(); toast(existing ? "Заметка сохранена" : "Заметка создана"); }
       else { ui.sheet = null; toast(existing ? "Изменения сохранены" : "Запись добавлена"); }
