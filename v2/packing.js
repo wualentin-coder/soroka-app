@@ -1,12 +1,14 @@
-/* A structured note: trip settings, a small editable packing list and real AI proposals. */
-const PK_SECTIONS = { documents: "Документы и деньги", clothes: "Одежда и обувь", tech: "Техника", hygiene: "Гигиена", personal: "Личное", before: "Перед выходом" };
+/* Packing lists retain their canonical identity and sync; lists is their visible home. */
+const PK_SECTIONS = Object.fromEntries(PackingCore.PACKING_SECTIONS.map(s=>[s.id,s.label]));
+const PK_ICONS = Object.fromEntries(PackingCore.PACKING_SECTIONS.map(s=>[s.id,s.icon]));
+const pkMemory={items:[],loaded:false,loading:null,error:"",pending:new Map()};
 const pkJobs = new Map();
 let pkWakeTimer=0;
 const PK = () => window.PackingCore;
 function packingIsNote(item, sheet = ui.sheet) { return Boolean(item?.packing || sheet?.noteType === "packing" || sheet?.packingDraft); }
 function pkToday() { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
 function pkFind(uid) { return data.notes.find(note => note.packing?.id === uid); }
-function pkActive(uid) { return ui.sheet?.kind === "saved" && ui.sheet.category === "notes" && ui.sheet.packingDraft?.id === uid; }
+function pkActive(uid) { return ui.sheet?.kind === "saved" && ["notes","lists"].includes(ui.sheet.category) && ui.sheet.packingDraft?.id === uid; }
 function packingDraft(item) {
   const sheet = ui.sheet;
   if (!sheet.packingDraft) {
@@ -28,7 +30,7 @@ function pkCommit(doc, sheet = pkActive(doc.id) ? ui.sheet : null, baseline = sh
   if (!item) {
     if (!normalized.config.destination && !normalized.items.length) return null;
     const folder = sheet?.draft?.categoryId || (ui.savedSection === "__none__" ? "" : ui.savedSection) || "";
-    item = {id:id(),created:todayIso(),source:"Добавлено вручную",versions:[],items:[],tags:[],categoryId:folder,topic:savedSection("notes",folder)?.name || ""};
+    item = {id:id(),created:todayIso(),source:"Добавлено вручную",versions:[],items:[],tags:[],categoryId:folder,topic:savedSection("lists",folder)?.name || ""};
     data.notes.push(item);
   }
   item.packing = normalized;
@@ -41,12 +43,13 @@ function pkCurrent(uid) { return pkActive(uid) ? packingDraft(pkFind(uid)) : pkF
 function pkReleaseJob(job) { if(pkJobs.get(job.uid)===job)pkJobs.delete(job.uid); }
 function pkTripRaw(sheet, doc) { return sheet.packingTrip ||= {...doc.config,days:PK().tripDays(doc.config),activities:[...doc.config.activities]}; }
 function packingOpen() {
-  ui.sheet = {kind:"saved",category:"notes",noteType:"packing",draft:{categoryId:ui.savedSection === "__none__" ? "" : ui.savedSection || ""},packingSettings:true};
-  render();
+ ui.sheet={kind:"saved",category:"lists",noteType:"packing",draft:{categoryId:ui.savedCategory==="lists"&&ui.savedSection!=="__none__"?ui.savedSection||"":""},packingSettings:true,packingImportMemory:true};
+ const uid=packingDraft(null).id;render();
+ void pkLoadMemory().then(ok=>{if(ok&&pkActive(uid)){try{pkImportMemory();}catch(error){ui.sheet.packingError=error.message;ui.sheet.packingMemoryOpen=true;}render();}});
 }
 function packingSaveQuietly() {
-  if (!ui.sheet || !packingIsNote(ui.sheet.id ? savedItem("notes",ui.sheet.id) : null)) return;
-  const doc = packingDraft(ui.sheet.id ? savedItem("notes",ui.sheet.id) : null);
+  if (!ui.sheet || !packingIsNote(pkRecord())) return;
+  const doc = packingDraft(pkRecord());
   pkCommit(doc);
 }
 function packingSheetDirty() {
@@ -57,7 +60,7 @@ function packingSheetDirty() {
     catch (_) { return true; }
   }
   const edit=sheet.packingEdit,row=doc.items.find(item=>item.id===edit?.id);
-  return Boolean(row&&(edit.text!==row.text||Number(edit.quantity)!==row.quantity||edit.section!==row.section));
+  return Boolean(row&&(edit.text!==row.text||Number(edit.quantity)!==row.quantity||edit.section!==row.section||(edit.parentId||'')!==(row.parentId||'')||Boolean(edit.remember)!==Boolean(row.remember)));
 }
 function packingDidClose(sheet) { clearTimeout(pkWakeTimer);pkWakeTimer=0;const job=pkJobs.get(sheet?.packingDraft?.id);if(job?.plan)pkApplyJob(job); }
 function pkArmStatus(doc) {
@@ -67,18 +70,18 @@ function pkArmStatus(doc) {
 }
 function pkDates(config) { return `${config.startOn ? new Date(config.startOn+"T12:00:00Z").toLocaleDateString("ru-RU",{day:"numeric",month:"short",timeZone:"UTC"}) : "Дата не указана"} · ${PK().tripDays(config)} дн.`; }
 function packingNoteRow(item) {
-  const doc = item.packing, count = (doc.items || []).length, done = (doc.items || []).filter(row=>row.done).length;
-  return `<button class="note-row" type="button" data-action="saved-open" data-category="notes" data-id="${esc(item.id)}"><span class="note-row-title">${esc(item.title || "Сборы")}</span><span class="note-row-preview">${esc(pkDates(doc.config))}${count ? ` · собрано ${done} из ${count}` : " · составить список"}</span><span class="note-row-foot"><span class="pk-type">${icon("plane","icon-sm")}Сборы</span><time>${esc(noteDateLabel(item))}</time>${item.pinned ? icon("bookmark","icon-sm") : ""}</span></button>`;
+ const doc=item.packing,p=PK().packingProgress(doc);
+ return `<button class="record-card pk-list-card" type="button" data-action="saved-open" data-category="lists" data-id="${esc(item.id)}"><span class="pk-type">${icon("plane","icon-sm")}Сборы</span><strong>${esc(doc.config.destination||item.title||"Поездка")}</strong><span>${esc(pkDates(doc.config))} · ${p.done} из ${p.total}</span><span class="progress-track"><span style="width:${p.total?p.done/p.total*100:0}%"></span></span></button>`;
 }
 function pkSettings(sheet, doc) {
   const raw = pkTripRaw(sheet,doc);
   const options = (field,values) => `<div class="pk-choices" data-trip-choice="${field}">${values.map(([value,label])=>`<button type="button" class="${(Array.isArray(raw[field]) ? raw[field].includes(value) : raw[field]===value) ? "active" : ""}" data-action="packing-choice" data-field="${field}" data-value="${value}" aria-pressed="${Array.isArray(raw[field]) ? raw[field].includes(value) : raw[field]===value}">${label}</button>`).join("")}</div>`;
-  return `<form id="packing-trip-form" class="pk-trip-form"><label class="field">Куда едем<input name="destination" required maxlength="180" placeholder="Город, страна или маршрут" value="${esc(raw.destination)}"></label><div class="field-row"><label class="field">Когда<input name="startOn" type="date" required value="${esc(raw.startOn)}"></label><label class="field">На сколько дней<input name="days" type="number" inputmode="numeric" min="1" max="365" required value="${esc(raw.days)}"></label></div><details class="pk-extra"><summary>Детали поездки</summary><p class="pk-label">Как добираемся</p>${options("transport",[["plane","Самолёт"],["train","Поезд"],["car","Машина"],["other","Другое"]])}<p class="pk-label">Багаж</p>${options("baggage",[["backpack","Рюкзак"],["cabin","Ручная кладь"],["checked","Чемодан"]])}<p class="pk-label">Что планируем</p>${options("activities",[["city","Город"],["beach","Море"],["nature","Природа"],["work","Работа"]])}<label class="field">Стирка каждые, дней<input name="laundryEvery" type="number" min="0" max="14" inputmode="numeric" value="${raw.laundryEvery}"><small>0 — без стирки. Это влияет на количество одежды.</small></label><label class="field">Что ещё учесть<textarea name="special" rows="2" maxlength="500" placeholder="Особые занятия или личные вещи">${esc(raw.special)}</textarea></label></details><p class="form-error" role="alert">${esc(sheet.packingError || "")}</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="packing-settings-save">Сохранить</button><button class="primary-button" type="submit">${doc.items.length ? "Обновить список" : "Составить список"}</button></div><p class="section-note">Только нужное. Без повторов и запасов «на всякий случай».</p></form>`;
+  return `<form id="packing-trip-form" class="pk-trip-form"><label class="field">Куда едем<input name="destination" required maxlength="180" placeholder="Город, страна или маршрут" value="${esc(raw.destination)}"></label><div class="field-row"><label class="field">Когда<input name="startOn" type="date" required value="${esc(raw.startOn)}"></label><label class="field">На сколько дней<input name="days" type="number" inputmode="numeric" min="1" max="365" required value="${esc(raw.days)}"></label></div><details class="pk-extra"><summary>Детали поездки</summary><p class="pk-label">Как добираемся</p>${options("transport",[["plane","Самолёт"],["train","Поезд"],["car","Машина"],["other","Другое"]])}<p class="pk-label">Багаж</p>${options("baggage",[["backpack","Рюкзак"],["cabin","Ручная кладь"],["checked","Чемодан"]])}<p class="pk-label">Что планируем</p>${options("activities",[["city","Город"],["beach","Море"],["nature","Природа"],["work","Работа"]])}<label class="field">Стирка каждые, дней<input name="laundryEvery" type="number" min="0" max="14" inputmode="numeric" value="${raw.laundryEvery}"><small>0 — без стирки. Это влияет на количество одежды.</small></label><label class="field">Что ещё учесть<textarea name="special" rows="2" maxlength="500" placeholder="Особые занятия или личные вещи">${esc(raw.special)}</textarea></label></details><p class="form-error" role="alert">${esc(sheet.packingError || "")}</p><div class="sheet-actions"><button class="ghost-button" type="button" data-action="packing-settings-save">Сохранить</button><button class="primary-button" type="submit">${doc.generatedFor ? "Обновить список" : "Составить список"}</button></div><p class="section-note">Только нужное. Без повторов и запасов «на всякий случай».</p></form>`;
 }
-function pkEditForm(sheet, doc) {
-  const edit = sheet.packingEdit, row = doc.items.find(item=>item.id===edit?.id);
-  if (!row) { delete sheet.packingEdit; return ""; }
-  return `<form id="packing-edit-form" class="pk-edit-form"><label class="field">Вещь<input name="text" maxlength="120" required value="${esc(edit.text)}"></label><div class="field-row"><label class="field">Количество<input name="quantity" type="number" min="1" max="99" inputmode="numeric" required value="${esc(edit.quantity)}"></label><label class="field">Раздел<select name="section">${Object.entries(PK_SECTIONS).map(([key,label])=>`<option value="${key}" ${edit.section===key?"selected":""}>${label}</option>`).join("")}</select></label></div>${row.note?`<p class="section-note">${esc(row.note)}</p>`:""}<div class="sheet-actions"><button class="ghost-button" type="button" data-action="packing-edit-cancel">Отмена</button><button class="primary-button" type="submit">Готово</button></div></form>`;
+function pkEditForm(sheet,doc) {
+ const edit=sheet.packingEdit,row=doc.items.find(i=>i.id===edit?.id);if(!row){delete sheet.packingEdit;return "";}
+ const group=row.kind==="group",parents=doc.items.filter(i=>i.kind==="group"&&i.section===edit.section);
+ return `<form id="packing-edit-form" class="pk-edit-form"><label class="field">${group?"Название группы":"Вещь"}<input name="text" maxlength="120" required value="${esc(edit.text)}"></label><div class="field-row">${group?'':`<label class="field">Количество<input name="quantity" type="number" min="1" max="99" inputmode="numeric" required value="${esc(edit.quantity)}"></label>`}<label class="field">Раздел<select name="section">${Object.entries(PK_SECTIONS).map(([key,label])=>`<option value="${key}" ${edit.section===key?"selected":""}>${label}</option>`).join("")}</select></label></div>${!group?`<label class="field">Группа<select name="parentId"><option value="">Без группы</option>${parents.map(i=>`<option value="${esc(i.id)}" ${edit.parentId===i.id?'selected':''}>${esc(i.text)}</option>`).join('')}</select></label>`:''}${row.note?`<p class="section-note">${esc(row.note)}</p>`:""}${!group?(row.remember&&row.templateId?`<div class="pk-memory-note"><span>${icon("bookmark","icon-sm")}Запомнено для следующих поездок</span><button type="button" class="text-action" data-action="packing-forget" data-id="${esc(row.templateId)}">Забыть</button></div>`:`<label class="pk-remember"><input type="checkbox" name="remember" ${edit.remember?'checked':''}>Запоминать для следующих поездок</label>`):''}<div class="sheet-actions"><button class="ghost-button" type="button" data-action="packing-edit-cancel">Отмена</button><button class="primary-button" type="submit">Готово</button></div></form>`;
 }
 function pkStatus(doc) {
   const job = pkJobs.get(doc.id),age=Date.now()-Date.parse(doc.generationStartedAt||""),stale=Boolean(doc.generating&&!job&&(!Number.isFinite(age)||age>=90000));
@@ -89,18 +92,20 @@ function pkStatus(doc) {
   return "";
 }
 function pkList(sheet,doc) {
-  const done = doc.items.filter(item=>item.done).length, total = doc.items.length;
-  const groups = Object.entries(PK_SECTIONS).map(([key,label])=>{
-    const rows = doc.items.filter(item=>item.section===key); if (!rows.length) return "";
-    return `<details class="pk-group" open><summary><b>${label}</b><span>${rows.filter(row=>row.done).length}/${rows.length}</span></summary><div>${rows.map(row=>`<div class="pk-row ${row.done?"done":""}"><button class="task-check ${row.done?"checked":""}" type="button" data-action="packing-toggle" data-id="${esc(row.id)}" aria-pressed="${row.done}" aria-label="${row.done?"Вернуть":"Собрано"}: ${esc(row.text)}">${icon("check","icon-sm")}</button><button class="pk-item-text" type="button" data-action="packing-edit" data-id="${esc(row.id)}"><span>${esc(row.text)}</span>${row.quantity>1?`<small>×${row.quantity}</small>`:""}</button><button class="pk-remove" type="button" data-action="packing-remove" data-id="${esc(row.id)}" aria-label="Убрать: ${esc(row.text)}">${icon("close","icon-sm")}</button></div>`).join("")}</div></details>`;
-  }).join("");
-  return `<div class="pk-trip-summary"><span>${esc(pkDates(doc.config))}</span><button class="text-action" type="button" data-action="packing-settings">Параметры поездки</button></div>${pkStatus(doc)}${total ? `<div class="pk-progress"><span>Собрано ${done} из ${total}</span><div class="progress-track"><span style="width:${done/total*100}%"></span></div></div>` : `<div class="pk-empty"><p>Список под твою поездку: минимум вещей, только необходимое.</p><button class="primary-button" type="button" data-action="packing-generate" ${doc.generating&&!doc.generationError?"disabled":""}>Составить список</button></div>`}${groups}${sheet.packingEdit?pkEditForm(sheet,doc):`<form id="packing-add-form" class="pk-add"><label class="sr-only" for="pk-add-text">Добавить вещь</label><input id="pk-add-text" name="text" maxlength="120" placeholder="Добавить свою вещь" autocomplete="off" required><button class="icon-button" type="submit" aria-label="Добавить вещь">${icon("plus")}</button></form>`}${total ? `<button class="text-action pk-regenerate" type="button" data-action="packing-generate" ${doc.generating&&!doc.generationError?"disabled":""}>${icon("spark","icon-sm")}Пересобрать с ИИ</button>`:""}<p class="pk-note">Твои пункты и правки сохраняются при пересборке.</p>`;
+ const progress=PK().packingProgress(doc);
+ const groups=Object.entries(PK_SECTIONS).map(([section,label])=>{
+  const roots=doc.items.filter(row=>row.section===section&&!row.parentId);if(!roots.length)return '';
+  const leaves=doc.items.filter(row=>row.section===section&&row.kind!=="group"),done=leaves.filter(row=>row.done).length;
+  const sole=roots.length===1&&roots[0].kind==='group'&&roots[0].source==='ai'?roots[0]:null,key='section:'+section,visible=sole?doc.items.filter(i=>i.parentId===sole.id):roots;
+  return `<details class="pk-group" data-pk-fold="${key}" ${sheet.packingClosed?.includes(key)?'':'open'}><summary class="pk-section-head"><h3>${icon(PK_ICONS[section],"icon-sm")}${label}</h3><span>${done}/${leaves.length}</span>${sole?`<button class="icon-button" type="button" data-action="packing-edit" data-id="${esc(sole.id)}" aria-label="Изменить группу ${esc(sole.text)}">${icon('note','icon-sm')}</button>`:''}<button type="button" class="icon-button" data-action="packing-add-here" data-section="${section}" ${sole?`data-parent="${esc(sole.id)}"`:''} aria-label="Добавить в ${label}">${icon("plus","icon-sm")}</button>${icon('down','icon-sm')}</summary>${visible.map(row=>pkItemMarkup(row,doc,sheet)).join('')}</details>`;
+ }).join('');
+ return `<div class="pk-trip-summary"><span>${esc(pkDates(doc.config))}</span><button type="button" class="text-action" data-action="packing-memory">${icon('bookmark','icon-sm')}Личные вещи</button></div>${pkStatus(doc)}${progress.total?`<div class="pk-progress"><span>Собрано ${progress.done} из ${progress.total}</span><div class="progress-track"><span style="width:${progress.done/progress.total*100}%"></span></div></div>`:`<div class="pk-empty"><p>Подробный список под поездку. Минимум вещей, каждый предмет отдельно.</p><button class="primary-button" type="button" data-action="packing-generate" ${doc.generating?'disabled':''}>Составить список</button></div>`}${sheet.packingMemoryOpen?pkMemoryMarkup():''}${groups}<button class="text-action pk-new-group" type="button" data-action="packing-add-here" data-kind="group" data-section="personal">${icon("plus","icon-sm")}Добавить группу</button>${sheet.packingEdit?pkEditForm(sheet,doc):pkAddMarkup(sheet)}${progress.total?`<button class="text-action pk-regenerate" type="button" data-action="packing-generate" ${doc.generating?'disabled':''}>${icon("spark","icon-sm")}Пересобрать с ИИ</button>`:''}<p class="pk-note">Ручные пункты и отметки сохраняются при пересборке.</p>`;
 }
 function renderPackingSheet(item) {
   const sheet = ui.sheet, doc = packingDraft(item);
   pkArmStatus(doc);
   if (item) sheet.packingExisting = true;
-  return `<div class="modal-backdrop note-backdrop packing-backdrop" data-action="backdrop"><section class="sheet packing-sheet" role="dialog" aria-modal="true" aria-label="Сборы"><div class="sheet-handle"></div><header class="sheet-head"><button class="icon-button" type="button" data-action="close-sheet" aria-label="К заметкам">${icon("left")}</button><div class="pk-heading"><span class="pk-type">${icon("plane","icon-sm")}Сборы</span><h2>${esc(doc.config.destination || "Новая поездка")}</h2></div><button class="icon-button" type="button" data-action="packing-settings" aria-label="Настроить поездку">${icon("settings")}</button>${item?`<button class="icon-button" type="button" data-action="saved-delete" aria-label="Удалить сборы">${icon("trash")}</button>`:""}</header><div class="pk-body">${sheet.packingSettings?pkSettings(sheet,doc):pkList(sheet,doc)}</div></section></div>`;
+  return `<div class="modal-backdrop note-backdrop packing-backdrop" data-action="backdrop"><section class="sheet packing-sheet" role="dialog" aria-modal="true" aria-label="Сборы"><div class="sheet-handle"></div><header class="sheet-head"><button class="icon-button" type="button" data-action="close-sheet" aria-label="К спискам">${icon("left")}</button><div class="pk-heading"><span class="pk-type">${icon("plane","icon-sm")}Сборы</span><h2>${esc(doc.config.destination || "Новая поездка")}</h2></div><button class="icon-button" type="button" data-action="packing-settings" aria-label="Настроить поездку">${icon("settings")}</button>${item?`<button class="icon-button" type="button" data-action="saved-delete" aria-label="Удалить сборы">${icon("trash")}</button>`:""}</header><div class="pk-body">${sheet.packingSettings?pkSettings(sheet,doc)+(sheet.packingMemoryOpen?pkMemoryMarkup():""):pkList(sheet,doc)}</div></section></div>`;
 }
 function pkApplyJob(job) {
   if(pkJobs.get(job.uid)!==job)return;
@@ -115,8 +120,10 @@ function pkApplyJob(job) {
   pkCommit(updated,pkActive(job.uid)?ui.sheet:null,current); pkReleaseJob(job); if (pkActive(job.uid)) render();
 }
 async function pkGenerate() {
-  const sheet=ui.sheet, doc=packingDraft(sheet.id?savedItem("notes",sheet.id):null);
+  let sheet=ui.sheet, doc=packingDraft(pkRecord(sheet));
   if (pkJobs.has(doc.id)) return;
+  if(sheet.packingImportMemory&&!sheet.packingMemoryApplied){const uid=doc.id;if(!await pkLoadMemory()){if(pkActive(uid)){ui.sheet.packingSettings=true;ui.sheet.packingError="Не удалось загрузить личные вещи. Повтори, чтобы не потерять их в новом списке.";render();}return;}if(!pkActive(uid))return;sheet=ui.sheet;try{pkImportMemory();doc=packingDraft(pkRecord(sheet));}catch(error){sheet.packingSettings=true;sheet.packingMemoryOpen=true;sheet.packingError=error.message;render();return;}}
+  if(pkJobs.has(doc.id))return;
   try { doc.config=PK().normalizeTrip(doc.config,true); }
   catch(error) { sheet.packingSettings=true; sheet.packingError=error.message; render(); return; }
   if (typeof window.sorokaPackingGenerate!=="function") { doc.generationError="ИИ доступен в приложении Flow.";pkCommit(doc);render();return; }
@@ -135,33 +142,39 @@ async function pkGenerate() {
   }
 }
 function pkReadTrip(form) {
-  const sheet=ui.sheet, doc=packingDraft(sheet.id?savedItem("notes",sheet.id):null),raw=pkTripRaw(sheet,doc);
+  const sheet=ui.sheet, doc=packingDraft(pkRecord(sheet)),raw=pkTripRaw(sheet,doc);
   for(const name of ["destination","startOn","days","laundryEvery","special"])raw[name]=form.elements.namedItem(name).value;
   return PK().normalizeTrip({...raw,endOn:""},true);
 }
 function pkSaveTrip(form,generate) {
   try {
-    const doc=packingDraft(ui.sheet.id?savedItem("notes",ui.sheet.id):null),config=pkReadTrip(form);
+    const doc=packingDraft(pkRecord()),config=pkReadTrip(form);
     if(PK().packingConfigKey(config)!==PK().packingConfigKey(doc.config)){doc.generating=false;delete doc.requestId;pkJobs.delete(doc.id);}
     doc.config=config;ui.sheet.packingError="";ui.sheet.packingSettings=false;delete ui.sheet.packingTrip;
     pkCommit(doc);if(generate)pkGenerate();else render();
   } catch(error) {ui.sheet.packingError=error.message;render();}
 }
 function pkFinishEdit(form) {
-  const sheet=ui.sheet,doc=packingDraft(sheet.id?savedItem("notes",sheet.id):null),edit=sheet.packingEdit;
-  if(!edit)return;
-  const text=form.elements.text.value.trim(),quantity=Number(form.elements.quantity.value),section=form.elements.section.value;
-  if(!text||!Number.isInteger(quantity)||quantity<1||quantity>99){toast("Укажи вещь и количество от 1 до 99");return;}
-  doc.items=doc.items.map(row=>row.id===edit.id?{...row,text,quantity,section,edited:true}:row);delete sheet.packingEdit;pkCommit(doc);
-  const job=pkJobs.get(doc.id);if(job?.plan)pkApplyJob(job);else render();
+ const sheet=ui.sheet,doc=packingDraft(pkRecord()),edit=sheet.packingEdit,row=doc.items.find(i=>i.id===edit?.id);if(!row)return;
+ const group=row.kind==="group",text=form.elements.text.value.trim(),quantity=group?1:Number(form.elements.quantity.value),section=form.elements.section.value,parentId=group?'':form.elements.parentId.value;
+ if(!text||!Number.isInteger(quantity)||quantity<1||quantity>99){toast("Укажи вещь и количество от 1 до 99");return;}
+ const updated={...row,text,quantity,section,edited:true};if(parentId)updated.parentId=parentId;else delete updated.parentId;
+ if(!group&&(row.remember||form.elements.remember?.checked))pkMarkRemembered(updated);
+ doc.items=doc.items.map(i=>{if(i.id===row.id)return updated;if(group&&i.parentId===row.id){const child={...i,section,edited:true};if(child.remember)pkMarkRemembered(child,text);return child;}return i;});
+ delete sheet.packingEdit;pkCommit(doc);pkMemory.loaded=false;
+ const job=pkJobs.get(doc.id);if(job?.plan)pkApplyJob(job);else render();
 }
 function packingAction(action,control,event) {
   if(action==="packing-new"){packingOpen();return true;}
-  if(!ui.sheet||!packingIsNote(ui.sheet.id?savedItem("notes",ui.sheet.id):null))return false;
-  const sheet=ui.sheet,doc=packingDraft(sheet.id?savedItem("notes",sheet.id):null);
+  if(!ui.sheet||!packingIsNote(pkRecord()))return false;
+  const sheet=ui.sheet,doc=packingDraft(pkRecord(sheet));
   if(action==="note-cancel"){closeSheet();return true;}
   if(action==="note-improve-menu"||action==="note-improve"){pkGenerate();return true;}
   if(!action.startsWith("packing-"))return false;
+  if(sheet.packingEdit&&((action==='packing-edit'&&control.dataset.id!==sheet.packingEdit.id)||action==='packing-add-here')){
+    const edit=sheet.packingEdit,row=doc.items.find(i=>i.id===edit.id),dirty=row&&(edit.text!==row.text||Number(edit.quantity)!==row.quantity||edit.section!==row.section||(edit.parentId||'')!==(row.parentId||'')||Boolean(edit.remember)!==Boolean(row.remember));
+    if(dirty&&!window.confirm('Отменить несохранённые изменения пункта?'))return true;
+  }
   if(action==="packing-settings"){sheet.packingSettings=!sheet.packingSettings;render();}
   if(action==="packing-settings-save"){const form=document.getElementById("packing-trip-form");if(form)pkSaveTrip(form,false);}
   if(action==="packing-generate")pkGenerate();
@@ -172,23 +185,45 @@ function packingAction(action,control,event) {
   }
   if(action==="packing-toggle"){doc.items=doc.items.map(row=>row.id===control.dataset.id?{...row,done:!row.done}:row);pkCommit(doc);render();}
   if(action==="packing-remove"){
-    const row=doc.items.find(row=>row.id===control.dataset.id);if(row){if(row.source==="ai"&&row.key)doc.removedKeys=[...new Set([...doc.removedKeys,row.key])];doc.items=doc.items.filter(item=>item.id!==row.id);pkCommit(doc);render();}
+    const row=doc.items.find(i=>i.id===control.dataset.id);if(row){const children=doc.items.filter(i=>i.parentId===row.id);if(children.length&&!window.confirm(`Убрать группу и ${children.length} пунктов?`))return true;const ids=new Set([row.id,...children.map(i=>i.id)]);for(const i of doc.items)if(ids.has(i.id)&&i.source==="ai"&&i.key)doc.removedKeys=[...new Set([...doc.removedKeys,i.key])];doc.items=doc.items.filter(i=>!ids.has(i.id));pkCommit(doc);render();}
   }
-  if(action==="packing-edit"){const row=doc.items.find(row=>row.id===control.dataset.id);if(row){sheet.packingEdit={id:row.id,text:row.text,quantity:row.quantity,section:row.section};render();}}
+  if(action==="packing-edit"){const row=doc.items.find(i=>i.id===control.dataset.id);if(row){sheet.packingEdit={id:row.id,text:row.text,quantity:row.quantity,section:row.section,parentId:row.parentId||"",remember:row.remember??(row.section==="medicines")};sheet.packingAdd=null;render();}}
+  if(action==="packing-add-here"){event?.preventDefault();sheet.packingAdd={section:control.dataset.section||"personal",parentId:control.dataset.parent||"",kind:control.dataset.kind||"item"};delete sheet.packingEdit;render();document.querySelector('#pk-add-text')?.focus();}
+  if(action==="packing-memory"){sheet.packingMemoryOpen=!sheet.packingMemoryOpen;render();if(sheet.packingMemoryOpen)void pkLoadMemory(true).then(()=>render());}
+  if(action==="packing-memory-retry")void pkLoadMemory(true).then(()=>render());
+  if(action==="packing-forget")void pkForgetMemory(control.dataset.id,doc.id);
   if(action==="packing-edit-cancel"){delete sheet.packingEdit;const job=pkJobs.get(doc.id);if(job?.plan)pkApplyJob(job);else render();}
   return true;
 }
+function pkRecord(sheet=ui.sheet){return sheet?.id?data.notes.find(i=>i.id===sheet.id)||data.saved?.lists?.find(i=>i.id===sheet.id):null;}
+function packingAddExternal(item,text){const doc=PK().normalizePacking(item.packing);if(doc.items.length>=200){toast('В списке уже 200 пунктов');return false;}const row={id:crypto.randomUUID(),text,quantity:1,section:'personal',done:false,source:'manual'};pkMarkRemembered(row);doc.items.push(row);pkCommit(doc,null,item.packing);pkMemory.loaded=false;return true;}
+function pkMarkRemembered(row,parentLabel){if(!row.remember)row.templateId=crypto.randomUUID();row.remember=true;row.templateId ||=crypto.randomUUID();row.templateAt=new Date(Math.max(Date.now(),(Date.parse(row.templateAt||'')||0)+1)).toISOString();parentLabel ??= ui.sheet?.packingDraft?.items.find(i=>i.id===row.parentId)?.text||'';pkMemory.pending.set(row.templateId,{id:row.templateId,text:row.text,quantity:row.quantity,section:row.section,parentLabel,updatedAt:row.templateAt});}
+function pkFolderId(item){return savedSections('lists').find(s=>s.id===item.categoryId)?.id||savedSections('lists').find(s=>s.name.toLocaleLowerCase('ru-RU')===String(item.topic||'').toLocaleLowerCase('ru-RU'))?.id||'';}
+async function pkLoadMemory(force=false){
+ if(pkMemory.loading)return pkMemory.loading;if(pkMemory.loaded&&!force)return true;
+ pkMemory.loading=(async()=>{try{const result=typeof window.sorokaPackingMemory==='function'?await window.sorokaPackingMemory('list'):{items:[]};const items=new Map(PK().normalizePackingMemory(result.items||[]).map(i=>[i.id,i]));for(const [id,pending] of pkMemory.pending){if(Date.parse(items.get(id)?.updatedAt||'')>=Date.parse(pending.updatedAt))pkMemory.pending.delete(id);else items.set(id,pending);}pkMemory.items=[...items.values()];pkMemory.loaded=true;pkMemory.error='';return true;}catch(_){pkMemory.error='Личные вещи не загрузились';return false;}finally{pkMemory.loading=null;}})();return pkMemory.loading;
+}
+function pkImportMemory(){const sheet=ui.sheet;if(!sheet?.packingImportMemory||sheet.packingMemoryApplied)return;sheet.packingDraft=PK().importPackingMemory(sheet.packingDraft,pkMemory.items);sheet.packingMemoryApplied=true;}
+function pkMemoryMarkup(){return `<div class="pk-memory"><h3>${icon('bookmark','icon-sm')}Для следующих поездок</h3>${pkMemory.loading?'<p role="status">Загружаю личные вещи…</p>':pkMemory.error?`<p role="status">${esc(pkMemory.error)} <button class="text-action" type="button" data-action="packing-memory-retry">Повторить</button></p>`:pkMemory.items.length?pkMemory.items.map(i=>`<div class="pk-memory-row"><span>${esc(i.parentLabel?i.parentLabel+' · ':'')}${esc(i.text)}${i.quantity>1?' ×'+i.quantity:''}</span><button class="text-action" type="button" data-action="packing-forget" data-id="${esc(i.id)}">Забыть</button></div>`).join(''):'<p>Добавь свои вещи в список. Личные дополнения запомнятся для новых поездок.</p>'}</div>`;}
+async function pkForgetMemory(id,uid){try{await window.sorokaPackingMemory('forget',id);pkMemory.pending.delete(id);pkMemory.items=pkMemory.items.filter(i=>i.id!==id);const doc=pkCurrent(uid);if(doc){doc.items=doc.items.map(i=>i.templateId===id?{...i,remember:false}:i);pkCommit(doc);}if(pkActive(uid))render();}catch(_){toast('Не получилось забыть вещь. Повтори, когда появится связь.');}}
+function pkAddMarkup(sheet){const add=sheet.packingAdd||{section:'personal',kind:'item'},parent=sheet.packingDraft.items.find(i=>i.id===add.parentId);return `<form id="packing-add-form" class="pk-add"><label class="pk-add-context">${parent?esc(parent.text):add.kind==='group'?'Новая группа':'Своя вещь'}<select name="section" aria-label="Раздел новой вещи" ${parent?'disabled':''}>${Object.entries(PK_SECTIONS).map(([key,label])=>`<option value="${key}" ${add.section===key?'selected':''}>${label}</option>`).join('')}</select></label><div class="pk-add-input"><label class="sr-only" for="pk-add-text">${add.kind==='group'?'Название группы':'Добавить вещь'}</label><input id="pk-add-text" name="text" maxlength="120" placeholder="${add.kind==='group'?'Название группы':'Напиши название'}" autocomplete="off" required><button class="icon-button" type="submit" aria-label="Добавить">${icon('plus')}</button></div></form>`;}
+function pkItemMarkup(row,doc,sheet){
+ if(row.kind==='group'){const p=PK().packingProgress(doc,row.id);return `<details class="pk-subgroup" data-pk-fold="${esc(row.id)}" ${sheet.packingClosed?.includes(row.id)?'':'open'}><summary><span>${icon('down','icon-sm')}${esc(row.text)}</span><small>${p.done}/${p.total}</small><button type="button" class="icon-button" data-action="packing-add-here" data-section="${row.section}" data-parent="${esc(row.id)}" aria-label="Добавить в ${esc(row.text)}">${icon('plus','icon-sm')}</button><button type="button" class="icon-button" data-action="packing-edit" data-id="${esc(row.id)}" aria-label="Изменить группу ${esc(row.text)}">${icon('note','icon-sm')}</button><button type="button" class="pk-remove" data-action="packing-remove" data-id="${esc(row.id)}" aria-label="Убрать группу ${esc(row.text)}">${icon('close','icon-sm')}</button></summary>${doc.items.filter(i=>i.parentId===row.id).map(i=>pkItemMarkup(i,doc,sheet)).join('')}</details>`;}
+ return `<div class="pk-row ${row.done?'done':''} ${row.parentId?'pk-child':''}"><button class="task-check ${row.done?'checked':''}" type="button" data-action="packing-toggle" data-id="${esc(row.id)}" aria-pressed="${row.done}" aria-label="${row.done?'Вернуть':'Собрано'}: ${esc(row.text)}">${icon('check','icon-sm')}</button><button class="pk-item-text" type="button" data-action="packing-edit" data-id="${esc(row.id)}"><span>${esc(row.text)}${row.note?`<small class="pk-item-note">${esc(row.note)}</small>`:''}</span>${row.quantity>1?`<small>×${row.quantity}</small>`:''}</button><button class="pk-remove" type="button" data-action="packing-remove" data-id="${esc(row.id)}" aria-label="Убрать: ${esc(row.text)}">${icon('close','icon-sm')}</button></div>`;
+}
+document.addEventListener('toggle',event=>{const key=event.target?.dataset?.pkFold;if(!key||!event.target.isConnected||!ui.sheet)return;const closed=new Set(ui.sheet.packingClosed||[]);if(event.target.open)closed.delete(key);else closed.add(key);ui.sheet.packingClosed=[...closed];},true);
+document.addEventListener('change',event=>{if(event.target.closest?.('#packing-edit-form')&&event.target.name==='section'){const edit=ui.sheet?.packingEdit;if(edit){edit.section=event.target.value;edit.parentId='';render();}}});
 document.addEventListener("input",event=>{
   if(!ui.sheet?.packingDraft)return;
   if(event.target.closest?.("#packing-trip-form")&&event.target.name)pkTripRaw(ui.sheet,ui.sheet.packingDraft)[event.target.name]=event.target.value;
-  if(event.target.closest?.("#packing-edit-form")&&ui.sheet.packingEdit)ui.sheet.packingEdit[event.target.name]=event.target.value;
+  if(event.target.closest?.("#packing-edit-form")&&ui.sheet.packingEdit)ui.sheet.packingEdit[event.target.name]=event.target.type==='checkbox'?event.target.checked:event.target.value;
 });
 document.addEventListener("submit",event=>{
   if(!["packing-trip-form","packing-add-form","packing-edit-form"].includes(event.target.id))return;
   event.preventDefault();event.stopImmediatePropagation();const form=event.target;
   if(form.id==="packing-trip-form")return pkSaveTrip(form,true);
   if(form.id==="packing-edit-form")return pkFinishEdit(form);
-  const doc=packingDraft(ui.sheet.id?savedItem("notes",ui.sheet.id):null),text=form.elements.text.value.trim();if(!text)return;
+  const doc=packingDraft(pkRecord()),text=form.elements.text.value.trim();if(!text)return;
   if(doc.items.length>=200){toast("В списке уже 200 пунктов");return;}
-  doc.items.push({id:crypto.randomUUID(),text,quantity:1,section:"personal",done:false,source:"manual"});pkCommit(doc);render();
+  const add=ui.sheet.packingAdd||{section:"personal",kind:"item"},row={id:crypto.randomUUID(),text,quantity:1,section:form.elements.section?.value||add.section,done:false,source:"manual",...(add.kind==="group"?{kind:"group"}:{}),...(add.parentId?{parentId:add.parentId}:{})};if(row.kind!=="group"&&!["before","final"].includes(row.section))pkMarkRemembered(row);doc.items.push(row);ui.sheet.packingAdd=null;pkCommit(doc);pkMemory.loaded=false;render();
 },true);
