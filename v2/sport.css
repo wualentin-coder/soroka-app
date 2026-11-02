@@ -587,3 +587,21 @@ button.sp-ex-load:disabled { cursor: default; }
 .sp-ai-thinking i:nth-child(3) { animation-delay:.3s; }
 @keyframes sp-ai-dot { 50% { opacity:.3; transform:translateY(-2px); } }
 @media (prefers-reduced-motion:reduce) { .sp-ai-thinking i { animation:none; } }
+
+/* Finger sizes share Sport's profile cards and compact, labelled fields. */
+.spf-people { display: grid; gap: 8px; margin: 12px 0; }
+.spf-person { display: flex; align-items: center; min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.spf-person-open { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.spf-person-open > span { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.spf-person-open b { font-size: 14px; }
+.spf-person-open small { color: var(--muted); font-size: 12px; }
+.spf-delete { flex: none; width: 44px; height: 44px; margin-right: 4px; color: var(--muted); }
+.spf-form { gap: 12px; margin-top: 12px; }
+.spf-form .field { margin: 0; }
+.spf-fields { min-width: 0; padding: 0; margin: 0; border: 0; }
+.spf-caption { width: 100%; margin-bottom: 12px; padding: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.spf-grid { display: grid; grid-template-columns: minmax(88px, 1.35fr) repeat(2, minmax(0, 1fr)); align-items: center; gap: 8px; }
+.spf-hand { color: var(--muted); text-align: center; font-size: 12px; font-weight: 700; }
+.spf-finger { color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
+.spf-grid input { min-width: 0; width: 100%; height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 16px; text-align: center; font-variant-numeric: tabular-nums; }
+.spf-grid input:focus-visible, .spf-person-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
