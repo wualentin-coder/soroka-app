@@ -223,6 +223,7 @@ function renderExtendedSheet() {
   return renderAddMenu();
 }
 function handleExtendedAction(action, control, event) {
+  if (typeof packingAction === "function" && packingAction(action, control, event)) return true;
   return sleepAction(action, control, event) || sportAction(action, control, event) || englishAction(action, control) || docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
