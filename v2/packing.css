@@ -41,6 +41,8 @@
 .packing-sheet .pk-row .task-check:not(.checked) .icon { visibility: hidden; }
 .pk-row .task-check .icon { width: 16px; height: 16px; }
 .pk-item-text { display: flex; align-items: center; justify-content: space-between; min-width: 0; min-height: 44px; padding: 6px 0; gap: 8px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.pk-item-text > span { flex: 1; min-width: 0; }
+.pk-item-text > .pk-edit-icon { flex: none; width: 14px; height: 14px; color: var(--subtle); }
 .pk-item-text small { flex: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pk-row.done .pk-item-text { color: var(--muted); }
 .pk-row.done .pk-item-text > span { text-decoration: line-through; }
@@ -54,6 +56,7 @@
 .pk-add .icon-button { flex: none; }
 .pk-add .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .pk-edit-form { display: grid; gap: 12px; margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); }
+.pk-row > .pk-edit-form { grid-column: 1 / -1; }
 .pk-regenerate { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
 .pk-note { margin: 8px 0 0; font-size: 11px; }
 .packing-sheet button:focus-visible, .packing-sheet input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
