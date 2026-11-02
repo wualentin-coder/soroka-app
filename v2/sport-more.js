@@ -286,7 +286,7 @@ function spMeasurements(sheet) {
     const series = C.measurementHistory(state, field.id);
     return `<button type="button" class="sp-metric" data-action="sp-measure-open" data-id="${spEsc(field.id)}"><span>${C.isRequiredField(field) && !series.length ? '<i class="sp-dot"></i>' : ""}${spEsc(field.label)}</span><b>${series[0] ? spEsc(C.measurementValue(series[0].value, field.unit)) : "—"}</b><small>${series.length ? `${series.length} ${spPlural(series.length, "запись", "записи", "записей")}` : "Добавить первый"}</small></button>`;
   }).join("");
-  return `<div class="sp-toolbar-line"><span class="section-note">Нажмите на параметр — график и история</span><button class="text-action" type="button" data-action="sp-measure-archive">${sheet.archived ? "Активные" : "Архив"}</button></div><div class="sp-metrics">${cards}</div><button class="ghost-button sp-wide" type="button" data-action="sp-field-new">+ Свой параметр</button>`;
+  return `<div class="sp-toolbar-line"><span class="section-note">Нажмите на параметр — график и история</span><button class="text-action" type="button" data-action="sp-measure-archive">${sheet.archived ? "Активные" : "Архив"}</button></div><div class="sp-metrics">${sheet.archived ? "" : spFingersCard()}${cards}</div><button class="ghost-button sp-wide" type="button" data-action="sp-field-new">+ Свой параметр</button>`;
 }
 function spSizes() {
   const C = SP(), state = spState().state;
