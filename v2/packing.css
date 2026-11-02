@@ -1,0 +1,57 @@
+/* «Сборы» uses the existing Flow sheet, field and checklist tokens. */
+.packing-sheet { display: flex; flex-direction: column; padding-bottom: 0; }
+.packing-sheet .sheet-head { flex: none; align-items: center; gap: 8px; }
+.pk-heading { flex: 1; min-width: 0; }
+.pk-heading h2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: 4px 0 0; overflow-wrap: anywhere; font-size: 18px; }
+.pk-type { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--accent); }
+.pk-body { min-height: 0; overflow: auto; padding-right: 8px; padding-bottom: calc(16px + env(safe-area-inset-bottom,0px)); }
+.pk-trip-form { display: grid; gap: 12px; }
+.pk-trip-form .field, .pk-edit-form .field { margin: 0; }
+.packing-sheet .sheet-actions { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); margin-top: 4px; gap: 8px; }
+.pk-trip-form .form-error:empty { display: none; }
+.pk-trip-form .field-row { min-width: 0; grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); }
+.pk-trip-form input, .pk-trip-form textarea, .pk-edit-form input, .pk-edit-form select { min-width: 0; width: 100%; }
+.pk-extra { border-top: 1px solid var(--line); padding-top: 12px; }
+.pk-extra summary { padding: 4px 0; color: var(--muted); font-size: 13px; cursor: pointer; }
+.pk-extra .field { margin-top: 12px; }
+.pk-extra .field small { font-size: 11px; color: var(--muted); font-weight: 400; }
+.pk-label { margin: 12px 0 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.pk-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.pk-choices button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 12px; font-weight: 700; }
+.pk-choices button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.pk-trip-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.pk-progress { display: grid; gap: 8px; margin-bottom: 12px; }
+.pk-progress .progress-track { margin-top: 0; }
+.pk-progress > span { font-size: 12px; color: var(--muted); }
+.pk-status { display: flex; align-items: center; gap: 8px; justify-content: space-between; margin: 8px 0 12px; padding: 12px; border-radius: 14px; background: var(--surface-soft); color: var(--muted); font-size: 12px; }
+.pk-status .live-spin { flex: none; }
+.pk-status-error { color: var(--warn); }
+.pk-status button { flex: none; }
+.pk-empty { display: grid; justify-items: start; gap: 8px; padding: 12px 0; }
+.pk-empty p, .pk-note { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.pk-group { margin-top: 8px; border-top: 1px solid var(--line); }
+.pk-group summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; font-size: 12px; color: var(--muted); cursor: pointer; list-style: none; }
+.pk-group summary::-webkit-details-marker { display: none; }
+.pk-group summary > span { font-size: 11px; font-variant-numeric: tabular-nums; }
+.pk-row { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 4px; min-height: 44px; }
+.packing-sheet .pk-row .task-check { position: relative; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; margin: 0; border: 0; border-radius: 0; background: none; }
+.packing-sheet .pk-row .task-check::before { content: ""; position: absolute; inset: 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); }
+.packing-sheet .pk-row .task-check.checked::before { background: var(--accent); border-color: var(--accent); }
+.packing-sheet .pk-row .task-check .icon { position: relative; z-index: 1; color: var(--accent-ink); }
+.packing-sheet .pk-row .task-check:not(.checked) .icon { visibility: hidden; }
+.pk-row .task-check .icon { width: 16px; height: 16px; }
+.pk-item-text { display: flex; align-items: center; justify-content: space-between; min-width: 0; min-height: 44px; padding: 6px 0; gap: 8px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.pk-item-text small { flex: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pk-row.done .pk-item-text { color: var(--muted); }
+.pk-row.done .pk-item-text > span { text-decoration: line-through; }
+.pk-remove { width: 44px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--subtle); cursor: pointer; }
+.pk-remove .icon { width: 16px; height: 16px; }
+.pk-add { display: flex; gap: 8px; margin: 12px 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.pk-add input { flex: 1; min-width: 0; height: 44px; border: 1px solid var(--line); border-radius: 13px; padding: 8px 12px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 14px; }
+.pk-add .icon-button { flex: none; }
+.pk-add .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pk-edit-form { display: grid; gap: 12px; margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); }
+.pk-regenerate { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.pk-note { margin: 8px 0 0; font-size: 11px; }
+.packing-sheet button:focus-visible, .packing-sheet input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.packing-sheet button:disabled { opacity: .55; cursor: default; }
