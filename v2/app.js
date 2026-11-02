@@ -12,6 +12,7 @@ const THEME_KEY = "soroka-planner-theme";
 const app = document.getElementById("app");
 
 const icons = {
+  shoe: '<path d="M3 15V8l5 1 3 4 7 2a4 4 0 0 1 3 4H3v-4Z"/><path d="M3 16h4m3-4 2-2m1 4 2-2M3 19h18"/>',
   today: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
   inbox: '<path d="M4 4h16l2 11v5H2v-5L4 4Z"/><path d="M2 15h6l2 3h4l2-3h6"/>',
