@@ -23,7 +23,7 @@ function packingDraft(item) {
   return sheet.packingDraft;
 }
 function pkCommit(doc, sheet = pkActive(doc.id) ? ui.sheet : null, baseline = sheet?.packingBase) {
-  let normalized = PK().normalizePacking(doc);
+  let normalized = PK().normalizePacking({...doc,hierarchyVersion:1});
   let item = pkFind(doc.id);
   if (!item && sheet?.packingExisting) return null; // A deleted note must stay deleted.
   if (item?.packing && baseline) normalized=PK().mergePacking(item.packing,baseline,normalized);
