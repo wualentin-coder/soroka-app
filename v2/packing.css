@@ -34,6 +34,18 @@
 .pk-group summary::-webkit-details-marker { display: none; }
 .pk-group summary > span { font-size: 11px; font-variant-numeric: tabular-nums; }
 .pk-row { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 4px; min-height: 44px; }
+.sheet.packing-sheet .pk-row { column-gap: 4px; row-gap: 0; }
+.pk-row + .pk-row { border-top: 1px solid var(--line); }
+.pk-inline-main { display: grid; grid-template-columns: minmax(0,1fr) 44px; align-items: center; gap: 4px; min-width: 0; }
+.pk-inline-main input, .pk-inline-add input { min-width: 0; width: 100%; min-height: 44px; padding: 6px 2px; border: 0; border-bottom: 1px solid var(--accent); border-radius: 0; background: transparent; color: var(--text); font: inherit; font-size: 14px; }
+.pk-inline-main .pk-inline-quantity { text-align: center; color: var(--muted); appearance: textfield; -moz-appearance: textfield; }
+.pk-inline-quantity::-webkit-inner-spin-button, .pk-inline-quantity::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.pk-inline-main > .pk-item-note { grid-column: 1 / -1; margin: -2px 0 4px; }
+.pk-inline-add { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 4px; min-height: 44px; }
+.sheet.packing-sheet .pk-inline-add { column-gap: 4px; row-gap: 0; }
+.pk-inline-add .pk-add-icon { display: grid; place-items: center; width: 44px; height: 44px; color: var(--accent); }
+.pk-inline-add input { border-bottom-color: transparent; }
+.packing-sheet .pk-inline-main input:focus-visible, .packing-sheet .pk-inline-add input:focus-visible { outline: none; border-bottom-color: var(--accent); }
 .packing-sheet .pk-row .task-check { position: relative; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; margin: 0; border: 0; border-radius: 0; background: none; }
 .packing-sheet .pk-row .task-check::before { content: ""; position: absolute; inset: 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); }
 .packing-sheet .pk-row .task-check.checked::before { background: var(--accent); border-color: var(--accent); }
