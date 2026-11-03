@@ -1,5 +1,5 @@
-import {normalizeCourseProgress} from './course.mjs?v=902d86820b77';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=902d86820b77';
+import {normalizeCourseProgress} from './course.mjs?v=e55349755070';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=e55349755070';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;
@@ -12,7 +12,9 @@ const prefer=(x,y,tx=0,ty=0)=>tx>ty?x:ty>tx?y:JSON.stringify(canonical(x))>JSON.
 function progressMap(value,name){const out={};for(const [id,raw]of Object.entries(object(value)).slice(0,2000)){
   if(!id||id.length>600||['__proto__','prototype','constructor'].includes(id))continue;const row=object(raw);
   if(name==='studyProgress'){if(!text(row.version,300))continue;out[id]={version:text(row.version,300),completed:[...new Set((Array.isArray(row.completed)?row.completed:[]).filter(v=>typeof v==='string'&&v.length<=200))].sort().slice(0,2000),cursor:text(row.cursor)};}
-  else if(name==='flowProgress')out[id]={best:range(row.best,100),last:range(row.last,100),at:finite(row.at),beta:row.beta===true};
+  else if(name==='flowProgress')out[id]={best:range(row.best,100),last:range(row.last,100),at:finite(row.at),beta:row.beta===true,
+    ...(Number.isFinite(row.practiceBpm)&&row.practiceBpm>=40&&row.practiceBpm<=180?{practiceBpm:row.practiceBpm}:{}),
+    ...(Number.isInteger(row.stablePasses)&&row.stablePasses>=0&&row.stablePasses<=2?{stablePasses:row.stablePasses}:{})};
   else out[id]={practiced:row.practiced===true,passed:row.passed===true,score:range(row.score,10),at:finite(row.at)};
 }return out;}
 function historyRows(value){return(Array.isArray(value)?value:[]).filter(h=>h&&Number.isFinite(h.at)&&typeof h.lesson==='string').map(h=>({at:finite(h.at),lesson:text(h.lesson),title:text(h.title,200)||text(h.lesson),correct:range(h.correct,5000),accuracy:range(h.accuracy,100),seconds:range(h.seconds,86400),kind:text(h.kind,40)||'learn',metric:text(h.metric,80)||'first-attempt-v1',...(Number.isFinite(h.score)?{score:range(h.score,10)}:{})})).sort((a,b)=>b.at-a.at||JSON.stringify(a).localeCompare(JSON.stringify(b))).slice(0,50);}
