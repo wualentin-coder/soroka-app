@@ -12,6 +12,7 @@ const THEME_KEY = "soroka-planner-theme";
 const app = document.getElementById("app");
 
 const icons = {
+  piano: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M13 4v16M18 4v16M6 4v8h3M11 4v8h3M16 4v8h3"/>',
   shoe: '<path d="M3 15V8l5 1 3 4 7 2a4 4 0 0 1 3 4H3v-4Z"/><path d="M3 16h4m3-4 2-2m1 4 2-2M3 19h18"/>',
   today: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
@@ -217,7 +218,7 @@ function save() {
   try { const safe = { ...data }; delete safe.vault; localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); return true; } catch (_) { return false; }
 }
 let data = load();
-const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "sleep"];
+const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "sleep", "piano"];
 function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 const ui = {
   page: currentPage(),
@@ -583,6 +584,7 @@ function render() {
   afterRender(scroll);
 }
 function afterRender(scroll) {
+  if (window.FlowPiano) FlowPiano.mount();
   syncModalScrollLock();
   if (window.FlowEnglishMusic) FlowEnglishMusic.sync();
   if (typeof pcVolumeKeysSync === "function") pcVolumeKeysSync();
