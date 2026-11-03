@@ -1,5 +1,5 @@
 {
-  "version": "e22f21ea3ada",
+  "version": "5e0e64f24530",
   "files": [
     "player.mjs",
     "player-template.mjs",
@@ -16,6 +16,8 @@
     "timed-session.mjs",
     "timing-feedback.mjs",
     "teacher.mjs",
+    "coach-feedback.mjs",
+    "postplay-coach.mjs",
     "pitch.mjs",
     "note-gate.mjs",
     "polyphonic.mjs",
