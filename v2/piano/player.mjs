@@ -1,31 +1,33 @@
-import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=e22f21ea3ada';
-import { LESSONS, PracticeSession } from './session.mjs?v=e22f21ea3ada';
-import { NoteGate } from './note-gate.mjs?v=e22f21ea3ada';
-import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=e22f21ea3ada';
-import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=e22f21ea3ada';
-import { createTeacher } from './teacher.mjs?v=e22f21ea3ada';
-import { createScoreTimeline } from './score.mjs?v=e22f21ea3ada';
-import { FollowTransport } from './transport.mjs?v=e22f21ea3ada';
-import { ChordSession } from './chord-session.mjs?v=e22f21ea3ada';
-import { createArrangement } from './arrangement.mjs?v=e22f21ea3ada';
-import { createAccompanimentPlayer } from './accompaniment.mjs?v=e22f21ea3ada';
-import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=e22f21ea3ada';
-import { createMidiInput } from './midi-input.mjs?v=e22f21ea3ada';
-import { EarlyInputBuffer } from './early-input.mjs?v=e22f21ea3ada';
-import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=e22f21ea3ada';
-import { createKeyboardRange } from './keyboard-range.mjs?v=e22f21ea3ada';
-import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=e22f21ea3ada';
-import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=e22f21ea3ada';
-import { createLessonPresenter } from './lesson-presenter.mjs?v=e22f21ea3ada';
-import { drawNotation } from './notation.mjs?v=e22f21ea3ada';
-import { chooseNativeRoute } from './native-route.mjs?v=e22f21ea3ada';
-import { getFingerHint } from './fingering.mjs?v=e22f21ea3ada';
-import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=e22f21ea3ada';
-import { TimedSession } from './timed-session.mjs?v=e22f21ea3ada';
-import { chooseFlowOutcome } from './flow-progression.mjs?v=e22f21ea3ada';
-import { chooseTimingAdvice } from './timing-feedback.mjs?v=e22f21ea3ada';
-import { practicePolicy } from './practice-policy.mjs?v=e22f21ea3ada';
-import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=e22f21ea3ada';
+import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=5e0e64f24530';
+import { LESSONS, PracticeSession } from './session.mjs?v=5e0e64f24530';
+import { NoteGate } from './note-gate.mjs?v=5e0e64f24530';
+import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=5e0e64f24530';
+import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=5e0e64f24530';
+import { createTeacher } from './teacher.mjs?v=5e0e64f24530';
+import { createScoreTimeline } from './score.mjs?v=5e0e64f24530';
+import { FollowTransport } from './transport.mjs?v=5e0e64f24530';
+import { ChordSession } from './chord-session.mjs?v=5e0e64f24530';
+import { createArrangement } from './arrangement.mjs?v=5e0e64f24530';
+import { createAccompanimentPlayer } from './accompaniment.mjs?v=5e0e64f24530';
+import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=5e0e64f24530';
+import { createMidiInput } from './midi-input.mjs?v=5e0e64f24530';
+import { EarlyInputBuffer } from './early-input.mjs?v=5e0e64f24530';
+import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=5e0e64f24530';
+import { createKeyboardRange } from './keyboard-range.mjs?v=5e0e64f24530';
+import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=5e0e64f24530';
+import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=5e0e64f24530';
+import { createLessonPresenter } from './lesson-presenter.mjs?v=5e0e64f24530';
+import { drawNotation } from './notation.mjs?v=5e0e64f24530';
+import { chooseNativeRoute } from './native-route.mjs?v=5e0e64f24530';
+import { getFingerHint } from './fingering.mjs?v=5e0e64f24530';
+import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=5e0e64f24530';
+import { TimedSession } from './timed-session.mjs?v=5e0e64f24530';
+import { chooseFlowOutcome } from './flow-progression.mjs?v=5e0e64f24530';
+import { chooseTimingAdvice } from './timing-feedback.mjs?v=5e0e64f24530';
+import { practicePolicy } from './practice-policy.mjs?v=5e0e64f24530';
+import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=5e0e64f24530';
+import { createCoachFeedback } from './coach-feedback.mjs?v=5e0e64f24530';
+import { createPostplayCoach } from './postplay-coach.mjs?v=5e0e64f24530';
 
 export function mountPianoPlayer(root, options = {}) {
 const mountAbort=new AbortController();let embeddedActive=false,taskHelpSticky=false,homeSettings=false;
@@ -78,6 +80,14 @@ const midiInput=createMidiInput({onNote:midi=>processNote(midi,'midi'),onDisconn
 let lessonGeneration=0,autoGeneration=0,autoTimer=0,keyboardRange=null,programmaticResultCloses=0,programmaticReplyCloses=0;
 let presentationGeneration=0,transitionTimer=0,carouselFrame=0,pendingNative=null,fingerTimer=0;
 const teacher=createTeacher({dependencies:options.teacherDependencies||{},onStatus:(status,detail)=>{const node=$('#review-status');const label={thinking:'Преподаватель готовит ответ…',preparing:'Готовим голос…',speaking:'Преподаватель говорит…',listening:'Слушаю твой ответ…',transcribing:'Распознаём ответ…',unavailable:'Голос недоступен. Ответ остаётся на экране.'}[status];if(node&&label)node.textContent=label;}});
+let postplayAction=null,postplayFeedback=null,postplayNextLabel='Продолжить';
+const postplay=createPostplayCoach({teacher,voice:()=>settings.voice,
+  isActive:()=>!document.hidden&&state.view==='practice'&&(!options.embedded||!options.isActive||options.isActive()),
+  onUpdate:renderPostplay,onClose:()=>{state.transitioning=false;if(state.phase==='coaching')state.phase='idle';renderPractice();},
+  onContinue:()=>{const action=postplayAction;postplayAction=null;action?.();},
+  onRepeat:()=>{postplayAction=null;repeatLearningTask();},
+  onRepair:()=>{const repair=postplayFeedback?.repair,offset=state.breakdown?(state.sectionRange?.start||0):0;postplayAction=null;if(repair)repeatProblemSection(false,{start:repair.start+offset,end:repair.end+offset});else repeatLearningTask();}
+});
 const presenter=createLessonPresenter({speak:text=>teacher.speak(text),cancelSpeech:()=>teacher.cancel(),onStopAudio:()=>stopPlayback(),
   onDemoStart:(frames,lead)=>{const ctx=ensureSynth();if(!ctx)return;const start=ctx.currentTime+lead;for(const frame of frames)soundNote(frame.midi,start+frame.time,frame.duration);},
   onPhase:phase=>{if(state.intro){state.intro.phase=phase;$('#intro-eyebrow').textContent=phase==='explaining'?'Слушай объяснение':phase==='demonstrating'?'Смотри и слушай пример':'Готово';}},
@@ -165,6 +175,32 @@ function nativeTransition(text,action,{voice=true,delay=voice?420:180}={}){
     transitionTimer=setTimeout(()=>{if(token!==presentationGeneration||document.hidden||state.view!=='practice')return;state.transitioning=false;state.phase='idle';$('#stage-transition').hidden=true;const next=pendingNative;pendingNative=null;if(next?.lesson===lessonGeneration)next.run();},delay);
   })().catch(()=>{});
 }
+function renderPostplay(view){
+  const panel=$('#postplay-coach');if(!panel)return;
+  if(view.open){state.running=false;state.phase='coaching';state.transitioning=true;}
+  panel.hidden=!view.open;panel.dataset.state=view.state||'idle';
+  $('#postplay-advice').textContent=view.advice||'';$('#postplay-status').textContent=view.status||'';
+  $('#postplay-question').hidden=!view.question;
+  $('#postplay-question-label').textContent=typeof view.question==='string'?view.question:'Всё понятно?';
+  $('#postplay-repair').hidden=!view.repair;
+  $('#postplay-next').hidden=!postplayAction;$('#postplay-next').textContent=postplayNextLabel;
+  $('#postplay-reply').hidden=!view.reply;$('#postplay-reply').textContent=view.reply||'';
+  $('#postplay-voice').hidden=!!view.recording;$('#postplay-stop-voice').hidden=!view.recording;
+}
+function postplayTransition(report,action,{autoContinue=true,nextLabel='Продолжить'}={}){
+  if(state.source==='demo'||report?.demo||!report?.finished)return false;
+  const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),beta=state.source==='mic'&&!!(lesson().polyphonic||stage?.requiresMidi);
+  const feedback=createCoachFeedback({lesson:lesson(),notes:state.session?.notes||notes(),report,mode:state.mode,source:state.source,stage,assisted:state.assisted||report.assisted===true,beta,breakdown:state.breakdown});
+  if(!feedback.valid){nativeTransition(feedback.text,repeatLearningTask,{voice:true});return true;}
+  closeResult();follow?.pause(now());backingPlayer?.stop();teacher.cancel();hideFingerHint();
+  ++presentationGeneration;clearTimeout(transitionTimer);pendingNative=null;$('#stage-transition').hidden=true;
+  state.running=false;state.phase='coaching';state.transitioning=true;postplayAction=action;postplayFeedback=feedback;postplayNextLabel=nextLabel;
+  $('#postplay-title').textContent=beta?'Преподаватель · тренировка':`Разбор · ${String(report.scoreOutOf10).replace('.',',')}/10`;
+  const contextLesson={id:lesson().id,title:lesson().title,instruction:JSON.stringify(feedback.llmContext).slice(0,1000)};
+  const contextReport={...report,mode:state.mode,source:state.source,assisted:state.assisted||report.assisted===true,beta,askUnderstanding:feedback.askUnderstanding};
+  renderPractice();postplay.show({feedback,lesson:contextLesson,report:contextReport,autoContinue:autoContinue&&!feedback.askUnderstanding&&feedback.kind!=='no-input'}).catch(()=>{});
+  return true;
+}
 function checkCurrentCourse(){pausePractice({keepInput:true});stopPlayback();state.quickStart=true;state.mode='check';state.session=null;state.saved=false;state.revealed=false;state.needsIntro=false;resetFollow();renderPractice();startPractice().catch(()=>failMic({}));}
 function baseLearningTempo(){const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId);return chooseLearningTempo(lesson(),{kind:isCourse()?'course':'composition',hand:state.hand,whole:stage?.whole||(!isCourse()&&!state.studyStageId)});}
 function tempoProgressKey(){return state.compositionKey||state.courseId||lesson().id;}
@@ -204,7 +240,7 @@ function completeStudyCheck(report,{demo,beta}){
   $('#review-status').textContent='Проверены высоты и вступления. Удержание, пальцы и постановка рук не оцениваются.';
   for(const id of ['study-continue','next-course-button','reply-area','return-whole'])$('#'+id).hidden=true;
   $('#problem-repeat').hidden=demo||!report.errors.length;$('#problem-repeat').textContent='Разобрать трудное место';$('#repeat-button').hidden=passed;$('#repeat-button').textContent=beta?'Потренироваться ещё':'Повторить целиком';$('#next-lesson-button').hidden=passed;$('#next-lesson-button').textContent='К композициям';$('#flow-next').hidden=!passed;$('#flow-next').textContent=state.learningTask?'Продолжить занятие':'К композициям';$('#flow-polish').hidden=!passed||report.scorePercent===100;
-  renderPractice();openDialog('result',false);if(passed)say('Ты сыграл всю учебную версию самостоятельно. Можно идти дальше или закрепить результат.');
+  renderPractice();if(demo)openDialog('result',false);else postplayTransition(report,passed?continueAfterFlow:repeatLearningTask,{autoContinue:false,nextLabel:passed?'Продолжить':'Повторить целиком'});
   return true;
 }
 function completeFlowPractice(){
@@ -217,17 +253,16 @@ function completeFlowPractice(){
   if(!demo&&!state.saved){const key=state.compositionKey||state.courseId||lesson().id,old=settings.flowProgress[key]||{};settings.flowProgress[key]={...old,best:Math.max(old.best||0,report.scorePercent),last:report.scorePercent,at:Date.now(),beta:assessmentBeta};settings.history.unshift({lesson:lesson().id,title:lesson().title+' · в темпе',at:Date.now(),accuracy:report.scorePercent,correct:report.firstAttemptCorrect,seconds:report.seconds,metric:report.metric,kind:assessmentBeta?'beta':'flow',score:report.scoreOutOf10});settings.history=settings.history.slice(0,50);state.saved=true;persist();}
   if(tempoChoice?.changed){settings.tempo=tempoChoice.bpm;$('#tempo').value=settings.tempo;$('#tempo-value').value=settings.tempo;persist();}
   if(completeStudyCheck(report,{demo,beta:assessmentBeta}))return;
-  if(state.studyStageId&&outcome==='retry'&&!demo){state.songFailures=(state.songFailureStage===state.studyStageId?state.songFailures||0:0)+1;state.songFailureStage=state.studyStageId;if(state.songFailures>=2&&recommendSongRepair(state.studyPlan.stages.find(s=>s.id===state.studyStageId),report)){nativeTransition('Разберём короткое место, затем вернёмся к фразе.',()=>repeatProblemSection(),{voice:false});return;}}else state.songFailures=0;
-  if(state.learningTask?.kind==='rhythm'&&state.rhythmGuided&&report.scorePercent>=80&&!demo){state.rhythmGuided=false;nativeTransition('Пульс получился. Теперь повтори тот же рисунок самостоятельно.',()=>startFlowLevel(state.flowNext,{immediate:true}),{voice:false});return;}
-  if(outcome==='retry'){nativeTransition(tempoChoice?.reason==='slow-down'?`Повторим спокойнее · ${settings.tempo} ударов в минуту`:report.earlyAbort?'Повторим этот фрагмент.':`Получилось ${report.scorePercent}%. Ещё раз спокойно.`,()=>startFlowLevel(state.flowNext,{polish:state.flowPolish,immediate:true}),{voice:false});return;}
+  if(state.studyStageId&&outcome==='retry'&&!demo){state.songFailures=(state.songFailureStage===state.studyStageId?state.songFailures||0:0)+1;state.songFailureStage=state.studyStageId;}else state.songFailures=0;
+  if(state.learningTask?.kind==='rhythm'&&state.rhythmGuided&&report.scorePercent>=80&&!demo){state.rhythmGuided=false;postplayTransition(report,()=>startFlowLevel(state.flowNext,{immediate:true}),{nextLabel:'Самостоятельно'});return;}
+  if(outcome==='retry'){postplayTransition(report,()=>startFlowLevel(state.flowNext,{polish:state.flowPolish,immediate:true}),{nextLabel:'Повторить в темпе'});return;}
   if(outcome==='offer-polish'||outcome==='complete')state.flowGoalReached=true;
   if(settings.pendingFlow){settings.pendingFlow.goalReached=state.flowGoalReached;persist();}
-  if(outcome==='complete'&&!demo){nativeTransition('100 процентов. Отлично, идём дальше!',continueAfterFlow);return;}
+  if(outcome==='complete'&&!demo){postplayTransition(report,continueAfterFlow);return;}
   $('#result-title').textContent=demo?'Демо в темпе':'Получилось! Можно идти дальше';$('#result-subtitle').textContent=lesson().title;$('#result-accuracy').textContent=report.scorePercent+'%';$('#result-correct').textContent=`${report.firstAttemptCorrect}/${report.total}`;$('#result-time').textContent=durationText(report.seconds);$('#result-dialog .result-metrics div:nth-child(2) span').textContent='Вовремя и верно';
   $('#result-advice').textContent=demo?'Экранное демо не сохраняется как игра на инструменте.':`Цель ${flowPassPercent()}% выполнена. Можно добить до 100% или продолжить обучение. ${state.source==='midi'?chooseTimingAdvice(report):'Держи общий счёт. Микрофон оценивает момент нажатия приблизительно.'}`;
   for(const id of ['study-continue','next-course-button','problem-repeat','return-whole','reply-area'])$('#'+id).hidden=true;
-  $('#review-status').textContent='В темпе оцениваются ноты и момент нажатия. Удержание и техника не оцениваются.';$('#repeat-button').hidden=!demo;$('#next-lesson-button').hidden=true;$('#flow-polish').hidden=demo;$('#flow-next').hidden=demo;renderPractice();openDialog('result',false);
-  if(!demo)say(`Получилось ${report.scorePercent} процентов. Можно добить до ста или идти дальше.`);
+  $('#review-status').textContent='В темпе оцениваются ноты и момент нажатия. Удержание и техника не оцениваются.';$('#repeat-button').hidden=!demo;$('#next-lesson-button').hidden=true;$('#flow-polish').hidden=demo;$('#flow-next').hidden=demo;renderPractice();if(demo)openDialog('result',false);else postplayTransition(report,continueAfterFlow,{autoContinue:false});
 }
 
 function applyTheme() {
@@ -531,8 +566,8 @@ function completeFlatTask(report,beta,demo){
   state.session.pause(now());keepInputWarm();backingPlayer?.stop();hideFingerHint();
   const passed=!demo&&!beta&&!state.assisted&&!report.assisted&&report.firstAttemptCorrect*10>=report.total*8;
   if(!demo&&!state.saved){settings.history.unshift({lesson:lesson().id,title:lesson().title,at:Date.now(),accuracy:report.accuracy,correct:report.correct,seconds:report.seconds,metric:report.metric,score:report.scoreOutOf10,kind:state.learningTask.kind});settings.history=settings.history.slice(0,50);state.saved=true;persist();}
-  if(passed){state.taskPassed=true;nativeTransition(state.learningTask.kind==='recall'?'Получилось без подсказок. Идём дальше.':'Рисунок прочитан. Идём дальше.',finishDailyTask);return;}
-  if(!demo){nativeTransition(state.assisted||report.assisted?'Теперь повтори без подсказки.':`${report.scoreOutOf10} из десяти. Ещё раз спокойно.`,repeatLearningTask,{voice:false});return;}
+  if(passed){state.taskPassed=true;postplayTransition(report,finishDailyTask);return;}
+  if(!demo){postplayTransition(report,repeatLearningTask,{nextLabel:'Повторить'});return;}
   $('#result-title').textContent='Демо завершено';$('#result-subtitle').textContent=lesson().title;$('#result-accuracy').textContent=report.scoreOutOf10+'/10';$('#result-correct').textContent=report.correct+'/'+report.total;$('#result-time').textContent=durationText(report.seconds);$('#result-advice').textContent='Игра на экранных клавишах не сохраняется как самостоятельная игра на инструменте.';$('#flow-polish').hidden=true;$('#flow-next').hidden=true;$('#study-continue').hidden=true;$('#next-course-button').hidden=true;$('#repeat-button').hidden=false;$('#repeat-button').textContent='Повторить';$('#next-lesson-button').hidden=false;$('#reply-area').hidden=true;openDialog('result',false);
 }
 async function startPractice() {
@@ -560,6 +595,7 @@ async function startPractice() {
 }
 function keepInputWarm(){clearTimeout(inputIdleTimer);inputIdleTimer=setTimeout(()=>{if(!state.running){midiInput.stop();stopMic();}},15000);}
 function pausePractice({keepInput=false}={}) {
+  postplay.cancel();postplayAction=null;postplayFeedback=null;
   hideFingerHint();
   ++presentationGeneration;clearTimeout(transitionTimer);state.transitioning=false;$('#stage-transition').hidden=true;
   presenter.cancel();state.intro=null;
@@ -614,9 +650,15 @@ function completePractice() {
   follow?.pause(now());backingPlayer?.stop();
   const beta=lesson().polyphonic&&state.source==='mic';
   const report={...state.session.report(now()),mode:beta?'learn':state.mode}, demo=state.source==='demo';
-  const generation=++autoGeneration,lessonToken=lessonGeneration;
+  ++autoGeneration;
   state.running=false;state.phase='idle';state.lastReport=report;state.reviewText='';
   emitLearningReport(report,beta);
+  if(state.breakdown&&!demo){
+    keepInputWarm();hideFingerHint();
+    if(!state.saved){settings.history.unshift({lesson:lesson().id,title:lesson().title+' · короткий повтор',at:Date.now(),accuracy:report.accuracy,correct:report.correct,seconds:report.seconds,metric:report.metric,score:report.scoreOutOf10,kind:'repair'});settings.history=settings.history.slice(0,50);state.saved=true;persist();}
+    const ready=report.firstAttemptCorrect*10>=report.total*8;
+    postplayTransition(report,ready?returnToWhole:repeatLearningTask,{nextLabel:ready?'К целой фразе':'Повторить участок'});return;
+  }
   if(state.learningTask&&['reading','recall'].includes(state.learningTask.kind)){completeFlatTask(report,beta,demo);return;}
   const isCheck=(isCourse()||state.customLesson) && state.mode==='check' && !state.breakdown&&!beta;
   const studyStage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),shortStudy=studyStage&&!studyStage.whole&&studyStage.hand!=='both';
@@ -631,8 +673,7 @@ function completePractice() {
     settings.history=settings.history.slice(0,50);state.saved=true;persist();
   }
   if(studyStage&&!demo){
-    if(state.breakdown){nativeTransition(report.firstAttemptCorrect*10>=report.total*8?'Это место получилось. Вернёмся к целой фразе.':'Ещё раз этот короткий участок.',report.firstAttemptCorrect*10>=report.total*8?returnToWhole:repeatLearningTask,{voice:false});return;}
-    if(report.firstAttemptCorrect*10<report.total*8){state.songFailures=(state.songFailureStage===state.studyStageId?state.songFailures||0:0)+1;state.songFailureStage=state.studyStageId;if(state.songFailures>=2&&recommendSongRepair(studyStage,report)){nativeTransition('Разберём трудное место с соседними нотами.',()=>repeatProblemSection(),{voice:false});return;}if(shortStudy){nativeTransition('Ещё раз эту фразу, не спеша.',repeatLearningTask,{voice:false});return;}}
+    if(report.firstAttemptCorrect*10<report.total*8){state.songFailures=(state.songFailureStage===state.studyStageId?state.songFailures||0:0)+1;state.songFailureStage=state.studyStageId;if(shortStudy){postplayTransition(report,repeatLearningTask,{nextLabel:'Повторить фразу'});return;}}
     else state.songFailures=0;
   }
   $('#result-title').textContent=demo ? 'Демо пройдено' : state.breakdown?'Маленький фрагмент разобран':isCheck ? report.passed?'Упражнение освоено':'Попробуем ещё раз':'Фраза разобрана';
@@ -656,26 +697,19 @@ function completePractice() {
   $('#problem-repeat').hidden=!report.errors.length;$('#return-whole').hidden=!state.breakdown;
   $('#next-course-button').hidden=!(isCheck && report.passed && !demo && lesson().nextId);
   $('#reply-area').hidden=true;$('#review-status').textContent='';
-  if(state.learningTask?.learningRoute==='guided-check'&&isCheck&&!demo){const passed=!beta&&report.firstAttemptCorrect/report.total>=.8&&!state.assisted&&!report.assisted;nativeTransition(passed?'Получилось самостоятельно. Идём к следующей фразе.':state.assisted||report.assisted?'Теперь повтори без подсказки.':'Ещё раз спокойно, без подсветки.',passed?finishDailyTask:repeatLearningTask,{voice:false});return;}
-  if(beta&&isCourse()&&!demo&&report.firstAttemptCorrect/report.total>=.8){startFlowLevel(flowDestination());return;}
-  if(route==='course-check'){nativeTransition('Получилось. Теперь сыграй самостоятельно.',checkCurrentCourse);return;}
-  if(route==='course-next'||(route==='finish'&&isCourse())){startFlowLevel(flowDestination());return;}
+  if(state.learningTask?.learningRoute==='guided-check'&&isCheck&&!demo){const passed=!beta&&report.firstAttemptCorrect/report.total>=.8&&!state.assisted&&!report.assisted;postplayTransition(report,passed?finishDailyTask:repeatLearningTask,{nextLabel:passed?'Продолжить':'Повторить самостоятельно'});return;}
+  if(beta&&isCourse()&&!demo&&report.firstAttemptCorrect/report.total>=.8){postplayTransition(report,()=>startFlowLevel(flowDestination(),{immediate:true}),{nextLabel:'В темпе'});return;}
+  if(route==='course-check'){postplayTransition(report,checkCurrentCourse,{nextLabel:'Самостоятельно'});return;}
+  if(route==='course-next'||(route==='finish'&&isCourse())){postplayTransition(report,()=>startFlowLevel(flowDestination(),{immediate:true}),{nextLabel:'В темпе'});return;}
   if(route==='study-next'){
-    if(studyStage.hand==='both'){startFlowLevel(flowDestination());return;}
+    if(studyStage.hand==='both'){postplayTransition(report,()=>startFlowLevel(flowDestination(),{immediate:true}),{nextLabel:'В темпе'});return;}
     const index=state.studyPlan.stages.findIndex(s=>s.id===state.studyStageId),next=state.studyPlan.stages[index+1];
     const label=next.whole?'Теперь вся песня':next.part!==studyStage.part?'Следующий кусок':next.hand==='left'?'Теперь левая рука':next.hand==='both'?'Соединим обе руки':'Теперь правая рука';
-    nativeTransition(report.errors.length?reportAdvice(report):label,advanceStudy,{voice:!!report.errors.length});return;
+    postplayTransition(report,advanceStudy,{nextLabel:label});return;
   }
-  if(route==='finish'&&state.studyStageId){startFlowLevel(flowDestination());return;}
-  if(autoRetry&&state.activePolicy?.beginner&&!demo){nativeTransition('Найди первую клавишу и повтори спокойно.',repeatLearningTask,{voice:false});return;}
-  renderPractice();if(route!=='retry')openDialog('result',false);
-  if(demo)return;
-  if(!shortStudy&&(lesson().type==='phrase' || state.customLesson)) {stopMic();automaticReview(report,lessonToken,generation);}
-  else {
-    (async()=>{if(settings.voice)await teacher.speak(advice);if(generation!==autoGeneration||lessonToken!==lessonGeneration||document.hidden)return;
-      if(autoRetry){autoTimer=setTimeout(()=>{if(generation!==autoGeneration||(!state.mic&&state.source!=='midi'))return;closeResult();state.breakdown=!!status?.needsBreakdown;if(state.breakdown)state.sectionRange=chooseProblemSection(lesson().notes,report);state.session=null;state.saved=false;if(state.breakdown)state.mode='learn';if(state.source==='midi')activateSession('midi');else beginCountdown();},900);}
-    })().catch(()=>{if(autoRetry)coach('Не удалось озвучить подсказку. Нажми «Повторить», чтобы продолжить.');});
-  }
+  if(route==='finish'&&state.studyStageId){postplayTransition(report,()=>startFlowLevel(flowDestination(),{immediate:true}),{nextLabel:'В темпе'});return;}
+  if(!demo){postplayTransition(report,autoRetry?repeatLearningTask:studyReady?advanceStudy:state.breakdown?returnToWhole:repeatLearningTask,{autoContinue:autoRetry,nextLabel:autoRetry?'Повторить':studyReady?'Продолжить':state.breakdown?'К целой фразе':'Повторить'});return;}
+  renderPractice();openDialog('result',false);
 }
 
 async function automaticCorrection(message) {
@@ -688,17 +722,6 @@ async function automaticCorrection(message) {
   autoTimer=setTimeout(()=>{if(generation!==autoGeneration||token!==lessonGeneration||document.hidden)return;
     state.phase='idle';if(state.source==='demo'||(state.source==='midi'&&midiInput.connected)||(state.mic&&micContext?.state==='running')){state.running=true;state.session.resume(now());follow?.play(now());}renderPractice();
   },550);
-}
-
-async function automaticReview(report,token,generation) {
-  $('#review-status').textContent='Преподаватель разбирает сыгранные ноты…';
-  try {
-    const result=await teacher.review({lesson:lessonForReview(report),report});
-    if(token!==lessonGeneration||generation!==autoGeneration||document.hidden)return;
-    state.reviewText=result.text;$('#result-advice').textContent=result.text;coach(result.text);$('#review-status').textContent='Разбор ИИ · OpenRouter. Оцениваются только сыгранные ноты.';
-    if(settings.voice)await teacher.speak(result.text,{remote:true});
-    if(token===lessonGeneration&&generation===autoGeneration&&!document.hidden)$('#reply-area').hidden=false;
-  }catch(error){if(token!==lessonGeneration||generation!==autoGeneration)return;$('#review-status').textContent=error.message||'Разбор сейчас недоступен. Результат сохранён; можно повторить фразу.';if(settings.voice)teacher.speak($('#result-advice').textContent).catch(()=>{});}
 }
 
 function ensureSynth() {
@@ -911,6 +934,9 @@ root.addEventListener('click',event=>{
     persist();renderPiano();renderPractice();
   }
 });
+for(const [id,action]of [['next','continue'],['understood','continue'],['repeat','repeat'],['repair','repair'],['explain','explain'],['voice','record'],['stop-voice','stopRecording'],['dismiss','cancel']]){
+  $('#postplay-'+id).addEventListener('click',()=>{Promise.resolve(postplay[action]()).catch(()=>{});});
+}
 $('#start-button').addEventListener('click',()=>{if(state.intro||state.transitioning){pausePractice();return;}if(pendingNative?.lesson===lessonGeneration){const next=pendingNative;pendingNative=null;next.run();return;}if(state.preview){stopPlayback();renderPractice();return;}if(state.needsIntro){startLessonIntro();return;}startPractice().catch(()=>failMic({}));});
 $('#mic-toggle').addEventListener('click',()=>{
   if(state.mic || state.phase==='permission'){pausePractice();return;}
@@ -982,13 +1008,14 @@ function lessonForReview(report){
   const played=notes(),range=chooseProblemSection(played,report,{size:8}),excerpt=played.slice(range.start,range.end).map(n=>noteInfo(n.midi).name).join(' → ');
   return {...lesson(),instruction:`${lesson().instruction} ${state.breakdown?'Сейчас разобран только небольшой участок, не целая композиция. ':''}${lesson().polyphonic&&state.source==='mic'?'Распознавание двух рук через микрофон пробное, без зачёта. ':''}Ноты рядом с ошибкой в данном проходе: ${excerpt}.`};
 }
-function repeatProblemSection(fromCurrent=false){
+function repeatProblemSection(fromCurrent=false,selectedRange=null){
   $('#settings-dialog').close();
   const full=lesson().notes,current=(state.session?.index||0)+(state.breakdown?(state.sectionRange?.start||0):0);
   const report=fromCurrent?{errors:[{index:Math.min(current,full.length-1)}]}:state.breakdown&&state.lastReport?{...state.lastReport,errors:state.lastReport.errors.map(error=>({...error,index:error.index+(state.sectionRange?.start||0)}))}:state.lastReport;
   const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),repair=stage?recommendSongRepair(stage,report):null;
   if(!state.breakdown)state.repairReturnMode=state.mode;
-  pausePractice({keepInput:true});stopPlayback();closeResult();state.sectionRange=repair?{start:repair.start,end:repair.end}:chooseProblemSection(full,report);state.breakdown=true;state.mode='learn';state.quickStart=true;state.session=null;state.saved=false;state.source=settings.input;resetFollow();
+  const exact=Number.isInteger(selectedRange?.start)&&Number.isInteger(selectedRange?.end)&&selectedRange.start>=0&&selectedRange.end>selectedRange.start&&selectedRange.end<=full.length?selectedRange:null;
+  pausePractice({keepInput:true});stopPlayback();closeResult();state.sectionRange=exact?{start:exact.start,end:exact.end}:repair?{start:repair.start,end:repair.end}:chooseProblemSection(full,report);state.breakdown=true;state.mode='learn';state.quickStart=true;state.session=null;state.saved=false;state.source=settings.input;resetFollow();
   coach('Разберём только это место. Когда станет удобно, вернись к целой мелодии.');renderPractice();startPractice().catch(()=>failMic({}));
 }
 function returnToWhole(){$('#settings-dialog').close();pausePractice({keepInput:true});stopPlayback();closeResult();state.breakdown=false;state.sectionRange=null;state.mode=state.repairReturnMode||(isCourse()?'check':'learn');state.repairReturnMode=null;state.quickStart=true;state.flowGoalReached=false;state.session=null;state.saved=false;state.revealed=false;state.assisted=false;state.source=settings.input;resetFollow();renderPractice();startPractice().catch(()=>failMic({}));}
@@ -1006,7 +1033,7 @@ async function sendTeacherReply(question){
   try{const result=await teacher.review({lesson:lessonForReview(state.lastReport),report:state.lastReport},{question:question.slice(0,1000),previousResponse:state.reviewText});
     if(token!==lessonGeneration||generation!==autoGeneration||document.hidden)return;
     state.reviewText=result.text;$('#result-advice').textContent=result.text;$('#review-status').textContent='Ответ ИИ · OpenRouter';
-    if(settings.voice)await teacher.speak(result.text,{remote:true});
+    if(settings.voice)await teacher.speak(result.text);
   }catch(error){if(token===lessonGeneration&&generation===autoGeneration)$('#review-status').textContent=error.message||'Ответ недоступен. Можно повторить вопрос.';}
   finally{if(token===lessonGeneration&&generation===autoGeneration&&!document.hidden)$('#reply-area').hidden=false;}
 }
