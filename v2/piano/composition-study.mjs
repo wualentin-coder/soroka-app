@@ -1,4 +1,4 @@
-import { createArrangement } from './arrangement.mjs?v=902d86820b77';
+import { createArrangement } from './arrangement.mjs?v=e55349755070';
 
 export const COMPOSITION_STUDY_VERSION = 'composition-study-v2';
 const WINDOW = .035, EPSILON = 1e-9, REFERENCE_GROUPS = 8, MAX_GROUPS = 16;
