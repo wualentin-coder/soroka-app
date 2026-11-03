@@ -63,9 +63,12 @@ const SAVED_SECTION_DESCRIPTIONS = {
 };
 function savedSectionCard(category, compact = false) {
   const items = savedItems(category);
+  const addressPreview = category === "addresses" && typeof savedAddressPreview === "function" ? savedAddressPreview(items) : null;
   const latest = items.slice().sort((a, b) => sortSavedItems(a, b, "newest"))[0];
-  const detail = latest ? `${latest.pinned ? "Закреплено" : "Недавнее"}: ${latest.title}` : "Пока нет записей";
-  return `<button class="saved-section-card ${compact ? "compact" : ""} saved-section-${category}" type="button" data-action="saved-section" data-category="${category}" data-order-key="${category}" aria-label="${esc(SAVED_NAMES[category])}, ${savedRecordLabel(items.length)}"><span class="saved-section-icon">${icon(savedIcon(category))}</span><span class="saved-section-copy"><strong>${esc(SAVED_NAMES[category])}</strong><small>${esc(SAVED_SECTION_DESCRIPTIONS[category])}</small>${!compact ? `<em>${esc(detail)}</em>` : ""}</span><span class="saved-section-count">${items.length}</span><span class="saved-section-arrow" aria-hidden="true">${icon("right", "icon-sm")}</span></button>`;
+  const detail = addressPreview ? addressPreview.detail : latest ? `${latest.pinned ? "Закреплено" : "Недавнее"}: ${latest.title}` : "Пока нет записей";
+  const about = addressPreview ? addressPreview.headline : SAVED_SECTION_DESCRIPTIONS[category];
+  const label = [SAVED_NAMES[category], savedRecordLabel(items.length), ...(addressPreview ? [about, detail] : [])].join(", ");
+  return `<button class="saved-section-card ${compact ? "compact" : ""} saved-section-${category}" type="button" data-action="saved-section" data-category="${category}" data-order-key="${category}" aria-label="${esc(label)}"><span class="saved-section-icon">${icon(savedIcon(category))}</span><span class="saved-section-copy"><strong>${esc(SAVED_NAMES[category])}</strong><small>${esc(about)}</small>${!compact || addressPreview ? `<em>${esc(detail)}</em>` : ""}</span><span class="saved-section-count">${items.length}</span><span class="saved-section-arrow" aria-hidden="true">${icon("right", "icon-sm")}</span></button>`;
 }
 /** Порядок плиток — как человек расставил их перетаскиванием; новые разделы в конце. */
 function savedOrdered(keys, group) {
