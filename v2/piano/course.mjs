@@ -1,5 +1,5 @@
-import { PracticeSession } from './session.mjs?v=e55349755070';
-import { INTRODUCTORY_LESSONS, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=e55349755070';
+import { PracticeSession } from './session.mjs?v=46c6017f0462';
+import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=46c6017f0462';
 
 export const MASTERY_METRIC = 'first-attempt-v1';
 export const COURSE_PROGRESS_VERSION = 1;
@@ -213,10 +213,10 @@ const LEGACY_COURSE_MODULES = [
     lessonIds: ['course-elise-neighbours','course-elise-landing','course-broken-accompaniment','course-musical-arc','course-composition-ready'] },
 ];
 
-const curriculumModules = new Map([...LEGACY_COURSE_MODULES, ...PRACTICAL_MODULES].map(module => [module.id, module]));
-export const COURSE_MODULES = ['orientation','pulse-and-space','five-notes','listen-and-remember','phrases','left-hand',
+const curriculumModules = new Map([...LEGACY_COURSE_MODULES, MUSICAL_MODULE, ...PRACTICAL_MODULES].map(module => [module.id, module]));
+export const COURSE_MODULES = ['orientation','first-music','pulse-and-space','five-notes','listen-and-remember','phrases','left-hand',
   'hands-dialogue','hands-together','keyboard-range','black-keys','simple-accompaniment','to-compositions'].map(id => curriculumModules.get(id));
-const byId = new Map([...INTRODUCTORY_LESSONS, ...FOUNDATION_LESSONS, ...MORE_LESSONS, ...PRACTICAL_LESSONS].map(lesson => [lesson.id, lesson]));
+const byId = new Map([...INTRODUCTORY_LESSONS, ...MUSICAL_LESSONS, ...FOUNDATION_LESSONS, ...MORE_LESSONS, ...PRACTICAL_LESSONS].map(lesson => [lesson.id, lesson]));
 export const COURSE = COURSE_MODULES.flatMap((module, moduleIndex) => module.lessonIds.map((id, lessonIndex) => {
   const lesson = byId.get(id);
   if (!lesson) throw new Error(`Missing course lesson: ${id}`);
