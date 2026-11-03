@@ -207,7 +207,7 @@ function openLoyaltyFull(item) {
 
 // ------------------------------------------------------------ рядом: карта выезжает сама
 
-const loyaltyNear = { hits: new Map(), shown: [], dismissed: new Set(), timer: 0, watch: null, last: null };
+const loyaltyNear = { hits: new Map(), shown: [], dismissed: new Set(), timer: 0, watch: null, last: null, provider: null, epoch: 0, pending: null, started: 0 };
 function distanceM(a, b) {
   const R = 6371000, rad = Math.PI / 180;
   const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
@@ -231,7 +231,7 @@ function onLoyaltyPosition(pos) {
   // Уверенное место (погрешность вдвое меньше радиуса) — сразу; иначе ждём второе совпадение.
   const sure = new Set(loyaltyMatches({ ...pos, acc: (Number(pos.acc) || 999) * 2 }).map(card => card.id));
   const ready = [...loyaltyNear.hits.entries()].filter(([cardId, n]) => (n >= 2 || sure.has(cardId)) && !loyaltyNear.dismissed.has(cardId)).map(([cardId]) => cardId);
-  try { localStorage.setItem("soroka-loyalty-last", JSON.stringify({ lat: pos.lat, lng: pos.lng, acc: pos.acc, at: Date.now() })); } catch (_) {}
+  try { localStorage.setItem("soroka-loyalty-last", JSON.stringify({ lat: pos.lat, lng: pos.lng, acc: pos.acc, at: Number(pos.at) || Date.now() })); } catch (_) {}
   if (ready.join() !== loyaltyNear.shown.join()) { loyaltyNear.shown = ready; drawLoyaltyPeek(); }
 }
 function drawLoyaltyPeek() {
@@ -259,28 +259,58 @@ function drawLoyaltyPeek() {
     if (event.target.closest(".loyalty-peek-hide")) { loyaltyNear.shown.forEach(cardId => loyaltyNear.dismissed.add(cardId)); loyaltyNear.shown = []; drawLoyaltyPeek(); }
   };
 }
+function loyaltyPositionRecord(raw) {
+  if (typeof validPositionRecord === "function") return validPositionRecord(raw);
+  if (!raw || [raw.lat, raw.lng, raw.acc, raw.at].some(value => value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim()))) return null;
+  const pos = { lat: Number(raw.lat), lng: Number(raw.lng), acc: Number(raw.acc), at: Number(raw.at) };
+  return Object.values(pos).every(Number.isFinite) && Math.abs(pos.lat) <= 90 && Math.abs(pos.lng) <= 180 && pos.acc >= 0 && pos.acc <= 100000 && pos.at > 0 && pos.at <= Date.now() + 60000 ? pos : null;
+}
+function wantsLoyaltyPlaces() {
+  return !document.hidden && savedItems("cards").some(card => (card.places || []).length);
+}
+function stopLoyaltyPlaces() {
+  if (!loyaltyNear.provider && loyaltyNear.watch === null && !loyaltyNear.timer && !loyaltyNear.pending) return;
+  loyaltyNear.epoch = (loyaltyNear.epoch || 0) + 1;
+  if (loyaltyNear.watch !== null) navigator.geolocation?.clearWatch(loyaltyNear.watch);
+  clearTimeout(loyaltyNear.timer);
+  loyaltyNear.watch = null; loyaltyNear.timer = 0; loyaltyNear.pending = null; loyaltyNear.provider = null;
+}
+/** Safe after every render: one active provider, with late replies tied to its epoch. */
 function watchLoyaltyPlaces() {
-  const want = !document.hidden && savedItems("cards").some(card => (card.places || []).length);
-  if (!want) { if (loyaltyNear.watch !== null) { navigator.geolocation?.clearWatch(loyaltyNear.watch); loyaltyNear.watch = null; } clearTimeout(loyaltyNear.timer); return; }
-  // Приложение телефона и браузер: слежение браузера — точное и непрерывное.
-  if (!window.Telegram?.WebApp?.initData && navigator.geolocation) {
-    // Сразу — последнее известное телефону место (мгновенно), потом точное слежение.
-    if (loyaltyNear.watch === null) navigator.geolocation.getCurrentPosition(p => onLoyaltyPosition({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }), () => {}, { enableHighAccuracy: false, maximumAge: 120000, timeout: 4000 });
-    if (loyaltyNear.watch === null) loyaltyNear.watch = navigator.geolocation.watchPosition(p => onLoyaltyPosition({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }), () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  if (!wantsLoyaltyPlaces()) { stopLoyaltyPlaces(); return; }
+  const provider = !window.Telegram?.WebApp?.initData && navigator.geolocation ? "browser" : "telegram";
+  if (loyaltyNear.provider === provider) return;
+  stopLoyaltyPlaces();
+  const epoch = loyaltyNear.epoch = (loyaltyNear.epoch || 0) + 1;
+  loyaltyNear.provider = provider; loyaltyNear.started = Date.now();
+  const active = () => loyaltyNear.epoch === epoch && loyaltyNear.provider === provider && wantsLoyaltyPlaces();
+  const accept = raw => {
+    if (!active()) return;
+    let pos = loyaltyPositionRecord(raw);
+    if (!pos || (Number(loyaltyNear.last?.at) || 0) > pos.at) return;
+    try { if (typeof rememberPosition === "function") pos = rememberPosition(pos) || pos; } catch (_) {}
+    onLoyaltyPosition(pos);
+  };
+  if (provider === "browser") {
+    const success = p => accept(p?.coords ? { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, at: p.timestamp ?? Date.now() } : null);
+    try { navigator.geolocation.getCurrentPosition(success, () => {}, { enableHighAccuracy: false, maximumAge: 120000, timeout: 4000 }); } catch (_) {}
+    try { loyaltyNear.watch = navigator.geolocation.watchPosition(success, () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }); } catch (_) {}
     return;
   }
-  // Telegram: геопозиция по запросу — спрашиваем каждые 12 секунд, пока приложение открыто.
-  clearTimeout(loyaltyNear.timer);
-  loyaltyNear.started = Date.now();
   const tick = async () => {
-    if (document.hidden) return;
-    onLoyaltyPosition(await requestPosition());
-    // Первую минуту — чаще: карта нужна, пока стоите у кассы.
-    loyaltyNear.timer = setTimeout(tick, Date.now() - loyaltyNear.started < 60000 ? 5000 : 12000);
+    if (!active() || loyaltyNear.pending) return;
+    loyaltyNear.timer = 0;
+    const run = { epoch }; loyaltyNear.pending = run;
+    try { accept(await requestPosition()); } catch (_) {}
+    finally {
+      if (loyaltyNear.pending === run) loyaltyNear.pending = null;
+      if (active()) loyaltyNear.timer = setTimeout(tick, Date.now() - loyaltyNear.started < 60000 ? 5000 : 12000);
+    }
   };
-  tick();
+  void tick();
 }
-document.addEventListener("visibilitychange", () => setTimeout(watchLoyaltyPlaces, 300));
+
+document.addEventListener("visibilitychange", watchLoyaltyPlaces);
 // Открыли приложение в том же магазине, где были минуту назад, — карта сразу, по прошлому месту.
 setTimeout(() => {
   try {
