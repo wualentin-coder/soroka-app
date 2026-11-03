@@ -1,5 +1,5 @@
-import {normalizeCourseProgress} from './course.mjs?v=e55349755070';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=e55349755070';
+import {normalizeCourseProgress} from './course.mjs?v=46c6017f0462';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=46c6017f0462';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;
@@ -9,9 +9,35 @@ const text=(v,max=200)=>typeof v==='string'?v.slice(0,max):null;
 const range=(v,max)=>Number.isFinite(v)&&v>=0&&v<=max?v:0;
 const canonical=v=>v&&typeof v==='object'?Array.isArray(v)?v.map(canonical):Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 const prefer=(x,y,tx=0,ty=0)=>tx>ty?x:ty>tx?y:JSON.stringify(canonical(x))>JSON.stringify(canonical(y))?x:y;
+function studyMastery(value){
+  const v=object(value);
+  if(!text(v.stageId)||v.stageId.length>200||v.metric!=='timed-notes-v1'||!Number.isInteger(v.scorePercent)||v.scorePercent<80||v.scorePercent>100||!Number.isFinite(v.at)||v.at<0||v.at>8640000000000000||!['mic','midi'].includes(v.source))return null;
+  return {stageId:v.stageId,metric:v.metric,scorePercent:v.scorePercent,at:v.at,source:v.source};
+}
+function studyLegacy(value){
+  const v=object(value);if(typeof v.version!=='string'||!/^composition-study-v[123](?::|$)/.test(v.version)||v.version.length>300)return null;
+  const mastery=studyMastery(v.mastery);return {version:v.version,completed:[...new Set((Array.isArray(v.completed)?v.completed:[]).filter(id=>typeof id==='string'&&id.length<=200))].slice(0,2048),cursor:typeof v.cursor==='string'&&v.cursor.length<=200?v.cursor:null,...(mastery?{mastery}:{})};
+}
+const bestStudyMastery=(a,b)=>[a,b].filter(Boolean).sort((x,y)=>y.scorePercent-x.scorePercent||y.at-x.at||JSON.stringify(x).localeCompare(JSON.stringify(y)))[0];
+function mergeStudyLegacy(a,b,preferred){
+  if(!a||!b)return a||b;
+  if(a.version!==b.version)return preferred||prefer(a,b);
+  const mastery=bestStudyMastery(a.mastery,b.mastery);
+  return {...(preferred||prefer(a,b)),completed:[...new Set([...a.completed,...b.completed])].sort(),...(mastery?{mastery}:{})};
+}
+function mergeStudyRows(x,y,atX,atY){
+  const latest=prefer(x,y,atX,atY);
+  if(x.version===y.version){const mastery=bestStudyMastery(x.mastery,y.mastery),legacy=mergeStudyLegacy(x.legacy,y.legacy,latest.legacy);return {...latest,completed:[...new Set([...x.completed,...y.completed])].sort(),...(mastery?{mastery}:{}),...(legacy?{legacy}:{})};}
+  // An older client must not downgrade the new study route. Its receipts remain
+  // available as history, never as evidence for a different arrangement.
+  const xNew=x.version.startsWith('composition-study-v3:'),yNew=y.version.startsWith('composition-study-v3:'),xOld=/^composition-study-v[12]:/.test(x.version),yOld=/^composition-study-v[12]:/.test(y.version);
+  const selected=xNew&&yOld?x:yNew&&xOld?y:latest,other=selected===x?y:x,prior=studyLegacy(other);
+  const legacy=mergeStudyLegacy(selected.legacy,prior,prior);
+  return {...selected,...(legacy?{legacy}:{})};
+}
 function progressMap(value,name){const out={};for(const [id,raw]of Object.entries(object(value)).slice(0,2000)){
   if(!id||id.length>600||['__proto__','prototype','constructor'].includes(id))continue;const row=object(raw);
-  if(name==='studyProgress'){if(!text(row.version,300))continue;out[id]={version:text(row.version,300),completed:[...new Set((Array.isArray(row.completed)?row.completed:[]).filter(v=>typeof v==='string'&&v.length<=200))].sort().slice(0,2000),cursor:text(row.cursor)};}
+  if(name==='studyProgress'){if(!text(row.version,300))continue;const mastery=studyMastery(row.mastery),legacy=studyLegacy(row.legacy);out[id]={version:text(row.version,300),completed:[...new Set((Array.isArray(row.completed)?row.completed:[]).filter(v=>typeof v==='string'&&v.length<=200))].sort().slice(0,2048),cursor:text(row.cursor),...(mastery?{mastery}:{}),...(legacy?{legacy}:{})};}
   else if(name==='flowProgress')out[id]={best:range(row.best,100),last:range(row.last,100),at:finite(row.at),beta:row.beta===true,
     ...(Number.isFinite(row.practiceBpm)&&row.practiceBpm>=40&&row.practiceBpm<=180?{practiceBpm:row.practiceBpm}:{}),
     ...(Number.isInteger(row.stablePasses)&&row.stablePasses>=0&&row.stablePasses<=2?{stablePasses:row.stablePasses}:{})};
@@ -39,7 +65,7 @@ export function mergePianoState(a,b){
   for(const id of Object.keys(out.dailyRun.assistance)){const x=a.dailyRun.assistance[id],y=b.dailyRun.assistance[id];if(x&&y)out.dailyRun.assistance[id]={helpedAt:Math.max(x.helpedAt,y.helpedAt),consumedAt:Math.max(x.consumedAt,y.consumedAt)};}
   for(const name of maps){out[name]={...a[name],...b[name]};for(const id of Object.keys(out[name])){
     const x=a[name][id],y=b[name][id];if(!x||!y)continue;
-    if(name==='studyProgress'&&x.version===y.version){const newest=prefer(x,y,a.updatedAt,b.updatedAt);out[name][id]={...newest,completed:[...new Set([...(x.completed||[]),...(y.completed||[])])].sort()};}
+    if(name==='studyProgress')out[name][id]=mergeStudyRows(x,y,a.updatedAt,b.updatedAt);
     else if(name==='flowProgress')out[name][id]={...prefer(x,y,x.at,y.at),best:Math.max(finite(x.best),finite(y.best))};
     else if(name==='compositionProgress')out[name][id]={...prefer(x,y,x.at,y.at),practiced:!!(x.practiced||y.practiced),passed:!!(x.passed||y.passed),score:Math.max(finite(x.score),finite(y.score))};
   }}
@@ -50,7 +76,7 @@ export function mergePianoState(a,b){
 export function toPianoProgress(value){
   const v=normalizePianoState(value),out={version:1,updatedAt:v.updatedAt,courseProgress:v.courseProgress,learningProgress:v.learningProgress,history:v.history};
   for(const name of maps)out[name]=v[name];out.pendingFlow=null;
-  if(v.pendingFlow&&typeof v.pendingFlow==='object'){const row=v.pendingFlow;out.pendingFlow={courseId:text(row.courseId),compositionId:text(row.compositionId),stageId:text(row.stageId),polish:row.polish===true,goalReached:row.goalReached===true};}
+  if(v.pendingFlow&&typeof v.pendingFlow==='object'){const row=v.pendingFlow;out.pendingFlow={courseId:text(row.courseId),compositionId:text(row.compositionId),stageId:text(row.stageId),...(text(row.studyVersion,300)?{studyVersion:text(row.studyVersion,300)}:{}),polish:row.polish===true,goalReached:row.goalReached===true};}
   out.dailyRun=v.dailyRun;
   if(typeof v.favoriteSongId==='string')out.favoriteSongId=v.favoriteSongId.slice(0,80);
   out.preferences={};for(const name of ['voice','cropKeys','intros','accompaniment','metronome'])if(typeof v[name]==='boolean')out.preferences[name]=v[name];
