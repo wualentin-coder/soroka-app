@@ -1,15 +1,18 @@
-import {mountPianoPlayer} from './player.mjs?v=c0bae9cc0270';
-import {PLAYER_HTML} from './player-template.mjs?v=c0bae9cc0270';
-import {COMPOSITIONS,parseMidiComposition} from './compositions.mjs?v=c0bae9cc0270';
-import {COURSE} from './course.mjs?v=c0bae9cc0270';
-import * as learning from './learning-path.mjs?v=c0bae9cc0270';
-import * as learningGoals from './learning-goals.mjs?v=c0bae9cc0270';
-import {normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress} from './state.mjs?v=c0bae9cc0270';
+import {mountPianoPlayer} from './player.mjs?v=d0006efbea09';
+import {PLAYER_HTML} from './player-template.mjs?v=d0006efbea09';
+import {COMPOSITIONS,parseMidiComposition} from './compositions.mjs?v=d0006efbea09';
+import {COURSE} from './course.mjs?v=d0006efbea09';
+import * as learning from './learning-path.mjs?v=d0006efbea09';
+import * as learningGoals from './learning-goals.mjs?v=d0006efbea09';
+import {normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress} from './state.mjs?v=d0006efbea09';
 
 export {COURSE,COMPOSITIONS,parseMidiComposition,learning,learningGoals,normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress};
-export {resetPianoProgress} from './state.mjs?v=c0bae9cc0270';
-export {createCompositionStudy,normalizeStudyProgress,studySummary} from './composition-study.mjs?v=c0bae9cc0270';
-export {putCachedComposition,getCachedComposition,listCachedCompositions} from './composition-cache.mjs?v=c0bae9cc0270';
+export {resetPianoProgress} from './state.mjs?v=d0006efbea09';
+export {createMicroLesson} from './microlearning.mjs?v=d0006efbea09';
+export {createSongMicroLesson} from './song-microlearning.mjs?v=d0006efbea09';
+export {getMicroRun} from './microlearning-progress.mjs?v=d0006efbea09';
+export {createCompositionStudy,normalizeStudyProgress,studySummary} from './composition-study.mjs?v=d0006efbea09';
+export {putCachedComposition,getCachedComposition,listCachedCompositions} from './composition-cache.mjs?v=d0006efbea09';
 export const pianoAsset=name=>new URL(name,import.meta.url).href;
 export function createTeacherFetch(call){
   return async(url,options={})=>{
@@ -39,7 +42,10 @@ export async function createNativePlayer(container,options){
     const font=new FontFace('Bravura',`url("${pianoAsset('fonts/Bravura.woff2')}")`);await font.load();document.fonts.add(font);
   }
   const style=document.createElement('style');style.textContent=css;root.append(style);
-  const body=document.createElement('div');body.innerHTML=PLAYER_HTML;root.append(body);
+  const body=document.createElement('div');body.innerHTML=PLAYER_HTML.replaceAll('./icon.svg',pianoAsset('../assets/flow-vortex-magic.svg'));
+  const brand=body.querySelector('.brand img'),mark=globalThis.flowDigitalBrand?.createMark?.();
+  if(brand&&mark){mark.setAttribute('width',brand.getAttribute('width')||'36');mark.setAttribute('height',brand.getAttribute('height')||'36');mark.setAttribute('aria-hidden','true');brand.replaceWith(mark);}
+  root.append(body);
   const engine=mountPianoPlayer(root,{...options,embedded:true,assetBase:pianoAsset('./'),teacherDependencies:{fetch:createTeacherFetch(options.call)}});
   const theme=new MutationObserver(()=>engine.redraw?.());theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-accent','data-palette']});
   return {...engine,destroy:()=>{theme.disconnect();engine.destroy();}};

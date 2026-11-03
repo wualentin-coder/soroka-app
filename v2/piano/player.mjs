@@ -1,33 +1,37 @@
-import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=c0bae9cc0270';
-import { LESSONS, PracticeSession } from './session.mjs?v=c0bae9cc0270';
-import { NoteGate } from './note-gate.mjs?v=c0bae9cc0270';
-import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=c0bae9cc0270';
-import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=c0bae9cc0270';
-import { createTeacher } from './teacher.mjs?v=c0bae9cc0270';
-import { createScoreTimeline } from './score.mjs?v=c0bae9cc0270';
-import { FollowTransport } from './transport.mjs?v=c0bae9cc0270';
-import { ChordSession } from './chord-session.mjs?v=c0bae9cc0270';
-import { createArrangement } from './arrangement.mjs?v=c0bae9cc0270';
-import { createAccompanimentPlayer } from './accompaniment.mjs?v=c0bae9cc0270';
-import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=c0bae9cc0270';
-import { createMidiInput } from './midi-input.mjs?v=c0bae9cc0270';
-import { EarlyInputBuffer } from './early-input.mjs?v=c0bae9cc0270';
-import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=c0bae9cc0270';
-import { createKeyboardRange } from './keyboard-range.mjs?v=c0bae9cc0270';
-import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=c0bae9cc0270';
-import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=c0bae9cc0270';
-import { createLessonPresenter } from './lesson-presenter.mjs?v=c0bae9cc0270';
-import { drawNotation } from './notation.mjs?v=c0bae9cc0270';
-import { chooseNativeRoute } from './native-route.mjs?v=c0bae9cc0270';
-import { getFingerHint } from './fingering.mjs?v=c0bae9cc0270';
-import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=c0bae9cc0270';
-import { TimedSession } from './timed-session.mjs?v=c0bae9cc0270';
-import { chooseFlowOutcome } from './flow-progression.mjs?v=c0bae9cc0270';
-import { chooseTimingAdvice } from './timing-feedback.mjs?v=c0bae9cc0270';
-import { practicePolicy } from './practice-policy.mjs?v=c0bae9cc0270';
-import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=c0bae9cc0270';
-import { createCoachFeedback } from './coach-feedback.mjs?v=c0bae9cc0270';
-import { createPostplayCoach } from './postplay-coach.mjs?v=c0bae9cc0270';
+import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=d0006efbea09';
+import { LESSONS, PracticeSession } from './session.mjs?v=d0006efbea09';
+import { NoteGate } from './note-gate.mjs?v=d0006efbea09';
+import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=d0006efbea09';
+import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=d0006efbea09';
+import { createTeacher } from './teacher.mjs?v=d0006efbea09';
+import { createScoreTimeline } from './score.mjs?v=d0006efbea09';
+import { FollowTransport } from './transport.mjs?v=d0006efbea09';
+import { ChordSession } from './chord-session.mjs?v=d0006efbea09';
+import { createArrangement } from './arrangement.mjs?v=d0006efbea09';
+import { createAccompanimentPlayer } from './accompaniment.mjs?v=d0006efbea09';
+import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=d0006efbea09';
+import { createMidiInput } from './midi-input.mjs?v=d0006efbea09';
+import { EarlyInputBuffer } from './early-input.mjs?v=d0006efbea09';
+import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=d0006efbea09';
+import { createKeyboardRange } from './keyboard-range.mjs?v=d0006efbea09';
+import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=d0006efbea09';
+import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=d0006efbea09';
+import { createLessonPresenter } from './lesson-presenter.mjs?v=d0006efbea09';
+import { drawNotation, describeStaffPosition } from './notation.mjs?v=d0006efbea09';
+import { createMicroLesson, chooseMicroRepair } from './microlearning.mjs?v=d0006efbea09';
+import { createSongMicroLesson } from './song-microlearning.mjs?v=d0006efbea09';
+import { normalizeMicroProgress, getMicroRun, updateMicroRun } from './microlearning-progress.mjs?v=d0006efbea09';
+import { createMicrostepView } from './microstep-ui.mjs?v=d0006efbea09';
+import { chooseNativeRoute } from './native-route.mjs?v=d0006efbea09';
+import { getFingerHint } from './fingering.mjs?v=d0006efbea09';
+import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=d0006efbea09';
+import { TimedSession } from './timed-session.mjs?v=d0006efbea09';
+import { chooseFlowOutcome } from './flow-progression.mjs?v=d0006efbea09';
+import { chooseTimingAdvice } from './timing-feedback.mjs?v=d0006efbea09';
+import { practicePolicy } from './practice-policy.mjs?v=d0006efbea09';
+import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=d0006efbea09';
+import { createCoachFeedback } from './coach-feedback.mjs?v=d0006efbea09';
+import { createPostplayCoach } from './postplay-coach.mjs?v=d0006efbea09';
 
 export function mountPianoPlayer(root, options = {}) {
 const mountAbort=new AbortController();let embeddedActive=false,taskHelpSticky=false,homeSettings=false;
@@ -51,20 +55,22 @@ function readStorage() {
       accompaniment:v.accompaniment!==false,backingVolume:Number.isFinite(v.backingVolume)?clamp(v.backingVolume,0,.8):.25,input:v.input==='midi'?'midi':'mic',
       lesson:LESSONS.some(l=>l.id===v.lesson) ? v.lesson : 'joy',
       resetAt:Number.isSafeInteger(v.resetAt)&&v.resetAt>=0&&v.resetAt<=8640000000000000?v.resetAt:0,
+      microProgress:normalizeMicroProgress(v.microProgress),
       courseProgress:normalizeCourseProgress(v.courseProgress),
       compositionProgress:v.compositionProgress && typeof v.compositionProgress==='object' ? v.compositionProgress : {},
       studyProgress:v.studyProgress && typeof v.studyProgress==='object' && !Array.isArray(v.studyProgress) ? v.studyProgress : {},
       flowProgress:v.flowProgress&&typeof v.flowProgress==='object'&&!Array.isArray(v.flowProgress)?v.flowProgress:{},
       pendingFlow:v.pendingFlow&&typeof v.pendingFlow==='object'&&((typeof v.pendingFlow.courseId==='string'&&COURSE.some(l=>l.id===v.pendingFlow.courseId))||(typeof v.pendingFlow.compositionId==='string'&&typeof v.pendingFlow.stageId==='string'))?v.pendingFlow:null,
       history:Array.isArray(v.history) ? v.history.filter(h=>h && (LESSONS.some(l=>l.id===h.lesson)||COURSE.some(l=>l.id===h.lesson)||typeof h.title==='string') && Number.isFinite(h.at) && Number.isFinite(h.accuracy) && h.accuracy>=0 && h.accuracy<=100 && Number.isFinite(h.correct) && h.correct>=0 && h.correct<=5000 && Number.isFinite(h.seconds) && h.seconds>=0 && h.seconds<86400).slice(0,50) : [] };
-  } catch { return { ...defaults, history:[],courseProgress:normalizeCourseProgress(null),compositionProgress:{},studyProgress:{},flowProgress:{} }; }
+  } catch { return { ...defaults, resetAt:0,microProgress:{},history:[],courseProgress:normalizeCourseProgress(null),compositionProgress:{},studyProgress:{},flowProgress:{} }; }
 }
 const settings = readStorage();
 const state = { view:'course', session:null, source:'mic', running:false, phase:'idle', mic:false,
   heard:null, heardAt:0, signal:0, noiseFloor:0, countdown:0, preview:false, previewStep:null, saved:false,
   courseId:null,customLesson:null,mode:'learn',revealed:false,breakdown:false,sectionRange:null,lastReport:null,reviewText:'',compositionKey:null,compositionId:null,hand:'right',waiting:false,polyNeedsRelease:false,feedbackMessage:'',feedbackUntil:0,
   studyPlan:null,studyStageId:null,studyPhase:'right',studyPage:0,courseModule:null,libraryPage:0,historyPage:0,
-  nativeFlow:false,intro:null,needsIntro:false,transitioning:false,courseBrowse:false,tempoAutomatic:true,flowPolish:false,flowNext:null,flowGoalReached:false,flowLastIndex:-1,learningTask:null,assisted:false,attemptId:null,taskPassed:false };
+  nativeFlow:false,intro:null,needsIntro:false,transitioning:false,courseBrowse:false,tempoAutomatic:true,flowPolish:false,flowNext:null,flowGoalReached:false,flowLastIndex:-1,learningTask:null,assisted:false,attemptId:null,taskPassed:false,
+  microPlan:null,microStageId:null,microHelpLevel:0,microRevealed:false,microRepairId:null,microReturnId:null };
 let micContext=null, stream=null, analyser=null, micSource=null, audioBuffer=null, micGeneration=0,micCalibrated=false,inputIdleTimer=0;
 let animationFrame=0, lastFrame=0, countdownTimer=0, synthContext=null, playbackGeneration=0;
 let playbackNodes=[],playbackTimers=[],previewTimeline=[],previewStartedAt=0,scoreFrame=0,gateUntil=0,calibration=null,toastTimer=0;
@@ -87,7 +93,7 @@ const postplay=createPostplayCoach({teacher,voice:()=>settings.voice,
   onUpdate:renderPostplay,onClose:()=>{state.transitioning=false;if(state.phase==='coaching')state.phase='idle';renderPractice();},
   onContinue:()=>{const action=postplayAction;postplayAction=null;action?.();},
   onRepeat:()=>{postplayAction=null;repeatLearningTask();},
-  onRepair:()=>{const repair=postplayFeedback?.repair,offset=state.breakdown?(state.sectionRange?.start||0):0;postplayAction=null;if(repair)repeatProblemSection(false,{start:repair.start+offset,end:repair.end+offset});else repeatLearningTask();}
+  onRepair:()=>{const repair=postplayFeedback?.repair,offset=state.breakdown?(state.sectionRange?.start||0):0;postplayAction=null;if(state.microPlan&&state.microRepairId&&!state.breakdown){const target=state.microRepairId;state.microReturnId=state.microStageId;enterMicroStage(target);return;}if(repair)repeatProblemSection(false,{start:repair.start+offset,end:repair.end+offset});else repeatLearningTask();}
 });
 const presenter=createLessonPresenter({speak:text=>teacher.speak(text),cancelSpeech:()=>teacher.cancel(),onStopAudio:()=>stopPlayback(),
   onDemoStart:(frames,lead)=>{const ctx=ensureSynth();if(!ctx)return;const start=ctx.currentTime+lead;for(const frame of frames)soundNote(frame.midi,start+frame.time,frame.duration);},
@@ -95,13 +101,116 @@ const presenter=createLessonPresenter({speak:text=>teacher.speak(text),cancelSpe
   onFrame:frame=>{if(!state.intro)return;Object.assign(state.intro,frame);$('#intro-beat').textContent=frame.beat?String(frame.beat):'♪';$('#intro-beat').style.setProperty('--beat-progress',String(frame.beatProgress));highlightKeys();drawScore();},
   onFinish:()=>{if(!state.intro)return;state.intro=null;state.needsIntro=false;state.phase='idle';renderPractice();startPractice().catch(()=>failMic({}));}
 });
-const lesson = () => {const selected=state.customLesson || COURSE.find(l=>l.id===state.courseId) || LESSONS.find(l=>l.id===settings.lesson) || LESSONS[0];return state.learningTask?.notes?.length?{...selected,notes:state.learningTask.notes}:selected;};
-function presentation(){const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),raw=(!state.breakdown&&stage?.purpose==='independent'?stage.presentation:null)||(state.rhythmGuided?state.learningTask?.guidedPresentation:null)||state.learningTask?.presentation||lesson().hintPolicy;if(!raw)return null;const memory=['echo','recall'].includes(lesson().practiceKind),reading=lesson().practiceKind==='reading';return {target:state.mode==='check'?false:raw.target??true,names:state.mode==='check'?false:raw.names??true,preview:raw.preview??true,staff:raw.staff??(!memory&&(reading||settings.notation!=='falling')),falling:raw.falling??(!memory&&!reading&&settings.notation!=='staff')};}
-function flowPassPercent(){return state.learningTask?.kind==='rhythm'||!state.breakdown&&state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent'?80:60;}
+const lesson = () => {const selected=state.customLesson || COURSE.find(l=>l.id===state.courseId) || LESSONS.find(l=>l.id===settings.lesson) || LESSONS[0],base=state.learningTask?.notes?.length?{...selected,notes:state.learningTask.notes}:selected,micro=state.microPlan?.stages.find(s=>s.id===state.microStageId);return micro?{...base,notes:micro.notes,instruction:micro.instruction,introSpeech:micro.spoken||micro.instruction}:base;};
+function presentation(){const micro=state.microPlan?.stages.find(s=>s.id===state.microStageId);if(micro){const raw=micro.presentation;return {...raw,...(state.microRevealed?{target:true,names:true,staff:true,fingers:true}:{}),preview:micro.assessment&&!state.microRevealed?false:raw.preview};}const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),raw=(!state.breakdown&&stage?.purpose==='independent'?stage.presentation:null)||(state.rhythmGuided?state.learningTask?.guidedPresentation:null)||state.learningTask?.presentation||lesson().hintPolicy;if(!raw)return null;const memory=['echo','recall'].includes(lesson().practiceKind),reading=lesson().practiceKind==='reading';return {target:state.mode==='check'?false:raw.target??true,names:state.mode==='check'?false:raw.names??true,preview:raw.preview??true,staff:raw.staff??(!memory&&(reading||settings.notation!=='falling')),falling:raw.falling??(!memory&&!reading&&settings.notation!=='staff')};}
+function flowPassPercent(){return state.learningTask?.kind==='rhythm'||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.assessment&&state.mode==='flow'||!state.breakdown&&state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent'?80:60;}
 function strictMemory(){const p=presentation();return !!p&&p.target===false&&p.staff===false&&p.falling===false&&!state.intro&&!state.preview;}
-function markAssisted(){state.assisted=true;state.session?.markAssisted();if(state.learningTask||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent')taskHelpSticky=true;if(state.learningTask)options.onAssistance?.(state.learningTask);}
+function markAssisted(){state.assisted=true;state.session?.markAssisted();if(state.learningTask||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.assessment||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent')taskHelpSticky=true;if(state.learningTask)options.onAssistance?.(state.learningTask);}
 function emitLearningReport(report,beta=false){if(!state.learningTask||state.source==='demo'||report.demo===true||state.learningTask.kind==='song'&&lesson().availableHands?.includes('both')&&state.hand!=='both')return;const p=presentation();options.onReport?.({task:state.learningTask,report,attemptId:state.attemptId,mode:state.mode,source:state.source,assisted:taskHelpSticky||state.assisted||report.assisted===true,cueVisible:p?!!(p.target||p.staff||p.falling):true,beta,breakdown:state.breakdown,hand:state.hand});taskHelpSticky=false;}
 function finishDailyTask(){const task=state.learningTask;closeResult();pausePractice({keepInput:true});stopPlayback();state.learningTask=null;options.onTaskComplete?.(task);}
+const microView=createMicrostepView(root,{onHelp:helpMicroLesson,onSkip:skipMicroStage,onRepeat:repeatLearningTask});
+function microStage(){return state.microPlan?.stages.find(stage=>stage.id===state.microStageId)||null;}
+function microLevel(stage){return stage.presentation.target?0:stage.presentation.names?1:stage.presentation.staff?2:3;}
+function rememberMicro(change={}){
+  if(!state.microPlan)return;
+  const previous=getMicroRun(settings.microProgress,state.microPlan);
+  settings.microProgress=updateMicroRun(settings.microProgress,state.microPlan,{stageId:state.microStageId,helpLevel:state.microHelpLevel,at:Math.min(8640000000000000,Math.max(Date.now(),previous.at+1)),...change});persist();
+}
+function clearMicroLesson(){state.microPlan=null;state.microStageId=null;state.microRevealed=false;state.microRepairId=null;state.microReturnId=null;}
+function beginMicroLesson(){
+  if(state.learningTask&&state.learningTask.role!=='new'&&state.learningTask.kind!=='new')return false;
+  const plan=createMicroLesson(lesson(),{kind:state.learningTask?.kind||'new'});
+  if(!plan.authored)return false;
+  state.microPlan=plan;const run=getMicroRun(settings.microProgress,plan);
+  enterMicroStage(run.stageId,{present:!run.completed.length&&!run.skipped.length,resume:run.at>0});return true;
+}
+function beginSongMicroLesson(){
+  const stage=state.studyPlan?.stages.find(item=>item.id===state.studyStageId);
+  if(!stage||isStudyStageComplete(state.studyPlan,studyProgress(),stage.id))return false;
+  const plan=createSongMicroLesson(state.studyPlan,stage);if(!plan)return false;
+  state.microPlan=plan;const run=getMicroRun(settings.microProgress,plan);
+  enterMicroStage(run.stageId,{resume:run.at>0});return true;
+}
+function enterMicroStage(id,{present=false,resume=false}={}){
+  const stage=state.microPlan?.stages.find(item=>item.id===id);if(!stage)return;
+  pausePractice({keepInput:true});stopPlayback();closeResult();pendingNative=null;
+  state.microStageId=id;const run=getMicroRun(settings.microProgress,state.microPlan),level=microLevel(stage);
+  state.microHelpLevel=resume?run.helpLevel:level;state.microRevealed=state.microHelpLevel<level;
+  state.mode=stage.mode;state.breakdown=false;state.sectionRange=null;state.session=null;state.saved=false;state.revealed=state.microRevealed;
+  state.quickStart=true;state.needsIntro=false;state.rhythmGuided=stage.mode==='flow'&&!!stage.presentation.target;
+  state.source=settings.input;state.assisted=false;state.microRepairId=null;
+  if(state.microRevealed&&stage.assessment)markAssisted();
+  resetFollow();rememberMicro();coach(stage.instruction);renderPractice();
+  const listening=(['echo','recall'].includes(lesson().practiceKind)||state.learningTask?.kind==='recall')&&stage.presentation.preview&&!stage.assessment;
+  if(listening||present&&stage.spoken&&stage.presentation.preview&&!stage.assessment&&settings.intros)startLessonIntro();
+  else startPractice().catch(()=>failMic({}));
+}
+function microCue(){
+  const stage=microStage(),policy=presentation(),index=state.session?.index||0;
+  if(!stage||!policy||state.intro||!state.microRevealed&&stage.assessment||index>=notes().length)return null;
+  const source=lesson().notes[index],midi=source?.midi+settings.octave*12;if(!Number.isInteger(midi))return null;
+  const staff=policy.staff&&(policy.names||policy.target),hand=source.hand||(lesson().hand==='Левая рука'?'left':'right');
+  const finger=policy.fingers&&(index===0||!state.running)?getFingerHint(lesson(),{index,hand:state.hand,octave:settings.octave,reason:'start'}):null;
+  if(!staff&&!finger&&!policy.target&&!policy.names)return null;
+  return {midi,name:noteInfo(midi).name,hand: finger?.hand||hand,...(staff?{staffText:describeStaffPosition(midi,{clef:hand==='left'?'bass':'treble'}).text}:{}),
+    ...(finger?{finger:finger.finger,position:finger.position?.text}:{})};
+}
+function renderMicroLesson(){
+  const stage=microStage(),visible=!!stage&&state.view==='practice'&&!state.breakdown;
+  microView.render({visible,title:stage?.title||'',instruction:stage?.instruction||'',index:state.microPlan?.stages.indexOf(stage)||0,total:state.microPlan?.stages.length||0,
+    helpLabel:state.microRevealed?'С подсказкой':stage?.assessment?'Самостоятельно':stage?.presentation.target?'Есть подсказки':stage?.presentation.staff?'Только ноты':'На слух',
+    cue:visible?microCue():null,allowSkip:!!stage&&!stage.assessment,allowHelp:!!stage&&!state.intro,phase:state.session?.finished?'complete':state.running&&state.session?.index>0?'playing':'ready'});
+  const panel=$('.practice-panel');panel.classList.toggle('microlearning',visible);
+  if(stage){panel.dataset.microStage=stage.id;panel.dataset.microPurpose=stage.purpose;}else{delete panel.dataset.microStage;delete panel.dataset.microPurpose;}
+}
+function helpMicroLesson(){
+  const stage=microStage();if(!stage)return;
+  state.microRevealed=true;state.microHelpLevel=0;state.revealed=true;state.assisted=true;state.session?.markAssisted();
+  if(stage.assessment)markAssisted();rememberMicro();renderPractice();showFingerHint('resume');
+  coach('Посмотри на опору. После подсказки можно спокойно повторить самостоятельно.',true);
+}
+function skipMicroStage(){
+  const stage=microStage();if(!stage||stage.assessment)return;
+  const next=state.microPlan.stages[state.microPlan.stages.indexOf(stage)+1];if(!next)return;
+  rememberMicro({stageId:next.id,skippedStageId:stage.id,helpLevel:microLevel(next)});enterMicroStage(next.id);
+}
+function canonicalMicroCoverage(stage){
+  const original=state.learningTask?.notes||COURSE.find(item=>item.id===state.courseId)?.notes;
+  return stage.coverage===true&&Array.isArray(original)&&JSON.stringify(stage.notes)===JSON.stringify(original);
+}
+/** Only a real full-score stage can reach the existing course evidence pipeline. */
+function completeMicroPractice(report,{beta=false,demo=false}={}){
+  const stage=microStage();if(!stage||state.breakdown)return false;
+  const independent=!state.assisted&&!taskHelpSticky&&!report.assisted&&!beta&&!demo;
+  const pass=report.finished&&!report.earlyAbort&&report.firstAttemptCorrect*10>=report.total*8;
+  const repairReport=settings.octave?{...report,errors:(report.errors||[]).map(error=>({...error,
+    expected:Number.isInteger(error.expected)?error.expected-settings.octave*12:error.expected,
+    ...(Number.isInteger(error.heard)?{heard:error.heard-settings.octave*12}:{}),
+    ...(Number.isInteger(error.played)?{played:error.played-settings.octave*12}:{})}))}:report;
+  if(stage.assessment){
+    if(pass&&independent)rememberMicro({completedStageId:stage.id});
+    else state.microRepairId=state.microPlan.song?null:chooseMicroRepair(state.microPlan,stage.id,repairReport)?.id||null;
+    if(!state.learningTask&&!demo&&!beta)taskHelpSticky=false;
+    return false;
+  }
+  keepInputWarm();hideFingerHint();state.session.pause(now());state.running=false;state.phase='idle';state.lastReport=report;
+  if(demo){coach('Это экранный показ. Сыграй на синтезаторе, чтобы продолжить занятие.');renderPractice();return true;}
+  const coverage=canonicalMicroCoverage(stage);
+  if(coverage)emitLearningReport(report,beta);
+  const ready=coverage||stage.mode!=='learn'?pass:report.finished&&report.correct===report.total;
+  const nextId=state.microReturnId||state.microPlan.stages[state.microPlan.stages.indexOf(stage)+1]?.id;
+  if(ready&&nextId){
+    const next=state.microPlan.stages.find(item=>item.id===nextId);state.microReturnId=null;
+    rememberMicro({completedStageId:stage.id,stageId:next.id,helpLevel:microLevel(next)});
+    const action=()=>enterMicroStage(next.id,{present:!!next.spoken&&next.purpose==='orient'});
+    if(report.errors?.length)postplayTransition(report,action,{nextLabel:'Дальше'});
+    else nativeTransition(next.instruction,action,{voice:false,delay:180});
+  }else{
+    state.microRepairId=state.microPlan.song?null:chooseMicroRepair(state.microPlan,stage.id,repairReport)?.id||null;
+    postplayTransition(report,repeatLearningTask,{nextLabel:'Повторить место'});
+  }
+  renderPractice();return true;
+}
 let lastPulse=-Infinity;
 function pulse(playhead){
   if(!state.running||state.mode!=='flow'){lastPulse=-Infinity;$('#practice-pulse').hidden=true;return;}
@@ -155,7 +264,8 @@ function startLessonIntro(){
   embeddedActive=true;
   teacher.unlock().catch(()=>{});ensureSynth();pausePractice({keepInput:true});stopPlayback();
   if(state.view!=='practice')return;
-  if(!settings.intros){state.needsIntro=false;startPractice().catch(()=>failMic({}));return;}
+  const requiredListening=state.microPlan&&(['echo','recall'].includes(lesson().practiceKind)||state.learningTask?.kind==='recall')&&presentation()?.preview;
+  if(!settings.intros&&!requiredListening){state.needsIntro=false;startPractice().catch(()=>failMic({}));return;}
   const notationGuide=state.learningTask?.kind==='reading'?createNotationGuide(lesson(),{octave:settings.octave}):null;
   if(state.learningTask&&presentation()?.preview===false&&!notationGuide){state.needsIntro=false;state.phase='idle';nativeTransition(state.learningTask.kind==='recall'?'Вспомни рисунок без примера и подсказок.':lesson().instruction,()=>startPractice().catch(()=>failMic({})));return;}
   if(notes().some(n=>n.midi<36||n.midi>96)){toast('Выбери подходящую октаву инструмента в настройках.');return;}
@@ -165,7 +275,7 @@ function startLessonIntro(){
   if(state.learningTask?.kind==='rhythm')plan.showNotation=false;
   state.needsIntro=true;state.intro={...plan,active:[],playhead:-.65,index:0};state.phase='intro';
   $('#intro-title').textContent=stage?`${lesson().hand} · ${studyStageLabel(stage)}`:plan.subtitle;$('#intro-text').textContent=plan.spoken;renderPractice();
-  const intro=state.intro,token=presentationGeneration;musicFontPromise.then(()=>{if(state.intro!==intro||token!==presentationGeneration)return;presenter.play(plan,{voice:settings.voice}).catch(()=>{if(state.intro===intro)skipLessonIntro();});});
+  const intro=state.intro,token=presentationGeneration;musicFontPromise.then(()=>{if(state.intro!==intro||token!==presentationGeneration)return;presenter.play(plan,{voice:settings.voice&&settings.intros}).catch(()=>{if(state.intro===intro)skipLessonIntro();});});
 }
 function skipLessonIntro(){presenter.cancel();state.intro=null;state.needsIntro=false;state.phase='idle';renderPractice();startPractice().catch(()=>failMic({}));}
 function nativeTransition(text,action,{voice=true,delay=voice?420:180}={}){
@@ -209,13 +319,14 @@ function applyLessonTempo(){const choice=baseLearningTempo(),saved=settings.flow
 function adaptPracticeTempo(report){if(!state.tempoAutomatic||state.saved||state.source==='demo')return null;const key=tempoProgressKey(),old=settings.flowProgress[key]||{},choice=adaptLearningTempo({currentBpm:settings.tempo,report,stablePasses:old.stablePasses,source:state.source,assisted:state.assisted||taskHelpSticky,beta:lesson().polyphonic&&state.source==='mic',breakdown:state.breakdown,minBpm:40,maxBpm:baseLearningTempo().bpm});settings.flowProgress[key]={...old,practiceBpm:choice.bpm,stablePasses:choice.stablePasses,at:Date.now()};return choice;}
 function hideFingerHint(){clearTimeout(fingerTimer);$('#finger-hint').hidden=true;for(const key of $$('#piano [data-finger]')){key.removeAttribute('data-finger');key.classList.remove('finger-cue');}}
 function showFingerHint(reason){
-  hideFingerHint();if(!state.running||state.intro||state.mode==='check'||presentation()?.target===false)return;
+  hideFingerHint();const p=presentation();if(!state.running||state.intro||state.mode==='check'&&!state.microRevealed||p?.fingers===false||p?.target===false&&p?.fingers!==true)return;
   const index=(state.session?.index||0)+(state.breakdown?(state.sectionRange?.start||0):0),hint=getFingerHint(lesson(),{index,octave:settings.octave,reason});if(!hint)return;
-  $('#finger-hint').textContent=hint.text;$('#finger-hint').hidden=false;const key=$(`#piano [data-midi="${hint.midi}"]`);if(key){key.dataset.finger=hint.finger;key.classList.add('finger-cue');}fingerTimer=setTimeout(hideFingerHint,3200);
+  $('#finger-hint').textContent=hint.text;$('#finger-hint').hidden=!!state.microPlan;const key=$(`#piano [data-midi="${hint.midi}"]`);if(key){key.dataset.finger=hint.finger;key.classList.add('finger-cue');}fingerTimer=setTimeout(hideFingerHint,3200);
 }
 function flowDestination(){return isCourse()?{kind:'course',id:lesson().nextId||null}:state.studyStageId?{kind:'study'}:{kind:'library'};}
 function resetFlowState(){state.flowGoalReached=false;state.flowPolish=false;state.flowNext=null;state.flowLastIndex=-1;}
 function startFlowLevel(destination=state.flowNext||flowDestination(),{polish=false,brief=false,immediate=false}={}){
+  if(state.microPlan)clearMicroLesson();
   pausePractice({keepInput:true});stopPlayback();closeResult();state.quickStart=true;state.flowNext=destination;state.flowPolish=polish;state.mode='flow';state.needsIntro=false;state.session=null;state.saved=false;state.revealed=false;state.source=settings.input;state.flowLastIndex=-1;resetFollow();
   settings.pendingFlow={courseId:state.courseId,compositionId:state.compositionId,stageId:state.studyStageId,studyVersion:state.studyPlan?.version,polish,goalReached:state.flowGoalReached};persist();
   if(immediate){renderPractice();startPractice().catch(()=>failMic({}));return;}
@@ -246,8 +357,11 @@ function completeStudyCheck(report,{demo,beta}){
 }
 function completeFlowPractice(){
   $('#flow-next').textContent='Дальше →';
-  state.session.pause(now());const report=state.session.report(now()),demo=state.source==='demo',outcome=!demo&&state.learningTask?.kind==='rhythm'&&report.scorePercent<80?'retry':chooseFlowOutcome(report,{polish:state.flowPolish,demo});
+  state.session.pause(now());const report=state.session.report(now()),demo=state.source==='demo',microFinal=state.microPlan?.stages.find(s=>s.id===state.microStageId)?.assessment;
+  const microFailed=microFinal&&(report.scorePercent<80||state.assisted||taskHelpSticky||report.assisted||lesson().polyphonic&&state.source==='mic');
+  const outcome=!demo&&(microFailed||state.learningTask?.kind==='rhythm'&&report.scorePercent<80)?'retry':chooseFlowOutcome(report,{polish:state.flowPolish,demo});
   state.running=false;state.phase='idle';state.lastReport=report;++autoGeneration;clearTimeout(autoTimer);keepInputWarm();backingPlayer?.stop();teacher.cancel();hideFingerHint();
+  if(state.microPlan&&completeMicroPractice(report,{demo,beta:lesson().polyphonic&&state.source==='mic'}))return;
   const tempoChoice=adaptPracticeTempo(report);
   const studyStage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),independent=studyStage?.purpose==='independent'&&!state.breakdown,assessmentBeta=state.source==='mic'&&!!(lesson().polyphonic||independent&&studyStage.requiresMidi);
   if(!independent||report.scorePercent>=80)emitLearningReport(report,assessmentBeta);
@@ -330,7 +444,7 @@ function drawScore() {
     $('#lesson-progress').style.transform=`scaleX(${percent/100})`;$('.progress-track').setAttribute('aria-valuenow',Math.round(percent));highlightKeys();
   }
   if(state.running){
-    const label=strictMemory()?state.learningTask?.kind==='rhythm'?'Держи ровный пульс':'Играем по памяти':state.feedbackUntil>time?state.feedbackMessage:state.mode==='flow'&&playhead<0?'Приготовься':state.mode==='flow'?state.flowPolish?'Играем без остановок · цель 100%':`Играем без остановок · цель ${flowPassPercent()}%`:state.polyNeedsRelease?'Отпусти клавиши и сыграй оставшуюся ноту отдельно':waiting?state.mode==='check'&&!state.revealed?'Играй самостоятельно':`Играй · ${expectedNotes().map(m=>noteInfo(m).name).join(' + ')}`:playhead<gate-.12?'Ноты подходят к клавишам':'Сейчас';if($('#stage-state').textContent!==label)$('#stage-state').textContent=label;
+    const label=strictMemory()?state.learningTask?.kind==='rhythm'?'Держи ровный пульс':'Играем по памяти':state.feedbackUntil>time?state.feedbackMessage:state.mode==='flow'&&playhead<0?'Приготовься':state.mode==='flow'?state.flowPolish?'Играем без остановок · цель 100%':`Играем без остановок · цель ${flowPassPercent()}%`:state.polyNeedsRelease?'Отпусти клавиши и сыграй оставшуюся ноту отдельно':waiting?(state.mode==='check'||presentation()?.target===false)&&!state.revealed?'Играй самостоятельно':`Играй · ${expectedNotes().map(m=>noteInfo(m).name).join(' + ')}`:playhead<gate-.12?'Подготовь следующую ноту':'Сейчас';if($('#stage-state').textContent!==label)$('#stage-state').textContent=label;
     if(state.mode!=='flow'&&playhead>=gate-.03){const session=state.session,at=session.index,source=state.source;const ready=earlyNotes.take({index:at,source,now:time,isHeld:midi=>source==='midi'?midiInput.heldNotes.includes(midi):time-(noteEvidence.get(midi)??-Infinity)<220});if(ready.length)queueMicrotask(()=>{for(const midi of ready){if(!state.running||state.session!==session||session.index!==at||state.source!==source)break;processNote(midi,source);}});}
   }
   if(!intro&&(state.running||state.preview||backingPlayer))syncBacking(Math.max(0,playhead),moving&&playhead>=0,state.mode==='flow'?Infinity:gate);
@@ -341,11 +455,11 @@ function drawScore() {
   const ink=styles.getPropertyValue('--accent-ink').trim(),muted=styles.getPropertyValue('--muted').trim(),text=styles.getPropertyValue('--text').trim();
   const policy=intro?null:presentation(),requestedMode=intro?(intro.showNotation?'staff':'falling'):policy?policy.staff?(policy.falling?'both':'staff'):'falling':settings.notation,grand=phrase.some(n=>n.hand==='left')&&phrase.some(n=>n.hand==='right');
   const compactGrand=grand&&requestedMode!=='falling'&&innerHeight<380;$('.practice-panel').classList.toggle('compact-grand',compactGrand);
-  const mode=requestedMode==='both'&&grand&&canvasHeight<230?'staff':requestedMode,staffOnly=mode==='staff',staffHeight=staffOnly?canvasHeight:mode==='both'?Math.min(grand?180:120,Math.max(grand?171:100,canvasHeight*.55)):0;
+  const mode=requestedMode==='both'&&canvasHeight<(grand?230:180)?'staff':requestedMode,staffOnly=mode==='staff',staffHeight=staffOnly?canvasHeight:mode==='both'?Math.min(grand?180:120,Math.max(grand?171:100,canvasHeight*.55)):0;
   $('#notation-size-note').hidden=!(requestedMode==='both'&&mode==='staff');
   $('.practice-panel').dataset.notation=mode;
   if(staffHeight){
-    const offset=intro?width*.45:0;ctx.save();ctx.translate(offset,0);if(musicFontReady)drawNotation(ctx,{width:width-offset,height:staffHeight,notes:phrase,timeline,playhead,index,expectedNotes:[...pending],hand:state.hand==='left'||lesson().hand==='Левая рука'?'left':state.hand,sourceTempo:lesson().tempo||60,tempo:settings.tempo,accent,leftColor:left,ink:text,muted,line,waiting,preview:previewing});else{ctx.fillStyle=muted;ctx.font='12px "Segoe UI",sans-serif';ctx.fillText('Загружаем нотный стан…',20,28);}ctx.restore();
+    const offset=intro?width*.45:0;ctx.save();ctx.translate(offset,0);if(musicFontReady)drawNotation(ctx,{width:width-offset,height:staffHeight,notes:phrase,timeline,playhead,index,expectedNotes:[...pending],hand:state.hand==='left'||lesson().hand==='Левая рука'?'left':state.hand,sourceTempo:lesson().tempo||60,tempo:settings.tempo,accent,leftColor:left,ink:text,muted,line,waiting,preview:previewing,showNames:state.microPlan&&canvasHeight>=140?!!(previewing||policy?.names):false,teachingCue:state.microPlan&&!previewing&&microCue()?.staffText?{index,finger:microCue()?.finger,label:microCue().staffText}:null});else{ctx.fillStyle=muted;ctx.font='12px "Segoe UI",sans-serif';ctx.fillText('Загружаем нотный стан…',20,28);}ctx.restore();
   }
   feedback=feedback.filter(f=>time-f.at<240);
   if(staffOnly){if(state.preview||(state.running&&!waiting)||feedback.length)queueScore();return;}
@@ -384,7 +498,7 @@ function renderPracticeRoute(){
 }
 function renderPractice() {
   const song=lesson(), s=state.session, e=expected(), info=e!==null ? noteInfo(e) : null;
-  const p=presentation(),memory=strictMemory();$('.practice-panel').dataset.cueLabel=String(['orientation','pulse-and-space'].includes(song.moduleId));$('.practice-panel').classList.toggle('memory-task',memory);$('.practice-panel').classList.toggle('hide-target',!state.intro&&!state.preview&&(memory||state.mode==='check')&&!state.revealed);$('.practice-panel').classList.toggle('hide-note-names',!!p&&p.names===false&&!state.intro);$('#recall-cover').hidden=!memory;$('#practice-pulse').hidden=state.mode!=='flow';
+  const p=presentation(),memory=strictMemory();$('.practice-panel').dataset.cueLabel=String(['orientation','pulse-and-space'].includes(song.moduleId));$('.practice-panel').classList.toggle('memory-task',memory);$('.practice-panel').classList.toggle('hide-target',!state.intro&&!state.preview&&(memory||state.mode==='check'||p?.target===false)&&!state.revealed);$('.practice-panel').classList.toggle('hide-note-names',!!p&&p.names===false&&!state.intro);$('#recall-cover').hidden=!memory;$('#practice-pulse').hidden=state.mode!=='flow';
   $('#recall-cover strong').textContent=state.learningTask?.kind==='rhythm'?'Повтори ритм':state.learningTask?.kind==='recall'?'Сыграй по памяти':'Повтори на слух';$('#recall-cover span').textContent=state.running?'Играем без показа нужных клавиш':'Послушай рисунок, затем сыграй самостоятельно';
   renderPiano();
   $('#lesson-guide').hidden=!isCourse()&&!state.customLesson;
@@ -404,7 +518,7 @@ function renderPractice() {
   const stage=state.phase==='coaching'?'Преподаватель объясняет':state.phase==='permission' ? 'Разреши доступ к микрофону' : state.phase==='calibrating' ? 'Секунда тишины — слушаю фон' : state.phase==='countdown' ? `Приготовься: ${state.countdown}` : state.preview ? 'Слушай пример' : s?.finished ? 'Попытка завершена' : state.running ? state.source==='demo' ? 'Демо на экранной клавиатуре' : 'Сыграй на синтезаторе' : s ? 'Практика на паузе' : 'Нажми ▶, чтобы начать';
   $('#stage-state').textContent=state.feedbackUntil>now()?state.feedbackMessage:stage;
   $('#score').setAttribute('aria-label',info ? `Дорожка нот. Следующая нота — ${info.name}, ${info.latin}.` : s?.earlyAbort?'Попытка завершена после серии ошибок.':'Попытка завершена.');
-  if(memory)$('#score').setAttribute('aria-label','Игра без показа ответа.');
+  if(memory)$('#score').setAttribute('aria-label','Игра без показа ответа.');else if(p?.names===false&&!state.preview&&!state.intro)$('#score').setAttribute('aria-label','Нотный стан. Прочитай и сыграй самостоятельно.');
   const busy=['permission','calibrating','countdown','coaching','intro'].includes(state.phase);
   $('.practice-panel').classList.toggle('introducing',!!state.intro);$('#intro-caption').hidden=!state.intro;
   $('#replay-intro').disabled=state.view!=='practice';$('#replay-intro').hidden=state.view!=='practice';
@@ -427,7 +541,7 @@ function renderPractice() {
   badge.textContent=state.phase==='permission' ? 'Запрос доступа' : state.mic ? (micContext?.state==='running' ? 'Слушаю' : 'На паузе') : state.phase==='error' ? 'Нет доступа' : 'Выключен';
   badge.classList.toggle('on',state.mic && micContext?.state==='running');badge.classList.toggle('error',state.phase==='error');
   renderCompositionControls();$('#whole-piece').hidden=!state.breakdown;
-  renderPracticeRoute();
+  renderPracticeRoute();renderMicroLesson();
   highlightKeys();drawScore();
 }
 function updateSignal(pitch,rms,time) {
@@ -549,20 +663,21 @@ function activateSession(source) {
   embeddedActive=true;
   clearTimeout(inputIdleTimer);
   state.source=source;
-  if(!state.session || state.session.finished) {resetFollow();const score=notes(),timeline=createScoreTimeline(score,{tempo:settings.tempo,preserveTiming:!!state.customLesson?.preserveTiming,sourceTempo:state.customLesson?.tempo||60});state.activePolicy=practicePolicy({lesson:lesson(),mode:state.mode,source,retry:state.quickStart===true,timeline});state.quickStart=false;state.attemptId=globalThis.crypto?.randomUUID?.()||Date.now()+':'+Math.random();state.assisted=taskHelpSticky;state.session=state.mode==='flow'?new TimedSession(score,{timeline,now:now(),leadIn:state.activePolicy.leadIn,window:state.activePolicy.windowSeconds,inputGrace:state.activePolicy.inputGrace,maxConsecutive:state.activePolicy.maxConsecutive,strictRests:!state.rhythmGuided&&(state.learningTask?.kind==='rhythm'||lesson().practiceKind==='rhythm')}):lesson().polyphonic?new ChordSession(score.map((n,i)=>({...n,time:timeline[i].time,duration:timeline[i].duration})),now()):new MasterySession(score,now());state.saved=false;state.revealed=false;}
+  if(!state.session || state.session.finished) {resetFollow();const score=notes(),timeline=createScoreTimeline(score,{tempo:settings.tempo,preserveTiming:!!state.customLesson?.preserveTiming,sourceTempo:state.customLesson?.tempo||60});state.activePolicy=practicePolicy({lesson:lesson(),mode:state.mode,source,retry:state.quickStart===true,timeline});state.quickStart=false;state.attemptId=globalThis.crypto?.randomUUID?.()||Date.now()+':'+Math.random();state.assisted=!!(taskHelpSticky||state.microRevealed||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.coverage&&state.mode==='check');state.session=state.mode==='flow'?new TimedSession(score,{timeline,now:now(),leadIn:state.activePolicy.leadIn,window:state.activePolicy.windowSeconds,inputGrace:state.activePolicy.inputGrace,maxConsecutive:state.activePolicy.maxConsecutive,strictRests:!state.rhythmGuided&&(state.learningTask?.kind==='rhythm'||lesson().practiceKind==='rhythm')}):lesson().polyphonic?new ChordSession(score.map((n,i)=>({...n,time:timeline[i].time,duration:timeline[i].duration})),now()):new MasterySession(score,now());state.saved=false;state.revealed=state.microRevealed===true;}
   else state.session.resume(now());
+  if(state.microPlan&&state.assisted)state.session.markAssisted?.();
   resetDetector();state.running=true;state.phase='idle';
   ensureFollow().play(now());
-  coach(source==='demo' ? 'Это демо: микрофон не включён, результат не попадёт в историю.' : (isCourse()||state.customLesson) && state.mode==='check' ? 'Сыграй названные ноты на синтезаторе. Оценка от 0 до 10 за весь фрагмент; для перехода нужно 8 или больше.' : 'Сыграй подсвеченную ноту. Между повторами отпускай клавишу.');
+  coach(state.microPlan?microStage().instruction:source==='demo' ? 'Это демо: микрофон не включён, результат не попадёт в историю.' : (isCourse()||state.customLesson) && state.mode==='check' ? 'Сыграй названные ноты на синтезаторе. Оценка от 0 до 10 за весь фрагмент; для перехода нужно 8 или больше.' : 'Сыграй подсвеченную ноту. Между повторами отпускай клавишу.');
   renderPractice();showFingerHint(state.session.index===0?'start':'resume');
 }
 function openLearningTask(task){
   if(!task||!COURSE.some(l=>l.id===task.lessonId))throw new Error('Не найдено упражнение для этого шага.');
-  state.learningTask=null;chooseCourse(task.lessonId);pausePractice({keepInput:true});stopPlayback();pendingNative=null;resetFollow();state.learningTask=task;state.rhythmGuided=!!task.guidedPresentation;taskHelpSticky=task.assisted===true;state.assisted=taskHelpSticky;state.nativeFlow=task.kind==='new';state.session=null;state.saved=false;state.revealed=false;state.taskPassed=false;state.needsIntro=true;
+  state.learningTask=null;chooseCourse(task.lessonId,{start:false});pausePractice({keepInput:true});stopPlayback();pendingNative=null;resetFollow();state.learningTask=task;state.rhythmGuided=!!task.guidedPresentation;taskHelpSticky=task.assisted===true;state.assisted=taskHelpSticky;state.nativeFlow=task.kind==='new';state.session=null;state.saved=false;state.revealed=false;state.taskPassed=false;state.needsIntro=true;
   state.mode=task.kind==='rhythm'?'flow':task.kind==='new'?'learn':'check';coach(task.instruction||'Сыграй короткий рисунок.');applyLessonTempo();renderPractice();
-  startLessonIntro();
+  if(!beginMicroLesson())startLessonIntro();
 }
-function repeatLearningTask(){pausePractice({keepInput:true});stopPlayback();closeResult();state.quickStart=true;state.session=null;state.saved=false;state.revealed=false;state.assisted=false;state.source=settings.input;resetFollow();renderPractice();startPractice().catch(()=>failMic({}));}
+function repeatLearningTask(){pausePractice({keepInput:true});stopPlayback();closeResult();state.quickStart=true;state.session=null;state.saved=false;state.revealed=false;state.assisted=false;state.source=settings.input;if(state.microPlan){state.microRevealed=false;state.microHelpLevel=microLevel(microStage());rememberMicro();}resetFollow();renderPractice();startPractice().catch(()=>failMic({}));}
 function completeFlatTask(report,beta,demo){
   state.session.pause(now());keepInputWarm();backingPlayer?.stop();hideFingerHint();
   const passed=!demo&&!beta&&!state.assisted&&!report.assisted&&report.firstAttemptCorrect*10>=report.total*8;
@@ -653,6 +768,7 @@ function completePractice() {
   const report={...state.session.report(now()),mode:beta?'learn':state.mode}, demo=state.source==='demo';
   ++autoGeneration;
   state.running=false;state.phase='idle';state.lastReport=report;state.reviewText='';
+  if(state.microPlan&&completeMicroPractice(report,{beta,demo}))return;
   emitLearningReport(report,beta);
   if(state.breakdown&&!demo){
     keepInputWarm();hideFingerHint();
@@ -668,7 +784,7 @@ function completePractice() {
   keepInputWarm();
   if(!demo && !state.saved) {
     if(state.studyPlan&&state.studyStageId)settings.studyProgress[state.studyPlan.id]=recordStudyAttempt(state.studyPlan,studyProgress(),state.studyStageId,report,{demo,breakdown:state.breakdown,mode:state.mode,source:state.source,assisted:state.assisted||taskHelpSticky,beta,answerShown:state.revealed,at:Date.now()});
-    if(isCourse()&&isCheck)settings.courseProgress=recordCourseAttempt(settings.courseProgress,state.courseId,report,{at:Date.now()});
+    if(isCourse()&&isCheck&&!state.assisted&&!report.assisted)settings.courseProgress=recordCourseAttempt(settings.courseProgress,state.courseId,report,{at:Date.now()});
     if(state.compositionKey){const progressKey=state.breakdown?`${state.compositionKey}:section:${state.sectionRange?.start}:${state.sectionRange?.end}`:state.compositionKey;const previous=settings.compositionProgress[progressKey]||{};settings.compositionProgress[progressKey]={...previous,practiced:true,passed:previous.passed===true || (isCheck&&report.passed),score:report.scoreOutOf10,at:Date.now()};}
     settings.history.unshift({lesson:isCourse()?state.courseId:settings.lesson,title:state.breakdown?`${lesson().title} · ноты ${(state.sectionRange?.start||0)+1}–${state.sectionRange?.end||3}`:lesson().title,at:Date.now(),accuracy:report.accuracy,correct:report.correct,seconds:report.seconds,metric:report.metric,score:report.scoreOutOf10,kind:beta?'beta':isCheck?'check':'learn'});
     settings.history=settings.history.slice(0,50);state.saved=true;persist();
@@ -750,7 +866,8 @@ function stopPlayback() {
   state.preview=false;state.previewStep=null;gateUntil=now()+300;
 }
 async function playExample() {
-  if(state.learningTask||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent')markAssisted();
+  if(state.microPlan){state.assisted=true;state.session?.markAssisted();state.microRevealed=true;state.microHelpLevel=0;state.revealed=true;if(microStage()?.assessment)markAssisted();rememberMicro();}
+  else if(state.learningTask||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent')markAssisted();
   if(state.preview) {stopPlayback();renderPractice();return;}
   const ctx=ensureSynth();if(!ctx)return;
   pausePractice();stopPlayback();const generation=playbackGeneration;
@@ -810,6 +927,7 @@ function renderStudy(){
   $('#study-page').textContent=`${state.studyPage+1} / ${pages}`;$('#study-prev').disabled=!state.studyPage;$('#study-next').disabled=state.studyPage>=pages-1;
 }
 function startStudyStage(id,{present=true}={}){
+  if(state.microPlan)clearMicroLesson();
   const plan=state.studyPlan,stage=plan?.stages.find(s=>s.id===id);if(!stage)return;
   const c=allCompositions().find(c=>c.id===plan.id);if(!c)return;
   pausePractice({keepInput:state.view==='practice'});stopPlayback();resetFollow();closeResult();pendingNative=null;++lessonGeneration;
@@ -817,7 +935,7 @@ function startStudyStage(id,{present=true}={}){
   state.nativeFlow=true;state.needsIntro=present&&stage.purpose!=='independent';state.courseId=null;state.studyStageId=id;state.compositionId=c.id;state.hand=stage.hand;state.mode=stage.requiredMode||'learn';state.breakdown=false;state.repairReturnMode=null;state.songFailures=0;state.sectionRange=null;state.revealed=false;state.assisted=false;state.session=null;state.source=settings.input;state.saved=false;state.lastReport=null;
   if(!state.learningTask)taskHelpSticky=false;
   state.customLesson={id:stage.id,compositionId:c.id,title:`${c.title} · ${studyStageLabel(stage)}`,author:c.author||'Твой MIDI',notes:stage.notes,backing:stage.backing,type:'phrase',tempo:stage.sourceTempo,preserveTiming:true,hand:{right:'Правая рука',left:'Левая рука',both:'Две руки'}[stage.hand],polyphonic:stage.notes.some((n,i)=>i>0&&n.time-stage.notes[i-1].time<=.035),availableHands:stage.availableHands,description:stage.description,backingDescription:stage.backingDescription,instruction:stage.instruction};
-  state.compositionKey=[plan.id,plan.version,stage.id].join(':');settings.studyProgress[plan.id]={...studyProgress(),cursor:id};persist();applyLessonTempo();coach(stage.instruction);navigate('practice');if(stage.rangeIssue)toast(stage.rangeIssue);const pending=settings.pendingFlow;if(pending?.compositionId===plan.id&&pending.studyVersion===plan.version&&pending.stageId===stage.id){state.flowGoalReached=pending.goalReached===true;startFlowLevel(flowDestination(),{polish:pending.polish===true});}else if(stage.purpose==='independent'){state.needsIntro=false;state.quickStart=true;startPractice().catch(()=>failMic({}));}else if(present)startLessonIntro();
+  state.compositionKey=[plan.id,plan.version,stage.id].join(':');settings.studyProgress[plan.id]={...studyProgress(),cursor:id};persist();applyLessonTempo();coach(stage.instruction);navigate('practice');if(stage.rangeIssue)toast(stage.rangeIssue);const pending=settings.pendingFlow;if(pending?.compositionId===plan.id&&pending.studyVersion===plan.version&&pending.stageId===stage.id){state.flowGoalReached=pending.goalReached===true;startFlowLevel(flowDestination(),{polish:pending.polish===true});}else if(stage.purpose==='independent'){state.needsIntro=false;state.quickStart=true;startPractice().catch(()=>failMic({}));}else if(present&&!beginSongMicroLesson())startLessonIntro();
 }
 function advanceStudy(){
   if(!state.studyPlan||!state.studyStageId||state.source==='demo'||state.breakdown||!isStudyStageComplete(state.studyPlan,studyProgress(),state.studyStageId))return;
@@ -861,7 +979,7 @@ function renderCourse(){
   $('#course-module').innerHTML=modules.map((id,i)=>`<option value="${id}" ${id===state.courseModule?'selected':''}>${i+1} · ${escapeHtml(COURSE.find(l=>(l.moduleId||'basics')===id).moduleTitle||'Первые навыки')}</option>`).join('');
   $('#course-list').innerHTML=COURSE.filter(l=>(l.moduleId||'basics')===state.courseModule).map(l=>{const status=courseLessonStatus(settings.courseProgress,l.id);return `<button class="course-row ${status.passed?'passed':''}" data-course="${l.id}"><span class="course-number">${status.passed?'✓':COURSE.indexOf(l)+1}</span><span class="course-copy"><strong>${escapeHtml(l.title)}</strong></span><span class="course-grade">${status.attempts?status.bestScore+'/10':'→'}</span></button>`;}).join('');
 }
-function chooseCourse(id){const l=COURSE.find(l=>l.id===id);if(!l)return;state.rhythmGuided=false;pausePractice({keepInput:state.view==='practice'});stopPlayback();pendingNative=null;++lessonGeneration;resetFlowState();state.nativeFlow=true;state.needsIntro=true;state.studyStageId=null;state.courseModule=l.moduleId;state.courseId=id;state.compositionId=null;state.hand=l.polyphonic||/Обе|Две/.test(l.hand)?'both':l.hand==='Левая рука'?'left':'right';state.customLesson=null;state.compositionKey=null;state.mode='learn';state.breakdown=false;state.session=null;state.source=settings.input;state.saved=false;state.revealed=false;applyLessonTempo();coach(l.instruction);navigate('practice');const pending=settings.pendingFlow;if(pending?.courseId===id){state.flowGoalReached=pending.goalReached===true;startFlowLevel(flowDestination(),{polish:pending.polish===true});}else startLessonIntro();}
+function chooseCourse(id,{start=true}={}){const l=COURSE.find(l=>l.id===id);if(!l)return;clearMicroLesson();state.rhythmGuided=false;pausePractice({keepInput:state.view==='practice'});stopPlayback();pendingNative=null;++lessonGeneration;resetFlowState();state.nativeFlow=true;state.needsIntro=true;state.studyStageId=null;state.courseModule=l.moduleId;state.courseId=id;state.compositionId=null;state.hand=l.polyphonic||/Обе|Две/.test(l.hand)?'both':l.hand==='Левая рука'?'left':'right';state.customLesson=null;state.compositionKey=null;state.mode='learn';state.breakdown=false;state.session=null;state.source=settings.input;state.saved=false;state.revealed=false;applyLessonTempo();coach(l.instruction);navigate('practice');if(!start)return;const pending=settings.pendingFlow;if(pending?.courseId===id){state.flowGoalReached=pending.goalReached===true;startFlowLevel(flowDestination(),{polish:pending.polish===true});}else if(!beginMicroLesson())startLessonIntro();}
 
 function renderProgress() {
   const history=settings.history,perPage=2,pages=Math.max(1,Math.ceil(history.length/perPage));state.historyPage=clamp(state.historyPage,0,pages-1);
@@ -890,6 +1008,7 @@ function navigate(view) {
   if(options.embedded){embeddedActive=view==='practice';options.onNavigate?.(view);}else window.scrollTo({top:0,behavior:'instant'});
 }
 function chooseLesson(id) {
+  if(state.microPlan)clearMicroLesson();
   if(!LESSONS.some(l=>l.id===id))return;
   pausePractice();stopPlayback();++lessonGeneration;state.courseId=null;state.customLesson=null;state.compositionId=null;state.compositionKey=null;state.breakdown=false;settings.lesson=id;state.session=null;state.source='mic';state.saved=false;persist();
   coach('Начни с прослушивания примера или сразу сыграй первую ноту. Я подожду.');navigate('practice');
@@ -1077,6 +1196,6 @@ return {
  getState:()=>JSON.parse(JSON.stringify(settings)),
  getCompositions:()=>allCompositions().map(c=>({id:c.id,title:c.title,author:c.author,source:c.source})),
  addComposition:composition=>{createCompositionStudy(composition);externalCompositions=[...externalCompositions.filter(c=>c.id!==composition.id),composition];},
- destroy:()=>{pausePractice();stopPlayback();mountAbort.abort();scoreObserver.disconnect();clearTimeout(layoutTimer);clearTimeout(toastTimer);clearTimeout(keyFeedbackTimer);embeddedActive=false;synthContext?.close().catch(()=>{});root.replaceChildren();}
+ destroy:()=>{pausePractice();stopPlayback();microView.destroy();mountAbort.abort();scoreObserver.disconnect();clearTimeout(layoutTimer);clearTimeout(toastTimer);clearTimeout(keyFeedbackTimer);embeddedActive=false;synthContext?.close().catch(()=>{});root.replaceChildren();}
 };
 }

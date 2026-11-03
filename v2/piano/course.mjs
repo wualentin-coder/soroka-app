@@ -1,5 +1,5 @@
-import { PracticeSession } from './session.mjs?v=c0bae9cc0270';
-import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=c0bae9cc0270';
+import { PracticeSession } from './session.mjs?v=d0006efbea09';
+import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=d0006efbea09';
 
 export const MASTERY_METRIC = 'first-attempt-v1';
 export const COURSE_PROGRESS_VERSION = 1;

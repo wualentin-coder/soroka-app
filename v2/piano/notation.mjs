@@ -41,6 +41,19 @@ export function pitchNotation(midi) {
     sharp: SHARPS.has(pitchClass), name: NAMES[pitchClass], octave };
 }
 
+/** Staff position only; a hand or a detected pitch does not prove fingering. */
+export function describeStaffPosition(midi,{clef='treble'}={}){
+  if(!['treble','bass'].includes(clef))throw new RangeError('Choose a treble or bass staff.');
+  const pitch=pitchNotation(midi),bottomStep=clef==='bass'?18:30,offset=pitch.step-bottomStep;
+  if(offset>=0&&offset<=8){
+    if(offset%2===0){const line=offset/2+1;return {midi,clef,kind:'line',line,text:`На ${line}-й линейке снизу`};}
+    const space=(offset+1)/2;return {midi,clef,kind:'space',space,text:`Между ${space}-й и ${space+1}-й линейками`};
+  }
+  const above=offset>8,distance=above?offset-8:-offset,side=above?'сверху':'снизу';
+  if(distance%2===0){const line=distance/2;return {midi,clef,kind:'ledger',line,side:above?'above':'below',text:`На ${line}-й добавочной линейке ${side}`};}
+  return {midi,clef,kind:'outside',side:above?'above':'below',text:distance===1?above?'Над пятой линейкой':'Под первой линейкой':`Между добавочными линейками ${side}`};
+}
+
 const VALUES = [];
 for (const [denominator, beats] of [[1,4],[2,2],[4,1],[8,.5],[16,.25],[32,.125],[64,.0625]]) {
   for (const [factor, dots, tuplet] of [[1,0,null],[1.5,1,null],[2/3,0,3]]) {
@@ -263,6 +276,37 @@ export function layoutNotation(notes, timeline, { width, height, playhead = 0, i
     onsetPositions:groups.map(group=>({time:group.time,endTime:group.endTime,x:cursorX+group.anchor-scroll})) };
 }
 
+/** Uses the visible timeline ordinal, never a pitch match or sourceIndex fallback. */
+export function teachingCueForLayout(layout,cue){
+  if(!cue||!Number.isSafeInteger(cue.index)||cue.index<0||!Array.isArray(layout?.notes)||!Array.isArray(layout.staffs))return null;
+  const note=layout.notes.find(note=>note.index===cue.index),staff=note&&layout.staffs[note.staffIndex];
+  if(!note||!staff||!Number.isFinite(note.headX)||!Number.isFinite(note.y)||note.headX<layout.clefGutter||
+    note.headX>layout.width||note.y<0||note.y>layout.height)return null;
+  const position=describeStaffPosition(note.midi,{clef:staff.clef}),space=layout.lineSpacing,
+    isLine=position.kind==='line'||position.kind==='ledger',left=Math.max(layout.clefGutter+2,note.headX-space*2.8),right=Math.min(layout.width-3,note.headX+space*2.8);
+  if(right<=left)return null;
+  const edges=isLine?[note.y]:[...staff.lines,...note.ledgerLines].filter(y=>Math.abs(Math.abs(y-note.y)-space/2)<.1);
+  const finger=Number.isInteger(cue.finger)&&cue.finger>=1&&cue.finger<=5?cue.finger:null;
+  const label=typeof cue.label==='string'?cue.label.replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,40):'';
+  const caption=[label,finger?`палец ${finger}`:''].filter(Boolean).join(' · '),fontSize=clamp(space*.9,11,14);
+  let badge=null;
+  if(caption){
+    const width=caption.length*fontSize*.63+8,height=fontSize+6;
+    if(width<layout.width-layout.clefGutter-8){
+      const x=clamp(note.headX-width/2,layout.clefGutter+4,layout.width-width-4);
+      for(const top of [note.glyphBounds.top-height-5,note.glyphBounds.bottom+5]){
+        const rectangle={left:x,right:x+width,top,bottom:top+height};
+        const overlaps=layout.notes.some(item=>rectangle.left<item.glyphBounds.right+3&&rectangle.right>item.glyphBounds.left-3&&rectangle.top<item.glyphBounds.bottom+3&&rectangle.bottom>item.glyphBounds.top-3);
+        const crossesLine=layout.staffs.some(item=>item.lines.some(y=>y>=rectangle.top-2&&y<=rectangle.bottom+2));
+        if(top>=3&&rectangle.bottom<=layout.height-3&&!overlaps&&!crossesLine){badge={...rectangle,text:caption,fontSize};break;}
+      }
+    }
+  }
+  return {index:note.index,midi:note.midi,staffIndex:note.staffIndex,position,finger,
+    band:{left,right,top:note.y-(isLine?1.5:space/2),bottom:note.y+(isLine?1.5:space/2),edges},
+    ring:{x:note.headX,y:note.y,rx:layout.headWidth*.8,ry:layout.headHeight*.78},badge};
+}
+
 function trebleClef(ctx, x, staff, space) {
   musicGlyph(ctx,'gClef',x,staff.bottom-space,space);
 }
@@ -299,7 +343,7 @@ function drawNote(ctx, note, layout, color) {
 
 /** Draws at the caller's existing DPR transform, without owning any clock. */
 export function drawNotation(ctx, { notes, timeline, accent='#68d1c9', leftColor='#8facdf',
-  ink='#dce8ed', muted='#9caeb7', line='#4c606b', waiting=false, ...options } = {}) {
+  ink='#dce8ed', muted='#9caeb7', line='#4c606b', waiting=false, teachingCue=null, ...options } = {}) {
   const layout = layoutNotation(notes,timeline,options);
   if (!layout.staffs.length) return layout;
   ctx.save(); ctx.strokeStyle=line;ctx.fillStyle=ink;ctx.lineWidth=1;ctx.globalAlpha=1;
@@ -321,9 +365,19 @@ export function drawNotation(ctx, { notes, timeline, accent='#68d1c9', leftColor
   ctx.strokeStyle=accent;ctx.lineWidth=waiting?2:1;ctx.globalAlpha=waiting?.9:.45;
   ctx.beginPath();ctx.moveTo(layout.cursorX,5);ctx.lineTo(layout.cursorX,layout.height-5);ctx.stroke();
   ctx.save();ctx.beginPath();ctx.rect(layout.clefGutter,0,Math.max(0,layout.width-layout.clefGutter),layout.height);ctx.clip();
+  const cue=teachingCueForLayout(layout,teachingCue);
+  if(cue){
+    const band=cue.band;ctx.globalAlpha=.12;ctx.fillStyle=accent;ctx.fillRect(band.left,band.top,Math.max(0,band.right-band.left),band.bottom-band.top);
+    ctx.globalAlpha=.7;ctx.strokeStyle=accent;ctx.lineWidth=1.5;
+    for(const y of band.edges){ctx.beginPath();ctx.moveTo(band.left,y);ctx.lineTo(band.right,y);ctx.stroke();}
+  }
   for (const note of layout.notes) {
     ctx.globalAlpha=note.played?.24:note.active?1:.84;
     drawNote(ctx,note,layout,note.active?(note.hand==='left'?leftColor:accent):note.played?muted:ink);
+  }
+  if(cue){
+    ctx.globalAlpha=.95;ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(cue.ring.x,cue.ring.y,cue.ring.rx,cue.ring.ry,0,0,Math.PI*2);ctx.stroke();
+    if(cue.badge){const badge=cue.badge;ctx.fillStyle=ink;ctx.font=`700 ${badge.fontSize}px "Manrope","Segoe UI",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(badge.text,(badge.left+badge.right)/2,(badge.top+badge.bottom)/2);}
   }
   ctx.restore();ctx.restore();
   return layout;

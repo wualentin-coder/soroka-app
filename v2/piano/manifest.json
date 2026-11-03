@@ -1,5 +1,5 @@
 {
-  "version": "c0bae9cc0270",
+  "version": "d0006efbea09",
   "files": [
     "player.mjs",
     "player-template.mjs",
@@ -42,6 +42,11 @@
     "fingering.mjs",
     "practice-policy.mjs",
     "practice-visuals.mjs",
+    "microlearning.mjs",
+    "microlearning-data.mjs",
+    "microlearning-progress.mjs",
+    "microstep-ui.mjs",
+    "song-microlearning.mjs",
     "fonts/Bravura.woff2",
     "fonts/Bravura-LICENSE.txt",
     "fonts/README.md",

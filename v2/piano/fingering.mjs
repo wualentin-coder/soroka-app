@@ -1,5 +1,5 @@
-import { COURSE } from './course.mjs?v=c0bae9cc0270';
-import { noteInfo } from './pitch.mjs?v=c0bae9cc0270';
+import { COURSE } from './course.mjs?v=d0006efbea09';
+import { noteInfo } from './pitch.mjs?v=d0006efbea09';
 
 const FINGER_WHITE_POSITION = [60, 62, 64, 65, 67];
 const FINGER_NAMES = ['', 'большой палец', 'указательный палец', 'средний палец', 'безымянный палец', 'мизинец'];

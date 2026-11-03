@@ -1,5 +1,6 @@
-import {normalizeCourseProgress} from './course.mjs?v=c0bae9cc0270';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=c0bae9cc0270';
+import {normalizeCourseProgress} from './course.mjs?v=d0006efbea09';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=d0006efbea09';
+import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=d0006efbea09';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;
@@ -50,6 +51,7 @@ function dailyRun(value){const v=object(value),out={assistance:{}};if(typeof v.r
 export function normalizePianoState(value){
   const v=object(value),out={...object(v.preferences),...v,version:1,updatedAt:finite(v.updatedAt),resetAt:resetEpoch(v.resetAt),courseProgress:normalizeCourseProgress(v.courseProgress)};
   out.learningProgress=normalizeLearningProgress(v.learningProgress,v.learningProgress?{}:{courseProgress:out.courseProgress});
+  out.microProgress=normalizeMicroProgress(v.microProgress);
   for(const name of maps)out[name]=progressMap(v[name],name);
   out.history=historyRows(v.history);out.dailyRun=dailyRun(v.dailyRun);
   return out;
@@ -61,7 +63,7 @@ export function resetPianoProgress(value,{at=Date.now()}={}){
   if(resetAt>MAX_TIMESTAMP)throw new RangeError('Progress reset timestamp is exhausted.');
   return normalizePianoState({...current,resetAt,updatedAt:Math.max(current.updatedAt,resetAt),lesson:'joy',
     courseProgress:normalizeCourseProgress(null),learningProgress:normalizeLearningProgress(null),
-    compositionProgress:{},studyProgress:{},flowProgress:{},history:[],pendingFlow:null,dailyRun:{}});
+    compositionProgress:{},studyProgress:{},flowProgress:{},microProgress:{},history:[],pendingFlow:null,dailyRun:{}});
 }
 export function mergePianoState(a,b){
   a=normalizePianoState(a);b=normalizePianoState(b);
@@ -70,7 +72,7 @@ export function mergePianoState(a,b){
     // A stale device may have a later ordinary edit time. Its preferences can
     // win, but its old achievements must never re-enter the reset epoch.
     const current=a.resetAt>b.resetAt?a:b;
-    for(const name of ['courseProgress','learningProgress',...maps,'history','pendingFlow','dailyRun'])out[name]=current[name];
+    for(const name of ['courseProgress','learningProgress','microProgress',...maps,'history','pendingFlow','dailyRun'])out[name]=current[name];
     out.lesson=typeof current.lesson==='string'?current.lesson:'joy';out.resetAt=current.resetAt;
     out.updatedAt=Math.max(a.updatedAt,b.updatedAt);
     return normalizePianoState(out);
@@ -81,6 +83,7 @@ export function mergePianoState(a,b){
     out.courseProgress.lessons[id]={...prefer(x,y,x.lastAt,y.lastAt),attempts:Math.max(x.attempts,y.attempts),bestScore:Math.max(x.bestScore,y.bestScore),passed:x.passed||y.passed};
   }
   out.learningProgress=mergeLearningProgress(a.learningProgress,b.learningProgress);
+  out.microProgress=mergeMicroProgress(a.microProgress,b.microProgress);
   out.dailyRun={...latest.dailyRun,assistance:{...a.dailyRun.assistance,...b.dailyRun.assistance}};
   for(const id of Object.keys(out.dailyRun.assistance)){const x=a.dailyRun.assistance[id],y=b.dailyRun.assistance[id];if(x&&y)out.dailyRun.assistance[id]={helpedAt:Math.max(x.helpedAt,y.helpedAt),consumedAt:Math.max(x.consumedAt,y.consumedAt)};}
   for(const name of maps){out[name]={...a[name],...b[name]};for(const id of Object.keys(out[name])){
@@ -94,7 +97,7 @@ export function mergePianoState(a,b){
   return normalizePianoState(out);
 }
 export function toPianoProgress(value){
-  const v=normalizePianoState(value),out={version:1,updatedAt:v.updatedAt,resetAt:v.resetAt,courseProgress:v.courseProgress,learningProgress:v.learningProgress,history:v.history};
+  const v=normalizePianoState(value),out={version:1,updatedAt:v.updatedAt,resetAt:v.resetAt,courseProgress:v.courseProgress,learningProgress:v.learningProgress,microProgress:v.microProgress,history:v.history};
   for(const name of maps)out[name]=v[name];out.pendingFlow=null;
   if(v.pendingFlow&&typeof v.pendingFlow==='object'){const row=v.pendingFlow;out.pendingFlow={courseId:text(row.courseId),compositionId:text(row.compositionId),stageId:text(row.stageId),...(text(row.studyVersion,300)?{studyVersion:text(row.studyVersion,300)}:{}),polish:row.polish===true,goalReached:row.goalReached===true};}
   out.dailyRun=v.dailyRun;
