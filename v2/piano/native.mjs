@@ -1,12 +1,14 @@
-import {mountPianoPlayer} from './player.mjs?v=e55349755070';
-import {PLAYER_HTML} from './player-template.mjs?v=e55349755070';
-import {COMPOSITIONS,parseMidiComposition} from './compositions.mjs?v=e55349755070';
-import {COURSE} from './course.mjs?v=e55349755070';
-import * as learning from './learning-path.mjs?v=e55349755070';
-import {normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress} from './state.mjs?v=e55349755070';
+import {mountPianoPlayer} from './player.mjs?v=46c6017f0462';
+import {PLAYER_HTML} from './player-template.mjs?v=46c6017f0462';
+import {COMPOSITIONS,parseMidiComposition} from './compositions.mjs?v=46c6017f0462';
+import {COURSE} from './course.mjs?v=46c6017f0462';
+import * as learning from './learning-path.mjs?v=46c6017f0462';
+import * as learningGoals from './learning-goals.mjs?v=46c6017f0462';
+import {normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress} from './state.mjs?v=46c6017f0462';
 
-export {COURSE,COMPOSITIONS,parseMidiComposition,learning,normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress};
-export {putCachedComposition,getCachedComposition,listCachedCompositions} from './composition-cache.mjs?v=e55349755070';
+export {COURSE,COMPOSITIONS,parseMidiComposition,learning,learningGoals,normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress};
+export {createCompositionStudy,normalizeStudyProgress,studySummary} from './composition-study.mjs?v=46c6017f0462';
+export {putCachedComposition,getCachedComposition,listCachedCompositions} from './composition-cache.mjs?v=46c6017f0462';
 export const pianoAsset=name=>new URL(name,import.meta.url).href;
 export function createTeacherFetch(call){
   return async(url,options={})=>{
