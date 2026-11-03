@@ -1,5 +1,5 @@
 {
-  "version": "e55349755070",
+  "version": "46c6017f0462",
   "files": [
     "player.mjs",
     "player-template.mjs",
@@ -9,6 +9,7 @@
     "course.mjs",
     "curriculum-data.mjs",
     "learning-path.mjs",
+    "learning-goals.mjs",
     "session.mjs",
     "score.mjs",
     "transport.mjs",
@@ -26,8 +27,10 @@
     "notation.mjs",
     "native-route.mjs",
     "compositions.mjs",
+    "beginner-songs.mjs",
     "fur-elise.mjs",
     "composition-study.mjs",
+    "song-learning.mjs",
     "chord-session.mjs",
     "arrangement.mjs",
     "accompaniment.mjs",
