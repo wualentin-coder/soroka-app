@@ -1,5 +1,5 @@
 {
-  "version": "902d86820b77",
+  "version": "e55349755070",
   "files": [
     "player.mjs",
     "player-template.mjs",
@@ -35,6 +35,8 @@
     "practice-section.mjs",
     "flow-progression.mjs",
     "fingering.mjs",
+    "practice-policy.mjs",
+    "practice-visuals.mjs",
     "fonts/Bravura.woff2",
     "fonts/Bravura-LICENSE.txt",
     "fonts/README.md",
