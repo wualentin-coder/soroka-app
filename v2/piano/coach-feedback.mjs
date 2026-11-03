@@ -1,8 +1,8 @@
-import {noteInfo} from './pitch.mjs?v=d0006efbea09';
-import {createScoreTimeline} from './score.mjs?v=d0006efbea09';
-import {chooseProblemSection} from './practice-section.mjs?v=d0006efbea09';
-import {recommendSongRepair,songOnsetGroups} from './song-learning.mjs?v=d0006efbea09';
-import {summarizeTimingOffsets} from './timing-feedback.mjs?v=d0006efbea09';
+import {noteInfo} from './pitch.mjs?v=157775a3eea1';
+import {createScoreTimeline} from './score.mjs?v=157775a3eea1';
+import {chooseProblemSection} from './practice-section.mjs?v=157775a3eea1';
+import {recommendSongRepair,songOnsetGroups} from './song-learning.mjs?v=157775a3eea1';
+import {summarizeTimingOffsets} from './timing-feedback.mjs?v=157775a3eea1';
 
 const MAX_NOTES=5000,MAX_ERRORS=20000;
 const midi=value=>Number.isInteger(value)&&value>=0&&value<=127;
@@ -94,17 +94,17 @@ function repairFor(notes,stage,report,focus,kind){
 }
 
 /** One concise, factual teaching turn. It never changes a report or progress. */
-export function createCoachFeedback({lesson={},notes=lesson?.notes,report,mode,source='mic',stage=null,assisted=false,beta=false,breakdown=false}={}){
+export function createCoachFeedback({lesson={},notes=lesson?.notes,report,mode,source='mic',stage=null,assisted=false,answerShown=false,beta=false,breakdown=false}={}){
   if(!lesson||typeof lesson!=='object'||Array.isArray(lesson))lesson={};
   if(report?.demo)return unavailable('demo');
   if(report?.finished===false)return unavailable('unfinished');
   const evidence=canonical(notes,report);
-  if(!evidence||![assisted,beta,breakdown].every(value=>typeof value==='boolean'))return unavailable('unavailable');
+  if(!evidence||![assisted,answerShown,beta,breakdown].every(value=>typeof value==='boolean'))return unavailable('unavailable');
   const explainedFailed=new Set(evidence.errors.map(error=>error.index));
   // Some chord/timed sessions record a hint in outcomes without an assisted
   // flag. Unexplained failed first attempts cannot become an independent turn.
   const inferredHelp=report.targetOutcomes.filter(value=>value===0).length>explainedFailed.size+report.skipped;
-  const measuredMidi=source==='midi',helped=assisted||report.assisted===true||inferredHelp,repairPractice=breakdown||report.breakdown===true;
+  const measuredMidi=source==='midi',helped=assisted||answerShown||report.assisted===true||report.answerShown===true||inferredHelp,repairPractice=breakdown||report.breakdown===true;
   const betaPractice=beta||!measuredMidi&&(stage?.requiresMidi===true||lesson.requiresMidiForAssessment===true||lesson.polyphonic===true);
   const measuredTiming=measuredMidi&&!betaPractice;
   const actualMode=['learn','check','flow'].includes(mode)?mode:report.metric==='timed-notes-v1'?'flow':'learn';
@@ -156,5 +156,11 @@ export function createCoachFeedback({lesson={},notes=lesson?.notes,report,mode,s
     timing:measuredTiming&&evidence.timing?{...evidence.timing}:null,
     unmeasured:['fingering','hand-technique','duration','legato','pedal','velocity',...(!measuredTiming?['precise-attack-timing']:[])]};
   const askUnderstanding=complex&&kind!=='no-input';
-  return {valid:true,kind,text,question:askUnderstanding?'Всё понятно?':null,askUnderstanding,focus,repair,llmContext};
+  const creditNotice=helped&&!betaPractice&&!repairPractice&&stage?.purpose==='independent'&&['check','flow'].includes(actualMode)&&
+    !report.earlyAbort&&kind!=='no-input'?'Была подсказка — для зачёта повтори проход без неё.':null;
+  if(creditNotice){
+    const factual=kind==='assisted'?'Ноты найдены.':text.match(/^[^.!?]+[.!?]?/u)?.[0]?.trim()||text;
+    text=`${factual} ${creditNotice}`;
+  }
+  return {valid:true,kind,text,creditNotice,question:askUnderstanding?'Всё понятно?':null,askUnderstanding,focus,repair,llmContext};
 }

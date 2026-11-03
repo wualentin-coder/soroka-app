@@ -1,7 +1,7 @@
-import {COURSE} from './course.mjs?v=d0006efbea09';
-import {createScoreTimeline} from './score.mjs?v=d0006efbea09';
-import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=d0006efbea09';
-import {MICROLESSONS,MICRO_CUES,MICRO_MODULE_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=d0006efbea09';
+import {COURSE} from './course.mjs?v=157775a3eea1';
+import {createScoreTimeline} from './score.mjs?v=157775a3eea1';
+import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=157775a3eea1';
+import {MICROLESSONS,MICRO_CUES,MICRO_MODULE_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=157775a3eea1';
 
 const MAX_NOTES=5000,MAX_STAGES=16;
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));
@@ -111,9 +111,9 @@ function structuredScenes(lesson,groups,family,add){
   }
   for(let index=0;index<chunks.length;index++){
     const material=chunks[index];
-    const text=memory?'Повтори эту часть без нового показа.':rhythm?'Считай ровно; в паузе не нажимай новую клавишу.':poly?'Ноты одного столбика сыграй вместе, затем следующий.':cue.motif;
+    const text=memory?'Послушай эту часть и повтори по памяти.':rhythm?'Считай ровно; в паузе не нажимай новую клавишу.':poly?'Ноты одного столбика сыграй вместе, затем следующий.':cue.motif;
     add(chunks.length===1?'motif':`motif-${index+1}`,'phrase',`Часть ${index+1} из ${chunks.length}`,handInstruction(lesson,material)||text,material,
-      {mode:rhythm?'flow':'learn',presentation:memory?HIDDEN:plain,
+      {mode:rhythm?'flow':'learn',presentation:memory?{...HIDDEN,preview:true}:plain,
         goal:{type:family,focus:cue.focus,pitches:pitches(material.notes)}});
   }
   const faded=groupMaterial(lesson,groups,start,Math.min(4,groups.length-start));

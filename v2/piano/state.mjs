@@ -1,6 +1,6 @@
-import {normalizeCourseProgress} from './course.mjs?v=d0006efbea09';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=d0006efbea09';
-import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=d0006efbea09';
+import {normalizeCourseProgress} from './course.mjs?v=157775a3eea1';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=157775a3eea1';
+import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=157775a3eea1';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;

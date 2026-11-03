@@ -1,6 +1,6 @@
-import { createArrangement } from './arrangement.mjs?v=d0006efbea09';
-import { musicalNoteKey,songFingerprint,songPhraseSections } from './song-learning.mjs?v=d0006efbea09';
-export { recommendSongRepair } from './song-learning.mjs?v=d0006efbea09';
+import { createArrangement } from './arrangement.mjs?v=157775a3eea1';
+import { musicalNoteKey,songFingerprint,songPhraseSections } from './song-learning.mjs?v=157775a3eea1';
+export { recommendSongRepair } from './song-learning.mjs?v=157775a3eea1';
 
 export const COMPOSITION_STUDY_VERSION = 'composition-study-v3';
 const WINDOW = .035, EPSILON = 1e-9, REFERENCE_GROUPS = 8, MAX_GROUPS = 16;

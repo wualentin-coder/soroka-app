@@ -49,13 +49,15 @@ export function createPostplayCoach({teacher,onUpdate=()=>{},onClose=()=>{},onCo
     });
   }
   function begin(patch){const epoch=stopWork();emit(patch);return epoch;}
-  function response(value){return combine(concise(value?.text),instruction(value));}
+  function response(value,creditNotice){return combine(concise(value?.text),instruction(value),creditNotice);}
   function instruction(value){
     return sentences(text(value?.text,1600)).find(value=>/^(сыграй|повтори|попробуй|дождись|готовь|сохраняй|держи|начни|уменьши|снизь|разбери|послушай|проверь|вернись|отпусти|найди)(?=\s|[,.!?;:]|$)/iu.test(value))||'';
   }
-  function combine(factual,addition){
-    if(!addition)return factual;
+  function combine(factual,addition,creditNotice){
     const first=sentences(factual)[0]||factual,extra=sentences(addition)[0];
+    const notice=sentences(text(creditNotice,200))[0];
+    if(notice)return first.toLowerCase()===notice.toLowerCase()?first:`${first} ${notice}`;
+    if(!addition)return factual;
     return extra&&!sentences(factual).some(value=>value.toLowerCase()===extra.toLowerCase())?`${first} ${extra}`:factual;
   }
   async function speak(epoch){
@@ -64,7 +66,12 @@ export function createPostplayCoach({teacher,onUpdate=()=>{},onClose=()=>{},onCo
     if(!enabled){emit({state:'idle',status:'Совет на экране.',recording:false});return active(epoch);}
     emit({state:'speaking',status:'Преподаватель говорит…',recording:false});
     if(!active(epoch))return false;
-    const result=await wait(()=>teacher.speak(`${view.advice}${view.question?' '+view.question:''}`),9000,epoch);
+    const utterance=`${view.advice}${view.question?' '+view.question:''}`;
+    // The teacher bounds voice lookup, status and speech preparation separately.
+    // Allow those phases plus conservative Russian reading time before the
+    // overall watchdog; explicit actions still cancel immediately.
+    const speechBudget=Math.min(60000,35000+utterance.length*120);
+    const result=await wait(()=>teacher.speak(utterance),speechBudget,epoch);
     if(!active(epoch))return false;
     const success=result.kind==='ok'&&result.value===true;
     emit({state:'idle',status:success?'': 'Голос недоступен. Совет на экране.',recording:false});
@@ -84,7 +91,7 @@ export function createPostplayCoach({teacher,onUpdate=()=>{},onClose=()=>{},onCo
       const result=await wait(()=>teacher.review({lesson,report}),2500,epoch);
       if(!active(epoch))return false;
       const addition=result.kind==='ok'?instruction(result.value):'';
-      emit({advice:combine(advice,addition),status:addition?'':'Короткий разбор на экране.'});
+      emit({advice:combine(advice,addition,feedback.creditNotice),status:addition?'':'Короткий разбор на экране.'});
     }
     if(!await speak(epoch)||!active(epoch))return false;
     if(automatic){await readingTime;if(!active(epoch))return false;return continueAction();}
@@ -108,9 +115,9 @@ export function createPostplayCoach({teacher,onUpdate=()=>{},onClose=()=>{},onCo
     if(!active(epoch))return false;
     const result=saved.feedback?.valid===true?await wait(()=>teacher.review({lesson:saved.lesson,report:saved.report},{question,previousResponse:previous}),2500,epoch):{kind:'unavailable'};
     if(!active(epoch))return false;
-    const answer=result.kind==='ok'?response(result.value):'';
+    const answer=result.kind==='ok'?response(result.value,saved.feedback?.creditNotice):'';
     const fallback=explanation?'Повтори только короткий участок медленнее. Затем вернись к целой фразе.':saved.feedback.text;
-    emit({advice:answer||concise(fallback)||previous,state:answer?'idle':'error',status:answer?'':'Ответ недоступен. Можно повторить или продолжить.',recording:false});
+    emit({advice:combine(answer||concise(fallback)||previous,'',saved.feedback?.creditNotice),state:answer?'idle':'error',status:answer?'':'Ответ недоступен. Можно повторить или продолжить.',recording:false});
     return speak(epoch);
   }
   function explain(){return reply('Объясни проще: как повторить этот участок, опираясь только на измеренный результат.',{explanation:true});}
