@@ -1,5 +1,5 @@
-import { PracticeSession } from './session.mjs?v=902d86820b77';
-import { PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=902d86820b77';
+import { PracticeSession } from './session.mjs?v=e55349755070';
+import { INTRODUCTORY_LESSONS, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=e55349755070';
 
 export const MASTERY_METRIC = 'first-attempt-v1';
 export const COURSE_PROGRESS_VERSION = 1;
@@ -196,7 +196,7 @@ export const COURSE_METHOD_SOURCES = [
 
 const LEGACY_COURSE_MODULES = [
   { id: 'orientation', title: 'Ориентиры на клавиатуре', description: 'Найди первые клавиши и сыграй музыкальный ответ.',
-    lessonIds: ['course-do','course-do-re','course-do-re-mi','course-fa','course-first-answer'] },
+    lessonIds: ['course-first-key','course-first-melody','course-do','course-do-re','course-do-re-mi','course-fa','course-first-answer'] },
   { id: 'five-notes', title: 'Пять нот — много музыки', description: 'Шаги, повторы и скачки в удобной позиции руки.',
     lessonIds: ['course-five','course-repeats','course-steps','course-skips','course-five-checkpoint'] },
   { id: 'phrases', title: 'От рисунка к мелодии', description: 'Разучивай небольшими частями и соединяй в целое.',
@@ -216,7 +216,7 @@ const LEGACY_COURSE_MODULES = [
 const curriculumModules = new Map([...LEGACY_COURSE_MODULES, ...PRACTICAL_MODULES].map(module => [module.id, module]));
 export const COURSE_MODULES = ['orientation','pulse-and-space','five-notes','listen-and-remember','phrases','left-hand',
   'hands-dialogue','hands-together','keyboard-range','black-keys','simple-accompaniment','to-compositions'].map(id => curriculumModules.get(id));
-const byId = new Map([...FOUNDATION_LESSONS, ...MORE_LESSONS, ...PRACTICAL_LESSONS].map(lesson => [lesson.id, lesson]));
+const byId = new Map([...INTRODUCTORY_LESSONS, ...FOUNDATION_LESSONS, ...MORE_LESSONS, ...PRACTICAL_LESSONS].map(lesson => [lesson.id, lesson]));
 export const COURSE = COURSE_MODULES.flatMap((module, moduleIndex) => module.lessonIds.map((id, lessonIndex) => {
   const lesson = byId.get(id);
   if (!lesson) throw new Error(`Missing course lesson: ${id}`);
