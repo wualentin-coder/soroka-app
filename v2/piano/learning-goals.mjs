@@ -1,5 +1,5 @@
-import {evaluateLearningGoal,SKILLS} from './learning-path.mjs?v=46c6017f0462';
-import {CURATED_SONG_GOALS} from './curriculum-data.mjs?v=46c6017f0462';
+import {evaluateLearningGoal,SKILLS} from './learning-path.mjs?v=e22f21ea3ada';
+import {CURATED_SONG_GOALS} from './curriculum-data.mjs?v=e22f21ea3ada';
 
 /** A catalogue aid for starting a guided opening, not a full-song assessment. */
 export function getLearningGoal(compositionOrId,progress,{date,input='mic',hand='right'}={}){
