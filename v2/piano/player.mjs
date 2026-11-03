@@ -1,33 +1,33 @@
-import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=5e0e64f24530';
-import { LESSONS, PracticeSession } from './session.mjs?v=5e0e64f24530';
-import { NoteGate } from './note-gate.mjs?v=5e0e64f24530';
-import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=5e0e64f24530';
-import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=5e0e64f24530';
-import { createTeacher } from './teacher.mjs?v=5e0e64f24530';
-import { createScoreTimeline } from './score.mjs?v=5e0e64f24530';
-import { FollowTransport } from './transport.mjs?v=5e0e64f24530';
-import { ChordSession } from './chord-session.mjs?v=5e0e64f24530';
-import { createArrangement } from './arrangement.mjs?v=5e0e64f24530';
-import { createAccompanimentPlayer } from './accompaniment.mjs?v=5e0e64f24530';
-import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=5e0e64f24530';
-import { createMidiInput } from './midi-input.mjs?v=5e0e64f24530';
-import { EarlyInputBuffer } from './early-input.mjs?v=5e0e64f24530';
-import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=5e0e64f24530';
-import { createKeyboardRange } from './keyboard-range.mjs?v=5e0e64f24530';
-import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=5e0e64f24530';
-import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=5e0e64f24530';
-import { createLessonPresenter } from './lesson-presenter.mjs?v=5e0e64f24530';
-import { drawNotation } from './notation.mjs?v=5e0e64f24530';
-import { chooseNativeRoute } from './native-route.mjs?v=5e0e64f24530';
-import { getFingerHint } from './fingering.mjs?v=5e0e64f24530';
-import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=5e0e64f24530';
-import { TimedSession } from './timed-session.mjs?v=5e0e64f24530';
-import { chooseFlowOutcome } from './flow-progression.mjs?v=5e0e64f24530';
-import { chooseTimingAdvice } from './timing-feedback.mjs?v=5e0e64f24530';
-import { practicePolicy } from './practice-policy.mjs?v=5e0e64f24530';
-import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=5e0e64f24530';
-import { createCoachFeedback } from './coach-feedback.mjs?v=5e0e64f24530';
-import { createPostplayCoach } from './postplay-coach.mjs?v=5e0e64f24530';
+import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=c0bae9cc0270';
+import { LESSONS, PracticeSession } from './session.mjs?v=c0bae9cc0270';
+import { NoteGate } from './note-gate.mjs?v=c0bae9cc0270';
+import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=c0bae9cc0270';
+import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=c0bae9cc0270';
+import { createTeacher } from './teacher.mjs?v=c0bae9cc0270';
+import { createScoreTimeline } from './score.mjs?v=c0bae9cc0270';
+import { FollowTransport } from './transport.mjs?v=c0bae9cc0270';
+import { ChordSession } from './chord-session.mjs?v=c0bae9cc0270';
+import { createArrangement } from './arrangement.mjs?v=c0bae9cc0270';
+import { createAccompanimentPlayer } from './accompaniment.mjs?v=c0bae9cc0270';
+import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=c0bae9cc0270';
+import { createMidiInput } from './midi-input.mjs?v=c0bae9cc0270';
+import { EarlyInputBuffer } from './early-input.mjs?v=c0bae9cc0270';
+import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=c0bae9cc0270';
+import { createKeyboardRange } from './keyboard-range.mjs?v=c0bae9cc0270';
+import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=c0bae9cc0270';
+import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=c0bae9cc0270';
+import { createLessonPresenter } from './lesson-presenter.mjs?v=c0bae9cc0270';
+import { drawNotation } from './notation.mjs?v=c0bae9cc0270';
+import { chooseNativeRoute } from './native-route.mjs?v=c0bae9cc0270';
+import { getFingerHint } from './fingering.mjs?v=c0bae9cc0270';
+import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=c0bae9cc0270';
+import { TimedSession } from './timed-session.mjs?v=c0bae9cc0270';
+import { chooseFlowOutcome } from './flow-progression.mjs?v=c0bae9cc0270';
+import { chooseTimingAdvice } from './timing-feedback.mjs?v=c0bae9cc0270';
+import { practicePolicy } from './practice-policy.mjs?v=c0bae9cc0270';
+import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=c0bae9cc0270';
+import { createCoachFeedback } from './coach-feedback.mjs?v=c0bae9cc0270';
+import { createPostplayCoach } from './postplay-coach.mjs?v=c0bae9cc0270';
 
 export function mountPianoPlayer(root, options = {}) {
 const mountAbort=new AbortController();let embeddedActive=false,taskHelpSticky=false,homeSettings=false;
@@ -50,6 +50,7 @@ function readStorage() {
       cropKeys:v.cropKeys!==false,notation:['falling','staff','both'].includes(v.notation)?v.notation:'falling',intros:v.intros!==false,metronome:typeof v.metronome==='boolean'?v.metronome:true,
       accompaniment:v.accompaniment!==false,backingVolume:Number.isFinite(v.backingVolume)?clamp(v.backingVolume,0,.8):.25,input:v.input==='midi'?'midi':'mic',
       lesson:LESSONS.some(l=>l.id===v.lesson) ? v.lesson : 'joy',
+      resetAt:Number.isSafeInteger(v.resetAt)&&v.resetAt>=0&&v.resetAt<=8640000000000000?v.resetAt:0,
       courseProgress:normalizeCourseProgress(v.courseProgress),
       compositionProgress:v.compositionProgress && typeof v.compositionProgress==='object' ? v.compositionProgress : {},
       studyProgress:v.studyProgress && typeof v.studyProgress==='object' && !Array.isArray(v.studyProgress) ? v.studyProgress : {},
@@ -400,9 +401,9 @@ function renderPractice() {
   $('#lesson-progress').style.width='100%';$('#lesson-progress').style.transform=`scaleX(${percent/100})`;
   $('.progress-track').setAttribute('aria-valuenow',Math.round(percent));
   $('#target-note').innerHTML=info ? `${expectedNotes().map(m=>noteInfo(m).name).join(' + ')}<span>${info.latin}</span>` : s?.earlyAbort?'Повторим':'Готово';
-  const stage=state.phase==='coaching'?'Преподаватель объясняет':state.phase==='permission' ? 'Разреши доступ к микрофону' : state.phase==='calibrating' ? 'Секунда тишины — слушаю фон' : state.phase==='countdown' ? `Приготовься: ${state.countdown}` : state.preview ? 'Слушай пример' : s?.finished ? 'Мелодия пройдена' : state.running ? state.source==='demo' ? 'Демо на экранной клавиатуре' : 'Сыграй на синтезаторе' : s ? 'Практика на паузе' : 'Нажми ▶, чтобы начать';
+  const stage=state.phase==='coaching'?'Преподаватель объясняет':state.phase==='permission' ? 'Разреши доступ к микрофону' : state.phase==='calibrating' ? 'Секунда тишины — слушаю фон' : state.phase==='countdown' ? `Приготовься: ${state.countdown}` : state.preview ? 'Слушай пример' : s?.finished ? 'Попытка завершена' : state.running ? state.source==='demo' ? 'Демо на экранной клавиатуре' : 'Сыграй на синтезаторе' : s ? 'Практика на паузе' : 'Нажми ▶, чтобы начать';
   $('#stage-state').textContent=state.feedbackUntil>now()?state.feedbackMessage:stage;
-  $('#score').setAttribute('aria-label',info ? `Дорожка нот. Следующая нота — ${info.name}, ${info.latin}.` : s?.earlyAbort?'Попытка завершена после серии ошибок.':'Все ноты мелодии пройдены.');
+  $('#score').setAttribute('aria-label',info ? `Дорожка нот. Следующая нота — ${info.name}, ${info.latin}.` : s?.earlyAbort?'Попытка завершена после серии ошибок.':'Попытка завершена.');
   if(memory)$('#score').setAttribute('aria-label','Игра без показа ответа.');
   const busy=['permission','calibrating','countdown','coaching','intro'].includes(state.phase);
   $('.practice-panel').classList.toggle('introducing',!!state.intro);$('#intro-caption').hidden=!state.intro;

@@ -1,7 +1,7 @@
 /* Native Flow navigation; the audio/score engine lives outside render(). */
 (() => {
   const base=new URL('./piano/',document.currentScript.src);
-  const revision='5e0e64f24530';
+  const revision='c0bae9cc0270';
   const state={tab:'today',module:null,index:0,busy:false,error:'',sync:'loading',profile:null,snapshot:{},library:[],daily:null,readyDate:'',player:null,engine:null,deck:null,screen:null,request:0,saveTimer:0,saveBusy:false,dirty:false,serverRevision:0,loaded:false};
   let modulePromise=null,apiModule=null,loadPromise=null,deckObserver=null;
   const publicStudyPlans=new Map();
@@ -25,10 +25,27 @@
   async function modules(){if(!modulePromise)modulePromise=import(new URL(`native.mjs?v=${revision}`,base).href).then(m=>apiModule=m);return modulePromise;}
   function addLibrary(items){state.library=[...state.library,...items].filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i);}
   async function restoreLibrary(){addLibrary(await apiModule.listCachedCompositions(state.profile));}
+  function applyLocalReset(m){
+    const at=window.flowPianoResetAt;
+    if(!Number.isSafeInteger(at)||at<=0||at>8640000000000000)return;
+    const keys=Object.keys(localStorage).filter(name=>name.startsWith('flow-piano-profile:')||name==='flow-piano-flow-v1');
+    if(!keys.length)keys.push('flow-piano-profile:local');
+    for(const name of keys){
+      const raw=localStorage.getItem(name);let previous;
+      try{previous=JSON.parse(raw||'{}');}catch{continue;}
+      if((previous?.resetAt||0)>=at)continue;
+      const backup='flow-piano-reset-backup:'+at+':'+name;
+      if(raw&&!localStorage.getItem(backup))localStorage.setItem(backup,raw);
+      const reset=m.resetPianoProgress(previous,{at});
+      if(name.startsWith('flow-piano-profile:')&&!name.endsWith(':player'))reset._sync={dirty:false,revision:previous?._sync?.revision||0};
+      localStorage.setItem(name,JSON.stringify(reset));
+    }
+  }
   async function load(){
     if(loadPromise)return loadPromise;
     loadPromise=(async()=>{
       const m=await modules();
+      applyLocalReset(m);
       try{state.profile=localStorage.getItem('flow-piano-active-profile')||null;if(state.profile==='local')state.profile=null;const cached=JSON.parse(localStorage.getItem(key())||'{}');state.dirty=cached._sync?.dirty===true;state.snapshot=m.normalizePianoState(cached);}catch{state.snapshot=m.normalizePianoState({});}
       state.library=m.COMPOSITIONS.map(c=>({id:c.id,title:c.title,author:c.author,source:c.source}));
       try{

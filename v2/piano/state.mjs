@@ -1,8 +1,10 @@
-import {normalizeCourseProgress} from './course.mjs?v=5e0e64f24530';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=5e0e64f24530';
+import {normalizeCourseProgress} from './course.mjs?v=c0bae9cc0270';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=c0bae9cc0270';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;
+const MAX_TIMESTAMP=8640000000000000;
+const resetEpoch=v=>Number.isSafeInteger(v)&&v>=0&&v<=MAX_TIMESTAMP?v:0;
 const copy=v=>JSON.parse(JSON.stringify(v));
 const maps=['compositionProgress','studyProgress','flowProgress'];
 const text=(v,max=200)=>typeof v==='string'?v.slice(0,max):null;
@@ -46,15 +48,33 @@ function progressMap(value,name){const out={};for(const [id,raw]of Object.entrie
 function historyRows(value){return(Array.isArray(value)?value:[]).filter(h=>h&&Number.isFinite(h.at)&&typeof h.lesson==='string').map(h=>({at:finite(h.at),lesson:text(h.lesson),title:text(h.title,200)||text(h.lesson),correct:range(h.correct,5000),accuracy:range(h.accuracy,100),seconds:range(h.seconds,86400),kind:text(h.kind,40)||'learn',metric:text(h.metric,80)||'first-attempt-v1',...(Number.isFinite(h.score)?{score:range(h.score,10)}:{})})).sort((a,b)=>b.at-a.at||JSON.stringify(a).localeCompare(JSON.stringify(b))).slice(0,50);}
 function dailyRun(value){const v=object(value),out={assistance:{}};if(typeof v.readyDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v.readyDate))out.readyDate=v.readyDate;for(const [id,raw]of Object.entries(object(v.assistance)).slice(-128)){if(id.length>240)continue;const row=object(raw);out.assistance[id]={helpedAt:finite(row.helpedAt),consumedAt:finite(row.consumedAt)};}return out;}
 export function normalizePianoState(value){
-  const v=object(value),out={...object(v.preferences),...v,version:1,updatedAt:finite(v.updatedAt),courseProgress:normalizeCourseProgress(v.courseProgress)};
+  const v=object(value),out={...object(v.preferences),...v,version:1,updatedAt:finite(v.updatedAt),resetAt:resetEpoch(v.resetAt),courseProgress:normalizeCourseProgress(v.courseProgress)};
   out.learningProgress=normalizeLearningProgress(v.learningProgress,v.learningProgress?{}:{courseProgress:out.courseProgress});
   for(const name of maps)out[name]=progressMap(v[name],name);
   out.history=historyRows(v.history);out.dailyRun=dailyRun(v.dailyRun);
   return out;
 }
+/** A new progress epoch clears achievements, never preferences or MIDI storage. */
+export function resetPianoProgress(value,{at=Date.now()}={}){
+  if(!Number.isSafeInteger(at)||at<=0||at>MAX_TIMESTAMP)throw new RangeError('Progress reset needs a positive timestamp.');
+  const current=normalizePianoState(value),resetAt=Math.max(at,current.resetAt+1);
+  if(resetAt>MAX_TIMESTAMP)throw new RangeError('Progress reset timestamp is exhausted.');
+  return normalizePianoState({...current,resetAt,updatedAt:Math.max(current.updatedAt,resetAt),lesson:'joy',
+    courseProgress:normalizeCourseProgress(null),learningProgress:normalizeLearningProgress(null),
+    compositionProgress:{},studyProgress:{},flowProgress:{},history:[],pendingFlow:null,dailyRun:{}});
+}
 export function mergePianoState(a,b){
   a=normalizePianoState(a);b=normalizePianoState(b);
   const latest=prefer(a,b,a.updatedAt,b.updatedAt),out={...a,...b,...latest};
+  if(a.resetAt!==b.resetAt){
+    // A stale device may have a later ordinary edit time. Its preferences can
+    // win, but its old achievements must never re-enter the reset epoch.
+    const current=a.resetAt>b.resetAt?a:b;
+    for(const name of ['courseProgress','learningProgress',...maps,'history','pendingFlow','dailyRun'])out[name]=current[name];
+    out.lesson=typeof current.lesson==='string'?current.lesson:'joy';out.resetAt=current.resetAt;
+    out.updatedAt=Math.max(a.updatedAt,b.updatedAt);
+    return normalizePianoState(out);
+  }
   out.courseProgress=normalizeCourseProgress({version:1,metric:'first-attempt-v1',lessons:{...a.courseProgress.lessons,...b.courseProgress.lessons}});
   for(const id of new Set([...Object.keys(a.courseProgress.lessons),...Object.keys(b.courseProgress.lessons)])){
     const x=a.courseProgress.lessons[id],y=b.courseProgress.lessons[id];if(!x||!y)continue;
@@ -74,7 +94,7 @@ export function mergePianoState(a,b){
   return normalizePianoState(out);
 }
 export function toPianoProgress(value){
-  const v=normalizePianoState(value),out={version:1,updatedAt:v.updatedAt,courseProgress:v.courseProgress,learningProgress:v.learningProgress,history:v.history};
+  const v=normalizePianoState(value),out={version:1,updatedAt:v.updatedAt,resetAt:v.resetAt,courseProgress:v.courseProgress,learningProgress:v.learningProgress,history:v.history};
   for(const name of maps)out[name]=v[name];out.pendingFlow=null;
   if(v.pendingFlow&&typeof v.pendingFlow==='object'){const row=v.pendingFlow;out.pendingFlow={courseId:text(row.courseId),compositionId:text(row.compositionId),stageId:text(row.stageId),...(text(row.studyVersion,300)?{studyVersion:text(row.studyVersion,300)}:{}),polish:row.polish===true,goalReached:row.goalReached===true};}
   out.dailyRun=v.dailyRun;
