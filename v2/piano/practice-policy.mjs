@@ -1,6 +1,6 @@
 // Preparation is a short UI cue, independent of the learner's musical tempo.
 export function practicePolicy({lesson={},mode='learn',source='midi',retry=false,timeline=[]}={}){
-  const beginner=['orientation','pulse-and-space','five-notes'].includes(lesson.moduleId);
+  const beginner=['orientation','first-music','pulse-and-space','five-notes'].includes(lesson.moduleId)||['joy-beginner','star-beginner'].includes(lesson.compositionId);
   const times=[...new Set(timeline.map(n=>n.time).filter(Number.isFinite))].sort((a,b)=>a-b);
   const gaps=times.slice(1).map((time,index)=>time-times[index]).filter(gap=>gap>.035);
   const gap=gaps.length?Math.min(...gaps):Infinity;
