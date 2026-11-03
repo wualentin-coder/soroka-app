@@ -1,5 +1,5 @@
-import { COURSE, normalizeCourseProgress } from './course.mjs?v=e55349755070';
-import { CURRICULUM_SKILLS } from './curriculum-data.mjs?v=e55349755070';
+import { COURSE, normalizeCourseProgress } from './course.mjs?v=46c6017f0462';
+import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=46c6017f0462';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],
@@ -96,8 +96,7 @@ function criterionReached(lesson, entry) {
   if (['echo','recall'].includes(lesson.practiceKind)) return entry.recallBest >= 8;
   return entry.readingBest >= 8 && (!lesson.requiresMidiForAssessment || entry.readingMidi);
 }
-const checkpointChoices = skill => skill.id === 'keyboard-landmarks' ?
-  [skill.checkpointIds, ['course-first-melody']] : [skill.checkpointIds];
+const checkpointChoices = skill => [skill.checkpointIds, ...(CURRICULUM_CHECKPOINT_ALTERNATIVES[skill.id] || [])];
 const checkpointsReached = (skill, progress, predicate) => checkpointChoices(skill).some(ids =>
   ids.every(id => predicate(PATH_LESSONS.get(id), progress.lessons[id])));
 function readySkills(progress) {
@@ -108,6 +107,36 @@ function coveredSkills(progress) {
   return new Set(SKILLS.filter(skill => checkpointsReached(skill, progress, (_lesson, entry) => coveredLesson(entry))).map(skill => skill.id));
 }
 const hasIndependent = entry => entry && (entry.readingBest >= 8 || entry.recallBest >= 8 || entry.timedBest >= 80);
+
+function lessonReady(lesson,progress,ready=readySkills(progress)) {
+  return criterionReached(lesson,progress.lessons[lesson.id]) ||
+    (lesson.id==='course-first-melody' || lesson.moduleId==='first-music') && lesson.skillIds.every(id=>ready.has(id));
+}
+function prerequisitesMet(lesson,progress,covered,ready) {
+  return lesson.prerequisites.every(id=>covered.has(id)) && (lesson.lessonPrerequisiteIds || []).every(id=>{
+    const prerequisite=PATH_LESSONS.get(id);return prerequisite && lessonReady(prerequisite,progress,ready);
+  });
+}
+
+/** Bounded catalogue preparation; this never derives skill from a title or MIDI. */
+export function evaluateLearningGoal(saved,{compositionId,hand='right',date}={}) {
+  const progress=normalizeLearningProgress(saved),spec=Object.hasOwn(CURATED_SONG_GOALS,compositionId)?CURATED_SONG_GOALS[compositionId]:null;
+  const availableHands=spec?.availableHands || ['right','left','both'];
+  if(!spec || !['right','left','both'].includes(hand) || !availableHands.includes(hand))return {known:false,requiredSkillIds:[],missingSkillIds:[],recommendedLessonIds:[],ready:false};
+  const ready=readySkills(progress),covered=coveredSkills(progress),requiredSkillIds=[...new Set(spec[hand])],missingSkillIds=requiredSkillIds.filter(id=>!ready.has(id));
+  const needed=new Set();
+  const include=id=>{if(ready.has(id)||needed.has(id))return;for(const prerequisite of SKILLS.find(skill=>skill.id===id)?.prerequisites || [])include(prerequisite);needed.add(id);};
+  missingSkillIds.forEach(include);
+  const recommendedLessonIds=[];
+  for(const skillId of needed){
+    const candidates=COURSE.filter(lesson=>lesson.skillIds.includes(skillId)&&!lessonReady(lesson,progress,ready)&&prerequisitesMet(lesson,progress,covered,ready));
+    const firstKeyNeeded=skillId==='keyboard-landmarks'&&!(progress.lessons['course-first-key']?.readingBest>=8||progress.lessons['course-do']?.readingBest>=8);
+    const preferred=(firstKeyNeeded&&candidates.find(lesson=>lesson.id==='course-first-key')) || candidates.find(lesson=>lesson.moduleId==='first-music') || candidates.find(lesson=>lesson.id==='course-first-melody') || candidates[0];
+    if(preferred&&!recommendedLessonIds.includes(preferred.id))recommendedLessonIds.push(preferred.id);
+    if(recommendedLessonIds.length>=4)break;
+  }
+  return {known:true,requiredSkillIds,missingSkillIds,recommendedLessonIds,ready:missingSkillIds.length===0};
+}
 
 export function skillState(progress, id, { date } = {}) {
   const skill = SKILLS.find(item => item.id === id); if (!skill) return null;
@@ -140,6 +169,7 @@ function taskFor(lesson, kind, date, minutes, input, role = kind) {
     requiredMetric: rhythm ? 'timed-notes-v1' : 'first-attempt-v1', passPercent: 80,
     evidenceKind: rhythm ? 'timed' : memory ? 'recall' : 'reading',
     requiresMidiForAssessment: lesson.requiresMidiForAssessment === true,
+    ...(kind==='reading'&&typeof lesson.notationGuide==='string'?{notationGuide:lesson.notationGuide}:{}),
     ...(kind === 'new' && lesson.learningRoute === 'guided-check' ? { learningRoute: 'guided-check', optionalFlow: true } : {}),
     ...(rhythm && role === 'new' ? { guidedPresentation: { target: true, names: true, staff: false, falling: true, preview: true, pulse: true } } : {}),
     notice: lesson.requiresMidiForAssessment && input !== 'midi' ? 'Через микрофон это тренировка. Независимая проверка двух звуков — с MIDI.' : '',
@@ -161,12 +191,14 @@ export function createPracticeTask(lessonId,{date,input='mic',progress}={}){
 }
 
 /** A small queue: due retrieval, one new idea, rhythm, then music of the user's choice. */
-export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song = null, courseProgress } = {}) {
-  const progress = normalizeLearningProgress(saved, { courseProgress }), today = todayFor(date), covered = coveredSkills(progress);
+export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song = null, goal = null, courseProgress } = {}) {
+  const progress = normalizeLearningProgress(saved, { courseProgress }), today = todayFor(date), covered = coveredSkills(progress), ready=readySkills(progress);
   const budget = Number.isFinite(minutes) ? clamp(Math.round(minutes), 5, 20) : 15, tasks = [];
   const completed = progress.days[today]?.completed || [], frozen = progress.days[today]?.selection;
   if (frozen) return finishDailyPlan(frozen.tasks.map(item => item.kind === 'song' ? { ...item, id: `${today}:song:${item.songId || 'choice'}`, date: today, skillIds: [] } :
     taskFor(PATH_LESSONS.get(item.lessonId), item.kind, today, item.minutes, input,item.role)), today, frozen.tasks.reduce((sum, task) => sum + task.minutes, 0), completed);
+  const goalEvidence=goal && goal.status!=='unknown' ? evaluateLearningGoal(progress,{compositionId:goal.compositionId,hand:goal.hand||'right',date:today}) : null;
+  const suggestedSong=song?.id && (!goal || goalEvidence?.known&&goalEvidence.ready) ? song : null;
   const firstKey = progress.lessons['course-first-key'], firstMelody = progress.lessons['course-first-melody'];
   const firstMelodyReady = firstMelody?.readingBest >= 8;
   const olderLandmarksReady = ['course-do-re-mi','course-fa','course-first-answer'].some(id => progress.lessons[id]?.readingBest >= 8);
@@ -177,31 +209,42 @@ export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song
     const melody = taskFor(PATH_LESSONS.get('course-first-melody'),'new',today,Math.min(4,budget-tasks.reduce((sum, task) => sum+task.minutes,0)),input,'new');
     if (tasks.length) melody.afterTaskId = tasks[0].id;
     tasks.push(melody);
-    if (song?.id && budget >= 10) tasks.push({ id: `${today}:song:${String(song.id).slice(0,80)}`, date: today, kind: 'song',
-      songId: String(song.id).slice(0,80), title: `Моя музыка: ${String(song.title || 'выбранная композиция').slice(0,100)}`,
+    if (suggestedSong && budget >= 10) tasks.push({ id: `${today}:song:${String(suggestedSong.id).slice(0,80)}`, date: today, kind: 'song',
+      songId: String(suggestedSong.id).slice(0,80), title: `Моя музыка: ${String(suggestedSong.title || 'выбранная композиция').slice(0,100)}`,
       minutes: Math.max(1,budget-tasks.reduce((sum, task) => sum+task.minutes,0)), skillIds: [], role: 'song',
       instruction: 'Попробуй маленький кусок выбранной музыки. Можно закончить занятие после первой мелодии и вернуться к композиции позже.' });
     return finishDailyPlan(tasks,today,tasks.reduce((sum, task) => sum+task.minutes,0),completed);
   }
-  const supersededByIntro = lesson => lesson.learningRoute === 'guided-check' && (firstMelodyReady || olderLandmarksReady) ||
-    firstMelodyReady && ['course-do','course-do-re','course-do-re-mi'].includes(lesson.id);
+  const supersededByIntro = lesson => ['course-first-key','course-first-melody'].includes(lesson.id) && (firstMelodyReady || olderLandmarksReady) ||
+    firstMelodyReady && ['course-do','course-do-re','course-do-re-mi'].includes(lesson.id) ||
+    progress.lessons['course-music-step']?.readingBest>=8 && ['course-fa','course-first-answer','course-five','course-repeats','course-steps','course-skips','course-five-checkpoint'].includes(lesson.id) ||
+    progress.lessons['course-music-pulse']?.timedBest>=80 && ['course-pulse-even','course-pulse-two-counts','course-pulse-long-short'].includes(lesson.id) ||
+    progress.lessons['course-music-space']?.timedBest>=80 && lesson.id==='course-pulse-one-rest';
   const due = COURSE.filter(lesson => hasIndependent(progress.lessons[lesson.id]) && progress.lessons[lesson.id].nextReviewDate <= today &&
     progress.lessons[lesson.id].nextReviewDate && !(lesson.id === 'course-first-key' && firstMelodyReady) && (!lesson.requiresMidiForAssessment || input === 'midi'))
     .sort((a,b) => progress.lessons[a.id].nextReviewDate.localeCompare(progress.lessons[b.id].nextReviewDate));
   const add = (lesson, kind, length, role = kind) => { const task = taskFor(lesson, kind, today, length, input,role); if (!tasks.some(item => item.id === task.id)) tasks.push(task); };
   for (const lesson of due.slice(0, budget >= 12 ? 2 : 1)) add(lesson, lesson.practiceKind === 'rhythm' ? 'rhythm' : 'recall', 2, 'review');
-  const unlocked = COURSE.filter(lesson => !supersededByIntro(lesson) && lesson.prerequisites.every(id => covered.has(id)));
-  const candidate = unlocked.find(lesson => !coveredLesson(progress.lessons[lesson.id]) && (!lesson.requiresMidiForAssessment || input === 'midi')) ||
+  const unlocked = COURSE.filter(lesson => !supersededByIntro(lesson) && prerequisitesMet(lesson,progress,covered,ready));
+  const musicalCandidate=MUSICAL_LESSONS.map(lesson=>PATH_LESSONS.get(lesson.id)).find(lesson=>unlocked.includes(lesson)&&!lessonReady(lesson,progress,ready));
+  const goalCandidate=goalEvidence?.recommendedLessonIds.map(id=>PATH_LESSONS.get(id)).find(lesson=>unlocked.includes(lesson)&&!lessonReady(lesson,progress,ready));
+  const candidate = musicalCandidate || goalCandidate || unlocked.find(lesson => !coveredLesson(progress.lessons[lesson.id]) && (!lesson.requiresMidiForAssessment || input === 'midi')) ||
     unlocked.find(lesson => !coveredLesson(progress.lessons[lesson.id]));
   if (candidate) add(candidate, candidate.practiceKind === 'reading' ? 'reading' : ['echo','recall'].includes(candidate.practiceKind) ? 'recall' : candidate.practiceKind === 'rhythm' ? 'rhythm' : 'new', budget >= 10 ? 5 : 2, 'new');
+  if(musicalCandidate){
+    if(suggestedSong&&budget>=10)tasks.push({id:`${today}:song:${String(suggestedSong.id).slice(0,80)}`,date:today,kind:'song',songId:String(suggestedSong.id).slice(0,80),
+      title:`Моя музыка: ${String(suggestedSong.title||'выбранная композиция').slice(0,100)}`,minutes:Math.max(1,budget-tasks.reduce((sum,task)=>sum+task.minutes,0)),skillIds:[],role:'song',
+      instruction:'Попробуй небольшой знакомый кусок выбранной песни. Это практика фрагмента, а не зачёт всей композиции.'});
+    return finishDailyPlan(tasks,today,tasks.reduce((sum,task)=>sum+task.minutes,0),completed);
+  }
   const rhythm = unlocked.find(lesson => lesson.practiceKind === 'rhythm' && !tasks.some(task => task.lessonId === lesson.id));
   if (rhythm && budget >= 10 && tasks.length < 4) add(rhythm, 'rhythm', 2);
   if (!tasks.some(task => task.kind === 'recall') && budget >= 10 && tasks.length < 4) {
     const memory = unlocked.find(lesson => hasIndependent(progress.lessons[lesson.id]) && !lesson.requiresMidiForAssessment) || candidate;
     if (memory) { add(memory, 'recall', 2); if (!hasIndependent(progress.lessons[memory.id])) tasks.at(-1).afterTaskId = tasks.find(task => task.lessonId === memory.id && task.kind !== 'recall')?.id; }
   }
-  tasks.push({ id: `${today}:song:${String(song?.id || 'choice').slice(0,80)}`, date: today, kind: 'song',
-    songId: typeof song?.id === 'string' ? song.id.slice(0, 80) : null, title: song?.title ? `Моя музыка: ${String(song.title).slice(0,100)}` : 'Сыграй любимый кусочек',
+  if(!goal||suggestedSong)tasks.push({ id: `${today}:song:${String(suggestedSong?.id || 'choice').slice(0,80)}`, date: today, kind: 'song',
+    songId: typeof suggestedSong?.id === 'string' ? suggestedSong.id.slice(0, 80) : null, title: suggestedSong?.title ? `Моя музыка: ${String(suggestedSong.title).slice(0,100)}` : 'Сыграй любимый кусочек',
     minutes: Math.max(1, budget - tasks.reduce((sum, task) => sum + task.minutes, 0)), skillIds: [], role: 'song',
     instruction: 'Разучи небольшой знакомый кусок: правая, левая, вместе. Можно просто поиграть для себя — это не экзамен.' });
   while (tasks.length > 1 && tasks.reduce((sum, task) => sum + task.minutes, 0) > budget) {
