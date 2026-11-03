@@ -1,5 +1,5 @@
-import { COURSE, normalizeCourseProgress } from './course.mjs?v=902d86820b77';
-import { CURRICULUM_SKILLS } from './curriculum-data.mjs?v=902d86820b77';
+import { COURSE, normalizeCourseProgress } from './course.mjs?v=e55349755070';
+import { CURRICULUM_SKILLS } from './curriculum-data.mjs?v=e55349755070';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],
@@ -96,12 +96,16 @@ function criterionReached(lesson, entry) {
   if (['echo','recall'].includes(lesson.practiceKind)) return entry.recallBest >= 8;
   return entry.readingBest >= 8 && (!lesson.requiresMidiForAssessment || entry.readingMidi);
 }
+const checkpointChoices = skill => skill.id === 'keyboard-landmarks' ?
+  [skill.checkpointIds, ['course-first-melody']] : [skill.checkpointIds];
+const checkpointsReached = (skill, progress, predicate) => checkpointChoices(skill).some(ids =>
+  ids.every(id => predicate(PATH_LESSONS.get(id), progress.lessons[id])));
 function readySkills(progress) {
-  return new Set(SKILLS.filter(skill => skill.checkpointIds.every(id => criterionReached(PATH_LESSONS.get(id), progress.lessons[id]))).map(skill => skill.id));
+  return new Set(SKILLS.filter(skill => checkpointsReached(skill, progress, criterionReached)).map(skill => skill.id));
 }
 const coveredLesson = entry => entry && (entry.coverageBest >= 8 || entry.timedCoverageBest >= 80 || entry.readingBest >= 8 || entry.recallBest >= 8 || entry.timedBest >= 80);
 function coveredSkills(progress) {
-  return new Set(SKILLS.filter(skill => skill.checkpointIds.every(id => coveredLesson(progress.lessons[id]))).map(skill => skill.id));
+  return new Set(SKILLS.filter(skill => checkpointsReached(skill, progress, (_lesson, entry) => coveredLesson(entry))).map(skill => skill.id));
 }
 const hasIndependent = entry => entry && (entry.readingBest >= 8 || entry.recallBest >= 8 || entry.timedBest >= 80);
 
@@ -109,7 +113,7 @@ export function skillState(progress, id, { date } = {}) {
   const skill = SKILLS.find(item => item.id === id); if (!skill) return null;
   const normalized = normalizeLearningProgress(progress), ready = readySkills(normalized), covered = coveredSkills(normalized), today = todayFor(date);
   const entries = skill.lessonIds.map(lessonId => normalized.lessons[lessonId]).filter(Boolean);
-  const retained = ready.has(id) && skill.checkpointIds.every(lessonId => normalized.lessons[lessonId]?.reviewStep >= 3);
+  const retained = ready.has(id) && checkpointsReached(skill, normalized, (_lesson, entry) => entry?.reviewStep >= 3);
   return { id, title: skill.title, ready: ready.has(id), covered: covered.has(id), retained,
     status: retained ? 'retained' : ready.has(id) ? 'ready' : entries.some(hasIndependent) ? 'practicing' : entries.length ? 'introduced' : 'new',
     due: entries.some(entry => hasIndependent(entry) && entry.nextReviewDate && entry.nextReviewDate <= today),
@@ -132,10 +136,12 @@ function taskFor(lesson, kind, date, minutes, input, role = kind) {
     { target: false, names: false, staff: true, falling: false, preview: lesson.practiceKind !== 'reading' };
   return { id: `${date}:${kind}:${lesson.id}`, date, kind, role, lessonId: lesson.id, skillIds: [...lesson.skillIds],
     title: kind === 'recall' && role !== 'new' ? `Вспомни: ${lesson.title}` : lesson.title, minutes, notes: sampleNotes(lesson, kind), presentation,
-    displayPracticeKind: lesson.practiceKind, completion: kind === 'new' ? 'flow-60' : rhythm ? 'flow-80' : 'independent-80',
+    displayPracticeKind: lesson.practiceKind, completion: kind === 'new' && lesson.learningRoute !== 'guided-check' ? 'flow-60' : rhythm ? 'flow-80' : 'independent-80',
     requiredMetric: rhythm ? 'timed-notes-v1' : 'first-attempt-v1', passPercent: 80,
     evidenceKind: rhythm ? 'timed' : memory ? 'recall' : 'reading',
     requiresMidiForAssessment: lesson.requiresMidiForAssessment === true,
+    ...(kind === 'new' && lesson.learningRoute === 'guided-check' ? { learningRoute: 'guided-check', optionalFlow: true } : {}),
+    ...(rhythm && role === 'new' ? { guidedPresentation: { target: true, names: true, staff: false, falling: true, preview: true, pulse: true } } : {}),
     notice: lesson.requiresMidiForAssessment && input !== 'midi' ? 'Через микрофон это тренировка. Независимая проверка двух звуков — с MIDI.' : '',
     instruction: kind === 'recall' && role !== 'new' ? 'Вспомни короткий рисунок без показа. Если забыл, можно послушать помощь и потренироваться; память проверим в другой день.' : memory ?
       'Сначала короткий показ. Затем ноты и подписи исчезнут: повтори сам. Повторный показ считается помощью.' : lesson.instruction,
@@ -161,12 +167,30 @@ export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song
   const completed = progress.days[today]?.completed || [], frozen = progress.days[today]?.selection;
   if (frozen) return finishDailyPlan(frozen.tasks.map(item => item.kind === 'song' ? { ...item, id: `${today}:song:${item.songId || 'choice'}`, date: today, skillIds: [] } :
     taskFor(PATH_LESSONS.get(item.lessonId), item.kind, today, item.minutes, input,item.role)), today, frozen.tasks.reduce((sum, task) => sum + task.minutes, 0), completed);
+  const firstKey = progress.lessons['course-first-key'], firstMelody = progress.lessons['course-first-melody'];
+  const firstMelodyReady = firstMelody?.readingBest >= 8;
+  const olderLandmarksReady = ['course-do-re-mi','course-fa','course-first-answer'].some(id => progress.lessons[id]?.readingBest >= 8);
+  // A fresh learner gets a short, musical entry. Old frozen days and reports keep
+  // their exact exercise signatures; passing the new tune never invents old grades.
+  if (!firstMelodyReady && !olderLandmarksReady) {
+    if (!(firstKey?.readingBest >= 8 || progress.lessons['course-do']?.readingBest >= 8)) tasks.push(taskFor(PATH_LESSONS.get('course-first-key'),'new',today,2,input,'new'));
+    const melody = taskFor(PATH_LESSONS.get('course-first-melody'),'new',today,Math.min(4,budget-tasks.reduce((sum, task) => sum+task.minutes,0)),input,'new');
+    if (tasks.length) melody.afterTaskId = tasks[0].id;
+    tasks.push(melody);
+    if (song?.id && budget >= 10) tasks.push({ id: `${today}:song:${String(song.id).slice(0,80)}`, date: today, kind: 'song',
+      songId: String(song.id).slice(0,80), title: `Моя музыка: ${String(song.title || 'выбранная композиция').slice(0,100)}`,
+      minutes: Math.max(1,budget-tasks.reduce((sum, task) => sum+task.minutes,0)), skillIds: [], role: 'song',
+      instruction: 'Попробуй маленький кусок выбранной музыки. Можно закончить занятие после первой мелодии и вернуться к композиции позже.' });
+    return finishDailyPlan(tasks,today,tasks.reduce((sum, task) => sum+task.minutes,0),completed);
+  }
+  const supersededByIntro = lesson => lesson.learningRoute === 'guided-check' && (firstMelodyReady || olderLandmarksReady) ||
+    firstMelodyReady && ['course-do','course-do-re','course-do-re-mi'].includes(lesson.id);
   const due = COURSE.filter(lesson => hasIndependent(progress.lessons[lesson.id]) && progress.lessons[lesson.id].nextReviewDate <= today &&
-    progress.lessons[lesson.id].nextReviewDate && (!lesson.requiresMidiForAssessment || input === 'midi'))
+    progress.lessons[lesson.id].nextReviewDate && !(lesson.id === 'course-first-key' && firstMelodyReady) && (!lesson.requiresMidiForAssessment || input === 'midi'))
     .sort((a,b) => progress.lessons[a.id].nextReviewDate.localeCompare(progress.lessons[b.id].nextReviewDate));
   const add = (lesson, kind, length, role = kind) => { const task = taskFor(lesson, kind, today, length, input,role); if (!tasks.some(item => item.id === task.id)) tasks.push(task); };
   for (const lesson of due.slice(0, budget >= 12 ? 2 : 1)) add(lesson, lesson.practiceKind === 'rhythm' ? 'rhythm' : 'recall', 2, 'review');
-  const unlocked = COURSE.filter(lesson => lesson.prerequisites.every(id => covered.has(id)));
+  const unlocked = COURSE.filter(lesson => !supersededByIntro(lesson) && lesson.prerequisites.every(id => covered.has(id)));
   const candidate = unlocked.find(lesson => !coveredLesson(progress.lessons[lesson.id]) && (!lesson.requiresMidiForAssessment || input === 'midi')) ||
     unlocked.find(lesson => !coveredLesson(progress.lessons[lesson.id]));
   if (candidate) add(candidate, candidate.practiceKind === 'reading' ? 'reading' : ['echo','recall'].includes(candidate.practiceKind) ? 'recall' : candidate.practiceKind === 'rhythm' ? 'rhythm' : 'new', budget >= 10 ? 5 : 2, 'new');
@@ -225,6 +249,7 @@ function applyLearningAttempt(progress, task, report, options = {}) {
   const day = progress.days[today] ||= { completed: [], selection: normalizeSelection(task.daySelection) };
   day.selection ||= normalizeSelection(task.daySelection);
   const entry = progress.lessons[lesson.id] ||= emptyEvidence();
+  const hadGuidedPass = entry.guidedBest >= 8;
   entry.attempts = Math.min(1000000, entry.attempts + 1); entry.lastAt = Math.max(entry.lastAt, at);
   // A timed abort leaves future outcomes null. Preserve that failed attempt for
   // retrieval scheduling, without promoting any partial score to an achievement.
@@ -237,9 +262,11 @@ function applyLearningAttempt(progress, task, report, options = {}) {
   }
   if (mode === 'flow') entry.timedCoverageBest = Math.max(entry.timedCoverageBest, percent);
   else entry.coverageBest = Math.max(entry.coverageBest, value);
-  if (task.kind === 'new' && mode === 'flow' && percent >= 60 && entry.coverageBest >= 8 && !report.earlyAbort && task.date === today && !day.completed.includes(task.id)) day.completed.push(task.id);
+  if (task.kind === 'new' && lesson.learningRoute !== 'guided-check' && mode === 'flow' && percent >= 60 && entry.coverageBest >= 8 && !report.earlyAbort && task.date === today && !day.completed.includes(task.id)) day.completed.push(task.id);
   const independent = mode !== 'learn' && assisted === false && report.assisted !== true && !report.earlyAbort && !beta &&
     (!lesson.requiresMidiForAssessment || source === 'midi');
+  if (task.kind === 'new' && lesson.learningRoute === 'guided-check' && mode === 'check' && percent >= 80 && hadGuidedPass && independent &&
+      task.date === today && !day.completed.includes(task.id)) day.completed.push(task.id);
   const recall = task.kind === 'recall' || ['echo','recall'].includes(lesson.practiceKind);
   if ((recall || task.kind === 'rhythm') && (!independent || cueVisible !== false || percent < 80)) {
     if (!entry.reviewBlockedDays.includes(today)) entry.reviewBlockedDays = [...entry.reviewBlockedDays,today].sort().slice(-28);
