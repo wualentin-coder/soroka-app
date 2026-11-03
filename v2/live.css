@@ -1320,3 +1320,13 @@ body:has(.movie-deck) .fab { bottom:max(8px,env(safe-area-inset-bottom)); }
 @media(max-width:350px) { .movie-view-sheet .movie-detail-hero { grid-template-columns:86px minmax(0,1fr); gap:10px; } .movie-view-sheet .movie-detail-hero .movie-cover-detail { width:86px; min-height:129px; } .movie-view-sheet .movie-detail-score { flex-direction:column; gap:0; padding:0 2px; } }
 
 
+
+/* Piano shares Flow chrome; the practice player owns the full viewport. */
+body.piano-page .mobile-brand,body.piano-page .fab{display:none!important}
+body.piano-playing .mobile-nav,body.piano-deck-open .mobile-nav{display:none!important}
+body.piano-playing{overflow:hidden}
+@media(orientation:landscape) and (max-height:600px){
+  body.piano-page .app-shell{display:block!important;min-height:100dvh}
+  body.piano-page .sidebar,body.piano-page .mobile-nav{display:none!important}
+  body.piano-page .main{width:100%;max-width:none;margin:0;padding:8px 12px;min-height:0}
+}
