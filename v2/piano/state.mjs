@@ -1,5 +1,5 @@
-import {normalizeCourseProgress} from './course.mjs?v=46c6017f0462';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=46c6017f0462';
+import {normalizeCourseProgress} from './course.mjs?v=e22f21ea3ada';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=e22f21ea3ada';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;
