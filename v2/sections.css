@@ -2515,3 +2515,6 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 .gift-new { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 4px 4px 4px 14px; border: 1px dashed var(--line); border-radius: 14px; }
 .gift-new input { flex: 1; min-width: 0; height: 36px; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; outline: none; }
 .gift-new .icon-button { color: var(--accent); }
+.saved-section-addresses .saved-section-copy small, .saved-section-addresses .saved-section-copy em { overflow-wrap: anywhere; white-space: normal; }
+.saved-section-addresses .saved-section-copy em { display: block; text-overflow: clip; }
+.saved-layout-list .saved-section-addresses .saved-section-copy em { display: block; margin-top: 3px; padding-right: 0; }
