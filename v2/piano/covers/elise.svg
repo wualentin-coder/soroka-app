@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title">
+  <title id="title">К Элизе — оригинальная обложка Flow Piano</title>
+  <defs>
+    <linearGradient id="room" x2="1" y2="1"><stop stop-color="#443c40"/><stop offset=".5" stop-color="#313638"/><stop offset="1" stop-color="#10252b"/></linearGradient>
+    <radialGradient id="light" cx=".7" cy=".18" r=".9"><stop stop-color="#d6bca0" stop-opacity=".3"/><stop offset="1" stop-color="#b5aa94" stop-opacity="0"/></radialGradient>
+    <linearGradient id="paper" x2=".8" y2="1"><stop stop-color="#dfd3b4"/><stop offset="1" stop-color="#a89f87"/></linearGradient>
+    <linearGradient id="key" x2="1" y2="1"><stop stop-color="#e1dcc5"/><stop offset="1" stop-color="#aeb8ac"/></linearGradient>
+  </defs>
+  <path fill="url(#room)" d="M0 0h400v600H0z"/>
+  <path fill="url(#light)" d="M0 0h400v600H0z"/>
+  <g fill="none" stroke="#8aa9a3" stroke-opacity=".12"><circle cx="310" cy="148" r="184"/><circle cx="310" cy="148" r="163"/><path d="M28 0v600M44 0v600"/></g>
+  <g transform="translate(84 91) rotate(-12 128 165)">
+    <path d="m7 13 239 8 8 328L6 338z" fill="#101d24" opacity=".2"/>
+    <path d="M0 0h238v327H0z" fill="url(#paper)"/>
+    <path d="M16 16h206v295H16z" fill="none" stroke="#746c5c" stroke-opacity=".25"/>
+    <path d="M73 35h92m-111 9h128" stroke="#514f48" stroke-opacity=".44" stroke-width="2"/>
+    <g stroke="#4e524c" stroke-opacity=".52" fill="none" stroke-width="1.2">
+      <path d="M30 76h177M30 83h177M30 90h177M30 97h177M30 104h177M30 137h177M30 144h177M30 151h177M30 158h177M30 165h177M30 198h177M30 205h177M30 212h177M30 219h177M30 226h177M30 259h177M30 266h177M30 273h177M30 280h177M30 287h177"/>
+      <path d="M73 76v28m58-28v28m52-28v28M73 137v28m58-28v28m52-28v28M73 198v28m58-28v28m52-28v28M73 259v28m58-28v28m52-28v28"/>
+    </g>
+    <g fill="#35413e" stroke="#35413e" stroke-width="1.5">
+      <ellipse cx="53" cy="91" rx="5" ry="3.5" transform="rotate(-20 53 91)"/><path d="M57 91V69"/>
+      <ellipse cx="91" cy="84" rx="5" ry="3.5" transform="rotate(-20 91 84)"/><path d="M95 84V62"/>
+      <ellipse cx="111" cy="91" rx="5" ry="3.5" transform="rotate(-20 111 91)"/><path d="M115 91V69"/>
+      <ellipse cx="151" cy="98" rx="5" ry="3.5" transform="rotate(-20 151 98)"/><path d="M155 98V76"/>
+      <ellipse cx="193" cy="91" rx="5" ry="3.5" transform="rotate(-20 193 91)"/><path d="M197 91V69"/>
+      <ellipse cx="51" cy="159" rx="5" ry="3.5"/><path d="M55 159v-22"/>
+      <ellipse cx="92" cy="151" rx="5" ry="3.5"/><path d="M96 151v-22"/>
+      <ellipse cx="151" cy="144" rx="5" ry="3.5"/><path d="M155 144v-22"/>
+      <ellipse cx="193" cy="158" rx="5" ry="3.5"/><path d="M197 158v-22"/>
+      <ellipse cx="52" cy="212" rx="5" ry="3.5"/><path d="M56 212v-22"/>
+      <ellipse cx="92" cy="219" rx="5" ry="3.5"/><path d="M96 219v-22"/>
+      <ellipse cx="112" cy="212" rx="5" ry="3.5"/><path d="M116 212v-22"/>
+      <ellipse cx="151" cy="205" rx="5" ry="3.5"/><path d="M155 205v-22"/>
+      <ellipse cx="192" cy="212" rx="5" ry="3.5"/><path d="M196 212v-22"/>
+    </g>
+    <path d="M45 246c50-25 101-22 153-7" fill="none" stroke="#7b7361" stroke-opacity=".5"/>
+  </g>
+  <g transform="translate(-27 383) rotate(-17 210 65)">
+    <path d="M0-16h452v150H0z" fill="#12232a" stroke="#68847b" stroke-opacity=".38"/>
+    <path d="M0 7h452v81H0z" fill="url(#key)"/>
+    <path d="M22 7v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81m25-81v81" stroke="#576b65"/>
+    <path d="M15 7h15v49H15zm25 0h15v49H40zm50 0h15v49H90zm25 0h15v49h-15zm25 0h15v49h-15zm50 0h15v49h-15zm25 0h15v49h-15zm50 0h15v49h-15zm25 0h15v49h-15zm25 0h15v49h-15zm50 0h15v49h-15zm25 0h15v49h-15z" fill="#12252b"/>
+    <path d="M0 89h452v12H0z" fill="#9da997" opacity=".25"/>
+  </g>
+  <path d="M0 563h400v37H0z" fill="#10242a" opacity=".3"/>
+</svg>
