@@ -109,7 +109,7 @@ document.addEventListener("click", event => {
     window.scrollTo(0,0);render(); return;
   }
   const card = event.target.closest(".movie-deck-card");
-  if (!card || !movieDeck) return;
+  if (!card || !movieDeck || card.closest("#movie-deck") !== movieDeck.track) return;
   if(movieDeck.spinning){event.preventDefault();event.stopImmediatePropagation();return;}
   if (performance.now() < movieDeck.ignoreClickUntil) { event.preventDefault(); event.stopPropagation(); return; }
   if (Number(card.dataset.slot) !== Math.round(movieDeck.position)) {
