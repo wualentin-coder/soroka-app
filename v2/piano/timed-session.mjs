@@ -1,4 +1,4 @@
-import { summarizeTimingOffsets } from './timing-feedback.mjs?v=e55349755070';
+import { summarizeTimingOffsets } from './timing-feedback.mjs?v=46c6017f0462';
 
 const EPSILON=1e-9,MAX_NOTES=5000,MAX_SECONDS=86400,GROUP_WINDOW=.035;
 const validClock=value=>Number.isFinite(value)&&value>=0;
