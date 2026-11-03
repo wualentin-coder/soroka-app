@@ -134,6 +134,9 @@
   .pn-hands-simple{max-height:70px}
 }
 @media(orientation:landscape) and (max-height:340px){
+  .pn-home-grid{grid-template-rows:minmax(0,1fr) 44px}
+  .pn-today-summary{min-height:0}
+  .pn-today-summary>small{display:none}
   .pn-lesson-card h2{display:-webkit-box;overflow:hidden;-webkit-line-clamp:1;-webkit-box-orient:vertical;font-size:18px}
   .pn-lesson-card,.pn-today-summary{padding:10px}
   .pn-lesson-card .pn-primary-action{min-width:104px;padding-inline:8px}
