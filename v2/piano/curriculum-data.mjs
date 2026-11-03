@@ -18,6 +18,22 @@ const grouped = (id, title, instruction, groups, { skillIds, prerequisites, beat
   evaluation: 'Совместные высоты и вступления. Через микрофон — тренировка без независимого зачёта; точная проверка с MIDI. Пальцы и удержание не оцениваются.',
 });
 
+// New IDs keep all earlier exercise/report signatures intact. The traditional
+// three-note tune is entered here directly, without importing a modern score.
+export const INTRODUCTORY_LESSONS = [
+  lesson('first-key', 'Первая клавиша — До', 'Найди пару чёрных клавиш ближе к середине Casio. До — белая сразу слева от пары. Сравни с примером и сыграй пять отдельных До без спешки.', [60,60,60,60,60],
+    { skillIds: ['keyboard-landmarks'], tempo: 40, learningRoute: 'guided-check', optionalFlow: true,
+      introSpeech: 'До — белая клавиша слева от двух чёрных. Сначала покажу пять отдельных нажатий.',
+      tip: 'Отпускай клавишу между нажатиями. Сейчас можно искать и исправляться: музыка подождёт.',
+      readiness: 'Найди До самостоятельно. Совпадение ритма пока не требуется.' }),
+  lesson('first-melody', 'Первая мелодия · Hot Cross Buns', 'Большой палец правой руки положи на До, указательный — на Ре, средний — на Ми. Сыграй начало знакомой песенки: Ми–Ре–До, затем ещё раз Ми–Ре–До. Послушай окончание каждой тройки.', [64,62,60,64,62,60],
+    { skillIds: ['keyboard-landmarks'], tempo: 44, beats: [1,1,2,1,1,2], learningRoute: 'guided-check', optionalFlow: true,
+      type: 'phrase', author: 'Английская народная мелодия · учебный фрагмент Flow',
+      introSpeech: 'Три соседние клавиши: До, Ре и Ми. Послушай песенку Ми–Ре–До и повтори её два раза.',
+      tip: 'Каждую тройку начинай средним пальцем на Ми. Пальцы приложение не видит; следи за удобством руки сам.',
+      readiness: 'Сыграй шесть звуков самостоятельно. Проверку точного ритма можно попробовать отдельно.' }),
+];
+
 const pulse = [
   lesson('pulse-even', 'Найди ровный пульс', 'Слушай четыре счёта. Играй одну До на каждый следующий счёт, не догоняя пропущенную ноту.', Array(8).fill(60),
     { skillIds: ['pulse'], prerequisites: ['keyboard-landmarks'], kind: 'rhythm', readiness: 'Восемь ровных вступлений на одной клавише без подсказки высоты.' }),
