@@ -18,6 +18,7 @@ export class NoteGate {
   }
 
   reset() {
+    this._lastOnsetAt = null;
     this.candidate = null;
     this.candidateSince = 0;
     this.latched = null;
@@ -29,6 +30,9 @@ export class NoteGate {
     this.troughAt = 0;
     this.armed = false;
   }
+
+  /** Candidate/attack evidence time, not the later stability confirmation. */
+  get lastOnsetAt() { return this._lastOnsetAt; }
 
   /** Returns one MIDI integer per stable note or newly detected repeated strike. */
   update(pitch, rms, timeMs) {
@@ -66,6 +70,7 @@ export class NoteGate {
     if (this.latched !== midi) {
       this.latched = midi;
       this.lastEmitAt = timeMs;
+      this._lastOnsetAt = this.candidateSince;
       this.trough = level;
       this.troughAt = timeMs;
       this.armed = false;
@@ -95,6 +100,7 @@ export class NoteGate {
     this.armed = false;
     if (timeMs - this.lastEmitAt < this.options.refractoryMs) return null;
     this.lastEmitAt = timeMs;
+    this._lastOnsetAt = timeMs;
     return midi;
   }
 }
