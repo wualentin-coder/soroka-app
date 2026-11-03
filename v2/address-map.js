@@ -187,7 +187,7 @@ function addressPosition() {
     requestPosition().then(pos => {
       addressPosAsking = false;
       if (!pos) return;
-      ui.myPos = { ...pos, at: Date.now() };
+      ui.myPos = pos;
       if (ui.page === "saved" && ui.savedCategory === "addresses" && !ui.sheet) render();
     });
   }
@@ -255,18 +255,23 @@ function mountMiniMap() {
  */
 const MY_POSITION_KEY = "soroka-my-position";
 let myMarker = null, myCircle = null, myWatch = 0;
+let positionRequest = null;
+const ADDRESS_POSITION_MAX_AGE = 5 * 60000;
+const addressPreviewState = { pending: null, attemptedAt: 0, visible: false, status: "idle" };
 function cachedPosition() {
   try { const p = JSON.parse(localStorage.getItem(MY_POSITION_KEY) || "null"); return p && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? p : null; } catch (_) { return null; }
 }
 /** Позиция: { lat, lng, acc } или null (не разрешили, нет сигнала). */
 function requestPosition() {
-  return new Promise(resolve => {
+  if (positionRequest) return positionRequest;
+  const pending = new Promise(resolve => {
     let done = false;
-    const finish = value => { if (!done) { done = true; resolve(value); } };
-    setTimeout(() => finish(null), 12000);
+    const finish = value => { if (!done) { done = true; clearTimeout(timer); resolve(value ? rememberPosition(value) : null); } };
+    const timer = setTimeout(() => finish(null), 12000);
     const browser = () => {
       if (!navigator.geolocation) return finish(null);
-      navigator.geolocation.getCurrentPosition(p => finish({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }), () => finish(null), { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 });
+      try { navigator.geolocation.getCurrentPosition(p => finish(p?.coords ? { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, at: p.timestamp ?? Date.now() } : null), () => finish(null), { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 }); }
+      catch (_) { finish(null); }
     };
     const tg = window.Telegram?.WebApp;
     const lm = tg?.LocationManager;
@@ -274,13 +279,100 @@ function requestPosition() {
     const ask = () => {
       if (!lm.isLocationAvailable) return browser();
       lm.getLocation(l => {
-        if (l) return finish({ lat: l.latitude, lng: l.longitude, acc: l.horizontal_accuracy || 60 });
+        if (l) return finish({ lat: l.latitude, lng: l.longitude, acc: l.horizontal_accuracy ?? 60, at: Date.now() });
         // Отказали в Telegram — браузер тоже не поможет; пусть человек включит в настройках.
         if (lm.isAccessRequested && !lm.isAccessGranted) return finish(null);
         browser();
       });
     };
     try { lm.isInited ? ask() : lm.init(ask); } catch (_) { browser(); }
+  });
+  positionRequest = pending;
+  pending.finally(() => { if (positionRequest === pending) positionRequest = null; });
+  return pending;
+}
+/** Coordinate records remain private; an undated cache never proves current proximity. */
+function validPositionRecord(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  if ([raw.lat, raw.lng, raw.acc, raw.at].some(value => value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim()))) return null;
+  const lat = Number(raw.lat), lng = Number(raw.lng), acc = Number(raw.acc), at = Number(raw.at);
+  if (![lat, lng, acc, at].every(Number.isFinite) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || acc < 0 || acc > 100000 || at <= 0 || at > Date.now() + 60000) return null;
+  return { lat, lng, acc, at };
+}
+function rememberPosition(raw) {
+  const pos = validPositionRecord({ ...raw, at: raw?.at ?? Date.now() });
+  if (!pos) return null;
+  const previous = freshAddressPosition();
+  if (previous && previous.at > pos.at) return previous;
+  ui.myPos = pos;
+  try { localStorage.setItem(MY_POSITION_KEY, JSON.stringify(pos)); } catch (_) {}
+  paintSavedAddressPreview(pos);
+  return pos;
+}
+function freshAddressPosition() {
+  const candidates = [ui.myPos, cachedPosition()];
+  try { candidates.push(JSON.parse(localStorage.getItem("soroka-loyalty-last") || "null")); } catch (_) {}
+  return candidates.map(validPositionRecord).filter(pos => pos && Date.now() - pos.at <= ADDRESS_POSITION_MAX_AGE && pos.acc <= 1000).sort((a, b) => b.at - a.at)[0] || null;
+}
+function addressPreviewPoint(item) {
+  if (!item || item.deleted_at || item.deletedAt || item.deleted || item.active === false) return null;
+  if ([item.lat, item.lng].some(value => value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim()))) return null;
+  return mapPointCoordinates(item);
+}
+function nearestSavedAddress(items = savedItems("addresses"), pos = freshAddressPosition()) {
+  if (!pos) return null;
+  return items.map(item => { const point = addressPreviewPoint(item); return point ? { item, distance: distanceM(pos, { lat: point[0], lng: point[1] }) } : null; })
+    .filter(row => row && Number.isFinite(row.distance)).sort((a, b) => a.distance - b.distance || String(a.item.id).localeCompare(String(b.item.id)))[0] || null;
+}
+function savedAddressPreview(items = savedItems("addresses")) {
+  const nearest = nearestSavedAddress(items);
+  if (!nearest) {
+    const mapped = items.some(item => addressPreviewPoint(item));
+    const status = !items.length ? "empty" : !mapped ? "unmapped" : addressPreviewState.status === "loading" ? "loading" : "unavailable";
+    return { item: null, status, headline: status === "empty" ? "Пока нет адресов" : status === "unmapped" ? "Добавь метки к адресам" : status === "loading" ? "Определяю ближайший адрес…" : "Геопозиция не определена", detail: items.length ? "Открой, чтобы выбрать адрес" : "Сохрани первое место" };
+  }
+  const item = nearest.item, title = String(item.title || "").trim() || "Адрес";
+  // Door codes are not part of the overview, even if an old address included one inline.
+  let address = String(item.address || item.city || "").replace(/(?:[,;]?\s*)(?:домофон|код\s+(?:двери|подъезда|домофона))(?:\s|[:№]).*$/iu, "").trim();
+  const parts = [];
+  const add = (value, label, aliases) => {
+    if (value == null || String(value).trim() === "") return;
+    const clean = String(value).trim(), escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (!new RegExp(`(?:${aliases})\\s*${escaped}(?:[\\s,.;]|$)`, "iu").test(address)) parts.push(`${label} ${clean}`);
+  };
+  add(item.apartment, "кв.", "кв\\.?|квартира"); add(item.entrance, "подъезд", "подъезд|под\\.?");
+  return { item: { id: item.id, title }, status: "ready", headline: `Ближайший: ${title} · ≈ ${distanceLabel(nearest.distance)}`, detail: [address, ...parts].filter(Boolean).join(" · ") || "Адрес не заполнен" };
+}
+/** Location fixes update only the visible tile, without rebuilding the page or its inputs. */
+function paintSavedAddressPreview(pos) {
+  if (!pos || Date.now() - pos.at > ADDRESS_POSITION_MAX_AGE || pos.acc > 1000 || document.hidden || ui.page !== "saved" || ui.savedCategory !== "overview" || ui.sheet) return;
+  const items = savedItems("addresses");
+  if (!items.some(item => addressPreviewPoint(item))) return;
+  const tile = document.querySelector(".saved-section-addresses");
+  if (!tile || tile.isConnected === false || tile.hidden || (tile.getClientRects && !tile.getClientRects().length)) return;
+  const headline = tile.querySelector("small"), detail = tile.querySelector("em");
+  if (!headline || !detail) return;
+  const preview = savedAddressPreview(items);
+  if (!preview.item) return;
+  if (headline.textContent !== preview.headline) headline.textContent = preview.headline;
+  if (detail.textContent !== preview.detail) detail.textContent = preview.detail;
+  const count = typeof savedRecordLabel === "function" ? savedRecordLabel(items.length) : String(items.length);
+  const label = ["Адреса", count, preview.headline, preview.detail].join(", ");
+  if (tile.getAttribute?.("aria-label") !== label) tile.setAttribute("aria-label", label);
+}
+/** Called from afterRender; it owns one coalesced request, never a second watch. */
+function refreshSavedAddressPreview() {
+  const visible = !document.hidden && ui.page === "saved" && ui.savedCategory === "overview" && !ui.sheet && savedItems("addresses").some(item => addressPreviewPoint(item));
+  if (!visible) { addressPreviewState.visible = false; return; }
+  const entered = !addressPreviewState.visible; addressPreviewState.visible = true;
+  if (!entered || addressPreviewState.pending || Date.now() - addressPreviewState.attemptedAt < 30000) return;
+  addressPreviewState.attemptedAt = Date.now(); addressPreviewState.status = "loading";
+  const pending = requestPosition(); addressPreviewState.pending = pending;
+  if (!freshAddressPosition()) render();
+  pending.then(pos => {
+    if (addressPreviewState.pending !== pending) return;
+    addressPreviewState.pending = null; addressPreviewState.status = pos && freshAddressPosition() ? "ready" : "unavailable";
+    if (!document.hidden && ui.page === "saved" && ui.savedCategory === "overview" && !ui.sheet && savedItems("addresses").some(item => addressPreviewPoint(item))) render();
   });
 }
 function drawMyPosition(pos) {
@@ -305,7 +397,6 @@ async function showMyPosition(centre) {
     }
     return;
   }
-  try { localStorage.setItem(MY_POSITION_KEY, JSON.stringify({ lat: pos.lat, lng: pos.lng, acc: pos.acc })); } catch (_) {}
   if (map !== addressMap) return;
   drawMyPosition(pos);
   if (centre) addressMap.flyTo([pos.lat, pos.lng], Math.max(addressMap.getZoom(), 15), { duration: .9 });
