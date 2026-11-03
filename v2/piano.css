@@ -31,6 +31,10 @@
 .pn-today-summary{display:flex;flex-direction:column;gap:8px}
 .pn-today-summary>strong,.pn-today-summary h3{margin:0;color:var(--text);font-size:15px;line-height:1.3;font-weight:800}
 .pn-today-summary>p,.pn-today-summary>span,.pn-today-summary>small{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.pn-goal-link{display:grid;grid-template-columns:minmax(0,1fr) 18px;align-items:center;gap:2px 8px;min-height:44px;width:100%;padding:4px 0;border:0;background:none;text-align:left;color:var(--text)}
+.pn-goal-link>span{color:var(--muted);font-size:11px}.pn-goal-link>strong{font-size:12px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pn-goal-link>.icon{grid-column:2;grid-row:1/3;color:var(--accent)}
+.pn-goal-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.pn-song-readiness{max-width:100%;color:var(--accent);font-size:11px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
 .pn-session-items{min-width:0;margin:0;padding:0;color:var(--muted);font-size:12px;line-height:1.45}
 .pn-session-items summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;color:var(--text);font-size:12px;font-weight:700}
 .pn-session-items summary .icon{width:16px;height:16px}
