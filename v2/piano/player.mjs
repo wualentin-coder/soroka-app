@@ -1,31 +1,31 @@
-import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=46c6017f0462';
-import { LESSONS, PracticeSession } from './session.mjs?v=46c6017f0462';
-import { NoteGate } from './note-gate.mjs?v=46c6017f0462';
-import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=46c6017f0462';
-import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=46c6017f0462';
-import { createTeacher } from './teacher.mjs?v=46c6017f0462';
-import { createScoreTimeline } from './score.mjs?v=46c6017f0462';
-import { FollowTransport } from './transport.mjs?v=46c6017f0462';
-import { ChordSession } from './chord-session.mjs?v=46c6017f0462';
-import { createArrangement } from './arrangement.mjs?v=46c6017f0462';
-import { createAccompanimentPlayer } from './accompaniment.mjs?v=46c6017f0462';
-import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=46c6017f0462';
-import { createMidiInput } from './midi-input.mjs?v=46c6017f0462';
-import { EarlyInputBuffer } from './early-input.mjs?v=46c6017f0462';
-import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=46c6017f0462';
-import { createKeyboardRange } from './keyboard-range.mjs?v=46c6017f0462';
-import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=46c6017f0462';
-import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=46c6017f0462';
-import { createLessonPresenter } from './lesson-presenter.mjs?v=46c6017f0462';
-import { drawNotation } from './notation.mjs?v=46c6017f0462';
-import { chooseNativeRoute } from './native-route.mjs?v=46c6017f0462';
-import { getFingerHint } from './fingering.mjs?v=46c6017f0462';
-import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=46c6017f0462';
-import { TimedSession } from './timed-session.mjs?v=46c6017f0462';
-import { chooseFlowOutcome } from './flow-progression.mjs?v=46c6017f0462';
-import { chooseTimingAdvice } from './timing-feedback.mjs?v=46c6017f0462';
-import { practicePolicy } from './practice-policy.mjs?v=46c6017f0462';
-import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=46c6017f0462';
+import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=e22f21ea3ada';
+import { LESSONS, PracticeSession } from './session.mjs?v=e22f21ea3ada';
+import { NoteGate } from './note-gate.mjs?v=e22f21ea3ada';
+import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=e22f21ea3ada';
+import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=e22f21ea3ada';
+import { createTeacher } from './teacher.mjs?v=e22f21ea3ada';
+import { createScoreTimeline } from './score.mjs?v=e22f21ea3ada';
+import { FollowTransport } from './transport.mjs?v=e22f21ea3ada';
+import { ChordSession } from './chord-session.mjs?v=e22f21ea3ada';
+import { createArrangement } from './arrangement.mjs?v=e22f21ea3ada';
+import { createAccompanimentPlayer } from './accompaniment.mjs?v=e22f21ea3ada';
+import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=e22f21ea3ada';
+import { createMidiInput } from './midi-input.mjs?v=e22f21ea3ada';
+import { EarlyInputBuffer } from './early-input.mjs?v=e22f21ea3ada';
+import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=e22f21ea3ada';
+import { createKeyboardRange } from './keyboard-range.mjs?v=e22f21ea3ada';
+import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=e22f21ea3ada';
+import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=e22f21ea3ada';
+import { createLessonPresenter } from './lesson-presenter.mjs?v=e22f21ea3ada';
+import { drawNotation } from './notation.mjs?v=e22f21ea3ada';
+import { chooseNativeRoute } from './native-route.mjs?v=e22f21ea3ada';
+import { getFingerHint } from './fingering.mjs?v=e22f21ea3ada';
+import { chooseLearningTempo, adaptLearningTempo } from './learning-tempo.mjs?v=e22f21ea3ada';
+import { TimedSession } from './timed-session.mjs?v=e22f21ea3ada';
+import { chooseFlowOutcome } from './flow-progression.mjs?v=e22f21ea3ada';
+import { chooseTimingAdvice } from './timing-feedback.mjs?v=e22f21ea3ada';
+import { practicePolicy } from './practice-policy.mjs?v=e22f21ea3ada';
+import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=e22f21ea3ada';
 
 export function mountPianoPlayer(root, options = {}) {
 const mountAbort=new AbortController();let embeddedActive=false,taskHelpSticky=false,homeSettings=false;
@@ -199,14 +199,16 @@ function completeStudyCheck(report,{demo,beta}){
   state.flowGoalReached=passed;if(settings.pendingFlow)settings.pendingFlow.goalReached=passed;persist();
   $('#result-title').textContent=demo?'Демо завершено':passed?'Сыграно самостоятельно':beta?'Практика двумя руками':'Закрепим целую мелодию';
   $('#result-subtitle').textContent=lesson().title;$('#result-accuracy').textContent=beta?'Без зачёта':`${report.scorePercent}%`;$('#result-correct').textContent=`${report.firstAttemptCorrect}/${report.total}`;$('#result-time').textContent=durationText(report.seconds);
+  $('#result-dialog .result-metrics div:nth-child(2) span').textContent='Вовремя и верно';
   $('#result-advice').textContent=demo?'Экранный показ не подтверждает игру на инструменте.':passed?'Ты сыграл всю учебную версию по нотам, без подсветки клавиш и сопровождения. В следующий раз попробуй ещё раз без показа.':beta?'Микрофонная полифония остаётся тренировкой. Для самостоятельной проверки двух рук выбери USB MIDI в настройках.':state.assisted||state.revealed?'Подсказка помогла. Теперь повтори целиком без неё.':'Нужно 80% верных вступлений без подсказки. Можно разобрать трудное место и вернуться к целому.';
   $('#review-status').textContent='Проверены высоты и вступления. Удержание, пальцы и постановка рук не оцениваются.';
   for(const id of ['study-continue','next-course-button','reply-area','return-whole'])$('#'+id).hidden=true;
-  $('#problem-repeat').hidden=demo||!report.errors.length;$('#problem-repeat').textContent='Разобрать трудное место';$('#repeat-button').hidden=passed;$('#repeat-button').textContent=beta?'Потренироваться ещё':'Повторить целиком';$('#next-lesson-button').hidden=false;$('#next-lesson-button').textContent='К композициям';$('#flow-next').hidden=!passed;$('#flow-polish').hidden=!passed||report.scorePercent===100;
+  $('#problem-repeat').hidden=demo||!report.errors.length;$('#problem-repeat').textContent='Разобрать трудное место';$('#repeat-button').hidden=passed;$('#repeat-button').textContent=beta?'Потренироваться ещё':'Повторить целиком';$('#next-lesson-button').hidden=passed;$('#next-lesson-button').textContent='К композициям';$('#flow-next').hidden=!passed;$('#flow-next').textContent=state.learningTask?'Продолжить занятие':'К композициям';$('#flow-polish').hidden=!passed||report.scorePercent===100;
   renderPractice();openDialog('result',false);if(passed)say('Ты сыграл всю учебную версию самостоятельно. Можно идти дальше или закрепить результат.');
   return true;
 }
 function completeFlowPractice(){
+  $('#flow-next').textContent='Дальше →';
   state.session.pause(now());const report=state.session.report(now()),demo=state.source==='demo',outcome=!demo&&state.learningTask?.kind==='rhythm'&&report.scorePercent<80?'retry':chooseFlowOutcome(report,{polish:state.flowPolish,demo});
   state.running=false;state.phase='idle';state.lastReport=report;++autoGeneration;clearTimeout(autoTimer);keepInputWarm();backingPlayer?.stop();teacher.cancel();hideFingerHint();
   const tempoChoice=adaptPracticeTempo(report);
@@ -949,7 +951,7 @@ $('#preview-button').addEventListener('click',()=>{for(const d of $$('dialog[ope
 $('#restart-button').addEventListener('click',()=>{const source=state.source;pausePractice({keepInput:true});stopPlayback();$('#settings-dialog').close();state.quickStart=true;state.needsIntro=false;state.session=null;state.saved=false;state.source=source;resetFollow();renderPractice();startPractice().catch(()=>failMic({}));});
 $('#skip-button').addEventListener('click',()=>{if(!state.running)return;const result=state.session.skip(now());follow?.seekIndex(state.session.index,now());resetDetector();if(result.kind==='complete')completePractice();else{coach('Нота пропущена. Её можно будет разобрать в следующем проходе.');renderPractice();}});
 $('#repeat-button').addEventListener('click',repeatCurrent);
-$('#next-lesson-button').addEventListener('click',()=>{closeResult();navigate(state.studyStageId?'study':isCourse()?'course':'library');});
+$('#next-lesson-button').addEventListener('click',()=>{closeResult();const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId);navigate(state.studyStageId&&stage?.purpose!=='independent'?'study':isCourse()?'course':'library');});
 $('#hint-button').addEventListener('click',()=>{
   if(state.learningTask)markAssisted();const e=expected();if(e===null){coach('Мелодия пройдена. Можно повторить её или выбрать другую.');return;}
   if(['check','flow'].includes(state.mode)&&state.session){markAssisted();state.revealed=true;renderPractice();}
