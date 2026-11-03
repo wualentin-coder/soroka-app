@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title">
+  <title id="title">Ода к радости — оригинальная обложка Flow Piano</title>
+  <defs>
+    <linearGradient id="dawn" x2=".2" y2="1"><stop stop-color="#946552"/><stop offset=".45" stop-color="#655348"/><stop offset="1" stop-color="#182e33"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#e9c795" stop-opacity=".55"/><stop offset="1" stop-color="#d1ae77" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sun" x2=".4" y2="1"><stop stop-color="#eed7a1"/><stop offset="1" stop-color="#c99f6d"/></linearGradient>
+    <linearGradient id="keys" x2="0" y2="1"><stop stop-color="#e6d9b4"/><stop offset="1" stop-color="#a5b4a5"/></linearGradient>
+  </defs>
+  <path d="M0 0h400v600H0z" fill="url(#dawn)"/>
+  <circle cx="219" cy="179" r="223" fill="url(#glow)"/>
+  <circle cx="222" cy="170" r="75" fill="url(#sun)"/>
+  <g fill="none" stroke="#e7c89c" stroke-opacity=".31"><path d="M94 236a147 147 0 0 1 250-147M68 248A176 176 0 0 1 361 69M40 261A207 207 0 0 1 380 47"/><path d="M55 319c91-78 208-80 319-17"/></g>
+  <g fill="#e4cba2" opacity=".58"><path d="m82 149 5-10 5 10-5 10zm250 96 4-8 4 8-4 8z"/><circle cx="123" cy="63" r="2"/><circle cx="358" cy="156" r="2"/><circle cx="55" cy="222" r="1.5"/></g>
+  <g fill="none" stroke="#1c3539" stroke-width="2.2" stroke-linecap="round">
+    <path d="M75 285v-42l33-8v41M167 305v-52l43-11v47M285 294v-43l31-8v40"/>
+  </g>
+  <g fill="#1c3539"><ellipse cx="68" cy="287" rx="9" ry="6" transform="rotate(-18 68 287)"/><ellipse cx="101" cy="278" rx="9" ry="6" transform="rotate(-18 101 278)"/><ellipse cx="160" cy="307" rx="10" ry="7" transform="rotate(-18 160 307)"/><ellipse cx="203" cy="291" rx="10" ry="7" transform="rotate(-18 203 291)"/><ellipse cx="278" cy="296" rx="9" ry="6" transform="rotate(-18 278 296)"/><ellipse cx="309" cy="285" rx="9" ry="6" transform="rotate(-18 309 285)"/></g>
+  <path d="M0 365c98-45 173-47 270-7 52 22 95 25 130 14v228H0z" fill="#263b3c"/>
+  <path d="M0 391c130-77 257-45 400 7" fill="none" stroke="#c9b893" stroke-opacity=".32" stroke-width="2"/>
+  <g transform="translate(-20 393) rotate(9 222 70)">
+    <path d="M0-11h445v157H0z" fill="#142b31"/>
+    <path d="M0 8h445v89H0z" fill="url(#keys)"/>
+    <path d="M20 8v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89m27-89v89" stroke="#657c70" stroke-width="1.2"/>
+    <path d="M13 8h15v52H13zm27 0h15v52H40zm54 0h15v52H94zm27 0h15v52h-15zm27 0h15v52h-15zm54 0h15v52h-15zm27 0h15v52h-15zm54 0h15v52h-15zm27 0h15v52h-15zm27 0h15v52h-15zm54 0h15v52h-15zm27 0h15v52h-15z" fill="#173036"/>
+    <path d="M0 98h445v5H0z" fill="#d7c396" opacity=".31"/>
+  </g>
+</svg>
