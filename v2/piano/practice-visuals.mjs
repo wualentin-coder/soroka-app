@@ -20,3 +20,41 @@ export function noteBarBounds({keyPosition,canvasWidth,noteTime,duration,playhea
     height=Math.max(geometry.minNoteHeightPx,duration*geometry.pxPerSecond),bottom=geometry.strikeY+(playhead-noteTime)*geometry.pxPerSecond;
   return {x,y:bottom-height,width,height,bottom,radius:Math.min(7,width/3)};
 }
+
+const routeLabels={right:'Правая',left:'Левая',both:'Вместе',join:'Соединяем',independent:'Самостоятельно'};
+const routeAria={right:'Правая рука',left:'Левая рука',both:'Две руки',join:'Соединение фрагментов',independent:'Самостоятельная игра'};
+const partNumber=value=>Number.isSafeInteger(value)&&value>=1&&value<=1000;
+
+/** Current musical context, never an inferred achievement or a plan of the whole course. */
+export function buildPracticeRoute({stage,availableHands,mode='learn',goalPercent=80,completedPhases=[],isCourse=false,memory=false}={}){
+  const hidden={visible:false,fragment:'',goal:'',ariaLabel:'',steps:[]};
+  if(isCourse||memory||!stage||typeof stage!=='object'||!['right','left','both'].includes(stage.hand))return hidden;
+  if(!['learn','check','flow'].includes(mode)||!Number.isFinite(goalPercent)||goalPercent<0||goalPercent>100)throw new RangeError('Practice route needs a real mode and a percentage goal.');
+  const kind=stage.kind||(stage.whole?'whole':'fragment');
+  if(!['fragment','connection','whole','check'].includes(kind))return hidden;
+  const independent=kind==='check'&&stage.purpose==='independent';
+  if(kind==='check'&&!independent)return hidden;
+  const whole=kind==='whole'||kind==='check',connection=kind==='connection';
+  const hands=['right','left','both'].filter(hand=>(Array.isArray(availableHands)?availableHands:Array.isArray(stage.availableHands)?stage.availableHands:[stage.hand]).includes(hand));
+  if(!hands.includes(stage.hand))return hidden;
+  const phases=whole?['join','independent']:connection?['join']:hands;
+  const current=independent?'independent':whole||connection?'join':stage.hand;
+  const completed=new Set(Array.isArray(completedPhases)?completedPhases:[]);
+  const steps=phases.map(phase=>({phase,label:routeLabels[phase],ariaLabel:routeAria[phase],state:phase===current?'current':completed.has(phase)?'done':'next'}));
+  const fragment=whole?'Вся композиция':connection?
+    partNumber(stage.fromPart)&&partNumber(stage.toPart)&&stage.fromPart<=stage.toPart?`Фрагменты ${stage.fromPart}–${stage.toPart}`:'Соединение фрагментов':
+    partNumber(stage.part)&&partNumber(stage.parts)&&stage.part<=stage.parts?`Фрагмент ${stage.part} из ${stage.parts}`:'Текущий фрагмент';
+  const timed=mode==='flow'||independent&&stage.requiredMode==='flow',percent=Math.round(goalPercent*10)/10,
+    grade=String(percent/10).replace('.',','),goal=timed?`${independent?'Цель':'В темпе'} · ≥${String(percent).replace('.',',')}%`:`Цель · ≥${grade}/10`;
+  return {visible:true,fragment,goal,ariaLabel:`${fragment}. ${routeAria[current]}. ${goal.replace('≥','не меньше ')}.`,steps};
+}
+
+/** Steady light on the present target, with no clock, blinking or score changes. */
+export function noteBarMaterial({active=false,due=false,approaching=false,waiting=false,played=false,reducedMotion=false}={}){
+  const current=active===true&&played!==true,arrived=current&&(due===true||waiting===true);
+  return {opacity:played===true?.12:arrived?1:current?.92:.62,
+    shadowBlur:reducedMotion===true?0:arrived?7:current&&approaching===true?3:0,
+    shadowOffsetY:arrived&&reducedMotion!==true?1:0,
+    glossTop:.32,glossMid:.07,glossBottom:.2,
+    rimAlpha:arrived?.5:current?.3:.2,rimWidth:arrived?1.25:.8};
+}
