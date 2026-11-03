@@ -34,6 +34,68 @@ export const INTRODUCTORY_LESSONS = [
       readiness: 'Сыграй шесть звуков самостоятельно. Проверку точного ритма можно попробовать отдельно.' }),
 ];
 
+// One small, original melodic contour is reused while a single new demand is
+// introduced at a time. No imported song arrangement is treated as an exercise.
+const firstMusic = [64,65,67,64,62,60];
+export const MUSICAL_LESSONS = [
+  lesson('music-step', 'Пять клавиш — одна фраза', 'До, Ре и Ми уже знакомы. Положи безымянный палец на Фа, мизинец — на Соль. Послушай фразу Ми–Фа–Соль и ответ Ми–Ре–До; сыграй её без спешки.', firstMusic,
+    { skillIds: ['right-five'], prerequisites: ['keyboard-landmarks'], lessonPrerequisiteIds: ['course-first-melody'],
+      learningRoute: 'guided-check', optionalFlow: true, type: 'phrase', tempo: 44, beats: [1,1,2,1,1,2],
+      introSpeech: 'Добавим Фа и Соль. Сначала три звука вверх, затем знакомый ответ домой к До.',
+      tip: 'Рука остаётся над пятью соседними белыми клавишами. Пальцы и удобство проверь сам; приложение слышит ноты.',
+      readiness: 'Найди все звуки короткой фразы самостоятельно. Ритм пока можно выбирать самому.' }),
+  lesson('music-pulse', 'Та же музыка в ровном счёте', 'Сыграй знакомую фразу под медленный счёт: Ми–Фа–Соль, Ми–Ре–До. Соль длится два счёта; продолжай считать и переходи к Ми после второго.', firstMusic,
+    { skillIds: ['pulse','note-lengths'], prerequisites: ['right-five'], lessonPrerequisiteIds: ['course-music-step'],
+      kind: 'rhythm', tempo: 44, beats: [1,1,2,1,1,2],
+      introSpeech: 'Ноты знакомы. Теперь держим ровный счёт; после Соль посчитай два раза и играй дальше.',
+      tip: 'Не догоняй пропущенный звук несколькими ударами. Удержание не оценивается; проверяются моменты новых нажатий.',
+      readiness: 'Вступи ровно в знакомом рисунке без показа следующей клавиши.' }),
+  lesson('music-space', 'Между фразами — вдох', 'Сыграй Ми–Фа–Соль, после длинной Соль пропусти один счёт в тишине. Затем ответь Ми–Ре–До. Пульс продолжается и в пустом счёте.', firstMusic,
+    { skillIds: ['rests'], prerequisites: ['note-lengths'], lessonPrerequisiteIds: ['course-music-pulse'],
+      kind: 'rhythm', tempo: 44, beats: [1,1,2,1,1,2], rests: [0,0,0,1,0,0],
+      introSpeech: 'Добавим один пустой счёт между вопросом и ответом. На этом счёте ничего не нажимай.',
+      tip: 'После Соль два счёта занимает нота и ещё один — пауза. Потом спокойно вступает Ми.',
+      readiness: 'Сохрани общий счёт через паузу и вовремя начни ответ без показа.' }),
+  lesson('music-echo', 'Эту фразу я помню', 'Послушай уже знакомые Ми–Фа–Соль и Ми–Ре–До. После показа экран скроет ноты. Повтори две тройки в удобном тебе темпе.', firstMusic,
+    { skillIds: ['ear-copy','memory-short'], prerequisites: ['right-five'], lessonPrerequisiteIds: ['course-music-space'],
+      kind: 'recall', tempo: 44, beats: [1,1,2,1,1,2],
+      introSpeech: 'Послушай две короткие части. Запомни их порядок и повтори без дорожки.',
+      tip: 'Если забыл, послушай помощь. Сегодня это тренировка; чистую память проверим в другой день.',
+      readiness: 'Вспомни обе тройки без подсказок, а затем повтори в разные дни.' }),
+  lesson('music-read', 'Узнаю ноты в новой фразе', 'Посмотри на нотный стан. Здесь только знакомые До, Ре, Ми и Фа, но порядок новый. Найди первую ноту и сыграй короткую фразу без звукового показа.', [60,62,65,64,62,60],
+    { skillIds: ['treble-reading'], prerequisites: ['right-five'], lessonPrerequisiteIds: ['course-music-echo'],
+      kind: 'reading', tempo: 44, beats: [1,1,2,1,1,2],
+      notationGuide: 'До — на добавочной линии снизу. Ре — под нижней линией, Ми — на нижней, Фа — в промежутке над ней.',
+      introSpeech: 'Теперь новый рисунок на стане. Звучать заранее он не будет: сыграй то, что видишь.',
+      tip: 'До — на добавочной линии снизу, Ре — под нижней, Ми — на нижней, Фа — над ней. Скорость чтения сейчас не оценивается.',
+      readiness: 'Прочитай новый короткий рисунок самостоятельно, без названий и показа клавиши.' }),
+];
+export const MUSICAL_MODULE = { id: 'first-music', title: 'От первой мелодии к музыке',
+  description: 'Одно движение, пульс, пауза, память и чтение — по отдельности.', lessonIds: MUSICAL_LESSONS.map(item => item.id) };
+
+// Alternative checkpoints are backed by real, separately scored new lessons.
+// They do not mark any historical lesson as completed or retained.
+export const CURRICULUM_CHECKPOINT_ALTERNATIVES = {
+  'keyboard-landmarks': [['course-first-melody']], 'right-five': [['course-music-step']],
+  pulse: [['course-music-pulse']], 'note-lengths': [['course-music-pulse']], rests: [['course-music-space']],
+  'ear-copy': [['course-music-echo']], 'memory-short': [['course-music-echo']], 'treble-reading': [['course-music-read']],
+};
+
+// These describe preparation for the curated opening, never mastery of a song.
+// External MIDI files have no inferred requirements or readiness here.
+const beginnerRight = ['keyboard-landmarks','right-five','pulse'];
+export const CURATED_SONG_GOALS = {
+  'joy-beginner': { difficulty: 'beginner', right: beginnerRight, left: ['left-five','pulse','bass-pattern'],
+    both: [...beginnerRight,'left-five','bass-pattern','both-pulse'] },
+  joy: { difficulty: 'beginner', right: beginnerRight, left: [], both: [], availableHands: ['right'] },
+  'star-beginner': { difficulty: 'beginner', right: [...beginnerRight,'position-shift'], left: ['left-five','pulse','bass-pattern'],
+    both: [...beginnerRight,'position-shift','left-five','bass-pattern','both-pulse'] },
+  star: { difficulty: 'beginner', right: [...beginnerRight,'position-shift'], left: [], both: [], availableHands: ['right'] },
+  'fur-elise': { difficulty: 'advanced', right: [...beginnerRight,'position-shift','black-keys'],
+    left: ['left-five','pulse','bass-pattern','position-shift'],
+    both: [...beginnerRight,'position-shift','black-keys','left-five','bass-pattern','both-pulse'] },
+};
+
 const pulse = [
   lesson('pulse-even', 'Найди ровный пульс', 'Слушай четыре счёта. Играй одну До на каждый следующий счёт, не догоняя пропущенную ноту.', Array(8).fill(60),
     { skillIds: ['pulse'], prerequisites: ['keyboard-landmarks'], kind: 'rhythm', readiness: 'Восемь ровных вступлений на одной клавише без подсказки высоты.' }),
