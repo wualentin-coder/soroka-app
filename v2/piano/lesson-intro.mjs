@@ -1,5 +1,5 @@
-import { noteInfo } from './pitch.mjs?v=e55349755070';
-import { createScoreTimeline } from './score.mjs?v=e55349755070';
+import { noteInfo } from './pitch.mjs?v=46c6017f0462';
+import { createScoreTimeline } from './score.mjs?v=46c6017f0462';
 
 const GROUP_WINDOW = .035, EPSILON = 1e-9;
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -78,11 +78,12 @@ function courseConcept(lesson, frames) {
 
 /** Voice is returned separately: the caller speaks first, then plays frames. */
 export function createLessonIntro(lesson, { kind = 'course', hand = inferHand(lesson || {}), part = 1, whole = false, octave = 0,complete=false } = {}) {
+  const connection=kind==='composition'&&lesson?.kind==='connection'&&Number.isInteger(lesson.fromPart)&&lesson.fromPart>=1&&Number.isInteger(lesson.toPart)&&lesson.toPart>=lesson.fromPart;
   if (!['course', 'composition'].includes(kind) || !Object.hasOwn(HAND_LABELS, hand) || ![-1, 0, 1].includes(octave) ||
-      !whole && (!Number.isInteger(part) || part < 1)) throw new TypeError('Invalid lesson intro options.');
+      !whole && !connection && (!Number.isInteger(part) || part < 1)) throw new TypeError('Invalid lesson intro options.');
   const { frames: source, sourceTempo } = sourceFrames(lesson, hand, octave), groups = groupsFor(source);
   const concept = kind === 'course' ? courseConcept(lesson, source) : { id: whole ? 'whole-arrangement' : hand === 'both' ? 'shared-pulse' : 'composition-pattern',
-    label: whole ? 'Соединяем изученные участки' : `${HAND_LABELS[hand]} · участок ${part}` };
+    label: connection?`Соединяем фразы ${lesson.fromPart}–${lesson.toPart}`:whole ? 'Соединяем изученные участки' : `${HAND_LABELS[hand]} · участок ${part}` };
   let start = 0;
   if (kind === 'course' && concept.id === 'duration-pulse') start = Math.max(0, groups.findIndex(group => group.some(frame => frame.beats >= 2)) - 1);
   if (kind === 'course' && concept.id === 'black-key') start = Math.max(0, groups.findIndex(group => group.some(frame => BLACK.has(frame.midi % 12))) - 1);
@@ -99,6 +100,7 @@ export function createLessonIntro(lesson, { kind = 'course', hand = inferHand(le
   const present = new Set(source.map(frame => frame.hand));
   let spoken = concept.speech;
   if (kind === 'composition') spoken = whole ? 'Теперь соедини всю учебную аранжировку. Начни спокойно, сохраняя общий счёт. Покажу короткий пример, затем сыграешь сам.' :
+    connection ? `Соедини знакомые фразы ${lesson.fromPart}–${lesson.toPart}. Не останавливай общий счёт между ними. Покажу начало, затем сыграешь весь участок.` :
     hand === 'right' ? `Сначала этот участок правой рукой: ${names}. Посмотри на ноты и клавиши в показе, затем повторишь сам.` :
     hand === 'left' ? `Теперь тот же участок левой рукой: ${names}. Правая пока отдыхает. Сначала короткий показ, затем твоя очередь.` :
     present.size < 2 ? `Здесь играет только ${present.has('left') ? 'левая' : 'правая'} рука; другая отдыхает. Сохраним общий счёт и повторим знакомые звуки.` :
@@ -108,4 +110,13 @@ export function createLessonIntro(lesson, { kind = 'course', hand = inferHand(le
     frames, concept: concept.id, showNotation: kind !== 'course' || !['course-do', 'course-do-re'].includes(lesson.id),
     beats: frames.map(frame => frame.beats), clef: hand === 'both' ? 'grand' : hand === 'left' ? 'bass' : 'treble',
     hand, demoScale, tempo: sourceTempo / demoScale, duration: Math.max(...frames.map(frame => frame.time + frame.duration)) };
+}
+
+/** Teach staff landmarks without playing the unseen assessment's answer. */
+export function createNotationGuide(lesson,{octave=0}={}){
+  if(typeof lesson?.notationGuide!=='string'||!lesson.notationGuide.trim())return null;
+  const plan=createLessonIntro({id:'staff-landmarks-guide',title:'Ориентиры на нотном стане',practiceKind:'landmarks',
+    introSpeech:lesson.notationGuide.slice(0,150),tempo:48,hand:'Правая рука',
+    notes:[60,62,64,65].map(midi=>({midi,beats:1}))},{kind:'course',hand:'right',octave,complete:true});
+  return {...plan,subtitle:'Линия, промежуток и клавиша',concept:'staff-landmarks',showNotation:true};
 }
