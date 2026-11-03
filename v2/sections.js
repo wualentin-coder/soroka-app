@@ -166,7 +166,7 @@ function extendedPage(page) {
     tasks: renderTasksPage, saved: renderSavedPage, finance: renderFinancePage,
     vault: renderVaultPage, inbox: renderInboxPage, overview: renderOverviewPage,
     projects: renderProjectsPage, metrics: renderMetricsPage, archive: renderArchivePage,
-    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage, english: renderEnglishPage, sport: renderSportPage, sleep: renderSleepPage
+    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage, english: renderEnglishPage, sport: renderSportPage, sleep: renderSleepPage, piano: renderPianoPage
   };
   return (pages[page] || renderMorePage)();
 }
