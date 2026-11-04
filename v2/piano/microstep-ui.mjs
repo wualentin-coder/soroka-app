@@ -1,4 +1,4 @@
-import {pitchNotation} from './notation.mjs?v=157775a3eea1';
+import {pitchNotation} from './notation.mjs?v=b9fc53831534';
 
 const FINGERS=['','большой','указательный','средний','безымянный','мизинец'];
 const POINTS=[[9,29],[22,13],[36,8],[50,13],[63,22]];
@@ -20,7 +20,7 @@ export function microstepViewModel(model){
   const source=model.cue,validCue=source&&Number.isInteger(source.midi)&&source.midi>=0&&source.midi<=127;
   const finger=validCue&&Number.isInteger(source.finger)&&source.finger>=1&&source.finger<=5?source.finger:null;
   const side=validCue?hand(source.hand):null;
-  const cue=validCue?{midi:source.midi,name:text(source.name,32)||pitchNotation(source.midi).name,
+  const cue=validCue?{midi:source.midi,name:source.showName===false?'':text(source.name,32)||pitchNotation(source.midi).name,
     staffText:text(source.staffText,100),finger,hand:side,position:text(source.position,80)}:null;
   if(cue){cue.badge=[cue.name,finger?`${finger} — ${FINGERS[finger]}`:''].filter(Boolean).join(' · ');
     cue.description=['Подсказка',cue.name,cue.staffText,finger?`${finger} — ${FINGERS[finger]}`:'',side?side==='left'?'левая рука':'правая рука':'',cue.position].filter(Boolean).join('. ');}

@@ -1,5 +1,5 @@
-import { COURSE, normalizeCourseProgress } from './course.mjs?v=157775a3eea1';
-import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=157775a3eea1';
+import { COURSE, normalizeCourseProgress } from './course.mjs?v=b9fc53831534';
+import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=b9fc53831534';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],

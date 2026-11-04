@@ -1,6 +1,7 @@
-import {normalizeCourseProgress} from './course.mjs?v=157775a3eea1';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=157775a3eea1';
-import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=157775a3eea1';
+import {normalizeCourseProgress} from './course.mjs?v=b9fc53831534';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=b9fc53831534';
+import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=b9fc53831534';
+import {normalizePerformanceProgress} from './learning-tempo.mjs?v=b9fc53831534';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;
@@ -12,6 +13,16 @@ const text=(v,max=200)=>typeof v==='string'?v.slice(0,max):null;
 const range=(v,max)=>Number.isFinite(v)&&v>=0&&v<=max?v:0;
 const canonical=v=>v&&typeof v==='object'?Array.isArray(v)?v.map(canonical):Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 const prefer=(x,y,tx=0,ty=0)=>tx>ty?x:ty>tx?y:JSON.stringify(canonical(x))>JSON.stringify(canonical(y))?x:y;
+const mixedSourceId=value=>typeof value==='string'&&/^[-A-Za-z0-9._:]{1,160}$/.test(value)&&!['__proto__','prototype','constructor'].includes(value)?value:null;
+function mergePerformance(a,b,atA,atB){
+  if(!a||!b)return a||b;
+  const cursorTieBreakKey=row=>({...row,completed:[],targetReached:false});
+  const selected=atA>atB?a:atB>atA?b:JSON.stringify(canonical(cursorTieBreakKey(a)))>=JSON.stringify(canonical(cursorTieBreakKey(b)))?a:b;
+  if(a.version!==b.version||a.sourceFingerprint!==b.sourceFingerprint||a.hand!==b.hand||a.noteCount!==b.noteCount||
+    a.sourceBpm!==b.sourceBpm||a.baseBpm!==b.baseBpm||JSON.stringify(a.steps)!==JSON.stringify(b.steps))return selected;
+  const completed=selected.steps.filter(bpm=>a.completed.includes(bpm)||b.completed.includes(bpm));
+  return {...selected,completed,targetReached:a.targetReached||b.targetReached};
+}
 function studyMastery(value){
   const v=object(value);
   if(!text(v.stageId)||v.stageId.length>200||v.metric!=='timed-notes-v1'||!Number.isInteger(v.scorePercent)||v.scorePercent<80||v.scorePercent>100||!Number.isFinite(v.at)||v.at<0||v.at>8640000000000000||!['mic','midi'].includes(v.source))return null;
@@ -41,9 +52,13 @@ function mergeStudyRows(x,y,atX,atY){
 function progressMap(value,name){const out={};for(const [id,raw]of Object.entries(object(value)).slice(0,2000)){
   if(!id||id.length>600||['__proto__','prototype','constructor'].includes(id))continue;const row=object(raw);
   if(name==='studyProgress'){if(!text(row.version,300))continue;const mastery=studyMastery(row.mastery),legacy=studyLegacy(row.legacy);out[id]={version:text(row.version,300),completed:[...new Set((Array.isArray(row.completed)?row.completed:[]).filter(v=>typeof v==='string'&&v.length<=200))].sort().slice(0,2048),cursor:text(row.cursor),...(mastery?{mastery}:{}),...(legacy?{legacy}:{})};}
-  else if(name==='flowProgress')out[id]={best:range(row.best,100),last:range(row.last,100),at:finite(row.at),beta:row.beta===true,
-    ...(Number.isFinite(row.practiceBpm)&&row.practiceBpm>=40&&row.practiceBpm<=180?{practiceBpm:row.practiceBpm}:{}),
-    ...(Number.isInteger(row.stablePasses)&&row.stablePasses>=0&&row.stablePasses<=2?{stablePasses:row.stablePasses}:{})};
+  else if(name==='flowProgress'){
+    const performance=normalizePerformanceProgress(row.performance),mixed=mixedSourceId(row.mixedSourceId);
+    out[id]={best:range(row.best,100),last:range(row.last,100),at:finite(row.at),beta:row.beta===true,
+      ...(Number.isFinite(row.practiceBpm)&&row.practiceBpm>=20&&row.practiceBpm<=300?{practiceBpm:row.practiceBpm}:{}),
+      ...(Number.isInteger(row.stablePasses)&&row.stablePasses>=0&&row.stablePasses<=2?{stablePasses:row.stablePasses}:{}),
+      ...(performance?{performance}:{}),...(mixed?{mixedSourceId:mixed}:{})};
+  }
   else out[id]={practiced:row.practiced===true,passed:row.passed===true,score:range(row.score,10),at:finite(row.at)};
 }return out;}
 function historyRows(value){return(Array.isArray(value)?value:[]).filter(h=>h&&Number.isFinite(h.at)&&typeof h.lesson==='string').map(h=>({at:finite(h.at),lesson:text(h.lesson),title:text(h.title,200)||text(h.lesson),correct:range(h.correct,5000),accuracy:range(h.accuracy,100),seconds:range(h.seconds,86400),kind:text(h.kind,40)||'learn',metric:text(h.metric,80)||'first-attempt-v1',...(Number.isFinite(h.score)?{score:range(h.score,10)}:{})})).sort((a,b)=>b.at-a.at||JSON.stringify(a).localeCompare(JSON.stringify(b))).slice(0,50);}
@@ -89,7 +104,10 @@ export function mergePianoState(a,b){
   for(const name of maps){out[name]={...a[name],...b[name]};for(const id of Object.keys(out[name])){
     const x=a[name][id],y=b[name][id];if(!x||!y)continue;
     if(name==='studyProgress')out[name][id]=mergeStudyRows(x,y,a.updatedAt,b.updatedAt);
-    else if(name==='flowProgress')out[name][id]={...prefer(x,y,x.at,y.at),best:Math.max(finite(x.best),finite(y.best))};
+    else if(name==='flowProgress'){
+      const latest=prefer(x,y,x.at,y.at),performance=mergePerformance(x.performance,y.performance,x.at,y.at),mixed=latest.mixedSourceId||x.mixedSourceId||y.mixedSourceId;
+      out[name][id]={...latest,best:Math.max(finite(x.best),finite(y.best)),...(performance?{performance}:{}),...(mixed?{mixedSourceId:mixed}:{})};
+    }
     else if(name==='compositionProgress')out[name][id]={...prefer(x,y,x.at,y.at),practiced:!!(x.practiced||y.practiced),passed:!!(x.passed||y.passed),score:Math.max(finite(x.score),finite(y.score))};
   }}
   const history=new Map();for(const entry of [...a.history,...b.history])history.set([entry.at,entry.lesson,entry.kind,entry.metric,entry.correct,entry.score].join(':'),entry);
@@ -99,11 +117,11 @@ export function mergePianoState(a,b){
 export function toPianoProgress(value){
   const v=normalizePianoState(value),out={version:1,updatedAt:v.updatedAt,resetAt:v.resetAt,courseProgress:v.courseProgress,learningProgress:v.learningProgress,microProgress:v.microProgress,history:v.history};
   for(const name of maps)out[name]=v[name];out.pendingFlow=null;
-  if(v.pendingFlow&&typeof v.pendingFlow==='object'){const row=v.pendingFlow;out.pendingFlow={courseId:text(row.courseId),compositionId:text(row.compositionId),stageId:text(row.stageId),...(text(row.studyVersion,300)?{studyVersion:text(row.studyVersion,300)}:{}),polish:row.polish===true,goalReached:row.goalReached===true};}
+  if(v.pendingFlow&&typeof v.pendingFlow==='object'){const row=v.pendingFlow;out.pendingFlow={courseId:text(row.courseId),compositionId:text(row.compositionId),stageId:text(row.stageId),...(text(row.studyVersion,300)?{studyVersion:text(row.studyVersion,300)}:{}),polish:row.polish===true,goalReached:row.goalReached===true,...(row.performance===true?{performance:true}:{})};}
   out.dailyRun=v.dailyRun;
   if(typeof v.favoriteSongId==='string')out.favoriteSongId=v.favoriteSongId.slice(0,80);
   out.preferences={};for(const name of ['voice','cropKeys','intros','accompaniment','metronome'])if(typeof v[name]==='boolean')out.preferences[name]=v[name];
-  for(const [name,min,max]of [['tempo',20,240],['sensitivity',1,100],['backingVolume',0,1]])if(Number.isFinite(v[name])&&v[name]>=min&&v[name]<=max)out.preferences[name]=v[name];
+  for(const [name,min,max]of [['tempo',20,300],['sensitivity',1,100],['backingVolume',0,1]])if(Number.isFinite(v[name])&&v[name]>=min&&v[name]<=max)out.preferences[name]=v[name];
   if(['mic','midi'].includes(v.input))out.preferences.input=v.input;if(['falling','staff','both'].includes(v.notation))out.preferences.notation=v.notation;if([-1,0,1].includes(v.octave))out.preferences.octave=v.octave;
   return out;
 }

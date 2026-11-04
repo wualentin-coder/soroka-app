@@ -1,9 +1,12 @@
-import {COURSE} from './course.mjs?v=157775a3eea1';
-import {createScoreTimeline} from './score.mjs?v=157775a3eea1';
-import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=157775a3eea1';
-import {MICROLESSONS,MICRO_CUES,MICRO_MODULE_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=157775a3eea1';
+import {COURSE} from './course.mjs?v=b9fc53831534';
+import {createScoreTimeline} from './score.mjs?v=b9fc53831534';
+import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=b9fc53831534';
+import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=b9fc53831534';
+import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=b9fc53831534';
+import {createMixedPracticeStages} from './mixed-practice.mjs?v=b9fc53831534';
+import {supportLevel} from './support-policy.mjs?v=b9fc53831534';
 
-const MAX_NOTES=5000,MAX_STAGES=16;
+const MAX_NOTES=5000,MAX_STAGES=48;
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));
 const clone=value=>structuredClone(value);
 const supportedKind=new Set(['new','reading','recall','rhythm']);
@@ -13,8 +16,9 @@ const STAFF=presentation(false,false,true,false,false,false);
 const HIDDEN=presentation(false,false,false,false,false,false);
 const stable=value=>value&&typeof value==='object'?Array.isArray(value)?value.map(stable):Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;
 const same=(a,b)=>JSON.stringify(stable(a))===JSON.stringify(stable(b));
-const familyFor=(lesson,kind)=>kind==='recall'?'memory':kind==='reading'?'reading':kind==='rhythm'?'rhythm':['echo','recall'].includes(lesson.practiceKind)?'memory':lesson.practiceKind==='reading'?'reading':lesson.practiceKind==='rhythm'?'rhythm':'notes';
+const familyFor=(lesson,kind)=>kind==='recall'?'memory':kind==='reading'?'reading':kind==='rhythm'?'rhythm':lesson.id==='course-memory'||['echo','recall'].includes(lesson.practiceKind)?'memory':lesson.practiceKind==='reading'?'reading':lesson.practiceKind==='rhythm'?'rhythm':'notes';
 const handFor=lesson=>['Левая рука','left'].includes(lesson.hand)?'left':'right';
+const sameHand=(a,b)=>a===b||['Левая рука','left'].includes(a)&&['Левая рука','left'].includes(b)||['Правая рука','right'].includes(a)&&['Правая рука','right'].includes(b);
 const pitches=notes=>[...new Set(notes.map(note=>note.midi))];
 
 function validate(lesson,kind){
@@ -38,7 +42,7 @@ function original(lesson,values,{beats=[],rests=[]}={}){
 }
 function whole(lesson,family){
   return {id:'whole',title:'Самостоятельно',instruction:family==='memory'?'Вспомни весь рисунок без показа.':family==='rhythm'?'Сыграй весь ритм; продолжай, даже если ошибся.':'Сыграй весь рисунок без подсветки клавиш.',
-    notes:clone(lesson.notes),mode:family==='rhythm'?'flow':'check',presentation:clone(family==='memory'||family==='rhythm'?HIDDEN:STAFF),purpose:'whole',assessment:true,
+    notes:clone(lesson.notes),mode:family==='rhythm'?'flow':'check',presentation:clone(family==='memory'?HIDDEN:STAFF),purpose:'whole',assessment:true,supportLevel:3,transitionIndices:[],
     sourceRange:{start:0,end:lesson.notes.length},goal:{type:family,pitches:pitches(lesson.notes)}};
 }
 
@@ -50,24 +54,6 @@ function recallSample(lesson){
 function groupMaterial(lesson,groups,start,count){
   const end=Math.min(groups.length,start+count);
   return clip(lesson.notes,groups,groups[start].start,groups[end-1].end);
-}
-function focusGroup(lesson,groups,cue){
-  const has=(group,predicate)=>lesson.notes.slice(group.start,group.end).some(predicate);
-  let index=groups.findIndex(group=>has(group,note=>note.restBefore>0));
-  if(index<0&&MICRO_HAND_BLOCKS[lesson.id])index=groups.findIndex(group=>group.start>=MICRO_HAND_BLOCKS[lesson.id]);
-  if(index<0&&cue.focus==='accidental')index=groups.findIndex(group=>has(group,note=>[1,3,6,8,10].includes(note.midi%12)));
-  if(index<0&&cue.focus==='register')index=groups.findIndex(group=>has(group,note=>Math.abs(note.midi-lesson.notes[0].midi)>=5));
-  if(index<0)index=groups.findIndex(group=>has(group,note=>note.beats!==undefined&&note.beats!==1));
-  return Math.max(0,index-1);
-}
-function handInstruction(lesson,material){
-  const size=MICRO_HAND_BLOCKS[lesson.id];if(!size)return null;
-  const runs=[];
-  for(let index=material.sourceRange.start;index<material.sourceRange.end;index++){
-    const hand=Math.floor(index/size)%2?'левой':'правой';
-    if(runs.at(-1)?.hand===hand)runs.at(-1).count++;else runs.push({hand,count:1});
-  }
-  return runs.map(run=>`${run.count} ${run.count===1?'нота':run.count<5?'ноты':'нот'} ${run.hand}`).join(', затем ')+'.';
 }
 // Reading preparation uses new short orders of familiar pitches. It never
 // rehearses an excerpt of the unseen canonical answer or assigns new fingers.
@@ -83,54 +69,66 @@ function readingMaterials(lesson,groups){
     return {midi,beats:1,...(match.hand?{hand:match.hand}:{})};
   })}));
 }
-function structuredScenes(lesson,groups,family,add){
-  const cue=MICRO_MODULE_CUES[lesson.moduleId],plain={...GUIDED,fingers:false,preview:false};
+function readingScenes(lesson,groups,add,guide){
+  const variants=guide&&lesson.practiceKind==='reading'?[sourceExample(lesson,groups,guide.example.order),sourceExample(lesson,groups,guide.example.order)]:readingMaterials(lesson,groups);
+  if(variants.length<2)return false;
+  add('warmup','orient','Знакомые ориентиры',guide?.preparation||'Сравни ноты и клавиши на другом коротком рисунке.',variants[0],
+    {spoken:guide?.concept,presentation:{...GUIDED,preview:false},supportLevel:0,goal:{type:'reading',focus:'landmark',pitches:pitches(variants[0].notes)}});
+  add('motif','phrase','Новый короткий рисунок',guide?.example.instruction||'Прочитай другой порядок знакомых нот.',variants[1],
+    {mode:'check',presentation:{...GUIDED,preview:false},supportLevel:0,goal:{type:'reading',pitches:pitches(variants[1].notes)}});
+  if(guide)add('focused-repair','phrase','Проверяем нотный ориентир',guide.repair.instruction,clone(variants[1]),
+    {commonMistake:guide.commonMistake,mode:'check',presentation:{...GUIDED,preview:false},supportLevel:0,goal:{type:'reading',pitches:pitches(variants[1].notes)}});
+  return true;
+}
+function sourceExample(lesson,groups,order){
+  const actual=order.filter(index=>index<groups.length),notes=[],sourceNoteIndices=[];
+  for(const [onset,index] of actual.entries()){
+    const range=groups[index];
+    for(let at=range.start;at<range.end;at++){
+      const note=clone(lesson.notes[at]);
+      if(note.group!==undefined)note.group=onset;
+      if(MICRO_HAND_BLOCKS[lesson.id])note.hand=Math.floor(at/MICRO_HAND_BLOCKS[lesson.id])%2?'left':'right';
+      notes.push(note);sourceNoteIndices.push(at);
+    }
+  }
+  return {notes,sourceAttackIndices:actual,sourceNoteIndices};
+}
+function authoredScenes(lesson,groups,family,add,guide){
   if(family==='reading'){
-    const variants=readingMaterials(lesson,groups);
-    if(variants.length<2)return false;
-    add('warmup','orient','Знакомые ориентиры','Сравни ноты и клавиши на другом коротком рисунке.',variants[0],
-      {presentation:plain,goal:{type:'reading',focus:'landmark',pitches:pitches(variants[0].notes)}});
-    add('motif','phrase','Новый короткий рисунок','Прочитай другой порядок знакомых нот.',variants[1],
-      {mode:'check',presentation:{...STAFF,names:true},goal:{type:'reading',pitches:pitches(variants[1].notes)}});
-    add('fade','fade','Читаем без названий','Тот же маленький рисунок, теперь только по стану.',clone(variants[1]),
-      {mode:'check',presentation:STAFF,goal:{type:'reading',pitches:pitches(variants[1].notes)}});
-    return true;
+    return readingScenes(lesson,groups,add,guide);
   }
-  const start=Math.min(focusGroup(lesson,groups,cue),Math.max(0,groups.length-2));
-  const warmup=groupMaterial(lesson,groups,start,2),memory=family==='memory',rhythm=family==='rhythm';
-  const hasRest=warmup.notes.some(note=>note.restBefore>0),poly=groups.some(group=>group.end-group.start>1);
-  const warmText=memory?'Послушай маленькую часть и запомни направление.':hasRest?'Сначала найди ноты вокруг паузы без спешки.':cue.warmup;
-  add('warmup','orient','Готовим трудное место',handInstruction(lesson,warmup)||warmText,warmup,
-    {presentation:memory?{...HIDDEN,preview:true}:plain,goal:{type:hasRest?'rest':rhythm?'pulse':family,focus:cue.focus,pitches:pitches(warmup.notes)}});
-  // Cover the whole source in short phrases; a final single attack joins the
-  // preceding phrase. Boundaries are actual onset groups, including chords.
-  const chunks=[];
-  for(let at=0;at<groups.length;){
-    const remaining=groups.length-at,count=remaining===5?3:Math.min(4,remaining);
-    chunks.push(groupMaterial(lesson,groups,at,count));at+=count;
+  const memory=family==='memory',rhythm=family==='rhythm',mode=rhythm?'flow':'learn';
+  const rangeMaterial=range=>range[0]<lesson.notes.length?clip(lesson.notes,groups,range[0],Math.min(range[1],lesson.notes.length)):null;
+  const warmup=rangeMaterial(guide.warmup)||groupMaterial(lesson,groups,0,Math.min(2,groups.length));
+  add('warmup','orient','Готовим трудное место',guide.preparation,warmup,
+    {spoken:guide.concept,presentation:memory?{...HIDDEN,preview:true}:GUIDED,
+      goal:{type:warmup.notes.some(note=>note.restBefore>0)?'rest':rhythm?'pulse':family,pitches:pitches(warmup.notes),objective:guide.objective}});
+  const chunks=guide.phrases.filter(range=>range.start<lesson.notes.length);
+  for(const [index,phrase] of chunks.entries()){
+    const material=rangeMaterial([phrase.start,phrase.end]);
+    add(chunks.length===1?'motif':`motif-${index+1}`,'phrase',`Часть ${index+1} из ${chunks.length}`,phrase.instruction,material,
+      {authoredPhrase:true,mode,presentation:memory?{...HIDDEN,preview:true}:GUIDED,goal:{type:family,pitches:pitches(material.notes)}});
   }
-  for(let index=0;index<chunks.length;index++){
-    const material=chunks[index];
-    const text=memory?'Послушай эту часть и повтори по памяти.':rhythm?'Считай ровно; в паузе не нажимай новую клавишу.':poly?'Ноты одного столбика сыграй вместе, затем следующий.':cue.motif;
-    add(chunks.length===1?'motif':`motif-${index+1}`,'phrase',`Часть ${index+1} из ${chunks.length}`,handInstruction(lesson,material)||text,material,
-      {mode:rhythm?'flow':'learn',presentation:memory?{...HIDDEN,preview:true}:plain,
-        goal:{type:family,focus:cue.focus,pitches:pitches(material.notes)}});
-  }
-  const faded=groupMaterial(lesson,groups,start,Math.min(4,groups.length-start));
-  add('fade','fade','Меньше подсказок',handInstruction(lesson,faded)|| (memory?'Повтори часть без нового показа.':rhythm?'Сохрани весь счёт без подсветки следующей клавиши.':'Сыграй часть по стану без названий и подсветки.'),faded,
-    {mode:rhythm?'flow':'learn',presentation:memory||rhythm?HIDDEN:STAFF,goal:{type:family,focus:cue.focus,pitches:pitches(faded.notes)}});
+  const comparison=sourceExample(lesson,groups,guide.example.order);
+  add('contrast','contrast','Сравни другой рисунок',guide.example.instruction,comparison,
+    {mode,presentation:memory?{...HIDDEN,preview:true}:GUIDED,sourceAttackIndices:comparison.sourceAttackIndices,goal:{type:'contrast',pitches:pitches(comparison.notes)}});
+  const repairMaterial=rangeMaterial([guide.repair.start,guide.repair.end]);
+  if(repairMaterial)add('focused-repair','phrase','Закрепляем трудный переход',guide.repair.instruction,repairMaterial,
+    {mode,presentation:memory?{...HIDDEN,preview:true}:GUIDED,commonMistake:guide.commonMistake,goal:{type:family,pitches:pitches(repairMaterial.notes)}});
+  if(memory)add('fade','fade','Повторяем без показа','Повтори знакомую часть без нового прослушивания.',warmup,
+    {mode,presentation:HIDDEN,goal:{type:family,pitches:pitches(warmup.notes)}});
   add('whole-guided','phrase','Соединяем весь рисунок',memory?'После показа повтори весь рисунок.':rhythm?'Соедини весь ритм, сохраняя паузы и счёт.':'Соедини знакомые части в полный рисунок.',
     {notes:clone(lesson.notes),sourceRange:{start:0,end:lesson.notes.length}},
-    {coverage:true,mode:memory?'check':rhythm?'flow':'learn',presentation:memory?{...HIDDEN,preview:true}:rhythm?plain:STAFF,
-      goal:{type:family,focus:cue.focus,pitches:pitches(lesson.notes)}});
+    {coverage:true,mode:memory?'check':mode,presentation:memory?{...HIDDEN,preview:true}:GUIDED,goal:{type:family,pitches:pitches(lesson.notes)}});
   return true;
 }
 
 /** Teaching scenes are provisional; only the final canonical whole is assessment. */
-export function createMicroLesson(lesson,{kind='new'}={}){
-  const groups=validate(lesson,kind),family=familyFor(lesson,kind),known=canonical.get(lesson.id),data=MICROLESSONS[lesson.id];
+export function createMicroLesson(lesson,{kind='new',knownLessonIds=[]}={}){
+  const groups=validate(lesson,kind),family=familyFor(lesson,kind),known=canonical.get(lesson.id),data=MICROLESSONS[lesson.id],guide=LESSON_GUIDES[lesson.id];
+  const transitions=guide?.transitionIndices||FOUNDATION_TRANSITIONS[lesson.id]||[];
   const exact=known&&(lesson.practiceKind===undefined||lesson.practiceKind===known.practiceKind)&&
-    (lesson.hand===undefined||handFor(lesson)===handFor(known))&&
+    (lesson.hand===undefined||sameHand(lesson.hand,known.hand))&&
     (same(lesson.notes,known.notes)||kind==='recall'&&same(lesson.notes,recallSample(known)));
   const detailed=!!(data&&exact&&(family!=='reading'||known.practiceKind==='reading')),stages=[];
   let authored=!!exact;
@@ -139,12 +137,12 @@ export function createMicroLesson(lesson,{kind='new'}={}){
     if(stages.some(stage=>stage.id===id))throw new Error('Duplicate micro scene.');
     const {presentation:cue,...extra}=options;
     stages.push({id,title,instruction,notes:material.notes,mode:options.mode||'learn',presentation:clone(cue||GUIDED),purpose,assessment:false,
-      ...(material.sourceRange?{sourceRange:material.sourceRange}:{}),...extra});
+      ...(material.sourceRange?{sourceRange:material.sourceRange}:{}),...(material.sourceNoteIndices?{sourceNoteIndices:clone(material.sourceNoteIndices)}:{}),...extra});
   };
   if(detailed){
     if(family==='reading'){
       const guide=original(lesson,data.guide||[60,62,64,65]);
-      add('staff-guide','orient','Ориентиры стана','Сравни линию, промежуток и клавишу.',{notes:guide},{spoken:data.cue,goal:{type:'reading',pitches:pitches(guide||[])}});
+      add('staff-guide','orient','Ориентиры стана','Сравни линию, промежуток и клавишу.',{notes:guide},{spoken:data.cue,presentation:{...GUIDED,preview:false},goal:{type:'reading',pitches:pitches(guide||[])}});
     }else if(family==='memory'){
       add('listen-part','orient','Сначала послушай','Послушай часть и повтори без дорожки.',clip(lesson.notes,groups,0,Math.min(3,lesson.notes.length)),
         {presentation:{...HIDDEN,preview:true},spoken:data.cue,goal:{type:'memory',pitches:pitches(lesson.notes.slice(0,3))}});
@@ -170,7 +168,7 @@ export function createMicroLesson(lesson,{kind='new'}={}){
     if(family!=='reading'&&data.family!=='landmark'){
       const range=data.motif||[0,Math.min(4,lesson.notes.length)];
       add('motif','phrase','Маленькая фраза',family==='memory'?'Повтори короткую часть по памяти.':'Сыграй знакомую часть без спешки.',clip(lesson.notes,groups,...range),
-        {presentation:family==='memory'?HIDDEN:GUIDED,goal:{type:family,pitches:pitches(lesson.notes.slice(...range))}});
+        {presentation:family==='memory'?{...HIDDEN,preview:true}:GUIDED,goal:{type:family,pitches:pitches(lesson.notes.slice(...range))}});
       add('fade','fade','Меньше подсказок',family==='memory'?'Повтори часть без нового показа.':family==='rhythm'?'Сохрани счёт без показа следующей клавиши.':'Теперь ориентируйся по нотам без названий.',clip(lesson.notes,groups,...range),
         {mode:family==='rhythm'?'flow':'learn',presentation:family==='memory'||family==='rhythm'?HIDDEN:STAFF,goal:{type:family,pitches:pitches(lesson.notes.slice(...range))}});
     }
@@ -183,13 +181,43 @@ export function createMicroLesson(lesson,{kind='new'}={}){
       {coverage:true,mode:family==='memory'?'check':family==='rhythm'?'flow':'learn',presentation:family==='memory'?{...HIDDEN,preview:true}:family==='rhythm'?GUIDED:STAFF,
         goal:{type:family,pitches:pitches(lesson.notes)}});
   }else if(authored){
-    // Module identity comes from the canonical course, not a caller's label.
-    authored=structuredScenes({...lesson,moduleId:known.moduleId},groups,family,add);
+    authored=guide?authoredScenes(lesson,groups,family,add,guide):readingScenes(lesson,groups,add);
   }
-  stages.push(whole(lesson,family));
+  if(authored){
+    if(family!=='memory'){
+      const previous=stages.find(stage=>stage.purpose==='fade')||stages.find(stage=>stage.id==='focused-repair')||
+        stages.findLast(stage=>!stage.coverage&&stage.purpose==='phrase')||stages.find(stage=>!stage.coverage);
+      for(let at=stages.length-1;at>=0;at--)if(stages[at].purpose==='fade')stages.splice(at,1);
+      const at=stages.findIndex(stage=>stage.coverage),tail=at<0?[]:stages.splice(at);
+      const material={notes:clone(previous.notes),...(previous.sourceRange?{sourceRange:clone(previous.sourceRange)}:{}),...(previous.sourceNoteIndices?{sourceNoteIndices:clone(previous.sourceNoteIndices)}:{})};
+      for(const [id,level,title,instruction] of [
+        ['fade-keyboard',1,'Без подсветки клавиши','Тот же рисунок: названия и пальцы ещё помогают.'],
+        ['fade-names',2,'Читаем без названий','Названия скрыты; пальцы подскажем только на переходах.'],
+        ['fade-fingers',3,'Только нотный стан','Повтори тот же рисунок без названий и номеров пальцев.'],
+      ])add(id,'fade',title,instruction,clone(material),{mode:family==='rhythm'?'flow':family==='reading'?'check':'learn',supportLevel:level,
+        presentation:presentation(false,level===1,true,false,false,level<3),goal:clone(previous.goal)});
+      stages.push(...tail);
+    }
+    for(const stage of stages){
+      stage.supportLevel??=family==='memory'?3:supportLevel(stage);
+      stage.transitionIndices=stage.sourceRange?transitions.filter(index=>index>=stage.sourceRange.start&&index<stage.sourceRange.end).map(index=>index-stage.sourceRange.start):
+        stage.sourceNoteIndices?stage.sourceNoteIndices.flatMap((index,local)=>transitions.includes(index)?[local]:[]):[];
+      if(family==='memory')stage.presentation={...HIDDEN,preview:stage.presentation.preview};
+      else if(stage.supportLevel===0)stage.presentation={...GUIDED,preview:stage.presentation.preview};
+      if(family==='reading')stage.presentation.preview=false;
+    }
+    const mixed=createMixedPracticeStages({...lesson,practiceKind:family==='memory'?'recall':family==='reading'?'reading':family==='rhythm'?'rhythm':lesson.practiceKind},
+      {knownLessonIds,transitionIndices:transitions});
+    if(family==='memory')for(const stage of mixed.filter(stage=>stage.goal.type==='memory')){
+      stage.supportLevel=3;stage.presentation={...HIDDEN,preview:stage.id!=='mixed-return'};
+    }
+    const insert=stages.findIndex(stage=>stage.coverage);
+    stages.splice(insert<0?stages.length:insert,0,...mixed);
+  }
+  stages.push({...whole(lesson,family),transitionIndices:authored?transitions.filter(index=>index<lesson.notes.length):[]});
   if(stages.length>MAX_STAGES)throw new RangeError('A micro lesson has too many scenes.');
-  const version='microlearning-v1:'+songFingerprint([JSON.stringify(stable({id:lesson.id,kind,family,notes:lesson.notes,stages}))]);
-  return {id:lesson.id,version,authored,coverage:detailed?'detailed':authored?'structured':'legacy',stages};
+  const version='microlearning-v1:'+songFingerprint([JSON.stringify(stable({id:lesson.id,kind,family,notes:lesson.notes,...(guide&&authored?{guide}:{}),stages}))]);
+  return {id:lesson.id,version,authored,coverage:authored?'detailed':'legacy',...(guide&&authored?{guide:clone(guide)}:{}),stages};
 }
 
 /** Recommend one preparatory scene; this never changes an outcome or progress. */
@@ -228,6 +256,8 @@ export function chooseMicroRepair(plan,stageId,report){
   const pitch=before.find(item=>item.purpose==='orient'&&item.goal?.pitches?.includes(expected));
   const sourceIndex=stage.sourceRange?stage.sourceRange.start+failed:null;
   const local=sourceIndex===null?null:before.find(item=>item.purpose==='phrase'&&item.sourceRange&&item.sourceRange.start<=sourceIndex&&item.sourceRange.end>sourceIndex);
-  const selected=specific||pair||(plan.coverage==='structured'?local:null)||pitch||local||before.find(item=>item.goal?.type===stage.goal?.type)||before.at(-1);
+  const focused=sourceIndex===null?null:before.find(item=>item.id==='focused-repair'&&(item.sourceRange?
+    item.sourceRange.start<=sourceIndex&&item.sourceRange.end>sourceIndex:stage.goal?.type==='reading'));
+  const selected=focused||specific||pair||(plan.guide?local:null)||pitch||local||before.find(item=>item.goal?.type===stage.goal?.type)||before.at(-1);
   return selected?{index:selected.index,id:selected.id}:null;
 }
