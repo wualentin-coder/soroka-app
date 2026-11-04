@@ -1,6 +1,7 @@
 // Carousel is a local display preference; records and actions stay in Saved.
 let movieDeck = null;
 let movieDeckId = "";
+let movieDeckSnapshot = null;
 let movieFiltersOpen = null;
 let movieLayoutObserver = null;
 let movieSearchOpen = false;
@@ -82,14 +83,35 @@ function movieCarouselCard(item, index, slot) {
 function mountMovieCarousel() {
   const track = document.getElementById("movie-deck");
   if (movieDeck?.track === track) return;
+  syncMovieCarousel();
+}
+// Called once by afterRender, not by paint or poster/slot mutations. Snapshot
+// only displayed copy and action state; provider payloads are never serialized.
+function movieCarouselSnapshot(items) {
+  return items.map(item=>[item.id,item.status,item.viewed,item.statusBeforeViewed,item.skipped,Boolean(item.pinned),
+    ...(item._movieMarathon ? [item._movieMarathon,item._movieMarathon.version,movieCarouselCard(item,0,0),...(item.memberIds||[])] :
+      [item.title,movieCoverSource(item),movieCarouselMetadata(item),movieCarouselScores(item),movieCarouselSeries(item),movieCardBlurb(item)])]);
+}
+function syncMovieCarousel() {
+  const track=document.getElementById('movie-deck');
+  const items=track&&movieCarouselEnabled() ? (typeof movieMarathonEntries==='function'?movieMarathonEntries(savedVisibleItems()):savedVisibleItems()) : [];
+  const snapshot=movieCarouselSnapshot(items);
+  if(movieDeck?.track===track && movieDeckSnapshot?.length===snapshot.length && snapshot.every((row,i)=>row.length===movieDeckSnapshot[i].length&&row.every((value,j)=>value===movieDeckSnapshot[i][j])))return;
+  const previousIndex=movieDeck ? movieDeck.itemIndex(Math.round(movieDeck.position)) : 0;
+  const pendingGesture=Boolean(movieDeck?.drag||movieDeck?.actionTimer||movieDeck?.lift);
+  const ignoreClickUntil=movieDeck?.ignoreClickUntil||0;
+  const focused=document.activeElement;
+  const focus=track?.contains(focused)?{id:focused.dataset.id,action:focused.dataset.action,className:focused.className}:null;
   movieLayoutObserver?.disconnect();movieLayoutObserver=null;
   movieDeck?.destroy(); movieDeck = null;
+  movieDeckSnapshot=snapshot;
   if (!track || !movieCarouselEnabled()) return;
-  const items = typeof movieMarathonEntries==='function'?movieMarathonEntries(savedVisibleItems()):savedVisibleItems();
+  track.replaceChildren();
   if (!items.length) return;
-  const index = Math.max(0, items.findIndex(item => item.id === movieDeckId || item.memberIds?.includes(movieDeckId)));
+  const selected=items.findIndex(item => item.id === movieDeckId || item.memberIds?.includes(movieDeckId));
+  const index=selected<0?Math.min(previousIndex,items.length-1):selected;
   sizeMovieCarousel(track);
-  movieDeck = new LoopDeck(track, {count: items.length, index, card: (i, slot) => movieCarouselCard(items[i], i, slot), onAction: (action,i)=>{
+  movieDeck = new LoopDeck(track, {count: items.length, index, warmImages:true, card: (i, slot) => movieCarouselCard(items[i], i, slot), onAction: (action,i)=>{
     if(items[i]?._movieMarathon){movieMarathonOpen(items[i]);return;}
     const item=savedItem('movies',items[i].id);if(!item)return;
     if(action==='viewed')movieCarouselViewed(item);
@@ -99,6 +121,8 @@ function mountMovieCarousel() {
     const count = document.getElementById("movie-deck-count");
     if (count) count.textContent = `${i + 1} из ${items.length}`;
   }});
+  movieDeck.ignoreClickUntil=pendingGesture?performance.now()+350:Math.max(movieDeck.ignoreClickUntil||0,ignoreClickUntil);
+  if(focus) [...track.querySelectorAll('.active button')].find(button=>button.dataset.id===focus.id&&button.dataset.action===focus.action&&button.className===focus.className)?.focus({preventScroll:true});
   if(typeof ResizeObserver==='function'){
     movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.measure();movieDeck.paint();}});
     track.closest('.movie-library-screen')?.querySelectorAll('.movie-prototype-header,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));

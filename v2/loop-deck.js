@@ -1,8 +1,9 @@
 class LoopDeck {
-  constructor(track,{count,index,card,onChange,onAction,actionLabel}) {
+  constructor(track,{count,index,card,onChange,onAction,actionLabel,warmImages=false}) {
     this.track=track;this.count=count;this.position=index;this.card=card;this.onChange=onChange;
     this.onAction=onAction;
     this.actionLabel=actionLabel;
+    this.warmImages=warmImages;
     this.velocity=0;this.frame=0;this.base=null;this.drag=null;this.ignoreClickUntil=0;this.lift=0;
     this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.abort=new AbortController();const options={signal:this.abort.signal};
@@ -72,7 +73,14 @@ class LoopDeck {
         else existing.set(slot,node);
       }
       // Keep decoded posters and their controls mounted as the window moves.
-      for(const slot of slots)if(!existing.has(slot))this.track.insertAdjacentHTML('beforeend',this.card(this.itemIndex(slot),slot));
+      for(const slot of slots)if(!existing.has(slot)){
+        this.track.insertAdjacentHTML('beforeend',this.card(this.itemIndex(slot),slot));
+        if(this.warmImages)for(const image of this.track.lastElementChild.querySelectorAll('img')){
+          // Hidden edge cards must be ready before entering the visible window.
+          // This is bounded by the seven mounted slots, never the whole library.
+          image.loading='eager';image.decoding='async';image.decode?.().catch(()=>{});
+        }
+      }
     }
     const width=this.width,step=this.step;
     const height=Number(this.track.dataset.heightLimit)||width*1.5+240;
@@ -84,7 +92,9 @@ class LoopDeck {
       node.style.transform=`translate3d(calc(-50% + ${distance*step}px), ${depth*14+lift}px, 0) scale(${1-depth*.075})`;
       node.style.opacity=String(Math.max(0,1-Math.max(0,depth-.15)*.2));
       node.style.visibility=Math.abs(distance)>2.3?'hidden':'visible';
-      node.style.zIndex=String(100-Math.round(Math.abs(distance)*20));
+      // Only the front card crossing changes stacking order. Updating z-index
+      // for every subpixel of motion forced the posters to repaint while swiping.
+      const stacking=String(100-Math.abs(slot-nearest));if(node.style.zIndex!==stacking)node.style.zIndex=stacking;
       const active=slot===nearest;if(node._deckActive!==active){node._deckActive=active;node.classList.toggle('active',active);node.querySelectorAll('button').forEach(b=>b.tabIndex=active?0:-1);}
       const hidden=String(Math.abs(distance)>1.6);if(node.getAttribute('aria-hidden')!==hidden)node.setAttribute('aria-hidden',hidden);
     }
@@ -179,5 +189,10 @@ class LoopDeck {
     };
     this.frame=requestAnimationFrame(tick);
   }
-  destroy(){this.stop();this.resizeObserver?.disconnect();this.abort.abort();}
+  destroy(){
+    const drag=this.drag;this.drag=null;this.stop();this.lift=0;
+    this.track.classList.remove('dragging');delete this.track.dataset.cardAction;
+    if(drag&&this.track.hasPointerCapture(drag.id))this.track.releasePointerCapture(drag.id);
+    this.resizeObserver?.disconnect();this.abort.abort();
+  }
 }

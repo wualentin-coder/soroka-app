@@ -2,14 +2,19 @@
 (() => {
   'use strict';
   const root=document.documentElement;
-  let page='',frame=0;
+  let page='',frame=0,compactMode=null;
   function route(){
-    frame=0;portalActions();const next=typeof ui==='undefined'?'':ui.page;if(!next||next===page)return;page=next;root.dataset.flowPage=page;
+    frame=0;
+    const compact=root.dataset.flowNative==='true'||innerWidth<=760;
+    if(root.dataset.flowCompact!==String(compact))root.dataset.flowCompact=String(compact);
+    const rebuild=compactMode!==null&&compactMode!==compact;compactMode=compact;
+    if(rebuild&&root.dataset.flowDesign==='magic'&&typeof render==='function')render();
+    portalActions();const next=typeof ui==='undefined'?'':ui.page;if(!next||next===page)return;page=next;root.dataset.flowPage=page;
     if(root.dataset.flowNative==='true')try{window.SorokaNative?.pianoRotation?.(page==='piano');}catch{}
   }
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(route);};
   function portalActions(){
-    if(root.dataset.flowNative!=='true'||root.dataset.flowDesign!=='magic')return;
+    if(root.dataset.flowCompact!=='true'||root.dataset.flowDesign!=='magic')return;
     const bar=document.querySelector('.dm-topbar');if(!bar)return;
     const movie=typeof ui!=='undefined'&&ui.page==='saved'&&ui.savedCategory==='movies';
     const plans=movie&&typeof moviePlansTab==='function'&&moviePlansTab();
@@ -50,7 +55,7 @@
     window.dispatchEvent(new CustomEvent('flow:windowgeometry',{detail:value}));
   }
   addEventListener('flow:nativeinsets',event=>update(event.detail));
-  addEventListener('resize',()=>update());
+  addEventListener('resize',()=>{update();schedule();});
   update();
   schedule();
 })();

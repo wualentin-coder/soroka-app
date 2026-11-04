@@ -161,11 +161,11 @@
   function sportCalendar(page,state,training=false){
     const week=page.querySelector(':scope>.sp-week'),four=page.querySelector(':scope>.sp-calendar');if(!week)return null;
     const frame=element('section','lv-day-scene'),calendar=element('div','lv-sport-calendar'),head=element('div','lv-calendar-heading'),nativeHead=week.querySelector('.sp-week-head'),label=nativeHead?.querySelector('b')?.textContent||'';
-    head.append(element('h2','',escape(label)));const arrows=element('div','lv-calendar-arrows');const activeHead=four?.querySelector('.sp-cal-head')||nativeHead;for(const button of activeHead?.querySelectorAll('.icon-button')||[])arrows.append(button);head.append(arrows);
-    const modes=element('div','lv-period-switch',`<button type="button" data-lv-sport-period="week" aria-pressed="${!state.monthOpen}">Неделя</button><button type="button" data-lv-sport-period="four" aria-pressed="${!!state.monthOpen}">4 недели</button>`);calendar.append(head,modes);
-    if(state.monthOpen&&four){const period=four.querySelector('.sp-cal-head>div');if(period){period.classList.add('lv-period-caption');calendar.append(period);}for(const child of [...four.children])if(!child.matches('.sp-cal-head'))calendar.append(child);four.remove();}
+    calendar.tabIndex=0;calendar.setAttribute('role','group');calendar.setAttribute('aria-label',label+'. Листайте влево или вправо; с клавиатуры Page Up и Page Down.');
+    const modes=element('div','lv-period-switch',`<button type="button" data-lv-sport-period="week" aria-pressed="${!state.monthOpen}">Неделя</button><button type="button" data-lv-sport-period="four" aria-pressed="${!!state.monthOpen}">4 недели</button>`);calendar.append(modes);
+    if(state.monthOpen&&four){for(const child of [...four.children])if(!child.matches('.sp-cal-head'))calendar.append(child);four.remove();}
     else{const days=week.querySelector('.sp-week-days');if(days)calendar.append(days);}
-    for(const today of week.querySelectorAll('[data-action=sp-today]'))calendar.append(today);
+    if(!calendar.querySelector('[data-action=sp-today]'))for(const today of week.querySelectorAll('[data-action=sp-today]')){today.classList.add('lv-calendar-return');today.textContent='Сегодня';today.setAttribute('aria-label','Вернуться к сегодняшнему дню');calendar.append(today);}
     week.remove();frame.append(calendar);frame.dataset.date=state.date;
     if(training){const pick=disclosure(label,'sp-training-date',false,'lv-training-date');pick.append(calendar);return pick;}
     return frame;
@@ -332,6 +332,16 @@
     event.preventDefault(); const tab=target.dataset.tab; target.click(); queueMicrotask(()=>{document.querySelector('.dl-module-nav [role=tab][data-tab="'+CSS.escape(tab)+'"],.lv-module-nav [role=tab][data-tab="'+CSS.escape(tab)+'"]')?.focus({preventScroll:true});scheduleMeasure();});
   });
   document.addEventListener('click',event=>{const button=event.target.closest('[data-lv-sport-period]');if(!button)return;const expanded=button.dataset.lvSportPeriod==='four';if(!!spState().monthOpen!==expanded)sportAction('sp-month',button,event);});
+
+  let sportSwipe=null,sportSuppress=0;
+  function shiftSport(direction){const expanded=!!spState().monthOpen;sportAction(expanded?'sp-weeks':'sp-week-shift',{dataset:{d:String(direction)}});window.flowDigital?.feedback('tap');}
+  document.addEventListener('pointerdown',event=>{const cal=event.target.closest('.lv-sport-calendar');if(!cal||event.button>0||event.isPrimary===false||sportSwipe||event.target.closest('.lv-period-switch,[data-action=sp-today]'))return;event.stopPropagation();sportSwipe={id:event.pointerId,x:event.clientX,y:event.clientY,cal};},true);
+  document.addEventListener('pointermove',event=>{const g=sportSwipe;if(!g||g.id!==event.pointerId)return;if(!g.cal.isConnected||ui.page!=='sport'){sportSwipe=null;return;}const x=event.clientX-g.x,y=event.clientY-g.y;if(Math.abs(x)>12&&Math.abs(x)>Math.abs(y)*1.4){try{g.cal.setPointerCapture(event.pointerId);}catch{}if(event.cancelable)event.preventDefault();event.stopPropagation();}},{capture:true,passive:false});
+  function finishSport(event,cancelled=false){const g=sportSwipe;if(!g||g.id!==event.pointerId)return;sportSwipe=null;if(!g.cal.isConnected||ui.page!=='sport')return;event.stopPropagation();const x=event.clientX-g.x,y=event.clientY-g.y;if(!cancelled&&Math.abs(x)>50&&Math.abs(x)>Math.abs(y)*1.4){sportSuppress=Date.now()+450;event.preventDefault();shiftSport(x<0?1:-1);}}
+  document.addEventListener('pointerup',e=>finishSport(e),true);document.addEventListener('pointercancel',e=>finishSport(e,true),true);
+  document.addEventListener('click',event=>{if(Date.now()<sportSuppress&&event.target.closest('.lv-sport-calendar')){event.preventDefault();event.stopImmediatePropagation();}},true);
+  document.addEventListener('keydown',event=>{if(event.target.matches('.lv-sport-calendar')&&['PageUp','PageDown'].includes(event.key)){event.preventDefault();shiftSport(event.key==='PageDown'?1:-1);}});
+  window.addEventListener('blur',()=>{sportSwipe=null;});document.addEventListener('visibilitychange',()=>{if(document.hidden)sportSwipe=null;});
   window.addEventListener('resize',scheduleMeasure); window.visualViewport?.addEventListener('resize',scheduleMeasure); window.visualViewport?.addEventListener('scroll',scheduleMeasure);
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&measureFrame){cancelAnimationFrame(measureFrame);measureFrame=0;}else scheduleMeasure();});
   const observer = new MutationObserver(scheduleMeasure); observer.observe(document.getElementById('app') || document.body,{childList:true,subtree:true});

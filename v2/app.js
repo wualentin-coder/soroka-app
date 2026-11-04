@@ -289,7 +289,7 @@ function navItem([page, label, symbol], mobile = false) {
   const planPage = ["today", "upcoming", "tasks"].includes(ui.page);
   const active = ui.page === page || (mobile && page === "today" && planPage) || (page === "more" && (mobile ? !planPage && !mobileNavigation.slice(0, 4).some(([name]) => name === ui.page) : !navigation.some(([name]) => name === ui.page)));
   const count = page === "inbox" && data.inbox.length && !mobile ? `<span class="nav-count">${data.inbox.length}</span>` : "";
-  return `<button type="button" class="${active ? "active" : ""}" data-action="navigate" data-page="${page}" ${active ? 'aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span>${count}</button>`;
+  return `<button type="button" class="${active ? "active" : ""}" data-action="navigate" data-page="${page}" ${active ? 'aria-current="page"' : ""}>${mobile&&document.documentElement.dataset.flowDesign==='magic'&&window.flowMagicObject?window.flowMagicObject(page):icon(symbol)}<span>${label}</span>${count}</button>`;
 }
 function brand() {
   return `<img class="brand-mark" src="./assets/flow-vortex-magic.svg" alt=""><div><span class="brand-name">FLOW</span><span class="brand-label">личное пространство</span></div>`;
@@ -595,7 +595,7 @@ function render() {
   const plan=app.querySelector('.dm-main > .dm-plan');
   if(!classicDesign()&&nav&&ui.page==='today'&&plan&&shellChrome===renderedShellChrome&&!hasMap(sheet)&&!nav.parentElement.querySelector(':scope > .mobile-nav ~ * .leaflet-container')){
     renderedShell=page;
-    const main=plan.parentElement;main.innerHTML=page;
+    const main=plan.parentElement;if(!window.flowMagicPatchPlan?.(main,page))main.innerHTML=page;
     while(nav.nextSibling)nav.nextSibling.remove();nav.insertAdjacentHTML('afterend',overlay);
     const inboxButton=app.querySelector('.sidebar [data-page="inbox"]'),inbox=inboxButton?.querySelector('.nav-count');
     if(data.inbox.length){if(inbox)inbox.textContent=String(data.inbox.length);else inboxButton?.insertAdjacentHTML('beforeend',`<span class="nav-count">${data.inbox.length}</span>`);}else inbox?.remove();
@@ -633,6 +633,7 @@ function afterRender(scroll) {
   restoreSheetScroll(scroll);
   renderedScrollIdentity = sheetScrollIdentity();
   if (typeof movieWatchReturnCheck === "function") movieWatchReturnCheck();
+  if (typeof syncMovieCarousel === "function") syncMovieCarousel();
   if (typeof refreshSavedAddressPreview === "function") refreshSavedAddressPreview();
   if (typeof watchLoyaltyPlaces === "function") watchLoyaltyPlaces();
 }
@@ -909,7 +910,7 @@ function stepCalendar(dir) {
 let calendarSwipe = null;
 document.addEventListener("pointerdown", event => {
   const card = event.target.closest(".calendar-card");
-  if (!card || event.target.closest(".calendar-handle")) return;
+  if (!card || card.classList.contains("dm-calendar-surface") || event.target.closest(".calendar-handle")) return;
   calendarSwipe = { x: event.clientX, y: event.clientY, id: event.pointerId };
 });
 document.addEventListener("pointerup", event => {

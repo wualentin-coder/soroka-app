@@ -690,10 +690,10 @@ html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm
 html[data-flow-native=true][data-flow-design=magic] .edge-energy{z-index:1500}
 html[data-flow-native=true][data-flow-design=magic] body.assistant-active .edge-energy{visibility:hidden}
 html[data-flow-native=true][data-flow-design=magic] .dm-live-assistant .fa-screen-energy{z-index:1500}
-html[data-flow-native=true][data-flow-design=magic] :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading)>div>:is(h1,p.date,p:first-child){display:none}
-html[data-flow-native=true][data-flow-design=magic] :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading){min-height:0;margin-top:0;margin-bottom:12px;padding-top:0}
-html[data-flow-native=true][data-flow-design=magic] .dm-page-heading:not(:has(button,summary,select)){display:none}
-html[data-flow-native=true][data-flow-design=magic] .dm-main :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading,.lv-heading){display:none!important}
+html[data-flow-compact=true][data-flow-design=magic] :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading)>div>:is(h1,p.date,p:first-child){display:none}
+html[data-flow-compact=true][data-flow-design=magic] :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading){min-height:0;margin-top:0;margin-bottom:12px;padding-top:0}
+html[data-flow-compact=true][data-flow-design=magic] .dm-page-heading:not(:has(button,summary,select)){display:none}
+html[data-flow-compact=true][data-flow-design=magic] .dm-main :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading,.lv-heading){display:none!important}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar{height:60px;padding-top:9px;padding-left:14px;padding-right:14px}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{top:9px;height:36px;min-height:36px}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-mobile-brand{height:36px}
@@ -705,11 +705,11 @@ html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:58px;max-width:58px}
 .head-pill .island-section-symbol svg{width:18px;height:18px;overflow:visible}
 html[data-flow-design=magic] .head-pill .island-section-symbol svg{width:18px;height:18px;min-width:18px;max-width:18px;min-height:18px;max-height:18px}
-html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-title-row{display:none!important}
-html[data-flow-native=true][data-flow-design=magic] .dm-main .ds-work-head{display:none!important}
+html[data-flow-compact=true][data-flow-design=magic] .dm-main .dc-movie-title-row{display:none!important}
+html[data-flow-compact=true][data-flow-design=magic] .dm-main .ds-work-head{display:none!important}
 
 /* Native chrome: the section lives in the island, actions in the global menu. */
-html[data-flow-native=true][data-flow-design=magic] .dm-main :is(.dm-finance-view-action,.dc-movie-toolbar){display:none!important}
+html[data-flow-compact=true][data-flow-design=magic] .dm-main :is(.dm-finance-view-action,.dc-movie-toolbar){display:none!important}
 html[data-flow-design=magic] .head-pill .island-section-symbol{width:18px;height:18px;min-width:18px;contain:size;overflow:hidden;line-height:0}
 html[data-flow-design=magic] .head-pill .island-section-symbol>svg{display:block;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important}
 html[data-flow-design=magic] .head-pill:is([data-activity=listen],[data-activity=think],[data-activity=speak],[data-activity=success],[data-activity=return]){border-color:rgba(var(--accent-rgb),.55)}
@@ -720,13 +720,38 @@ html[data-motion=off] .head-pill *,.digital-hidden .head-pill *{animation:none!i
 @media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .head-pill *{animation:none!important;transition:none!important}}
 
 
-html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-tools{display:none!important}
-html[data-flow-native=true][data-flow-design=magic] .dm-topbar.dm-context-view .dm-mobile-brand{display:none}
-html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-movie-start{display:flex;align-items:center;width:64px;flex:none}
-html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view{display:grid;place-items:center;width:32px;min-width:32px;height:36px;min-height:36px;flex:none;padding:6px;border:0;background:transparent;color:var(--accent)}
-html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view svg{width:23px;height:23px;filter:drop-shadow(0 0 5px rgba(var(--accent-rgb),.3))}
+html[data-flow-compact=true][data-flow-design=magic] .dm-main .dc-movie-tools{display:none!important}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar.dm-context-view .dm-mobile-brand{display:none}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .dm-header-movie-start{display:flex;align-items:center;width:64px;flex:none}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .dm-header-view{display:grid;place-items:center;width:32px;min-width:32px;height:36px;min-height:36px;flex:none;padding:6px;border:0;background:transparent;color:var(--accent)}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .dm-header-view svg{width:23px;height:23px;filter:drop-shadow(0 0 5px rgba(var(--accent-rgb),.3))}
 @media(max-width:359px){
   html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{width:150px;min-width:150px}
   html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:40px;max-width:40px}
 }
 
+
+/* One optical centre for the approved light controls and the camera row. */
+html[data-flow-design=magic] .dm-topbar .dm-icon-button>.light-glyph{display:block;width:25px;height:25px;min-width:25px;flex:none}
+html[data-flow-design=magic] .dm-bottom-nav button>.light-glyph{display:block;width:26px;height:26px;min-width:26px;flex:none;opacity:.65}
+html[data-flow-design=magic] .dm-bottom-nav button.active>.light-glyph{opacity:1}
+html[data-flow-design=magic] .dm-bottom-nav button:not(.active) .li-aura{opacity:.2}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar{height:60px;padding:9px 12px 15px 14px;gap:0;align-items:center}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .dm-mobile-brand{display:flex;height:36px;gap:5px;font-size:24px;max-width:82px;align-items:center}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .brand-mark{width:19px;height:23px}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .dm-toolbar{height:36px;gap:0}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .dm-icon-button{width:32px;min-width:32px;height:36px;padding:0}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .head-pill{top:9px;left:50%;transform:translateX(-50%);width:170px;min-width:170px;max-width:170px;height:36px;min-height:36px;justify-content:center;gap:9px;padding:0 12px}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar.dm-context-view .dm-mobile-brand{display:none}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .dm-icon-button{padding:0}
+@media(max-width:359px){html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .head-pill{width:150px;min-width:150px;max-width:150px}}
+
+/* A glyph is centred inside the control, independently of native cutout padding. */
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-icon-button{padding:0}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar{padding-bottom:14px}
+html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .dm-mobile-brand{min-height:36px}
+@media(max-width:359px){
+  html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=true]) .dm-topbar .dm-mobile-brand,
+  html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-mobile-brand{font-size:22px;max-width:67px;gap:4px}
+  html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .dm-mobile-brand :is(.brand-mark,.flow-vortex-mark){width:18px;height:22px}
+}

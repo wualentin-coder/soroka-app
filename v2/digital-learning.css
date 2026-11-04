@@ -672,3 +672,8 @@ html[data-flow-design=magic] body .lv-sp-v10[data-lv-view=training] .sp-workout-
 @media(orientation:landscape) and (max-height:340px){
 html[data-flow-design=magic] body:has(.lv-en-chat) .sp-bar{height:46px;min-height:46px;padding:0 10px;bottom:env(safe-area-inset-bottom,0px)}
 }
+
+html[data-flow-design=magic] .lv-sport-calendar{touch-action:pan-y}
+html[data-flow-design=magic] .lv-sport-calendar>.lv-period-switch{margin-top:0}
+html[data-flow-design=magic] .lv-sport-calendar>.lv-calendar-return{display:block;width:auto;min-height:44px;margin:4px 0 0 auto;padding:8px 0 8px 12px}
+html[data-flow-design=magic] .lv-sport-calendar .sp-cal-foot>[data-action=sp-today]{min-height:44px;margin-left:auto;padding:8px 0 8px 12px}
