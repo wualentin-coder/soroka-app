@@ -764,11 +764,26 @@ html[data-flow-design=magic] .head-pill[data-island-orb] .island-section-symbol{
 html[data-flow-design=magic] .head-pill[data-island-orb] .island-label{position:absolute;left:43px;right:12px;top:50%;width:auto;max-width:none;overflow:hidden;text-overflow:ellipsis;text-align:center;transform:translateY(-50%);transition:left .36s var(--digital-ease),right .36s var(--digital-ease),transform .36s var(--digital-ease),opacity .18s}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill[data-island-orb] .island-label{left:auto;right:12px;width:58px;max-width:58px}
 html[data-flow-design=magic] .dm-topbar .head-pill.activity-island[data-island-orb=true]{width:44px;min-width:44px;max-width:44px;background:transparent;border-color:transparent;box-shadow:none}
-html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill.activity-island[data-island-orb=true]{top:5px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill.activity-island[data-island-orb=true]{top:var(--native-camera-hit-top,0px);border-width:0}
 html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-section-symbol{left:50%;opacity:0;transform:translate(-50%,-50%) scale(.35);animation:none}
 html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-label{left:50%;right:auto;opacity:0;transform:translate(-50%,-50%) scale(.5)}
 html[data-flow-design=magic] .island-orb{position:absolute;left:50%;top:50%;width:20px;height:20px;border-radius:50%;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.3);transition:opacity .2s .12s,transform .42s var(--digital-ease)}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .island-orb{width:28px;height:28px;--island-orb-animation:island-camera-breathe}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill[data-island-orb=true] .island-orb{top:var(--native-camera-light-offset,50%)}
+html[data-camera-calibration=true][data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill.activity-island{top:var(--native-camera-hit-top,0px);width:44px;min-width:44px;max-width:44px;background:transparent;border-width:0;box-shadow:none;transition:none}
+html[data-camera-calibration=true][data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill :is(.island-section-symbol,.island-label){opacity:0}
+html[data-camera-calibration=true][data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill .island-orb{top:var(--native-camera-light-offset,50%);opacity:1;transform:translate(-50%,-50%) scale(1);transition:none}
+html[data-camera-calibration=true][data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill[data-island-orb] .island-orb:before{animation:none;opacity:1;transform:none}
+.native-camera-calibration{margin-top:16px}
+.native-camera-calibration>p{color:var(--muted);font-size:13px;line-height:1.5;margin:8px 0 16px}
+.native-camera-calibration [hidden]{display:none!important}
+.native-camera-calibration [data-native-camera-controls]{margin-top:20px}
+.native-camera-calibration label{display:block;font-size:13px;color:var(--muted);margin-bottom:10px}
+.native-camera-calibration input[type=range]{display:block;width:100%;min-height:44px;accent-color:var(--accent)}
+.native-camera-nudge,.native-camera-actions{display:flex;gap:10px;align-items:center;margin-top:12px}
+.native-camera-nudge>button{flex:1;min-height:44px}
+.native-camera-actions{justify-content:space-between}
+.native-camera-actions .primary-button{min-height:44px;min-width:120px}
 html[data-flow-design=magic] .island-orb:before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle at 35% 30%,#ffffef 0%,var(--energy-hot) 22%,var(--accent) 58%,rgba(var(--accent-rgb),.32) 100%);border:1px solid rgba(var(--accent-rgb),.6);box-shadow:0 0 12px rgba(var(--accent-rgb),.55),0 0 24px rgba(var(--accent-rgb),.2),inset 0 0 7px #ffffff55}
 html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-orb{opacity:1;transform:translate(-50%,-50%) scale(1)}
 html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-orb:before{animation:var(--island-orb-animation,island-orb-breathe) 7s ease-in-out infinite}
