@@ -56,7 +56,7 @@
     const template=parse(original()),native=[...template.content.querySelectorAll('.settings-group')],appearance=native.find(group=>group.querySelector('[data-setting=theme]')),aside=template.content.querySelector('.content-aside');
     const workspace=document.createElement('section');workspace.className='settings-group';workspace.innerHTML='<h2>Поведение</h2><div class="list-panel"></div>';
     if(appearance){
-      appearance.classList.add('dv-appearance');appearance.dataset.settingsTitle='Внешний вид';
+      appearance.classList.add('dv-appearance','dv-preference-card');appearance.dataset.settingsTitle='Внешний вид';
       for(const key of['density','startPage']){const row=appearance.querySelector('[data-setting="'+key+'"]')?.closest('.settings-row');if(row)workspace.querySelector('.list-panel').append(row);}
       const title=appearance.querySelector('h2');if(title)title.insertAdjacentHTML('afterend','<p class="dv-group-caption" data-settings-accent>'+escape(summaryFor(appearance))+'</p>');
     }
@@ -68,7 +68,8 @@
     const storage=native.find(group=>group.querySelector('[data-action=export-json]'));if(storage&&aside){aside.className='dv-storage-note';storage.append(aside);}
     const assistant=native.find(group=>group.querySelector('[data-setting=manualOnly]'));
     if(assistant){assistant.dataset.settingsTitle='Ассистент';assistant.querySelector('h2').textContent='Помощь Flow';const billing=document.createElement('details');billing.className='dv-billing';billing.innerHTML='<summary>Лимиты и расходы '+symbol('down')+'</summary>';for(const child of[...assistant.children])if(child.matches('.side-card,.section-note'))billing.append(child);assistant.append(billing);}
-    const other=native.filter(group=>group!==appearance);if(workspace.querySelector('.settings-row'))other.unshift(workspace);
+    workspace.classList.add('dv-preference-card','dv-behavior-card');
+    const other=native.filter(group=>group!==appearance);
     const disclosures=other.map((group,index)=>{
       const title=group.dataset.settingsTitle||group.querySelector('h2')?.textContent||'Настройки',name={Бот:'Бот и уведомления',Ассистент:'Помощь Flow'}[title]||title,key={Поведение:'workspace',Бот:'bot',Подключения:'connections',Телефон:'phone',Ассистент:'assistant',Данные:'data'}[title]||'group-'+index;
       const detail=document.createElement('details');detail.className='settings-group dv-preference-group';detail.dataset.preferenceGroup=key;detail.dataset.settingsTitle=title;detail.open=preferenceOpen.get(key)||false;
@@ -76,7 +77,8 @@
       for(const child of[...group.children])if(child.tagName!=='H2')detail.append(child);return detail.outerHTML;
     }).join('');
     queueMicrotask(syncEffects);
-    return `<div class="wide-content dc-settings dv-preferences">${heading('Личный Flow','Настройки')}<div class="dv-preference-workbench"><div class="dv-visual-preferences">${appearance?.outerHTML||''}</div><div class="dv-sensory-preferences">${effectsGroup()}</div><div class="dv-other-preferences">${disclosures}</div></div></div>`;
+    const sensory=parse(effectsGroup());sensory.content.firstElementChild?.classList.add('dv-preference-card','dv-feedback-card');
+    return `<div class="wide-content dc-settings dv-preferences">${heading('Личный Flow','Настройки')}<div class="dv-preference-workbench"><div class="dv-visual-preferences">${appearance?.outerHTML||''}</div><div class="dv-sensory-preferences">${sensory.innerHTML}</div>${workspace.querySelector('.settings-row')?workspace.outerHTML:''}<section class="dv-preference-card dv-system-card"><h2>Связь и система</h2><div class="dv-other-preferences">${disclosures}</div></section></div></div>`;
   }
   replace('renderSettingsPage',settingsPage);
   function syncEffects(){

@@ -1,5 +1,5 @@
-import {getFingeringPlan} from './fingering.mjs?v=63e9fd53e452';
-import {noteInfo} from './pitch.mjs?v=63e9fd53e452';
+import {getFingeringPlan} from './fingering.mjs?v=ee88d828b262';
+import {noteInfo} from './pitch.mjs?v=ee88d828b262';
 
 const NAMES=['','большой палец','указательный палец','средний палец','безымянный палец','мизинец'];
 const validFinger=value=>Number.isInteger(value)&&value>=1&&value<=5;

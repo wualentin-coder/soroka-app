@@ -16,9 +16,9 @@ html[data-flow-design="magic"] .dm-task-due{color:var(--warn)}
 html[data-flow-design="magic"] .dm-plan .task-list .swipe-row{margin:0;border-radius:0;background:transparent;box-shadow:none}
 html[data-flow-design="magic"] .dm-plan .task-list .swipe-row .swipe-content{border-radius:0;background:var(--page);box-shadow:none}
 html[data-flow-design="magic"] .dm-plan .task-list.task-stack{display:block}
-html[data-flow-design="magic"] .dm-plan .dm-overdue{margin-top:24px}
-html[data-flow-design="magic"] .dm-overdue-list{overflow:hidden;padding:4px 12px;border-radius:24px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
-html[data-flow-design="magic"] .dm-overdue-list .dm-task-row{position:relative;border:0;padding:12px 0;background:transparent;border-radius:16px}
+html[data-flow-design="magic"] .dm-plan .dm-overdue{margin-top:20px;padding:12px 16px;border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line));border-radius:24px;background:radial-gradient(ellipse at 0 0,rgba(var(--energy-rgb),.065),transparent 70%),color-mix(in srgb,var(--surface) 80%,transparent)}
+html[data-flow-design="magic"] .dm-overdue-list{overflow:hidden;padding:0;border-radius:0;background:transparent}
+html[data-flow-design="magic"] .dm-overdue-list .dm-task-row{position:relative;align-items:center;min-height:56px;border:0;padding:6px 0;background:transparent;border-radius:16px}
 html[data-flow-design="magic"] .dm-overdue-list .dm-task-row+.dm-task-row:before{content:"";position:absolute;left:46px;right:10px;top:0;height:1px;background:linear-gradient(90deg,var(--line),transparent);pointer-events:none}
 html[data-flow-design="magic"] .dm-overdue-list .swipe-row,html[data-flow-design="magic"] .dm-overdue-list .swipe-content{border:0;border-radius:16px;background:transparent;box-shadow:none}
 html[data-flow-design="magic"] .dm-home-modules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -36,7 +36,7 @@ html[data-flow-design="magic"] .dm-plan .section-heading{margin-top:20px;margin-
 html[data-flow-design="magic"] .dm-agenda-summary{color:var(--muted);font-size:11px;margin:0 0 8px}
 html[data-flow-design="magic"] .dm-plan .hero-card{margin-top:26px;min-height:230px}
 html[data-flow-design="magic"] .dm-plan .module-grid{margin-top:0}
-html[data-flow-design="magic"] .dm-native-events .event-card{margin:0;border:0;border-radius:0;border-bottom:1px solid var(--line);background:transparent;padding:17px 0}
+html[data-flow-design="magic"] .dm-native-events .event-card{margin:0;border:0;border-radius:0;background:transparent;padding:13px 0}
 html[data-flow-design="magic"] .dm-free-day{color:var(--muted);font-size:13px;line-height:1.7;padding:17px 0}
 html[data-flow-design="magic"] .dm-calendar-toggle{flex:none;color:var(--muted)}
 html[data-flow-design="magic"] .dm-upcoming-row{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:47px;padding:10px 0;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--muted);font:12px/1.5 Manrope,sans-serif}
@@ -63,7 +63,7 @@ html[data-flow-design="magic"] .dm-calendar-view-indicator{position:absolute;lef
 html[data-flow-design="magic"] .dm-calendar-surface .calendar-toolbar>.text-action{min-height:48px;margin:0;padding:0 5px;color:var(--energy-hot);font-size:11px}
 html[data-flow-design="magic"] .dm-calendar-surface .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));font-size:9px;font-weight:400;color:var(--subtle);padding:0;margin:0 0 7px;min-height:16px;opacity:1}
 html[data-flow-design="magic"] .dm-calendar-surface .calendar-weekdays span{padding:0;height:16px;line-height:16px;display:grid;place-items:center}
-html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:44px;gap:5px;height:auto;max-height:none;overflow:clip;margin:0;padding:0;transform:none}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:44px;gap:5px;height:auto;max-height:none;overflow:clip;margin:0;padding:0;transform:none;animation:none}
 html[data-flow-design="magic"] .dm-calendar-surface[data-calendar-scale=week] .calendar-grid{grid-auto-rows:56px}
 html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day{z-index:1;position:relative;display:flex;align-items:center;justify-content:center;min-width:0;height:44px;min-height:44px;margin:0;padding:0;border:1px solid transparent;border-radius:13px;background:#ffffff04;color:var(--text);font:500 13px/1.2 Manrope,sans-serif;box-shadow:none;transform:none;transform-origin:50% 50%;transition:color .22s,opacity .22s}
 html[data-flow-design="magic"] .dm-calendar-surface .calendar-day.today::before{content:none;display:none}
@@ -93,14 +93,14 @@ html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-head
 html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-heading h2{font-size:15px;letter-spacing:-.02em;line-height:1.4}
 html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-heading .text-button{min-height:44px;padding:0 0 0 6px;font-size:10px;white-space:nowrap;color:var(--energy-hot)}
 html[data-flow-design="magic"] .dm-calendar-living .dm-agenda-summary{margin:-6px 0 7px;font-size:9px;letter-spacing:.025em}
-html[data-flow-design="magic"] .dm-plan .dm-calendar-living .dm-task-row{display:grid;align-items:start;grid-template-columns:36px minmax(0,1fr) auto;gap:8px;min-height:72px;padding:14px 0;background:transparent;border-color:#ffffff0d}
+html[data-flow-design="magic"] .dm-plan .dm-calendar-living .dm-task-row{display:grid;align-items:center;grid-template-columns:36px minmax(0,1fr) auto;gap:8px;min-height:56px;padding:6px 0;background:transparent;border-color:#ffffff0d}
 html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-info{padding-top:0;align-self:center}
 html[data-flow-design="magic"] .dm-calendar-living .dm-task-row>.task-sub{grid-column:2/-1;min-width:0;margin:0;padding-left:0}
 html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-name{font-size:12px;font-weight:550;line-height:1.5}
 html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-description{font-size:10px;margin-top:3px}
 html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-check{width:44px;margin-left:-5px}
 html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .check-ring{border-color:rgba(var(--energy-rgb),.42)}
-html[data-flow-design="magic"] .dm-calendar-living .task-time{min-height:0;align-self:center;font-size:10px;color:var(--accent);padding:5px 7px;border:1px solid rgba(var(--energy-rgb),.12);border-radius:6px;background:rgba(var(--energy-rgb),.04)}
+html[data-flow-design="magic"] .dm-calendar-living .task-time{min-height:0;align-self:center;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--energy-hot);padding:5px 8px;border:1px solid rgba(var(--energy-rgb),.16);border-radius:9px;background:rgba(var(--energy-rgb),.055)}
 html[data-flow-design="magic"] .dm-calendar-living .task-time:empty{display:none}
 html[data-flow-design="magic"] .dm-calendar-living .task-time .priority-marker{display:none}
 html[data-flow-design="magic"] .dm-calendar-living .task-time:not(:has(.task-drag-handle)){gap:0}
@@ -168,7 +168,7 @@ html[data-flow-design="magic"] .dm-finance-flow button+button{border-left:1px so
 html[data-flow-design="magic"] .dm-finance-flow button>span{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
 html[data-flow-design="magic"] .dm-finance-flow strong{font:650 20px/1.2 Manrope,sans-serif;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
 html[data-flow-design="magic"] .dm-finance-flow small{font-size:11px;color:var(--muted)}
-html[data-flow-design="magic"] .dm-finance-debt-link{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:14px 2px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);text-align:left;font:600 13px Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-finance-debt-link{display:grid;grid-template-columns:32px minmax(0,1fr) 18px;align-items:center;gap:12px;width:100%;padding:16px;border:1px solid color-mix(in srgb,var(--accent) 23%,var(--line));border-radius:22px;background:radial-gradient(ellipse at 0 0,rgba(var(--energy-rgb),.065),transparent 75%),var(--surface);color:var(--text);text-align:left;font:600 13px/1.45 Manrope,sans-serif}
 html[data-flow-design="magic"] .dm-finance-debt-link small{display:block;color:var(--muted);font:400 12px/1.6 Manrope,sans-serif}
 html[data-flow-design="magic"] .dm-finance-obligations{padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--surface) 60%,transparent);margin-bottom:16px}
 html[data-flow-design="magic"] .dm-finance-obligations>span{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
@@ -194,6 +194,9 @@ html[data-flow-design="magic"] .dm-finance-native .payment-card>.list-copy{grid-
 html[data-flow-design="magic"] .dm-finance-native .payment-card>.amount{grid-column:3;grid-row:1;justify-self:end}
 html[data-flow-design="magic"] .dm-finance-native .payment-card .payment-actions{grid-column:4;grid-row:1;margin:0;padding:0;border:0;justify-self:end}
 html[data-flow-design="magic"] .dm-finance-native .payment-card .payment-actions button{padding:6px 10px;min-height:44px;border:0;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-size:11px}
+html[data-flow-design=magic] .dm-finance-native .payment-card .payment-open{display:grid;gap:2px;min-height:44px;margin:0;padding:0;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+html[data-flow-design=magic] .dm-finance-native :is(.payment-list,.utility-bills)>.swipe-row{margin:0;border-radius:0}
+html[data-flow-design=magic] .dm-finance-native :is(.payment-list,.utility-bills)>.swipe-row:not(:last-child) .payment-card{border-bottom:1px solid var(--line)}
 html[data-flow-design="magic"] .dm-finance-native .utility-group,html[data-flow-design="magic"] .dm-finance-native .credit-card{border:0;border-radius:0;background:transparent}
 html[data-flow-design="magic"] .dm-finance-native .utility-head{padding:12px;gap:8px;grid-template-columns:26px minmax(0,1fr) auto auto}
 html[data-flow-design="magic"] .dm-finance-native .credit-list{border:1px solid var(--line);border-radius:20px;padding:0 12px;background:color-mix(in srgb,var(--surface) 65%,transparent)}
@@ -298,7 +301,7 @@ html[data-flow-design=magic] .dm-category-ledger .cat-share{font-size:10px;color
 html[data-flow-design=magic] .dm-category-ledger .cat-sum{font-size:14px;min-width:0;white-space:nowrap}
 .dm-category-meter{position:absolute;left:0;right:0;bottom:12px;height:3px;background:var(--line);border-radius:9px;overflow:hidden}
 .dm-category-meter>i{display:block;height:100%;width:var(--category-share);background:linear-gradient(90deg,rgba(var(--accent-rgb),.35),var(--accent),var(--energy-hot));border-radius:inherit}
-html[data-flow-design=magic] .dm-calendar-living:after{padding:0;background:none;mask:none;-webkit-mask:none;border:1px solid rgba(var(--accent-rgb),.25);box-shadow:inset 0 0 18px rgba(var(--accent-rgb),.04);animation:flow-stable-light 12s ease-in-out infinite}
+html[data-flow-design=magic] .dm-calendar-living:after{padding:0;background:none;mask:none;-webkit-mask:none;border:1px solid rgba(var(--accent-rgb),.25);box-shadow:inset 0 0 18px rgba(var(--accent-rgb),.04);animation:dm-calendar-contour-breathe 12s ease-in-out infinite}
 
 /* Narrow finance is a readable ledger: name and amount never fight for a column. */
 html[data-flow-design=magic] .dm-category-ledger .cat-more{grid-template-columns:minmax(0,1fr) auto auto 16px;text-align:left}
@@ -310,12 +313,19 @@ html[data-flow-design=magic] .dm-finance-obligations>span{display:block}
 html[data-flow-design=magic] .dm-finance-obligations strong{display:block;margin:8px 0 4px;font-size:26px;white-space:nowrap}
 html[data-flow-design=magic] .dm-finance-obligations strong small{display:inline-block;white-space:nowrap;font-size:11px}
 @media(max-width:600px){
-html[data-flow-design=magic] .dm-finance-native .payment-card{grid-template-columns:24px minmax(0,1fr) auto;gap:5px 10px;padding:16px 14px}
-html[data-flow-design=magic] .dm-finance-native .payment-card>.list-icon{grid-column:1;grid-row:1}
-html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy{grid-column:2/-1;grid-row:1;min-width:0}
-html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy strong{display:block;overflow-wrap:anywhere;line-height:1.5}
-html[data-flow-design=magic] .dm-finance-native .payment-card>.amount{grid-column:2;grid-row:2;justify-self:start;white-space:nowrap;font-size:16px}
-html[data-flow-design=magic] .dm-finance-native .payment-card .payment-actions{grid-column:3;grid-row:2;justify-self:end}
+html[data-flow-design=magic] .dm-finance-native .payment-card{grid-template-columns:22px minmax(0,1fr) minmax(78px,auto);grid-template-rows:auto auto;gap:3px 8px;padding:10px 12px}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-icon{grid-column:1;grid-row:1/3}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy{grid-column:2;grid-row:1/3;min-width:0;align-self:center}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;line-height:1.4;font-size:13px}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.amount{grid-column:3;grid-row:1;justify-self:end;max-width:min(160px,35vw);white-space:normal;overflow-wrap:anywhere;text-align:right;font-size:15px;align-self:end}
+html[data-flow-design=magic] .dm-finance-native .payment-card .payment-actions{grid-column:3;grid-row:2;justify-self:end;align-self:start}
+}
+@media(min-width:380px) and (max-width:600px){
+html[data-flow-design=magic] .dm-finance-native .payment-card{grid-template-columns:22px minmax(0,1fr) minmax(68px,auto) 78px;grid-template-rows:auto;gap:8px}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-icon,html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy{grid-row:1}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.amount{grid-column:3;grid-row:1;align-self:center;max-width:100px}
+html[data-flow-design=magic] .dm-finance-native .payment-card .payment-actions{grid-column:4;grid-row:1;align-self:center}
 }
 /* Move the glint as a texture; background-position previously repainted every frame. */
 html[data-flow-design=magic] .dm-calendar-selection:after{inset:0 -60%;background-size:100% 100%;animation:calendar-glint-travel 7.4s ease-in-out infinite;will-change:transform}
@@ -329,3 +339,43 @@ html[data-flow-design=magic] .dm-plan-practices .dc-module-group{margin:0}
 html[data-flow-design=magic] .expense-category-picker{padding:0 16px 14px;gap:7px}
 html[data-flow-design=magic] .expense-category-picker .flow-choice>summary{min-height:44px;background:transparent;border:1px solid var(--line);color:var(--accent)}
 html[data-flow-design=magic] .dm-calendar-week-band,html[data-flow-design=magic] .dm-calendar-view-indicator{transform-origin:0 0}
+
+/* Plan rows keep their full record in the editor; the list is an immediate cue. */
+html[data-flow-design=magic] .dm-plan .dm-task-row .task-info{padding-top:0;align-self:center}
+html[data-flow-design=magic] .dm-plan .dm-task-row .task-name{display:flex;align-items:center;min-height:44px;font-size:13px;line-height:1.4}
+html[data-flow-design=magic] .dm-plan .dm-task-row .task-check{align-self:center}
+html[data-flow-design=magic] .dm-plan .dm-task-row .priority-marker{display:none}
+html[data-flow-design=magic] .dm-plan .task-card-trailing[data-has-time=true]{position:relative;isolation:isolate;overflow:hidden;align-self:center;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--energy-hot);border-radius:9px}
+html[data-flow-design=magic] .dm-plan .task-card-trailing[data-has-time=true]:after{content:'';position:absolute;inset:0 -70%;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(var(--energy-rgb),.2) 49%,transparent 63%);transform:translateX(45%);animation:dm-time-sheen 1.35s var(--digital-ease) 1;will-change:transform}
+@keyframes dm-time-sheen{from{transform:translateX(-45%)}to{transform:translateX(45%)}}
+html[data-flow-design=magic] .dm-plan .dm-overdue>.section-heading{margin:0 0 4px;gap:12px;align-items:center}
+html[data-flow-design=magic] .dm-plan .dm-overdue>.section-heading h2{font-size:15px;line-height:1.4}
+html[data-flow-design=magic] .dm-overdue>.text-button{min-height:44px;font-size:11px;color:var(--muted)}
+html[data-flow-design=magic] .dm-plan .dm-overdue .task-time[data-has-time=false]{display:none}
+html[data-flow-design=magic] .dm-calendar-living .dm-plan-agenda>.section-heading.dm-events-heading{margin:14px 0 0;padding:12px 0 5px;border:0;gap:12px;align-items:center}
+html[data-flow-design=magic] .dm-calendar-living .dm-plan-agenda>.section-heading.dm-events-heading h2{font-size:14px;line-height:1.4}
+html[data-flow-design=magic] .dm-plan .dm-events-heading:after{content:'';height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent)}
+html[data-flow-design=magic] .dm-debt-symbol{display:grid;place-items:center;width:32px;height:32px;color:var(--accent)}
+html[data-flow-design=magic] .dm-debt-symbol svg,html[data-flow-design=magic] .dm-debt-symbol>.magic-object.light-glyph{display:block;position:static;width:30px;height:30px;margin:0;transform:none}
+
+/* Task editor: essential inputs first; optional detail stays with its owner. */
+html[data-flow-design=magic] .sheet.dm-task-editor{width:min(100%,620px)}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-body{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:0 2px}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-name{margin:0;grid-column:1/-1;font-size:11px}
+html[data-flow-design=magic] .sheet.dm-task-editor #entry-form .dm-entry-name input{margin-top:4px;padding:9px 12px;border:1px solid var(--line);border-radius:13px;background:var(--page);font-size:20px;line-height:1.35;min-height:44px}
+html[data-flow-design=magic] .dm-task-group{min-width:0;margin:0;padding:7px 11px 11px;border:1px solid var(--line);border-radius:16px}
+html[data-flow-design=magic] .dm-task-group legend{padding:0 5px;font:600 11px/1.5 Manrope,sans-serif;color:var(--accent)}
+html[data-flow-design=magic] .dm-task-editor .field{margin:0;min-width:0}
+html[data-flow-design=magic] .dm-task-editor .field-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+html[data-flow-design=magic] .dm-task-editor .dm-task-when .field-row{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
+html[data-flow-design=magic] .dm-task-editor .field :is(input,select,textarea){margin-top:4px;padding:9px 10px;min-height:44px;font-size:16px}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-options{margin:0;grid-column:1/-1}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-options>summary{min-height:44px;font-size:12px;color:var(--text)}
+html[data-flow-design=magic] .dm-task-details{display:grid;gap:12px;padding:0 0 4px}
+html[data-flow-design=magic] .dm-task-repeat{display:grid;gap:10px}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-footer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 0;padding:10px 0 0}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-footer:has(.danger-button){grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-footer>.ghost-button{grid-column:1;order:0}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-footer>.primary-button{grid-column:2;order:0}
+html[data-flow-design=magic] .dm-task-editor .dm-entry-footer>.danger-button{grid-column:3;order:0;width:44px;min-width:44px}
+@media(min-width:700px){html[data-flow-design=magic] .dm-task-editor .dm-entry-body{grid-template-columns:repeat(2,minmax(0,1fr))}html[data-flow-design=magic] .dm-task-editor .dm-task-details{grid-template-columns:repeat(2,minmax(0,1fr))}html[data-flow-design=magic] .dm-task-repeat{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}}

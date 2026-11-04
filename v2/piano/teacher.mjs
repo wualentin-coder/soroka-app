@@ -111,9 +111,11 @@ export function createTeacher({ onText = () => {}, onStatus = () => {}, dependen
   const pick = (name, fallback) => Object.hasOwn(dependencies, name) ? dependencies[name] : fallback;
   const environment = {
     fetch: pick('fetch', globalThis.fetch?.bind(globalThis)),
+    recordedFetch: pick('recordedFetch', globalThis.fetch?.bind(globalThis)),
     speechSynthesis: pick('speechSynthesis', globalThis.speechSynthesis),
     Utterance: pick('SpeechSynthesisUtterance', globalThis.SpeechSynthesisUtterance),
     AudioContext: pick('AudioContext', globalThis.AudioContext || globalThis.webkitAudioContext),
+    recordedVoices: pick('recordedVoices', () => globalThis.FLOW_PIANO_VOICES),
     getUserMedia: pick('getUserMedia', globalThis.navigator?.mediaDevices?.getUserMedia?.bind(globalThis.navigator.mediaDevices)),
     now: pick('now', Date.now),
   };
@@ -271,7 +273,11 @@ export function createTeacher({ onText = () => {}, onStatus = () => {}, dependen
     await waitCurrent(playbackContext.resume(), epoch); assertCurrent(epoch);
     if (playbackContext.state !== 'running') return false;
     const buffer = await waitCurrent(playbackContext.decodeAudioData(bytes.buffer.slice(0)), epoch); assertCurrent(epoch);
-    emit('speaking', 'openrouter');
+    return playSpeechBuffer(buffer, epoch, 'openrouter');
+  }
+
+  function playSpeechBuffer(buffer, epoch, provider) {
+    emit('speaking', provider);
     return new Promise(resolve => {
       const source = playbackContext.createBufferSource(); source.buffer = buffer; source.connect(playbackContext.destination);
       let finished = false, timer;
@@ -288,11 +294,56 @@ export function createTeacher({ onText = () => {}, onStatus = () => {}, dependen
     });
   }
 
+  async function speakRecorded(value, epoch, recordings) {
+    const address = recordings?.[value];
+    if (typeof address !== 'string' || !environment.recordedFetch || !environment.AudioContext) return false;
+    const url = new URL(address, import.meta.url);
+    const voice = /\/assets\/piano-intro-(tanya|mikhail)-v4-\d{2}\.mp3$/.exec(url.pathname)?.[1];
+    if (url.origin !== new URL(import.meta.url).origin || !voice) return false;
+    const controller = new AbortController(); controllers.add(controller);
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      if (!playbackContext || playbackContext.state === 'closed') playbackContext = new environment.AudioContext();
+      await waitCurrent(playbackContext.resume(), epoch, controller.signal); assertCurrent(epoch);
+      if (playbackContext.state !== 'running') return false;
+      // Bundled recordings only: no text is sent to a speech provider.
+      const response = await waitCurrent(environment.recordedFetch(url.href, {
+        credentials: 'same-origin', cache: 'force-cache', signal: controller.signal,
+      }), epoch, controller.signal);
+      if (!response.ok || !(response.headers.get('content-type') || '').toLowerCase().startsWith('audio/') ||
+        Number(response.headers.get('content-length')) > SPEECH_LIMIT) return false;
+      const reader = response.body?.getReader();
+      if (!reader) return false;
+      const parts = []; let size = 0;
+      try {
+        while (true) {
+          const chunk = await waitCurrent(reader.read(), epoch, controller.signal); assertCurrent(epoch);
+          if (chunk.done) break;
+          size += chunk.value.length;
+          if (size > SPEECH_LIMIT) return false;
+          parts.push(chunk.value);
+        }
+      } finally { try { reader.cancel()?.catch(() => {}); } catch {} }
+      if (!size) return false;
+      const bytes = new Uint8Array(size); let offset = 0;
+      for (const part of parts) { bytes.set(part, offset); offset += part.length; }
+      const buffer = await waitCurrent(playbackContext.decodeAudioData(bytes.buffer), epoch, controller.signal);
+      assertCurrent(epoch);
+      if (playbackContext.state !== 'running' || !Number.isFinite(buffer.duration) || buffer.duration <= 0 || buffer.duration > 90) return false;
+      clearTimeout(timer);
+      return await playSpeechBuffer(buffer, epoch, voice + '-v4-recording');
+    } catch (error) { if (!current(epoch)) throw aborted(); return false; }
+    finally { clearTimeout(timer); controllers.delete(controller); }
+  }
+
   async function speak(value, { remote = false } = {}) {
     value = text(value, 1600); if (!value) return false;
     const epoch = begin('preparing'); onText(value);
     try {
-      const methods = remote ? [speakRemote, speakLocal] : [speakLocal, speakRemote];
+      let recordings;
+      try { recordings = typeof environment.recordedVoices === 'function' ? environment.recordedVoices() : environment.recordedVoices; } catch { recordings = null; }
+      const recorded = recordings === null || Object.hasOwn(recordings || {}, value);
+      const methods = recorded ? [(value, epoch) => speakRecorded(value, epoch, recordings), speakLocal] : remote ? [speakRemote, speakLocal] : [speakLocal, speakRemote];
       for (const method of methods) {
         try { if (await method(value, epoch)) { assertCurrent(epoch); emit('idle'); return true; } }
         catch (error) { if (!current(epoch) || error.name === 'AbortError') throw aborted(); }

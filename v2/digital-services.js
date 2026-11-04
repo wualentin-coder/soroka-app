@@ -82,19 +82,30 @@
     const r=j.resources,current=fresh&&r?.observed_at&&Date.now()-r.observed_at*1000<20000,known=[r?.ram_bytes,r?.vram_bytes].some(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0);
     return `<article class="rm-live ds2-job ${fresh?'':'is-stale'}" data-render-fresh="${fresh}"><div class="ds2-job-label"><span class="ds2-live-dot"></span>${!fresh?'Последнее состояние':j.status==='delivering'?'Доставка результата':j.stage&&rmProgress(j)===null?escape(j.stage):'Сейчас рендерится'}</div><div class="ds2-job-title"><h2>${escape(j.name)}</h2>${pct?`<strong class="ds2-progress-number pc-render-pct">${pct.textContent}</strong>`:''}</div>${bar?.outerHTML||''}<p class="ds2-job-facts">${facts?.innerHTML||''}</p>${current&&known?`<p class="ds2-job-memory">${escape(rmMemoryText(r,fresh))}</p>`:''}${resource?.outerHTML||''}${warning?.outerHTML||''}<div class="rm-acts ds2-job-actions" data-assistant-reserve>${acts?.innerHTML||''}</div></article>`;
   }
+  function renderPhase(d){
+    if(!d)return {state:ui.pc?.error?'error':'loading',progress:null};
+    const q=d.rmQueue||{},jobs=rmVisibleJobs(q),fresh=rmFresh(d),job=jobs.find(j=>RM_ACTIVE.includes(j.status)),paused=jobs.find(j=>j.status==='paused');
+    if(!fresh)return {state:'stale',progress:null};
+    if(job)return {state:'rendering',progress:rmProgress(job),job};
+    if(d.render?.rendering){const value=d.render.percent;return {state:'rendering',progress:value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))?Math.max(0,Math.min(100,Number(value))):null};}
+    if(paused||q.held&&jobs.some(j=>j.status==='queued'))return {state:'paused',progress:paused?rmProgress(paused):null,job:paused};
+    return {state:jobs.some(j=>j.status==='queued')?'queued':'empty',progress:null};
+  }
   replace('renderRenderPage',original=>{
     original();
     const d=ui.pc?.data,add=workButton('rm-scenes','Сцена','plus','aria-label="Поставить сцену на рендер"','ds2-header-add');
     if(!d)return workPage('render','Рендер',`<section class="ds2-surface ds2-unavailable"><span class="ds2-state-mark">${glyph('render')}</span><h2>${ui.pc?.error?'Очередь недоступна':'Проверяю очередь'}</h2><p>${escape(ui.pc?.error||'Получаю состояние с компьютера')}</p>${ui.pc?.error?workButton('pc-refresh','Повторить','reset'):''}</section>`);
-    const q=d.rmQueue||{},jobs=rmVisibleJobs(q),activeJobs=jobs.filter(j=>RM_ACTIVE.includes(j.status)),waiting=jobs.filter(j=>RM_WAITING.includes(j.status)),recent=jobs.filter(j=>['done','failed','cancelled'].includes(j.status)),fresh=rmFresh(d),state=!fresh?'stale':q.held?'paused':activeJobs.length?'rendering':waiting.length?'queued':'empty';
+    const q=d.rmQueue||{},jobs=rmVisibleJobs(q),activeJobs=jobs.filter(j=>RM_ACTIVE.includes(j.status)),waiting=jobs.filter(j=>RM_WAITING.includes(j.status)),recent=jobs.filter(j=>['done','failed','cancelled'].includes(j.status)),fresh=rmFresh(d),state=renderPhase(d).state;
     const hold=activeJobs.length||waiting.length||q.held?`<button type="button" class="ds2-control ds2-queue-hold ${rmBusyCls('rm-hold')}" data-action="rm-hold" data-on="${q.held?'0':'1'}" data-assistant-reserve>${q.held?symbol('play'):'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>'}<span>${q.held?'Продолжить очередь':'Остановить очередь'}</span></button>`:'';
     const history=recent.length?`<details class="rm-history ds2-history" ${ui.pc.rmHistoryOpen?'open':''}><summary data-action="rm-history-toggle"><span>История</span><small>${recent.length}</small>${symbol('down')}</summary><button type="button" class="text-action ${rmBusyCls('rm-clear')}" data-action="rm-clear">Очистить историю</button><div class="rm-recents">${recent.map(j=>`<div class="rm-history-swipe" data-history-id="${j.id}"><span class="rm-history-remove" aria-hidden="true">Убрать</span><div class="rm-history-row">${rmRecentRow(j)}</div></div>`).join('')}</div></details>`:'';
+    const latest=recent.slice().sort((a,b)=>Number(b.finished_at||0)-Number(a.finished_at||0))[0],failure=!activeJobs.length&&!waiting.length&&fresh&&latest&&(latest.status==='failed'||latest.delivery?.status==='failed')?latest:null;
+    const notice=failure?`<div class="ds2-render-notice" role="status"><strong>${failure.status==='failed'?'Рендер не завершён':'Результат не доставлен'}</strong><p>${escape(failure.error||failure.delivery?.error||'Откройте задачу в истории, чтобы проверить причину и повторить.')}</p><button type="button" class="text-action" data-action="rm-detail" data-id="${escape(failure.id)}">Открыть задачу ${symbol('right')}</button></div>`:'';
     const next=waiting.length?`<section class="ds2-next"><header><h2>Дальше</h2><small>${waiting.length}${waiting.length>1?' · перетащите за ручку':''}</small></header><div class="rm-waiting ds2-waiting">${waiting.map(rmWaitingRow).join('')}</div></section>`:'';
-    const queue=`<section class="ds2-queue" data-queue-state="${state}"><div class="ds2-queue-top"><span class="ds2-queue-status"><span class="ds2-live-dot"></span>${!fresh?'Нет свежего подтверждения':q.held?'Очередь остановлена':activeJobs.length?`Очередь · ${activeJobs.length+waiting.length} ${word(activeJobs.length+waiting.length,'задача','задачи','задач')}`:waiting.length?'В ожидании':'Можно начать новый рендер'}</span><button type="button" class="icon-button" data-action="pc-refresh" aria-label="Обновить очередь">${symbol('reset')}</button></div>${!d.agent?'<p class="ds2-hint">Компьютер не на связи. Показано последнее известное состояние.</p>':''}${q.held?'<p class="ds2-hint">Текущий рендер доработает, следующие ждут.</p>':''}${activeJobs.map(j=>renderJob(j,fresh)).join('')}${!activeJobs.length&&d.render?.rendering?`<div class="ds2-manual"><span class="ds2-eyebrow">Вручную в After Effects</span>${pcRenderNow(d.render)}</div>`:''}${!activeJobs.length&&!waiting.length&&!d.render?.rendering?`<div class="ds2-queue-empty"><span>${glyph('render')}</span><h2>Место для новой сцены</h2><p>Выберите проект и композицию.<br>Готовый результат появится здесь.</p><button type="button" class="primary-button" data-action="rm-scenes">Выбрать сцену ${symbol('right')}</button></div>`:''}${hold}${next}${history}</section>`;
+    const queue=`<section class="ds2-queue" data-queue-state="${state}"><div class="ds2-queue-top"><span class="ds2-queue-status"><span class="ds2-live-dot"></span>${!fresh?'Нет свежего подтверждения':activeJobs.length?`Очередь · ${activeJobs.length+waiting.length} ${word(activeJobs.length+waiting.length,'задача','задачи','задач')}`:state==='paused'?'Рендер на паузе':waiting.length?'В ожидании':'Можно начать новый рендер'}</span><button type="button" class="icon-button" data-action="pc-refresh" aria-label="Обновить очередь">${symbol('reset')}</button></div>${!d.agent?'<p class="ds2-hint">Компьютер не на связи. Показано последнее известное состояние.</p>':''}${q.held?'<p class="ds2-hint">Текущий рендер доработает, следующие ждут.</p>':''}${activeJobs.map(j=>renderJob(j,fresh)).join('')}${!activeJobs.length&&d.render?.rendering?`<div class="ds2-manual"><span class="ds2-eyebrow">Вручную в After Effects</span>${pcRenderNow(d.render)}</div>`:''}${!activeJobs.length&&!waiting.length&&!d.render?.rendering?`<div class="ds2-queue-empty"><span>${glyph('render')}</span><h2>Место для новой сцены</h2><p>Выберите проект и композицию.<br>Готовый результат появится здесь.</p><button type="button" class="primary-button" data-action="rm-scenes">Выбрать сцену ${symbol('right')}</button></div>`:''}${hold}${next}${history}</section>`;
     const after=d.agent?parse(pcRenderBlock(d,true)):null;
     if(after){const box=after.content.firstElementChild;box.className='ds2-surface ds2-after';box.querySelector('.pc-card-head').outerHTML='<h2 class="ds2-section-title">После рендера</h2>';box.querySelector('.pc-after-label')?.remove();box.querySelector('.segmented')?.classList.add('ds2-after-options');}
     const tools=`<details class="rm-tools ds2-tools" ${ui.pc.rmToolsOpen?'open':''}><summary data-action="rm-tools-toggle">${symbol('settings')}<span>Настройки и диагностика</span>${symbol('down')}</summary><div class="ds2-tool-content">${rmSettingsCard(d)}${rmCalibrationCard()}${rmHealthCard(d)}</div></details>`;
-    return workPage('render','Рендер',`<div class="pc-page ds2-render">${queue}<div class="ds2-render-secondary">${after?.innerHTML||''}${tools}</div></div>`,add);
+    return workPage('render','Рендер',`<div class="pc-page ds2-render">${notice}${queue}<div class="ds2-render-secondary">${after?.innerHTML||''}${tools}</div></div>`,add);
   });
 
   replace('renderDocsPage',original=>{
@@ -133,4 +144,45 @@
 
   document.addEventListener('input',event=>{if(event.target?.id==='pc-find'&&event.target.value){const details=event.target.closest('.ds2-launch')?.querySelector('.ds2-shortcuts');if(details)details.open=true;}},true);
   document.addEventListener('toggle',event=>{const node=event.target;if(node.matches?.('[data-service-group]'))openGroups.set(node.dataset.serviceGroup,node.open);},true);
+
+  // The Render page follows observed jobs. Its ambient layer survives polling.
+  const renderRoot=document.documentElement,renderObserved=new Map();
+  let renderFrame=0,renderLight=null,renderResult=null,renderResultTimer=0,renderPulses=0,renderSnapshot={state:'idle',progress:null};
+  function syncRenderLight(){
+    renderFrame=0;
+    const onPage=active()&&typeof ui!=='undefined'&&ui.page==='render',d=typeof ui!=='undefined'?ui.pc?.data:null;
+    const next=renderPhase(d),jobs=d?rmVisibleJobs(d.rmQueue||{}):[],fresh=d&&rmFresh(d);
+    if(fresh){
+      for(const job of jobs){
+        const previous=renderObserved.get(job.id);
+        if(previous&&['rendering','delivering','paused'].includes(previous)&&['done','failed'].includes(job.status)&&!document.hidden&&onPage){
+          const success=job.status==='done'&&job.delivery?.status!=='failed';
+          renderResult={state:success?'success':'error',id:job.id};
+          clearTimeout(renderResultTimer);
+          if(success){renderPulses++;renderResultTimer=setTimeout(()=>{renderResult=null;scheduleRenderLight();},1800);}
+        }
+      }
+      renderObserved.clear();for(const job of jobs)renderObserved.set(job.id,job.status);
+    }else renderObserved.clear();
+    if(['rendering','paused','queued'].includes(next.state)){renderResult=null;clearTimeout(renderResultTimer);}
+    if(!onPage){
+      renderResult=null;clearTimeout(renderResultTimer);delete renderRoot.dataset.renderState;delete renderRoot.dataset.renderKnown;delete renderRoot.dataset.renderAttention;
+      renderLight?.remove();renderLight=null;renderSnapshot={state:'idle',progress:null};return;
+    }
+    const state=renderResult&&next.state==='empty'?renderResult.state:next.state;
+    if(!renderLight){const atmosphere=document.querySelector('.digital-atmosphere');if(atmosphere){renderLight=document.createElement('div');renderLight.className='ds2-render-light';renderLight.setAttribute('aria-hidden','true');atmosphere.append(renderLight);}}
+    if(renderRoot.dataset.renderState!==state)renderRoot.dataset.renderState=state;
+    const known=next.progress!==null;if(renderRoot.dataset.renderKnown!==String(known))renderRoot.dataset.renderKnown=String(known);
+    const value=String(next.progress??0);if(renderRoot.style.getPropertyValue('--render-progress')!==value)renderRoot.style.setProperty('--render-progress',value);
+    const attention=['listen','think','speak'].includes(renderRoot.dataset.magicScene)?'quiet':'available';if(renderRoot.dataset.renderAttention!==attention)renderRoot.dataset.renderAttention=attention;
+    renderSnapshot={state,progress:next.progress};
+  }
+  function scheduleRenderLight(){if(!renderFrame)renderFrame=requestAnimationFrame(syncRenderLight);}
+  const renderObserver=new MutationObserver(scheduleRenderLight);renderObserver.observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
+  document.addEventListener('flow:activity',scheduleRenderLight);document.addEventListener('flow:processstate',scheduleRenderLight);
+  document.addEventListener('flow:effectschange',scheduleRenderLight);document.addEventListener('visibilitychange',scheduleRenderLight);
+  window.addEventListener('pagehide',()=>{if(renderFrame)cancelAnimationFrame(renderFrame);renderFrame=0;clearTimeout(renderResultTimer);renderResult=null;renderObserved.clear();});
+  window.addEventListener('pageshow',scheduleRenderLight);
+  window.flowRenderMotion={getState:()=>({...renderSnapshot,completionPulses:renderPulses,visible:!!renderLight?.isConnected}),refresh:scheduleRenderLight};
+  scheduleRenderLight();
 })();

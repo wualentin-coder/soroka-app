@@ -755,3 +755,26 @@ html[data-flow-compact=true][data-flow-design=magic]:not([data-native-camera=tru
   html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-mobile-brand{font-size:22px;max-width:67px;gap:4px}
   html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .dm-mobile-brand :is(.brand-mark,.flow-vortex-mark){width:18px;height:22px}
 }
+
+/* Activity presents its context once, then returns to a quiet light. The
+   44px trigger remains usable; only its visual surface contracts. */
+html[data-flow-design=magic] .dm-topbar .head-pill.activity-island[data-island-orb]{--island-context-width:170px;width:var(--island-context-width);min-width:var(--island-context-width);max-width:var(--island-context-width);height:44px;min-height:44px;padding:0;gap:0;overflow:visible;transition:width .42s var(--digital-ease),min-width .42s var(--digital-ease),max-width .42s var(--digital-ease),background-color .28s,border-color .28s,top .42s var(--digital-ease)}
+html[data-flow-compact=true][data-flow-design=magic] .dm-topbar .head-pill.activity-island[data-island-orb]{top:5px;transform:translateX(-50%)}
+html[data-flow-design=magic] .head-pill[data-island-orb] .island-section-symbol{position:absolute;left:14px;top:50%;transform:translateY(-50%);transition:left .36s var(--digital-ease),transform .36s var(--digital-ease),opacity .18s}
+html[data-flow-design=magic] .head-pill[data-island-orb] .island-label{position:absolute;left:43px;right:12px;top:50%;width:auto;max-width:none;overflow:hidden;text-overflow:ellipsis;text-align:center;transform:translateY(-50%);transition:left .36s var(--digital-ease),right .36s var(--digital-ease),transform .36s var(--digital-ease),opacity .18s}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill[data-island-orb] .island-label{left:auto;right:12px;width:58px;max-width:58px}
+html[data-flow-design=magic] .dm-topbar .head-pill.activity-island[data-island-orb=true]{width:44px;min-width:44px;max-width:44px;background:transparent;border-color:transparent;box-shadow:none}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill.activity-island[data-island-orb=true]{top:max(5px,calc(var(--native-camera-bottom,0px) - 8px))}
+html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-section-symbol{left:50%;opacity:0;transform:translate(-50%,-50%) scale(.35);animation:none}
+html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-label{left:50%;right:auto;opacity:0;transform:translate(-50%,-50%) scale(.5)}
+html[data-flow-design=magic] .island-orb{position:absolute;left:50%;top:50%;width:20px;height:20px;border-radius:50%;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.3);transition:opacity .2s .12s,transform .42s var(--digital-ease)}
+html[data-flow-design=magic] .island-orb:before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle at 35% 30%,#ffffef 0%,var(--energy-hot) 22%,var(--accent) 58%,rgba(var(--accent-rgb),.32) 100%);border:1px solid rgba(var(--accent-rgb),.6);box-shadow:0 0 12px rgba(var(--accent-rgb),.55),0 0 24px rgba(var(--accent-rgb),.2),inset 0 0 7px #ffffff55}
+html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-orb{opacity:1;transform:translate(-50%,-50%) scale(1)}
+html[data-flow-design=magic] .head-pill[data-island-orb=true] .island-orb:before{animation:island-orb-breathe 7s ease-in-out infinite}
+html[data-flow-design=magic] .head-pill[data-island-orb=true][data-activity=listen] .island-orb:before{animation:none;opacity:calc(.6 + var(--island-level,0)*.4);transform:scale(calc(.88 + var(--island-level,0)*.22));transition:opacity .1s,transform .1s}
+html[data-flow-design=magic] .head-pill[data-island-orb=true]:is([data-activity=pause],[data-activity=error],[data-activity=disconnected]) .island-orb:before{animation:none;opacity:.65}
+html[data-flow-design=magic] .activity-island-layer .activity-island-card{max-height:min(65dvh,var(--island-available-height,520px))}
+@keyframes island-orb-breathe{0%,100%{opacity:.7;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
+@media(max-width:359px){html[data-flow-design=magic] .dm-topbar .head-pill.activity-island[data-island-orb]{--island-context-width:150px}html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill[data-island-orb] .island-label{width:40px;max-width:40px}}
+html[data-motion=off] .head-pill[data-island-orb],.digital-hidden .head-pill[data-island-orb]{transition:none!important}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .head-pill[data-island-orb]{transition:none!important}}

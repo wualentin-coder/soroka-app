@@ -349,7 +349,8 @@ function paymentDate(p) {
 function paymentRow(p) {
   const late = p.status !== "confirmed" && p.nextOn && p.nextOn < todayIso();
   const facts = [paymentDate(p), p.category, p.endsOn ? `до ${dateLabel(p.endsOn)}${p.endsOn.slice(0, 4) !== todayIso().slice(0, 4) ? ` ${p.endsOn.slice(0, 4)}` : ""}` : "", p.locked ? "из «Долгов»" : ""].filter(Boolean).join(" · ");
-  return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span><span class="list-copy"><strong>${esc(financeTitle(p.title))}</strong><span>${esc(facts)}${p.status === "confirmed" ? " · оплачено" : ""}</span></span><span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}</div></article>`; // «Настроить» не нужна: нажатие на карточку открывает платёж
+  const editable=typeof classicDesign==='function'&&!classicDesign()&&!p.locked,copy=`<strong>${esc(financeTitle(p.title))}</strong><span>${esc(facts)}${p.status==='confirmed'?' · оплачено':''}</span>`;
+  return `<article class="payment-card ${p.status === "confirmed" ? "done" : ""} ${late ? "late" : ""}"><span class="list-icon">${icon(p.locked ? "wallet" : "calendar")}</span>${editable?`<button class="list-copy payment-open" type="button" data-action="finance-edit" data-entity="payment" data-id="${esc(p.id)}" aria-label="Открыть платёж: ${esc(financeTitle(p.title))}">${copy}</button>`:`<span class="list-copy">${copy}</span>`}<span class="amount">${paymentMoney(p)}</span><div class="payment-actions">${p.status !== "confirmed" ? miniButton("Списалось", "payment-confirm", `data-id="${esc(p.id)}"`) : ""}</div></article>`;
 }
 /*
  * Счёт постоянных расходов: банк пополняет его сам в назначенный день на

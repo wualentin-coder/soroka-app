@@ -8,14 +8,14 @@
  const surface=()=>card()?.closest('.dm-calendar-living')||card();
  function box(node,base){if(!node||!base)return null;const a=node.getBoundingClientRect(),b=base.getBoundingClientRect();return{x:a.x-b.x-base.clientLeft,y:a.y-b.y-base.clientTop,w:a.width,h:a.height};}
  function place(node,value){if(!node||!value)return;node.hidden=false;const values={width:value.w+'px',height:value.h+'px',transform:`translate(${value.x}px,${value.y}px)`};for(const [name,next]of Object.entries(values))if(node.style[name]!==next)node.style[name]=next;}
- function measure(withCells=false){
+ function measure(){
   const current=card(),grid=current?.querySelector('.calendar-grid'),tabs=current?.querySelector('.segmented');if(!grid||!tabs)return;
   const host=surface(),gridRect=grid.getBoundingClientRect(),tabsRect=tabs.getBoundingClientRect(),hostRect=host.getBoundingClientRect();
   const gridBase={x:gridRect.x+grid.clientLeft,y:gridRect.y+grid.clientTop},tabsBase={x:tabsRect.x+tabs.clientLeft,y:tabsRect.y+tabs.clientTop};
   const relative=(node,base)=>{if(!node)return null;const a=node.getBoundingClientRect();return{x:a.x-base.x,y:a.y-base.y,w:a.width,h:a.height};};
   const selected=grid.querySelector('.selected'),selection=grid.querySelector('.dm-calendar-selection'),band=grid.querySelector('.dm-calendar-week-band'),point=relative(selected,gridBase);
   const origin={x:gridRect.x-hostRect.x-host.clientLeft,y:gridRect.y-hostRect.y-host.clientTop},gridWidth=grid.clientWidth,indicator=tabs.querySelector('.dm-calendar-view-indicator'),indicatorBox=relative(tabs.querySelector('.active'),tabsBase);
-  return{current,grid,tabs,host,selected,selection,band,point,origin,gridWidth,indicator,indicatorBox,height:current.getBoundingClientRect().height,cells:withCells?[...grid.querySelectorAll('[data-date]')].map(node=>({node,next:relative(node,gridBase)})):[]};
+  return{current,grid,tabs,host,selected,selection,band,point,origin,gridWidth,indicator,indicatorBox};
  }
  function align(geometry=measure()){
   if(!geometry)return;const{host,selection,band,point,origin,gridWidth,indicator,indicatorBox}=geometry;
@@ -29,22 +29,22 @@
   const host=known?.host||surface();if(!moving()||!node||!host)return;const r=known?.rect||box(node,host),count=complete?10:6;
   for(let i=0;i<count;i++){const dot=document.createElement('i');dot.className='dm-calendar-spark';dot.setAttribute('aria-hidden','true');dot.style.left=(r.x+r.w/2)+'px';dot.style.top=(r.y+r.h/2)+'px';host.append(dot);particles.add(dot);const angle=i/count*Math.PI*2,distance=complete?24:15,dx=Math.cos(angle)*distance,dy=Math.sin(angle)*distance;const animation=animate(dot,[{transform:'scale(.4)',opacity:0},{transform:`translate(${dx*.35}px,${dy*.35}px) scale(1)`,opacity:.75,offset:.2},{transform:`translate(${dx}px,${dy}px) scale(0)`,opacity:0}],{duration:580+i%3*45,easing:'cubic-bezier(.16,1,.3,1)'});const remove=()=>{particles.delete(dot);dot.remove();};if(animation)animation.finished.catch(()=>{}).finally(remove);else remove();}
  }
- function snapshot(withCells=false){const current=card(),grid=current?.querySelector('.calendar-grid'),tabs=current?.querySelector('.segmented');if(!current||!grid)return null;const cells=new Map(withCells?[...grid.querySelectorAll('[data-date]')].map(node=>[node.dataset.date,box(node,grid)]):[]),selection=grid.querySelector('.dm-calendar-selection'),indicator=tabs?.querySelector('.dm-calendar-view-indicator'),focus=document.activeElement;return{height:current.getBoundingClientRect().height,cells,selection:selection&&!selection.hidden?box(selection,grid):null,indicator:indicator&&!indicator.hidden?box(indicator,tabs):null,focus:current.contains(focus)||focus?.matches('.dm-calendar-toggle')?{calendar:focus===current,date:focus.dataset.date,action:focus.dataset.action,mode:focus.dataset.mode}:null};}
+ function snapshot(){const current=card(),grid=current?.querySelector('.calendar-grid'),tabs=current?.querySelector('.segmented');if(!current||!grid)return null;const selection=grid.querySelector('.dm-calendar-selection'),indicator=tabs?.querySelector('.dm-calendar-view-indicator'),focus=document.activeElement;return{selection:selection&&!selection.hidden?box(selection,grid):null,indicator:indicator&&!indicator.hidden?box(indicator,tabs):null,focus:current.contains(focus)||focus?.matches('.dm-calendar-toggle')?{calendar:focus===current,date:focus.dataset.date,action:focus.dataset.action,mode:focus.dataset.mode}:null};}
  function change(update,{kind='view',direction=0,cue=false}={}){
-  const before=snapshot(kind==='view');clear();update();const geometry=measure(kind!=='select');align(geometry);const current=geometry?.current,grid=geometry?.grid;
+  const before=snapshot();clear();update();const geometry=measure();align(geometry);const current=geometry?.current,grid=geometry?.grid;
   if(current&&before){
-   // Measure the complete destination before starting any animation. Alternating
-   // animate()/getBoundingClientRect() forced style/layout for each calendar cell.
-   const {height:after,cells,selection,band,indicator,indicatorBox,gridWidth,point:selectionBox,origin,host,selected}=geometry;
+   // Keep controls in normal flow; only the dates move. Animating the clipped
+   // card's height laid out the whole Plan on every frame and each date made
+   // another composited layer on a 42-day month.
+   const {selection,band,indicator,indicatorBox,gridWidth,point:selectionBox,origin,host,selected}=geometry;
    const bandBox=selectionBox?{x:0,y:selectionBox.y,w:gridWidth,h:selectionBox.h}:null;
-   if(Math.abs(before.height-after)>.5)animate(current,[{height:before.height+'px'},{height:after+'px'}]);
-   cells.forEach(({node,next},index)=>{const prior=before.cells.get(node.dataset.date);if(prior&&kind==='view')animate(node,[{transform:`translate(${prior.x-next.x}px,${prior.y-next.y}px)`},{transform:'translate(0,0)'}]);else if(!prior||kind==='period')animate(node,[{opacity:0,transform:`translate(${direction*15}px,${kind==='view'?6:0}px)`},{opacity:1,transform:'translate(0,0)'}],{duration:340,delay:Math.min(Math.floor(index/7)*16,65)});});
+   if(kind!=='select')animate(grid,[{opacity:.65,transform:`translate(${direction*12}px,${kind==='view'?5:0}px)`},{opacity:1,transform:'none'}],{duration:300});
    travel(selection,before.selection,selectionBox);travel(band,before.selection?{x:0,y:before.selection.y,w:gridWidth,h:before.selection.h}:null,bandBox);travel(indicator,before.indicator,indicatorBox,360);
    if(kind!=='view'){document.querySelectorAll('.dm-plan-agenda .dm-task-row,.dm-plan-agenda .event-card,.dm-plan-agenda .dm-free-day').forEach((node,index)=>animate(node,[{opacity:0,transform:`translate(${direction*9}px,7px)`},{opacity:1,transform:'translate(0,0)'}],{duration:380,delay:Math.min(index*35,140)}));if(selectionBox)spark(selected,false,{host,rect:{...selectionBox,x:origin.x+selectionBox.x,y:origin.y+selectionBox.y}});}
    if(before.focus){const f=before.focus,target=f.calendar?current:f.date?current.querySelector(`[data-date="${ui.selected}"]`):document.querySelector(`[data-action="${f.action}"]${f.mode?`[data-mode="${f.mode}"]`:''}`);target?.focus({preventScroll:true});}
   }
   if(cue)window.flowDigital?.feedback(kind==='view'?'open':'tap');
-  document.dispatchEvent(new CustomEvent('flow:calendarinteraction',{detail:{kind,date:ui.selected,expanded:ui.calendarExpanded}}));observe();
+  document.dispatchEvent(new CustomEvent('flow:calendarinteraction',{detail:{kind,date:ui.selected,expanded:ui.calendarExpanded}}));observe(false);
  }
  function mode(expanded,cue=true){change(()=>{ui.calendarExpanded=expanded;ui.mode=expanded?'month':'week';ui.calendarAnchor=ui.selected;if(expanded)ui.month=ui.selected.slice(0,7)+'-01';render();},{kind:'view',cue});}
  function period(direction){change(()=>{const date=parseDate(ui.selected||todayIso());if(ui.calendarExpanded){const next=new Date(parseDate(ui.month).getFullYear(),parseDate(ui.month).getMonth()+direction,1,12),day=Math.min(date.getDate(),new Date(next.getFullYear(),next.getMonth()+1,0).getDate());ui.month=localIso(next);ui.selected=localIso(new Date(next.getFullYear(),next.getMonth(),day,12));}else{ui.selected=localIso(shiftDay(parseDate(ui.calendarAnchor||ui.selected||todayIso()),direction*7));ui.month=ui.selected.slice(0,7)+'-01';}ui.calendarAnchor=ui.selected;render();},{kind:'period',direction,cue:true});}
@@ -70,7 +70,7 @@
  window.addEventListener('blur',abortGesture);window.addEventListener('flow:suspend',abortGesture);
  const intersection=new IntersectionObserver(entries=>{for(const entry of entries)entry.target.classList.toggle('dm-calendar-inactive',!entry.isIntersecting||document.hidden);});
  const sizeObserver=new ResizeObserver(()=>{if(!animations.size)align();});
- function observe(){const current=card();if(current===observed)return;if(observedSurface)intersection.unobserve(observedSurface);sizeObserver.disconnect();observed=current;observedSurface=surface();if(current){align();intersection.observe(observedSurface);sizeObserver.observe(current);for(const animation of animations)if(!animation.effect?.target?.isConnected)animation.cancel();}else clear();}
+ function observe(needsAlignment=true){const current=card();if(current===observed)return;if(observedSurface)intersection.unobserve(observedSurface);sizeObserver.disconnect();observed=current;observedSurface=surface();if(current){if(needsAlignment)align();intersection.observe(observedSurface);sizeObserver.observe(current);for(const animation of animations)if(!animation.effect?.target?.isConnected)animation.cancel();}else clear();}
  new MutationObserver(()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;observe();});}).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)abortGesture();surface()?.classList.toggle('dm-calendar-inactive',document.hidden);});
  document.addEventListener('flow:effectschange',()=>{if(!moving())clear();});media.addEventListener('change',()=>{if(!moving())clear();});window.addEventListener('pagehide',abortGesture);

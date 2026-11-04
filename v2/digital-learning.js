@@ -95,20 +95,36 @@
     const actions=element('div','lv-scene-actions');for(const button of source.querySelectorAll(':scope>button'))actions.append(button);lead.append(actions);if(path.children.length)lead.append(path);
     const streak=source.querySelector('.en-streak');if(streak)lead.append(streak);
     source.replaceWith(layout);layout.append(lead);
-    const rhythm=page.querySelector(':scope>.en-goals');if(rhythm){rhythm.classList.add('lv-rhythm');layout.append(rhythm);}
-    const place=page.querySelector(':scope>.en-place');if(place){place.classList.add('lv-assessment');layout.append(place);}
+    const rhythm=page.querySelector(':scope>.en-goals');if(rhythm){rhythm.classList.add('lv-rhythm');for(const card of rhythm.querySelectorAll('.en-goal')){card.classList.add('lv-rhythm-object');card.prepend(element('span','lv-rhythm-mark',icon(card.dataset.tab==='words'?'card':'study')));}layout.append(rhythm);}
+    const place=page.querySelector(':scope>.en-place');if(place){assessmentObject(place);layout.append(place);}
     const links=page.querySelector(':scope>.en-today-links');if(links){links.classList.add('lv-quick-links');layout.append(links);}
     extras(page,layout);
+  }
+  function assessmentObject(place){
+    place.classList.add('lv-assessment');
+    const copy=place.querySelector(':scope>div');copy?.classList.add('lv-assessment-copy');
+    place.prepend(element('span','lv-assessment-mark',window.flowMagicObject?.('english',true)||icon('study')));
+    const action=place.querySelector('[data-action=en-place]');if(action){action.classList.add('lv-assessment-action');action.innerHTML='<span>Определить уровень</span>'+icon('right');}
   }
   function englishWords(page){
     const source=page.querySelector(':scope>.en-hero'),list=page.querySelector('.en-wlist'),search=page.querySelector('#en-wsearch')?.closest('label');if(!source||!list||!search)return;
     const filters=list.previousElementSibling,layout=element('div','lv-lexicon'),desk=element('section','lv-word-desk'),tools=element('div','lv-search-actions'),learn=source.querySelector('[data-action=en-deck]');
-    tools.append(search);if(learn)tools.append(learn);desk.append(tools);if(filters?.matches('.map-categories'))desk.append(filters);desk.append(list);
-    const side=region('Мой словарь','lv-word-rhythm');const title=source.querySelector('.en-hero-top'),bar=source.querySelector(':scope>.en-bar');if(title)side.append(title);if(bar)side.append(bar);
+    const summary=element('section','lv-word-summary'),title=source.querySelector('.en-hero-top'),bar=source.querySelector(':scope>.en-bar');
+    summary.append(element('span','lv-word-emblem',window.flowMagicObject?.('english',true)||icon('card')));if(title)summary.append(title);if(bar)summary.append(bar);if(learn)summary.append(learn);
+    tools.append(search);desk.append(summary,tools);if(filters?.matches('.map-categories')){filters.classList.add('lv-word-filters');desk.append(filters);}list.classList.add('lv-word-entries');for(const row of list.querySelectorAll('.en-wrow'))row.classList.add('lv-word-entry');desk.append(list);
+    const side=region('Мой ритм','lv-word-rhythm');
     for(const button of source.querySelectorAll('button'))side.append(button);
     const settings=disclosure('Ритм и частота слов','en-words-rhythm',false);for(const card of page.querySelectorAll(':scope>.en-situation'))settings.append(card);const note=source.querySelector('.section-note');if(note)settings.append(note);
     const phrases=page.querySelector('.en-phrases-link');if(phrases){phrases.classList.add('lv-destination');side.append(phrases);}side.append(settings);
     source.replaceWith(layout);layout.append(desk,side);extras(page,layout);
+  }
+  function englishConversation(page){
+    page.classList.add('lv-en-chat');const chat=page.querySelector('.en-chat');if(!chat)return;chat.classList.add('lv-conversation');
+    const head=chat.querySelector('.en-chat-head'),avatar=head?.querySelector('.en-avatar');
+    if(avatar){avatar.classList.add('lv-voice-sign');avatar.setAttribute('aria-hidden','true');avatar.innerHTML=icon('mic');}
+    head?.querySelector(':scope>div')?.classList.add('lv-conversation-identity');
+    const tools=element('div','lv-conversation-tools');for(const control of head?.querySelectorAll('.en-tone')||[])tools.append(control);if(tools.children.length)head.after(tools);
+    chat.querySelector('.en-msgs')?.setAttribute('aria-label','Сообщения разговора');
   }
   function englishCourse(page){
     const source=page.querySelector(':scope>.en-hero'),levels=[...page.querySelectorAll(':scope>.en-level')];if(!source)return;
@@ -153,7 +169,7 @@
     else if(state.tab==='words')englishWords(page);
     else if(state.tab==='course')englishCourse(page);
     else if(state.tab==='read')englishLibrary(page,state);
-    else if(state.tab==='chat'){page.classList.add('lv-en-chat');page.querySelector('.en-chat')?.classList.add('lv-conversation');}
+    else if(state.tab==='chat')englishConversation(page);
     else if(state.tab==='progress'){page.querySelector('.en-metrics')?.classList.add('lv-evidence');for(const card of page.querySelectorAll(':scope>.en-situation'))card.classList.add('lv-progress-section');if(state.progress?.days&&!state.progress.days.some(day=>day.count)){const days=page.querySelector('.en-days');if(days){days.classList.add('lv-no-history');days.append(element('p','lv-empty-inline','Ритм появится после первых занятий.'));}}}
     else if(state.tab==='phrases')page.classList.add('lv-phrase-library');
   });
@@ -320,6 +336,7 @@
     const obstacles = [...document.querySelectorAll('.dm-bottom-nav,.mobile-nav,.sp-bar')].filter(n => getComputedStyle(n).display !== 'none' && getComputedStyle(n).visibility !== 'hidden').map(n => n.getBoundingClientRect()).filter(r => r.height > 0 && r.top < bottom && r.bottom > 0);
     const limit = Math.min(bottom, ...obstacles.map(r=>r.top))-12;
     const height = Math.max(100, Math.floor(limit-chat.getBoundingClientRect().top));
+    chat.classList.toggle('lv-chat-compact',height<380);
     if(chat.style.getPropertyValue('--dl-chat-height') !== height+'px') chat.style.setProperty('--dl-chat-height', height+'px');
   }
   function scheduleMeasure() { if (!measureFrame && !document.hidden) measureFrame = requestAnimationFrame(measureWorkspace); }

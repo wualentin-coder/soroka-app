@@ -1,7 +1,7 @@
-import {COURSE} from './course.mjs?v=63e9fd53e452';
-import {COMPOSITIONS} from './compositions.mjs?v=63e9fd53e452';
-import {noteInfo} from './pitch.mjs?v=63e9fd53e452';
-import {COURSE_FINGERINGS,SONG_FINGERINGS} from './fingering-data.mjs?v=63e9fd53e452';
+import {COURSE} from './course.mjs?v=ee88d828b262';
+import {COMPOSITIONS} from './compositions.mjs?v=ee88d828b262';
+import {noteInfo} from './pitch.mjs?v=ee88d828b262';
+import {COURSE_FINGERINGS,SONG_FINGERINGS} from './fingering-data.mjs?v=ee88d828b262';
 
 const NAMES=['','большой палец','указательный палец','средний палец','безымянный палец','мизинец'];
 const COURSES=new Map(COURSE.map(lesson=>[lesson.id,lesson]));

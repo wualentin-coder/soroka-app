@@ -16,17 +16,33 @@
     }
     catch (_) { return null; }
   }
-  function eventStart(event, timezone) {
+  function localDay(at,timezone){const p=zonedParts(at,timezone);return p?`${p.year}-${p.month}-${p.day}`:'';}
+  function validDay(value){const at=Date.parse(`${value}T12:00:00Z`);return /^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(at)&&new Date(at).toISOString().slice(0,10)===value;}
+  function annualDay(year,month,day){return new Date(Date.UTC(year,month-1,day)).toISOString().slice(0,10);}
+  function eventOccurrence(event, timezone,now=Date.now(),today='') {
+    const repeat=event.repeat??event.repeatRule??event.repeat_rule,yearly=repeat==='yearly',day=yearly?(today||localDay(now,timezone)):'';
     const cached = eventTimes.get(event);
-    if (cached && cached.timezone === timezone && cached.due === event.due && cached.time === event.time && cached.startsAt === event.startsAt) return cached.at;
-    const at = calculateEventStart(event, timezone);
-    eventTimes.set(event, { timezone, due: event.due, time: event.time, startsAt: event.startsAt, at });
-    return at;
+    if (cached && cached.timezone === timezone && cached.due === event.due && cached.time === event.time && cached.startsAt === event.startsAt&&cached.repeat===repeat&&cached.day===day&&!(yearly&&!cached.value?.allDay&&cached.value?.at<now)) return cached.value;
+    let value=null;
+    const explicit=event.startsAt?Date.parse(event.startsAt):null;
+    if(event.startsAt&&!yearly){if(Number.isFinite(explicit))value={at:explicit,due:validDay(event.due)?event.due:localDay(explicit,timezone),time:event.time||'',allDay:false};}
+    else{
+      const parts=event.startsAt&&Number.isFinite(explicit)?zonedParts(explicit,timezone):null;
+      let due=event.due||(parts?`${parts.year}-${parts.month}-${parts.day}`:''),time=event.time||(parts?`${parts.hour}:${parts.minute}`:''),allDay=!time;
+      if(validDay(due)&&timezone&&(!time||/^\d{2}:\d{2}$/.test(time))&&(!yearly||day)){
+        const [,month,date]=due.split('-').map(Number),year=Number(day.slice(0,4));
+        if(yearly){due=annualDay(year,month,date);if(due<day)due=annualDay(year+1,month,date);}
+        let at=calculateEventStart(due,time||'00:00',timezone);
+        if(yearly&&!allDay&&at!==null&&at<now){due=annualDay(Number(due.slice(0,4))+1,month,date);at=calculateEventStart(due,time,timezone);}
+        if(at!==null)value={at,due,time,allDay};
+      }
+    }
+    eventTimes.set(event, { timezone, due: event.due, time: event.time, startsAt: event.startsAt,repeat,day,value });
+    return value;
   }
-  function calculateEventStart(event, timezone) {
-    if (event.startsAt) { const at = Date.parse(event.startsAt); return Number.isFinite(at) ? at : null; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(event.due || "") || !/^\d{2}:\d{2}$/.test(event.time || "") || !timezone) return null;
-    const target = Date.parse(`${event.due}T${event.time}:00Z`);
+  function eventStart(event,timezone,now=Date.now()){return eventOccurrence(event,timezone,now)?.at??null;}
+  function calculateEventStart(due,time,timezone) {
+    const target = Date.parse(`${due}T${time}:00Z`);
     if (!Number.isFinite(target)) return null;
     let at = target;
     for (let i = 0; i < 3; i++) {
@@ -36,7 +52,7 @@
       at += target - wall;
     }
     const p = zonedParts(at, timezone);
-    return p && `${p.year}-${p.month}-${p.day}` === event.due && `${p.hour}:${p.minute}` === event.time ? at : null;
+    return p && `${p.year}-${p.month}-${p.day}` === due && `${p.hour}:${p.minute}` === time ? at : null;
   }
   function model({ section = "Flow", pc = null, data = {}, now = Date.now(), unavailable = false }) {
     const r = pc?.render || {};
@@ -45,24 +61,42 @@
     const fresh = !unavailable && pc?.agent === true && Number.isFinite(seen) && now - seen >= -5000 && now - seen < ONLINE_MS
       && Number.isFinite(renderAt) && now - renderAt >= -30000 && now - renderAt < 90000;
     const active = r.rendering === true;
-    const job=(pc?.rmQueue?.jobs||[]).find(item=>['rendering','paused'].includes(item.status));
+    const jobs=pc?.rmQueue?.jobs||[];
+    const job=jobs.find(item=>['rendering','delivering'].includes(item.status))||jobs.find(item=>item.status==='paused');
     const queueStamp=Date.parse(pc?.rmQueue?.at||pc?.rmQueue?.observed_at||pc?.agentSeen);
-    const queueFresh=!unavailable&&pc?.agent===true&&Number.isFinite(seen)&&now-seen>=-5000&&now-seen<ONLINE_MS&&Number.isFinite(queueStamp)&&now-queueStamp>=-30000&&now-queueStamp<90000;
-    const events = (data.events || []).map(event => ({ ...event, at: eventStart(event, data.timezone) })).filter(e => e.at !== null && e.at >= now).sort((a, b) => a.at - b.at).slice(0, 3);
+    const queueFresh=!unavailable&&pc?.agent===true&&pc?.rmQueue?.service?.available!==false&&Number.isFinite(seen)&&now-seen>=-5000&&now-seen<ONLINE_MS&&Number.isFinite(queueStamp)&&now-queueStamp>=-30000&&now-queueStamp<90000;
     const day = zonedParts(now, data.timezone);
     const today = day ? `${day.year}-${day.month}-${day.day}` : "";
+    const events = (data.events || []).map(event=>{const occurrence=eventOccurrence(event,data.timezone,now,today);return occurrence?{...event,...occurrence}:null;}).filter(e=>e&&(e.allDay?e.due>=today:e.at>=now)).sort((a,b)=>a.at-b.at).slice(0,3);
+    const imminent=events.find(event=>!event.allDay&&event.at-now<=3600000);
     const tasks = (data.tasks || []).filter(t => !t.done && (t.priority === "high" || (today && t.due && t.due < today))).sort((a, b) => Number(b.priority === "high") - Number(a.priority === "high") || String(a.due || "9999").localeCompare(String(b.due || "9999"))).slice(0, 3);
     let kind = "idle", label = section, progress = null;
-    if (active) {
+    if (job) {
+      const app=job.app==='karma'?'Karma':job.app==='ae'?'AE':'Рендер';
+      kind=!queueFresh?'disconnected':job.status==='paused'?'pause':'render';
+      progress=queueFresh?queueProgress(job):null;
+      label=!queueFresh?'ПК · нет связи':job.status==='paused'?'Рендер · пауза':job.status==='delivering'?(progress===null?'Перенос в облако':`В облако · ${progress}%`):progress===null?`${app} · ${job.stage||'рендер'}`:`${app} · ${progress}%`;
+    } else if (active) {
       if (!fresh) { kind = "disconnected"; label = "ПК · нет связи"; }
       else { kind = "render"; progress = percent(r.percent); const app = r.app === "Karma" ? "Karma" : "AE"; label = progress === null ? `${app} · рендер` : `${app} · ${progress}%`; }
-    } else if (job?.status === 'paused') {
-      kind=queueFresh?'pause':'disconnected';label=queueFresh?'Рендер · пауза':'ПК · нет связи';
-    } else if (events[0] && events[0].at - now <= 3600000) {
-      kind = "event"; label = `Через ${Math.max(1, Math.ceil((events[0].at - now) / 60000))} мин`;
+    } else if (imminent) {
+      kind = "event"; label = `Через ${Math.max(1, Math.ceil((imminent.at - now) / 60000))} мин`;
     }
-    const render = active ? { fresh, title: r.comp || r.app || "After Effects", frame: finite(r.frame), frames: finite(r.frames), eta: fresh ? finite(r.eta) : null, elapsed: fresh && finite(r.since) !== null ? Math.max(0, Math.round(now / 1000 - Number(r.since))) : null } : null;
-    return { kind, label, progress, render, job:job?{id:job.id,name:job.name,status:job.status,fresh:queueFresh}:null, events, tasks, interval: active || (pc?.rmQueue?.jobs || []).some(j => ["queued","paused","rendering","delivering"].includes(j.status)) ? 3000 : 15000 };
+    const render = job?{fresh:queueFresh,app:job.app==='karma'?'Karma':job.app==='ae'?'After Effects':'Рендер',queue:true,title:job.name||'Рендер',frame:finite(job.done),frames:finite(job.total),eta:queueFresh&&job.status!=='paused'?finite(job.eta):null,elapsed:null}:active ? { fresh, app:r.app||'After Effects',title: r.comp || r.app || "After Effects", frame: finite(r.frame), frames: finite(r.frames), eta: fresh ? finite(r.eta) : null, elapsed: fresh && finite(r.since) !== null ? Math.max(0, Math.round(now / 1000 - Number(r.since))) : null } : null;
+    return { kind, label, progress, render,queueFresh,imminentId:imminent?.id, job:job?{id:job.id,name:job.name,status:job.status,fresh:queueFresh}:null, events, tasks, interval: active || (pc?.rmQueue?.jobs || []).some(j => ["queued","paused","rendering","delivering"].includes(j.status)) ? 3000 : 15000 };
+  }
+  function queueProgress(job){
+    if(typeof window.rmProgress==='function')return percent(window.rmProgress(job));
+    if(job.status==='delivering')return finite(job.delivery?.total)>0?percent(Number(job.delivery.files||0)/Number(job.delivery.total)*100):null;
+    if(job.stage&&(/склей|кодир|сборк|провер|подготов|открыва|копир|исходник/i.test(job.stage)||!job.done&&!job.stage.startsWith('рендер')))return null;
+    return percent(job.percent);
+  }
+  function createPresentation({changed=()=>{},setTimer=setTimeout,clearTimer=clearTimeout,hidden=()=>false}={}){
+    let key='',timer=null,orb=false;
+    const cancel=()=>{if(timer!==null)clearTimer(timer);timer=null;};
+    const set=value=>{orb=value;changed(orb);};
+    function peek(delay=1800){cancel();if(hidden()){set(true);return;}set(false);timer=setTimer(()=>{timer=null;set(true);},delay);}
+    return{update(next,{quiet=false,open=false}={}){const different=key!==next;key=next;if(open){cancel();set(false);}else if(different&&!quiet)peek();else changed(orb);},peek,collapse(){cancel();set(true);},suspend(){cancel();set(true);},getState:()=>({key,orb,pending:timer!==null})};
   }
   function createStateSource(fetchState, { now = Date.now, hidden = () => document.hidden, publish = () => {} } = {}) {
     let snapshot = null, at = 0, pending = null, generation = 0;
@@ -104,26 +138,31 @@
     return controller;
   }
   function createController(options) {
-    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0;
+    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0,suspended=false,lastTyping=0;
+    const magic=()=>document.documentElement?.dataset.flowDesign==='magic';
+    const hidden=()=>document.hidden||suspended;
+    const presentation=createPresentation({hidden,changed:orb=>{if(pill?.isConnected&&magic())pill.dataset.islandOrb=String(orb);}});
     const current = () => model({ section, pc, data: options.data(), unavailable });
     function close(restoreFocus = true) {
       if (!layer) return;
       layer.remove(); layer = null; shown = null; lastPanelHTML="";
       pill?.setAttribute("aria-expanded", "false");
+      if(magic())presentation.peek(1200);
       if (restoreFocus) pill?.focus({ preventScroll: true });
     }
     const duration = value => value === null ? "" : `${Math.round(value / 60)} мин`;
     function panel(state) {
       const render = state.render;
-      const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls"><button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button><button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
-      const facts = render ? [render.fresh && render.frame !== null && render.frames !== null ? `Кадр ${render.frame} из ${render.frames}` : "", render.elapsed !== null ? `Идёт ${duration(render.elapsed)}` : "", render.eta !== null ? `Осталось ~${duration(render.eta)}` : ""].filter(Boolean).join(" · ") : "";
-      return `<header><strong>Сейчас в Flow</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>${render ? `<section class="island-render"><small>${render.fresh ? "After Effects" : "Связь с ПК потеряна"}</small><b>${escape(render.title)}</b>${state.progress === null ? "" : `<span>${state.progress}%</span>`}${facts ? `<p>${escape(facts)}</p>` : ""}</section>` : ""}${state.events.length ? `<section><h3>Ближайшее</h3>${state.events.map((event, i) => `<button type="button" data-island-event="${i}"><b>${escape(event.title)}</b><small>${escape(event.due || "")} ${escape(event.time || "")}</small></button>`).join("")}</section>` : ""}${state.tasks.length ? `<section><h3>Важные дела</h3>${state.tasks.map((task, i) => `<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due || "Без срока")}</small></button>`).join("")}</section>` : ""}${controls}${!render && !state.events.length && !state.tasks.length ? "<p class=\"island-empty\">Сейчас всё спокойно.</p>" : ""}<button type="button" class="island-pins" data-island-pins>Закреплённое <span>→</span></button>`;
+      const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls">${state.job.status==='delivering'?'':`<button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button>`}<button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
+      const facts = render ? [render.fresh && render.frame !== null && render.frames !== null ? `${render.queue?'Готово':'Кадр'} ${render.frame} из ${render.frames}` : "", render.elapsed !== null ? `Идёт ${duration(render.elapsed)}` : "", render.eta !== null ? `Осталось ~${duration(render.eta)}` : ""].filter(Boolean).join(" · ") : "";
+      return `<header><strong>Сейчас в Flow</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>${magic()?`<p class="island-now">${escape(state.label)}</p>`:''}${render ? `<section class="island-render"><small>${render.fresh ? escape(render.app) : "Связь с ПК потеряна"}</small><b>${escape(render.title)}</b>${state.progress === null ? "" : `<span>${state.progress}%</span>`}${facts ? `<p>${escape(facts)}</p>` : ""}</section>` : ""}${state.events.length ? `<section><h3>Ближайшее</h3>${state.events.map((event, i) => `<button type="button" data-island-event="${i}"><b>${escape(event.title)}</b><small>${escape(event.due || "")} ${escape(event.allDay ? "Весь день" : event.time || "")}</small></button>`).join("")}</section>` : ""}${state.tasks.length ? `<section><h3>Важные дела</h3>${state.tasks.map((task, i) => `<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due || "Без срока")}</small></button>`).join("")}</section>` : ""}${controls}${!render && !state.events.length && !state.tasks.length ? "<p class=\"island-empty\">Сейчас всё спокойно.</p>" : ""}<button type="button" class="island-pins" data-island-pins>Закреплённое <span>→</span></button>`;
     }
-    function paint() {
+    function paint({quiet=false}={}) {
       const state = current();
       if(feedback&&state.kind!=='disconnected'){state.kind=feedback.kind;state.label=feedback.label;}
       if (pill?.isConnected) {
-        if(document.documentElement?.dataset.flowDesign!=='magic'){
+        let currentLabel=state.label;
+        if(!magic()){
           const label=state.kind==='idle'&&section==='Flow'?'Flow рядом':state.label;if(pill.textContent!==label)pill.textContent=label;
         }else{
         const route=typeof ui==='undefined'?'':ui.page;
@@ -131,6 +170,7 @@
         const category=route==='saved'&&ui.savedCategory!=='overview'?ui.savedCategory:'';
         const sectionName=category&&typeof SAVED_NAMES!=='undefined'?(SAVED_NAMES[category]||names[route]):names[route];
         const label=state.kind==='idle'&&sectionName?sectionName:state.label;
+        currentLabel=label;
         let mark=pill.querySelector('.island-section-symbol');const shape=category&&typeof savedIcon==='function'?savedIcon(category):({today:'calendar',tasks:'check',saved:'bookmark',finance:'wallet',more:'overview',settings:'settings',piano:'piano',english:'study',sport:'weight',pc:'desktop',render:'film',vpn:'key',server:'server',projects:'project',metrics:'chart',docs:'file',vault:'key',archive:'archive',inbox:'inbox'}[route]||'spark');
         if(!mark){mark=document.createElement('span');mark.className='island-section-symbol';mark.setAttribute('aria-hidden','true');pill.prepend(mark);}
         const processShape={listen:'mic',think:'spark',speak:'music',success:'check',error:'bell',return:'spark'}[state.kind];
@@ -139,11 +179,14 @@
         let text=pill.querySelector('.island-label');if(!text){text=document.createElement('span');text.className='island-label';pill.replaceChildren(text);}
         if(!mark.isConnected)pill.prepend(mark);
         if(text.textContent!==label)text.textContent=label;
+        if(!pill.querySelector('.island-orb')){const orb=document.createElement('span');orb.className='island-orb';orb.setAttribute('aria-hidden','true');pill.append(orb);}
+        const context=[route,category,route==='finance'?ui.financeTab||'':'',state.kind,state.job?.id||'',state.job?.status||'',feedback?.kind==='think'?captureId||'':'',state.kind==='event'?state.imminentId||'':''].join('|');
+        presentation.update(context,{quiet,open:Boolean(layer)});
         }
         if(pill.dataset.activity!==state.kind)pill.dataset.activity = state.kind;
         pill.dataset.progressKnown = String(state.progress !== null);
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);
-        pill.setAttribute("aria-label", `${state.label} — текущая активность`);
+        pill.setAttribute("aria-label", `${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — текущая активность. Открыть подробности`);
       }
       if (layer) {
         shown = state;
@@ -161,30 +204,33 @@
       if (typeof CustomEvent === "function") document.dispatchEvent(new CustomEvent("flow:activity", { detail: { kind:state.kind, progress:state.progress, label:state.label, fresh:state.render?.fresh??true } }));
       return state.interval;
     }
-    function pulse(kind,label,timeout=0){
-      clearTimeout(feedbackTimer);feedback={kind,label};paint();
+    function pulse(kind,label,timeout=0,source=null){
+      const different=feedback?.kind!==kind||feedback?.label!==label;
+      clearTimeout(feedbackTimer);feedback={kind,label,source};paint();if(different&&magic()&&!layer)presentation.peek();
       if(pill?.isConnected&&!window.flowDigital?.reducedMotion?.()&&!document.hidden){
         pill.getAnimations?.().filter(a=>a.id==='flow-island-cue').forEach(a=>a.cancel());
         const a=pill.animate?.([{boxShadow:'0 0 0 transparent'},{boxShadow:'0 0 18px rgba(var(--accent-rgb),.3)',offset:.3},{boxShadow:'0 0 0 transparent'}],{duration:650,easing:'ease-out'});if(a)a.id='flow-island-cue';
       }
-      if(timeout)feedbackTimer=setTimeout(()=>{feedback=null;paint();},timeout);
+      if(timeout)feedbackTimer=setTimeout(()=>{feedback=null;paint({quiet:true});},timeout);
     }
     document.addEventListener('flow:assistantphase',event=>{
       const value=event.detail||{};if(value.open===false){pulse('return','Я рядом',1800);return;}
+      if(value.open&&value.opened){pulse('return','Ассистент Flow',1800);return;}
       const phase={listening:['listen','Слушаю'],thinking:['think','Обрабатываю'],speaking:['speak','Отвечаю'],success:['success','Готово'],error:['error','Нужна проверка']}[value.state];
-      if(phase)pulse(...phase,value.state==='success'?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint();}
+      if(phase)pulse(...phase,value.state==='success'?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}
     });
     document.addEventListener('flow:voice',event=>{const value=event.detail||{};if(value.state==='listening'){
       // Actual microphone level only; at most ten light updates per second.
       const now=performance.now();if(now-lastVoicePaint<100)return;lastVoicePaint=now;
       pill?.style.setProperty('--island-level',String(Math.max(0,Math.min(1,Number(value.level)||0))));
-    }});
+    }else pill?.style.setProperty('--island-level','0');});
     document.addEventListener('flow:composecapture',event=>{const v=event.detail||{};
       if(v.phase==='submitting'){captureId=v.requestId;pulse('think','Передаю в Flow');}
       else if(v.requestId===captureId&&captureId!=null){if(v.phase==='result'){captureId=null;pulse('success','Готово',2200);}else if(v.phase==='error'){captureId=null;pulse('error','Не отправилось',3200);}else if(v.phase==='pending'){captureId=null;pulse('return','Ответ придёт в чат',2400);}}
-      else if(v.phase==='closed')captureId=null;
+      else if(v.phase==='closed'){const pending=captureId!==null;captureId=null;if(pending&&feedback?.kind==='think'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}}
     });
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(feedbackTimer);feedback=null;}});
+    document.addEventListener('input',event=>{if(!magic()||hidden())return;const field=event.target.closest?.('textarea,input,[contenteditable="true"]');if(!field||field.matches('input[type=range],input[type=checkbox],input[type=radio],input[type=file]'))return;const now=Date.now();if(now-lastTyping>1200&&!layer)presentation.peek();lastTyping=now;},true);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(feedbackTimer);feedback=null;presentation.suspend();pill?.style.setProperty('--island-level','0');}});
     function toggle() {
       if (layer) { close(); return; }
       layer = document.createElement("div"); layer.className = "activity-island-layer";
@@ -210,15 +256,28 @@
       if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); close(); }
 
     }, true);
-    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),width=Math.min(360,innerWidth-24);layer.style.setProperty('--island-left',`${Math.max(12,Math.min(innerWidth-width-12,r.left+r.width/2-width/2))}px`);layer.style.setProperty('--island-top',`${r.top}px`);layer.style.setProperty('--island-width',`${width}px`);}
+    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),width=Math.min(360,innerWidth-24),top=magic()?r.bottom+6:r.top;layer.style.setProperty('--island-left',`${Math.max(12,Math.min(innerWidth-width-12,r.left+r.width/2-width/2))}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);}
     document.addEventListener('pointerdown',event=>{if(layer&&!layer.contains(event.target)&&!pill?.contains(event.target))close(false);},true);
     window.addEventListener?.('resize',position);window.addEventListener?.('scroll',position,{passive:true});
-    const poller = createPoller({ hidden: () => document.hidden, paint, read: async () => {
+    window.addEventListener?.('flow:windowgeometry',position);
+    window.visualViewport?.addEventListener('resize',position);
+    const poller = createPoller({ hidden, paint, read: async () => {
       if (typeof window.sorokaPc !== "function") return;
-      try { pc = await window.sorokaPc({ op: "state" }); unavailable = false; }
+      try {
+        const prior=current().job;pc = await window.sorokaPc({ op: "state" }); unavailable = false;
+        const next=current(),finished=prior&&(pc?.rmQueue?.jobs||[]).find(job=>String(job.id)===String(prior.id));
+        if(feedback?.source==='render'&&next.job){clearTimeout(feedbackTimer);feedback=null;}
+        if(prior?.fresh&&next.queueFresh&&finished&&(!feedback||feedback.source==='render')){
+          if(finished.status==='failed'||finished.status==='done'&&[finished.delivery?.status,finished.delivery?.phase].includes('failed'))pulse('error','Рендер требует проверки',0,'render');
+          else if(finished.status==='done')pulse('success','Рендер готов',1800,'render');
+        }
+      }
       catch (_) { unavailable = true; }
     } });
     document.addEventListener("visibilitychange", () => poller.visibility());
+    window.addEventListener?.('flow:suspend',()=>{suspended=true;presentation.suspend();poller.visibility();});
+    window.addEventListener?.('flow:resume',()=>{suspended=false;poller.visibility();});
+    window.addEventListener?.('pagehide',()=>presentation.suspend());
     void poller.start();
     return { attach(next, title, nextOptions) {
       if(nextOptions)options=nextOptions;
@@ -227,7 +286,7 @@
       pill.classList.add("activity-island"); pill.setAttribute("aria-haspopup", "false"); pill.setAttribute("aria-expanded", String(Boolean(layer)));
       if (!pill.dataset.islandBound) { pill.dataset.islandBound = "true"; pill.addEventListener("click", toggle); }
       position();paint();if(changed&&!window.flowDigital?.reducedMotion?.()&&!document.hidden)pill.querySelector('.island-label')?.animate?.([{opacity:.35,translate:'0 3px'},{opacity:1,translate:'0 0'}],{duration:320,easing:'ease-out'});
-    }, close };
+    }, close,getState:()=>({...presentation.getState(),activity:current().kind,panelOpen:Boolean(layer)}) };
   }
-  window.FlowActivity = { model, eventStart, percent, createStateSource, createPoller, mount };
+  window.FlowActivity = { model, eventStart, percent, createPresentation,createStateSource, createPoller, mount };
 })();

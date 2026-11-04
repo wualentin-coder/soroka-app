@@ -108,8 +108,8 @@
   }
   let publishedProcess='';
   function syncProcess() {
-    let scene = microphones.size?'listen':speaking ? 'speak' : ['requesting', 'listening', 'transcribing'].includes(voice) ? (voice === 'listening' ? 'listen' : 'think') : capture !== 'idle' ? capture : activity?.kind==='pause'?'pause':activity?.kind === 'render' ? 'render' : activity?.kind === 'disconnected' ? 'error' : 'idle';
-    const progress = activity?.kind === 'render' ? activity.progress : null;
+    let scene = microphones.size?'listen':speaking ? 'speak' : ['requesting', 'listening', 'transcribing'].includes(voice) ? (voice === 'listening' ? 'listen' : 'think') : capture !== 'idle' ? capture : activity?.kind==='pause'?'pause':activity?.kind === 'render' ? 'render' : ['disconnected','error'].includes(activity?.kind) ? 'error' : activity?.kind === 'success' ? 'success' : 'idle';
+    const progress = ['render','pause'].includes(activity?.kind) ? activity.progress : null;
     const focus=microphones.size||['requesting','listening','transcribing'].includes(voice)?'recording':speaking?'voice':media.size?'media':'none';
     const stamp=JSON.stringify([scene,voiceLevel,progress,focus]);if(stamp===publishedProcess)return;publishedProcess=stamp;
     root.dataset.magicScene = scene; root.style.setProperty('--magic-level', String(voiceLevel)); root.style.setProperty('--magic-progress', String(progress ?? 0));

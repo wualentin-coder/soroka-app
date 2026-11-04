@@ -1,7 +1,7 @@
 /* Native Flow navigation; the audio/score engine lives outside render(). */
 (() => {
   const base=new URL('./piano/',document.currentScript.src);
-  const revision='63e9fd53e452';
+  const revision='ee88d828b262';
   const state={tab:'today',module:null,index:0,busy:false,error:'',sync:'loading',profile:null,snapshot:{},library:[],daily:null,readyDate:'',player:null,engine:null,deck:null,screen:null,request:0,saveTimer:0,saveBusy:false,dirty:false,serverRevision:0,loaded:false};
   let modulePromise=null,apiModule=null,loadPromise=null,deckObserver=null,practiceFocus=false;
   const publicStudyPlans=new Map();

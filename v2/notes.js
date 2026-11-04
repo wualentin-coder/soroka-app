@@ -87,7 +87,7 @@ function renderNoteSheet(item) {
   const versions = item?.versions || [];
   const history = versions.length ? `<details class="note-history"><summary>История изменений <span>${versions.length}</span></summary>${versions.slice().reverse().map((version, index) => `<div class="note-history-entry"><time>${esc(version.date || "Ранее")}</time><p>${esc(version.description || "Пустая версия")}</p><button type="button" data-action="saved-restore-version" data-version="${versions.length - 1 - index}">Вставить в редактор</button></div>`).join("")}</details>` : "";
   const magic = document.documentElement.dataset.flowDesign === "magic";
-  const assistant = `<button class="note-tool dc2-note-assistant" type="button" data-action="note-assistant" aria-label="Ассистент для этой заметки"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3C34 23 41 30 61 32C41 34 34 41 32 61C30 41 23 34 3 32C23 30 30 23 32 3Z"/></svg></button>`;
+  const assistant = `<button class="note-tool dc2-note-assistant" type="button" data-action="note-improve-menu" aria-label="Улучшить текст" title="Улучшить текст" aria-expanded="${Boolean(ui.sheet.improve)}"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3C34 23 41 30 61 32C41 34 34 41 32 61C30 41 23 34 3 32C23 30 30 23 32 3Z"/></svg></button>`;
   const tools = `${magic ? assistant : `<button class="note-tool improve" type="button" data-action="note-improve-menu" aria-label="Улучшить">${icon("spark", "icon-sm")}<span>Улучшить</span></button>`}${item ? `<button class="note-tool" type="button" data-action="saved-share" aria-label="Поделиться">${icon("share", "icon-sm")}</button>` : ""}${magic ? `<button class="note-tool dc2-note-done" type="button" data-action="note-cancel">Готово</button>` : item ? `<button class="note-tool danger" type="button" data-action="saved-delete" aria-label="Удалить">${icon("trash", "icon-sm")}</button>` : ""}`;
   const undo = ui.sheet.prevText !== undefined ? `<button type="button" class="note-undo" data-action="note-improve-undo">${icon("reset", "icon-sm")}Вернуть как было</button>` : "";
   const menu = ui.sheet.improve ? `<div class="note-improve-menu" role="menu">${NOTE_STYLES.map(([key, label, about]) => `<button type="button" role="menuitem" data-action="note-improve" data-style="${key}"><b>${label}</b><small>${about}</small></button>`).join("")}</div>` : "";
@@ -97,7 +97,14 @@ function renderNoteSheet(item) {
   const composition = document.createElement("template"); composition.innerHTML = editor;
   if (magic) { const form = composition.content.querySelector("form"), meta = form.querySelector(".note-meta"); form.querySelector(".note-title-input").after(meta); if (item) meta.querySelector(".note-editor-details").insertAdjacentHTML("beforeend", `<button class="text-button danger dc2-note-delete" type="button" data-action="saved-delete">${icon("trash", "icon-sm")}Удалить заметку</button>`); }
   const format = document.createElement("template"); format.innerHTML = noteFormatBar();
-  if (magic) format.content.querySelector("[data-note-voice]")?.remove();
+  if (magic) {
+    format.content.querySelector("[data-note-voice]")?.remove();
+    const paths={h:'M5 5V21M16 5V21M5 13H16M20 7H27M23.5 7V21',ul:'M10 8H27M10 16H27M10 24H24M4 8H4.1M4 16H4.1M4 24H4.1',ol:'M12 8H28M12 16H28M12 24H26M4 4V11M3 4H4M2 16C2 13 7 13 7 16L2 20H7M2 24H6L3 27H7',check:'M3 9L6 12L11 5M15 9H28M3 23L6 26L11 19M15 23H28',bold:'M9 5H17C25 5 25 15 17 15H9ZM9 15H18C27 15 27 27 18 27H9Z',table:'M4 5H28V27H4ZM4 12H28M4 20H28M12 5V27M20 5V27'};
+    for(const button of format.content.querySelectorAll('[data-note-cmd]')){
+      button.innerHTML=`<svg class="note-light-glyph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[button.dataset.noteCmd]}"/></svg>`;
+      button.setAttribute('aria-pressed','false');
+    }
+  }
   return `<div class="modal-backdrop note-backdrop" data-action="backdrop"><section class="sheet note-sheet ${magic ? "dc2-note-sheet" : ""}" role="dialog" aria-modal="true" aria-label="Заметка"><header class="note-toolbar"><button type="button" class="note-back" data-action="note-cancel">${icon("left", "icon-sm")}${returnLabel}</button><span class="note-tools">${tools}</span></header>${undo}${menu}${composition.innerHTML}${format.innerHTML}${busy}</section></div>`;
 }
 
@@ -190,3 +197,30 @@ closeSheet = function () {
   }
   saveNoteQuietly(); return closeSheetBeforeNotes.apply(this, arguments);
 };
+
+// Formatting reads the current selection and keeps it when the toolbar receives keyboard focus.
+(() => {
+  let range=null,owner=null,frame=0;
+  function update(){
+    frame=0;
+    const editor=document.querySelector('.dc2-note-sheet .note-rich');if(!editor)return;
+    const selection=getSelection(),node=selection?.anchorNode,element=node?.nodeType===1?node:node?.parentElement;
+    if(node&&editor.contains(node)&&selection.rangeCount){range=selection.getRangeAt(0).cloneRange();owner=editor;}
+    const within=element&&editor.contains(element),list=within?element.closest('ul,ol'):null;
+    for(const button of document.querySelectorAll('.dc2-note-sheet [data-note-cmd]')){
+      const cmd=button.dataset.noteCmd,pressed=within&&({h:!!element.closest('h1,h2,h3,h4'),ul:list?.tagName==='UL'&&!list.classList.contains('checks'),ol:list?.tagName==='OL',check:!!list?.classList.contains('checks'),bold:document.queryCommandState('bold'),table:!!element.closest('table')}[cmd]);
+      button.setAttribute('aria-pressed',String(Boolean(pressed)));
+    }
+  }
+  function schedule(){if(!frame)frame=requestAnimationFrame(update);}
+  document.addEventListener('selectionchange',schedule);
+  document.addEventListener('input',event=>{if(event.target.closest?.('.dc2-note-sheet .note-rich'))schedule();});
+  document.addEventListener('click',event=>{
+    if(!event.target.closest?.('.dc2-note-sheet [data-note-cmd]'))return;
+    const editor=document.querySelector('.dc2-note-sheet .note-rich');
+    if(editor&&owner===editor&&range?.startContainer.isConnected&&!editor.contains(getSelection()?.anchorNode)){
+      editor.focus({preventScroll:true});const selection=getSelection();selection.removeAllRanges();selection.addRange(range);
+    }
+    schedule();
+  },true);
+})();

@@ -74,3 +74,9 @@ html[data-motion=off] .flow-edge-line,.digital-hidden .flow-edge-line{animation:
 /* Offscreen scenes keep their phase but stop consuming animation work. */
 .magic-out-of-view,.magic-out-of-view *,.magic-out-of-view:before,.magic-out-of-view:after,.magic-out-of-view *:before,.magic-out-of-view *:after{animation-play-state:paused!important}
 html[data-flow-native=true] .assistant-fab[data-avoid-hidden]{opacity:0;visibility:hidden;pointer-events:none}
+
+/* The foreground window keeps its own light/input response; the covered Plan
+   and ambient scenery hold their phase instead of animating behind its blur. */
+html[data-flow-surface=window] :is(.digital-atmosphere,.digital-atmosphere *,.dm-calendar-living,.dm-calendar-living *,.rhythm-card,.rhythm-card *,.dc-practice-card,.dc-practice-card *,.assistant-fab,.assistant-fab *,.flow-edge-line),
+html[data-flow-surface=window] :is(.dm-calendar-living,.dm-calendar-living *,.assistant-fab,.assistant-fab *)::before,
+html[data-flow-surface=window] :is(.dm-calendar-living,.dm-calendar-living *,.assistant-fab,.assistant-fab *)::after{animation-play-state:paused!important}
