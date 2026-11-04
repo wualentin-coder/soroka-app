@@ -19,42 +19,60 @@ class LoopDeck {
       const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.shiftKey?e.deltaY:0;
       if(!delta||count<2)return;e.preventDefault();if(this.spinning)return;this.stop();
       this.position+=delta*(e.deltaMode===1?16:1)/this.step;
-      this.paint();clearTimeout(this.wheelTimer);this.wheelTimer=setTimeout(()=>this.settle(),100);
+      this.requestPaint();clearTimeout(this.wheelTimer);this.wheelTimer=setTimeout(()=>this.settle(),100);
     },{...options,passive:false});
-    this.paint();
+    this.measure();this.paint();
+    if(typeof ResizeObserver==='function'){
+      this.resizeObserver=new ResizeObserver(()=>{const before=this.measuredWidth;this.measure();if(this.measuredWidth!==before)this.paint();});
+      this.resizeObserver.observe(track);
+    }
   }
   wrap(n){return ((n%this.count)+this.count)%this.count;}
   itemIndex(slot){return this.spinMap?.get(slot) ?? this.wrap(slot);}
-  get width(){return Math.min(480,innerWidth*.8,this.track.clientWidth*.94);}
+  measure(){this.measuredWidth=Math.min(480,innerWidth*.8,this.track.clientWidth*.94);}
+  get width(){return this.measuredWidth??Math.min(480,innerWidth*.8,this.track.clientWidth*.94);}
   get step(){return this.width-25;}
+  requestPaint(){if(!this.paintFrame)this.paintFrame=requestAnimationFrame(()=>{this.paintFrame=0;this.paint();});}
+  rebase(position){
+    const shift=Math.round(position-this.position);
+    for(const node of this.track?.children||[])node.dataset.slot=String(Number(node.dataset.slot)+shift);
+    this.position=position;this.base=null;
+  }
   stop(){
+    if(this.paintFrame)cancelAnimationFrame(this.paintFrame);this.paintFrame=0;
     cancelAnimationFrame(this.frame);this.frame=0;this.velocity=0;clearTimeout(this.wheelTimer);
-    if(this.spinMap){this.position=this.itemIndex(Math.round(this.position));this.spinMap=null;this.base=null;}
+    if(this.spinMap){const nearest=Math.round(this.position),index=this.itemIndex(nearest);this.rebase(this.position+index-nearest);this.spinMap=null;}
     this.spinning=false;
   }
   paint(){
+    if(this.paintFrame)cancelAnimationFrame(this.paintFrame);this.paintFrame=0;
     const base=Math.floor(this.position),nearest=Math.round(this.position);
     if(base!==this.base){
       this.base=base;const slots=this.count===1?[0]:Array.from({length:7},(_,i)=>base+i-3);
-      this.track.innerHTML=slots.map(slot=>this.card(this.itemIndex(slot),slot)).join('');
+      const wanted=new Set(slots),existing=new Map();
+      for(const node of [...this.track.children]){
+        const slot=Number(node.dataset.slot);
+        if(!wanted.has(slot)||Number(node.dataset.index)!==this.itemIndex(slot))node.remove();
+        else existing.set(slot,node);
+      }
+      // Keep decoded posters and their controls mounted as the window moves.
+      for(const slot of slots)if(!existing.has(slot))this.track.insertAdjacentHTML('beforeend',this.card(this.itemIndex(slot),slot));
     }
     const width=this.width,step=this.step;
     const height=Number(this.track.dataset.heightLimit)||width*1.5+240;
-    this.track.style.height=`${height}px`;
-    this.track.style.setProperty('--movie-poster-height',`${height-240}px`);
+    if(this.paintedHeight!==height){this.track.style.height=`${height}px`;this.track.style.setProperty('--movie-poster-height',`${height-240}px`);this.paintedHeight=height;}
     for(const node of this.track.children){
       const slot=Number(node.dataset.slot),distance=slot-this.position,depth=Math.min(Math.abs(distance),2);
-      node.style.width=`${width}px`;
+      if(node.style.width!==`${width}px`)node.style.width=`${width}px`;
       const lift=slot===nearest?(this.drag?.axis==='y'?Math.max(-95,Math.min(95,this.drag.dy||0)):(this.lift||0)):0;
       node.style.transform=`translate3d(calc(-50% + ${distance*step}px), ${depth*14+lift}px, 0) scale(${1-depth*.075})`;
       node.style.opacity=String(Math.max(0,1-Math.max(0,depth-.15)*.2));
       node.style.visibility=Math.abs(distance)>2.3?'hidden':'visible';
       node.style.zIndex=String(100-Math.round(Math.abs(distance)*20));
-      node.classList.toggle('active',slot===nearest);
-      const hidden=Math.abs(distance)>1.6;node.setAttribute('aria-hidden',String(hidden));
-      node.querySelectorAll('button').forEach(b=>b.tabIndex=slot===nearest?0:-1);
+      const active=slot===nearest;if(node._deckActive!==active){node._deckActive=active;node.classList.toggle('active',active);node.querySelectorAll('button').forEach(b=>b.tabIndex=active?0:-1);}
+      const hidden=String(Math.abs(distance)>1.6);if(node.getAttribute('aria-hidden')!==hidden)node.setAttribute('aria-hidden',hidden);
     }
-    this.onChange(this.itemIndex(nearest));
+    const index=this.itemIndex(nearest);if(this.notifiedIndex!==index){this.notifiedIndex=index;this.onChange(index);}
   }
   down(e){
     if(e.button!==0||(!this.onAction&&this.count<2)||this.drag||this.spinning)return;
@@ -71,11 +89,11 @@ class LoopDeck {
       d.moved=true;this.track.setPointerCapture(e.pointerId);this.track.classList.add('dragging');
     }
     if(d.axis==='y'){
-      d.dy=dy;this.track.dataset.cardAction=this.actionLabel?.(dy<0?'viewed':'menu',this.itemIndex(Math.round(this.position))) || (dy<0?'Просмотрено':'Действия');this.paint();return;
+      d.dy=dy;this.track.dataset.cardAction=this.actionLabel?.(dy<0?'viewed':'menu',this.itemIndex(Math.round(this.position))) || (dy<0?'Просмотрено':'Действия');this.requestPaint();return;
     }
     const now=performance.now(),dt=Math.max(8,now-d.lastAt);
     this.velocity=this.velocity*.25+(-(e.clientX-d.lastX)/dt*1000/this.step)*.75;
-    this.position=d.start-dx/this.step;d.lastX=e.clientX;d.lastAt=now;this.paint();
+    this.position=d.start-dx/this.step;d.lastX=e.clientX;d.lastAt=now;this.requestPaint();
   }
   up(e,cancelled=false){
     const d=this.drag;if(!d||d.id!==e.pointerId)return;
@@ -113,7 +131,7 @@ class LoopDeck {
         this.velocity+=(-180*(this.position-target)-27*this.velocity)*dt;
         this.position+=this.velocity*dt;
         if(Math.abs(this.position-target)<.0008&&Math.abs(this.velocity)<.008){
-          this.position=this.wrap(target);this.velocity=0;this.paint();this.frame=0;return;
+          this.rebase(this.wrap(target));this.velocity=0;this.paint();this.frame=0;return;
         }
       }
       this.paint();this.frame=requestAnimationFrame(tick);
@@ -138,9 +156,9 @@ class LoopDeck {
       const t=Math.min(1,Math.max(0,(now-began)/duration));
       this.position=start+(last-start)*(1-Math.pow(1-t,3));this.paint();
       if(t<1)this.frame=requestAnimationFrame(tick);
-      else {this.spinMap=null;this.spinning=false;this.position=index;this.base=null;this.frame=0;this.paint();onDone();}
+      else {this.rebase(index);this.spinMap=null;this.spinning=false;this.frame=0;this.paint();onDone();}
     };
     this.frame=requestAnimationFrame(tick);
   }
-  destroy(){this.stop();this.abort.abort();}
+  destroy(){this.stop();this.resizeObserver?.disconnect();this.abort.abort();}
 }

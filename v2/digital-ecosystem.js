@@ -5,7 +5,7 @@
   if (window.flowEcosystem) return;
   const root = document.documentElement, abort = new AbortController(), signal = abort.signal;
   const selector = '.sheet,.composer,.enm-song-sheet,.pins-drop-card,.pn-dialog,dialog,[role="dialog"]';
-  const surfaces = new Set(), observers = new Map(), media = new Set(), inputs = new Map(), microphones = new Set();
+  const surfaces = new Set(), observers = new Map(), media = new Set(), inputs = new Map(), microphones = new Set(), pendingScopes = new Set();
   let frame = 0, disposed = false, active = null, voice = 'idle', voiceLevel = 0, activity = null, capture = 'idle', captureRequest = null, speaking = false, settleTimer = 0;
   const reduced = () => window.flowDigital?.reducedMotion?.() ?? matchMedia('(prefers-reduced-motion:reduce)').matches;
   const moving = () => !disposed && !document.hidden && !reduced();
@@ -18,20 +18,28 @@
     const contour = document.createElement('i'); contour.className = 'flow-surface-contour'; contour.setAttribute('aria-hidden', 'true');surface.append(contour);
   }
   function scan(scope) {
+    if(scope.matches?.(selector))attach(scope);
     for (const node of scope.querySelectorAll(selector)) attach(node);
+    if(scope.shadowRoot&&!observers.has(scope.shadowRoot))watch(scope.shadowRoot);
     for (const host of scope.querySelectorAll('*')) if (host.shadowRoot && !observers.has(host.shadowRoot)) watch(host.shadowRoot);
   }
   function watch(scope) {
     if (observers.has(scope)) return;
     const observer = new MutationObserver(records => {
-      if (records.some(record => record.type==='attributes'&&(record.target.id==='mic-badge'||['open','hidden'].includes(record.attributeName))) || records.some(record => [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1 && !node.matches?.('.flow-surface-contour,.flow-input-light,.flow-input-source,.flow-input-spread')))) schedule();
+      let changed=false;
+      for(const record of records){
+        if(record.type==='attributes'){if(record.target.id==='mic-badge'||['open','hidden'].includes(record.attributeName))changed=true;continue;}
+        for(const node of record.addedNodes)if(node.nodeType===1&&!node.matches('.flow-surface-contour,.flow-input-light,.flow-input-source,.flow-input-spread')){pendingScopes.add(node);changed=true;}
+        if([...record.removedNodes].some(node=>node.nodeType===1&&!node.matches('.flow-surface-contour,.flow-input-light,.flow-input-source,.flow-input-spread')))changed=true;
+      }
+      if(changed)schedule();
     });
     observer.observe(scope, { childList: true, subtree: true, attributes:true, attributeFilter:['class','open','hidden'] }); observers.set(scope, observer); scan(scope);
   }
   function paint() {
     frame = 0; if (disposed) return;
-    scan(document);
-    for (const scope of observers.keys()) if (scope instanceof ShadowRoot) { if (!scope.host.isConnected) { observers.get(scope).disconnect(); observers.delete(scope);microphones.delete(scope); } else {scan(scope);const badge=scope.querySelector('#mic-badge');if(badge?.classList.contains('on'))microphones.add(scope);else microphones.delete(scope);} }
+    for(const scope of pendingScopes)if(scope.isConnected)scan(scope);pendingScopes.clear();
+    for (const scope of observers.keys()) if (scope instanceof ShadowRoot) { if (!scope.host.isConnected) { observers.get(scope).disconnect(); observers.delete(scope);microphones.delete(scope); } else {const badge=scope.querySelector('#mic-badge');if(badge?.classList.contains('on'))microphones.add(scope);else microphones.delete(scope);} }
     for (const surface of surfaces) if (!surface.isConnected) { clearInput(surface); surfaces.delete(surface); }
     const list = [...surfaces].filter(visible); active = list.find(surface=>{const owner=surface.getRootNode();return surface.contains(owner.activeElement||document.activeElement);}) || list.at(-1) || null;
     for (const surface of surfaces) { surface.classList.toggle('flow-surface-attention', surface === active); surface.classList.toggle('flow-surface-resting', !moving() || !visible(surface)); }
@@ -98,9 +106,12 @@
     owned.effects = [...owned.node.children].map((node, i) => node.animate([{ opacity: previous[i] }, { opacity: strength, offset: i ? .2 : .12 }, { opacity: strength * .5, offset: .48 }, { opacity: 0 }], { duration: duration - (i ? 0 : 80), easing: 'cubic-bezier(.2,.6,.25,1)' }));
     const last = owned.effects[1]; last.finished.then(() => { if (inputs.get(surface)?.effects.includes(last)) clearInput(surface); }, () => {});
   }
+  let publishedProcess='';
   function syncProcess() {
     let scene = microphones.size?'listen':speaking ? 'speak' : ['requesting', 'listening', 'transcribing'].includes(voice) ? (voice === 'listening' ? 'listen' : 'think') : capture !== 'idle' ? capture : activity?.kind==='pause'?'pause':activity?.kind === 'render' ? 'render' : activity?.kind === 'disconnected' ? 'error' : 'idle';
     const progress = activity?.kind === 'render' ? activity.progress : null;
+    const focus=microphones.size||['requesting','listening','transcribing'].includes(voice)?'recording':speaking?'voice':media.size?'media':'none';
+    const stamp=JSON.stringify([scene,voiceLevel,progress,focus]);if(stamp===publishedProcess)return;publishedProcess=stamp;
     root.dataset.magicScene = scene; root.style.setProperty('--magic-level', String(voiceLevel)); root.style.setProperty('--magic-progress', String(progress ?? 0));
     window.flowSound?.setFocus(microphones.size||['requesting','listening','transcribing'].includes(voice) ? 'recording' : speaking ? 'voice' : media.size ? 'media' : 'none', 'ecosystem');
     document.dispatchEvent(new CustomEvent('flow:processstate', { detail: { state: scene, level: voiceLevel, progress } }));
@@ -125,7 +136,7 @@
   document.addEventListener('visibilitychange', () => { document.body.classList.toggle('digital-hidden', document.hidden); if (document.hidden) for (const [surface] of inputs) clearInput(surface); schedule(); }, { signal });
   window.addEventListener('pagehide', () => { for (const [surface] of inputs) clearInput(surface); if (frame) cancelAnimationFrame(frame); frame = 0; }, { signal });
   window.addEventListener('pageshow', schedule, { signal });
-  window.flowEcosystem = { refresh: schedule, getState: () => ({ surfaces: surfaces.size, activeSurface: !!active, typingLayers: inputs.size, typingAnimations: [...inputs.values()].reduce((n, item) => n + item.effects.filter(effect => effect.playState === 'running').length, 0), scene: root.dataset.magicScene, mediaOwners: media.size, microphoneOwners:microphones.size, voice, physicalHapticsVerified: false }), dispose() { disposed = true; abort.abort(); for(const fab of document.querySelectorAll('.assistant-fab')){fab.inert=false;fab.style.removeProperty('--assistant-avoid');fab.removeAttribute('data-avoid-hidden');} clearTimeout(settleTimer); if (frame) cancelAnimationFrame(frame); for (const observer of observers.values()) observer.disconnect(); for (const [surface] of inputs) clearInput(surface); for (const surface of surfaces) { surface.classList.remove('flow-living-surface','flow-surface-static','flow-surface-attention','flow-surface-resting','flow-surface-focused');surface.style.removeProperty('--surface-x');surface.style.removeProperty('--surface-y'); surface.querySelector(':scope>.flow-surface-contour')?.remove(); } } };
+  window.flowEcosystem = { refresh() { pendingScopes.add(document.body);schedule(); }, getState: () => ({ surfaces: surfaces.size, activeSurface: !!active, typingLayers: inputs.size, typingAnimations: [...inputs.values()].reduce((n, item) => n + item.effects.filter(effect => effect.playState === 'running').length, 0), scene: root.dataset.magicScene, mediaOwners: media.size, microphoneOwners:microphones.size, voice, physicalHapticsVerified: false }), dispose() { disposed = true; abort.abort(); for(const fab of document.querySelectorAll('.assistant-fab')){fab.inert=false;fab.style.removeProperty('--assistant-avoid');fab.removeAttribute('data-avoid-hidden');} clearTimeout(settleTimer); if (frame) cancelAnimationFrame(frame); for (const observer of observers.values()) observer.disconnect(); for (const [surface] of inputs) clearInput(surface); for (const surface of surfaces) { surface.classList.remove('flow-living-surface','flow-surface-static','flow-surface-attention','flow-surface-resting','flow-surface-focused');surface.style.removeProperty('--surface-x');surface.style.removeProperty('--surface-y'); surface.querySelector(':scope>.flow-surface-contour')?.remove(); } } };
   document.addEventListener('click', event => {
     const button=event.target.closest?.('[data-action="list-toggle"]');
     if(!button||button.disabled||!moving())return;

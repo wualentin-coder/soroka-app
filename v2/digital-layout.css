@@ -722,6 +722,11 @@ html[data-motion=off] .head-pill *,.digital-hidden .head-pill *{animation:none!i
 
 html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-tools{display:none!important}
 html[data-flow-native=true][data-flow-design=magic] .dm-topbar.dm-context-view .dm-mobile-brand{display:none}
-html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view{display:grid;place-items:center;width:52px;height:36px;min-height:36px;flex:none;padding:6px;border:0;background:transparent;color:var(--accent)}
+html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-movie-start{display:flex;align-items:center;width:64px;flex:none}
+html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view{display:grid;place-items:center;width:32px;min-width:32px;height:36px;min-height:36px;flex:none;padding:6px;border:0;background:transparent;color:var(--accent)}
 html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view svg{width:23px;height:23px;filter:drop-shadow(0 0 5px rgba(var(--accent-rgb),.3))}
+@media(max-width:359px){
+  html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{width:150px;min-width:150px}
+  html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:40px;max-width:40px}
+}
 

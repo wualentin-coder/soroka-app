@@ -12,10 +12,16 @@
     if(root.dataset.flowNative!=='true'||root.dataset.flowDesign!=='magic')return;
     const bar=document.querySelector('.dm-topbar');if(!bar)return;
     const movie=typeof ui!=='undefined'&&ui.page==='saved'&&ui.savedCategory==='movies';
-    const toggle=document.querySelector('.dm-main .dc-movie-tools [data-action=movie-carousel-toggle]');
-    if(toggle){bar.querySelector('.dm-header-view')?.remove();toggle.classList.add('dm-header-view');bar.prepend(toggle);}
-    else if(!movie)bar.querySelector('.dm-header-view')?.remove();
-    bar.classList.toggle('dm-context-view',Boolean(movie&&bar.querySelector('.dm-header-view')));
+    const plans=movie&&typeof moviePlansTab==='function'&&moviePlansTab();
+    let start=bar.querySelector('.dm-header-movie-start');
+    if(plans&&!start){start=document.createElement('div');start.className='dm-header-movie-start';bar.prepend(start);}
+    if(!plans){start?.remove();start=null;}
+    for(const [action,host] of [['movie-carousel-toggle',start],['movie-filters-toggle',start],['movie-random',movie&&ui.savedFilter!=='reco'?bar.querySelector('.dm-toolbar'):null]]){
+      const old=bar.querySelector(`[data-action="${action}"]`),fresh=document.querySelector(`.dm-main .dc-movie-tools [data-action="${action}"]`);
+      if(!host){old?.remove();continue;}
+      if(fresh){old?.remove();fresh.classList.add('dm-header-view');host.insertBefore(fresh,host.matches('.dm-toolbar')?host.querySelector('.header-menu-wrap'):null);}
+    }
+    bar.classList.toggle('dm-context-view',Boolean(start));
     const menu=bar.querySelector('.header-menu');if(!menu)return;
     const headings=document.querySelectorAll('.dm-main :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dc-movie-title-row,.dl-heading,.ds2-heading,.ds-work-head,.dc-heading,.lv-heading,.dm-finance-view-action,.dc-movie-tools)');
     const controls=[...headings].flatMap(h=>[...h.querySelectorAll('button,details')].filter(n=>!n.closest('.head-pill')&&(!n.closest('details')||n.matches('details')))).filter(n=>!n.matches('[data-action=calendar-expand]'));

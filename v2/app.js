@@ -591,6 +591,18 @@ function render() {
     afterRender(scroll);
     return;
   }
+  // Calendar changes replace their content, keeping the live header and navigation.
+  const plan=app.querySelector('.dm-main > .dm-plan');
+  if(!classicDesign()&&nav&&ui.page==='today'&&plan&&shellChrome===renderedShellChrome&&!hasMap(sheet)&&!nav.parentElement.querySelector(':scope > .mobile-nav ~ * .leaflet-container')){
+    renderedShell=page;
+    const main=plan.parentElement;main.innerHTML=page;
+    while(nav.nextSibling)nav.nextSibling.remove();nav.insertAdjacentHTML('afterend',overlay);
+    const inboxButton=app.querySelector('.sidebar [data-page="inbox"]'),inbox=inboxButton?.querySelector('.nav-count');
+    if(data.inbox.length){if(inbox)inbox.textContent=String(data.inbox.length);else inboxButton?.insertAdjacentHTML('beforeend',`<span class="nav-count">${data.inbox.length}</span>`);}else inbox?.remove();
+    installSwipeCards(main);nav.parentElement.querySelectorAll(':scope > .mobile-nav ~ *').forEach(installSwipeCards);
+    if(retainRouteFocus)focusRouteHeading();else if(navigationFocus)focusCurrentNavigation(navigationFocus);
+    afterRender(scroll);return;
+  }
   disposeAddressMap();
   if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
   renderedShell = page;

@@ -72,13 +72,13 @@ function mountMovieCarousel() {
     if (count) count.textContent = `${i + 1} из ${items.length}`;
   }});
   if(typeof ResizeObserver==='function'){
-    movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.paint();}});
+    movieLayoutObserver=new ResizeObserver(()=>{if(movieDeck?.track===track){sizeMovieCarousel(track);movieDeck.measure();movieDeck.paint();}});
     track.closest('.movie-library-screen')?.querySelectorAll('.movie-prototype-header,.movie-carousel-tabbar').forEach(node=>movieLayoutObserver.observe(node));
   }
 }
 function sizeMovieCarousel(track) {
   const screen=track.closest('.movie-library-screen'),filters=screen?.querySelector('.movie-folder-chips');
-  const toggle=screen?.querySelector('.movie-filter-toggle');
+  const toggle=screen?.querySelector('.movie-filter-toggle')||document.querySelector?.('.dm-topbar .movie-filter-toggle');
   if(!filters)return;
   filters.hidden=false;
   const viewport=window.visualViewport?.height || innerHeight;
@@ -113,7 +113,7 @@ document.addEventListener("click", event => {
     movieFiltersOpen=filters.getAttribute('aria-expanded')!=='true';
     if(movieDeck){sizeMovieCarousel(movieDeck.track);movieDeck.paint();}
     else {
-      const panel=filters.closest('.movie-library-screen')?.querySelector('.movie-folder-chips');
+      const panel=(filters.closest('.movie-library-screen')||document.querySelector('.movie-library-screen'))?.querySelector('.movie-folder-chips');
       if(panel)panel.hidden=!movieFiltersOpen;
       filters.setAttribute('aria-expanded',String(movieFiltersOpen));
       filters.setAttribute('aria-label',movieFiltersOpen?'Скрыть папки фильмов':'Показать папки фильмов');
@@ -139,7 +139,7 @@ document.addEventListener("keydown", event => {
   if(movieDeck.spinning||movieDeck.count<2){event.preventDefault();return;}
   event.preventDefault(); movieDeck.nudge(event.key === "ArrowRight" ? 1 : -1);
 });
-window.addEventListener("resize", () => { if (movieDeck) { sizeMovieCarousel(movieDeck.track); movieDeck.paint(); } });
-window.visualViewport?.addEventListener('resize',()=>{if(movieDeck){sizeMovieCarousel(movieDeck.track);movieDeck.paint();}});
+window.addEventListener("resize", () => { if (movieDeck) { sizeMovieCarousel(movieDeck.track); movieDeck.measure(); movieDeck.paint(); } });
+window.visualViewport?.addEventListener('resize',()=>{if(movieDeck){sizeMovieCarousel(movieDeck.track);movieDeck.measure();movieDeck.paint();}});
 // Full renders and search-only result replacements share the same lifecycle.
 new MutationObserver(mountMovieCarousel).observe(document.documentElement, {childList: true, subtree: true});
