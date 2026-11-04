@@ -1,5 +1,5 @@
-import { noteInfo } from './pitch.mjs?v=b9fc53831534';
-import { createScoreTimeline } from './score.mjs?v=b9fc53831534';
+import { noteInfo } from './pitch.mjs?v=63e9fd53e452';
+import { createScoreTimeline } from './score.mjs?v=63e9fd53e452';
 
 const GROUP_WINDOW = .035, EPSILON = 1e-9;
 const BLACK = new Set([1, 3, 6, 8, 10]);

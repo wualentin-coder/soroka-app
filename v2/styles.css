@@ -281,7 +281,7 @@ h1 { margin-bottom: 4px; font-size: clamp(31px, 7vw, 43px); line-height: 1.13; l
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  :root:not([data-motion-mode=on]) *, :root:not([data-motion-mode=on]) *::before, :root:not([data-motion-mode=on]) *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 
 [data-action="move-overdue"], [data-action="calendar-mode"], [data-action="server-chart"] { min-height:44px; }

@@ -82,17 +82,45 @@ function renderNoteSheet(item) {
   if (typeof packingIsNote === "function" && packingIsNote(item)) return renderPackingSheet(item);
   const d = noteDraft(item);
   const reading = ui.sheet.mode === "read";
+  const returnLabel = ui.page === "saved" && ui.savedCategory === "notes" ? "Заметки" : "Назад";
   const folder = savedSection("notes", d.categoryId)?.name || "Без раздела";
   const versions = item?.versions || [];
   const history = versions.length ? `<details class="note-history"><summary>История изменений <span>${versions.length}</span></summary>${versions.slice().reverse().map((version, index) => `<div class="note-history-entry"><time>${esc(version.date || "Ранее")}</time><p>${esc(version.description || "Пустая версия")}</p><button type="button" data-action="saved-restore-version" data-version="${versions.length - 1 - index}">Вставить в редактор</button></div>`).join("")}</details>` : "";
-  const tools = `<button class="note-tool improve" type="button" data-action="note-improve-menu" aria-label="Улучшить">${icon("spark", "icon-sm")}<span>Улучшить</span></button>${item ? `<button class="note-tool" type="button" data-action="saved-share" aria-label="Поделиться">${icon("share", "icon-sm")}</button><button class="note-tool danger" type="button" data-action="saved-delete" aria-label="Удалить">${icon("trash", "icon-sm")}</button>` : ""}`;
+  const magic = document.documentElement.dataset.flowDesign === "magic";
+  const assistant = `<button class="note-tool dc2-note-assistant" type="button" data-action="note-assistant" aria-label="Ассистент для этой заметки"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3C34 23 41 30 61 32C41 34 34 41 32 61C30 41 23 34 3 32C23 30 30 23 32 3Z"/></svg></button>`;
+  const tools = `${magic ? assistant : `<button class="note-tool improve" type="button" data-action="note-improve-menu" aria-label="Улучшить">${icon("spark", "icon-sm")}<span>Улучшить</span></button>`}${item ? `<button class="note-tool" type="button" data-action="saved-share" aria-label="Поделиться">${icon("share", "icon-sm")}</button>` : ""}${magic ? `<button class="note-tool dc2-note-done" type="button" data-action="note-cancel">Готово</button>` : item ? `<button class="note-tool danger" type="button" data-action="saved-delete" aria-label="Удалить">${icon("trash", "icon-sm")}</button>` : ""}`;
   const undo = ui.sheet.prevText !== undefined ? `<button type="button" class="note-undo" data-action="note-improve-undo">${icon("reset", "icon-sm")}Вернуть как было</button>` : "";
   const menu = ui.sheet.improve ? `<div class="note-improve-menu" role="menu">${NOTE_STYLES.map(([key, label, about]) => `<button type="button" role="menuitem" data-action="note-improve" data-style="${key}"><b>${label}</b><small>${about}</small></button>`).join("")}</div>` : "";
   const busy = ui.sheet.improving ? `<div class="note-busy"><span class="live-spin big"></span><b>Оформляю…</b></div>` : "";
-  const editor = `<form id="saved-form" class="note-editor note-plain"><textarea class="note-title-input" name="title" rows="1" placeholder="Название" maxlength="120" aria-label="Название заметки">${esc(d.title)}</textarea><div class="note-rich ${d.description.trim() ? "" : "is-empty"}" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Текст заметки" data-placeholder="Начните писать…">${noteEditableHtml(d.description)}</div><details class="note-meta"><summary>${icon("archive", "icon-sm")}${esc(folder)}${d.tags ? ` · ${esc(d.tags)}` : ""}</summary><div class="note-editor-details"><label>Папка<select name="categoryId"><option value="">Без папки</option>${savedSections("notes").map(section => `<option value="${esc(section.id)}" ${d.categoryId === section.id ? "selected" : ""}>${esc(section.name)}</option>`).join("")}</select></label><label>Метки<input name="tags" type="text" value="${esc(d.tags)}" placeholder="Через запятую"></label></div></details>${history}</form>`;
+  const editor = `<form id="saved-form" class="note-editor note-plain"><textarea class="note-title-input" name="title" rows="1" placeholder="Название" maxlength="120" aria-label="Название заметки">${esc(d.title)}</textarea><div class="note-rich ${d.description.trim() ? "" : "is-empty"}" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Текст заметки" data-placeholder="Начните писать…">${noteEditableHtml(d.description)}</div><details class="note-meta"><summary>${icon("folder", "icon-sm")}${esc(folder)}${d.tags ? ` · ${esc(d.tags)}` : ""}</summary><div class="note-editor-details"><label>Папка<select name="categoryId"><option value="">Без папки</option>${savedSections("notes").map(section => `<option value="${esc(section.id)}" ${d.categoryId === section.id ? "selected" : ""}>${esc(section.name)}</option>`).join("")}</select></label><label>Метки<input name="tags" type="text" value="${esc(d.tags)}" placeholder="Через запятую"></label></div></details>${history}</form>`;
   const reader = `<div class="note-reader"><div class="note-paper note-rendered"><p class="note-date">${esc(item ? noteDateLabel(item) : "Новая заметка")}</p><h2>${esc(d.title || "Без названия")}</h2>${noteMarkdown(d.description) || "<p class=\"section-note\">Пустая заметка</p>"}</div></div>`;
-  return `<div class="modal-backdrop note-backdrop" data-action="backdrop"><section class="sheet note-sheet" role="dialog" aria-modal="true" aria-label="Заметка"><header class="note-toolbar"><button type="button" class="note-back" data-action="note-cancel">${icon("left", "icon-sm")}Заметки</button><span class="note-tools">${tools}</span></header>${undo}${menu}${editor}${noteFormatBar()}${busy}</section></div>`;
+  const composition = document.createElement("template"); composition.innerHTML = editor;
+  if (magic) { const form = composition.content.querySelector("form"), meta = form.querySelector(".note-meta"); form.querySelector(".note-title-input").after(meta); if (item) meta.querySelector(".note-editor-details").insertAdjacentHTML("beforeend", `<button class="text-button danger dc2-note-delete" type="button" data-action="saved-delete">${icon("trash", "icon-sm")}Удалить заметку</button>`); }
+  const format = document.createElement("template"); format.innerHTML = noteFormatBar();
+  if (magic) format.content.querySelector("[data-note-voice]")?.remove();
+  return `<div class="modal-backdrop note-backdrop" data-action="backdrop"><section class="sheet note-sheet ${magic ? "dc2-note-sheet" : ""}" role="dialog" aria-modal="true" aria-label="Заметка"><header class="note-toolbar"><button type="button" class="note-back" data-action="note-cancel">${icon("left", "icon-sm")}${returnLabel}</button><span class="note-tools">${tools}</span></header>${undo}${menu}${composition.innerHTML}${format.innerHTML}${busy}</section></div>`;
 }
+
+/** Explicit, ephemeral bridge to the one Flow assistant. No note text leaves on open. */
+window.flowNoteAssistantSession = function (opener) {
+  if (ui.sheet?.kind !== "saved" || ui.sheet.category !== "notes") return null;
+  const sheet = ui.sheet, item = sheet.id ? savedItem("notes", sheet.id) : null;
+  let generation = 0;
+  const current = () => { if (ui.sheet !== sheet) throw new Error("Заметка уже закрыта"); return noteDraft(item); };
+  const applyText = text => { const draft = current(); sheet.prevText = draft.description; draft.description = String(text || ""); render(); return draft.description; };
+  const applyVoice = text => { const draft = current(); return applyText([draft.description.trimEnd(), String(text || "").trim()].filter(Boolean).join("\n\n")); };
+  return { opener, title: noteDraft(item).title || "Новая заметка", styles: NOTE_STYLES.map(([id,label,about]) => ({ id,label,about })), isCurrent: () => ui.sheet === sheet && sheet.kind === "saved" && sheet.category === "notes", getText: () => current().description, applyText, applyVoice, cancel: () => { generation++; },
+    improve: async (style, options = {}) => {
+      const source = current().description, request = ++generation;
+      if (!source.trim()) throw new Error("Сначала напишите текст");
+      if (typeof window.sorokaImproveNote !== "function") throw new Error("Обработка доступна в приложении Flow");
+      const text = await window.sorokaImproveNote(source, style);
+      if (request !== generation || options.isCurrent?.() === false) throw new Error("Обработка отменена");
+      if (current().description !== source) throw new Error("Текст уже изменился. Новая версия сохранена — повторите обработку.");
+      return applyText(text);
+    }
+  };
+};
 
 function noteAction(action, control) {
   if (ui.sheet?.kind !== "saved" || ui.sheet.category !== "notes") {
@@ -101,6 +129,7 @@ function noteAction(action, control) {
     return false;
   }
   const item = ui.sheet.id ? savedItem("notes", ui.sheet.id) : null;
+  if (action === "note-assistant") { const session = window.flowNoteAssistantSession(control); if (session) window.flowAssistant?.openNote?.(session); return true; }
   if (action === "note-cancel") { saveNoteQuietly(); ui.sheet = null; render(); return true; }
   if (action === "note-read-toggle") { noteDraft(item); ui.sheet.mode = ui.sheet.mode === "read" ? "edit" : "read"; ui.sheet.improve = false; render(); return true; }
   if (action === "note-improve-menu") { noteDraft(item); ui.sheet.improve = !ui.sheet.improve; render(); return true; }

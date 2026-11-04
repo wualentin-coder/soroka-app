@@ -1,8 +1,8 @@
-import {noteInfo} from './pitch.mjs?v=b9fc53831534';
-import {createScoreTimeline} from './score.mjs?v=b9fc53831534';
-import {chooseProblemSection} from './practice-section.mjs?v=b9fc53831534';
-import {recommendSongRepair,songOnsetGroups} from './song-learning.mjs?v=b9fc53831534';
-import {summarizeTimingOffsets} from './timing-feedback.mjs?v=b9fc53831534';
+import {noteInfo} from './pitch.mjs?v=63e9fd53e452';
+import {createScoreTimeline} from './score.mjs?v=63e9fd53e452';
+import {chooseProblemSection} from './practice-section.mjs?v=63e9fd53e452';
+import {recommendSongRepair,songOnsetGroups} from './song-learning.mjs?v=63e9fd53e452';
+import {summarizeTimingOffsets} from './timing-feedback.mjs?v=63e9fd53e452';
 
 const MAX_NOTES=5000,MAX_ERRORS=20000;
 const midi=value=>Number.isInteger(value)&&value>=0&&value<=127;

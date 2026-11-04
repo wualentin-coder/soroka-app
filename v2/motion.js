@@ -10,7 +10,7 @@
 (function installMotion() {
   let last = "";
   let sheetSeen = null;
-  const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const calm = () => window.flowDigital?.reducedMotion?.() ?? window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   const before = render;
   render = function () {

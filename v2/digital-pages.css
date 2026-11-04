@@ -1,0 +1,290 @@
+html[data-flow-design="magic"] .dm-task-row{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:start;min-height:72px;margin:0;padding:13px 0;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none}
+html[data-flow-design="magic"] .dm-task-row .task-info{min-width:0;padding-top:8px}
+html[data-flow-design="magic"] .dm-task-row .task-name{display:block;width:100%;min-height:24px;text-align:left;padding:0;color:var(--text);font:600 13px/1.55 Manrope,sans-serif;letter-spacing:-.15px;background:none;border:0;overflow-wrap:anywhere}
+html[data-flow-design="magic"] .dm-task-row .task-description{margin:3px 0 0;color:var(--muted);font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+html[data-flow-design="magic"] .dm-task-row .task-time{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;white-space:nowrap;min-height:44px;align-self:start;position:static;flex-direction:row}
+html[data-flow-design="magic"] .dm-task-row .task-time .priority-marker{position:static;flex:none;width:4px;height:4px}
+html[data-flow-design="magic"] .dm-task-row .task-check{position:relative;width:44px;height:44px;min-height:44px;display:grid;place-items:center;padding:0;border:0;background:transparent;box-shadow:none;align-self:start}
+html[data-flow-design="magic"] .dm-task-row .check-ring{display:grid;place-items:center;width:19px;height:19px;border:1px solid var(--muted);border-radius:50%;color:var(--accent-ink)}
+html[data-flow-design="magic"] .dm-task-row.done .check-ring{background:var(--accent);border-color:var(--accent);box-shadow:0 0 15px color-mix(in srgb,var(--accent) 15%,transparent)}
+html[data-flow-design="magic"] .dm-task-row.done .check-ring svg{width:12px;height:12px}
+html[data-flow-design="magic"] .dm-task-row.done .task-name{text-decoration:line-through;color:var(--muted)}
+html[data-flow-design="magic"] .dm-task-row>:is(.task-sub,.task-checklist){grid-column:2/-1;margin:0;padding:0;border:0;background:none;min-width:0}
+html[data-flow-design="magic"] .dm-task-row .task-checklist button{min-height:44px}
+html[data-flow-design="magic"] .dm-task-row.dm-late .task-description{color:var(--muted)}
+html[data-flow-design="magic"] .dm-task-due{color:var(--warn)}
+html[data-flow-design="magic"] .dm-plan .task-list .swipe-row{margin:0;border-radius:0;background:transparent;box-shadow:none}
+html[data-flow-design="magic"] .dm-plan .task-list .swipe-row .swipe-content{border-radius:0;background:var(--page);box-shadow:none}
+html[data-flow-design="magic"] .dm-plan .task-list.task-stack{display:block}
+html[data-flow-design="magic"] .dm-plan .dm-overdue{margin-top:24px}
+html[data-flow-design="magic"] .dm-overdue-list{overflow:hidden;padding:4px 12px;border-radius:24px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+html[data-flow-design="magic"] .dm-overdue-list .dm-task-row{position:relative;border:0;padding:12px 0;background:transparent;border-radius:16px}
+html[data-flow-design="magic"] .dm-overdue-list .dm-task-row+.dm-task-row:before{content:"";position:absolute;left:46px;right:10px;top:0;height:1px;background:linear-gradient(90deg,var(--line),transparent);pointer-events:none}
+html[data-flow-design="magic"] .dm-overdue-list .swipe-row,html[data-flow-design="magic"] .dm-overdue-list .swipe-content{border:0;border-radius:16px;background:transparent;box-shadow:none}
+html[data-flow-design="magic"] .dm-home-modules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html[data-flow-design="magic"] .dm-home-learning{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 20px;grid-template-rows:60px auto;gap:10px;width:100%;padding:18px;text-align:left;background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:24px;color:var(--text);min-width:0;transition:border-color .25s,background .25s}
+html[data-flow-design="magic"] .dm-home-learning:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+html[data-flow-design="magic"] .dm-home-subject{display:block;width:60px;height:60px}
+html[data-flow-design="magic"] .dm-home-subject .magic-object{display:block;width:60px;height:60px;overflow:visible}
+html[data-flow-design="magic"] .dm-home-copy{grid-column:1/-1;display:grid;gap:6px;min-width:0}
+html[data-flow-design="magic"] .dm-home-copy strong{font-size:15px;font-weight:750}
+html[data-flow-design="magic"] .dm-home-copy>span{font-size:12px;color:var(--muted);line-height:1.5}
+html[data-flow-design="magic"] .dm-home-copy small{font-size:11px;color:var(--muted);line-height:1.5}
+html[data-flow-design="magic"] .dm-home-learning>svg{grid-column:2;grid-row:1;width:18px;height:18px;color:var(--muted);align-self:center}
+@media(max-width:360px){html[data-flow-design="magic"] .dm-home-learning{padding:14px;grid-template-rows:52px auto}html[data-flow-design="magic"] .dm-home-subject,html[data-flow-design="magic"] .dm-home-subject .magic-object{width:52px;height:52px}}
+html[data-flow-design="magic"] .dm-plan .section-heading{margin-top:20px;margin-bottom:5px}
+html[data-flow-design="magic"] .dm-agenda-summary{color:var(--muted);font-size:11px;margin:0 0 8px}
+html[data-flow-design="magic"] .dm-plan .hero-card{margin-top:26px;min-height:230px}
+html[data-flow-design="magic"] .dm-plan .module-grid{margin-top:0}
+html[data-flow-design="magic"] .dm-native-events .event-card{margin:0;border:0;border-radius:0;border-bottom:1px solid var(--line);background:transparent;padding:17px 0}
+html[data-flow-design="magic"] .dm-free-day{color:var(--muted);font-size:13px;line-height:1.7;padding:17px 0}
+html[data-flow-design="magic"] .dm-calendar-toggle{flex:none;color:var(--muted)}
+html[data-flow-design="magic"] .dm-upcoming-row{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:47px;padding:10px 0;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--muted);font:12px/1.5 Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-upcoming-row b{color:var(--text);font-weight:600}
+html[data-flow-design="magic"] .dm-upcoming-row svg{width:16px;height:16px}
+html[data-flow-design="magic"] .dm-plan .ring-label strong>span{font-size:.5em;color:var(--muted)}
+html[data-flow-design="magic"] .dm-calendar-living{display:block;position:relative;isolation:isolate;overflow:visible;padding:18px;border-radius:30px;border:1px solid rgba(var(--energy-rgb),.22);background:linear-gradient(160deg,var(--surface),color-mix(in srgb,var(--page) 85%,#06090b) 65%);box-shadow:0 18px 65px #0004}
+html[data-flow-design="magic"] .dm-calendar-living:after{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;background:radial-gradient(ellipse 230px 200px at var(--dm-calendar-x,40%) var(--dm-calendar-y,40%),rgba(var(--energy-rgb),.7),transparent),linear-gradient(150deg,rgba(var(--energy-rgb),.2),transparent 55%);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;animation:dm-calendar-contour-breathe 8.8s ease-in-out infinite}
+html[data-flow-design="magic"] .dm-calendar-living>.dm-calendar-atmosphere{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;z-index:-1;opacity:.55}
+html[data-flow-design="magic"] .dm-calendar-atmosphere:before{content:'';position:absolute;inset:-10%;background:radial-gradient(ellipse 240px 160px at var(--dm-calendar-x,40%) var(--dm-calendar-y,40%),rgba(var(--energy-rgb),.24),transparent 75%),radial-gradient(ellipse at 100% 0,rgba(var(--energy-rgb),.09),transparent 65%);animation:dm-calendar-world-breathe 8.8s ease-in-out infinite}
+html[data-flow-design="magic"] .dm-calendar-surface.calendar-card{display:block;position:relative;isolation:isolate;height:auto;max-height:none;padding:0;margin:0;overflow:hidden;border-radius:0;background:none;border:0;box-shadow:none;touch-action:pan-y;user-select:none}
+html[data-flow-design="magic"] .dm-calendar-surface:after{content:none}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;margin:0 0 16px;padding:0;border:0}
+html[data-flow-design="magic"] .dm-calendar-period{min-width:0}
+html[data-flow-design="magic"] .dm-calendar-period strong{display:block;font:650 23px/1.15 Manrope,sans-serif;letter-spacing:-.035em;text-transform:capitalize;color:var(--text)}
+html[data-flow-design="magic"] .dm-calendar-period small{display:block;font-size:10px;line-height:1.5;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-controls{display:flex;gap:4px;margin:0}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-controls button{display:grid;place-items:center;width:44px;height:44px;min-height:44px;border:1px solid #ffffff12;border-radius:50%;background:#ffffff03;color:var(--muted)}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;height:auto;max-height:none;opacity:1;margin:0 0 13px;padding:0;overflow:visible;border:0}
+html[data-flow-design="magic"] .dm-calendar-surface .segmented{display:flex;position:relative;isolation:isolate;flex:1;min-width:0;gap:0;padding:3px;background:#07090b88;border:1px solid #ffffff12;border-radius:13px}
+html[data-flow-design="magic"] .dm-calendar-surface .segmented button{position:relative;z-index:1;flex:1;min-height:44px;padding:5px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font:11px Manrope,sans-serif;box-shadow:none}
+html[data-flow-design="magic"] .dm-calendar-surface .segmented .active{background:transparent;border-color:transparent;color:var(--text);box-shadow:none}
+html[data-flow-design="magic"] .dm-calendar-view-indicator{position:absolute;left:0;top:0;z-index:0;pointer-events:none;transform-origin:0 0;border-radius:10px;background:linear-gradient(140deg,rgba(var(--energy-rgb),.15),#ffffff08);border:1px solid rgba(var(--energy-rgb),.18)}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-toolbar>.text-action{min-height:48px;margin:0;padding:0 5px;color:var(--energy-hot);font-size:11px}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));font-size:9px;font-weight:400;color:var(--subtle);padding:0;margin:0 0 7px;min-height:16px;opacity:1}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-weekdays span{padding:0;height:16px;line-height:16px;display:grid;place-items:center}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:44px;gap:5px;height:auto;max-height:none;overflow:clip;margin:0;padding:0;transform:none}
+html[data-flow-design="magic"] .dm-calendar-surface[data-calendar-scale=week] .calendar-grid{grid-auto-rows:56px}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day{z-index:1;position:relative;display:flex;align-items:center;justify-content:center;min-width:0;height:44px;min-height:44px;margin:0;padding:0;border:1px solid transparent;border-radius:13px;background:#ffffff04;color:var(--text);font:500 13px/1.2 Manrope,sans-serif;box-shadow:none;transform:none;transform-origin:50% 50%;transition:color .22s,opacity .22s}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-day.today::before{content:none;display:none}
+html[data-flow-design="magic"] .dm-calendar-surface[data-calendar-scale=week] .calendar-grid .calendar-day{height:56px;font-size:16px}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day.selected{background:transparent;border-color:transparent;color:var(--energy-hot);font-weight:750;box-shadow:none}
+html[data-flow-design="magic"] .dm-calendar-surface[data-calendar-scale=week] .calendar-grid .calendar-day.selected{font-size:20px}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day.today:not(.selected){border-color:rgba(var(--energy-rgb),.42);color:var(--text)}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day.outside{color:var(--muted);opacity:.45}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day.outside.selected{opacity:1}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid .calendar-day:focus-visible{outline:1px solid var(--energy-hot);outline-offset:-3px}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-dots{position:absolute;left:0;right:0;bottom:7px;display:flex;justify-content:center;gap:3px;height:auto}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-dots i{width:4px;height:2px;background:rgba(var(--energy-rgb),.65);border-radius:1px}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-dots .event-dot{border:1px solid var(--muted);background:none;border-radius:50%}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-day.selected .calendar-dots i{background:var(--energy-hot);box-shadow:0 0 7px rgba(var(--energy-rgb),.8)}
+html[data-flow-design="magic"] .dm-calendar-selection{position:absolute;left:0;top:0;z-index:0;pointer-events:none;border-radius:13px;background:linear-gradient(145deg,rgba(var(--energy-rgb),.6),rgba(var(--energy-rgb),.17));border:1px solid rgba(var(--energy-rgb),.8);box-shadow:0 0 28px rgba(var(--energy-rgb),.22),inset 0 1px 1px rgba(var(--energy-rgb),.5),inset 0 -8px 20px rgba(var(--energy-rgb),.08);transform-origin:0 0;overflow:hidden}
+html[data-flow-design="magic"] .dm-calendar-selection:before{content:'';position:absolute;inset:-35%;background:radial-gradient(ellipse at 30% 30%,rgba(var(--energy-rgb),.14),transparent 65%);animation:dm-calendar-quiet-light 5.8s ease-in-out infinite}
+html[data-flow-design="magic"] .dm-calendar-selection:after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(var(--energy-rgb),.28);background:linear-gradient(110deg,transparent 30%,rgba(var(--energy-rgb),.09) 48%,transparent 66%);background-size:250% 100%;animation:dm-calendar-edge-light 7.4s ease-in-out infinite}
+html[data-flow-design="magic"] .dm-calendar-week-band{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:0;border-radius:13px;background:linear-gradient(90deg,rgba(var(--energy-rgb),.025),rgba(var(--energy-rgb),.07),transparent);border-top:1px solid rgba(var(--energy-rgb),.08);border-bottom:1px solid rgba(var(--energy-rgb),.035)}
+html[data-flow-design="magic"] :is(.dm-calendar-selection,.dm-calendar-week-band,.dm-calendar-view-indicator)[hidden]{display:none}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-handle{display:grid;place-items:center;width:100%;height:12px;min-height:12px;margin:0;padding:0;touch-action:none;background:none;border:0}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-handle span{display:block;width:36px;height:3px;border-radius:4px;background:rgba(var(--energy-rgb),.13)}
+html[data-flow-design="magic"] .dm-calendar-surface.cal-dragging .calendar-toolbar{height:auto;opacity:1;max-height:none}
+html[data-flow-design="magic"] .dm-calendar-surface.cal-dragging .calendar-grid{transition:none;overflow:hidden}
+html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda{position:relative;min-width:0;margin:8px 0 0;padding-top:15px;border-top:1px solid rgba(var(--energy-rgb),.16)}
+html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda:before{content:'';position:absolute;top:-1px;left:clamp(0px,calc(var(--dm-calendar-x,50%) - 45px),calc(100% - 60px));width:60px;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--energy-rgb),.85),transparent);box-shadow:0 0 12px rgba(var(--energy-rgb),.28);pointer-events:none}
+html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-heading{align-items:center;gap:6px;margin:0 0 0}
+html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-heading h2{font-size:15px;letter-spacing:-.02em;line-height:1.4}
+html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-heading .text-button{min-height:44px;padding:0 0 0 6px;font-size:10px;white-space:nowrap;color:var(--energy-hot)}
+html[data-flow-design="magic"] .dm-calendar-living .dm-agenda-summary{margin:-6px 0 7px;font-size:9px;letter-spacing:.025em}
+html[data-flow-design="magic"] .dm-plan .dm-calendar-living .dm-task-row{display:grid;align-items:start;grid-template-columns:36px minmax(0,1fr) auto;gap:8px;min-height:72px;padding:14px 0;background:transparent;border-color:#ffffff0d}
+html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-info{padding-top:0;align-self:center}
+html[data-flow-design="magic"] .dm-calendar-living .dm-task-row>.task-sub{grid-column:2/-1;min-width:0;margin:0;padding-left:0}
+html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-name{font-size:12px;font-weight:550;line-height:1.5}
+html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-description{font-size:10px;margin-top:3px}
+html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-check{width:44px;margin-left:-5px}
+html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .check-ring{border-color:rgba(var(--energy-rgb),.42)}
+html[data-flow-design="magic"] .dm-calendar-living .task-time{min-height:0;align-self:center;font-size:10px;color:var(--accent);padding:5px 7px;border:1px solid rgba(var(--energy-rgb),.12);border-radius:6px;background:rgba(var(--energy-rgb),.04)}
+html[data-flow-design="magic"] .dm-calendar-living .task-time:empty{display:none}
+html[data-flow-design="magic"] .dm-calendar-living .task-time .priority-marker{display:none}
+html[data-flow-design="magic"] .dm-calendar-living .task-time:not(:has(.task-drag-handle)){gap:0}
+html[data-flow-design="magic"] .dm-plan .dm-calendar-living .swipe-row .swipe-content{background:transparent}
+html[data-flow-design="magic"] .dm-plan .dm-calendar-living .dm-task-row.overdue{background:transparent;border-color:#ffffff0d}
+html[data-flow-design="magic"] .dm-calendar-living .task-list{border:0}
+html[data-flow-design="magic"] .dm-calendar-living .task-time[data-has-time=false]:not(:has(.task-drag-handle)){display:none}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-day.is-off:not(.selected)>span:first-child{color:var(--text)}
+html[data-flow-design="magic"] .dm-calendar-living .dm-free-day{min-height:76px;padding:10px 0 9px 4px;font-size:12px}
+html[data-flow-design="magic"] .dm-calendar-spark{position:absolute;z-index:3;pointer-events:none;width:2px;height:2px;border-radius:50%;background:var(--energy-hot);box-shadow:0 0 6px rgba(var(--energy-rgb),.7)}
+html[data-flow-design="magic"] .dm-calendar-inactive:after,html[data-flow-design="magic"] .dm-calendar-inactive .dm-calendar-atmosphere:before,html[data-flow-design="magic"] .dm-calendar-inactive .dm-calendar-selection:before,html[data-flow-design="magic"] .dm-calendar-inactive .dm-calendar-selection:after{animation-play-state:paused}
+html[data-flow-design="magic"][data-motion=off] .dm-calendar-living:after,html[data-flow-design="magic"][data-motion=off] .dm-calendar-living *:before,html[data-flow-design="magic"][data-motion=off] .dm-calendar-living *:after{animation:none!important}
+@media(prefers-reduced-motion:reduce){html[data-flow-design="magic"]:not([data-motion=on]) .dm-calendar-living:after,html[data-flow-design="magic"]:not([data-motion=on]) .dm-calendar-living *:before,html[data-flow-design="magic"]:not([data-motion=on]) .dm-calendar-living *:after{animation:none!important}}
+@media(max-width:360px){html[data-flow-design="magic"] .dm-calendar-living{padding:13px}html[data-flow-design="magic"] .dm-calendar-period strong{font-size:20px}html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid{gap:3px}html[data-flow-design="magic"] .dm-calendar-living .dm-plan-agenda>.section-heading h2{font-size:13px}html[data-flow-design="magic"] .dm-plan .dm-calendar-living .dm-task-row{gap:5px;grid-template-columns:33px minmax(0,1fr) auto}html[data-flow-design="magic"] .dm-calendar-living .task-time{padding:4px;font-size:9px}html[data-flow-design="magic"] .dm-calendar-living .dm-task-row .task-name{font-size:11px}html[data-flow-design="magic"] .dm-calendar-surface .calendar-controls{gap:0}}
+@keyframes dm-calendar-world-breathe{0%,100%{opacity:.42;transform:translate(-2%,1%) scale(.99)}50%{opacity:.85;transform:translate(2%,-1%) scale(1.035)}}
+@keyframes dm-calendar-contour-breathe{0%,100%{opacity:.42}50%{opacity:.85}}
+@keyframes dm-calendar-quiet-light{50%{transform:translate(12%,9%);opacity:.5}}
+@keyframes dm-calendar-edge-light{0%,35%{background-position:100% 0}75%,100%{background-position:0 0}}
+html[data-flow-design="magic"] .dm-finance-root{max-width:760px;margin-inline:auto}
+html[data-flow-design="magic"] .dm-finance-root .page-heading{margin-bottom:12px;gap:8px;align-items:center}
+html[data-flow-design="magic"] .dm-finance-root .page-heading h1{font:650 26px/1.15 Manrope,sans-serif;letter-spacing:-1px;margin:0;overflow-wrap:anywhere}
+html[data-flow-design="magic"] .dm-finance-root[data-finance-view="overview"] .page-heading h1{font:500 36px/1.05 var(--magic-display-font);letter-spacing:-1px}
+html[data-flow-design="magic"] .dm-finance-title{display:flex;align-items:center;gap:6px;min-width:0}
+html[data-flow-design="magic"] .dm-finance-title .date{font-size:11px;margin:0 0 5px}
+html[data-flow-design="magic"] .dm-finance-back{flex:none;width:36px;margin-left:-8px}
+html[data-flow-design="magic"] .dm-finance-sections{position:relative;flex:none;z-index:5}
+html[data-flow-design="magic"] .dm-finance-sections summary{display:flex;align-items:center;gap:5px;min-height:44px;padding:0 9px;list-style:none;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:600 12px Manrope,sans-serif;cursor:pointer}
+html[data-flow-design="magic"] .dm-finance-sections summary::-webkit-details-marker{display:none}
+html[data-flow-design="magic"] .dm-finance-sections[open] summary{border-color:var(--accent);color:var(--accent)}
+html[data-flow-design="magic"] .dm-finance-section-menu{position:absolute;right:0;top:calc(100% + 8px);width:210px;max-width:calc(100vw - 40px);padding:7px;border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));border-radius:17px;background:var(--surface-raised,var(--surface));box-shadow:0 16px 40px #0008;backdrop-filter:blur(24px)}
+html[data-flow-design="magic"] .dm-finance-section-menu button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border:0;background:none;color:var(--text);padding:10px 12px;border-radius:10px;font:600 14px Manrope,sans-serif;text-align:left}
+html[data-flow-design="magic"] .dm-finance-section-menu button[aria-current],html[data-flow-design="magic"] .dm-finance-section-menu button:hover{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent)}
+html[data-flow-design="magic"] .dm-finance-navigation{margin:0 0 16px;max-width:100%}
+html[data-flow-design="magic"] .dm-finance-navigation .page-modes{margin:0;min-height:44px}
+html[data-flow-design="magic"] .dm-finance-navigation .page-modes button{min-height:44px;height:auto;font-size:12px}
+html[data-flow-design="magic"] .dm-finance-view-action{display:flex;justify-content:flex-end;margin:-8px 0 8px}
+html[data-flow-design="magic"] .dm-finance-view-action button{display:flex;align-items:center;gap:6px;min-height:44px;border:0;border-radius:12px;padding:8px 14px;color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);font:650 13px Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-finance-native .content-grid{display:block;max-width:760px}
+html[data-flow-design="magic"] .dm-finance-native .content-aside{display:none}
+html[data-flow-design="magic"] .dm-finance-native .content-main{min-width:0}
+html[data-flow-design="magic"] .dm-finance-native .list-panel{background:color-mix(in srgb,var(--surface) 65%,transparent);border:1px solid var(--line);border-radius:20px;box-shadow:none;padding:0 12px;overflow:hidden}
+html[data-flow-design="magic"] .dm-finance-native .swipe-row,html[data-flow-design="magic"] .dm-finance-native .swipe-row .swipe-content{border-radius:0;background:transparent;box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-native .finance-row{min-height:76px;padding:14px 0;gap:10px;border-bottom:1px solid var(--line);background:transparent;align-items:center}
+html[data-flow-design="magic"] .dm-finance-native .list-panel .swipe-content>.finance-row{padding-left:0;padding-right:0}
+html[data-flow-design="magic"] .dm-finance-native .finance-row .list-copy{min-width:0}
+html[data-flow-design="magic"] .dm-finance-native .finance-row .list-copy strong{font-size:14px;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+html[data-flow-design="magic"] .dm-finance-native .finance-row .list-copy>span{font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+html[data-flow-design="magic"] .dm-finance-native .finance-row .amount{font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text)}
+html[data-flow-design="magic"] .dm-finance-native .finance-row .income{color:var(--accent)}
+html[data-flow-design="magic"] .dm-finance-native .list-icon{border:0;border-radius:0;background:none;color:var(--accent);box-shadow:none;min-width:26px;width:26px;height:36px}
+html[data-flow-design="magic"] .dm-finance-native .section-heading{margin:20px 0 12px}
+html[data-flow-design="magic"] .dm-finance-native .section-heading h2{font:650 16px/1.4 Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-finance-balance{background:radial-gradient(ellipse at 90% 0,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%),color-mix(in srgb,var(--surface) 75%,transparent);border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));padding:18px;border-radius:23px}
+html[data-flow-design="magic"] .dm-finance-native .finance-hero{background:none;border:0;padding:0;border-radius:0;margin:0;box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-native .finance-hero>strong{font-family:var(--magic-display-font);font-size:46px;line-height:1.05;letter-spacing:-1px;font-weight:500}
+html[data-flow-design="magic"] .dm-finance-native .finance-hero .eyebrow{font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0}
+html[data-flow-design="magic"] .dm-finance-native .finance-hero .section-note{font-size:11px;line-height:1.5}
+html[data-flow-design="magic"] .dm-finance-native .finance-hero-more{font-size:12px;margin-top:7px}
+html[data-flow-design="magic"] .dm-finance-native .finance-quick{gap:6px;margin:15px 0 0}
+html[data-flow-design="magic"] .dm-finance-native .finance-quick button{display:flex;justify-content:center;align-items:center;gap:4px;min-height:44px;padding:7px 8px;font-size:12px;border-radius:12px;font-weight:650;background:transparent}
+html[data-flow-design="magic"] .dm-finance-native .finance-quick .primary-button{background:var(--accent);color:var(--accent-ink)}
+html[data-flow-design="magic"] .dm-finance-flow{display:grid;grid-template-columns:1fr 1fr;margin:12px 0 20px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--surface) 45%,transparent)}
+html[data-flow-design="magic"] .dm-finance-flow button{display:grid;gap:5px;min-width:0;padding:13px 15px;border:0;text-align:left;background:none;color:var(--text)}
+html[data-flow-design="magic"] .dm-finance-flow button+button{border-left:1px solid var(--line)}
+html[data-flow-design="magic"] .dm-finance-flow button>span{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+html[data-flow-design="magic"] .dm-finance-flow strong{font:650 20px/1.2 Manrope,sans-serif;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-flow small{font-size:11px;color:var(--muted)}
+html[data-flow-design="magic"] .dm-finance-debt-link{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:14px 2px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);text-align:left;font:600 13px Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-finance-debt-link small{display:block;color:var(--muted);font:400 12px/1.6 Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-finance-obligations{padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--surface) 60%,transparent);margin-bottom:16px}
+html[data-flow-design="magic"] .dm-finance-obligations>span{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+html[data-flow-design="magic"] .dm-finance-obligations strong{font-size:20px;letter-spacing:-.5px;color:var(--text);font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-obligations small{font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0}
+html[data-flow-design="magic"] .dm-finance-facts{display:flex;gap:0;border-bottom:1px solid var(--line);margin:0 0 18px}
+html[data-flow-design="magic"] .dm-finance-facts .kpi{flex:1;min-width:0;min-height:0;padding:0 12px 12px 0;border:0;border-radius:0;background:none;box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-facts .kpi-value{font:650 19px/1.4 Manrope,sans-serif;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-facts .kpi-label{font-size:12px}
+html[data-flow-design="magic"] .dm-finance-native .budget-card{padding:18px;margin-bottom:12px;border-radius:20px;background:color-mix(in srgb,var(--surface) 65%,transparent);box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-native .budget-top{align-items:flex-start;gap:12px;font-size:14px}
+html[data-flow-design="magic"] .dm-finance-native .budget-top>span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-native .budget-top small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:4px}
+html[data-flow-design="magic"] .dm-finance-native .budget-note{font-size:12px;line-height:1.5}
+html[data-flow-design="magic"] .dm-finance-native .progress-track{height:3px;background:color-mix(in srgb,var(--accent) 8%,var(--line))}
+html[data-flow-design="magic"] .dm-finance-native .dm-budget-warning{border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+html[data-flow-design="magic"] .dm-finance-native .payment-list{gap:0;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:color-mix(in srgb,var(--surface) 65%,transparent)}
+html[data-flow-design="magic"] .dm-finance-native .payment-card{padding:12px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;grid-template-columns:24px minmax(0,1fr) auto auto;gap:9px;align-items:center}
+html[data-flow-design="magic"] .dm-finance-native .payment-card:last-child{border-bottom:0}
+html[data-flow-design="magic"] .dm-finance-native .payment-card .amount{font-size:14px;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-native .payment-card>.list-icon{grid-column:1;grid-row:1;align-self:center}
+html[data-flow-design="magic"] .dm-finance-native .payment-card>.list-copy{grid-column:2;grid-row:1;align-self:center}
+html[data-flow-design="magic"] .dm-finance-native .payment-card>.amount{grid-column:3;grid-row:1;justify-self:end}
+html[data-flow-design="magic"] .dm-finance-native .payment-card .payment-actions{grid-column:4;grid-row:1;margin:0;padding:0;border:0;justify-self:end}
+html[data-flow-design="magic"] .dm-finance-native .payment-card .payment-actions button{padding:6px 10px;min-height:44px;border:0;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-size:11px}
+html[data-flow-design="magic"] .dm-finance-native .utility-group,html[data-flow-design="magic"] .dm-finance-native .credit-card{border:0;border-radius:0;background:transparent}
+html[data-flow-design="magic"] .dm-finance-native .utility-head{padding:12px;gap:8px;grid-template-columns:26px minmax(0,1fr) auto auto}
+html[data-flow-design="magic"] .dm-finance-native .credit-list{border:1px solid var(--line);border-radius:20px;padding:0 12px;background:color-mix(in srgb,var(--surface) 65%,transparent)}
+html[data-flow-design="magic"] .dm-finance-native .empty-card{padding:16px 0;font-size:12px;line-height:1.6;background:none;min-height:0;border:0;border-top:1px solid var(--line);border-radius:0;text-align:left}
+html[data-flow-design="magic"] .dm-finance-native .empty-card strong{font:600 15px/1.5 Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-finance-native .tx-kinds{margin-top:0;margin-bottom:12px}
+html[data-flow-design="magic"] .dm-finance-native .tx-day-head{font-size:12px;margin:15px 0 8px}
+html[data-flow-design="magic"] .dm-finance-native .text-action,html[data-flow-design="magic"] .dm-finance-native .inline-actions button,html[data-flow-design="magic"] .dm-finance-native .finance-kind-tabs button{min-height:44px}
+html[data-flow-design="magic"] .dm-finance-disclosure{border:1px solid var(--line);border-radius:18px;margin-top:20px;padding:0 16px;background:var(--surface)}
+html[data-flow-design="magic"] .dm-finance-disclosure>summary{display:flex;align-items:center;justify-content:space-between;min-height:56px;font:600 12px Manrope,sans-serif;color:var(--text);cursor:pointer;list-style:none}
+html[data-flow-design="magic"] .dm-finance-disclosure>summary:after{content:'+';font-size:20px;color:var(--accent)}
+html[data-flow-design="magic"] .dm-finance-disclosure[open]>summary:after{content:'−'}
+html[data-flow-design="magic"] .dm-finance-disclosure .rules-reconcile{margin:0 0 18px;padding:0;border:0;background:none}
+html[data-flow-design="magic"] .dm-finance-native .overview-intro{padding:0;margin:0 0 16px;background:none;border:0}
+html[data-flow-design="magic"] .dm-finance-native .rules-sliders{margin-top:18px}
+html[data-flow-design="magic"] .dm-finance-native .rule-slider{padding:18px 0}
+html[data-flow-design="magic"] .dm-finance-native .rules-auto{border-color:color-mix(in srgb,var(--accent) 20%,var(--line));background:var(--surface)}
+html[data-flow-design="magic"] .dm-finance-native .rules-auto-copy strong{font-size:14px}
+html[data-flow-design="magic"] .dm-finance-native .rules-auto-copy small{font-size:12px;line-height:1.5}
+html[data-flow-design="magic"] .dm-finance-native .rule-slider-head strong{font-size:14px}
+html[data-flow-design="magic"] .dm-finance-native .rule-slider-head b{font-size:14px;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-allocation{border:1px solid var(--line);border-radius:20px;padding:16px;background:color-mix(in srgb,var(--surface) 65%,transparent)}
+html[data-flow-design="magic"] .dm-finance-allocation .rules-auto{padding:0 0 16px;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-allocation .rules-sliders{margin:0}
+html[data-flow-design="magic"] .dm-finance-allocation .rule-total{margin:0;padding:18px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
+html[data-flow-design="magic"] .dm-finance-allocation .list-panel{border:0;border-radius:0;padding:0;background:none}
+html[data-flow-design="magic"] .dm-finance-sheet .sheet-head h2{font:650 24px/1.25 Manrope,sans-serif;letter-spacing:-.8px}
+html[data-flow-design="magic"] .dm-finance-fields .field{margin:0 0 14px;min-width:0}
+html[data-flow-design="magic"] .dm-finance-fields .field-row{gap:0}
+html[data-flow-design="magic"] .dm-finance-fields .amount-input-row input{font:600 24px/1.2 Manrope,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.5px;min-height:54px}
+html[data-flow-design="magic"] .dm-finance-form-details{margin:2px 0 16px;padding:0 12px;border:1px solid var(--line);border-radius:14px}
+html[data-flow-design="magic"] .dm-finance-form-details>summary{min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;cursor:pointer;font:600 12px Manrope,sans-serif;color:var(--muted)}
+html[data-flow-design="magic"] .dm-finance-form-details>summary:after{content:'+';font-size:18px;color:var(--accent)}
+html[data-flow-design="magic"] .dm-finance-form-details[open]>summary:after{content:'−'}
+html[data-flow-design="magic"] .dm-finance-amount-tools>summary{display:flex;align-items:center;min-height:44px;list-style:none;font:500 11px Manrope,sans-serif;color:var(--muted);cursor:pointer}
+html[data-flow-design="magic"] .dm-finance-amount-tools .amount-step-row{margin:2px 0 6px}
+html[data-flow-design="magic"] .dm-finance-fields [hidden]{display:none!important}
+html[data-flow-design="magic"] .dm-finance-sheet input[type="number"]::-webkit-inner-spin-button{appearance:none;margin:0}
+html[data-flow-design="magic"] .dm-finance-sheet .amount-clear{width:44px;height:44px;right:1px;min-height:44px}
+html[data-flow-design="magic"] .dm-finance-sheet .amount-input-row input{padding-right:48px}
+html[data-flow-design="magic"] .dm-finance-sheet .sheet-actions:not(.dm-goal-actions){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+html[data-flow-design="magic"] .dm-finance-sheet .sheet-actions:not(:has(>button+button)){grid-template-columns:minmax(0,1fr)}
+html[data-flow-design="magic"] .dm-finance-sheet .sheet-actions>button{width:auto!important;min-width:0;min-height:44px;height:auto;flex:none!important;white-space:normal;overflow:hidden;padding:10px 12px;font-size:13px;line-height:1.4}
+html[data-flow-design="magic"] .dm-finance-sheet .sheet-actions>button:only-child{grid-column:1/-1}
+html[data-flow-design="magic"] .dm-finance-sheet .list-panel{background:color-mix(in srgb,var(--surface) 60%,transparent);border:1px solid var(--line);border-radius:18px;padding:0 12px;box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-sheet .swipe-content{background:transparent;border-radius:0}
+html[data-flow-design="magic"] .dm-finance-sheet .finance-row{background:none;padding:14px 0;min-height:72px;gap:9px}
+html[data-flow-design="magic"] .dm-finance-sheet .finance-row .list-copy strong{font-size:14px;line-height:1.4}
+html[data-flow-design="magic"] .dm-finance-sheet .finance-row .list-copy>span{font-size:12px;line-height:1.5}
+html[data-flow-design="magic"] .dm-finance-sheet .finance-row .amount{font-size:14px;font-variant-numeric:tabular-nums}
+html[data-flow-design="magic"] .dm-finance-sheet .finance-row .list-icon{background:none;border:0;border-radius:0;color:var(--accent);box-shadow:none;width:26px;min-width:26px}
+html[data-flow-design="magic"] .dm-finance-sheet .rules-reconcile{border:0;background:none;border-radius:0;padding:0;margin:0}
+html[data-flow-design="magic"] .dm-finance-sheet .rules-reconcile-head strong{font-size:14px}
+html[data-flow-design="magic"] .dm-finance-sheet .rules-reconcile-head small{font-size:12px;line-height:1.5}
+html[data-flow-design="magic"] .dm-finance-sheet .split-plan{border-radius:18px;background:color-mix(in srgb,var(--surface) 60%,transparent);box-shadow:none}
+html[data-flow-design="magic"] .dm-finance-sheet #receipt-form>button[type="submit"]{width:100%;min-height:44px;margin-top:12px}
+@media(max-width:360px){html[data-flow-design="magic"] .dm-finance-sheet .field-row{grid-template-columns:minmax(0,1fr)}html[data-flow-design="magic"] .dm-finance-sheet .sheet-head h2{font-size:22px}html[data-flow-design="magic"] .dm-finance-sheet .finance-row{flex-wrap:wrap}html[data-flow-design="magic"] .dm-finance-sheet .finance-row .list-copy{flex:1;min-width:110px}}
+html[data-flow-design="magic"] .goal-deposit-sheet .dm-goal-actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:10px}
+html[data-flow-design="magic"] .goal-deposit-sheet .dm-goal-actions>button{width:auto!important;min-width:0;min-height:46px;height:auto;flex:none!important;padding:11px 12px;white-space:normal;overflow:hidden;font-size:13px}
+html[data-flow-design="magic"] .sheet .amount-step-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+html[data-flow-design="magic"] .sheet .amount-step,html[data-flow-design="magic"] .sheet .amount-clear{min-height:44px;min-width:44px;height:44px}
+html[data-flow-design="magic"] .sheet .finance-file-field .dm-file-button{position:relative;display:flex;align-items:center;gap:8px;min-height:48px;border:1px solid var(--line);border-radius:13px;padding:12px 14px;color:var(--accent);overflow:hidden}
+html[data-flow-design="magic"] .sheet .finance-file-field input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;margin:0}
+html[data-flow-design="magic"] .sheet .finance-file-field small{display:block;min-height:20px;color:var(--muted);overflow-wrap:anywhere;margin-top:6px}
+html[data-flow-design="magic"] #finance-form .field-row{grid-template-columns:minmax(0,1fr)!important}
+@keyframes dm-calendar-breathe{0%,100%{opacity:.35}50%{opacity:.8}}
+html[data-motion=off] .dm-calendar-surface:after,html[data-motion=off] .dm-calendar-atmosphere{animation:none!important}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .dm-calendar-surface:after,html:not([data-motion=on]) .dm-calendar-atmosphere{animation:none!important}}
+@media(max-width:760px){html[data-flow-design="magic"] .dm-plan .dm-week-summary{display:none}html[data-flow-design="magic"] .dm-finance-native .content-aside{display:none}html[data-flow-design="magic"] .dm-finance-native .finance-row .amount{font-size:14px}html[data-flow-design="magic"] .dm-finance-root .page-heading h1{font-size:26px}html[data-flow-design="magic"] .dm-plan .hero-card{min-height:220px}html[data-flow-design="magic"] .dm-finance-native .finance-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:360px){html[data-flow-design="magic"] .dm-calendar-surface.calendar-card{padding-left:4px;padding-right:4px}html[data-flow-design="magic"] .dm-calendar-period strong{font-size:19px}html[data-flow-design="magic"] .dm-calendar-surface .calendar-grid{gap:0}html[data-flow-design="magic"] .dm-calendar-surface .calendar-top,html[data-flow-design="magic"] .dm-calendar-surface .calendar-toolbar{margin-left:6px;margin-right:6px}html[data-flow-design="magic"] .dm-finance-native .finance-row{display:grid;grid-template-columns:26px minmax(0,1fr);gap:6px 8px}html[data-flow-design="magic"] .dm-finance-native .finance-row .amount{grid-column:2;justify-self:start;padding:0 0 0;font-size:14px}html[data-flow-design="magic"] .dm-finance-native .finance-row .list-icon{grid-row:1/3}html[data-flow-design="magic"] .dm-task-row{grid-template-columns:30px minmax(0,1fr) auto;gap:7px}html[data-flow-design="magic"] .dm-task-row .task-check{width:30px}html[data-flow-design="magic"] .dm-task-row .task-name{font-size:12px}html[data-flow-design="magic"] .dm-finance-native .finance-hero{padding:0}html[data-flow-design="magic"] .dm-finance-native .finance-hero>strong{font-size:42px}}
+
+html[data-flow-design="magic"] .dm-color-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:20px}
+html[data-flow-design="magic"] .dm-color-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:82px;background:var(--surface-soft);color:var(--text);border:1px solid var(--line);border-radius:16px;font:11px/1.4 Manrope,sans-serif}
+html[data-flow-design="magic"] .dm-color-grid i{display:block;width:25px;height:25px;border-radius:50%;background:var(--choice);box-shadow:0 0 14px color-mix(in srgb,var(--choice) 25%,transparent)}
+html[data-flow-design="magic"] .dm-color-grid [aria-pressed=true]{border-color:var(--choice)}
+html[data-flow-design="magic"] .dm-palette-sheet h2{font-family:var(--magic-display-font);font-size:32px;font-weight:600}
+html[data-flow-design="magic"] .dm-palette-sheet>p{color:var(--muted);font-size:12px}
+
+
+
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-weekdays span{padding:0;height:16px;line-height:16px;display:grid;place-items:center}
+
+
+
+@media(min-width:1200px){html[data-flow-design="magic"] .dm-plan .main-column{min-width:0}}
+
+html[data-flow-design="magic"] .dm-account-name-hint{display:block;margin-top:5px;color:var(--muted);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+
+html[data-flow-design="magic"] .dm-finance-native button{min-height:44px}
+
+
+
+
+html[data-flow-design="magic"] .dm-goal-card-actions{display:flex;align-items:center;gap:14px;margin-top:12px}html[data-flow-design="magic"] .dm-goal-card-actions .primary-button{min-height:44px;padding:10px 17px;font-size:12px}

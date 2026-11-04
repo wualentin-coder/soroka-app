@@ -43,15 +43,19 @@ function confirmSheetDiscard(node = activeSheet()) {
 }
 function sheetFocusTarget(el) {
   if (!el || el === document.body || el.closest?.('.sheet')) return null;
-  const attrs = ['id', 'data-action', 'data-id', 'data-page', 'data-tab', 'data-section'];
+  const attrs = ['id', 'data-action', 'data-id', 'data-page', 'data-tab', 'data-section', 'data-cmd', 'data-kind', 'data-key', 'data-then', 'data-entity', 'data-mode', 'data-target', 'data-value', 'data-index'];
   const selector = attrs.filter(a => el.hasAttribute?.(a)).map(a => `[${a}="${CSS.escape(el.getAttribute(a))}"]`).join('');
   return { el, selector };
+}
+function sheetDisclosures(node) {
+  return [...node.querySelectorAll('details')].filter(el => el.tagName === 'DETAILS').map((el, index) => ({ el, key: el.id || el.dataset.stateKey || String(index), open: el.open }));
 }
 function captureSheetState() {
   const node = activeSheet();
   if (!node) sheetReturnTarget = sheetFocusTarget(document.activeElement) || sheetReturnTarget;
   if (!sheetViewState || sheetViewState.node !== node) return;
   sheetViewState.rows = sheetFieldRows(node);
+  sheetViewState.disclosures = sheetDisclosures(node);
   sheetViewState.focus = node.contains(document.activeElement) ? sheetViewState.rows.find(r => r.el === document.activeElement)?.key : null;
 }
 function restoreSheetState() {
@@ -67,6 +71,8 @@ function restoreSheetState() {
   }
   const same = previous?.owner === owner;
   if (same && previous.node !== node) {
+    const disclosureState = new Map((previous.disclosures || []).map(item => [item.key, item.open]));
+    for (const item of sheetDisclosures(node)) if (disclosureState.has(item.key)) item.el.open = disclosureState.get(item.key);
     const old = new Map(previous.rows.map(r => [r.key, r]));
     for (const row of sheetFieldRows(node)) {
       const saved = old.get(row.key);
@@ -81,7 +87,7 @@ function restoreSheetState() {
       }
     }
   }
-  sheetViewState = { owner, node, rows: sheetFieldRows(node), returnTo: same ? previous.returnTo : sheetReturnTarget };
+  sheetViewState = { owner, node, rows: sheetFieldRows(node), disclosures: sheetDisclosures(node), returnTo: same ? previous.returnTo : sheetReturnTarget };
   if (!same) {
     const coarse = window.matchMedia('(pointer: coarse)').matches;
     const first = !coarse ? node.querySelector('[autofocus], input:not([type="hidden"]), textarea') : null;
@@ -97,6 +103,8 @@ function closeActiveSheet(node = activeSheet()) {
   if (close) close.click(); else closeSheet();
 }
 document.addEventListener('keydown', event => {
+  // The shared star can work with a note without dismissing its underlying sheet.
+  if (window.flowAssistant?.getState?.().open) return;
   const node = activeSheet();
   if (!node) return;
   if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); closeActiveSheet(node); return; }

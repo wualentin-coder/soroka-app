@@ -1,4 +1,4 @@
-const TODAY_CARDS = [["sleep", "Сон"], ["sport", "Спорт"], ["english", "Английский"]];
+const TODAY_CARDS = [["sport", "Спорт"], ["english", "Английский"]];
 const TODAY_CARDS_KEY = "flow.today-cards.v1";
 let todayCardsHidden = (() => {
   try { const value = JSON.parse(localStorage.getItem(TODAY_CARDS_KEY)); return TODAY_CARDS.filter(([key]) => value?.[key] === true).map(([key]) => key); }

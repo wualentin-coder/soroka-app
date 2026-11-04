@@ -28,6 +28,9 @@ function savedIcon(category) {
   if (category === "materials") return "archive";
   return (SAVED_CATEGORIES.find(([key]) => key === category) || [null, null, "note"])[2];
 }
+function savedFolderIcon(size = "") {
+  return `<svg class="icon ${esc(size)}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h18v12H3zM3 8V4h7l2 3"/></svg>`;
+}
 function savedSections(category = ui.savedCategory) {
   return (data.savedSections?.[category] || []).slice().sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
 }
@@ -76,6 +79,39 @@ function savedOrdered(keys, group) {
   const rank = key => { const at = order.indexOf(key); return at < 0 ? order.length + keys.indexOf(key) : at; };
   return keys.slice().sort((a, b) => rank(a) - rank(b));
 }
+/** One layout contract in both shells: at most six selected modules, all others below. */
+function savedHubGroups() {
+  const all = [...SAVED_CATEGORIES.map(([key]) => key).filter(key => !MATERIAL_KINDS.some(([kind]) => kind === key)), "materials", "birthdays", "sites", "projects", "vault", "docs"];
+  const order = data.settings.savedOrder || {};
+  const canonical = keys => [...new Set((Array.isArray(keys) ? keys : []).map(key => MATERIAL_KINDS.some(([kind]) => kind === key) ? "materials" : key))].filter(key => all.includes(key));
+  // The server's never-configured default is {main:[],other:[]}. An intentional
+  // empty top always has all available modules in its persisted `other` array.
+  const configured = Array.isArray(order.main) && (order.main.length > 0 || Array.isArray(order.other) && order.other.length > 0);
+  const main = (configured ? canonical(order.main) : SAVED_PRIMARY).slice(0, 6);
+  const remaining = all.filter(key => !main.includes(key)), chosenOther = canonical(order.other).filter(key => remaining.includes(key));
+  return { all, main, other: [...chosenOther, ...remaining.filter(key => !chosenOther.includes(key))] };
+}
+function savedHubStoreOrder(main, other) {
+  const all = savedHubGroups().all;
+  const unique = keys => [...new Set(keys)].filter(key => all.includes(key));
+  const selected = unique(main);
+  if (selected.length > 6) { toast("Наверху уже 6 разделов. Сначала уберите один вниз."); return false; }
+  const remaining = unique([...other, ...all]).filter(key => !selected.includes(key));
+  data.settings.savedOrder = { ...(data.settings.savedOrder || {}), main: selected, other: remaining };
+  if (save() === false) toast("Порядок изменён здесь, но пока не сохранился. Попробуйте ещё раз.");
+  return true;
+}
+function savedHubItem(html, key, group, index, count) {
+  const controls = ui.savedArrange ? `<div class="saved-hub-controls" role="group" aria-label="Порядок: ${esc(SAVED_NAMES[key] || { materials: "Материалы", birthdays: "Дни рождения", sites: "Мини-сайты", projects: "Проекты", vault: "Пароли", docs: "Документы" }[key] || key)}"><button type="button" data-action="saved-hub-move" data-key="${key}" data-move="up" ${index === 0 ? "disabled" : ""} aria-label="Выше">${icon("up", "icon-sm")}</button><button type="button" data-action="saved-hub-move" data-key="${key}" data-move="down" ${index === count - 1 ? "disabled" : ""} aria-label="Ниже">${icon("down", "icon-sm")}</button><button type="button" class="saved-hub-transfer" data-action="saved-hub-move" data-key="${key}" data-move="${group === "main" ? "demote" : "promote"}">${icon(group === "main" ? "down" : "up", "icon-sm")}${group === "main" ? "В список" : "Наверх"}</button></div>` : "";
+  return `<div class="saved-hub-item" data-order-key="${key}">${html.replace(/ data-order-key="[^"]*"/, "")}${controls}</div>`;
+}
+function focusSavedHubControl(key, move) {
+  const row = document.querySelector(`.saved-hub-item[data-order-key="${CSS.escape(key)}"]`);
+  if (!row) return;
+  const wanted = row.querySelector(`[data-move="${CSS.escape(move)}"]`);
+  const target = wanted && !wanted.disabled ? wanted : row.querySelector('.saved-hub-controls button:not(:disabled)');
+  target?.focus({ preventScroll: true });
+}
 /** Плитки не из списка записей: пароли и проекты ведут на свои страницы. */
 function savedExtraCard(key) {
   const extra = key === "vault"
@@ -85,17 +121,14 @@ function savedExtraCard(key) {
   return `<button class="saved-section-card compact saved-section-${key}" type="button" data-action="navigate" data-page="${extra.page}" data-order-key="${key}" aria-label="${extra.name}"><span class="saved-section-icon">${icon(extra.icon)}</span><span class="saved-section-copy"><strong>${extra.name}</strong><small>${extra.about}</small></span>${extra.count ? `<span class="saved-section-count">${extra.count}</span>` : ""}<span class="saved-section-arrow" aria-hidden="true">${icon("right", "icon-sm")}</span></button>`;
 }
 function renderSavedOverview() {
-  const list = data.settings.savedLayout === "list";
-  const card = (key, compact) => key === "birthdays" ? birthdayTile() : key === "sites" ? sitesTile() : ["vault", "projects", "docs"].includes(key) ? savedExtraCard(key) : savedSectionCard(key, compact);
+  const focused = document.activeElement?.closest?.('.saved-hub-controls [data-action="saved-hub-move"]');
+  if (focused && ui.savedArrange) { const { key, move } = focused.dataset; queueMicrotask(() => { if (document.activeElement === document.body || !document.activeElement?.isConnected) focusSavedHubControl(key, move); }); }
+    const card = (key, compact) => key === "birthdays" ? birthdayTile() : key === "sites" ? sitesTile() : ["vault", "projects", "docs"].includes(key) ? savedExtraCard(key) : savedSectionCard(key, compact);
   // Какие плитки в «Основных» — решает человек: перетащил плитку в «Ещё» или обратно.
-  // Пустые «Проекты» — плитка с нулём, ведущая на пустой экран: не показываем, пока проектов нет.
-  const all = [...SAVED_CATEGORIES.map(([key]) => key).filter(key => !MATERIAL_KINDS.some(([kind]) => kind === key)), "materials", "birthdays", "sites", ...((data.projects || []).length ? ["projects"] : []), "vault", "docs"];
-  // Старый порядок со «Ссылками», «Постами» или «Файлами» в основных — теперь это «Материалы».
-  const chosen = [...new Set(((data.settings.savedOrder || {}).main || []).map(key => MATERIAL_KINDS.some(([kind]) => kind === key) ? "materials" : key))].filter(key => all.includes(key));
-  const mainKeys = chosen.length ? chosen : SAVED_PRIMARY;
-  const primary = savedOrdered(mainKeys, "main").map(key => card(key, list)).join("");
-  const others = all.filter(key => !mainKeys.includes(key));
-  const secondary = savedOrdered(others, "other").map(key => card(key, true)).join("");
+  // Все модули доступны для выбора, включая пустые проекты.
+  const { main: mainKeys, other: others } = savedHubGroups();
+  const primary = mainKeys.map((key, index) => savedHubItem(card(key, false), key, "main", index, mainKeys.length)).join("");
+  const secondary = others.map((key, index) => savedHubItem(card(key, true), key, "other", index, others.length)).join("");
   const hidden = new Set(data.settings.pinsHidden || []);
   const pinned = SAVED_CATEGORIES.flatMap(([category]) => savedItems(category).filter(item => item.pinned && !hidden.has(item.id)).map(item => ({ category, item }))).sort((a, b) => String(b.item.updated || b.item.created || "").localeCompare(String(a.item.updated || a.item.created || "")));
   // «Закреплённое» по умолчанию свёрнуто — раскрывается нажатием или жестом вниз.
@@ -103,8 +136,8 @@ function renderSavedOverview() {
   const query = String(ui.savedPinsQuery || "").toLocaleLowerCase("ru-RU");
   const pinRows = pinned.length ? pinned.map(({ category, item }) => `<div class="saved-pin-swipe" data-pin-id="${esc(item.id)}"><span class="saved-pin-hide" aria-hidden="true">${icon("close", "icon-sm")}Скрыть</span><button class="saved-pin-row" type="button" data-action="saved-open" data-category="${category}" data-id="${esc(item.id)}" data-search="${esc(`${item.title} ${SAVED_NAMES[category]} ${item.topic || ""}`.toLocaleLowerCase("ru-RU"))}" ${query && !`${item.title} ${SAVED_NAMES[category]} ${item.topic || ""}`.toLocaleLowerCase("ru-RU").includes(query) ? "hidden" : ""}><span class="saved-pin-icon">${icon(savedIcon(category), "icon-sm")}</span><span><strong>${esc(item.title)}</strong><small>${esc(SAVED_NAMES[category])}${item.topic ? ` · ${esc(item.topic)}` : ""}</small></span>${icon("right", "icon-sm")}</button></div>`).join("") : `<p class="saved-pins-empty">Закрепите нужную карточку в любом разделе, и она появится здесь.</p>`;
   const pinSearch = pinned.length > 3 ? `<label class="saved-pins-search">${icon("search", "icon-sm")}<input id="saved-pins-search" type="search" value="${esc(ui.savedPinsQuery || "")}" placeholder="Найти закреплённое" aria-label="Найти закреплённое"></label>` : "";
-  const layoutButton = `<button class="icon-button saved-layout-toggle" type="button" data-action="saved-layout" aria-label="${list ? "Показать плитками" : "Показать списком"}" title="${list ? "Плитки" : "Список"}">${icon(list ? "overview" : "rows")}</button>`;
-  return `${header("Сохранённое", "Заметки, файлы, места и другие записи", "Библиотека")}<section class="saved-pinned-panel"><button class="saved-pinned-toggle" type="button" data-action="saved-pins-toggle" aria-expanded="${open}" aria-controls="saved-pins-list"><span class="saved-pinned-heading">${icon("bookmark", "icon-sm")}<strong>Закреплённое</strong><small>${pinned.length}</small></span>${icon(open ? "up" : "down", "icon-sm")}</button>${open ? `<div id="saved-pins-list" class="saved-pins-list">${pinSearch}${pinRows}<p id="saved-pins-no-results" class="saved-pins-empty" ${!query || pinned.some(({ category, item }) => `${item.title} ${SAVED_NAMES[category]} ${item.topic || ""}`.toLocaleLowerCase("ru-RU").includes(query)) ? "hidden" : ""}>Ничего не найдено.</p></div>` : `<div id="saved-pins-list" hidden></div>`}</section><section class="saved-overview-group" aria-labelledby="saved-main-heading"><div class="section-heading"><h2 id="saved-main-heading">Основные разделы</h2>${layoutButton}</div><div class="saved-section-grid ${list ? "saved-layout-list" : ""}" data-order-group="main">${primary}</div></section><section class="saved-overview-group saved-overview-other" aria-labelledby="saved-other-heading"><div class="section-heading"><h2 id="saved-other-heading">Ещё в сохранённом</h2></div><div class="saved-section-grid saved-section-grid-compact ${list ? "saved-layout-list" : ""}" data-order-group="other">${secondary}</div></section>`;
+  const layoutButton = `<button class="saved-hub-arrange" type="button" data-action="saved-arrange-toggle" aria-pressed="${Boolean(ui.savedArrange)}">${icon(ui.savedArrange ? "check" : "settings", "icon-sm")}${ui.savedArrange ? "Готово" : "Настроить библиотеку"}</button>`;
+  return `${header("Сохранённое", "Заметки, файлы, места и другие записи", "Библиотека")}<section class="saved-pinned-panel"><button class="saved-pinned-toggle" type="button" data-action="saved-pins-toggle" aria-expanded="${open}" aria-controls="saved-pins-list"><span class="saved-pinned-heading">${icon("bookmark", "icon-sm")}<strong>Закреплённое</strong><small>${pinned.length}</small></span>${icon(open ? "up" : "down", "icon-sm")}</button>${open ? `<div id="saved-pins-list" class="saved-pins-list">${pinSearch}${pinRows}<p id="saved-pins-no-results" class="saved-pins-empty" ${!query || pinned.some(({ category, item }) => `${item.title} ${SAVED_NAMES[category]} ${item.topic || ""}`.toLocaleLowerCase("ru-RU").includes(query)) ? "hidden" : ""}>Ничего не найдено.</p></div>` : `<div id="saved-pins-list" hidden></div>`}</section>${ui.savedArrange ? `<p class="saved-hub-instructions" role="status">До 6 разделов вверху. Перетаскивайте или используйте стрелки.</p>` : ""}<section class="saved-overview-group" aria-labelledby="saved-main-heading"><div class="section-heading"><h2 id="saved-main-heading">Вверху · ${mainKeys.length}/6</h2>${layoutButton}</div><div class="saved-section-grid saved-hub-main" data-order-group="main">${primary || `<p class="saved-hub-empty">Выберите разделы из списка ниже</p>`}</div></section><section class="saved-overview-group saved-overview-other" aria-labelledby="saved-other-heading"><div class="section-heading"><h2 id="saved-other-heading">Ещё в сохранённом</h2></div><div class="saved-section-grid saved-layout-list saved-hub-other" data-order-group="other">${secondary}</div></section>`;
 }
 function renderSavedAddMenuSheet() {
   const category = ui.savedCategory;
@@ -217,9 +250,19 @@ function savedVisibleItems() {
 function movieCoverSource(item) {
   if (item.coverHidden) return "";
   if (item.coverData) return item.coverData;
-  if (item.coverPath) return item.coverPath;
-  return item.title?.trim().toLocaleLowerCase("ru-RU") === "патерсон" && Number(item.year) === 2016 ? "./assets/paterson-cover.webp" : "";
+  const path = String(item.coverPath || "");
+  if (!path) return "";
+  let demo = /^(?:\.\/)?assets\/paterson-cover\.webp(?:[?#].*)?$/.test(path);
+  if (!demo && typeof document !== "undefined") {
+    try {
+      const candidate = new URL(path, document.baseURI), reserved = new URL("./assets/paterson-cover.webp", document.baseURI);
+      demo = candidate.origin === reserved.origin && candidate.pathname === reserved.pathname;
+    } catch (_) {}
+  }
+  if (demo) return item.title?.trim().toLocaleLowerCase("ru-RU") === "патерсон" && Number(item.year) === 2016 ? "./assets/paterson-poster-official.jpg" : "";
+  return path;
 }
+
 /** Начало события по билету, по местному времени; нет даты — нет и срока. */
 function ticketStart(item) {
   if (!item?.eventDate) return null;
@@ -322,9 +365,10 @@ function renderPostMedia(item, compact = false) {
 }
 function movieCoverMarkup(item, context = "card") {
   const source = movieCoverSource(item);
-  const demoCover = source === "./assets/paterson-cover.webp";
-  return `<span class="movie-cover movie-cover-${context} ${source ? "has-image" : "is-empty"}">${source ? `<img src="${esc(source)}" alt="Обложка фильма «${esc(item.title)}»" loading="lazy">` : `<span class="movie-cover-fallback"><small>FLOW · КИНО</small><strong>${esc(item.title || "Без названия")}</strong><em>${item.year ? esc(item.year) : ""}</em></span>`}${demoCover ? `<span class="movie-cover-caption">${esc(item.title)}</span>` : ""}</span>`;
+  const fallback = `<span class="movie-cover-fallback"><span class="movie-cover-symbol" aria-hidden="true">${icon("film")}</span><small>Без обложки</small></span>`;
+  return `<span class="movie-cover movie-cover-${context} ${source ? "has-image" : "is-empty"}">${source ? `<img src="${esc(source)}" alt="Обложка фильма «${esc(item.title)}»" loading="lazy" onerror="this.parentElement.classList.remove('has-image');this.parentElement.classList.add('is-empty');this.remove()">` : ""}${fallback}</span>`;
 }
+
 /** Карточка в списке — с закладкой поверх: закрепить, не открывая запись. */
 /** Сторона хвостика у поста: «случайно», но у одного поста всегда одна. */
 function postSide(id) {
@@ -484,7 +528,7 @@ function renderNotesPage() {
   // Разделы заметок — такими же чипами, как в остальных разделах «Сохранённого».
   const chip = (id, label, count, section) => `<button type="button" class="map-category-chip ${ui.savedSection === id ? "active" : ""}" data-action="saved-section-filter" data-id="${esc(id)}" aria-pressed="${ui.savedSection === id}"${section ? ` style="--map-color:${esc(section.color)}"` : ""}>${section ? icon(sectionIcon(section, "note"), "icon-sm") : ""}${esc(label)} <span>${count}</span></button>`;
   const folders = sections.length ? `<div class="map-categories saved-subcategories" aria-label="Разделы заметок">${chip("", "Все", savedItems("notes").length)}${sections.map(section => chip(section.id, section.name, folderCount(section.id), section)).join("")}${unfiled ? chip("__none__", "Без раздела", unfiled) : ""}</div>` : "";
-  return `<div class="notes-screen"><div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button></div><header class="notes-heading saved-section-heading"><div><h1>Заметки</h1></div><span>${savedItems("notes").length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Новая заметка">${icon("plus")}</button></header><label class="notes-search">${icon("search", "icon-sm")}<input id="saved-filter-input" type="search" value="${esc(ui.savedQuery)}" placeholder="Поиск по заметкам" aria-label="Поиск по заметкам"></label>${folders}<div id="saved-results" class="notes-results">${renderNotesResults()}</div></div>`;
+  return `<div class="notes-screen"><div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${savedFolderIcon("icon-sm")}Разделы</button></div><header class="notes-heading saved-section-heading"><div><h1>Заметки</h1></div><span>${savedItems("notes").length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Новая заметка">${icon("plus")}</button></header><label class="notes-search">${icon("search", "icon-sm")}<input id="saved-filter-input" type="search" value="${esc(ui.savedQuery)}" placeholder="Поиск по заметкам" aria-label="Поиск по заметкам"></label>${folders}<div id="saved-results" class="notes-results">${renderNotesResults()}</div></div>`;
 }
 /** Записи открытой вкладки: у фильмов папки «Кино / Сериалы» считаются внутри «В планах» или «Просмотрено». */
 function savedChipPool(category) {
@@ -539,7 +583,7 @@ function renderSavedPage() {
   const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
   const toolbar = "";
   const movieTools = "";
-  const heading = category === "movies" ? moviePrototypeHeader() : `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><span class="notes-topline-actions"><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "materials" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${icon("archive", "icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
+  const heading = category === "movies" ? moviePrototypeHeader() : `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><span class="notes-topline-actions"><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "materials" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${savedFolderIcon("icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
   const hint = category === "movies" && !movieCarouselEnabled() && !savedHintSeen() ? `<p class="swipe-hint">Свайп вправо — просмотрено · влево — действия</p>` : "";
   const seenTabs = category === "movies" ? movieSeenTabs() : category === "tickets" ? ticketTabs() : "";
   const main = category === "materials" ? `${materialKindTabs()}<div class="saved-sort-row">${sortSelect}</div>${hint}<div id="saved-results" class="saved-results">${renderSavedResults()}</div>`
@@ -832,6 +876,28 @@ function deleteSavedRecord(category, recordId) {
   return true;
 }
 function savedAction(action, control) {
+  if (action === "saved-arrange-toggle") { ui.savedArrange = !ui.savedArrange; render(); document.querySelector('[data-action="saved-arrange-toggle"]')?.focus({ preventScroll: true }); return true; }
+  if (action === "saved-hub-move") {
+    const groups = savedHubGroups(), key = control.dataset.key, move = control.dataset.move;
+    const from = groups.main.includes(key) ? "main" : groups.other.includes(key) ? "other" : null;
+    if (!from) return true;
+    const main = groups.main.slice(), other = groups.other.slice(), list = from === "main" ? main : other, at = list.indexOf(key);
+    if (move === "promote" || move === "demote") {
+      if (move === "promote" && main.length >= 6) { toast("Наверху уже 6 разделов. Сначала уберите один вниз."); focusSavedHubControl(key, move); return true; }
+      list.splice(at, 1); (move === "promote" ? main : other).push(key);
+    } else {
+      const to = at + (move === "up" ? -1 : move === "down" ? 1 : 0);
+      if (to < 0 || to >= list.length || to === at) return true;
+      list.splice(at, 1); list.splice(to, 0, key);
+    }
+    const scroll = window.scrollY;
+    if (savedHubStoreOrder(main, other)) {
+      render(); window.scrollTo({ top: scroll, behavior: "instant" });
+      if (move === "promote" || move === "demote") toast(move === "promote" ? "Раздел добавлен наверх" : "Раздел перенесён в список");
+      focusSavedHubControl(key, move === "promote" ? "demote" : move === "demote" ? "promote" : move);
+    }
+    return true;
+  }
   if (productWishAction(action, control)) return true;
   if (action === "saved-home") { ui.savedCategory = "overview"; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "material-kind") { ui.materialKind = control.dataset.kind || ""; ui.savedSection = ""; ui.savedLimit = 60; render(); return true; }
@@ -1178,7 +1244,8 @@ function savedChange(event) {
 
   document.addEventListener("pointerdown", event => {
     if (event.button > 0) return;
-    const tile = event.target.closest?.("[data-order-group] > .saved-section-card, [data-order-group] > .wallet-card, [data-list-order] > .check-row");
+    if (event.target.closest?.('.saved-hub-controls')) return;
+    const tile = event.target.closest?.("[data-order-group] > .saved-hub-item, [data-order-group] > .saved-section-card, [data-order-group] > .wallet-card, [data-list-order] > .check-row");
     if (tile) {
       const x = event.clientX, y = event.clientY;
       press = { tile, x, y, timer: setTimeout(() => startDrag(tile, x, y), 380) };
@@ -1192,7 +1259,9 @@ function savedChange(event) {
     press = null;
     const grid = tile.parentElement;
     const rect = tile.getBoundingClientRect();
-    drag = { tile, grid, x, y, left: rect.left, top: rect.top, stack: grid.classList.contains("wallet"), from: [...grid.children].indexOf(tile), to: [...grid.children].indexOf(tile) };
+    const hub = ["main", "other"].includes(grid.dataset.orderGroup);
+    const rollback = new Map((hub ? [...document.querySelectorAll('[data-order-group="main"],[data-order-group="other"]')] : [grid]).map(node => [node, [...node.children]]));
+    drag = { tile, grid, x, y, left: rect.left, top: rect.top, rollback, stack: grid.classList.contains("wallet"), from: [...grid.children].indexOf(tile), to: [...grid.children].indexOf(tile) };
     tile.classList.add("is-dragging");
     grid.classList.add("is-sorting");
     haptic();
@@ -1232,13 +1301,17 @@ function savedChange(event) {
       if (Date.now() < (drag.lock || 0)) return;
       tile.style.pointerEvents = "none";
       const point = document.elementFromPoint(event.clientX, event.clientY);
-      const over = point?.closest(".saved-section-card, .wallet-card, .check-row");
+      const over = point?.closest(".saved-hub-item, .wallet-card, .check-row");
       const otherGrid = point?.closest("[data-order-group]");
       tile.style.pointerEvents = "";
       // Плитки «Сохранённого» ходят между «Основными» и «Ещё»: над другой группой —
       // переезжаем в неё (к плитке под пальцем или в конец).
       const hub = ["main", "other"].includes(grid.dataset.orderGroup);
       if (hub && otherGrid && otherGrid !== grid && ["main", "other"].includes(otherGrid.dataset.orderGroup)) {
+        if (otherGrid.dataset.orderGroup === "main" && otherGrid.querySelectorAll(':scope>.saved-hub-item[data-order-key]').length >= 6) {
+          if (!drag.limitFeedback) { toast("Наверху уже 6 разделов. Сначала уберите один вниз."); drag.limitFeedback = true; }
+          return;
+        }
         if (over && over.parentElement === otherGrid) over.before(tile); else otherGrid.append(tile);
         drag.grid = otherGrid;
         grid.classList.remove("is-sorting"); otherGrid.classList.add("is-sorting");
@@ -1324,9 +1397,9 @@ function savedChange(event) {
         // Обе группы разом: плитка могла переехать из одной в другую.
         const keys = group => [...(document.querySelector(`[data-order-group="${group}"]`)?.children || [])].map(card => card.dataset.orderKey).filter(Boolean);
         const main = keys("main");
-        if (!main.length) { toast("В «Основных» должна остаться хотя бы одна плитка"); render(); return; }
-        data.settings.savedOrder = { ...(data.settings.savedOrder || {}), main, other: keys("other") };
-        render();
+        const other = keys("other"), previous = savedHubGroups();
+        if (JSON.stringify(main) !== JSON.stringify(previous.main) || JSON.stringify(other) !== JSON.stringify(previous.other)) savedHubStoreOrder(main, other);
+        render(); return;
       } else data.settings.savedOrder = { ...(data.settings.savedOrder || {}), [grid.dataset.orderGroup]: order };
       save();
       return;
@@ -1354,7 +1427,26 @@ function savedChange(event) {
     }
   }
   document.addEventListener("pointerup", finish);
-  document.addEventListener("pointercancel", finish);
+  function cancelDrag() {
+    if (press) { clearTimeout(press.timer); press = null; }
+    if (drag) {
+      const cancelled = drag; drag = null;
+      cancelled.tile.classList.remove("is-dragging");
+      cancelled.tile.style.transform = "";
+      cancelled.grid.classList.remove("is-sorting");
+      // A cancelled move changes no model bytes. Restore the actual owned nodes
+      // too: classic render may legitimately reuse its unchanged shell markup.
+      for (const [grid, children] of cancelled.rollback) if (grid.isConnected) {
+        for (const child of children) { child.style.transform = ""; child.style.transition = ""; grid.append(child); }
+        grid.classList.remove("is-sorting");
+      }
+      swallowClick = true; setTimeout(() => { swallowClick = false; }, 400); render();
+    }
+    if (pin) { pin.face.style.transform = ""; pin.row.style.removeProperty("--hide"); pin.row.classList.remove("is-swiping"); pin = null; }
+  }
+  window.addEventListener("pointercancel", cancelDrag, { capture: true });
+  window.addEventListener("touchcancel", cancelDrag, { capture: true, passive: true });
+  document.addEventListener("keydown", event => { if (event.key === "Escape" && (drag || press)) { event.preventDefault(); cancelDrag(); } });
 })();
 
 /** Подъезд, этаж, квартира, домофон — короткими подписями. (Не addressParts: так называется разбор геокодера в address-map.js, и он перекрывал эту функцию.) */

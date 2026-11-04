@@ -1,0 +1,655 @@
+/* Digital Magic composition. This is the live shell, with the approved local
+   study's spacing and component geometry; load after the previous Magic layers. */
+html[data-flow-design="magic"] {
+  --display: "Cormorant Garamond", Georgia, serif;
+  --card-radius: 22px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --digital-ease: cubic-bezier(.19, 1, .22, 1);
+  --dm-sidebar-width: 224px;
+  --dm-gutter: 40px;
+  --sage: var(--accent);
+  --lilac: var(--accent);
+}
+html[data-flow-design="magic"] body { font-size: 14px; line-height: 1.5; }
+html[data-flow-design="magic"] .dm-main h1[data-flow-route-focus]:focus-visible { outline:2px solid var(--accent);outline-offset:6px;border-radius:4px; }
+html[data-flow-design="magic"] .dm-app-shell {
+  display: block;
+  min-height: 100dvh;
+  position: relative;
+}
+html[data-flow-design="magic"] .dm-sidebar {
+  display: flex;
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--dm-sidebar-width);
+  height: 100dvh;
+  padding: 32px 20px 16px;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--page) 96%, transparent);
+  z-index: 5;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+html[data-flow-design="magic"] .dm-workspace {
+  min-width: 0;
+  max-width: 1660px;
+  margin-left: var(--dm-sidebar-width);
+}
+html[data-flow-design="magic"] .dm-sidebar .sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 43px;
+  line-height: 1;
+}
+html[data-flow-design="magic"] .dm-sidebar :where(.brand-mark,.flow-vortex-mark) {
+  width: 34px;
+  height: 38px;
+  flex: none;
+  border-radius: 0;
+  object-fit: contain;
+  box-shadow: none;
+}
+html[data-flow-design="magic"] .dm-sidebar .brand-name {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -2px;
+}
+html[data-flow-design="magic"] .dm-sidebar .brand-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+html[data-flow-design="magic"] .dm-sidebar .sidebar-caption {
+  margin: 0 12px 12px;
+  padding: 0;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+html[data-flow-design="magic"] .dm-sidebar .sidebar-caption-gap {
+  border-top: 1px solid var(--line);
+  margin-top: 27px;
+  padding-top: 25px;
+}
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav { display: grid; gap: 5px; }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+}
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button.active { background: var(--surface-raised); color: var(--text); }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button.active { box-shadow: inset 0 0 20px rgba(var(--energy-rgb),.04); }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button.active .icon { color: var(--accent); }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav .icon { transition: transform .25s var(--digital-ease),filter .25s; }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button.active .icon { filter: drop-shadow(0 0 5px rgba(var(--energy-rgb),.45)); }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button:hover .icon { transform: rotate(-7deg) scale(1.09); }
+html[data-flow-design="magic"] .dm-sidebar .sidebar-nav button:hover { background: var(--surface); }
+html[data-flow-design="magic"] .dm-sidebar .nav-count { margin-left: auto; font-size: 11px; color: var(--subtle); }
+html[data-flow-design="magic"] .dm-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 24;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 87px;
+  padding: 0 var(--dm-gutter);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--page) 94%, transparent);
+  backdrop-filter: blur(18px);
+}
+html[data-flow-design="magic"] .dm-mobile-brand { display: none; }
+html[data-flow-design="magic"] .dm-topbar .head-pill {position:absolute;left:50%;top:43px;transform:translate(-50%,-50%);max-width:min(248px,34vw);z-index:3}
+html[data-flow-design="magic"] .dm-topbar .head-pill:active {transform:translate(-50%,-50%) scale(.98)}
+html[data-flow-design="magic"] .dm-topbar .dm-toolbar .dm-status {display:none}
+@media(max-width:760px){
+html[data-flow-design="magic"] .dm-topbar .head-pill {top:calc(94px + env(safe-area-inset-top));max-width:calc(100% - 40px)}
+html[data-flow-design="magic"] .dm-topbar .dm-mobile-brand,html[data-flow-design="magic"] .dm-topbar .dm-toolbar {height:44px}
+}
+
+html[data-flow-design="magic"] .dm-breadcrumb { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--muted); }
+html[data-flow-design="magic"] .dm-breadcrumb strong { color: var(--text); font-weight: 500; }
+html[data-flow-design="magic"] .dm-breadcrumb .slash { color: var(--subtle); }
+html[data-flow-design="magic"] .dm-toolbar { display: flex; align-items: center; gap: 3px; flex: none; }
+html[data-flow-design="magic"] .dm-icon-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+}
+html[data-flow-design="magic"] .dm-icon-button .icon { width: 18px; height: 18px; }
+html[data-flow-design="magic"] .dm-icon-button:hover { background: var(--surface-soft); color: var(--text); }
+html[data-flow-design="magic"] .dm-status { display: flex; align-items: center; gap: 6px; margin-right: 16px; font-size: 9px; letter-spacing: .08em; color: var(--subtle); text-transform: uppercase; }
+html[data-flow-design="magic"] .dm-status i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 9px var(--accent); animation: status-breathe 3s ease-in-out infinite; }
+html[data-flow-design="magic"] .dm-accent-button { display: grid; place-items: center; flex: none; height: 44px; width: 44px; padding: 0; border: 0; background: transparent; }
+html[data-flow-design="magic"] .dm-accent-button i { width: 17px; height: 17px; border: 3px solid var(--page); outline: 1px solid var(--line); border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px color-mix(in srgb,var(--accent) 15%,transparent); }
+html[data-flow-design="magic"] .dm-main {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 35px var(--dm-gutter) 90px;
+  min-width: 0;
+  outline: none;
+}
+html[data-flow-design="magic"] .dm-main > .page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 26px;
+  min-height: 0;
+}
+html[data-flow-design="magic"] .dm-main > .page-header h1,
+html[data-flow-design="magic"] .dm-main .page-heading h1 {
+  display: block;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 48px;
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -1.6px;
+  overflow-wrap: anywhere;
+}
+html[data-flow-design="magic"] .dm-main > .page-header .eyebrow { margin-bottom: 9px; font-size: 12px; font-weight: 400; line-height: 1.5; color: var(--muted); text-transform: none; letter-spacing: 0; }
+html[data-flow-design="magic"] .dm-main > .page-header .page-subtitle { margin-top: 13px; max-width: 470px; font-size: 12px; line-height: 1.7; }
+html[data-flow-design="magic"] .dm-main > .page-header .header-actions { padding-bottom: 4px; padding-top: 0; }
+html[data-flow-design="magic"] .dm-main .content-grid { display: grid; grid-template-columns: minmax(0,1fr) 282px; align-items: start; gap: 24px; }
+html[data-flow-design="magic"] .dm-main .content-grid:not(:has(> .content-aside)) { grid-template-columns: minmax(0,1fr); }
+html[data-flow-design="magic"] .dm-main :where(.content-main,.content-aside) { min-width: 0; }
+html[data-flow-design="magic"] .dm-main .content-aside { display: block; }
+html[data-flow-design="magic"] .dm-main > :where(.wide-content,.notes-screen,.settings-grid,.docs-page) { max-width: 1020px; }
+html[data-flow-design="magic"] .dm-main .section { margin-top: 26px; }
+html[data-flow-design="magic"] .dm-main :where(.side-card,.mosaic-card,.project-card,.overview-intro,.state-card) { padding: 24px; border-radius: 22px; }
+html[data-flow-design="magic"] .dm-main .side-card + .side-card { margin-top: 24px; }
+html[data-flow-design="magic"] .dm-main .side-card h3 { font-size: 16px; font-weight: 600; letter-spacing: -.3px; margin-bottom: 17px; }
+html[data-flow-design="magic"] .dm-main .side-row { min-height: 44px; align-items: center; padding: 10px 0; font-size: 12px; }
+html[data-flow-design="magic"] .dm-main .side-row b { font-weight: 500; }
+html[data-flow-design="magic"] .dm-main .list-panel { padding: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
+html[data-flow-design="magic"] .dm-main .list-row { min-height: 75px; padding: 17px 0; border-bottom: 1px solid var(--line); }
+html[data-flow-design="magic"] .dm-main .list-row + .list-row { border-top: 0; }
+html[data-flow-design="magic"] .dm-main .list-copy strong { font-size: 14px; font-weight: 500; }
+html[data-flow-design="magic"] .dm-main .list-copy > span { display: block; font-size: 11px; margin-top: 3px; }
+html[data-flow-design="magic"] .dm-main .list-icon { width: 40px; height: 40px; border-radius: 13px; }
+html[data-flow-design="magic"] .dm-main .task-stack { gap: 0; border-top: 1px solid var(--line); }
+html[data-flow-design="magic"] .dm-main .task-card:not(.overdue):not(.dm-task-row) { min-height: 75px; padding: 17px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; align-items: center; gap: 12px; }
+html[data-flow-design="magic"] .dm-main .task-card + .task-card { margin-top: 0; }
+html[data-flow-design="magic"] .dm-main .task-card:not(.overdue):not(.dm-task-row):hover { background: transparent; transform: none; }
+html[data-flow-design="magic"] .dm-main .task-card .task-title { font-size: 14px; font-weight: 500; line-height: 1.5; }
+html[data-flow-design="magic"] .dm-main .task-card .task-meta { font-size: 11px; font-weight: 400; margin-top: 3px; }
+html[data-flow-design="magic"] .dm-main .task-card .task-check { margin: 0; }
+html[data-flow-design="magic"] .dm-main .empty-card { padding: 40px 24px; border-radius: 22px; text-align: center; font-size: 12px; line-height: 1.7; }
+html[data-flow-design="magic"] .dm-main .empty-card strong { font-size: 16px; font-weight: 600; }
+html[data-flow-design="magic"] .dm-main :where(.overview-mosaic,.project-grid,.more-grid) { gap: 18px; }
+html[data-flow-design="magic"] .dm-main .mosaic-card:not(.wide) { border: 1px solid var(--line); background: var(--surface); }
+html[data-flow-design="magic"] .dm-main .more-grid { grid-template-columns: repeat(2,minmax(0,1fr)); max-width: 800px; border: 0; }
+html[data-flow-design="magic"] .dm-main .more-tile { flex-direction: column; align-items: flex-start; justify-content: space-between; border: 1px solid var(--line); background: var(--surface); }
+html[data-flow-design="magic"] .dm-main .more-tile > .icon { width: 28px; height: 28px; color: var(--accent); }
+html[data-flow-design="magic"] .dm-main .more-tile strong { font-size: 15px; }
+html[data-flow-design="magic"] .dm-main .more-tile small { font-size: 11px; }
+html[data-flow-design="magic"] .dm-main .content-main:has(> .project-card) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+html[data-flow-design="magic"] .dm-main .project-card { margin-bottom: 0; }
+html[data-flow-design="magic"] .dm-main .hero-bottom > .primary-button { flex: none; text-decoration: none; }
+html[data-flow-design="magic"] .dm-main :where(.more-tile,.info-tile) { min-height: 156px; border-radius: 22px; padding: 20px; }
+html[data-flow-design="magic"] .dm-main :where(.more-tile strong,.tile-value) { font-weight: 600; }
+html[data-flow-design="magic"] .dm-bottom-nav { display: none; }
+
+@media (min-width:1600px) {
+  html[data-flow-design="magic"] .dm-main { padding-top: 44px; }
+  html[data-flow-design="magic"] .dm-main .content-grid { grid-template-columns: minmax(0,1fr) 310px; gap: 32px; }
+}
+@media (max-width:1200px) and (min-width:761px) {
+  html[data-flow-design="magic"] { --dm-gutter: 26px; }
+  html[data-flow-design="magic"] .dm-main { padding-top: 28px; }
+  html[data-flow-design="magic"] .dm-main .content-grid { grid-template-columns: minmax(0,1fr) 242px; gap: 20px; }
+}
+@media (max-width:1020px) and (min-width:761px) {
+  html[data-flow-design="magic"] .dm-main .content-grid { grid-template-columns: minmax(0,1fr); }
+  html[data-flow-design="magic"] .dm-main .content-aside { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+  html[data-flow-design="magic"] .dm-main .content-aside > * { margin: 0; }
+}
+@media (max-width:760px) {
+  html[data-flow-design="magic"] { --dm-gutter: 20px; }
+  html[data-flow-design="magic"] .dm-sidebar { display: none; }
+  html[data-flow-design="magic"] .dm-workspace { margin-left: 0; max-width: none; }
+  html[data-flow-design="magic"] .dm-topbar { height: calc(134px + env(safe-area-inset-top)); padding: calc(14px + env(safe-area-inset-top)) 12px 64px 20px; align-items:flex-start; border-bottom: 1px solid var(--line); }
+  html[data-flow-design="magic"] .dm-mobile-brand { display: flex; align-items: center; gap: 7px; padding: 0; font-size: 28px; font-weight: 800; letter-spacing: -1.8px; line-height: 1; text-decoration: none; flex: none; }
+  html[data-flow-design="magic"] .dm-mobile-brand :where(.brand-mark,.flow-vortex-mark) { width: 27px; height: 30px; border-radius: 0; box-shadow: none; margin: 0; }
+  html[data-flow-design="magic"] .dm-mobile-brand > span { display: inline; }
+  html[data-flow-design="magic"] .dm-mobile-brand :where(.brand-dot,.dm-brand-dot) { color: var(--accent); }
+  html[data-flow-design="magic"] .dm-breadcrumb { display: none; }
+  html[data-flow-design="magic"] .dm-toolbar { gap: 0; }
+  html[data-flow-design="magic"] .dm-icon-button { width: 44px; min-width: 44px; }
+  html[data-flow-design="magic"] .dm-accent-button { width: 44px; }
+  html[data-flow-design="magic"] .dm-status { margin-right: 5px; font-size: 8px; }
+  html[data-flow-design="magic"] .dm-main { padding: 15px 20px 125px; max-width: none; }
+  html[data-flow-design="magic"] .dm-main > .page-header { margin: 0 0 23px; align-items: center; }
+  html[data-flow-design="magic"] .dm-main > .page-header h1 { font-size: 41px; letter-spacing: -.9px; }
+  html[data-flow-design="magic"] .dm-main > .page-header .eyebrow { font-size: 11px; }
+  html[data-flow-design="magic"] .dm-main > .page-header .page-subtitle { font-size: 12px; }
+  html[data-flow-design="magic"] .dm-main > .page-header .header-actions { padding: 0; gap: 2px; }
+  html[data-flow-design="magic"] .dm-main > .page-header .header-actions .icon-button { width: 36px; height: 44px; }
+  html[data-flow-design="magic"] .dm-main .content-grid { grid-template-columns: minmax(0,1fr); gap: 24px; }
+  html[data-flow-design="magic"] .dm-main .content-aside { display: grid; grid-template-columns: minmax(0,1fr); gap: 24px; }
+  html[data-flow-design="magic"] .dm-main .content-aside > * { margin: 0; }
+  html[data-flow-design="magic"] .dm-main :where(.side-card,.mosaic-card,.project-card,.overview-intro,.state-card) { padding: 20px; }
+  html[data-flow-design="magic"] .dm-main :where(.overview-mosaic,.project-grid,.more-grid) { gap: 12px; }
+  html[data-flow-design="magic"] .dm-main :where(.more-tile,.info-tile) { min-height: 157px; padding: 16px; }
+  html[data-flow-design="magic"] .dm-main .task-card:not(.overdue):not(.dm-task-row) { gap: 8px; }
+  html[data-flow-design="magic"] .dm-main .task-card .task-title { font-size: 13px; }
+  html[data-flow-design="magic"] .dm-main .task-card .task-meta { font-size: 10px; }
+  html[data-flow-design="magic"] .dm-bottom-nav {
+    position: fixed;
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    left: 12px;
+    right: 12px;
+    bottom: max(10px,env(safe-area-inset-bottom));
+    width: auto;
+    border: 1px solid var(--line);
+    border-radius: 23px;
+    padding: 5px;
+    background: color-mix(in srgb,var(--surface) 94%,transparent);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 6px 25px #0003;
+    z-index: 10;
+  }
+  html[data-flow-design="magic"] .dm-bottom-nav button { min-width: 0; min-height: 56px; padding: 5px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 17px; background: transparent; color: var(--muted); font-size: 10px; font-weight: 400; line-height: 1.5; }
+  html[data-flow-design="magic"] .dm-bottom-nav button.active { color: var(--accent); background: var(--accent-soft); }
+  html[data-flow-design="magic"] .dm-bottom-nav button.active .icon { filter: drop-shadow(0 0 5px rgba(var(--energy-rgb),.45)); }
+  html[data-flow-design="magic"] .dm-bottom-nav .icon { width: 20px; height: 20px; }
+}
+@media (max-width:359px) {
+  html[data-flow-design="magic"] .dm-topbar { padding-left: 16px; }
+  html[data-flow-design="magic"] .dm-mobile-brand { font-size: 26px; }
+  html[data-flow-design="magic"] .dm-icon-button { width: 44px; min-width: 44px; }
+  html[data-flow-design="magic"] .dm-accent-button { width: 44px; }
+  html[data-flow-design="magic"] .dm-status { display: none; }
+  html[data-flow-design="magic"] .dm-main { padding-left: 16px; padding-right: 16px; }
+  html[data-flow-design="magic"] .dm-main > .page-header h1 { font-size: 37px; }
+}
+
+/* Keyboard, full-screen native practice and document content retain their own
+   measured geometry; the decorative shell must not replace those viewports. */
+html[data-flow-design="magic"].kb-open .dm-bottom-nav { display: none; }
+html[data-flow-design="magic"].composer-open .dm-bottom-nav { visibility: hidden; }
+html[data-flow-design="magic"] body.piano-playing .dm-topbar { display: none; }
+html[data-flow-design="magic"] body.piano-playing .dm-workspace { margin-left: 0; max-width: none; }
+html[data-flow-design="magic"] body.piano-playing .dm-main { padding: 0; max-width: none; }
+
+/* Exact approved prototype component geometry, including its later readability overrides. */
+
+html[data-flow-design="magic"] .dm-main :where(.page-heading,.hero-card,.rhythm-card,.module-card,.aside-section,.balance-card,.transaction) :where(h1,h2,h3,p) { margin: 0; }
+html[data-flow-design="magic"] .dm-main :where(.hero-card,.rhythm-card,.module-card,.aside-section,.balance-card,.transaction) :where(h2,h3) { font-weight: 600; }
+html[data-flow-design="magic"] .dm-main .task-row .task-check::before { content: none; }
+html[data-flow-design="magic"] .dm-main .page-heading { display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:26px }
+html[data-flow-design="magic"] .dm-main .page-heading .date { font-size:12px;color:var(--muted);margin-bottom:9px }
+html[data-flow-design="magic"] .dm-main .page-heading h1 { font-size:48px }
+html[data-flow-design="magic"] .dm-main .heading-side { color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;padding-bottom:6px }
+html[data-flow-design="magic"] .dm-main .heading-side .icon { width:16px;height:16px;color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .page-layout { display:grid;grid-template-columns:minmax(0,1fr) 282px;gap:24px }
+html[data-flow-design="magic"] .dm-main .main-column,
+html[data-flow-design="magic"] .dm-main .aside-column { min-width:0 }
+html[data-flow-design="magic"] .dm-main .week-strip { display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:5px;border:1px solid var(--line);border-radius:17px;margin-bottom:22px }
+html[data-flow-design="magic"] .dm-main .day { background:transparent;border-radius:12px;padding:9px 4px 7px;display:grid;gap:4px;justify-items:center;color:var(--muted);min-height:71px }
+html[data-flow-design="magic"] .dm-main .day small { font-size:10px }
+html[data-flow-design="magic"] .dm-main .day strong { font-size:16px;font-weight:500 }
+html[data-flow-design="magic"] .dm-main .day i { width:3px;height:3px;border-radius:50%;background:var(--subtle) }
+html[data-flow-design="magic"] .dm-main .day.selected { background:var(--surface-soft);color:var(--text) }
+html[data-flow-design="magic"] .dm-main .day.selected i { background:var(--accent) }
+html[data-flow-design="magic"] .dm-main .day.selected strong { color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .day:hover { background:var(--surface) }
+html[data-flow-design="magic"] .dm-main .hero-card { position:relative;isolation:isolate;overflow:hidden;min-height:264px;border:1px solid var(--line);border-radius:var(--card-radius);background:var(--surface);padding:25px 24px }
+html[data-flow-design="magic"] .dm-main .hero-kicker { display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);margin-bottom:17px }
+html[data-flow-design="magic"] .dm-main .hero-kicker .icon { width:14px;height:14px;color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .hero-content { position:relative;z-index:2;max-width:68% }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-family:var(--display);font-size:41px;line-height:1.02;letter-spacing:-.8px;max-width:290px }
+html[data-flow-design="magic"] .dm-main .hero-content p { color:var(--muted);font-size:12px;max-width:240px;margin-top:11px;line-height:1.7 }
+html[data-flow-design="magic"] .dm-main .hero-bottom { display:flex;align-items:center;gap:14px;margin-top:23px }
+html[data-flow-design="magic"] .dm-main .primary-button,
+html[data-flow-design="magic"] .dm-main .secondary-button { display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:11px 22px;border-radius:99px;font-size:12px;font-weight:700 }
+html[data-flow-design="magic"] .dm-main .primary-button { color:var(--accent-ink);background:var(--accent);box-shadow:0 0 0 3px var(--surface),0 0 0 4px var(--line) }
+html[data-flow-design="magic"] .dm-main .primary-button:hover { background:var(--accent-strong) }
+html[data-flow-design="magic"] .dm-main .primary-button .icon { width:15px;height:15px }
+html[data-flow-design="magic"] .dm-main .secondary-button { background:transparent;border:1px solid var(--line);color:var(--text) }
+html[data-flow-design="magic"] .dm-main .secondary-button:hover { background:var(--surface-soft) }
+html[data-flow-design="magic"] .dm-main .hero-bottom>small { color:var(--subtle);font-size:10px }
+html[data-flow-design="magic"] .dm-main .hero-art { position:absolute;right:-3px;top:30px;width:215px;height:218px;z-index:0;pointer-events:none }
+html[data-flow-design="magic"] .dm-main .planet { position:absolute;left:60px;top:23px;width:128px;height:128px;border-radius:50%;background:radial-gradient(circle at 35% 20%,#d9e3ce 0,#a7c4ad 19%,#6d8c7a 38%,#263e34 60%,#111c19 77%);box-shadow:inset -9px -12px 20px #0008,0 0 32px #bfd9b114 }
+html[data-flow-design="magic"] .dm-main .planet:before { content:"";position:absolute;inset:8px;border-radius:50%;border-top:1px solid #e7ead86b;transform:rotate(-35deg) }
+html[data-flow-design="magic"] .dm-main .orbit-line { position:absolute;left:10px;top:61px;width:206px;height:56px;border:1px solid #b0c3ae80;border-radius:50%;transform:rotate(-28deg);box-shadow:0 1px 2px #0005 }
+html[data-flow-design="magic"] .dm-main .orbit-line:after { content:"";position:absolute;right:24px;bottom:1px;width:7px;height:7px;background:#d9e8cf;border-radius:50%;box-shadow:0 0 12px #e2f3d57d }
+html[data-flow-design="magic"] .dm-main .mini-piano { position:absolute;bottom:2px;left:22px;width:174px;height:69px;display:flex;gap:2px;transform:perspective(300px) rotateX(32deg) rotateZ(-13deg);filter:drop-shadow(0 12px 10px #0005) }
+html[data-flow-design="magic"] .dm-main .mini-piano i { height:100%;flex:1;background:linear-gradient(#e4e1d9,#fff9ec 80%,#c6c7bd 81%);border-radius:0 0 3px 3px;position:relative;border:1px solid #0b141a }
+html[data-flow-design="magic"] .dm-main .mini-piano i:not(:nth-child(3)):not(:nth-child(7)):not(:last-child):after { content:"";position:absolute;z-index:1;right:-5px;top:-1px;width:8px;height:40px;border-radius:0 0 2px 2px;background:linear-gradient(90deg,#32383b,#0e1113);border:1px solid #090e10 }
+html[data-flow-design="magic"] .dm-main .mini-piano i:nth-child(5) { background:linear-gradient(#a5dfcd,#90c9b8 80%,#5a9c86 81%) }
+html[data-flow-design="magic"] .dm-main .section-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 14px }
+html[data-flow-design="magic"] .dm-main .section-heading h2 { font-size:16px;font-weight:600 }
+html[data-flow-design="magic"] .dm-main .text-button { background:none;color:var(--muted);font-size:11px;min-height:44px;padding:8px 0;display:flex;align-items:center;gap:5px }
+html[data-flow-design="magic"] .dm-main .text-button .icon { width:14px;height:14px }
+html[data-flow-design="magic"] .dm-main .text-button:hover { color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .task-list { border-top:1px solid var(--line) }
+html[data-flow-design="magic"] .dm-main .task-row:not(.dm-task-row) { display:flex;gap:12px;align-items:center;min-height:74px;border-bottom:1px solid var(--line) }
+html[data-flow-design="magic"] .dm-main .task-row:not(.dm-task-row) .task-check { height:44px;width:36px;min-width:36px;background:transparent;display:grid;place-items:center;color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .check-ring { width:19px;height:19px;border:1px solid var(--subtle);border-radius:50%;display:grid;place-items:center }
+html[data-flow-design="magic"] .dm-main .check-ring .icon { width:12px;height:12px }
+html[data-flow-design="magic"] .dm-main .task-row.done .check-ring { background:var(--accent);color:var(--accent-ink);border-color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .task-row.done .task-name { text-decoration:line-through;color:var(--subtle) }
+html[data-flow-design="magic"] .dm-main .task-info { min-width:0;flex:1 }
+html[data-flow-design="magic"] .dm-main .task-name { font-size:12px;display:block;overflow-wrap:anywhere }
+html[data-flow-design="magic"] .dm-main .task-description { font-size:10px;color:var(--muted);margin-top:3px }
+html[data-flow-design="magic"] .dm-main .task-time { color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap }
+html[data-flow-design="magic"] .dm-main .task-dot { height:5px;width:5px;border-radius:50%;background:var(--sage);margin-right:4px }
+html[data-flow-design="magic"] .dm-main .module-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px }
+html[data-flow-design="magic"] .dm-main .module-card { background:var(--surface);border:1px solid var(--line);border-radius:var(--card-radius);padding:17px 17px 16px;text-align:left;min-height:156px;position:relative;overflow:hidden }
+html[data-flow-design="magic"] .dm-main .module-card:hover { background:var(--surface-raised) }
+html[data-flow-design="magic"] .dm-main .module-card .module-symbol { display:flex;align-items:center;justify-content:space-between;margin-bottom:19px;color:var(--sage) }
+html[data-flow-design="magic"] .dm-main .module-card .module-symbol>span { font-family:var(--display);font-size:35px;line-height:1;font-style:italic }
+html[data-flow-design="magic"] .dm-main .module-card .module-symbol>.icon { height:16px;width:16px;color:var(--subtle) }
+html[data-flow-design="magic"] .dm-main .module-card h3 { font-size:13px;font-weight:600 }
+html[data-flow-design="magic"] .dm-main .module-card p { font-size:10px;color:var(--muted);margin-top:5px }
+html[data-flow-design="magic"] .dm-main .module-card.sport .module-symbol { color:var(--lilac) }
+html[data-flow-design="magic"] .dm-main .dumbbell { width:37px;height:28px;transform:rotate(-30deg);display:flex;align-items:center;gap:0 }
+html[data-flow-design="magic"] .dm-main .dumbbell i { width:7px;height:24px;border-radius:3px;background:var(--lilac) }
+html[data-flow-design="magic"] .dm-main .dumbbell i:nth-child(2) { height:10px;width:16px;border-radius:0 }
+html[data-flow-design="magic"] .dm-main .rhythm-card { border:1px solid var(--line);border-radius:var(--card-radius);padding:22px 20px;text-align:center;background:var(--surface) }
+html[data-flow-design="magic"] .dm-main .rhythm-card h2 { font-family:var(--display);font-size:30px;letter-spacing:-.8px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .caption { font-size:10px;color:var(--muted);margin-top:3px }
+html[data-flow-design="magic"] .dm-main .progress-orbit { width:175px;height:175px;position:relative;margin:16px auto 18px;display:grid;place-items:center }
+html[data-flow-design="magic"] .dm-main .progress-orbit svg { position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg) }
+html[data-flow-design="magic"] .dm-main .ring-track { fill:none;stroke:var(--line);stroke-width:1 }
+html[data-flow-design="magic"] .dm-main .ring-progress { fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:327 490;stroke-linecap:round }
+html[data-flow-design="magic"] .dm-main .ring-dot { fill:var(--accent);filter:drop-shadow(0 0 3px var(--accent)) }
+html[data-flow-design="magic"] .dm-main .ring-label strong { display:block;font-size:42px;font-family:var(--display);line-height:1 }
+html[data-flow-design="magic"] .dm-main .ring-label small { font-size:10px;color:var(--muted) }
+html[data-flow-design="magic"] .dm-main .weekly-bars { display:flex;justify-content:space-between;align-items:flex-end;gap:7px;padding:0 4px }
+html[data-flow-design="magic"] .dm-main .bar-day { display:grid;justify-items:center;gap:9px;flex:1 }
+html[data-flow-design="magic"] .dm-main .bar-track { height:49px;display:flex;align-items:flex-end;width:11px;background:var(--surface-soft);border-radius:5px;overflow:hidden }
+html[data-flow-design="magic"] .dm-main .bar-track i { width:100%;height:var(--height);background:var(--sage);border-radius:5px }
+html[data-flow-design="magic"] .dm-main .bar-day.current .bar-track i { background:var(--accent) }
+html[data-flow-design="magic"] .dm-main .bar-day small { font-size:9px;color:var(--subtle) }
+html[data-flow-design="magic"] .dm-main .rhythm-message { border-top:1px solid var(--line);padding-top:17px;margin-top:19px;font-size:10px;color:var(--muted);line-height:1.7 }
+html[data-flow-design="magic"] .dm-main .rhythm-message strong { color:var(--text);font-weight:500 }
+html[data-flow-design="magic"] .dm-main .aside-section { margin-top:24px }
+html[data-flow-design="magic"] .dm-main .aside-section h2 { font-size:14px;margin-bottom:14px }
+html[data-flow-design="magic"] .dm-main .book-card { display:flex;gap:14px;padding:15px 0;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);width:100%;background:none;text-align:left }
+html[data-flow-design="magic"] .dm-main .book-cover { height:71px;width:53px;flex:none;background:#c7d7bb;color:#1f423b;box-shadow:inset 3px 0 #fff3,2px 2px 0 #0004;font-family:var(--display);font-size:11px;line-height:1.1;padding:10px 6px;text-align:center;position:relative }
+html[data-flow-design="magic"] .dm-main .book-cover:after { content:"✦";font-size:17px;display:block;margin-top:8px }
+html[data-flow-design="magic"] .dm-main .book-meta { flex:1;min-width:0 }
+html[data-flow-design="magic"] .dm-main .book-meta h3 { font-size:12px }
+html[data-flow-design="magic"] .dm-main .book-meta p { font-size:10px;color:var(--muted);margin:5px 0 10px }
+html[data-flow-design="magic"] .dm-main .thin-track { height:3px;background:var(--line);border-radius:9px;overflow:hidden }
+html[data-flow-design="magic"] .dm-main .thin-track span { display:block;width:var(--progress,36%);background:var(--accent);height:100% }
+html[data-flow-design="magic"] .dm-main .book-card>.icon { width:15px;color:var(--muted) }
+html[data-flow-design="magic"] .dm-main .quote { font-family:var(--display);font-size:24px;line-height:1.15;color:var(--muted);padding:23px 0 0;max-width:220px }
+html[data-flow-design="magic"] .dm-main .quote small { display:block;font-family:Manrope,sans-serif;font-size:9px;margin-top:12px;color:var(--subtle) }
+html[data-flow-design="magic"] .dm-main .wide-content { max-width:1020px }
+html[data-flow-design="magic"] .dm-main .intro-copy { font-size:12px;color:var(--muted);max-width:470px;margin:13px 0 0 }
+html[data-flow-design="magic"] .dm-main .balance-card { border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:28px;margin-bottom:24px }
+html[data-flow-design="magic"] .dm-main .balance-label { font-size:12px;color:var(--muted) }
+html[data-flow-design="magic"] .dm-main .balance { font-family:var(--display);font-size:62px;line-height:1.2;margin:8px 0 18px;letter-spacing:-1.5px }
+html[data-flow-design="magic"] .dm-main .balance small { font-size:35px;color:var(--subtle) }
+html[data-flow-design="magic"] .dm-main .balance-summary { display:flex;flex-wrap:wrap;gap:24px;border-top:1px solid var(--line);padding-top:19px }
+html[data-flow-design="magic"] .dm-main .balance-summary span { font-size:11px;color:var(--muted) }
+html[data-flow-design="magic"] .dm-main .balance-summary strong { display:block;font-size:17px;font-weight:500;color:var(--text);margin-top:3px }
+html[data-flow-design="magic"] .dm-main .transaction { display:flex;align-items:center;gap:13px;border-bottom:1px solid var(--line);padding:17px 0 }
+html[data-flow-design="magic"] .dm-main .transaction .transaction-icon { height:40px;width:40px;background:var(--surface-soft);border-radius:13px;display:grid;place-items:center;color:var(--muted) }
+html[data-flow-design="magic"] .dm-main .transaction>div:nth-child(2) { flex:1 }
+html[data-flow-design="magic"] .dm-main .transaction h3 { font-size:12px }
+html[data-flow-design="magic"] .dm-main .transaction p { font-size:10px;color:var(--muted);margin-top:3px }
+html[data-flow-design="magic"] .dm-main .transaction strong { font-size:13px;font-weight:500;white-space:nowrap }
+html[data-flow-design="magic"] .dm-main .finance-caption { font-size:10px;color:var(--muted);margin-top:15px }
+@media(min-width:1600px) {
+html[data-flow-design="magic"] .dm-main .page-layout { grid-template-columns:minmax(0,1fr) 310px;gap:32px }
+html[data-flow-design="magic"] .dm-main .hero-card { min-height:300px;padding:30px }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:49px }
+html[data-flow-design="magic"] .dm-main .hero-art { right:35px;top:50px;transform:scale(1.15) }
+html[data-flow-design="magic"] .dm-main .hero-bottom { margin-top:27px }
+html[data-flow-design="magic"] .dm-main .task-row:not(.dm-task-row) { min-height:80px }
+}
+@media(max-width:1200px) {
+html[data-flow-design="magic"] .dm-main .page-layout { grid-template-columns:minmax(0,1fr) 242px;gap:20px }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:36px }
+html[data-flow-design="magic"] .dm-main .hero-art { right:-38px;transform:scale(.88) }
+html[data-flow-design="magic"] .dm-main .hero-content { max-width:75% }
+html[data-flow-design="magic"] .dm-main .hero-bottom { gap:10px }
+html[data-flow-design="magic"] .dm-main .hero-bottom>small { display:none }
+html[data-flow-design="magic"] .dm-main .rhythm-card { padding:20px 15px }
+html[data-flow-design="magic"] .dm-main .progress-orbit { width:165px;height:165px }
+}
+@media(max-width:1020px) and (min-width:761px) {
+html[data-flow-design="magic"] .dm-main .page-layout { grid-template-columns:1fr }
+html[data-flow-design="magic"] .dm-main .aside-column { display:grid;grid-template-columns:1fr 1fr;gap:20px }
+html[data-flow-design="magic"] .dm-main .rhythm-card { margin-top:24px }
+html[data-flow-design="magic"] .dm-main .aside-section { margin-top:24px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .progress-orbit { width:125px;height:125px;margin:12px auto }
+html[data-flow-design="magic"] .dm-main .rhythm-card .weekly-bars { display:none }
+html[data-flow-design="magic"] .dm-main .rhythm-message { font-size:11px }
+html[data-flow-design="magic"] .dm-main .hero-art { right:20px }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:43px }
+html[data-flow-design="magic"] .dm-main .hero-card { min-height:280px }
+}
+@media(max-width:760px) {
+html[data-flow-design="magic"] .dm-main .page-heading { margin-bottom:23px }
+html[data-flow-design="magic"] .dm-main .page-heading h1 { font-size:42px;letter-spacing:-.9px }
+html[data-flow-design="magic"] .dm-main .page-heading .date { font-size:10px;margin-bottom:9px }
+html[data-flow-design="magic"] .dm-main .heading-side { font-size:10px;padding-bottom:4px;gap:5px }
+html[data-flow-design="magic"] .dm-main .heading-side .icon { width:14px }
+html[data-flow-design="magic"] .dm-main .page-layout { grid-template-columns:1fr;gap:24px }
+html[data-flow-design="magic"] .dm-main .week-strip { margin-bottom:17px }
+html[data-flow-design="magic"] .dm-main .day { min-height:66px;padding-top:8px;padding-bottom:6px }
+html[data-flow-design="magic"] .dm-main .day strong { font-size:15px }
+html[data-flow-design="magic"] .dm-main .day small { font-size:9px }
+html[data-flow-design="magic"] .dm-main .hero-card { min-height:261px;padding:22px 20px }
+html[data-flow-design="magic"] .dm-main .hero-content { max-width:74% }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:39px;max-width:250px }
+html[data-flow-design="magic"] .dm-main .hero-kicker { font-size:10px;margin-bottom:17px }
+html[data-flow-design="magic"] .dm-main .hero-content p { font-size:11px;max-width:198px;line-height:1.65 }
+html[data-flow-design="magic"] .dm-main .hero-art { right:-21px;top:37px;transform:scale(.85);transform-origin:right center }
+html[data-flow-design="magic"] .dm-main .hero-bottom { margin-top:23px }
+html[data-flow-design="magic"] .dm-main .hero-bottom>small { display:none }
+html[data-flow-design="magic"] .dm-main .primary-button { padding:11px 20px;font-size:12px }
+html[data-flow-design="magic"] .dm-main .section-heading { margin-top:22px;margin-bottom:10px }
+html[data-flow-design="magic"] .dm-main .section-heading h2 { font-size:16px }
+html[data-flow-design="magic"] .dm-main .task-name { font-size:12px }
+html[data-flow-design="magic"] .dm-main .task-row:not(.dm-task-row) { min-height:75px;gap:8px }
+html[data-flow-design="magic"] .dm-main .task-row:not(.dm-task-row) .task-check { width:31px;min-width:31px }
+html[data-flow-design="magic"] .dm-main .task-time { font-size:10px }
+html[data-flow-design="magic"] .dm-main .task-description { font-size:10px }
+html[data-flow-design="magic"] .dm-main .module-card { padding:16px;min-height:157px }
+html[data-flow-design="magic"] .dm-main .aside-column { display:grid;grid-template-columns:1fr }
+html[data-flow-design="magic"] .dm-main .rhythm-card { text-align:left;position:relative;padding:20px;min-height:194px;overflow:hidden }
+html[data-flow-design="magic"] .dm-main .rhythm-card h2 { font-size:29px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .progress-orbit { position:absolute;right:13px;top:8px;margin:0;width:156px;height:156px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .weekly-bars { width:50%;margin-top:19px;gap:5px;padding:0 }
+html[data-flow-design="magic"] .dm-main .bar-track { height:41px;width:9px }
+html[data-flow-design="magic"] .dm-main .bar-day { gap:5px }
+html[data-flow-design="magic"] .dm-main .rhythm-message { width:100%;padding-top:12px;margin-top:16px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .ring-label strong { font-size:36px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .ring-label small { font-size:9px }
+html[data-flow-design="magic"] .dm-main .aside-section { margin-top:0 }
+html[data-flow-design="magic"] .dm-main .aside-section h2 { font-size:16px }
+html[data-flow-design="magic"] .dm-main .quote { display:none }
+html[data-flow-design="magic"] .dm-main .balance-card { padding:22px }
+html[data-flow-design="magic"] .dm-main .balance { font-size:54px }
+html[data-flow-design="magic"] .dm-main .balance-summary { gap:22px }
+html[data-flow-design="magic"] .dm-main .balance-summary span { font-size:10px }
+html[data-flow-design="magic"] .dm-main .balance-summary strong { font-size:15px }
+html[data-flow-design="magic"] .dm-main .page-heading .primary-button { padding:10px 14px;font-size:10px }
+html[data-flow-design="magic"] .dm-main .heading-side.hide-mobile { display:none }
+}
+@media(max-width:359px) {
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:34px }
+html[data-flow-design="magic"] .dm-main .hero-card { padding:20px 17px }
+html[data-flow-design="magic"] .dm-main .hero-art { right:-27px;transform:scale(.69) }
+html[data-flow-design="magic"] .dm-main .hero-content { max-width:79% }
+html[data-flow-design="magic"] .dm-main .hero-content p { max-width:180px }
+html[data-flow-design="magic"] .dm-main .page-heading h1 { font-size:37px }
+html[data-flow-design="magic"] .dm-main .heading-side { font-size:9px }
+html[data-flow-design="magic"] .dm-main .heading-side .icon { display:none }
+html[data-flow-design="magic"] .dm-main .module-card { padding:14px }
+html[data-flow-design="magic"] .dm-main .module-card p { font-size:9px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .progress-orbit { right:0;width:142px;height:142px;top:13px }
+html[data-flow-design="magic"] .dm-main .rhythm-card h2 { font-size:27px }
+html[data-flow-design="magic"] .dm-main .balance { font-size:46px }
+}
+html[data-flow-design="magic"] .dm-main .task-name,
+html[data-flow-design="magic"] .dm-main .book-meta h3 { font-size:14px }
+html[data-flow-design="magic"] .dm-main .task-description,
+html[data-flow-design="magic"] .dm-main .task-time,
+html[data-flow-design="magic"] .dm-main .module-card p,
+html[data-flow-design="magic"] .dm-main .book-meta p,
+html[data-flow-design="magic"] .dm-main .hero-kicker,
+html[data-flow-design="magic"] .dm-main .hero-bottom>small,
+html[data-flow-design="magic"] .dm-main .rhythm-card .caption,
+html[data-flow-design="magic"] .dm-main .rhythm-message,
+html[data-flow-design="magic"] .dm-main .ring-label small,
+html[data-flow-design="magic"] .dm-main .bar-day small { font-size:11px }
+html[data-flow-design="magic"] .dm-main .module-card h3 { font-size:14px }
+html[data-flow-design="magic"] .dm-main .hero-content p { font-size:13px }
+html[data-flow-design="magic"] .dm-main .text-button { font-size:12px }
+html[data-flow-design="magic"] .dm-main .day small { font-size:11px }
+@media(max-width:760px) {
+html[data-flow-design="magic"] .dm-main .heading-side { display:none }
+html[data-flow-design="magic"] .dm-main .page-heading h1 { font-size:41px }
+html[data-flow-design="magic"] .dm-main .hero-content { max-width:100% }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:36px;max-width:240px }
+html[data-flow-design="magic"] .dm-main .hero-content p { font-size:12px;max-width:195px }
+html[data-flow-design="magic"] .dm-main .hero-art { right:-37px;top:52px;transform:scale(.65) }
+html[data-flow-design="magic"] .dm-main .hero-card { min-height:287px }
+html[data-flow-design="magic"] .dm-main .hero-bottom { margin-top:23px }
+html[data-flow-design="magic"] .dm-main .module-card h3 { font-size:14px }
+html[data-flow-design="magic"] .dm-main .module-card p { font-size:11px }
+html[data-flow-design="magic"] .dm-main .hero-kicker { font-size:11px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .caption,
+html[data-flow-design="magic"] .dm-main .rhythm-message,
+html[data-flow-design="magic"] .dm-main .ring-label small,
+html[data-flow-design="magic"] .dm-main .bar-day small,
+html[data-flow-design="magic"] .dm-main .book-meta p { font-size:11px }
+html[data-flow-design="magic"] .dm-main .rhythm-card { min-height:218px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .weekly-bars { margin-top:23px }
+html[data-flow-design="magic"] .dm-main .rhythm-message { margin-top:18px }
+html[data-flow-design="magic"] .dm-main .rhythm-card h2 { font-size:28px }
+html[data-flow-design="magic"] .dm-main .balance-label { font-size:13px }
+html[data-flow-design="magic"] .dm-main .transaction h3 { font-size:14px }
+html[data-flow-design="magic"] .dm-main .transaction p { font-size:11px }
+html[data-flow-design="magic"] .dm-main .task-name { font-size:13px }
+html[data-flow-design="magic"] .dm-main .page-heading .date { font-size:11px }
+html[data-flow-design="magic"] .dm-main .page-heading { align-items:center }
+}
+@media(max-width:359px) {
+html[data-flow-design="magic"] .dm-main .hero-content h2 { font-size:33px;max-width:210px }
+html[data-flow-design="magic"] .dm-main .hero-art { right:-40px;top:60px;transform:scale(.52) }
+html[data-flow-design="magic"] .dm-main .hero-content p { max-width:175px }
+html[data-flow-design="magic"] .dm-main .page-heading h1 { font-size:37px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .progress-orbit { width:125px;height:125px;top:23px;right:0 }
+html[data-flow-design="magic"] .dm-main .rhythm-card .caption { max-width:145px }
+html[data-flow-design="magic"] .dm-main .rhythm-card h2 { font-size:26px;max-width:150px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .ring-label strong { font-size:30px }
+html[data-flow-design="magic"] .dm-main .rhythm-card .ring-label small { font-size:10px }
+html[data-flow-design="magic"] .dm-main .task-description,
+html[data-flow-design="magic"] .dm-main .task-time { font-size:10px }
+html[data-flow-design="magic"] .dm-main .task-name { font-size:13px }
+}
+
+/* The prototype's global button/reset rules are confined to these live
+   components so native players, form controls and reader pages keep theirs. */
+html[data-flow-design="magic"] .dm-main :where(.day,.text-button) { border: 0; }
+html[data-flow-design="magic"] .dm-main :where(.module-card,.book-card,.text-button) { text-decoration: none; }
+html[data-flow-design="magic"] .dm-main .book-card { border-left: 0; border-right: 0; }
+html[data-flow-design="magic"] .dm-main > .project-card + .project-card { margin-top: 14px; }
+html[data-flow-design="magic"] .dm-main .section > .section-heading { margin-top: 0; }
+
+/* Exact approved Digital Magic material and motion declarations. Keyframes live in digital-effects.css. */
+html[data-flow-design="magic"] .dm-main .hero-card { background:linear-gradient(120deg,var(--surface),color-mix(in srgb,var(--surface) 95%,var(--accent)));border-color:color-mix(in srgb,var(--line) 76%,var(--accent));box-shadow:0 8px 42px rgba(var(--energy-rgb),.035),inset 0 1px rgba(var(--energy-rgb),.1) }
+html[data-flow-design="magic"] .dm-main .hero-card::before { content:"";position:absolute;z-index:-1;left:-25%;width:150%;height:150px;bottom:-140px;border-radius:50%;border-top:2px solid rgba(var(--energy-rgb),.75);background:radial-gradient(ellipse at 50% 0,rgba(var(--energy-rgb),.2),transparent 66%);box-shadow:0 -4px 21px rgba(var(--energy-rgb),.16),0 -1px 4px rgba(var(--energy-rgb),.8);animation:corona-breathe 5s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .hero-card::after { content:"";position:absolute;width:45%;height:150%;top:-40%;left:-70%;background:linear-gradient(100deg,transparent,rgba(var(--energy-rgb),.035),transparent);transform:skewX(-22deg);animation:hero-scan 12s ease-in-out infinite;pointer-events:none;z-index:-1 }
+html[data-flow-design="magic"] .dm-main .hero-kicker { color:color-mix(in srgb,var(--text) 75%,var(--accent)) }
+html[data-flow-design="magic"] .dm-main .hero-kicker .icon { filter:drop-shadow(0 0 4px rgba(var(--energy-rgb),.5)) }
+html[data-flow-design="magic"] .dm-main .hero-content h2 { color:var(--text);text-shadow:0 0 40px rgba(var(--energy-rgb),.08) }
+html[data-flow-design="magic"] .dm-main .hero-art { animation:hero-levitate 7s ease-in-out infinite;transform-origin:center }
+html[data-flow-design="magic"] .dm-main .planet { background:radial-gradient(circle at 30% 20%,var(--energy-hot),var(--accent) 20%,color-mix(in srgb,var(--accent) 40%,var(--surface)) 45%,var(--page) 80%);box-shadow:inset -9px -12px 20px #0008,0 0 36px rgba(var(--energy-rgb),.16);animation:planet-breathe 8s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .planet::before { animation:planet-band 20s linear infinite }
+html[data-flow-design="magic"] .dm-main .orbit-line { border-color:rgba(var(--energy-rgb),.65);box-shadow:0 0 6px rgba(var(--energy-rgb),.12);animation:orbit-tilt 12s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .orbit-line::after { background:var(--energy-hot);box-shadow:0 0 7px var(--accent),0 0 16px var(--accent);animation:orbital-flare 3s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .mini-piano { animation:piano-float 7s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .mini-piano i:nth-child(5) { background:linear-gradient(var(--energy-hot),var(--accent) 80%,color-mix(in srgb,var(--accent) 60%,var(--page)) 81%);box-shadow:0 0 9px rgba(var(--energy-rgb),.3) }
+html[data-flow-design="magic"] .dm-main .primary-button { position:relative;isolation:isolate;overflow:hidden;box-shadow:0 0 0 3px var(--surface),0 0 0 4px color-mix(in srgb,var(--line) 70%,var(--accent)),0 5px 25px rgba(var(--energy-rgb),.16);transition:transform .23s var(--digital-ease),box-shadow .23s,background .16s }
+html[data-flow-design="magic"] .dm-main .primary-button::after { content:"";position:absolute;inset:-80% auto -80% -90%;width:45%;background:linear-gradient(100deg,transparent,#fff5,transparent);transform:skewX(-25deg);animation:button-gleam 8s ease-in-out infinite;pointer-events:none }
+html[data-flow-design="magic"] .dm-main .primary-button:hover { box-shadow:0 0 0 3px var(--surface),0 0 0 4px var(--accent),0 8px 32px rgba(var(--energy-rgb),.32);transform:translateY(-2px) }
+html[data-flow-design="magic"] .dm-main .primary-button:active { transform:scale(.95) }
+html[data-flow-design="magic"] .dm-main .primary-button .icon { transition:transform .3s var(--digital-ease) }
+html[data-flow-design="magic"] .dm-main .primary-button:hover .icon { transform:translateX(3px) }
+html[data-flow-design="magic"] .dm-main .module-card,
+html[data-flow-design="magic"] .dm-main .rhythm-card,
+html[data-flow-design="magic"] .dm-main .balance-card { box-shadow:inset 0 1px 0 #ffffff03;transition:transform .35s var(--digital-ease),border-color .3s,box-shadow .3s,background .2s }
+html[data-flow-design="magic"] .dm-main .module-card:hover { border-color:rgba(var(--energy-rgb),.5);box-shadow:0 10px 34px rgba(var(--energy-rgb),.09);transform:translateY(-4px) }
+html[data-flow-design="magic"] .dm-main .module-symbol>.icon:last-child { transition:transform .4s var(--digital-ease),color .2s }
+html[data-flow-design="magic"] .dm-main .module-card:hover .module-symbol>.icon:last-child { transform:translate(3px,-3px) rotate(-35deg);color:var(--accent) }
+html[data-flow-design="magic"] .dm-main .module-symbol>span { animation:letter-float 8s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .day { transition:transform .25s var(--digital-ease),background .2s,color .2s,box-shadow .2s }
+html[data-flow-design="magic"] .dm-main .day.selected { box-shadow:inset 0 0 24px rgba(var(--energy-rgb),.04),0 0 18px rgba(var(--energy-rgb),.035) }
+html[data-flow-design="magic"] .dm-main .day.selected i { box-shadow:0 0 6px var(--accent) }
+html[data-flow-design="magic"] .dm-main .task-row.done .check-ring { box-shadow:0 0 13px rgba(var(--energy-rgb),.2) }
+html[data-flow-design="magic"] .dm-main .check-ring { transition:transform .25s var(--digital-ease),box-shadow .25s }
+html[data-flow-design="magic"] .dm-main .task-row .task-check:active .check-ring { transform:scale(.8) }
+html[data-flow-design="magic"] .dm-main .ring-progress { filter:drop-shadow(0 0 4px rgba(var(--energy-rgb),.35)) }
+html[data-flow-design="magic"] .dm-main .ring-dot { filter:drop-shadow(0 0 4px var(--accent));animation:orbit-dot-pulse 3s ease-in-out infinite;transform-origin:center }
+html[data-flow-design="magic"] .dm-main .progress-orbit svg { animation:progress-sway 14s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .bar-track i { transform-origin:bottom;animation:activity-breathe 4s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .bar-day:nth-child(2n) .bar-track i { animation-delay:-1.4s }
+@media(max-width:760px) {
+html[data-flow-design="magic"] .dm-main .hero-card::before { bottom:-143px }
+html[data-flow-design="magic"] .dm-main .hero-art { animation:hero-levitate 7s ease-in-out infinite }
+html[data-flow-design="magic"] .dm-main .balance { font-size:50px }
+html[data-flow-design="magic"] .dm-main .page-heading h1 { overflow-wrap:anywhere }
+}
+
+/* A rotated phone keeps the workspace, with compact chrome instead of a desktop sidebar. Piano owns its immersive shell. */
+@media(orientation:landscape) and (max-height:520px) and (max-width:1100px){
+html[data-flow-design="magic"] body:not(.piano-page) .dm-sidebar{display:none}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-workspace{margin-left:0;max-width:none}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-topbar{height:56px;padding:6px 16px;align-items:center}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-mobile-brand{display:flex;align-items:center;gap:6px;font-size:25px;font-weight:800;letter-spacing:-1.5px}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-mobile-brand .flow-vortex-mark{width:26px;height:26px}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-breadcrumb{display:none}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-topbar .head-pill{top:28px;max-width:180px;min-height:40px}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-main{padding:14px 20px 82px;max-width:100%}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));inset:auto 12px 8px;max-width:640px;width:calc(100% - 24px);margin-inline:auto;padding:4px;border:1px solid var(--line);border-radius:20px;background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(18px);z-index:25}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-bottom-nav button{display:flex;align-items:center;justify-content:center;flex-direction:row;gap:8px;padding:6px;min-height:44px;border:0;border-radius:15px;background:transparent;color:var(--muted);font-size:11px}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-bottom-nav button.active{background:var(--accent-soft);color:var(--accent)}
+html[data-flow-design="magic"] body:not(.piano-page) .dm-bottom-nav .icon{width:18px;height:18px}
+html[data-flow-design="magic"] body:not(.piano-page) .assistant-fab{bottom:72px;right:16px;width:56px;height:56px}
+}
+
+/* Keyboard ownership comes from the native visual viewport bridge in every phone orientation. */
+html[data-flow-design="magic"].kb-open body .dm-bottom-nav,
+html[data-flow-design="magic"].kb-open body .assistant-fab{display:none}

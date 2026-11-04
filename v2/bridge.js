@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=efb8604b51","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=fdb0689cdf","integrity":null},{"src":"./movie-carousel.js?v=92ecf9ace4","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=68506f628c","integrity":null},{"src":"./server.js?v=072fc7694d","integrity":null},{"src":"./pc.js?v=f3f0de8b9b","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=236808be43","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=51d8caa4a8","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=96bd99bcf6","integrity":null},{"src":"./sport-train.js?v=9c7fbd1905","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sleep-device.js?v=5e7b1453f7","integrity":null},{"src":"./sleep.js?v=5cbf3f24f7","integrity":null},{"src":"./render-queue.js?v=040902e964","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=d6659b411e","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=839cc1a66b","integrity":null},{"src":"./more.js?v=86c68254b1","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=8a782b9425","integrity":null},{"src":"./sections.js?v=3763f04a43","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=767488ffe6","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano.js?v=65f1e357b4","integrity":null},{"src":"./app.js?v=e5cd2ade42","integrity":null},{"src":"./notes.js?v=d0a00001af","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=d3c1789428","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=78effb6c7c","integrity":null},{"src":"./calendar-drag.js?v=d8550fc456","integrity":null},{"src":"./activity-island.js?v=ca8559eed2","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=32846c92af","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=fdb0689cdf","integrity":null},{"src":"./movie-carousel.js?v=903c70d1f6","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=236808be43","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=33ff58d43f","integrity":null},{"src":"./sport-train.js?v=9c7fbd1905","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=ff789b9674","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=294ca9db2e","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano.js?v=341c66b9ef","integrity":null},{"src":"./app.js?v=225a8b9bfb","integrity":null},{"src":"./notes.js?v=1327bb7588","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./motion.js?v=9a3bb028dc","integrity":null},{"src":"./calendar-drag.js?v=0f02462b44","integrity":null},{"src":"./activity-island.js?v=c89aed7679","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=0d1494a553","integrity":null},{"src":"./digital-collections.js?v=7fddf31d12","integrity":null},{"src":"./digital-directory.js?v=f1840da70c","integrity":null},{"src":"./digital-services.js?v=5430d3fd5a","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=4ca392148f","integrity":null},{"src":"./digital-runtime.js?v=e64c42c61a","integrity":null},{"src":"./digital-brand.js?v=c57321afce","integrity":null},{"src":"./digital-assistant.js?v=5415f7fa65","integrity":null},{"src":"./digital-assistant-visual.js?v=b62dbdeb41","integrity":null},{"src":"./digital-effects.js?v=f7d87e7268","integrity":null},{"src":"./digital-ecosystem.js?v=bdc20260a0","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1045,7 +1045,6 @@
   };
   window.sorokaOpenSport = () => { navigate("sport"); if (typeof spState === "function") { const s = spState(), saved = window.sorokaSportTimer?.read(); s.tab = "training"; if (saved?.date) s.date = saved.date; if (saved?.kind) s.kind = saved.kind; } render(); };
   window.sorokaSport = (op, args) => call({ action: "sport", op, args: args || {} }, op === "import" ? 30000 : 20000);
-  window.sorokaSleep = (op, args) => call({ action: "sleep", op, args: args || {} }, op === "debrief" ? 30000 : 20000);
   window.sorokaVpn = (op, args) => call({ action: "vpn", op, args: args || {} }, 30000);
   let pcStateSource = null;
   window.sorokaPc = (payload) => {
@@ -1289,15 +1288,24 @@
   const KIND_NAME = { task: "Дело", event: "Событие", note: "Заметка", link: "Материал", recipe: "Рецепт", movie: "Фильм",
     product: "Товар", debt: "Долг", payment: "Платёж", tx: "Операция", place: "Адрес", metric: "Показатель", list: "Список" };
 
-  function captureProgress(text, item) {
-    const layer = document.createElement("div");
+  let captureSequence = 0;
+  function captureSignal(detail) {
+    document.dispatchEvent(new CustomEvent("flow:composecapture", { detail }));
+  }
+  function captureProgress(text, item, options = {}) {
+    const embedded = options.embedded === true;
+    const signal = (phase, detail = {}) => { if (embedded) captureSignal({ phase, requestId: options.requestId, item, ...detail }); };
+    const layer = embedded ? null : document.createElement("div");
+    let open = true, timer = null;
+    const close = () => { open = false; clearTimeout(timer); layer?.remove(); document.removeEventListener("flow:composecapture", closed); };
+    function closed(event) { if (event.detail?.phase === "closed") close(); }
+    if (embedded) document.addEventListener("flow:composecapture", closed);
+    if (layer) {
     layer.className = "modal-backdrop live-capture-backdrop";
     layer.innerHTML = `<section class="sheet live-capture" role="dialog" aria-modal="true" aria-live="polite"><div class="sheet-handle"></div>
       <div class="live-capture-state"><span class="live-spin big"></span><strong>Бот разбирает сообщение…</strong><small>Обычно это несколько секунд</small></div>
       <p class="live-capture-source">${escape(text)}</p><div class="live-capture-actions"><button type="button" class="ghost-button" data-close>Закрыть</button></div></section>`;
     document.body.appendChild(layer);
-    let open = true;
-    const close = () => { open = false; layer.remove(); };
     layer.addEventListener("click", (event) => {
       if (event.target === layer || event.target.closest("[data-close]")) close();
       const again = event.target.closest("[data-again]");
@@ -1305,14 +1313,21 @@
       const ref = event.target.closest("[data-ref]");
       if (ref) { close(); openRef(ref.dataset.ref); }
     });
+    }
     const started = Date.now();
     const tick = async () => {
       if (!open) return;
       const status = await call({ action: "planner_capture_status", item }).catch(() => null);
+      if (!open) return;
       if (status && status.done) {
         await refresh(true);
         if (!open) return;
         const records = status.records || [];
+        if (embedded) {
+          signal("result", { records: records.map(record => ({ ref: record.ref, kind: record.kind, title: record.title || "" })), recordCount: records.length, reply: typeof status.reply === "string" ? status.reply : typeof status.message === "string" ? status.message : "" });
+          close();
+          return;
+        }
         layer.querySelector(".live-capture-state").innerHTML = records.length
           ? `<span class="live-done">✓</span><strong>${records.length === 1 ? "Записал" : `Записал ${records.length}`}</strong>`
           : `<span class="live-done">✓</span><strong>Бот ответил в чате</strong><small>Записей из этого сообщения не получилось</small>`;
@@ -1322,12 +1337,13 @@
         return;
       }
       if (Date.now() - started > 90000) {
+        if (embedded) { signal("pending", { message: "Обработка продолжается. Ответ придёт в чат, запись появится в Flow." }); close(); return; }
         layer.querySelector(".live-capture-state").innerHTML = `<strong>Бот ещё думает</strong><small>Ответ придёт в чат, запись появится здесь сама</small>`;
         return;
       }
-      setTimeout(tick, 1500);
+      timer = setTimeout(tick, 1500);
     };
-    setTimeout(tick, 1200);
+    timer = setTimeout(tick, 1200);
   }
 
   /**
@@ -1385,7 +1401,7 @@
     if (page === "english") { navigate("english"); render(); return; }
     if (page === "piano") { navigate("piano"); render(); return; }
     if (page === "sport") { navigate("sport"); render(); return; }
-    if (page === "sleep") { navigate("sleep"); render(); return; }
+    if (page === "sleep") { navigate("today"); render(); return; }
     if (page === "tasks" && params.has("date") && window.sorokaOpenPlannerDay(params.get("date"))) return;
     // «Открыть пароли» из чата.
     if (params.get("tab") === "vault") { navigate("vault"); return; }
@@ -1555,9 +1571,10 @@
     window.SOROKA_LIVE_DATA = prepare(snapshot);
     try { sessionStorage.removeItem("soroka-boot-retry"); } catch (_) {}
     root.innerHTML = "";
-    // Тема — у Telegram: светлый клиент открывает светлое приложение.
+    // Digital Magic uses a dark surface; accent is independent of the client theme.
     try {
-      if (!localStorage.getItem("soroka-planner-theme")) localStorage.setItem("soroka-planner-theme", "telegram");
+      const currentTheme = localStorage.getItem("soroka-planner-theme");
+      if (document.documentElement.dataset.flowDesign !== "classic" && !["dark", "midnight", "graphite"].includes(currentTheme)) localStorage.setItem("soroka-planner-theme", "dark");
     } catch (_) {}
     for (const entry of SCRIPTS) {
       // Карта (Leaflet) не должна валить всё приложение, если CDN недоступен.
@@ -1752,7 +1769,7 @@
   let composer = null;
   function openComposer(preset = null) {
     closeComposer();
-    const ctx = composeContext();
+    const ctx = preset?.context && COMPOSE[preset.context] ? preset.context : composeContext();
     const conf = COMPOSE[ctx];
     const off = aiOff();
     const layer = document.createElement("div");
@@ -1774,26 +1791,34 @@
     // Вложение: фото уменьшаем до 1600 px (JPEG) — быстрее уходит и читается так же.
     const attach = async (file) => {
       if (!file) return;
+      const owner = composer;
+      if (!owner || owner.layer !== layer) return;
+      const revision = owner.attachRevision = (owner.attachRevision || 0) + 1;
+      const current = () => composer === owner && owner.attachRevision === revision;
       if (file.size > 10_000_000) { say("Файл больше 10 МБ — такой не отправить"); return; }
       let data, mime = file.type || "application/octet-stream", name = file.name || "file";
       if (/^image\//.test(mime)) {
         const img = await createImageBitmap(file).catch(() => null);
+        if (!current()) { img?.close?.(); return; }
         if (img) {
           const k = Math.min(1, 1600 / Math.max(img.width, img.height));
           const canvas = document.createElement("canvas");
           canvas.width = Math.round(img.width * k); canvas.height = Math.round(img.height * k);
           canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
           data = canvas.toDataURL("image/jpeg", 0.86).split(",")[1];
+          img.close?.();
           mime = "image/jpeg"; name = name.replace(/\.\w+$/, "") + ".jpg";
         }
       }
       if (!data) {
         const buf = new Uint8Array(await file.arrayBuffer());
+        if (!current()) return;
         let bin = "";
         for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
         data = btoa(bin);
       }
-      composer.file = { name, mime, data };
+      if (!current()) return;
+      owner.file = { name, mime, data };
       attachRow.hidden = false;
       attachRow.innerHTML = `<span class="composer-attach">${/^image\//.test(mime) ? `<img src="data:${mime};base64,${data}" alt="">` : icon("note", "icon-sm")}<b>${escape(name)}</b><button type="button" data-unclip aria-label="Убрать">×</button></span>`;
       send.disabled = false;
@@ -1843,8 +1868,10 @@
     });
     layer.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
+      const owner = composer;
+      if (!owner || owner.layer !== layer) return;
       const text = field.value.trim();
-      const file = composer.file;
+      const file = owner.file;
       if (!text && !file) return;
       if (off && !file) { closeComposer(); composeManual(ctx, text); return; }
       if (ctx === "movies" && !file) { findMovie(text); return; }
@@ -1852,17 +1879,23 @@
       if (ctx === "recipes" && !file && !/https?:\/\//.test(text) && text.length < 160) { findRecipe(text); return; }
       send.disabled = true;
       send.innerHTML = '<span class="live-spin"></span>';
+      const embedded = Boolean(owner.layer.closest(".dm-live-assistant"));
+      const requestId = `capture-${++captureSequence}`;
+      if (embedded) captureSignal({ phase: "submitting", requestId, context: ctx });
       call({ action: "planner_capture", text: text ? (conf.hint || "") + text : file ? (conf.hint || "") : "", ...(file ? { file } : {}) }, file ? 60000 : 20000).then((answer) => {
-        closeComposer();
-        captureProgress(text || (file ? `Файл: ${file.name}` : ""), answer.item);
-      }).catch(() => { send.disabled = false; send.innerHTML = icon("arrow"); say("Не отправилось — попробуйте ещё раз"); });
+        if (composer !== owner) { say("Предыдущая запись передана в Flow"); return; }
+        if (embedded) captureSignal({ phase: "accepted", requestId, item: answer.item });
+        closeComposer({ reason: "submitted", embedded });
+        captureProgress(text || (file ? `Файл: ${file.name}` : ""), answer.item, { embedded, requestId });
+      }).catch(() => { if (composer !== owner) return; send.disabled = false; send.innerHTML = icon("arrow"); if (embedded) captureSignal({ phase: "error", requestId, message: "Не отправилось — попробуйте ещё раз" }); say("Не отправилось — попробуйте ещё раз"); });
     });
     if (preset) {
       if (preset.text) field.value = preset.text;
       if (preset.file) { composer.file = preset.file; attachRow.hidden = false; attachRow.innerHTML = `<span class="composer-attach">${/^image\//.test(preset.file.mime) ? `<img src="data:${preset.file.mime};base64,${preset.file.data}" alt="">` : icon("note", "icon-sm")}<b>${escape(preset.file.name)}</b><button type="button" data-unclip aria-label="Убрать">×</button></span>`; }
     }
-    setTimeout(() => field.focus(), 60);
+    if (preset?.focus !== false) setTimeout(() => { if (composer?.field === field) field.focus(); }, 60);
     show();
+    document.dispatchEvent(new CustomEvent("flow:composer", { detail: { open: true, context: ctx, layer } }));
   }
   // «Поделиться» на Android: присланное в Magpie открывается в «+» — текст в поле, фото вложением.
   function takeShared() {
@@ -1877,16 +1910,28 @@
   }
   window.addEventListener("soroka-shared", takeShared);
   window.sorokaTakeShared = takeShared;
-  function closeComposer() {
+  function closeComposer(options = {}) {
     if (!composer) return;
     composer.layer.remove();
     composer = null;
     document.documentElement.classList.remove("composer-open");
+    document.dispatchEvent(new CustomEvent("flow:composer", { detail: { open: false, reason: options?.reason || "closed", embedded: options?.embedded === true } }));
   }
+  // Presentation adapter only: submissions, permissions and saves stay in the existing composer.
+  window.flowCompose = {
+    open: preset => { openComposer(preset); return composer?.layer || null; },
+    close: closeComposer,
+    openRef,
+    manual: (context, text = "") => { closeComposer(); composeManual(COMPOSE[context] ? context : composeContext(), text); },
+    getState: () => composer ? { open: true, context: composer.ctx, layer: composer.layer, text: composer.field.value, hasFile: Boolean(composer.file) } : { open: false },
+    getDraft: () => composer ? { text: composer.field.value, file: composer.file } : { text: "" },
+    contexts: () => Object.entries(COMPOSE).map(([id, conf]) => ({ id, label: conf.label })),
+  };
   /** Обычная форма раздела — для того, что без ИИ не угадать (адрес на карте, билет с кодами). */
   function composeManual(ctx, text) {
     if (ctx === "plan") { openEntry("task"); prefill(text); return; }
     if (ctx === "finance") { openFinanceForm("transaction", null, "expense"); return; }
+    if (ctx === "birthdays" && typeof birthdayAction === "function") { birthdayAction("birthday-add", document.createElement("button")); prefill(text); return; }
     if (ctx === "any") { pickManual(text); return; }
     if (ctx === "addresses" || ctx === "lists") { ui.sheet = { kind: "saved-add-menu" }; render(); return; }
     openSavedRecord(ctx);
@@ -1913,7 +1958,13 @@
   }
   function prefill(text) {
     if (!text) return;
-    setTimeout(() => { const input = document.querySelector('.sheet form input[name="title"]'); if (input && !input.value) input.value = text.slice(0, 120); }, 30);
+    const owner = ui.sheet;
+    const form = document.querySelector('.sheet form');
+    setTimeout(() => {
+      if (ui.sheet !== owner || !form?.isConnected) return;
+      const input = form.querySelector('input[name="title"], textarea[name="title"]');
+      if (input && !input.value) { input.value = text.slice(0, 120); input.dispatchEvent(new Event('input', { bubbles: true })); }
+    }, 30);
   }
 
   /** Фильм по названию или описанию: модель предлагает, IMDb подтверждает. */
@@ -2089,6 +2140,8 @@
     document.documentElement.style.setProperty("--tg-content-safe-area-inset-top", "0px");
   }
   function headPill(text) {
+    const shared = root.querySelector(".dm-topbar .head-pill");
+    if (shared) { mountIsland(shared, text || "Flow"); return; }
     const row = root.querySelector(".main .page-header, .main .notes-topline");
     if (!row || !text) return;
     const host = row;
@@ -2109,7 +2162,7 @@
   let barsColor = "";
   function paintBars() {
     if (!androidApp || !android.bars) return;
-    const rgb = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
+    const rgb = getComputedStyle(document.documentElement).backgroundColor.match(/\d+/g);
     if (!rgb) return;
     const hex = "#" + rgb.slice(0, 3).map((n) => Number(n).toString(16).padStart(2, "0")).join("");
     if (hex === barsColor) return;
@@ -2122,6 +2175,14 @@
 
   function topTitle() {
     paintBars();
+    if (root.querySelector('.dm-topbar')) {
+      document.documentElement.classList.toggle('tg-fs', Boolean(inTelegram && tg.isFullscreen) || androidApp);
+      if (titleBar) titleBar.hidden = true;
+      root.querySelectorAll('.main .head-pill:not(.movie-prototype-header .head-pill)').forEach(node => node.remove());
+      const island = root.querySelector('.dm-island');
+      if (island) mountIsland(island, 'Flow рядом');
+      return;
+    }
     const moviePill = root.querySelector(".movie-prototype-header .head-pill");
     if (moviePill) {
       document.documentElement.classList.toggle("tg-fs", Boolean(inTelegram && tg.isFullscreen) || androidApp);

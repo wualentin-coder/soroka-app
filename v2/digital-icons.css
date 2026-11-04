@@ -1,0 +1,21 @@
+.magic-object.light-glyph{overflow:visible;filter:none;transform:none;transition:filter .28s,opacity .28s,scale .28s cubic-bezier(.19,1,.22,1)}
+.magic-object.light-glyph .li-symbol,.magic-object.light-glyph .li-aura{fill:none;stroke:var(--li-light);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.magic-object.light-glyph .li-aura{stroke:var(--accent);stroke-width:4.2;opacity:.5;filter:blur(2.4px)}
+.magic-object.light-glyph .li-fill{fill:var(--li-light);stroke:none}
+.magic-object.light-glyph .li-thin{stroke-width:1.5}
+.magic-object.light-glyph .li-dot{fill:var(--energy-hot);stroke:none}
+.magic-object.light-glyph .li-cut{fill:var(--page);stroke:none}
+.magic-object.light-glyph .li-soft{opacity:.55}
+.dc-module-card:hover .magic-object.light-glyph,.dc-module-card:focus-visible .magic-object.light-glyph{transform:none;filter:drop-shadow(0 0 8px rgba(var(--energy-rgb),.15));scale:1.035}
+.dc-module-card[aria-pressed=true] .magic-object.light-glyph .li-aura{opacity:.8}
+.magic-object.light-glyph.mono,.dc-module-card:hover .magic-object.light-glyph.mono,.dc-module-card:focus-visible .magic-object.light-glyph.mono{filter:none}
+.magic-object.light-glyph.mono .li-aura{display:none}
+.magic-object.light-glyph.mono .li-symbol{stroke:currentColor}
+.magic-object.light-glyph.mono .li-fill,.magic-object.light-glyph.mono .li-dot{fill:currentColor}
+.magic-object.light-glyph.mono .li-cut{fill:var(--page)}
+.magic-object.light-glyph.mono text:first-of-type{display:block}
+@media(prefers-reduced-motion:reduce){:root:not([data-motion=on]) .magic-object.light-glyph{transition:none}}
+
+html[data-flow-design="magic"] .magic-object.light-glyph{width:64px;height:64px;flex:none;color:var(--accent)}
+html[data-flow-design="magic"] .dc-module-card .module-symbol{height:64px;margin-bottom:16px}
+html[data-flow-design="magic"] .dc-module-card .module-symbol>.magic-object{width:64px;height:64px}

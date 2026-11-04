@@ -35,7 +35,7 @@ function serverCall(op, payload = {}) {
 function serverLoad(force = false) {
   ui.server ||= { state: "idle", chart: "cpu" };
   const fresh = ui.server.data && Date.now() - ui.server.at < 20000;
-  if (ui.server.state === "loading" || (fresh && !force)) return;
+  if (ui.server.state === "loading" || (!force && (fresh || ui.server.state === "error"))) return;
   ui.server.state = "loading";
   serverCall("server").then(answer => {
     if (answer?.error) throw new Error(answer.error);

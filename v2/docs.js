@@ -26,7 +26,21 @@ const DOC_ICONS = {
   medical: '<circle cx="12" cy="12" r="9"/><path d="M10 7.5h4v3h3v3h-3v3h-4v-3H7v-3h3z"/>',
   copies: '<path d="M15 3H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7z"/><path d="M15 3v4h4M4 7v12a2 2 0 0 0 2 2h9"/>',
 };
-function docIcon(name, cls = "") { return `<svg class="doc-icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DOC_ICONS[name] || DOC_ICONS.document}</svg>`; }
+let docGlyphSequence = 0;
+function docIcon(name, cls = "") {
+  if (document.documentElement.dataset.flowDesign !== "magic") return `<svg class="doc-icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DOC_ICONS[name] || DOC_ICONS.document}</svg>`;
+  const plates = {
+    passport: ['M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z', '<path d="M8 3v18M11 7h4M11 17h4"/><circle cx="13" cy="12" r="2"/>'],
+    plane: ['M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z', '<path d="M8 3v18M10 7h6M10 17h6"/><circle cx="13" cy="12" r="2.5"/><path d="M10.5 12h5M13 9.5c-1 2-1 3 0 5 1-2 1-3 0-5"/>'],
+    certificate: ['M5 3h11l3 3v15H5z', '<path d="M15 3v4h4M8 9h7M8 12h7M8 15h3"/><circle cx="15" cy="17" r="1.4"/>'],
+    snils: ['M3 6h18v13H3z', '<path d="M3 9h18M7 13h6M7 16h4M16 9v10"/>'],
+    medical: ['M5 3h14v18H5z', '<path d="M10.5 7h3v3h3v3h-3v3h-3v-3h-3v-3h3zM8 19h8"/>'],
+    copies: ['M7 3h10l3 3v13H7z', '<path d="M4 7v15h12M16 3v4h4M10 11h6M10 14h6"/>'],
+    document: ['M5 3h11l3 3v15H5z', '<path d="M15 3v4h4M8 10h7M8 13h7M8 16h4"/>']
+  };
+  const [shape, detail] = plates[name] || plates.document, id = `doc-light-${++docGlyphSequence}`;
+  return `<svg class="doc-icon doc-magic-glyph ${cls}" viewBox="0 0 24 24" fill="none" stroke="var(--energy-hot,var(--accent))" stroke-width=".8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--energy-hot,var(--accent))" stop-opacity=".7"/><stop offset=".45" stop-color="var(--accent)" stop-opacity=".12"/><stop offset="1" stop-color="var(--accent)" stop-opacity=".4"/></linearGradient></defs><path d="${shape}" fill="url(#${id})"/>${detail}</svg>`;
+}
 
 // Pure import merge: plaintext stays in memory and is encrypted by FlowDocs.save.
 window.FlowDocumentImports = (() => {
@@ -113,7 +127,8 @@ function docsReload() {
   const state = docsState();
   if (state.loading) return;
   state.loading = true;
-  FlowDocs.list().then(list => { state.list = list; }).catch(() => { state.list = []; toast("Не удалось загрузить документы"); })
+  state.error = "";
+  FlowDocs.list().then(list => { state.list = list; state.error = ""; }).catch(() => { state.error = "Проверьте соединение и попробуйте ещё раз."; toast("Не удалось загрузить документы"); })
     .finally(() => { state.loading = false; if (ui.page === "docs") render(); });
 }
 /** Расшифровать документ и показать; пока идёт — окно с ожиданием. */
@@ -207,20 +222,22 @@ function renderDocsPage() {
   const top = `${backLink("more")}${header("Документы", "", "")}`;
   if (window.SOROKA_LIVE && !ui.vaultUnlocked) return `${top}<p class="section-note docs-lock-note">Документы зашифрованы тем же мастер-паролем, что и пароли: сервер видит только их вид.</p>${vaultLockedCard()}`;
   const state = docsState();
+  const failure = state.error ? `<div class="state-card doc-load-error ${state.list?.length ? "is-snapshot" : ""}" role="status"><h2>${state.list?.length ? "Не удалось обновить документы" : "Документы не загрузились"}</h2><p>${state.list?.length ? "Показан последний загруженный список. " : ""}${esc(state.error)}</p><button class="ghost-button" type="button" data-action="doc-reload">Повторить</button></div>` : "";
+  if (failure && !state.list?.length) return `${top}${failure}`;
   if (state.list === null) { docsReload(); return `${top}<div class="state-card"><h2>Открываю документы…</h2></div>`; }
   const byKind = kind => state.list.filter(d => d.kind === kind);
   const tile = (kind, doc) => {
     const type = DOC_TYPES[kind];
     const filled = Boolean(doc);
     const action = filled ? `data-action="doc-open" data-id="${esc(doc.id)}"` : `data-action="doc-new" data-kind="${kind}"`;
-    return `<button type="button" class="doc-tile ${filled ? "is-filled" : ""}" ${action}>${docIcon(type.icon)}<span class="doc-tile-name">${esc(doc?.title || type.title)}</span>${filled ? `<span class="doc-tile-mark" aria-label="Заполнен">${icon("check", "icon-sm")}</span>` : `<span class="doc-tile-add">${icon("plus", "icon-sm")}</span>`}</button>`;
+    return `<button type="button" class="doc-tile ${filled ? "is-filled" : ""}" ${action}>${docIcon(type.icon)}<span class="doc-tile-name">${esc(doc?.title || type.title)}</span><small class="doc-tile-status">${filled ? "Добавлен" : "Добавить документ"}</small>${filled ? `<span class="doc-tile-mark" aria-label="Заполнен">${icon("check", "icon-sm")}</span>` : `<span class="doc-tile-add">${icon("plus", "icon-sm")}</span>`}</button>`;
   };
   const standard = ["passport", "foreign", "inn", "snils", "oms"].flatMap(kind => byKind(kind).length ? byKind(kind).map(doc => tile(kind, doc)) : [tile(kind, null)]);
   const own = byKind("custom").map(doc => tile("custom", doc));
   const copies = byKind("copies").map(doc => tile("copies", doc));
   const add = `<button type="button" class="doc-tile doc-tile-new" data-action="doc-new" data-kind="custom">${docIcon("document")}<span class="doc-tile-name">Свой документ</span><span class="doc-tile-add">${icon("plus", "icon-sm")}</span></button>`;
   const addCopies = copies.length ? "" : tile("copies", null);
-  return `${top}<div class="doc-grid">${standard.join("")}${own.join("")}${copies.join("")}${addCopies}${add}</div><p class="section-note">Нажмите на документ — поля копируются по одному или все сразу. ${window.SOROKA_LIVE ? "Хранится шифром: открыть можно только мастер-паролем." : ""}</p>`;
+  return `${top}${failure}${state.loading ? `<p class="section-note" role="status">Обновляю список документов…</p>` : ""}<div class="doc-grid">${standard.join("")}${own.join("")}${copies.join("")}${addCopies}${add}</div><p class="section-note">Нажмите на документ — поля копируются по одному или все сразу. ${window.SOROKA_LIVE ? "Хранится шифром: открыть можно только мастер-паролем." : ""}</p>`;
 }
 
 // ------------------------------------------------------------ окна
@@ -258,6 +275,12 @@ function docInput(type, [key, label, kind], value) {
   const hint = { series: "45 10", num6: "123456", code: "770-001", foreign: "75 1234567", inn: "12 цифр", snils: "123-456-789 01", oms: "16 цифр", lat: "IVANOV" }[kind] || "";
   return `<label class="field">${label}<input name="f:${key}" value="${v}" ${mode} ${hint ? `placeholder="${hint}"` : ""} autocomplete="off" ${kind === "lat" ? 'autocapitalize="characters"' : ""}></label>`;
 }
+function docFieldGroups(doc, type) {
+  const personal = new Set(["surname", "name", "patronymic", "surnameLat", "nameLat", "sex", "birth", "birthplace", "address"]);
+  const numbers = new Set(["series", "number", "inn", "snils", "oms"]);
+  return [["Личные данные", field => personal.has(field[0])], ["Номер документа", field => numbers.has(field[0])], ["Выдача и действие", field => !personal.has(field[0]) && !numbers.has(field[0])]]
+    .map(([title, accepts]) => {const fields = type.fields.filter(accepts);return fields.length ? `<fieldset class="doc-field-group"><legend>${title}</legend>${fields.map(field => docInput(doc.kind, field, doc.fields?.[field[0]])).join("")}</fieldset>` : "";}).join("");
+}
 function renderDocEditSheet() {
   const sheet = ui.sheet;
   const doc = sheet.draft;
@@ -265,7 +288,7 @@ function renderDocEditSheet() {
   const titleField = ["custom", "copies"].includes(doc.kind) ? `<label class="field doc-wide">Название<input name="title" value="${esc(doc.title || "")}" required maxlength="80" placeholder="${doc.kind === "copies" ? "Копии документов" : "Диплом, свидетельство, пропуск…"}"></label>` : "";
   const fields = doc.kind === "custom"
     ? `${(doc.rows || []).map((r, i) => `<div class="doc-row-edit"><input name="rl:${i}" value="${esc(r.label || "")}" placeholder="Поле"><input name="rv:${i}" value="${esc(r.value || "")}" placeholder="Значение"><button type="button" class="icon-button" data-action="doc-row-remove" data-index="${i}" aria-label="Убрать поле">${icon("close", "icon-sm")}</button></div>`).join("")}<button type="button" class="ghost-button doc-wide" data-action="doc-row-add">${icon("plus", "icon-sm")}Добавить поле</button>`
-    : type.fields.map(field => docInput(doc.kind, field, doc.fields?.[field[0]])).join("");
+    : docFieldGroups(doc, type);
   const photos = `<div class="doc-wide doc-photo-edit">${(doc.photos || []).map((src, i) => `<span><img src="${esc(src)}" alt=""><button type="button" class="icon-button" data-action="doc-photo-remove" data-index="${i}" aria-label="Убрать фото">${icon("close", "icon-sm")}</button></span>`).join("")}${(doc.photos || []).length < 4 ? `<label class="doc-photo-add">${icon("plus")}<small>${doc.kind === "copies" ? "Фото или скан" : "Скан, если нужен"}</small><input type="file" accept="image/*" multiple data-doc-photos hidden></label>` : ""}</div>`;
   const note = `<label class="field doc-wide">Заметка<textarea name="note" rows="2">${esc(doc.note || "")}</textarea></label>`;
   const files = (doc.files || []).map((file, index) => `<div class="doc-wide doc-file-row"><span>${esc(file.name || "Скан.pdf")}</span><button type="button" class="icon-button" data-action="doc-file-remove" data-index="${index}" aria-label="Убрать файл">${icon("close")}</button></div>`).join("");
@@ -341,6 +364,7 @@ document.addEventListener("submit", event => {
 function docsAction(action, control) {
   if (!action.startsWith("doc-")) return false;
   const state = docsState();
+  if (action === "doc-reload") { docsReload(); render(); return true; }
   const doc = ui.sheet?.id ? state.cache[ui.sheet.id] : null;
   if ((action === "doc-import-keep" || action === "doc-import-use") && doc && !ui.sheet.saving) {
     const index = Number(control.dataset.index);

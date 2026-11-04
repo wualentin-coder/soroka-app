@@ -1,10 +1,10 @@
-import {COURSE} from './course.mjs?v=b9fc53831534';
-import {createScoreTimeline} from './score.mjs?v=b9fc53831534';
-import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=b9fc53831534';
-import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=b9fc53831534';
-import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=b9fc53831534';
-import {createMixedPracticeStages} from './mixed-practice.mjs?v=b9fc53831534';
-import {supportLevel} from './support-policy.mjs?v=b9fc53831534';
+import {COURSE} from './course.mjs?v=63e9fd53e452';
+import {createScoreTimeline} from './score.mjs?v=63e9fd53e452';
+import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=63e9fd53e452';
+import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=63e9fd53e452';
+import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=63e9fd53e452';
+import {createMixedPracticeStages} from './mixed-practice.mjs?v=63e9fd53e452';
+import {supportLevel} from './support-policy.mjs?v=63e9fd53e452';
 
 const MAX_NOTES=5000,MAX_STAGES=48;
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));

@@ -605,3 +605,16 @@ button.sp-ex-load:disabled { cursor: default; }
 .spf-finger { color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
 .spf-grid input { min-width: 0; width: 100%; height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); color: var(--text); font: inherit; font-size: 16px; text-align: center; font-variant-numeric: tabular-nums; }
 .spf-grid input:focus-visible, .spf-person-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+html[data-flow-design="magic"] .sp-bar :is(.sp-bar-open,.sp-bar-actions button,.sp-bar-close,.sp-bar-mark){min-height:44px}
+html[data-flow-design="magic"] .sp-bar :is(.sp-bar-actions button,.sp-bar-close){min-width:44px;width:44px;height:44px}
+
+html[data-flow-design="magic"] .sp-runner :is(.sp-timer-controls button,.sp-runner-session button,.icon-button){min-height:44px}
+html[data-flow-design="magic"] .sp-runner :is(.sp-dial-arc,.sp-timer.work .sp-dial-arc){stroke:var(--accent)}
+html[data-flow-design="magic"] .sp-bar.work{border-color:var(--accent)}
+html[data-flow-design="magic"] .sp-bar.work .sp-bar-clock small{color:var(--accent)}
+html[data-flow-design="magic"] .sp-runner-head{background:var(--surface);border-color:var(--line)}
+html[data-flow-design="magic"] .sp-runner-body h2{font-family:var(--display,Georgia,serif);font-size:28px;font-weight:500;line-height:1.15}
+html[data-flow-design="magic"] .sp-runner-zone{background:var(--surface)}
+html[data-flow-design="magic"] .sp-goal-head{min-height:52px;padding:14px 0}
+html[data-flow-design="magic"] .sp-goal-head small{font-size:12px;line-height:1.5}

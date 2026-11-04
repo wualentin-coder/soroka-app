@@ -538,10 +538,17 @@ body:has(#practice-view:not([hidden])) .toast{bottom:calc(20px + env(safe-area-i
   #library-view .composition-copy h2{font-size:16px;line-height:1.15}
   .composition-copy{padding:10px 12px;gap:3px}
   .composition-continue,.composition-action{min-height:18px;font-size:11px}
-  .intro-caption{top:6px;gap:4px;padding:6px 8px;max-width:min(43%,320px)}
+}
+@media(orientation:landscape) and (max-height:500px){
+  .intro-caption{top:6px;gap:4px 12px;padding:6px 8px;max-width:min(74%,540px);max-height:calc(100% - 12px);overflow:auto;grid-template-columns:minmax(0,1fr) auto}
   .intro-caption .intro-eyebrow{display:none}
   .intro-caption h3,.intro-caption strong{font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .intro-caption p,.intro-caption .intro-copy{font-size:12px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .intro-caption :is(h3,strong){grid-column:1;grid-row:1}
+  .intro-caption :is(p,.intro-copy){grid-column:1;grid-row:2}
+  .intro-caption .intro-actions{grid-column:2;grid-row:1/span 2;align-self:center}
+  .intro-caption .intro-beat{display:none}
+  .intro-caption .intro-progress{grid-column:1/-1}
 }
 @media(orientation:portrait) and (max-width:720px){
   .course-home{min-height:420px;padding:24px}

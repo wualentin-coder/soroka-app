@@ -27,7 +27,7 @@ function vpnCall(op, payload = {}) {
 function vpnLoad(force = false) {
   ui.vpn ||= { state: "idle" };
   const fresh = ui.vpn.data && Date.now() - ui.vpn.at < 30000;
-  if (ui.vpn.state === "loading" || (fresh && !force)) return;
+  if (ui.vpn.state === "loading" || (!force && (fresh || ui.vpn.state === "error"))) return;
   ui.vpn.state = "loading";
   vpnCall("summary").then(answer => {
     if (answer?.error) throw new Error(answer.error);

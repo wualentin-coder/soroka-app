@@ -166,7 +166,7 @@ function extendedPage(page) {
     tasks: renderTasksPage, saved: renderSavedPage, finance: renderFinancePage,
     vault: renderVaultPage, inbox: renderInboxPage, overview: renderOverviewPage,
     projects: renderProjectsPage, metrics: renderMetricsPage, archive: renderArchivePage,
-    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage, english: renderEnglishPage, sport: renderSportPage, sleep: renderSleepPage, piano: renderPianoPage
+    settings: renderSettingsPage, more: renderMorePage, vpn: renderVpnPage, server: renderServerPage, pc: renderPcPage, render: renderRenderPage, docs: renderDocsPage, english: renderEnglishPage, sport: renderSportPage, piano: renderPianoPage
   };
   return (pages[page] || renderMorePage)();
 }
@@ -224,7 +224,7 @@ function renderExtendedSheet() {
 }
 function handleExtendedAction(action, control, event) {
   if (typeof packingAction === "function" && packingAction(action, control, event)) return true;
-  return sleepAction(action, control, event) || sportAction(action, control, event) || englishAction(action, control) || docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
+  return sportAction(action, control, event) || englishAction(action, control) || docsAction(action, control) || noteAction(action, control) || vpnAction(action, control) || serverAction(action, control) || pcAction(action, control) || rmAction(action, control) || siteAction(action, control) || birthdayAction(action, control) || recipeAction(action, control) || loyaltyAction(action, control) || movieAction(action, control) || mapAction(action, control, event) || savedAction(action, control, event) || financeAction(action, control, event) || moreAction(action, control, event);
 }
 function handleExtendedSubmit(event) {
   if (typeof universeSubmit === "function" && universeSubmit(event)) return true;

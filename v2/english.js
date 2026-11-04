@@ -84,7 +84,12 @@ function enState() {
 }
 function enRerender() { if (ui.page === "english" || ui.page === "today") render(); }
 function enPlural(n, one, few, many) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; }
-function enWait() { return `<div class="en-wait"><span class="live-spin"></span></div>${enState().error ? `<p class="section-note">${esc(enState().error)}</p>` : ""}`; }
+function enWait() {
+  const s=enState(), key=({today:'today', chat:'today', words:'words', course:'course', read:'books', progress:'progress', phrases:'list'})[s.tab] || 'today';
+  const failed=!s.ex&&!s.deck?s.failedLoads?.[key]:null, error=failed?.error || s.error;
+  const action=failed ? 'en-retry' : s.ex ? 'en-ex-quit' : s.deck ? 'en-deck-quit' : 'en-tab';
+  return error ? `<section class="en-wait en-load-error" role="status"><strong>Не удалось загрузить</strong><p class="section-note">${esc(error)}</p><button class="ghost-button" type="button" data-action="${action}" data-key="${esc(key)}" data-tab="${esc(s.tab || "today")}">${failed ? "Попробовать снова" : s.ex || s.deck ? "Вернуться к разделу" : "Открыть раздел заново"}</button></section>` : `<section class="en-wait" role="status" aria-busy="true"><span class="live-spin" aria-hidden="true"></span><p class="section-note">Загружаем занятие…</p></section>`;
+}
 const enNum = n => Number(n || 0).toLocaleString("ru-RU");
 
 /** Плитка на «Плане»: напоминание о занятии там, где человек и так смотрит каждый день. */
@@ -100,16 +105,19 @@ function enHomeTile() {
   return `<section class="section"><button type="button" class="en-home ${done ? "done" : ""}" data-action="en-home"><span class="en-step-ic">${icon(done ? "check" : "study", "icon-sm")}</span><span class="en-home-text"><small>Английский</small><b>${title}</b><span>${sub}</span></span>${icon("arrow", "icon-sm")}</button></section>`;
 }
 function enLoad(key, op, args = {}) {
-  const s = enState();
-  if (s[`${key}Loading`]) { s[`${key}Next`] = { op, args }; return; }
+  const s = enState(), failed=s.failedLoads?.[key];
+  if (failed && failed.op===op && JSON.stringify(failed.args)===JSON.stringify(args)) return false;
+  if (failed) delete s.failedLoads[key];
+  if (s[`${key}Loading`]) { const current=s[`${key}Request`]; if(!current || current.op!==op || JSON.stringify(current.args)!==JSON.stringify(args))s[`${key}Next`] = { op, args }; return; }
+  s[`${key}Request`] = {op,args};
   s[`${key}Loading`] = true;
   const token = Symbol(); s[`${key}Token`] = token;
   enCall(op, args).then(answer => { if (answer?.error) throw new Error(answer.error); if (!s[`${key}Next`] && s[`${key}Token`] === token) s[key] = answer; s.error = ""; })
-    .catch(error => { s.error = String(error?.message || error); })
+    .catch(error => { s.error = String(error?.message || error); (s.failedLoads ||= {})[key] = {op, args, error:s.error}; })
     .finally(() => {
       s[`${key}Loading`] = false;
       const next = s[`${key}Next`];
-      if (next) { delete s[`${key}Next`]; s[key] = null; enLoad(key, next.op, next.args); return; }
+      if (next) { delete s[`${key}Next`]; s[key] = null; if(enLoad(key, next.op, next.args)===false)enRerender(); return; }
       // Поиск: после перерисовки курсор остаётся в поле, а не пропадает.
       const typing = document.activeElement?.id;
       enRerender();
@@ -384,7 +392,7 @@ function enWordsScreen() {
     <section class="en-situation"><div class="en-row"><b>Новых слов за занятие</b><small>знакомые не считаются</small></div><div class="map-categories en-chips">${chips}</div></section>
     <label class="notes-search">${icon("search", "icon-sm")}<input id="en-wsearch" type="search" value="${esc(s.wq)}" placeholder="Найти слово" aria-label="Поиск слова"></label>
     <div class="map-categories en-chips">${chip("learning", "Учу")}${chip("known", "Знаю")}${chip("all", "Все по порядку")}</div>
-    <div class="en-wlist">${rows || `<p class="section-note">${s.wordlist ? "Пока пусто — слова появятся после первого занятия." : ""}</p>`}</div>`;
+    <div class="en-wlist">${s.failedLoads?.wordlist ? `<section class="en-load-error" role="status"><strong>Словарь не загрузился</strong><p class="section-note">${esc(s.failedLoads.wordlist.error)}</p><button class="ghost-button" type="button" data-action="en-retry" data-key="wordlist">Попробовать снова</button></section>` : rows || `<p class="section-note">${s.wordlist ? "Пока пусто — слова появятся после первого занятия." : ""}</p>`}</div>`;
 }
 
 // ------------------------------------------------------------ курс
@@ -393,6 +401,7 @@ const EN_LEVEL_NAMES = { A1: "A1 · начальный", A2: "A2 · базовы
 function enCourseScreen() {
   const s = enState();
   if (!s.course) { enLoad("course", "course"); return enWait(); }
+  if (!Array.isArray(s.course.units) || !s.course.units.length) return `<section class="en-wait en-load-empty" role="status"><strong>В курсе пока нет уроков</strong><p class="section-note">Можно вернуться к сегодняшней практике.</p><button class="ghost-button" type="button" data-action="en-tab" data-tab="today">К занятию на сегодня</button></section>`;
   const c = s.course, cur = c.units.find(u => u.status === "current") || c.units[0];
   const levels = ["A1", "A2", "B1", "B2"].map(level => {
     const list = c.units.filter(u => u.level === level);
@@ -1246,6 +1255,11 @@ function englishAction(action, control) {
   if(typeof enBrowserAction==='function'&&enBrowserAction(action,control))return true;
   if (!action.startsWith("en-")) return false;
   const s = enState();
+  if (action === "en-retry") {
+    const key=control.dataset.key, failed=s.failedLoads?.[key];
+    if(failed){delete s.failedLoads[key];s.error="";enLoad(key,failed.op,failed.args);enRerender();}
+    return true;
+  }
   if (action === "en-rule") { enRuleStart(Number(control.dataset.id)); return true; }
   if (action === "en-rule-talk") {
     const rule = s.ex?.rule;
@@ -1279,7 +1293,7 @@ function englishAction(action, control) {
     return true;
   }
   if (action === "en-media-tab") { s.mediaTab = control.dataset.tab === "music" ? "music" : "books"; s.book = null; s.pop = null; if (s.mediaTab === "books") s.books = null; render(); return true; }
-  if (action === "en-tab") { if (s.tab === "chat" && control.dataset.tab !== "chat") { enStopPcm(); enLiveStop(); } if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
+  if (action === "en-tab") { const keys=({today:['today'],chat:['today'],words:['words','wordlist'],course:['course'],read:['books'],progress:['progress'],phrases:['list']})[control.dataset.tab] || []; for(const key of keys)if(s.failedLoads)delete s.failedLoads[key];s.error=""; if (s.tab === "chat" && control.dataset.tab !== "chat") { enStopPcm(); enLiveStop(); } if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
   if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") { s.tab = "today"; navigate("english"); if (s.today && !s.today.plan.doneToday) enLessonStart(); else render(); return true; }
   if (action === "en-say") { enSpeak(control.dataset.text, control); return true; }

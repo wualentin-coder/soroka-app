@@ -1,0 +1,380 @@
+/* Digital Magic working windows. Native drafts/actions/gesture owners remain authoritative. */
+html[data-flow-design="magic"] {
+  --magic-window-edge: color-mix(in srgb, var(--line) 74%, var(--accent));
+  --magic-window-glow: color-mix(in srgb, var(--accent) 8%, transparent);
+  --magic-window-shadow: 0 26px 90px rgba(0, 0, 0, .42), 0 0 30px var(--magic-window-glow), inset 0 0 0 1px var(--magic-window-edge), inset 0 1px 0 rgba(255, 255, 255, .035);
+  --magic-control-edge: color-mix(in srgb, var(--line) 88%, var(--accent));
+}
+
+/* All ui.sheet kinds, separate Sport owners, and body-mounted bridge/music sheets. */
+html[data-flow-design="magic"] :is(.modal-backdrop, .enm-backdrop, .composer-scrim, .pins-drop-scrim) {
+  background-color: color-mix(in srgb, var(--page) 78%, transparent);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet, .pins-drop-card) {
+  color: var(--text);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--surface-raised) 97%, var(--accent)), var(--surface-raised) 78%);
+  border-color: var(--magic-window-edge);
+  box-shadow: var(--magic-window-shadow);
+}
+html[data-flow-design="magic"] .modal-backdrop{padding:12px 12px 0;align-items:flex-end;backdrop-filter:blur(8px)}
+html[data-flow-design="magic"] .sheet{width:min(100%,580px);max-height:calc(100dvh - 24px - env(safe-area-inset-top));padding:12px 20px max(20px,env(safe-area-inset-bottom));border:1px solid var(--magic-window-edge);border-radius:28px 28px 0 0;scroll-padding-block:90px;overscroll-behavior:contain}
+html[data-flow-design="magic"] .sheet-handle{margin-bottom:16px}
+html[data-flow-design="magic"] .sheet-head{gap:12px;align-items:center;margin-bottom:18px}
+html[data-flow-design="magic"] .sheet-head>h2{min-width:0;overflow-wrap:anywhere}
+html[data-flow-design="magic"] .sheet-head>.icon-button{flex:none;width:44px;height:44px;min-height:44px}
+html[data-flow-design="magic"] .sheet form>.field,html[data-flow-design="magic"] .sheet .field-row{margin-bottom:14px}
+html[data-flow-design="magic"] .sheet .field-row>.field{margin-bottom:0;min-width:0}
+html[data-flow-design="magic"] .sheet .field{font-size:11px;line-height:1.5;font-weight:600;letter-spacing:.01em}
+html[data-flow-design="magic"] .sheet .field :is(input,textarea,select){margin-top:7px;min-width:0;border-radius:14px;padding:12px 14px;font:500 16px/1.45 Manrope,sans-serif;transition:border-color .2s,background .2s}
+html[data-flow-design="magic"] .sheet .field :is(input,textarea,select):focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 10%,transparent)}
+html[data-flow-design="magic"] .sheet .sheet-actions{margin-top:20px;align-items:center}
+html[data-flow-design="magic"] .sheet a:is(.small-button,.ghost-button,.primary-button,.secondary-button,.icon-button){display:inline-flex;align-items:center;justify-content:center;min-height:44px}
+html[data-flow-design="magic"] .sheet .sheet-actions>:is(button,a){min-height:48px;min-width:0;border-radius:999px;font-size:13px;font-weight:700}
+html[data-flow-design="magic"] .sheet .sheet-actions>.primary-button{flex:1}
+html[data-flow-design="magic"] .sheet .sheet-actions>.ghost-button{flex:1}
+html[data-flow-design="magic"] .sheet-type{gap:4px;padding:4px;border-radius:17px;background:color-mix(in srgb,var(--page) 60%,var(--surface));margin-bottom:20px}
+html[data-flow-design="magic"] .sheet-type button{min-height:44px;border:0;border-radius:13px;background:none;color:var(--muted);font-size:12px}
+html[data-flow-design="magic"] .sheet-type button.active{background:var(--surface-soft);color:var(--text);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 25%,var(--line))}
+html[data-flow-design="magic"] .sheet.dm-entry-workspace{display:flex;flex-direction:column;overflow:hidden}
+html[data-flow-design="magic"] .dm-entry-workspace>#entry-form{display:flex;flex-direction:column;min-height:0}
+html[data-flow-design="magic"] .dm-entry-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 3px}
+html[data-flow-design="magic"] .dm-entry-workspace .dm-entry-name{font-size:0}
+html[data-flow-design="magic"] .sheet.dm-entry-workspace #entry-form .dm-entry-name input{font-size:24px;line-height:1.35;padding:8px 0 14px;margin:0;border:0;border-radius:0;border-bottom:1px solid var(--line);background:transparent;font-weight:600}
+html[data-flow-design="magic"] .dm-entry-schedule:empty{display:none}
+html[data-flow-design="magic"] .dm-entry-schedule{padding-top:4px}
+html[data-flow-design="magic"] .dm-entry-options{border:0;border-top:1px solid var(--line);border-radius:0;padding:0;margin-top:18px;background:transparent}
+html[data-flow-design="magic"] .dm-entry-options>summary{min-height:48px;display:flex;align-items:center;cursor:pointer;font-size:12px;color:var(--muted)}
+html[data-flow-design="magic"] .dm-entry-options>summary:after{content:'+';margin-left:auto;font-size:20px;color:var(--accent)}
+html[data-flow-design="magic"] .dm-entry-options[open]>summary:after{content:'−'}
+html[data-flow-design="magic"] .dm-entry-footer{position:relative;flex:none;padding:14px 0 0;margin-top:8px;background:transparent;z-index:7}
+html[data-flow-design="magic"] .dm-entry-footer>.icon-button{order:3;flex:none;width:48px}
+@media(min-width:761px){html[data-flow-design="magic"] .modal-backdrop{align-items:center;padding:24px}html[data-flow-design="magic"] .sheet{border-radius:28px;max-height:calc(100dvh - 48px);padding:16px 24px 24px}}
+@media(max-height:500px){html[data-flow-design="magic"] .sheet{max-height:calc(100dvh - 16px);border-radius:24px;padding-top:8px}html[data-flow-design="magic"] .sheet-handle{margin-bottom:8px}html[data-flow-design="magic"] .sheet-head{margin-bottom:10px}html[data-flow-design="magic"] .dm-entry-footer{position:static}}
+
+html[data-flow-design="magic"] :is(.sheet-handle, .enm-sheet-grip) {
+  background: color-mix(in srgb, var(--muted) 76%, var(--accent));
+}
+html[data-flow-design="magic"] :is(.sheet-head, .enm-sheet-heading) {
+  color: var(--text);
+  border-color: var(--line);
+}
+html[data-flow-design="magic"] :is(.sheet-head, .enm-sheet-heading) :is(h2, h3) {
+  color: var(--text);
+  font-weight: 750;
+  letter-spacing: -.035em;
+}
+html[data-flow-design="magic"] :is(.sheet-head, .enm-sheet-heading) .icon-button {
+  border-radius: 50%;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  border-color: transparent;
+}
+html[data-flow-design="magic"] :is(.sheet-head, .enm-sheet-heading) .icon-button:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+/* Neutral content groups preserve the information hierarchy of each form. */
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.detail-block, .list-panel, .form-block, .sp-group, .sp-stats, .sl-stats, .sl-pair, .entry-reminders, .doc-field-group, .doc-note, .gift-editor-list, .live-capture-source, .capture-source, .capture-preview) {
+  background-color: var(--surface);
+  border-color: var(--line);
+  box-shadow: none;
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.section-note, .field-note, .sp-note, .sp-ai-chat-meta, .sl-note, .enm-usage-note, .enm-small-label) {
+  color: var(--muted);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.eyebrow, .sp-kicker, .sl-kicker, .mini-heading) {
+  color: var(--muted);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.field, .enm-field, legend) {
+  color: var(--muted);
+}
+
+/* Textual controls only: range tracks, switches, checkboxes, file pickers and color wells keep their geometry. */
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(
+  input:not([type]), input[type="text"], input[type="password"], input[type="search"],
+  input[type="email"], input[type="url"], input[type="tel"], input[type="number"],
+  input[type="date"], input[type="time"], input[type="datetime-local"], textarea, select
+) {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--magic-control-edge);
+  caret-color: var(--accent);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(input, textarea)::placeholder {
+  color: var(--subtle);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(input, textarea, select):focus-visible {
+  border-color: var(--accent);
+  outline-color: var(--accent);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(input, textarea, select)[aria-invalid="true"] {
+  border-color: var(--warn);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(input[type="checkbox"], input[type="radio"], input[type="range"]) {
+  accent-color: var(--accent);
+}
+html[data-flow-design="magic"] .sheet :is(.search-field, .capture-composer textarea, .note-format, .note-improve-menu) {
+  background-color: var(--surface);
+  border-color: var(--magic-control-edge);
+  color: var(--text);
+}
+html[data-flow-design="magic"] .sheet .search-field input {
+  background: transparent;
+}
+
+/* Action roles remain distinct. No rule changes button height or hit areas. */
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet, .pins-drop-card) :is(.primary-button:not(.soft):not(.danger-button), .enm-sheet-action:not(.enm-secondary)) {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  border-radius: 99px;
+  box-shadow: 0 3px 16px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.primary-button:not(.soft):not(.danger-button), .enm-sheet-action:not(.enm-secondary)):hover {
+  background: var(--accent-strong);
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.ghost-button, .secondary-button, .enm-secondary) {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: none;
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) .primary-button.soft {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  color: var(--accent);
+  box-shadow: none;
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.danger-button, .text-action.danger) {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+}
+html[data-flow-design="magic"] :is(.sheet, .composer, .enm-song-sheet) :is(.sheet-type, .sp-ai-directions, .enm-segments) {
+  background-color: var(--surface-soft);
+  border-color: var(--line);
+}
+html[data-flow-design="magic"] .sheet :is(.sheet-type, .sp-ai-directions) button:is(.active, [aria-pressed="true"], [aria-selected="true"]) {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  color: var(--accent);
+}
+html[data-flow-design="magic"] .sheet :is(.search-result, .map-category-row, .account-row, .sp-ai-message, .sp-history-row, .sl-plan-row) {
+  border-color: var(--line);
+}
+html[data-flow-design="magic"] .sheet :is(.search-result, .saved-add-options > button):hover {
+  background-color: var(--surface-soft);
+}
+
+/* Capture/composer belongs to the live bridge, not ui.sheet. */
+html[data-flow-design="magic"] .composer-row {
+  background: var(--surface);
+  border-color: var(--magic-control-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+html[data-flow-design="magic"] .composer-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 9%, transparent);
+}
+html[data-flow-design="magic"] .composer-row textarea {
+  background: transparent;
+}
+html[data-flow-design="magic"] :is(.composer-chip, .live-capture-record small, .pins-drop-card > header) {
+  color: var(--accent);
+}
+html[data-flow-design="magic"] .composer-chip {
+  background: var(--accent-soft);
+}
+html[data-flow-design="magic"] :is(.composer-hit, .composer-movie, .composer-recipe, .live-capture-record, .composer-choices button) {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: none;
+}
+html[data-flow-design="magic"] :is(.composer-hit, .composer-choices button):hover {
+  border-color: var(--magic-control-edge);
+  background: var(--surface-soft);
+}
+html[data-flow-design="magic"] .composer-send {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+html[data-flow-design="magic"] :is(.composer-mic, .composer-clip, .composer-manual) {
+  color: var(--muted);
+}
+html[data-flow-design="magic"] .pins-drop-card > button {
+  border-color: var(--line);
+}
+
+/* Existing audio-recording bar and protected file viewer chrome. Media and code pixels stay intact. */
+html[data-flow-design="magic"] .voice-bar {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--magic-window-edge);
+  box-shadow: var(--magic-window-shadow);
+}
+html[data-flow-design="magic"] .voice-bar :is(.voice-dot, .voice-level i) {
+  background: var(--accent);
+}
+html[data-flow-design="magic"] .live-file > header {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--magic-window-edge);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .12);
+}
+html[data-flow-design="magic"] .live-file-close {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--line);
+  border-radius: 99px;
+}
+html[data-flow-design="magic"] .live-code-close {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  border-radius: 99px;
+}
+
+/* Reader keeps its own paper, typography, brightness and reading-theme preferences. */
+html[data-flow-design="magic"] :is(.en-reader-bar, .en-rset, .en-rpop) {
+  background: var(--r-panel);
+  color: var(--r-text);
+  border-color: color-mix(in srgb, var(--r-line) 76%, var(--accent));
+  box-shadow: 0 5px 26px color-mix(in srgb, var(--r-text) 8%, transparent);
+}
+html[data-flow-design="magic"] .en-reader-bar .icon-button {
+  color: var(--r-text);
+  border-radius: 50%;
+}
+html[data-flow-design="magic"] :is(.en-rset-fonts button.on, .en-rtheme.on) {
+  border-color: var(--accent);
+}
+html[data-flow-design="magic"] .en-rset-fonts button.on {
+  color: var(--r-text);
+  background: color-mix(in srgb, var(--accent) 9%, var(--r-panel));
+}
+
+/* Native Piano is in an open ShadowRoot. This section applies when the same CSS is linked there. */
+:host-context(html[data-flow-design="magic"]) dialog {
+  color: var(--text);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--surface-raised) 97%, var(--accent)), var(--surface-raised) 78%);
+  border-color: var(--magic-window-edge, var(--line));
+  box-shadow: var(--magic-window-shadow, 0 22px 70px rgba(0, 0, 0, .4));
+}
+:host-context(html[data-flow-design="magic"]) dialog::backdrop {
+  background: color-mix(in srgb, var(--page) 80%, transparent);
+}
+:host-context(html[data-flow-design="magic"]) .dialog-heading {
+  color: var(--text);
+  border-color: var(--line);
+}
+:host-context(html[data-flow-design="magic"]) .dialog-heading h2 {
+  color: var(--text);
+  font-weight: 750;
+  letter-spacing: -.03em;
+}
+:host-context(html[data-flow-design="magic"]) :is(.dialog-tabs, .segmented) {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+:host-context(html[data-flow-design="magic"]) :is(.dialog-tabs, .segmented) button {
+  color: var(--muted);
+  border-color: transparent;
+}
+:host-context(html[data-flow-design="magic"]) :is(.dialog-tabs, .segmented) button:is(.selected, [aria-selected="true"], [aria-pressed="true"]) {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}
+:host-context(html[data-flow-design="magic"]) dialog :is(.dialog-grid > div, .dialog-grid > fieldset, .lesson-guide, .settings-disclosure, .menu-coach, .mic-panel) {
+  background-color: var(--surface);
+  border-color: var(--line);
+  box-shadow: none;
+}
+:host-context(html[data-flow-design="magic"]) dialog :is(input:not([type]), input[type="text"], input[type="number"], textarea, select) {
+  background-color: var(--surface);
+  border-color: var(--magic-control-edge, var(--line));
+  color: var(--text);
+  caret-color: var(--accent);
+}
+:host-context(html[data-flow-design="magic"]) dialog :is(input, textarea)::placeholder {
+  color: var(--subtle);
+}
+:host-context(html[data-flow-design="magic"]) dialog :is(input[type="checkbox"], input[type="radio"], input[type="range"]) {
+  accent-color: var(--accent);
+}
+:host-context(html[data-flow-design="magic"]) dialog .primary-button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  box-shadow: 0 3px 14px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+:host-context(html[data-flow-design="magic"]) dialog .secondary-button {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
+  box-shadow: none;
+}
+:host-context(html[data-flow-design="magic"]) dialog :is(.field-note, .settings-disclosure p, .session-settings p) {
+  color: var(--muted);
+}
+:host-context(html[data-flow-design="magic"]) dialog :is(button, input, textarea, select):focus-visible {
+  outline-color: var(--accent);
+}
+/* A running workout stays alive while its dock yields to an open form. */
+html[data-flow-design="magic"].modal-open .sp-bar,
+html[data-flow-design="magic"].composer-open .sp-bar,
+html[data-flow-design="magic"] body.dm-assistant-active .sp-bar {
+  visibility: hidden;
+  pointer-events: none;
+}
+html[data-flow-design="magic"] .doc-row-edit :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--magic-control-edge,var(--line));
+  border-radius: 12px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font: inherit;
+}
+html[data-flow-design="magic"] .flow-effects-sheet .switch{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:46px;min-height:44px;cursor:pointer}
+html[data-flow-design="magic"] .flow-effects-sheet .switch input{position:absolute;inset:0;z-index:2;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+html[data-flow-design="magic"] .flow-effects-sheet .switch>span{position:relative;width:44px;height:26px;border:1px solid var(--line);border-radius:99px;background:var(--surface-soft);transition:background .2s,border-color .2s}
+html[data-flow-design="magic"] .flow-effects-sheet .switch>span::before{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);box-shadow:0 2px 7px #0005;transition:transform .2s,background .2s}
+html[data-flow-design="magic"] .flow-effects-sheet .switch input:checked+span{background:var(--accent);border-color:var(--accent)}
+html[data-flow-design="magic"] .flow-effects-sheet .switch input:checked+span::before{background:var(--accent-ink);transform:translateX(18px)}
+html[data-flow-design="magic"] .flow-effects-sheet .switch input:focus-visible+span{outline:2px solid var(--accent);outline-offset:4px}
+html[data-flow-design="magic"] .flow-effects-sheet .switch input:disabled+span{opacity:.4}
+html[data-flow-design="magic"][data-motion="off"] .flow-effects-sheet .switch>span,html[data-flow-design="magic"][data-motion="off"] .flow-effects-sheet .switch>span::before{transition:none}
+
+.flow-living-surface{--surface-x:50%;--surface-y:24%;isolation:isolate}.flow-surface-static{position:relative}.flow-surface-contour{position:absolute;inset:0;border-radius:inherit;padding:1px;z-index:4;pointer-events:none;background:radial-gradient(ellipse 260px 190px at var(--surface-x) var(--surface-y),rgba(var(--accent-rgb),.8),rgba(var(--accent-rgb),.08));mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;opacity:.2;animation:flow-surface-breathe 7.8s ease-in-out infinite}
+.flow-surface-attention>.flow-surface-contour{opacity:.65}.flow-surface-focused>.flow-surface-contour{background:radial-gradient(ellipse 270px 170px at var(--surface-x) var(--surface-y),rgba(var(--accent-rgb),1),rgba(var(--accent-rgb),.16))}.flow-surface-resting>.flow-surface-contour{animation:none!important;opacity:.22}.flow-input-light{position:absolute;inset:0;z-index:5;border-radius:inherit;pointer-events:none;user-select:none;contain:layout style}.flow-input-light i{position:absolute;display:block;pointer-events:none;opacity:0}.flow-input-source{left:var(--input-left);top:var(--input-top);width:var(--input-width);height:var(--input-height);border-radius:var(--input-radius,12px);border:1px solid rgba(var(--accent-rgb),.78);box-shadow:0 0 16px rgba(var(--accent-rgb),.16),inset 0 0 9px rgba(var(--accent-rgb),.045)}.flow-input-light[data-rich] .flow-input-source{border:0;border-radius:12px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.06),rgba(var(--accent-rgb),.14) 40%,transparent);box-shadow:0 0 20px rgba(var(--accent-rgb),.13)}.flow-input-spread{inset:0;border-radius:inherit}.flow-input-spread:before,.flow-input-spread:after{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none}.flow-input-spread:before{padding:1.5px;background:radial-gradient(ellipse 390px 240px at var(--input-x) var(--input-y),rgba(var(--accent-rgb),.95),rgba(var(--accent-rgb),.38) 62%,rgba(var(--accent-rgb),.04));mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor}.flow-input-spread:after{border:1px solid rgba(var(--accent-rgb),.26);box-shadow:0 0 22px rgba(var(--accent-rgb),.24),0 0 52px rgba(var(--accent-rgb),.10)}
+.flow-effects-sheet .small-button,.flow-effects-sheet .icon-button,.flow-effects-sheet input[type=range]{min-height:44px}.flow-sound-params{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.flow-sound-params label{font-size:12px;min-width:0}.flow-sound-params input{display:block;width:100%;accent-color:var(--accent)}
+@keyframes flow-surface-breathe{0%,100%{opacity:.26}50%{opacity:.72}}
+html[data-motion=off] .flow-surface-contour,.digital-hidden .flow-surface-contour{animation:none!important}.flow-living-surface :is(input,textarea,select){font-size:16px}.flow-living-surface :is(input,textarea,select):focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+:host .flow-living-surface :is(button,input,select){min-height:44px}:host .flow-living-surface{color:var(--text);background:var(--surface-raised);border-color:var(--line)}
+
+.flow-living-surface :is(button,textarea,select),.flow-living-surface input:not([type=checkbox]):not([type=radio]):not([type=range]){min-height:44px}
+
+html[data-flow-design=magic] .flow-living-surface :is(.sheet-head h2,.enm-song-sheet h2){font-family:"Cormorant Garamond",Georgia,serif;font-size:30px;line-height:1.12;font-weight:500;letter-spacing:-.02em}.flow-living-surface :is(.sheet-head,.form-head){margin-bottom:14px}.flow-living-surface .sheet-actions{gap:10px}
+
+:host .flow-living-surface .dialog-heading h2{font-family:"Cormorant Garamond",Georgia,serif;font-size:28px;font-weight:500;line-height:1.15}
+
+html[data-flow-design="magic"] .sheet.flow-living-surface form:not(.note-plain) .field:not(.dm-entry-name) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),textarea,select){font-size:16px;min-height:44px}
+@media(max-height:500px){html[data-flow-design="magic"] .sheet .sheet-actions{position:static}}
+
+@media(orientation:landscape) and (max-height:500px){
+html[data-flow-design="magic"] .sheet.dm-entry-workspace{width:min(100%,760px)}
+html[data-flow-design="magic"] .dm-entry-workspace .sheet-handle{display:none}
+html[data-flow-design="magic"] .dm-entry-workspace .sheet-head{margin-bottom:4px}
+html[data-flow-design="magic"] .dm-entry-workspace .sheet-type{margin-bottom:10px}
+html[data-flow-design="magic"] .dm-entry-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);gap:8px 18px;align-items:start}
+html[data-flow-design="magic"] .dm-entry-body>.dm-entry-options{grid-column:1/-1;margin-top:0}
+html[data-flow-design="magic"] .dm-entry-body>.dm-entry-name{margin-top:10px}
+}
+
+html[data-flow-design="magic"].kb-open .modal-backdrop{padding-bottom:var(--kb,0px)}
+html[data-flow-design="magic"].kb-open .sheet{max-height:calc(var(--vvh,100dvh) - 12px)}

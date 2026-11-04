@@ -50,7 +50,7 @@ const spDateShort = date => new Intl.DateTimeFormat("ru-RU", { day: "numeric", m
 function spReady() { const s = spState(); return Boolean(SP() && s.state); }
 function spLoad() {
   const s = spState();
-  if (s.loading || !SP()) return;
+  if (s.loading || s.error || !SP()) return;
   s.loading = true;
   spCall("load").then(answer => {
     if (!answer || answer.error) throw new Error(answer?.error || "load");
@@ -202,12 +202,15 @@ const SP_TABS = [["today", "Сегодня"], ["training", "Тренировка
 function renderSportPage() {
   const s = spState();
   if (!SP()) return `${header("Спорт", "", "")}<div class="sp-page"><p class="section-note">Не загрузился модуль спорта — обновите приложение.</p></div>`;
-  if (!s.state) { spLoad(); return `${header("Спорт", "", "")}<div class="sp-page"><div class="en-wait"><span class="live-spin"></span></div>${s.error ? `<p class="section-note">${spEsc(s.error)}</p>` : ""}</div>`; }
+  if (!s.state) {
+    spLoad();
+    return `${header("Спорт", "", "")}<div class="sp-page">${s.error ? `<section class="en-wait en-load-error" role="status"><strong>Не удалось загрузить спорт</strong><p class="section-note">${spEsc(s.error)}</p><button type="button" class="ghost-button" data-action="sp-load-retry">Попробовать снова</button></section>` : `<div class="en-wait" role="status" aria-busy="true"><span class="live-spin" aria-hidden="true"></span><p class="section-note">Загружаем тренировки…</p></div>`}</div>`;
+  }
   const C = SP();
   const tabs = `<div class="sp-tabs" role="tablist">${SP_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}${key === "profile" && C.profileGaps(s.state).any ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
   const body = s.tab === "training" ? spTrainingScreen() : s.tab === "goals" ? spGoalsScreen() : s.tab === "profile" ? spProfileScreen() : spTodayScreen();
   const banner = s.demo ? `<p class="sp-demo">Демо WooSport · данные не сохраняются</p>` : "";
-  const failed = s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "";
+  const failed = (s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "") + (s.error ? `<div class="sp-error" role="status">${spEsc(s.error)} <button type="button" class="text-action" data-action="sp-load-retry">Попробовать снова</button></div>` : "");
   return `${header("Спорт", "", "")}<div class="sp-page">${banner}${failed}${tabs}${body}</div>${spSheetHtml()}`;
 }
 // ------------------------------------------------------------ окна (шторки Flow)
@@ -568,6 +571,14 @@ Object.assign(SP_ACTIONS, {
   "sp-wake-log": () => spOpen("wake-log"),
   "sp-wake-edit": control => spOpen("wake", { date: control.dataset.date }),
 });
+
+SP_ACTIONS["sp-load-retry"] = () => {
+  const s = spState();
+  if (s.loading) return;
+  s.error = "";
+  spLoad();
+  spRerender(true);
+};
 
 function sportAction(action, control, event) {
   if (!action.startsWith("sp-")) return false;

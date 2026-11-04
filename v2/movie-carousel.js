@@ -3,11 +3,18 @@ let movieDeck = null;
 let movieDeckId = "";
 let movieFiltersOpen = null;
 let movieLayoutObserver = null;
+let movieSearchOpen = false;
 let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view") === "carousel"; } catch { return false; } })();
 function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
 function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
 function movieBuiltinSection(section) { return /^(кино|фильмы|сериалы|анимация|мультфильмы)$/i.test(String(section?.name || "").trim()); }
 function moviePrototypeHeader() {
+  if (document.documentElement.dataset?.flowDesign === 'magic') {
+    const searching = ui.savedFilter !== 'reco' && (movieSearchOpen || Boolean(ui.savedQuery));
+    const folders = moviePlansTab() ? `<button type="button" class="icon-button movie-filter-toggle" data-action="movie-filters-toggle" aria-label="Папки фильмов" aria-expanded="${movieFiltersOpen !== false}">${savedFolderIcon()}</button>` : '';
+    const tools = ui.savedFilter === 'reco' ? '' : `<div class="dc-movie-tools"><div class="movie-prototype-tools">${movieCarouselToggle()}<span class="dc-movie-mode">${movieCarouselEnabled() ? 'Карусель' : 'Библиотека'}</span></div><div class="movie-prototype-tools"><button type="button" class="icon-button movie-random-button" data-action="movie-random" aria-label="Случайный фильм">${icon('spark')}</button><button type="button" class="icon-button" data-action="movie-local-search" aria-label="${searching ? 'Закрыть поиск' : 'Искать фильм'}" aria-expanded="${searching}">${icon('search')}</button>${folders}</div></div>`;
+    return `<header class="movie-prototype-header"><div class="dc-movie-title-row"><button type="button" class="icon-button" data-action="saved-home" aria-label="Сохранённое">${icon('left')}</button><h1>Фильмы</h1><button type="button" class="icon-button" data-action="saved-new" aria-label="Добавить фильм">${icon('plus')}</button></div>${tools}${searching ? `<label class="search-box dc-category-search dc-movie-search">${icon('search')}<input id="saved-filter-input" type="search" aria-label="Поиск фильмов" placeholder="Название, жанр или заметка" value="${esc(ui.savedQuery)}"></label>` : ''}</header>`;
+  }
   return `<div class="movie-prototype-header"><div class="movie-prototype-toolbar"><div class="movie-prototype-tools movie-tools-start"><button type="button" class="icon-button" data-action="saved-home" aria-label="Сохранённое">${icon("left", "icon-sm")}</button>${movieCarouselToggle()}</div><div class="movie-brand-row"><button type="button" class="head-pill" aria-label="Фильмы">Фильмы</button></div><div class="movie-prototype-tools movie-tools-end"><button type="button" class="icon-button movie-random-button" data-action="movie-random" aria-label="Случайный фильм">${icon("spark", "icon-sm")}</button><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать фильм">${icon("search", "icon-sm")}</button><button type="button" class="icon-button movie-filter-toggle" data-action="movie-filters-toggle" aria-label="Показать или скрыть разделы" aria-expanded="${movieFiltersOpen !== false}"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 8h18v12H3zM3 8V4h7l2 3"/></svg></button></div></div></div>`;
 }
 function movieCarouselToggle() {
@@ -80,9 +87,19 @@ function sizeMovieCarousel(track) {
   const room=()=>viewport-track.getBoundingClientRect().top-Math.max(6,safeBottom-2);
   filters.hidden=movieFiltersOpen===null ? width*1.5+240>room() : !movieFiltersOpen;
   toggle?.setAttribute('aria-expanded',String(!filters.hidden));
-  track.dataset.heightLimit=String(Math.max(320,Math.floor(room())));
+  toggle?.setAttribute('aria-label',filters.hidden?'Показать папки фильмов':'Скрыть папки фильмов');
+  track.dataset.heightLimit=String(Math.max(document.documentElement.dataset?.flowDesign === 'magic' ? 180 : 320,Math.floor(room())));
 }
 document.addEventListener("click", event => {
+  const search = event.target.closest('[data-action="movie-local-search"]');
+  if (search) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    movieSearchOpen = !(movieSearchOpen || ui.savedQuery);
+    if (!movieSearchOpen) ui.savedQuery = '';
+    render();
+    if (movieSearchOpen) document.getElementById('saved-filter-input')?.focus();
+    return;
+  }
   if(event.target.closest('[data-action="movie-random"]') && movieCarouselEnabled() && movieDeck){
     event.preventDefault();event.stopImmediatePropagation();
     if(movieDeck.spinning)return;
@@ -99,6 +116,7 @@ document.addEventListener("click", event => {
       const panel=filters.closest('.movie-library-screen')?.querySelector('.movie-folder-chips');
       if(panel)panel.hidden=!movieFiltersOpen;
       filters.setAttribute('aria-expanded',String(movieFiltersOpen));
+      filters.setAttribute('aria-label',movieFiltersOpen?'Скрыть папки фильмов':'Показать папки фильмов');
     }
     return;
   }
@@ -118,7 +136,7 @@ document.addEventListener("click", event => {
 }, true);
 document.addEventListener("keydown", event => {
   if (!event.target.closest("#movie-deck") || !movieDeck || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
-  if(movieDeck.spinning){event.preventDefault();return;}
+  if(movieDeck.spinning||movieDeck.count<2){event.preventDefault();return;}
   event.preventDefault(); movieDeck.nudge(event.key === "ArrowRight" ? 1 : -1);
 });
 window.addEventListener("resize", () => { if (movieDeck) { sizeMovieCarousel(movieDeck.track); movieDeck.paint(); } });

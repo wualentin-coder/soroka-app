@@ -421,3 +421,21 @@ html.tg-fs .en-page-text { padding-top: calc(var(--tg-top, 0px) + 28px); }
 /* Теория: листать по урокам */
 .en-theory-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
 .en-theory-nav .ghost-button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; }
+
+html[data-flow-design="magic"] .en-run{min-height:0;gap:16px;padding-bottom:20px}
+html[data-flow-design="magic"] .en-run :is(.en-card,.en-situation){border-radius:20px;background:var(--surface);box-shadow:none}
+html[data-flow-design="magic"] .en-run :is(.en-prompt,.en-done h2){font-family:var(--display,Georgia,serif);font-size:30px;line-height:1.15;font-weight:500}
+html[data-flow-design="magic"] .en-run :is(button,input,select){min-height:44px}
+html[data-flow-design="magic"] .en-run input{font-size:16px}
+html[data-flow-design="magic"] body:has(.en-run) .dm-bottom-nav{display:none!important}
+html[data-flow-design="magic"] body:has(.en-run):has(.sp-bar) .en-run{padding-bottom:84px}
+html[data-flow-design="magic"] body:has(.en-run) .sp-bar{bottom:max(10px,env(safe-area-inset-bottom))}
+html[data-flow-design="magic"] .en-load-error{justify-items:start;align-content:start;padding:24px;border:1px solid var(--line);border-radius:20px;background:var(--surface);min-height:0}
+html[data-flow-design="magic"] .en-load-error strong{font-size:18px}
+html[data-flow-design="magic"] .en-load-error .section-note{margin:0;font-size:14px;line-height:1.6}
+html[data-flow-design="magic"] .en-wait[aria-busy=true] .section-note{font-size:13px}
+html[data-flow-design="magic"] .en-reader .en-reader-bar :is(button,select,input){min-height:44px}
+html[data-flow-design="magic"] .en-reader .en-reader-bar button{min-width:44px}
+html[data-flow-design="magic"] .en-reader-settings :is(button,input,select){min-height:44px}
+html[data-flow-design="magic"] .en-page :is(.en-book,.en-song){border-radius:18px}
+html[data-flow-design="magic"] .en-page .en-wrow{min-height:64px;border-bottom:1px solid var(--line);padding:12px 0}

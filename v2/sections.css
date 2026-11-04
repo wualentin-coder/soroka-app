@@ -2107,7 +2107,7 @@ body.page-anim .page-header, body.page-anim .header { animation: rise-in .3s eas
 .mobile-nav button:active, .mobile-nav a:active { transform: scale(.92); }
 /* Окна — с пружинкой, затемнение — плавно. */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion-mode=on]) *, :root:not([data-motion-mode=on]) *::before, :root:not([data-motion-mode=on]) *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* ══ Заметка: блоки не сжимаются друг на друга, таблица — как раньше, аккуратная ══ */
 .note-sheet .note-plain { flex: 1 0 auto; min-height: auto; }
@@ -2159,7 +2159,7 @@ body.page-anim .content-main > :nth-child(n+6) { animation-delay: .17s; }
 .calendar-card.expanded .calendar-grid { animation: calendar-open .32s var(--ease-out) both; }
 .toast { transition: opacity .25s ease; }
 .note-improve-menu, .voice-bar, .composer-movie-done { animation-timing-function: cubic-bezier(.22, 1, .36, 1) !important; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion-mode=on]) *, :root:not([data-motion-mode=on]) *::before, :root:not([data-motion-mode=on]) *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* ══ Товар — как на маркетплейсе (вариант 2) ═══════════════════════════════ */
 .product-card { background: var(--surface, #fff) !important; border: 0 !important; box-shadow: none !important; border-radius: 18px; }
@@ -2518,3 +2518,20 @@ html[data-theme="dark"] :is(.recipe-image, .product-image).blank b { color: hsl(
 .saved-section-addresses .saved-section-copy small, .saved-section-addresses .saved-section-copy em { overflow-wrap: anywhere; white-space: normal; }
 .saved-section-addresses .saved-section-copy em { display: block; text-overflow: clip; }
 .saved-layout-list .saved-section-addresses .saved-section-copy em { display: block; margin-top: 3px; padding-right: 0; }
+
+
+/* The selected modules keep the same layout contract in the classic shell. */
+html[data-flow-design=classic] .saved-section-grid.saved-hub-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+html[data-flow-design=classic] .saved-section-grid.saved-hub-other{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+html[data-flow-design=classic] .saved-hub-item{display:flex;flex-direction:column;min-width:0;position:relative}
+html[data-flow-design=classic] .saved-hub-item>.saved-section-card{width:100%;height:100%;flex:1}
+html[data-flow-design=classic] .saved-hub-arrange{display:flex;align-items:center;gap:6px;min-height:44px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:transparent;color:var(--muted);font-size:11px}
+html[data-flow-design=classic] .saved-hub-controls{display:flex;gap:0;align-items:center;padding:0;border:1px solid var(--line);border-radius:10px;margin-top:4px}
+html[data-flow-design=classic] .saved-hub-controls>button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;min-width:44px;flex:0 0 44px;border:0;background:transparent;color:var(--muted);font-size:10px;padding:6px 4px}
+html[data-flow-design=classic] .saved-hub-controls>.saved-hub-transfer{min-width:0;flex:1;white-space:nowrap;color:var(--accent)}
+html[data-flow-design=classic] .saved-hub-instructions,html[data-flow-design=classic] .saved-hub-empty{font-size:12px;color:var(--muted);line-height:1.6}
+html[data-flow-design=classic] .saved-hub-empty{grid-column:1/-1;text-align:center;margin:0;padding:24px;border:1px dashed var(--line);border-radius:14px}
+html[data-flow-design=classic] .saved-hub-main:has(>.saved-hub-item)>.saved-hub-empty{display:none}
+html[data-flow-design=classic] .saved-hub-item.is-dragging{z-index:20;opacity:.8;filter:drop-shadow(0 8px 16px #0005)}
+
+html[data-flow-design=classic] .saved-hub-main .saved-hub-transfer>.icon{display:none}

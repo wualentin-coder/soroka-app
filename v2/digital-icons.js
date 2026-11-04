@@ -1,0 +1,35 @@
+(() => {
+  'use strict';
+  if (document.documentElement.dataset.flowDesign === 'classic') return;
+  let serial = 0;
+  const shapes = {
+    piano: `<path d="M15 20H65V61H15Z"/><path class="li-thin" d="M25 21V60M35 21V60M45 21V60M55 21V60"/><path class="li-fill" d="M22 20H28V41H22ZM32 20H38V41H32ZM52 20H58V41H52Z"/>`,
+    english: `<text class="li-fill" x="10" y="57" font-family="'Cormorant Garamond',Georgia,serif" font-size="53" font-weight="500">Aa</text>`,
+    sport: `<path d="M27 40H53"/><path class="li-fill" d="M18 21C19 24 22 25 26 25V55C22 55 19 56 18 59C15 54 14 47 14 40S15 26 18 21ZM62 21C65 26 66 33 66 40S65 54 62 59C61 56 58 55 54 55V25C58 25 61 24 62 21Z"/><path d="M8 32V48M72 32V48"/>`,
+    tasks: `<path class="li-fill" d="M15 40L21 35L34 48L59 19L66 24L35 61Z"/>`,
+    projects: `<path d="M40 38V23M34 43L22 52M46 43L58 52"/><path d="M40 9L50 19L40 29L30 19ZM18 46L28 56L18 66L8 56ZM62 46L72 56L62 66L52 56Z"/><circle class="li-dot" cx="40" cy="42" r="4"/>`,
+    vault: `<path d="M24 33V25C24 4 56 4 56 25V33M20 33H60V66H20Z"/><path class="li-fill" d="M40 42C31 42 30 53 36 56L34 62H46L44 56C50 53 49 42 40 42Z"/>`,
+    docs: `<path d="M21 10H49L62 23V68H21ZM49 10V24H62"/><path class="li-thin" d="M30 37H52M30 46H52M30 55H45M15 20V62"/>`,
+    vpn: `<path d="M28 13C17 19 12 29 12 40S17 61 28 67M52 13C63 19 68 29 68 40S63 61 52 67"/><path class="li-thin" d="M25 27C20 35 20 45 25 53M55 27C60 35 60 45 55 53"/><path d="M29 40H51M43 32L51 40L43 48"/>`,
+    server: `<path d="M16 12H64V26H16ZM16 33H64V47H16ZM16 54H64V68H16Z"/><path class="li-thin" d="M24 19H41M24 40H41M24 61H41"/><circle class="li-dot" cx="55" cy="19" r="2"/><circle class="li-dot" cx="55" cy="40" r="2"/><circle class="li-dot" cx="55" cy="61" r="2"/>`,
+    pc: `<path d="M11 15H69V54H11ZM40 54V66M28 67H52"/><path class="li-fill" d="M31 27L51 37L43 40L39 49Z"/>`,
+    render: `<path d="M14 28V14H28M52 14H66V28M66 52V66H52M28 66H14V52"/><circle cx="40" cy="40" r="16"/><path class="li-thin" d="M40 24L49 40L40 56M26 32L44 33L54 48M26 48L35 33L54 32"/>`,
+    archive: `<path d="M13 34H67L61 66H19ZM15 34L21 21H59L65 34M25 14H55"/><path d="M29 45H51"/>`,
+    settings: `<path class="li-thin" d="M20 13V67M40 13V67M60 13V67"/><path class="li-fill" d="M20 20L27 27L20 34L13 27ZM40 45L47 52L40 59L33 52ZM60 28L67 35L60 42L53 35Z"/>`,
+    today: `<path d="M16 19H64V65H16ZM16 31H64M27 12V25M53 12V25"/><path class="li-fill" d="M25 40H31V46H25ZM37 40H43V46H37ZM49 40H55V46H49ZM25 52H31V58H25Z"/>`,
+    saved: `<path d="M22 12H58V69L40 55L22 69Z"/><path class="li-thin" d="M30 21H50"/>`,
+    finance: `<path d="M13 24L59 14V25M13 25H66V63H13ZM51 37H69V52H51Z"/><circle class="li-dot" cx="59" cy="44.5" r="2"/><path class="li-thin" d="M22 52H37"/>`,
+    more: `<path class="li-fill" d="M23 12C25 21 29 25 38 27C29 29 25 33 23 42C21 33 17 29 8 27C17 25 21 21 23 12ZM57 12C59 21 63 25 72 27C63 29 59 33 57 42C55 33 51 29 42 27C51 25 55 21 57 12ZM23 46C25 55 29 59 38 61C29 63 25 67 23 76C21 67 17 63 8 61C17 59 21 55 23 46ZM57 46C59 55 63 59 72 61C63 63 59 67 57 76C55 67 51 63 42 61C51 59 55 55 57 46Z"/>`
+  };
+  shapes.files = shapes.docs;
+  shapes.notes = shapes.docs;
+  shapes.lists = shapes.tasks;
+  shapes.cards = shapes.finance;
+  shapes.inbox = shapes.archive;
+  shapes.metrics = shapes.projects;
+  window.flowMagicObject = (name, mono = false) => {
+    const id = 'light-glyph-' + serial++;
+    const shape = shapes[name] || shapes.docs;
+    return `<svg class="magic-object light-glyph${mono ? ' mono' : ''}" viewBox="0 0 80 80" aria-hidden="true"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="70" y2="70"><stop stop-color="var(--accent)"/><stop offset=".48" stop-color="var(--energy-hot)"/><stop offset="1" stop-color="var(--accent)"/></linearGradient></defs><g style="--li-light:url(#${id})"><g class="li-aura">${shape}</g><g class="li-symbol">${shape}</g></g></svg>`;
+  };
+})();

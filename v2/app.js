@@ -1,10 +1,11 @@
 /* Дизайн-прототип: все записи хранятся только в этом браузере. */
 const STORAGE_KEY = "soroka-planner-prototype-v1";
-/** Темы: основа (тёмная или светлая) и палитра поверх неё. «Как в Telegram» — по клиенту. */
+function classicDesign() { return document.documentElement.dataset.flowDesign === "classic"; }
+/** The classic shell retains its original theme choices; Magic has three dark surfaces. */
 const THEMES = {
-  telegram: { label: "Как в Telegram", tone: () => (window.Telegram?.WebApp?.colorScheme || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")) },
+  ...(classicDesign() ? { telegram: { label: "Как в Telegram", tone: () => (window.Telegram?.WebApp?.colorScheme || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")) } } : {}),
   dark: { label: "Тёмная", tone: "dark" }, midnight: { label: "Ночь", tone: "dark" }, graphite: { label: "Графит", tone: "dark" },
-  light: { label: "Светлая", tone: "light" }, sand: { label: "Песок", tone: "light" }, mint: { label: "Мята", tone: "light" }
+  ...(classicDesign() ? { light: { label: "Светлая", tone: "light" }, sand: { label: "Песок", tone: "light" }, mint: { label: "Мята", tone: "light" } } : {})
 };
 function themeTone() { const t = THEMES[ui.theme] || THEMES.dark; return typeof t.tone === "function" ? t.tone() : t.tone; }
 const ACCENTS = [["teal", "Бирюзовый", "#58d0cf"], ["blue", "Синий", "#76a9ff"], ["indigo", "Индиго", "#8b93ff"], ["violet", "Фиолетовый", "#b99aff"], ["pink", "Розовый", "#f58bb8"], ["red", "Красный", "#ff7b7b"], ["orange", "Оранжевый", "#ffa35c"], ["amber", "Янтарный", "#f2c14e"], ["green", "Зелёный", "#6fcf7f"]];
@@ -51,6 +52,7 @@ const icons = {
   pen: '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
   bookmark: '<path d="M5 4h14v17l-7-5-7 5V4Z"/>',
   archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v12h14V8m-9 5h4"/>',
+  folder: '<path d="M3 8h18v12H3zM3 8V4h7l2 3"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9 2 2-2 2 1 1-2 2-2-2-2 2"/>',
   project: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>',
   settings: '<path d="M10.3 2.6h3.4l.5 2.6a7.6 7.6 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.8a7.7 7.7 0 0 1 0 2.2l2 1.8-1.7 2.9-2.5-.9a7.6 7.6 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.6 7.6 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.8a7.7 7.7 0 0 1 0-2.2l-2-1.8 1.7-2.9 2.5.9a7.6 7.6 0 0 1 1.9-1.1Z"/><circle cx="12" cy="12" r="3"/>',
@@ -218,8 +220,9 @@ function save() {
   try { const safe = { ...data }; delete safe.vault; localStorage.setItem(STORAGE_KEY, JSON.stringify(safe)); return true; } catch (_) { return false; }
 }
 let data = load();
-const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "sleep", "piano"];
-function currentPage() { const name = location.hash.slice(1); const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
+const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "piano"];
+function currentPage() { const name = location.hash.slice(1); if (name === "sleep") return "today"; const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
+if (location.hash === "#sleep") history.replaceState(null, "", "#today");
 const ui = {
   page: currentPage(),
   selected: todayIso(),
@@ -277,11 +280,14 @@ const navigation = [
   ["docs", "Документы", "file"],
   ["archive", "Архив", "archive"],
   ["settings", "Настройки", "settings"],
-  ["more", "Все разделы", "more"]
+  ["inbox", "Входящие", "inbox"],
+  ["metrics", "Показатели", "chart"],
+  ["more", "Все разделы", "overview"]
 ];
-const mobileNavigation = [["today", "План", "today"], navigation[3], navigation[4], ["more", "Ещё", "more"]];
+const mobileNavigation = [["today", "План", "today"], navigation[3], navigation[4], ["more", "Ещё", "overview"]];
 function navItem([page, label, symbol], mobile = false) {
-  const active = ui.page === page || (page === "more" && mobile && !mobileNavigation.slice(0, 4).some(([name]) => name === ui.page));
+  const planPage = ["today", "upcoming", "tasks"].includes(ui.page);
+  const active = ui.page === page || (mobile && page === "today" && planPage) || (page === "more" && (mobile ? !planPage && !mobileNavigation.slice(0, 4).some(([name]) => name === ui.page) : !navigation.some(([name]) => name === ui.page)));
   const count = page === "inbox" && data.inbox.length && !mobile ? `<span class="nav-count">${data.inbox.length}</span>` : "";
   return `<button type="button" class="${active ? "active" : ""}" data-action="navigate" data-page="${page}" ${active ? 'aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span>${count}</button>`;
 }
@@ -410,11 +416,9 @@ function todayPage() {
   })() : "";
   // Английский — короткое занятие дня (english.js): сколько повторить и серия.
   const english = isToday && todayCardVisible("english") && typeof enHomeTile === "function" ? enHomeTile() : "";
-  // Сон — подъём на сегодня и отмечена ли ночь (sleep.js).
-  const sleep = isToday && todayCardVisible("sleep") && typeof slHomeTile === "function" ? slHomeTile() : "";
   // Спорт — тренировка дня и привычки (sport.js, перенос WooSport).
   const sport = isToday && todayCardVisible("sport") && typeof spHomeTile === "function" ? spHomeTile() : "";
-  const body = isToday ? `${overdue}${tasks}${events}${free}${sleep}${sport}${english}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
+  const body = isToday ? `${overdue}${tasks}${events}${free}${sport}${english}${birthdaysSoon}${tickets}${glance}` : dayAgenda(ui.selected);
   return `${header("План", "Сегодня, неделя и месяц — в одном месте", "Мой день")}<div class="content-grid"><div class="content-main plan-main">${cal}${body}</div><aside class="content-aside">${aside}</aside></div>`;
 }
 function calendarDays() {
@@ -485,25 +489,25 @@ function entrySheet() {
   const draft = sheet.draft || {};
   const field = key => draft[key] ?? item?.[key] ?? "";
   const typeLabel = sheet.type === "event" ? "Событие" : sheet.type === "note" ? "Заметка" : "Задача";
-  const title = item ? typeLabel : "Добавить";
+  const title = item ? typeLabel : sheet.type === "event" ? "Новое событие" : sheet.type === "note" ? "Новая заметка" : "Новая задача";
   const types = !item ? `<div class="sheet-type">${[["task", "Задача"], ["event", "Событие"], ["note", "Заметка"]].map(([type, label]) => `<button type="button" class="${sheet.type === type ? "active" : ""}" data-action="sheet-type" data-type="${type}">${label}</button>`).join("")}</div>` : (() => { const bd = sheet.type === "event" && typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item.title || "") && /^\d{4}-\d{2}-\d{2}$/.test(item.due || "") ? birthdayNext(item.due) : null; return bd ? `<p class="entry-when">${bd.days === 0 ? "Сегодня" : `Через ${bd.days} ${plural(bd.days, "день", "дня", "дней")}`} · ${bd.day} ${MONTHS_GEN[bd.month]}</p>` : ""; })();
-  const defaultDue = field("due") || sheet.date || (ui.page === "tasks" && !item ? "" : todayIso());
+  const defaultDue = item || Object.prototype.hasOwnProperty.call(draft, "due") ? field("due") : sheet.date ?? (ui.page === "tasks" ? "" : ui.selected || todayIso());
   const dateFields = sheet.type !== "note" ? `<div class="field-row"><label class="field">Дата<input name="due" type="date" value="${esc(defaultDue)}" ${sheet.type === "event" ? "required" : ""}></label><label class="field">Время<input name="time" type="time" value="${esc(field("time"))}"></label></div>` : "";
-  const taskFields = sheet.type === "task" ? `<div class="field-row"><label class="field">Важность<select name="priority"><option value="high" ${field("priority") === "high" ? "selected" : ""}>Очень важно</option><option value="medium" ${!field("priority") || field("priority") === "medium" ? "selected" : ""}>Обычно</option><option value="low" ${field("priority") === "low" ? "selected" : ""}>Когда-нибудь</option></select></label><label class="field">Проект<select name="project">${data.projects.map(p => `<option value="${esc(p.name)}" ${field("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>` : "";
+  const taskFields = sheet.type === "task" ? `<div class="field-row"><label class="field">Важность<select name="priority"><option value="high" ${field("priority") === "high" ? "selected" : ""}>Очень важно</option><option value="medium" ${!field("priority") || field("priority") === "medium" ? "selected" : ""}>Обычно</option><option value="low" ${field("priority") === "low" ? "selected" : ""}>Когда-нибудь</option></select></label><label class="field">Проект<select name="project"><option value="" ${!field("project") ? "selected" : ""}>Без проекта</option>${field("project") && !data.projects.some(p => p.name === field("project")) ? `<option value="${esc(field("project"))}" selected>${esc(field("project"))}</option>` : ""}${data.projects.map(p => `<option value="${esc(p.name)}" ${field("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>` : "";
   // Только то, что сервер выполняет: повтор задачи (день, будни, неделя, месяц, год),
   // у события — «каждый год» и «напомнить за…». О задаче со сроком бот напоминает в срок сам.
   const repeatValue = String(field("repeat") || "none");
   const repeatSelection = sheet.type === "task" && /^every:/.test(repeatValue) ? "custom" : repeatValue;
   const repeatOptions = sheet.type === "event" ? [["none", "Не повторять"], ["yearly", "Каждый год"]] : [["none", "Не повторять"], ["daily", "Каждый день"], ["weekdays", "По будням"], ["weekly", "Каждую неделю"], ["monthly", "Каждый месяц"], ["yearly", "Каждый год"], ["custom", "Каждые N дней"]];
   const reminderFields = sheet.type !== "note" ? `<div class="entry-reminders"><h3>${sheet.type === "event" ? "Повтор и напоминание" : "Повтор"}</h3><div class="field-row"><label class="field">Повторять<select name="repeat">${repeatOptions.map(([key, label]) => `<option value="${key}" ${repeatSelection === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>${sheet.type === "event" ? `<label class="field">Напомнить<select name="remindBefore">${[["none", "Не напоминать"], ["at", "В момент начала"], ["5m", "За 5 минут"], ["15m", "За 15 минут"], ["1h", "За 1 час"], ["1d", "За 1 день"]].map(([key, label]) => `<option value="${key}" ${String(field("remindBefore") || (item ? "none" : "1h")) === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>` : ""}</div>${sheet.type === "task" ? `${taskRepeatFields(repeatValue)}<p class="section-note">Следующая задача появится после выполнения; интервал считается от даты в плане. Со временем — бот напомнит в срок; без времени — утром в день срока.</p>` : ""}</div>` : "";
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><label class="field">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${dateFields}${taskFields}${sheet.type === "event" && (sheet.birthday || (typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item?.title || ""))) ? renderGiftFields(item) : ""}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}<div class="sheet-actions">${item ? `<button class="ghost-button danger-button" type="button" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">Удалить</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><div class="dm-entry-body"><label class="field dm-entry-name">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><div class="dm-entry-schedule">${dateFields}</div>${sheet.type !== "note" ? `<details class="dm-entry-options" ${item || field("description") || field("repeat") && field("repeat") !== "none" ? "open" : ""}><summary>Детали и повтор</summary>` : ""}<label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${taskFields}${sheet.type === "event" && (sheet.birthday || (typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item?.title || ""))) ? renderGiftFields(item) : ""}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}${sheet.type !== "note" ? "</details>" : ""}</div><div class="sheet-actions dm-entry-footer"><button class="ghost-button" type="button" data-action="close-sheet">Отмена</button>${item ? `<button class="icon-button danger-button" type="button" aria-label="Удалить запись" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">${icon("trash")}</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
 }
 function searchSheet() {
   return renderSearchSheetExt();
 }
 let renderedScrollIdentity = null;
 let modalPageLock = null;
-const sheetScrollSelectors = [".sheet", ".note-editor", ".note-reader", ".season-chips", ".pk-body"];
+const sheetScrollSelectors = [".sheet", ".dm-entry-body", ".note-editor", ".note-reader", ".season-chips", ".pk-body"];
 function sheetScrollIdentity() {
   const s = ui.sheet;
   return s ? JSON.stringify([ui.page, s.kind, s.category, s.id, s.mode, s.type, s.index]) : null;
@@ -544,7 +548,24 @@ function syncModalScrollLock() {
 // Некоторые окна мост добавляет вне app: они тоже должны удерживать фон.
 new MutationObserver(syncModalScrollLock).observe(document.body, { childList: true, subtree: true });
 let renderedShell = "";
+let renderedShellChrome = "";
+function focusRouteHeading() {
+  const heading = app.querySelector(".main h1");
+  if (!heading || ui.sheet) return;
+  heading.tabIndex = -1;
+  heading.dataset.flowRouteFocus = ui.page;
+  heading.focus({ preventScroll: true });
+}
+function focusCurrentNavigation(selector) {
+  const control = app.querySelector(`${selector} [aria-current="page"]`);
+  if (!control || ui.sheet) return;
+  control.dataset.flowNavFocus = ui.page;
+  control.focus({ preventScroll: true });
+}
 function render() {
+  const retainRouteFocus = !ui.sheet && document.activeElement?.dataset.flowRouteFocus === ui.page;
+  const navigationFocus = !ui.sheet && document.activeElement?.dataset.flowNavFocus === ui.page
+    ? document.activeElement.closest('.mobile-nav') ? '.mobile-nav' : '.sidebar' : null;
   if(typeof movieMarathonBegin==='function')movieMarathonBegin();
   captureSheetState();
   scrollBeforeRender = modalPageLock ? null : { x: window.scrollX, y: window.scrollY };
@@ -556,6 +577,7 @@ function render() {
   document.body.classList.toggle("density-spacious", data.settings.density === "spacious");
   const page = ui.demoState !== "normal" && ui.page !== "settings" ? renderDemoStatePage() : ui.page === "today" ? todayPage() : ui.page === "upcoming" ? upcomingPage() : extendedPage(ui.page);
   const sheet = ui.sheet ? ui.sheet.kind === "search" ? searchSheet() : ui.sheet.kind === "entry" ? entrySheet() : renderExtendedSheet() : "";
+  const shellChrome = typeof flowMagicShellStamp === "function" ? flowMagicShellStamp() : "";
   if(typeof movieMarathonEnd==='function')movieMarathonEnd();
   const overlay = `${sheet}${ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : ""}`;
   // Открыли или закрыли окно, показали подсказку, а экран под ними тот же —
@@ -563,7 +585,7 @@ function render() {
   // 120–200 мс задержки на каждое открытие.
   const nav = app.querySelector(":scope > .app-shell > .mobile-nav");
   const hasMap = html => /id="(loyalty-map|mini-map|address-map)"/.test(html);
-  if (nav && page === renderedShell && !hasMap(sheet) && !(nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container"))) {
+  if (nav && page === renderedShell && shellChrome === renderedShellChrome && !hasMap(sheet) && !(nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container"))) {
     while (nav.nextSibling) nav.nextSibling.remove();
     nav.insertAdjacentHTML("afterend", overlay);
     nav.parentElement.querySelectorAll(":scope > .mobile-nav ~ *").forEach(installSwipeCards);
@@ -573,8 +595,15 @@ function render() {
   disposeAddressMap();
   if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
   renderedShell = page;
-  const sidebar = `<div class="sidebar-caption">План</div><nav class="sidebar-nav" aria-label="План">${navigation.slice(0, 3).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Пространство</div><nav class="sidebar-nav" aria-label="Разделы">${navigation.slice(3, 10).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Другое</div><nav class="sidebar-nav" aria-label="Другое">${navigation.slice(10).map(item => navItem(item)).join("")}</nav>`;
-  app.innerHTML = `<div class="app-shell"><aside class="sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · личное пространство</p></div></aside><div><div class="mobile-brand">${brand()}</div><main class="main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${overlay}</div>`;
+  renderedShellChrome = shellChrome;
+  const sidebar = `<div class="sidebar-caption">План</div><nav class="sidebar-nav" aria-label="План">${navigation.slice(0, 3).filter(([name]) => name !== "upcoming").map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Пространство</div><nav class="sidebar-nav" aria-label="Разделы">${navigation.slice(3, 10).map(item => navItem(item)).join("")}</nav><div class="sidebar-caption sidebar-caption-gap">Другое</div><nav class="sidebar-nav" aria-label="Другое">${navigation.slice(10).map(item => navItem(item)).join("")}</nav>`;
+  if (classicDesign()) {
+    app.innerHTML = `<div class="app-shell"><aside class="sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · личное пространство</p></div></aside><div><div class="mobile-brand">${brand()}</div><main class="main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${overlay}</div>`;
+  } else {
+  app.innerHTML = `<div class="app-shell dm-app-shell"><aside class="sidebar dm-sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · Digital Magic</p></div></aside><div class="dm-workspace">${typeof flowMagicTopbar === "function" ? flowMagicTopbar() : `<div class="mobile-brand">${brand()}</div>`}<main class="main dm-main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav dm-bottom-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${overlay}</div>`;
+  }
+  if (retainRouteFocus) focusRouteHeading();
+  else if (navigationFocus) focusCurrentNavigation(navigationFocus);
   const savedTabs = app.querySelector('.subtabs[role="tablist"]');
   const selectedSavedTab = savedTabs?.querySelector('[aria-selected="true"]');
   if (selectedSavedTab) savedTabs.scrollLeft = selectedSavedTab.offsetLeft - savedTabs.offsetLeft - (savedTabs.clientWidth - selectedSavedTab.offsetWidth) / 2;
@@ -589,9 +618,9 @@ function afterRender(scroll) {
   if (window.FlowEnglishMusic) FlowEnglishMusic.sync();
   if (typeof pcVolumeKeysSync === "function") pcVolumeKeysSync();
   scrollBeforeRender = null;
+  restoreSheetState();
   restoreSheetScroll(scroll);
   renderedScrollIdentity = sheetScrollIdentity();
-  restoreSheetState();
   if (typeof movieWatchReturnCheck === "function") movieWatchReturnCheck();
   if (typeof refreshSavedAddressPreview === "function") refreshSavedAddressPreview();
   if (typeof watchLoyaltyPlaces === "function") watchLoyaltyPlaces();
@@ -611,6 +640,7 @@ function toggleTask(recordId) {
 }
 function navigate(page) {
   if (!confirmSheetDiscard()) return;
+  if (page === "sleep") page = "today";
   if (!validPages.includes(page)) return;
   // «Предстоящие» и «Обзор» теперь внутри «Плана».
   if (page === "upcoming" || page === "overview") page = "today";
@@ -621,9 +651,9 @@ function navigate(page) {
   ui.sheet = null;
   location.hash = page;
   render();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top: 0, behavior: window.flowDigital?.reducedMotion?.() ? "instant" : "smooth" });
 }
-function openEntry(type = "task", date = ui.page === "upcoming" ? ui.selected : ui.page === "tasks" ? "" : todayIso(), recordId = null) {
+function openEntry(type = "task", date = ["today", "upcoming"].includes(ui.page) ? ui.selected || todayIso() : ui.page === "tasks" ? "" : todayIso(), recordId = null) {
   if (type === "note") { openSavedRecord("notes", recordId); return; }
   ui.sheet = { kind: "entry", type, id: recordId, date, justRendered: false };
   ui.menu = false;
@@ -712,7 +742,16 @@ document.addEventListener("click", event => {
   }
   const action = control.dataset.action;
   if (action === "backdrop") { if (event.target === control) closeSheet(); return; }
-  if (action === "navigate") { if (control.dataset.page === "saved") ui.savedCategory = "overview"; if (control.dataset.page === "finance") { ui.financeTab = "overview"; ui.financeCategory = ""; } navigate(control.dataset.page); return; }
+  if (action === "navigate") {
+    const navArea = event.detail === 0 ? control.closest(".dm-bottom-nav,.dm-sidebar") : null;
+    const navSelector = navArea?.classList.contains("dm-bottom-nav") ? ".dm-bottom-nav" : ".dm-sidebar";
+    if (control.dataset.page === "saved") ui.savedCategory = "overview";
+    if (control.dataset.page === "finance") { ui.financeTab = "overview"; ui.financeCategory = ""; }
+    navigate(control.dataset.page);
+    if (navArea && !ui.sheet) focusCurrentNavigation(navSelector);
+    else if (event.detail === 0 && !ui.sheet) focusRouteHeading();
+    return;
+  }
   if (action === "search") { if (!ui.sheet) { ui.searchQuery = ""; ui.searchPage = 1; ui.searchType = "all"; } ui.sheet = { kind: "search", justRendered: false }; ui.menu = false; render(); return; }
   if (action === "today-cards") { ui.menu = false; ui.sheet = { kind: "today-cards" }; render(); return; }
   if (action === "menu") { ui.menu = !ui.menu; render(); return; }
@@ -803,7 +842,7 @@ document.addEventListener("submit", event => {
 });
 document.addEventListener("input", event => { handleExtendedInput(event); });
 document.addEventListener("change", event => { handleExtendedChange(event); });
-window.addEventListener("hashchange", () => { const page = currentPage(); if (page !== ui.page) { if (!confirmSheetDiscard()) { history.replaceState(null, "", `#${ui.page}`); return; } ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
+window.addEventListener("hashchange", () => { if (location.hash === "#sleep") history.replaceState(null, "", "#today"); const page = currentPage(); if (page !== ui.page) { if (!confirmSheetDiscard()) { history.replaceState(null, "", `#${ui.page}`); return; } ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
 let calendarPointerStart = null;
 let suppressCalendarClick = false;
 document.addEventListener("pointerdown", event => {

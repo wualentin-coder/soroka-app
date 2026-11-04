@@ -43,7 +43,7 @@ const pcDemo = { last: null, audio: { level: 76, muted: false }, rm: {
 function pcLoad(force = false) {
   ui.pc ||= { state: "idle" };
   const fresh = ui.pc.data && Date.now() - ui.pc.at < 15000;
-  if (ui.pc.loading || (fresh && !force)) return;
+  if (ui.pc.loading || (!force && (fresh || ui.pc.error))) return;
   ui.pc.loading = true;
   pcCall({ op: "state" }).then(answer => {
     if (answer?.error) throw new Error(answer.error);
@@ -117,7 +117,7 @@ function pcMeters(st, animate) {
 function pcHero(d) {
   const on = d.on === true, off = d.on === false;
   const mode = on ? "on" : off ? "off" : "unknown";
-  const title = on ? "Работает" : off ? "Выключен" : "Нет данных";
+  const title = on ? (d.agent ? "Компьютер на связи" : "Компьютер включён") : off ? "Компьютер выключен" : "Нет данных о компьютере";
   const st = d.status;
   const line = on ? [st?.uptime_seconds ? `работает ${pcUptime(st.uptime_seconds)}` : "", st?.active_user || ""].filter(Boolean).join(" · ") || (d.agent ? "агент на связи" : "агент Flow не запущен")
     : off ? "можно включить по сети" : "ESP32 давно не выходила на связь";
@@ -125,9 +125,14 @@ function pcHero(d) {
   const stale = d.statusAt && Date.now() - Date.parse(d.statusAt) > 120000;
   const hub = d.hub ? (stale ? "" : null) : "ESP32 не на связи — включить по сети не выйдет";
   const fresh = ui.pc.last?.cmd === "status" && ui.pc.last.status === "done";
-  return `<section class="pc-hero ${mode}">
-    <div class="pc-hero-top"><div class="pc-orb">${pcIcon(off ? "moon" : "power")}</div><div class="pc-hero-text"><strong>${title}</strong><span>${esc(line)}</span>${hub !== null || (stale && on) ? `<small>${esc([hub, stale && on ? `данные ${pcAgo(d.statusAt)}` : ""].filter(Boolean).join(" · "))}</small>` : ""}</div><button class="icon-button pc-refresh ${ui.pc.loading ? "spin" : ""}" type="button" data-action="pc-refresh" aria-label="Обновить">${pcIcon("refresh")}</button></div>
-    ${on ? pcMeters(fresh ? ui.pc.last.result : st, fresh) : ""}
+  const magic = document.documentElement.dataset.flowDesign === "magic";
+  const object = magic && window.flowMagicObject ? window.flowMagicObject("pc") : pcIcon(off ? "moon" : "power");
+  const measured = d.statusAt ? `Измерение: ${pcAgo(d.statusAt)}` : "Время измерения не передано";
+  return `<section class="pc-hero ${mode} ${stale || ui.pc.error ? "is-stale" : ""}" data-device-state="${ui.pc.error ? "error" : stale ? "stale" : mode}">
+    <div class="pc-hero-top"><div class="pc-orb">${object}</div><div class="pc-hero-text"><small class="pc-connection-label">${ui.pc.error ? "Последнее известное состояние" : stale ? "Данные устарели" : d.agent ? "Агент Flow на связи" : "Связь с устройством"}</small><strong>${title}</strong><span>${esc(line)}</span><small>${esc([hub, measured].filter(Boolean).join(" · "))}</small></div><button class="icon-button pc-refresh ${ui.pc.loading ? "spin" : ""}" type="button" data-action="pc-refresh" aria-label="Обновить состояние компьютера">${pcIcon("refresh")}</button></div>
+    ${ui.pc.error ? `<p class="pc-connection-error" role="status">Не удалось обновить: ${esc(ui.pc.error)}. Можно повторить кнопкой обновления.</p>` : ""}
+    ${magic && on && d.agent ? `<button type="button" class="primary-button pc-primary" data-action="pc-find-focus">Открыть на компьютере ${pcIcon("link")}</button>` : ""}
+    ${on && magic && st ? `<details class="pc-resource-group"><summary>Ресурсы компьютера<span>${pcPct(st.cpu_percent)} CPU · ${pcPct(st.memory_percent)} RAM</span></summary>${pcMeters(fresh ? ui.pc.last.result : st, fresh)}</details>` : on ? pcMeters(fresh ? ui.pc.last.result : st, fresh) : ""}
   </section>`;
 }
 
@@ -335,10 +340,18 @@ function pcFindResultsHtml(raw) {
 
 function pcLinkBlock() {
   const q = ui.pc.find || "";
-  return `<section class="pc-card pc-find"><div class="pc-card-head"><h3>${pcIcon("link")}Открыть на компьютере</h3></div><div class="pc-find-box"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.search}</svg><input id="pc-find" type="search" aria-label="Программа, файл, сайт или запрос на компьютере" enterkeyhint="go" placeholder="Программа, файл, сайт или запрос" autocomplete="off" value="${esc(q)}"></div><div class="pc-find-results">${pcFindResultsHtml(q)}</div><p class="section-note">Файл на компьютер — пришлите боту с подписью «на комп» (сохранит в «Загрузки\\Flow»). С компьютера — «скинь D:\\путь\\к\\файлу».</p></section>`;
+  return `<section class="pc-card pc-find"><div class="pc-card-head"><h3>${pcIcon("link")}Открыть на компьютере</h3></div><form id="pc-find-form" role="search"><div class="pc-find-box"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.search}</svg><input id="pc-find" type="search" aria-label="Программа, файл, сайт или запрос на компьютере" enterkeyhint="go" placeholder="Программа, файл, сайт или запрос" autocomplete="off" value="${esc(q)}"></div></form><div class="pc-find-results">${pcFindResultsHtml(q)}</div><p class="section-note">Файл на компьютер — пришлите боту с подписью «на комп» (сохранит в «Загрузки\\Flow»). С компьютера — «скинь D:\\путь\\к\\файлу».</p></section>`;
 }
 
 // Варианты меняются по мере набора — перерисовываем только список, поле остаётся в фокусе.
+document.addEventListener("focusin", event => {
+  if (event.target?.id !== "pc-find") return;
+  const results = document.querySelector(".pc-find-results");
+  if (results) results.style.minHeight = `${results.getBoundingClientRect().height}px`;
+});
+document.addEventListener("focusout", event => {
+  if (event.target?.id === "pc-find") document.querySelector(".pc-find-results")?.style.removeProperty("min-height");
+});
 document.addEventListener("input", event => {
   if (event.target?.id !== "pc-find") return;
   ui.pc.find = event.target.value;
@@ -383,7 +396,7 @@ function renderPcShotSheet() {
 function renderPcPowerSheet() {
   const cmd = ui.sheet.cmd === "sleep" ? "sleep" : "off";
   const opts = [[0, "Сейчас"], [600, "Через 10 мин"], [1800, "Через 30 мин"], [3600, "Через час"], [7200, "Через 2 часа"]];
-  const list = opts.map(([s, label]) => `<button type="button" class="pc-btn ${s ? "" : cmd === "off" ? "pc-off" : "pc-sleep"}" data-action="pc-power-go" data-cmd="${cmd}" data-delay="${s}">${label}</button>`).join("");
+  const list = opts.map(([s, label]) => `<button type="button" class="pc-btn ${s ? "" : cmd === "off" ? "pc-off" : "pc-sleep"}" data-action="pc-power-go" data-cmd="${cmd}" data-delay="${s}"><span>${label}</span><small>${s ? "Поставить таймер" : cmd === "sleep" ? "Усыпить сейчас" : "Выключить сейчас"}</small>${pcIcon(s ? "chart" : cmd === "sleep" ? "moon" : "power")}</button>`).join("");
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${cmd === "sleep" ? "Усыпить компьютер" : "Выключить компьютер"}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><p class="section-note">${cmd === "sleep" ? "Открытые программы останутся как есть, проснётся за несколько секунд." : "Программы с несохранённой работой могут не дать выключиться — тогда придёт сообщение."} Отложенное можно отменить.</p><div class="pc-pad">${list}</div></section></div>`;
 }
 
@@ -463,7 +476,12 @@ function pcQuick(cmd, args, key, done, failed) {
     }
     if (state === "is-done") done?.(result);
     if (state === "is-fail") failed?.();
-    if (pcOnPage() && !pcVolumeDragging && !document.querySelector(".pc-vol-range:active")) render();
+    if (pcOnPage() && !pcVolumeDragging && !document.querySelector(".pc-vol-range:active")) {
+      if (quiet && document.activeElement?.id === "pc-find") {
+        const media = document.querySelector(".pc-media");
+        if (media) media.outerHTML = pcMedia();
+      } else render();
+    }
   };
   pcCall({ op: "send", cmd, args }).then(made => {
     if (made?.error) throw new Error(made.error);
