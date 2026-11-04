@@ -19,3 +19,8 @@
 html[data-flow-design="magic"] .magic-object.light-glyph{width:64px;height:64px;flex:none;color:var(--accent)}
 html[data-flow-design="magic"] .dc-module-card .module-symbol{height:64px;margin-bottom:16px}
 html[data-flow-design="magic"] .dc-module-card .module-symbol>.magic-object{width:64px;height:64px}
+/* The same light material reaches secondary actions without changing meanings. */
+html[data-flow-design=magic] :is(.dm-bottom-nav,.dm-toolbar,.dc2-category-tools,.sheet-head,.sheet-actions,.dm-finance-root,.ds2-region,.lv-region) .icon{
+  stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(var(--accent-rgb),.24));
+}
+html[data-flow-design=magic] :is(.dm-bottom-nav .active,.dm-bottom-nav [aria-current=page],.dm-icon-button,.record-kicker,.dc2-ticket-main small,.ds2-region h2) .icon{color:var(--accent);filter:drop-shadow(0 0 5px rgba(var(--accent-rgb),.38))}

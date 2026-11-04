@@ -298,3 +298,23 @@ html[data-flow-design=magic][data-motion=off] .dc2-module{transition:none}
 @media(prefers-reduced-motion:reduce){html[data-flow-design=magic]:not([data-motion-mode=on]) .dc2-module{transition:none}}
 
 html[data-flow-design=magic] .saved-hub-main .saved-hub-transfer>.icon{display:none}
+html[data-flow-design=magic] .dc2-module-detail{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:400 10px/1.5 Manrope,sans-serif;color:var(--muted);margin-top:5px;font-style:normal}
+/* Immersive cinema and ticket proportions follow the physical object. */
+html[data-flow-design=magic] body:has(.dc-movie-workspace .movie-deck) :is(.dm-bottom-nav,.dm-sidebar,.assistant-fab){display:none!important}
+html[data-flow-design=magic] body:has(.dc-movie-workspace .movie-deck) .dm-main{padding-bottom:12px}
+html[data-flow-design=magic] .dc-movie-workspace .movie-deck-poster>.movie-cover{width:100%;max-width:none;aspect-ratio:auto;margin:0}
+html[data-flow-design=magic] .dc-movie-workspace .movie-deck-poster img{width:100%;height:100%;object-fit:cover;object-position:center}
+html[data-flow-design=magic] .dc2-ticket{min-height:182px;height:182px;overflow:hidden;position:relative;grid-template-columns:minmax(0,1fr) 96px;border-radius:24px;background:linear-gradient(120deg,rgba(var(--accent-rgb),.055),transparent 60%),var(--surface)}
+html[data-flow-design=magic] .dc2-ticket-main{min-width:0;padding:17px 16px;gap:7px}
+html[data-flow-design=magic] .dc2-ticket-main strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:17px;line-height:1.3}
+html[data-flow-design=magic] .dc2-ticket-main>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+html[data-flow-design=magic] .dc2-ticket-stub{border-left:1px dashed var(--line);padding:15px 10px;position:relative;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+html[data-flow-design=magic] .dc2-ticket-stub>.light-glyph{width:40px;height:40px}
+html[data-flow-design=magic] .dc2-ticket-stub:before,html[data-flow-design=magic] .dc2-ticket-stub:after{content:'';position:absolute;left:-8px;width:15px;height:15px;background:var(--page);border:1px solid var(--line);border-radius:50%}
+html[data-flow-design=magic] .dc2-ticket-stub:before{top:-9px}html[data-flow-design=magic] .dc2-ticket-stub:after{bottom:-9px}
+.dc2-ticket-code{display:grid;place-items:center;background:#fff;padding:5px;border-radius:5px;width:72px;height:106px;overflow:hidden}
+.dc2-ticket-code svg{width:100%;height:100%;filter:none}
+.dc2-ticket-code.barcode svg{width:96px;height:60px;max-width:none;transform:rotate(90deg)}
+.dc2-ticket-code.qr{height:72px}
+html[data-flow-design=magic] .dc2-ticket-stub>span:last-child{font-size:9px;line-height:1.4}
+html[data-flow-native=true][data-flow-design=magic] body:has(.dc-movie-workspace .movie-deck) .dm-topbar{display:flex!important}

@@ -288,3 +288,14 @@ html[data-flow-design="magic"] .dm-finance-native button{min-height:44px}
 
 
 html[data-flow-design="magic"] .dm-goal-card-actions{display:flex;align-items:center;gap:14px;margin-top:12px}html[data-flow-design="magic"] .dm-goal-card-actions .primary-button{min-height:44px;padding:10px 17px;font-size:12px}
+html[data-flow-design=magic] .dm-category-ledger{padding:0;background:transparent;border:0;box-shadow:none}
+html[data-flow-design=magic] .dm-category-ledger .cat-head{padding:4px 0 18px;border-bottom:1px solid var(--line);align-items:baseline}
+html[data-flow-design=magic] .dm-category-ledger .cat-head strong{font-size:24px;letter-spacing:-.7px;font-weight:500}
+html[data-flow-design=magic] .dm-category-ledger .cat-list{display:grid;gap:0}
+html[data-flow-design=magic] .dm-category-ledger .cat-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto 16px;gap:9px;padding:16px 0 22px;min-height:70px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;text-align:left;align-items:center}
+html[data-flow-design=magic] .dm-category-ledger .cat-name{font-size:13px;white-space:normal}
+html[data-flow-design=magic] .dm-category-ledger .cat-share{font-size:10px;color:var(--muted)}
+html[data-flow-design=magic] .dm-category-ledger .cat-sum{font-size:14px;min-width:0;white-space:nowrap}
+.dm-category-meter{position:absolute;left:0;right:0;bottom:12px;height:3px;background:var(--line);border-radius:9px;overflow:hidden}
+.dm-category-meter>i{display:block;height:100%;width:var(--category-share);background:linear-gradient(90deg,rgba(var(--accent-rgb),.35),var(--accent),var(--energy-hot));border-radius:inherit}
+html[data-flow-design=magic] .dm-calendar-living:after{padding:0;background:none;mask:none;-webkit-mask:none;border:1px solid rgba(var(--accent-rgb),.25);box-shadow:inset 0 0 18px rgba(var(--accent-rgb),.04);animation:flow-stable-light 12s ease-in-out infinite}

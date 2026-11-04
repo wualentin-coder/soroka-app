@@ -78,3 +78,35 @@ html[data-flow-design=magic] .assistant-fab{translate:0 calc(-1 * var(--assistan
 .fa-note-transform>summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px;cursor:pointer}
 .fa-note-transform>summary:after{content:'+';color:var(--accent);font-size:20px}.fa-note-transform[open]>summary:after{content:'−'}
 .fa-note-transform>.field{display:block;margin:6px 0 10px}.fa-note-transform>.ghost-button{width:100%;min-height:48px;border-radius:99px;margin-bottom:4px}
+/* One visual viewport, including Android adjustResize. No second IME offset. */
+.dm-live-assistant{top:var(--fa-top,0px);bottom:auto;height:var(--fa-height,100dvh)}
+.dm-live-assistant :is(.fa-stage,.fa-context,.fa-result,.fa-screen-energy){position:absolute}
+.dm-live-assistant .fa-request{position:absolute;left:18px;right:18px;bottom:24px;max-width:540px;margin:auto;max-height:30%;overflow:auto;z-index:5;text-align:center}
+.fa-request p{font-size:17px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 14px}
+.fa-request>div{display:flex;gap:10px;justify-content:center}
+.fa-request button{min-height:44px}
+.dm-live-assistant:has(.fa-request:not([hidden])) .fa-stage{bottom:35%}
+.dm-live-assistant[data-keyboard=true] .fa-context{bottom:8px;max-height:calc(var(--fa-height) - 78px);padding-top:8px}
+.dm-live-assistant[data-keyboard=true] .fa-stage{top:8px;bottom:auto;width:calc(100% - 36px);height:54px;flex-direction:row;justify-content:center;gap:12px}
+.dm-live-assistant[data-keyboard=true] .fa-star{width:44px;height:44px}
+.dm-live-assistant[data-keyboard=true] .fa-star-canvas{width:100px;height:90px}
+.dm-live-assistant[data-keyboard=true] .fa-status{margin:0;font-size:12px}
+.dm-live-assistant[data-keyboard=true] .fa-answer{display:none}
+.dm-live-assistant[data-keyboard=true] .fa-controls{margin:0;gap:8px}
+.dm-live-assistant[data-keyboard=true] .fa-controls button{width:44px;height:44px}
+html[data-flow-native=true] .dm-live-assistant .fa-screen-energy{inset:1px}
+.dm-live-assistant[data-keyboard=true] .fa-context{left:16px;right:16px;width:auto;margin:0;max-width:570px}
+.dm-live-assistant[data-keyboard=true] .fa-stage{left:16px;right:16px;width:auto;top:calc(var(--native-safe-top,0px) + 6px);justify-content:space-between}
+.dm-live-assistant[data-keyboard=true] .fa-context{max-height:calc(var(--fa-height) - 90px - var(--native-safe-top,0px))}
+.dm-live-assistant[data-keyboard=true] .dm-compose-foot .fa-privacy{display:none}
+.dm-live-assistant .fa-screen-energy:before{content:none}
+.dm-live-assistant .fa-screen-energy{border:1px solid rgba(var(--accent-rgb),.45);animation:none;opacity:1;box-shadow:inset 0 0 22px rgba(var(--accent-rgb),.14);transition:box-shadow .3s}
+.dm-live-assistant .fa-screen-energy:after{animation:fa-edge-shimmer 12s ease-in-out infinite;box-shadow:inset 0 0 20px rgba(var(--accent-rgb),.13)}
+html[data-flow-native=true] .dm-assistant-active :is(.dm-topbar,.dm-main,.dm-bottom-nav,.dm-sidebar){filter:none;opacity:.22}
+html[data-flow-native=true] .flow-assistant-layer{contain:layout style;transform:translateZ(0);background:rgba(5,7,9,.36)}
+html[data-flow-native=true] .fa-screen-energy{contain:strict;isolation:isolate;transform:translateZ(0)}
+html[data-flow-native=true] .fa-canvas-ready.fa-star{filter:none}
+html[data-flow-native=true] .fa-context{mask:none;backdrop-filter:none;background:var(--page);border-radius:22px;padding:14px}
+html[data-flow-native=true] .fa-controls button{backdrop-filter:none}
+html[data-flow-native=true] .dm-live-assistant.flow-assistant-layer .fa-screen-energy{animation:none;opacity:1;border-color:rgba(var(--accent-rgb),calc(.4 + var(--voice)*.3));box-shadow:inset 0 0 calc(20px + var(--voice)*24px) rgba(var(--accent-rgb),.15);transition:box-shadow .16s,border-color .16s}
+html[data-flow-native=true] .dm-live-assistant .fa-screen-energy:after{animation:flow-window-light 12s ease-in-out infinite}

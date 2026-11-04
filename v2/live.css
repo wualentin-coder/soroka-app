@@ -1330,3 +1330,6 @@ body.piano-playing{overflow:hidden}
   body.piano-page .sidebar,body.piano-page .mobile-nav{display:none!important}
   body.piano-page .main{width:100%;max-width:none;margin:0;padding:8px 12px;min-height:0}
 }
+/* Native edge-to-edge geometry also protects the optional Classic shell. */
+html[data-flow-native=true][data-flow-design=classic] body{padding-top:var(--native-safe-top,0px)}
+html[data-flow-native=true] .pn-player-shell{padding:var(--native-safe-top,0px) var(--native-safe-right,0px) var(--native-safe-bottom,0px) var(--native-safe-left,0px);box-sizing:border-box}

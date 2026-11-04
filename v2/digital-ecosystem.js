@@ -15,7 +15,7 @@
     if (surfaces.has(surface) || surface.closest('.dm-live-assistant') || surface.matches('.activity-island-card')) return;
     surfaces.add(surface); surface.classList.add('flow-living-surface');
     if (getComputedStyle(surface).position === 'static') surface.classList.add('flow-surface-static');
-    const contour = document.createElement('i'); contour.className = 'flow-surface-contour'; contour.setAttribute('aria-hidden', 'true'); surface.append(contour);
+    const contour = document.createElement('i'); contour.className = 'flow-surface-contour'; contour.setAttribute('aria-hidden', 'true');surface.append(contour);
   }
   function scan(scope) {
     for (const node of scope.querySelectorAll(selector)) attach(node);
@@ -126,5 +126,16 @@
   window.addEventListener('pagehide', () => { for (const [surface] of inputs) clearInput(surface); if (frame) cancelAnimationFrame(frame); frame = 0; }, { signal });
   window.addEventListener('pageshow', schedule, { signal });
   window.flowEcosystem = { refresh: schedule, getState: () => ({ surfaces: surfaces.size, activeSurface: !!active, typingLayers: inputs.size, typingAnimations: [...inputs.values()].reduce((n, item) => n + item.effects.filter(effect => effect.playState === 'running').length, 0), scene: root.dataset.magicScene, mediaOwners: media.size, microphoneOwners:microphones.size, voice, physicalHapticsVerified: false }), dispose() { disposed = true; abort.abort(); for(const fab of document.querySelectorAll('.assistant-fab')){fab.inert=false;fab.style.removeProperty('--assistant-avoid');fab.removeAttribute('data-avoid-hidden');} clearTimeout(settleTimer); if (frame) cancelAnimationFrame(frame); for (const observer of observers.values()) observer.disconnect(); for (const [surface] of inputs) clearInput(surface); for (const surface of surfaces) { surface.classList.remove('flow-living-surface','flow-surface-static','flow-surface-attention','flow-surface-resting','flow-surface-focused');surface.style.removeProperty('--surface-x');surface.style.removeProperty('--surface-y'); surface.querySelector(':scope>.flow-surface-contour')?.remove(); } } };
+  document.addEventListener('click', event => {
+    const button=event.target.closest?.('[data-action="list-toggle"]');
+    if(!button||button.disabled||!moving())return;
+    requestAnimationFrame(()=>{
+      const surface=document.querySelector('.dc2-window-lists');
+      if(!surface||!visible(surface))return;
+      attach(surface);
+      const contour=surface.querySelector(':scope>.flow-surface-contour');
+      contour?.animate([{opacity:.28},{opacity:.95,offset:.22},{opacity:.28}],{duration:620,easing:'ease-out'});
+    });
+  }, {capture:true,signal});
   watch(document.body); schedule();
 })();

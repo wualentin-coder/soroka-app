@@ -653,3 +653,56 @@ html[data-flow-design="magic"] body:not(.piano-page) .assistant-fab{bottom:72px;
 /* Keyboard ownership comes from the native visual viewport bridge in every phone orientation. */
 html[data-flow-design="magic"].kb-open body .dm-bottom-nav,
 html[data-flow-design="magic"].kb-open body .assistant-fab{display:none}
+/* Android owns fullscreen and cutout geometry; the web shell owns safe controls. */
+html[data-flow-native=true][data-flow-design=magic] .dm-topbar{
+  height:calc(60px + var(--native-safe-top,0px));
+  padding:calc(var(--native-safe-top,0px) + 4px) max(16px,var(--native-safe-right,0px)) 8px max(20px,var(--native-safe-left,0px));
+  align-items:center;
+}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{
+  position:fixed;left:var(--native-camera-x,50%);top:3px;transform:translateX(-50%);
+  width:168px;max-width:calc(100vw - 100px);height:max(36px,var(--native-camera-bottom,36px));min-height:36px;
+  border-radius:999px;background:#020203;border-color:rgba(var(--accent-rgb),.18);z-index:50;
+}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill .pill-idle{padding-left:36px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:active{transform:translateX(-50%) scale(.98)}
+html[data-flow-native=true][data-flow-design=magic] .dm-app-shell{padding-left:var(--native-safe-left,0px);padding-right:var(--native-safe-right,0px)}
+html[data-flow-native=true][data-flow-design=magic] .edge-energy{inset:1px;border-radius:30px}
+html[data-flow-native=true][data-flow-design=magic] .dm-bottom-nav{bottom:max(10px,var(--native-safe-bottom,0px))}
+html[data-flow-native=true][data-native-keyboard=true] .dm-bottom-nav{display:none}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{width:190px;padding:0 12px;justify-content:space-between;gap:38px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:before{margin-left:13px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{display:block;width:66px;max-width:66px;overflow:hidden;text-overflow:ellipsis;font-size:11px;text-align:center}
+/* Compact camera row: brand | cutout island | settings and menu. */
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar{height:56px;padding:3px 8px 7px 12px;align-items:flex-start}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-mobile-brand{height:37px;gap:5px;font-size:24px;max-width:82px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .brand-mark{width:19px;height:23px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-toolbar{height:37px;gap:0}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-icon-button{width:32px;min-width:32px;height:37px;padding:7px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{width:140px;min-width:140px;padding:0 8px;gap:30px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:47px;max-width:47px;font-size:9.5px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:before{margin-left:6px}
+.head-pill .island-section-symbol{display:grid;place-items:center;flex:none;width:18px;height:18px;color:var(--accent)}
+.head-pill .island-section-symbol .icon{width:16px;height:16px}
+html[data-flow-design=magic] .head-pill.activity-island:has(.island-section-symbol):before{display:none}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{width:170px;min-width:170px;padding:0 9px 0 14px;gap:32px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:64px;max-width:64px;font-size:9px}
+html[data-flow-native=true][data-flow-design=magic] .edge-energy{z-index:1500}
+html[data-flow-native=true][data-flow-design=magic] body.assistant-active .edge-energy{visibility:hidden}
+html[data-flow-native=true][data-flow-design=magic] .dm-live-assistant .fa-screen-energy{z-index:1500}
+html[data-flow-native=true][data-flow-design=magic] :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading)>div>:is(h1,p.date,p:first-child){display:none}
+html[data-flow-native=true][data-flow-design=magic] :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading){min-height:0;margin-top:0;margin-bottom:12px;padding-top:0}
+html[data-flow-native=true][data-flow-design=magic] .dm-page-heading:not(:has(button,summary,select)){display:none}
+html[data-flow-native=true][data-flow-design=magic] .dm-main :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dl-heading,.ds2-heading,.dc-heading,.lv-heading){display:none!important}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar{height:60px;padding-top:9px;padding-left:14px;padding-right:14px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{top:9px;height:36px;min-height:36px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-mobile-brand{height:36px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .dm-toolbar{height:36px}
+.dm-section-actions{display:grid;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px}
+html[data-flow-design=magic] .dm-section-actions>button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;height:auto;min-height:44px;padding:10px 12px;border:0;border-radius:12px;background:transparent;color:var(--text);font-size:12px;text-align:left}
+html[data-flow-design=magic] .dm-section-actions .icon{width:17px;height:17px;flex:none}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar :is(.dm-mobile-brand,.dm-toolbar,.dm-icon-button){height:36px;min-height:36px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:58px;max-width:58px}
+.head-pill .island-section-symbol svg{width:18px;height:18px;overflow:visible}
+html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-title-row{display:none!important}
+html[data-flow-native=true][data-flow-design=magic] .dm-main .ds-work-head{display:none!important}

@@ -122,7 +122,21 @@
     function paint() {
       const state = current();
       if (pill?.isConnected) {
-        const label=state.kind==='idle'&&section==='Flow'?'Flow рядом':state.label; if(pill.textContent!==label)pill.textContent=label;
+        if(document.documentElement?.dataset.flowDesign!=='magic'){
+          const label=state.kind==='idle'&&section==='Flow'?'Flow рядом':state.label;if(pill.textContent!==label)pill.textContent=label;
+        }else{
+        const route=typeof ui==='undefined'?'':ui.page;
+        const names={today:'План',tasks:'Дела',saved:'Сохранённое',finance:'Финансы',more:'Ещё',settings:'Настройки',piano:'Пианино',english:'Английский',sport:'Спорт',pc:'Компьютер',render:'Рендер',vpn:'VPN',server:'Сервер',projects:'Проекты',metrics:'Показатели',docs:'Документы',vault:'Пароли',archive:'Архив',inbox:'Входящие'};
+        const category=route==='saved'&&ui.savedCategory!=='overview'?ui.savedCategory:'';
+        const sectionName=category&&typeof SAVED_NAMES!=='undefined'?(SAVED_NAMES[category]||names[route]):names[route];
+        const label=state.kind==='idle'&&sectionName?sectionName:state.label;
+        let mark=pill.querySelector('.island-section-symbol');const shape=category&&typeof savedIcon==='function'?savedIcon(category):({today:'calendar',tasks:'check',saved:'bookmark',finance:'wallet',more:'overview',settings:'settings',piano:'piano',english:'study',sport:'weight',pc:'desktop',render:'film',vpn:'key',server:'server',projects:'project',metrics:'chart',docs:'file',vault:'key',archive:'archive',inbox:'inbox'}[route]||'spark');
+        if(!mark){mark=document.createElement('span');mark.className='island-section-symbol';mark.setAttribute('aria-hidden','true');pill.prepend(mark);}
+        if(mark.dataset.route!==route+category){mark.dataset.route=route+category;mark.innerHTML=!category&&typeof window.flowMagicObject==='function'?window.flowMagicObject(route):(typeof icon==='function'?icon(shape):'');}
+        let text=pill.querySelector('.island-label');if(!text){text=document.createElement('span');text.className='island-label';pill.replaceChildren(text);}
+        if(!mark.isConnected)pill.prepend(mark);
+        if(text.textContent!==label)text.textContent=label;
+        }
         pill.dataset.activity = state.kind;
         pill.dataset.progressKnown = String(state.progress !== null);
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);

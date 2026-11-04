@@ -20,7 +20,7 @@
     if (where !== last) {
       const first = !last;
       last = where;
-      if (!first) {
+      if (!first && document.documentElement.dataset.flowDesign !== 'magic') {
         document.body.classList.remove("page-anim");
         void document.body.offsetWidth;
         document.body.classList.add("page-anim");
@@ -29,8 +29,9 @@
       }
     }
     // Новое окно — с въездом; то же окно после перерисовки — без.
-    if (ui.sheet && ui.sheet !== sheetSeen) {
-      sheetSeen = ui.sheet;
+    const currentSheetOwner = ui.sheet ? ['kind','category','id','type','mode'].map(key => String(ui.sheet[key] ?? '')).join('|') : null;
+    if (ui.sheet && currentSheetOwner !== sheetSeen) {
+      sheetSeen = currentSheetOwner;
       document.querySelectorAll(".modal-backdrop").forEach(node => node.classList.add("sheet-enter"));
     }
     if (!ui.sheet) sheetSeen = null;

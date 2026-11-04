@@ -11,7 +11,7 @@
   window.flowMagicUI={heading,hero,art,sectionHeading};
   window.flowMagicShellStamp=()=>`${ui.page}|${ui.menu}|${window.flowDigital?.settings.sound!==false}`;
   function menu(){const node=template(nativeHeader('','','')).content.querySelector('.header-menu');if(!node)return'';const theme=node.querySelector('[data-action="theme"]');if(theme){theme.dataset.action='navigate';theme.dataset.page='settings';theme.innerHTML=icon('settings')+'<span>Оформление</span>';}node.insertAdjacentHTML('afterbegin',`<button type="button" data-action="search">${icon('search')}<span>Поиск по Flow</span></button><button type="button" data-dm-shell="assistant">${icon('spark')}<span>Ассистент Flow</span></button>`);return node.outerHTML;}
-  window.flowMagicTopbar=()=>`<header class="dm-topbar"><button type="button" class="dm-mobile-brand" data-action="navigate" data-page="today" aria-label="Flow, главная"><img class="brand-mark" src="./assets/flow-logo.svg" alt=""><span>flow<span class="brand-dot">.</span></span></button><div class="dm-breadcrumb"><span>Моё пространство</span><span>/</span><strong>${esc((navigation.find(item=>item[0]===ui.page)||[])[1]||({piano:'Пианино',english:'Английский',sport:'Спорт'}[ui.page])||'Flow')}</strong></div><div class="dm-toolbar"><button class="head-pill dm-island" type="button" aria-label="Текущая активность Flow"></button><button type="button" class="dm-icon-button" data-dm-shell="sound" aria-label="Звуковые отклики" aria-pressed="${window.flowDigital?.settings.sound!==false}">${icon('music')}</button><button type="button" class="dm-icon-button" data-dm-shell="effects" aria-label="Свет, движение и звук">${icon('settings')}</button><button type="button" class="dm-accent-button" data-dm-shell="accent" aria-label="Выбрать акцент Flow"><i></i></button><div class="header-menu-wrap"><button type="button" class="dm-icon-button" data-action="menu" aria-label="Меню Flow" aria-expanded="${ui.menu}">${icon('more')}</button>${menu()}</div></div></header>`;
+  window.flowMagicTopbar=()=>`<header class="dm-topbar"><button type="button" class="dm-mobile-brand" data-action="navigate" data-page="today" aria-label="Flow, главная"><img class="brand-mark" src="./assets/flow-logo.svg" alt=""><span>flow<span class="brand-dot">.</span></span></button><div class="dm-breadcrumb"><span>Моё пространство</span><span>/</span><strong>${esc((navigation.find(item=>item[0]===ui.page)||[])[1]||({piano:'Пианино',english:'Английский',sport:'Спорт'}[ui.page])||'Flow')}</strong></div><div class="dm-toolbar"><button class="head-pill dm-island" type="button" aria-label="Текущая активность Flow"></button><button type="button" class="dm-icon-button" data-action="navigate" data-page="settings" aria-label="Настройки Flow">${icon('settings')}</button><div class="header-menu-wrap"><button type="button" class="dm-icon-button" data-action="menu" aria-label="Меню Flow" aria-expanded="${ui.menu}">${icon('more')}</button>${menu()}</div></div></header>`;
   window.brand=()=>`<img class="brand-mark" src="./assets/flow-logo.svg" alt=""><div><span class="brand-name">flow<span style="color:var(--accent)">.</span></span><span class="brand-label">Digital Magic</span></div>`;
   window.header=(title,subtitle,eyebrow)=>heading(esc(eyebrow||subtitle||'Моё пространство'),title);
   function calendarDayMarkup(date) {
@@ -73,5 +73,19 @@
   document.addEventListener('click',event=>{const button=event.target.closest('[data-dm-shell]');if(!button)return;const action=button.dataset.dmShell;if(action==='assistant'){ui.menu=false;render();requestAnimationFrame(()=>requestAnimationFrame(()=>window.flowAssistant?.open(document.querySelector('.dm-topbar [data-action="menu"]'))));return;}if(action==='effects')window.flowDigital?.openSettings(button);if(action==='sound'){const prefs=window.flowDigital;if(prefs){prefs.setSound(!prefs.settings.sound);button.setAttribute('aria-pressed',String(prefs.settings.sound));button.innerHTML=icon(prefs.settings.sound?'music':'bell');}}if(action==='accent')openPalette(button);});
   document.addEventListener('flow:effectschange',()=>{document.querySelectorAll('[data-dm-shell="sound"]').forEach(button=>{const enabled=window.flowDigital?.settings.sound!==false;button.setAttribute('aria-pressed',String(enabled));button.innerHTML=icon(enabled?'music':'bell');});});
   window.addEventListener('keydown',event=>{if(palette&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();closePalette();}},true);
+  const nativeCategories=categoriesCard;
+  window.categoriesCard=()=>{
+    const fragment=template(nativeCategories()),card=fragment.content.querySelector('.cat-card');if(!card)return fragment.innerHTML;
+    card.classList.add('dm-category-ledger');
+    const totals=monthCategories(),sum=totals.reduce((n,row)=>n+row[1],0);
+    card.querySelector('.cat-bar')?.remove();
+    for(const row of card.querySelectorAll('.cat-row[data-category]')){
+      const value=totals.find(item=>item[0]===row.dataset.category)?.[1]||0;
+      row.style.setProperty('--category-share',`${sum?100*value/sum:0}%`);
+      row.querySelector('.cat-dot')?.remove();
+      row.insertAdjacentHTML('beforeend','<span class="dm-category-meter" aria-hidden="true"><i></i></span>');
+    }
+    return fragment.innerHTML;
+  };
   const refresh=()=>{if(typeof render==='function')render();};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});else queueMicrotask(refresh);
 })();
