@@ -4,6 +4,34 @@ let movieDeckId = "";
 let movieFiltersOpen = null;
 let movieLayoutObserver = null;
 let movieSearchOpen = false;
+let movieSwipeUndo = null, movieSwipeUndoTimer = 0;
+const movieSwipeFields = ['status','viewed','statusBeforeViewed'];
+function movieSwipeState(item){return movieSwipeFields.map(key=>({key,own:Object.prototype.hasOwnProperty.call(item,key),value:item[key]}));}
+function clearMovieSwipeUndo(resize=true){
+  clearTimeout(movieSwipeUndoTimer);movieSwipeUndoTimer=0;movieSwipeUndo=null;
+  document.querySelector('.movie-carousel-undo')?.remove();document.body.classList.remove('movie-undo-visible');
+  if(resize&&movieDeck?.track.isConnected){sizeMovieCarousel(movieDeck.track);movieDeck.measure();movieDeck.paint();}
+}
+function movieCarouselViewed(item){
+  const before=movieSwipeState(item);toggleMovieViewed(item,true);
+  clearMovieSwipeUndo(false);
+  const expires=Date.now()+8000;movieSwipeUndo={id:item.id,before,after:movieSwipeState(item),expires};
+  const notice=document.createElement('div');notice.className='movie-carousel-undo swipe-undo';notice.setAttribute('role','status');
+  notice.innerHTML=`<span>${icon('check','icon-sm')}<span class="movie-undo-copy"><b>${item.viewed?'Просмотрено':'Снова в планах'}</b><small>${esc(item.title)}</small></span></span><button type="button" data-action="movie-carousel-undo" aria-label="Вернуть фильм: ${esc(item.title)}">Вернуть</button>`;
+  document.body.classList.add('movie-undo-visible');document.body.append(notice);
+  movieSwipeUndoTimer=setTimeout(()=>clearMovieSwipeUndo(),8000);
+  clearTimeout(toastTimer);ui.toast='';render();
+}
+function undoMovieCarouselSwipe(){
+  const undo=movieSwipeUndo;if(!undo)return;
+  const item=savedItem('movies',undo.id);clearMovieSwipeUndo(false);
+  if(Date.now()>undo.expires){render();return;}
+  if(!item){toast('Фильм уже удалён');return;}
+  if(!undo.after.every(({key,own,value})=>Object.prototype.hasOwnProperty.call(item,key)===own&&item[key]===value)){toast('Статус фильма уже изменился');return;}
+  for(const {key,own,value} of undo.before){if(own)item[key]=value;else delete item[key];}
+  movieDeckId=item.id;save();toast('Фильм возвращён в планы');
+  if(movieCarouselEnabled())requestAnimationFrame(()=>movieDeck?.track.querySelector('.active .movie-deck-info')?.focus({preventScroll:true}));
+}
 let movieDeckMode = (() => { try { return localStorage.getItem("flow-movie-view") === "carousel"; } catch { return false; } })();
 function moviePlansTab() { return ui.savedCategory === "movies" && !["viewed", "reco", "skipped"].includes(ui.savedFilter); }
 function movieCarouselEnabled() { return moviePlansTab() && movieDeckMode; }
@@ -64,7 +92,7 @@ function mountMovieCarousel() {
   movieDeck = new LoopDeck(track, {count: items.length, index, card: (i, slot) => movieCarouselCard(items[i], i, slot), onAction: (action,i)=>{
     if(items[i]?._movieMarathon){movieMarathonOpen(items[i]);return;}
     const item=savedItem('movies',items[i].id);if(!item)return;
-    if(action==='viewed')toggleMovieViewed(item);
+    if(action==='viewed')movieCarouselViewed(item);
     else {ui.sheet={kind:'saved',category:'movies',id:item.id,mode:'carousel-actions',justRendered:false};render();}
   }, actionLabel:(action,i)=>items[i]?._movieMarathon?'Открыть марафон':action==='viewed'?'Просмотрено':'Действия', onChange: i => {
     movieDeckId = items[i].id;
@@ -91,6 +119,7 @@ function sizeMovieCarousel(track) {
   track.dataset.heightLimit=String(Math.max(document.documentElement.dataset?.flowDesign === 'magic' ? 180 : 320,Math.floor(room())));
 }
 document.addEventListener("click", event => {
+  if(event.target.closest('[data-action="movie-carousel-undo"]')){event.preventDefault();event.stopImmediatePropagation();undoMovieCarouselSwipe();return;}
   const search = event.target.closest('[data-action="movie-local-search"]');
   if (search) {
     event.preventDefault(); event.stopImmediatePropagation();

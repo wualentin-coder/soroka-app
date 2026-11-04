@@ -755,6 +755,11 @@ body.density-compact .task-card, body.density-compact .record-card, body.density
 .swipe-undo { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 8px 0 16px; border-radius: 16px; background: var(--surface-soft); color: var(--muted); font-size: 13px; font-weight: 700; }
 .swipe-undo span { display: inline-flex; align-items: center; gap: 8px; }
 .swipe-undo button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--accent); font: inherit; font-weight: 800; }
+.movie-carousel-undo{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));z-index:90;box-sizing:border-box;width:min(420px,calc(100vw - 32px));min-height:56px;padding:8px 8px 8px 16px;border:1px solid rgba(var(--accent-rgb),.38);box-shadow:0 8px 28px #0005;background:var(--surface)}
+.movie-carousel-undo>span{min-width:0}.movie-carousel-undo .movie-undo-copy{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}.movie-undo-copy b{color:var(--text);font-size:13px}.movie-undo-copy small{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:400}.movie-carousel-undo>button{flex:none;min-height:44px}
+body:has(.movie-deck) .movie-carousel-undo{bottom:max(52px,env(safe-area-inset-bottom),calc(var(--native-safe-bottom,0px) + 16px))}
+body.movie-undo-visible .main:has(.movie-deck),html[data-flow-design=magic] body.movie-undo-visible .dm-main:has(.dc-movie-workspace .movie-deck){padding-bottom:max(116px,calc(env(safe-area-inset-bottom) + 64px),calc(var(--native-safe-bottom,0px) + 80px))!important}
+body.movie-undo-visible .toast{bottom:calc(160px + env(safe-area-inset-bottom))}
 /* Палитры поверх основы (тёмной или светлой). */
 :root[data-palette="midnight"] { --page: #0b1020; --surface: #121a2e; --surface-raised: #17213a; --surface-soft: #1c2844; --line: #283655; --text: #eef2ff; --muted: #a3aecb; --subtle: #8793b3; }
 :root[data-palette="graphite"] { --page: #121212; --surface: #1c1c1e; --surface-raised: #232326; --surface-soft: #2a2a2d; --line: #38383c; --text: #f2f2f2; --muted: #a8a8ad; --subtle: #8e8e93; }

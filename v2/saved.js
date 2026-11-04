@@ -329,7 +329,7 @@ function ensureMovieFacts(item) {
 }
 function movieInfo(item, key) { return item[key] === undefined ? movieDemoInfo(item)[key] : item[key]; }
 function movieScore(value) { return value === "" || value === null || value === undefined || Number(value) <= 0 ? "—" : Number(value).toLocaleString("ru-RU", { maximumFractionDigits: 1 }); }
-function toggleMovieViewed(item) {
+function toggleMovieViewed(item, quiet = false) {
   if (!item) return;
   if (movieIsViewed(item)) {
     item.status = item.statusBeforeViewed && item.statusBeforeViewed !== "Посмотрел" ? item.statusBeforeViewed : "Хочу посмотреть";
@@ -340,6 +340,7 @@ function toggleMovieViewed(item) {
     item.viewed = true;
   }
   save();
+  if (quiet) return;
   if (!ui.sheet) render();
   toast(item.viewed ? "Просмотрено — фильм в «Показать → Просмотренные»" : "Фильм возвращён в планы");
 }
