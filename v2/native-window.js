@@ -24,6 +24,7 @@
   function paintCamera(){
     if(!cameraAvailable()||!geometry)return;
     const y=cameraY(),hitTop=Math.max(0,y-22);
+    root.style.setProperty('--native-camera-center-y',y+'px');
     root.style.setProperty('--native-camera-hit-top',hitTop+'px');
     root.style.setProperty('--native-camera-light-offset',(y-hitTop)+'px');
     const range=document.querySelector('[data-native-camera-y]');if(range)range.value=String(y);

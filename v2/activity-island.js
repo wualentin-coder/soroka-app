@@ -141,11 +141,31 @@
     let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0,suspended=false,lastTyping=0;
     const magic=()=>document.documentElement?.dataset.flowDesign==='magic';
     const hidden=()=>document.hidden||suspended;
-    const presentation=createPresentation({hidden,changed:orb=>{if(pill?.isConnected&&magic())pill.dataset.islandOrb=String(orb);}});
+    const presentation=createPresentation({hidden,changed:orb=>{
+      if(!pill?.isConnected||!magic())return;
+      pill.dataset.islandOrb=String(orb);
+      const bar=pill.closest('.dm-topbar');
+      if(bar){
+        bar.dataset.islandOrb=String(orb);
+        if(!bar.querySelector('.island-canopy')){
+          const canopy=document.createElement('span');canopy.className='island-canopy';canopy.setAttribute('aria-hidden','true');
+          canopy.innerHTML='<svg viewBox="0 0 1000 72" preserveAspectRatio="none"><path class="island-canopy-fill" d="M0 0H240C310 0 290 64 400 64H600C710 64 690 0 760 0H1000V-8H0Z"/><path class="island-canopy-rim" d="M0 0H240C310 0 290 64 400 64H600C710 64 690 0 760 0H1000"/></svg>';
+          bar.prepend(canopy);
+        }
+      }
+    }});
     const current = () => model({ section, pc, data: options.data(), unavailable });
     function close(restoreFocus = true) {
       if (!layer) return;
-      layer.remove(); layer = null; shown = null; lastPanelHTML="";
+      const leaving=layer;layer=null;shown=null;lastPanelHTML="";
+      leaving.style.pointerEvents='none';leaving.inert=true;leaving.setAttribute('aria-hidden','true');
+      const card=leaving.querySelector('.activity-island-card');
+      if(magic()&&!hidden()&&!window.flowDigital?.reducedMotion?.()&&card?.animate){
+        const current=getComputedStyle(card),from={opacity:current.opacity,translate:current.translate,scale:current.scale};
+        card.getAnimations().filter(animation=>animation.id==='flow-island-open').forEach(animation=>animation.cancel());
+        const exit=card.animate([from,{opacity:0,translate:'0 -8px',scale:'.98'}],{duration:220,easing:'cubic-bezier(.4,0,1,1)'});
+        exit.finished.catch(()=>{}).finally(()=>leaving.remove());
+      }else leaving.remove();
       pill?.setAttribute("aria-expanded", "false");
       if(magic())presentation.peek(1200);
       if (restoreFocus) pill?.focus({ preventScroll: true });
@@ -237,7 +257,13 @@
       layer.innerHTML = '<section class="activity-island-card" role="region" aria-label="Текущая активность" tabindex="-1"></section>';
       document.body.appendChild(layer);
       pill?.setAttribute("aria-expanded", "true");
-      position(); paint(); layer.querySelector(".activity-island-card").focus({ preventScroll: true });
+      paint();position();
+      const card=layer.querySelector('.activity-island-card');
+      if(magic()&&!hidden()&&!window.flowDigital?.reducedMotion?.()){
+        const entrance=card.animate?.([{opacity:0,translate:'0 -12px',scale:'.97'},{opacity:1,translate:'0 0',scale:'1'}],{duration:520,easing:'cubic-bezier(.22,1,.36,1)'});
+        if(entrance)entrance.id='flow-island-open';
+      }
+      card.focus({ preventScroll: true });
       layer.addEventListener("click", event => {
         const target = event.target.closest("button, .activity-island-scrim");
         if (!target) return;
