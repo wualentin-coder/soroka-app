@@ -704,5 +704,6 @@ html[data-flow-design=magic] .dm-section-actions .icon{width:17px;height:17px;fl
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar :is(.dm-mobile-brand,.dm-toolbar,.dm-icon-button){height:36px;min-height:36px}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .island-label{width:58px;max-width:58px}
 .head-pill .island-section-symbol svg{width:18px;height:18px;overflow:visible}
+html[data-flow-design=magic] .head-pill .island-section-symbol svg{width:18px;height:18px;min-width:18px;max-width:18px;min-height:18px;max-height:18px}
 html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-title-row{display:none!important}
 html[data-flow-native=true][data-flow-design=magic] .dm-main .ds-work-head{display:none!important}
