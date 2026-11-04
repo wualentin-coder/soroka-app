@@ -1,7 +1,6 @@
 /* Approved Flow vortex. Geometry stays fixed; light follows the current theme. */
 (() => {
   'use strict';
-  if (document.documentElement.dataset.flowDesign === 'classic') return;
   if (window.flowDigitalBrand) return;
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -24,7 +23,7 @@
   let instances = 0;
   let replacements = 0;
   let assetError = false;
-  let lastFavicon = '';
+  let lastFavicon = '', themeDirty = true;
 
   function parse(text) {
     const xml = new DOMParser().parseFromString(text, 'image/svg+xml');
@@ -126,7 +125,7 @@
       for (const image of pending) replace(image);
       pending.clear();
     }
-    favicon();
+    if(themeDirty&&mono){themeDirty=false;favicon();}
   }
 
   function schedule() {
@@ -177,7 +176,7 @@
       if (found) schedule();
     });
     bodyObserver.observe(document.body, { childList: true, subtree: true });
-    rootObserver = new MutationObserver(schedule);
+    rootObserver = new MutationObserver(()=>{themeDirty=true;schedule();});
     rootObserver.observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-palette', 'data-accent', 'data-flow-design', 'style', 'class'] });
     refresh();
     void load();

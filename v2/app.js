@@ -292,7 +292,7 @@ function navItem([page, label, symbol], mobile = false) {
   return `<button type="button" class="${active ? "active" : ""}" data-action="navigate" data-page="${page}" ${active ? 'aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span>${count}</button>`;
 }
 function brand() {
-  return `<img class="brand-mark" src="./assets/flow-logo.svg" alt=""><div><span class="brand-name">FLOW</span><span class="brand-label">личное пространство</span></div>`;
+  return `<img class="brand-mark" src="./assets/flow-vortex-magic.svg" alt=""><div><span class="brand-name">FLOW</span><span class="brand-label">личное пространство</span></div>`;
 }
 function header(title, subtitle, eyebrow) {
   return `<header class="page-header"><div><h1>${title}</h1></div><div class="header-actions"><button class="icon-button" type="button" data-action="search" aria-label="Поиск">${icon("search")}</button><div class="header-menu-wrap"><button class="icon-button" type="button" data-action="menu" aria-label="Меню" aria-expanded="${ui.menu}">${icon("more")}</button>${ui.menu ? `<div class="header-menu">${ui.page === "today" ? `<button type="button" data-action="today-cards">${icon("settings")}<span>Карточки на сегодня</span></button>` : ""}<button type="button" data-action="theme">${icon(themeTone() === "dark" ? "sun" : "moon")}<span>${themeTone() === "dark" ? "Светлая тема" : "Тёмная тема"}</span></button><button type="button" data-action="reset">${icon("reset")}<span>${window.SOROKA_LIVE ? "Обновить данные" : "Сбросить данные"}</span></button>${window.SorokaAndroid && window.SorokaAndroid.settings ? `<button type="button" data-action="android-settings">${icon("settings")}<span>Настройки телефона</span></button>` : ""}</div>` : ""}</div></div></header>`;
@@ -507,7 +507,7 @@ function searchSheet() {
 }
 let renderedScrollIdentity = null;
 let modalPageLock = null;
-const sheetScrollSelectors = [".sheet", ".dm-entry-body", ".note-editor", ".note-reader", ".season-chips", ".pk-body"];
+const sheetScrollSelectors = [".sheet", ".dm-entry-body", ".dc2-window-body", ".note-editor", ".note-reader", ".season-chips", ".pk-body"];
 function sheetScrollIdentity() {
   const s = ui.sheet;
   return s ? JSON.stringify([ui.page, s.kind, s.category, s.id, s.mode, s.type, s.index]) : null;
@@ -570,9 +570,8 @@ function render() {
   captureSheetState();
   scrollBeforeRender = modalPageLock ? null : { x: window.scrollX, y: window.scrollY };
   const scroll = captureSheetScroll();
-  document.documentElement.dataset.theme = themeTone();
-  document.documentElement.dataset.palette = ui.theme;
-  document.documentElement.dataset.accent = data.settings.accent || "teal";
+  const themeState={theme:themeTone(),palette:ui.theme,accent:data.settings.accent||"teal"};
+  for(const [key,value] of Object.entries(themeState))if(document.documentElement.dataset[key]!==value)document.documentElement.dataset[key]=value;
   document.body.classList.toggle("density-compact", data.settings.density === "compact");
   document.body.classList.toggle("density-spacious", data.settings.density === "spacious");
   const page = ui.demoState !== "normal" && ui.page !== "settings" ? renderDemoStatePage() : ui.page === "today" ? todayPage() : ui.page === "upcoming" ? upcomingPage() : extendedPage(ui.page);

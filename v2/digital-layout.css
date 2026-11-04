@@ -707,3 +707,21 @@ html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm
 html[data-flow-design=magic] .head-pill .island-section-symbol svg{width:18px;height:18px;min-width:18px;max-width:18px;min-height:18px;max-height:18px}
 html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-title-row{display:none!important}
 html[data-flow-native=true][data-flow-design=magic] .dm-main .ds-work-head{display:none!important}
+
+/* Native chrome: the section lives in the island, actions in the global menu. */
+html[data-flow-native=true][data-flow-design=magic] .dm-main :is(.dm-finance-view-action,.dc-movie-toolbar){display:none!important}
+html[data-flow-design=magic] .head-pill .island-section-symbol{width:18px;height:18px;min-width:18px;contain:size;overflow:hidden;line-height:0}
+html[data-flow-design=magic] .head-pill .island-section-symbol>svg{display:block;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important}
+html[data-flow-design=magic] .head-pill:is([data-activity=listen],[data-activity=think],[data-activity=speak],[data-activity=success],[data-activity=return]){border-color:rgba(var(--accent-rgb),.55)}
+html[data-flow-design=magic] .head-pill[data-activity=listen] .island-section-symbol{opacity:calc(.5 + var(--island-level,0)*.5);transform:scale(calc(.85 + var(--island-level,0)*.15))}
+html[data-flow-design=magic] .head-pill[data-activity=think] .island-section-symbol{animation:island-processing 1.8s ease-in-out infinite}
+@keyframes island-processing{50%{opacity:.4;transform:scale(.82)}}
+html[data-motion=off] .head-pill *,.digital-hidden .head-pill *{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .head-pill *{animation:none!important;transition:none!important}}
+
+
+html[data-flow-native=true][data-flow-design=magic] .dm-main .dc-movie-tools{display:none!important}
+html[data-flow-native=true][data-flow-design=magic] .dm-topbar.dm-context-view .dm-mobile-brand{display:none}
+html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view{display:grid;place-items:center;width:52px;height:36px;min-height:36px;flex:none;padding:6px;border:0;background:transparent;color:var(--accent)}
+html[data-flow-native=true][data-flow-design=magic] .dm-topbar .dm-header-view svg{width:23px;height:23px;filter:drop-shadow(0 0 5px rgba(var(--accent-rgb),.3))}
+

@@ -11,8 +11,9 @@
  function align(){
   const current=card(),grid=current?.querySelector('.calendar-grid'),tabs=current?.querySelector('.segmented');if(!grid||!tabs)return;
   const selected=grid.querySelector('.selected'),selection=grid.querySelector('.dm-calendar-selection'),band=grid.querySelector('.dm-calendar-week-band'),point=box(selected,grid);
-  if(point){place(selection,point);place(band,{x:0,y:point.y,w:grid.clientWidth,h:point.h});const origin=box(grid,surface());surface()?.style.setProperty('--dm-calendar-x',`${origin.x+point.x+point.w/2}px`);surface()?.style.setProperty('--dm-calendar-y',`${origin.y+point.y+point.h/2}px`);}else{if(selection)selection.hidden=true;if(band)band.hidden=true;}
-  place(tabs.querySelector('.dm-calendar-view-indicator'),box(tabs.querySelector('.active'),tabs));
+  const origin=point?box(grid,surface()):null,gridWidth=grid.clientWidth,indicatorBox=box(tabs.querySelector('.active'),tabs);
+  if(point){place(selection,point);place(band,{x:0,y:point.y,w:gridWidth,h:point.h});surface()?.style.setProperty('--dm-calendar-x',`${origin.x+point.x+point.w/2}px`);surface()?.style.setProperty('--dm-calendar-y',`${origin.y+point.y+point.h/2}px`);}else{if(selection)selection.hidden=true;if(band)band.hidden=true;}
+  place(tabs.querySelector('.dm-calendar-view-indicator'),indicatorBox);
  }
  function clear(){for(const timer of completionTimers)clearTimeout(timer);completionTimers.clear();for(const animation of animations)animation.cancel();animations.clear();for(const node of particles)node.remove();particles.clear();const current=card();current?.classList.remove('cal-dragging');if(current){current.style.removeProperty('--cal-p');current.querySelector('.calendar-grid')?.style.removeProperty('height');}}
  function animate(node,frames,options={}){if(!node||!moving())return;const animation=node.animate(frames,{duration:460,easing:'cubic-bezier(.19,1,.22,1)',...options});animations.add(animation);animation.finished.catch(()=>{}).finally(()=>{animations.delete(animation);if(!animations.size)align();});return animation;}

@@ -394,3 +394,21 @@ html[data-flow-native=true] .sheet{border-radius:28px;max-height:calc(100dvh - 2
 @keyframes flow-window-light{0%,100%{opacity:.55}50%{opacity:.72}}
 .flow-living-surface>.flow-surface-contour{animation:flow-window-light 12s ease-in-out infinite}
 .flow-surface-focused>.flow-surface-contour{animation:none;opacity:.85}
+
+html[data-flow-design=magic] .sheet.flow-living-surface>.flow-surface-contour{display:none}
+html[data-flow-design=magic] .sheet.flow-living-surface{border-color:rgba(var(--accent-rgb),.4)}
+html[data-flow-design=magic] .sheet.flow-surface-focused{border-color:rgba(var(--accent-rgb),.8);box-shadow:0 0 24px rgba(var(--accent-rgb),.12)}
+html[data-flow-design=magic] .sheet:is(.dc2-window,.dc2-note-sheet){overflow:hidden;min-height:0}
+html[data-flow-design=magic] .dc2-note-sheet .note-editor{flex:1 1 auto;min-height:0;overflow:auto;scroll-padding-bottom:32px}
+html[data-flow-design=magic] .dc2-note-sheet .note-rich{flex:0 0 auto;min-height:220px}
+html[data-flow-design=magic] .dc2-note-sheet .note-history{position:static;clear:both;flex:none;margin:24px 0 8px}
+html[data-flow-design=magic] .dc2-note-sheet .note-history summary{display:flex;align-items:center;gap:8px;min-height:44px}
+html[data-flow-design=magic] .dc2-note-sheet .note-format{position:relative;z-index:2;flex:0 0 auto;backdrop-filter:none;background:var(--surface)}
+
+
+html[data-flow-design=magic] .sheet.dc2-window{display:flex;flex-direction:column;overflow:hidden}
+html[data-flow-design=magic] .dc2-window>.sheet-handle,html[data-flow-design=magic] .dc2-window>.sheet-head{flex:none}
+html[data-flow-design=magic] .dc2-window>#saved-form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+html[data-flow-design=magic] .dc2-window-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scroll-padding:20px;padding:0 2px 12px}
+html[data-flow-design=magic] .dc2-window-actions{position:relative;flex:none;background:var(--surface);z-index:2}
+

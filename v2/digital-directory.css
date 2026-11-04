@@ -149,3 +149,12 @@ html[data-flow-design=magic][data-motion=off] .dv-preferences *{transition:none!
 }
 @media(max-width:359px){html[data-flow-design=magic] body .dv-preferences .accent-swatches{grid-template-columns:repeat(5,44px);gap:7px}html[data-flow-design=magic] body .dv-preferences .settings-row:not(.settings-row-wide)>select{max-width:100%}html[data-flow-design=magic] body .dv-preferences .settings-row{flex-wrap:wrap}html[data-flow-design=magic] body .dv-preferences .settings-row:has(.switch){flex-wrap:nowrap}}
 @media(orientation:landscape) and (max-height:500px){html[data-flow-design=magic] body .dv-preference-workbench{display:grid;grid-template-columns:minmax(250px,1fr) minmax(0,1.2fr);gap:24px}html[data-flow-design=magic] body .dv-visual-preferences{grid-column:1;grid-row:1/span 2;position:static}html[data-flow-design=magic] body .dv-sensory-preferences,html[data-flow-design=magic] body .dv-other-preferences{grid-column:2}html[data-flow-design=magic] body .dv-preferences .accent-swatches{grid-template-columns:repeat(5,44px);gap:7px}}
+
+@media(max-width:600px){
+html[data-flow-design=magic] .dc-practice-card{align-items:center;justify-content:center;min-height:124px;padding:16px 5px;gap:10px;text-align:center}
+html[data-flow-design=magic] .dc-practice-card h3{font-size:clamp(10px,3vw,13px);white-space:nowrap;overflow-wrap:normal;word-break:normal}
+html[data-flow-design=magic] .dc-practice-card p{display:none}
+}
+html[data-flow-design=magic] .dc-settings .switch input:checked+span{background:var(--accent);border-color:var(--accent)}
+html[data-flow-design=magic] .dc-settings .switch input:checked+span:before{background:var(--accent-ink)}
+

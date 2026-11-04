@@ -299,3 +299,25 @@ html[data-flow-design=magic] .dm-category-ledger .cat-sum{font-size:14px;min-wid
 .dm-category-meter{position:absolute;left:0;right:0;bottom:12px;height:3px;background:var(--line);border-radius:9px;overflow:hidden}
 .dm-category-meter>i{display:block;height:100%;width:var(--category-share);background:linear-gradient(90deg,rgba(var(--accent-rgb),.35),var(--accent),var(--energy-hot));border-radius:inherit}
 html[data-flow-design=magic] .dm-calendar-living:after{padding:0;background:none;mask:none;-webkit-mask:none;border:1px solid rgba(var(--accent-rgb),.25);box-shadow:inset 0 0 18px rgba(var(--accent-rgb),.04);animation:flow-stable-light 12s ease-in-out infinite}
+
+/* Narrow finance is a readable ledger: name and amount never fight for a column. */
+html[data-flow-design=magic] .dm-category-ledger .cat-more{grid-template-columns:minmax(0,1fr) auto auto 16px;text-align:left}
+html[data-flow-design=magic] .dm-category-ledger .cat-more .cat-dot{display:none}
+html[data-flow-design=magic] .dm-category-ledger .cat-more .cat-name{grid-column:1;min-width:0}
+html[data-flow-design=magic] .dm-category-ledger .cat-more .cat-share{grid-column:2}
+html[data-flow-design=magic] .dm-category-ledger .cat-more .cat-sum{grid-column:3;white-space:nowrap}
+html[data-flow-design=magic] .dm-finance-obligations>span{display:block}
+html[data-flow-design=magic] .dm-finance-obligations strong{display:block;margin:8px 0 4px;font-size:26px;white-space:nowrap}
+html[data-flow-design=magic] .dm-finance-obligations strong small{display:inline-block;white-space:nowrap;font-size:11px}
+@media(max-width:600px){
+html[data-flow-design=magic] .dm-finance-native .payment-card{grid-template-columns:24px minmax(0,1fr) auto;gap:5px 10px;padding:16px 14px}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-icon{grid-column:1;grid-row:1}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy{grid-column:2/-1;grid-row:1;min-width:0}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.list-copy strong{display:block;overflow-wrap:anywhere;line-height:1.5}
+html[data-flow-design=magic] .dm-finance-native .payment-card>.amount{grid-column:2;grid-row:2;justify-self:start;white-space:nowrap;font-size:16px}
+html[data-flow-design=magic] .dm-finance-native .payment-card .payment-actions{grid-column:3;grid-row:2;justify-self:end}
+}
+/* Move the glint as a texture; background-position previously repainted every frame. */
+html[data-flow-design=magic] .dm-calendar-selection:after{inset:0 -60%;background-size:100% 100%;animation:calendar-glint-travel 7.4s ease-in-out infinite;will-change:transform}
+@keyframes calendar-glint-travel{0%,30%{transform:translateX(-24%)}75%,100%{transform:translateX(24%)}}
+

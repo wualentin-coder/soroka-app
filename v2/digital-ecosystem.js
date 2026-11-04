@@ -44,15 +44,15 @@
   function schedule() { if (!frame && !disposed) frame = requestAnimationFrame(paint); }
   function avoidAssistant(){
     if(window.flowAssistant?.getState?.().open)return;
-    const controls=[...document.querySelectorAll('.primary-button,button[type=submit],[data-assistant-reserve],input:not([type=hidden]),textarea,select,[contenteditable="true"],.finance-row .amount,.tx-day-head b,.dm-finance-root button:not(.finance-row):not(.swipe-action),.dm-finance-root summary')].filter(visible);
+    const controls=[...document.querySelectorAll('.primary-button,button[type=submit],[data-assistant-reserve],input:not([type=hidden]),textarea,select,[contenteditable="true"],.finance-row .amount,.tx-day-head b,.dm-finance-root .list-copy,.dm-finance-obligations,.dm-category-ledger .cat-sum,.dm-finance-root button:not(.finance-row):not(.swipe-action),.dm-finance-root summary')].map(node=>{const rect=node.getBoundingClientRect();return rect.width>0&&rect.height>0?rect:null;}).filter(Boolean);
     for(const fab of document.querySelectorAll('.assistant-fab')){
-      fab.style.setProperty('--assistant-avoid','0px');fab.removeAttribute('data-avoid-hidden');const box=fab.getBoundingClientRect();
+      const previous=Number.parseFloat(fab.style.getPropertyValue('--assistant-avoid'))||0,measured=fab.getBoundingClientRect(),box={left:measured.left,right:measured.right,top:measured.top+previous,bottom:measured.bottom+previous};
       const overlap=(r,o)=>r.left<o.right+10&&r.right>o.left-10&&r.top<o.bottom+10&&r.bottom>o.top-10;
-      let lift=0;for(let i=0;i<6;i++){const occupied=controls.map(node=>node.getBoundingClientRect()).find(rect=>overlap({left:box.left,right:box.right,top:box.top-lift,bottom:box.bottom-lift},rect));if(!occupied)break;lift=Math.max(lift,box.bottom-occupied.top+18);}
+      let lift=0;for(let i=0;i<6;i++){const occupied=controls.find(rect=>overlap({left:box.left,right:box.right,top:box.top-lift,bottom:box.bottom-lift},rect));if(!occupied)break;lift=Math.max(lift,box.bottom-occupied.top+18);}
       const placed={left:box.left,right:box.right,top:box.top-lift,bottom:box.bottom-lift};
-      const obstructed=placed.top<150||controls.some(node=>overlap(placed,node.getBoundingClientRect()));
+      const obstructed=placed.top<150||controls.some(rect=>overlap(placed,rect));
       fab.inert=obstructed;
-      if(obstructed)fab.dataset.avoidHidden='true';else fab.style.setProperty('--assistant-avoid',lift+'px');
+      if(obstructed)fab.dataset.avoidHidden='true';else {fab.removeAttribute('data-avoid-hidden');if(lift!==previous)fab.style.setProperty('--assistant-avoid',lift+'px');}
     }
   }
   function fieldOf(event) { return event.composedPath().find(node => node instanceof Element && node.matches('input,textarea,[contenteditable="true"]')); }
@@ -133,8 +133,7 @@
       const surface=document.querySelector('.dc2-window-lists');
       if(!surface||!visible(surface))return;
       attach(surface);
-      const contour=surface.querySelector(':scope>.flow-surface-contour');
-      contour?.animate([{opacity:.28},{opacity:.95,offset:.22},{opacity:.28}],{duration:620,easing:'ease-out'});
+      surface.animate([{borderColor:'rgba(var(--accent-rgb),.3)'},{borderColor:'rgba(var(--accent-rgb),.95)',offset:.22},{borderColor:'rgba(var(--accent-rgb),.4)'}],{duration:620,easing:'ease-out'});
     });
   }, {capture:true,signal});
   watch(document.body); schedule();

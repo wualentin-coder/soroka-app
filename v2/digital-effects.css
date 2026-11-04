@@ -63,3 +63,14 @@ html[data-flow-native=true] .primary-button::after{display:none}
 /* The masked perspective plane corrupts Android WebView damage tracking on the
    tested device. Keep ambient light/particles and a stable two-dimensional grid. */
 html[data-flow-native=true] .digital-grid{transform:none;opacity:.03}
+
+.flow-edge-line rect{animation:none;stroke-opacity:.8}
+.flow-edge-line{animation:edge-light-opacity 12s ease-in-out infinite;will-change:opacity}
+@keyframes edge-light-opacity{0%,100%{opacity:.65}50%{opacity:.9}}
+html[data-motion=off] .flow-edge-line,.digital-hidden .flow-edge-line{animation:none!important}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .flow-edge-line{animation:none!important}}
+
+
+/* Offscreen scenes keep their phase but stop consuming animation work. */
+.magic-out-of-view,.magic-out-of-view *,.magic-out-of-view:before,.magic-out-of-view:after,.magic-out-of-view *:before,.magic-out-of-view *:after{animation-play-state:paused!important}
+html[data-flow-native=true] .assistant-fab[data-avoid-hidden]{opacity:0;visibility:hidden;pointer-events:none}

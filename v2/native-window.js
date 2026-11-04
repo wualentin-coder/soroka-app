@@ -10,12 +10,20 @@
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(route);};
   function portalActions(){
     if(root.dataset.flowNative!=='true'||root.dataset.flowDesign!=='magic')return;
-    const menu=document.querySelector('.dm-topbar .header-menu');if(!menu)return;
-    const headings=document.querySelectorAll('.dm-main :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dc-movie-title-row,.dl-heading,.ds2-heading,.ds-work-head,.dc-heading,.lv-heading)');
+    const bar=document.querySelector('.dm-topbar');if(!bar)return;
+    const movie=typeof ui!=='undefined'&&ui.page==='saved'&&ui.savedCategory==='movies';
+    const toggle=document.querySelector('.dm-main .dc-movie-tools [data-action=movie-carousel-toggle]');
+    if(toggle){bar.querySelector('.dm-header-view')?.remove();toggle.classList.add('dm-header-view');bar.prepend(toggle);}
+    else if(!movie)bar.querySelector('.dm-header-view')?.remove();
+    bar.classList.toggle('dm-context-view',Boolean(movie&&bar.querySelector('.dm-header-view')));
+    const menu=bar.querySelector('.header-menu');if(!menu)return;
+    const headings=document.querySelectorAll('.dm-main :is(.dm-page-heading,.dc2-library-head,.dc2-category-head,.dc-category-head,.dc-movie-title-row,.dl-heading,.ds2-heading,.ds-work-head,.dc-heading,.lv-heading,.dm-finance-view-action,.dc-movie-tools)');
     const controls=[...headings].flatMap(h=>[...h.querySelectorAll('button,details')].filter(n=>!n.closest('.head-pill')&&(!n.closest('details')||n.matches('details')))).filter(n=>!n.matches('[data-action=calendar-expand]'));
     if(!controls.length)return;
     let group=menu.querySelector('.dm-section-actions');if(!group){group=document.createElement('div');group.className='dm-section-actions';menu.prepend(group);}
-    group.replaceChildren();
+    // Existing moved controls survive unrelated surface updates; new render wins.
+    // The shell owns this group; app rerenders replace the whole shell or source.
+    for(const control of controls){const key=control.dataset.action;if(key)for(const old of group.querySelectorAll('[data-action]'))if(old.dataset.action===key&&old.dataset.entity===control.dataset.entity)old.remove();}
     for(const control of controls){if(control.matches('[data-action=calendar-expand]'))continue;
       if(control.matches('button')&&!control.textContent.trim()){const label=control.getAttribute('aria-label')||control.title;if(label){const text=document.createElement('span');text.textContent=label;control.append(text);}}
       group.append(control);

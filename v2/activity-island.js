@@ -104,7 +104,7 @@
     return controller;
   }
   function createController(options) {
-    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="";
+    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0;
     const current = () => model({ section, pc, data: options.data(), unavailable });
     function close(restoreFocus = true) {
       if (!layer) return;
@@ -121,6 +121,7 @@
     }
     function paint() {
       const state = current();
+      if(feedback&&state.kind!=='disconnected'){state.kind=feedback.kind;state.label=feedback.label;}
       if (pill?.isConnected) {
         if(document.documentElement?.dataset.flowDesign!=='magic'){
           const label=state.kind==='idle'&&section==='Flow'?'Flow рядом':state.label;if(pill.textContent!==label)pill.textContent=label;
@@ -132,12 +133,14 @@
         const label=state.kind==='idle'&&sectionName?sectionName:state.label;
         let mark=pill.querySelector('.island-section-symbol');const shape=category&&typeof savedIcon==='function'?savedIcon(category):({today:'calendar',tasks:'check',saved:'bookmark',finance:'wallet',more:'overview',settings:'settings',piano:'piano',english:'study',sport:'weight',pc:'desktop',render:'film',vpn:'key',server:'server',projects:'project',metrics:'chart',docs:'file',vault:'key',archive:'archive',inbox:'inbox'}[route]||'spark');
         if(!mark){mark=document.createElement('span');mark.className='island-section-symbol';mark.setAttribute('aria-hidden','true');pill.prepend(mark);}
-        if(mark.dataset.route!==route+category){mark.dataset.route=route+category;mark.innerHTML=!category&&typeof window.flowMagicObject==='function'?window.flowMagicObject(route):(typeof icon==='function'?icon(shape):'');}
+        const processShape={listen:'mic',think:'spark',speak:'music',success:'check',error:'bell',return:'spark'}[state.kind];
+        const markKey=route+category+':'+(processShape?state.kind:'section');
+        if(mark.dataset.route!==markKey){mark.dataset.route=markKey;mark.innerHTML=processShape==='spark'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1C13 9 15 11 23 12C15 13 13 15 12 23C11 15 9 13 1 12C9 11 11 9 12 1Z"/></svg>':processShape?(typeof icon==='function'?icon(processShape):''):!category&&typeof window.flowMagicObject==='function'?window.flowMagicObject(route):(typeof icon==='function'?icon(shape):'');}
         let text=pill.querySelector('.island-label');if(!text){text=document.createElement('span');text.className='island-label';pill.replaceChildren(text);}
         if(!mark.isConnected)pill.prepend(mark);
         if(text.textContent!==label)text.textContent=label;
         }
-        pill.dataset.activity = state.kind;
+        if(pill.dataset.activity!==state.kind)pill.dataset.activity = state.kind;
         pill.dataset.progressKnown = String(state.progress !== null);
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);
         pill.setAttribute("aria-label", `${state.label} — текущая активность`);
@@ -158,6 +161,30 @@
       if (typeof CustomEvent === "function") document.dispatchEvent(new CustomEvent("flow:activity", { detail: { kind:state.kind, progress:state.progress, label:state.label, fresh:state.render?.fresh??true } }));
       return state.interval;
     }
+    function pulse(kind,label,timeout=0){
+      clearTimeout(feedbackTimer);feedback={kind,label};paint();
+      if(pill?.isConnected&&!window.flowDigital?.reducedMotion?.()&&!document.hidden){
+        pill.getAnimations?.().filter(a=>a.id==='flow-island-cue').forEach(a=>a.cancel());
+        const a=pill.animate?.([{boxShadow:'0 0 0 transparent'},{boxShadow:'0 0 18px rgba(var(--accent-rgb),.3)',offset:.3},{boxShadow:'0 0 0 transparent'}],{duration:650,easing:'ease-out'});if(a)a.id='flow-island-cue';
+      }
+      if(timeout)feedbackTimer=setTimeout(()=>{feedback=null;paint();},timeout);
+    }
+    document.addEventListener('flow:assistantphase',event=>{
+      const value=event.detail||{};if(value.open===false){pulse('return','Я рядом',1800);return;}
+      const phase={listening:['listen','Слушаю'],thinking:['think','Обрабатываю'],speaking:['speak','Отвечаю'],success:['success','Готово'],error:['error','Нужна проверка']}[value.state];
+      if(phase)pulse(...phase,value.state==='success'?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint();}
+    });
+    document.addEventListener('flow:voice',event=>{const value=event.detail||{};if(value.state==='listening'){
+      // Actual microphone level only; at most ten light updates per second.
+      const now=performance.now();if(now-lastVoicePaint<100)return;lastVoicePaint=now;
+      pill?.style.setProperty('--island-level',String(Math.max(0,Math.min(1,Number(value.level)||0))));
+    }});
+    document.addEventListener('flow:composecapture',event=>{const v=event.detail||{};
+      if(v.phase==='submitting'){captureId=v.requestId;pulse('think','Передаю в Flow');}
+      else if(v.requestId===captureId&&captureId!=null){if(v.phase==='result'){captureId=null;pulse('success','Готово',2200);}else if(v.phase==='error'){captureId=null;pulse('error','Не отправилось',3200);}else if(v.phase==='pending'){captureId=null;pulse('return','Ответ придёт в чат',2400);}}
+      else if(v.phase==='closed')captureId=null;
+    });
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(feedbackTimer);feedback=null;}});
     function toggle() {
       if (layer) { close(); return; }
       layer = document.createElement("div"); layer.className = "activity-island-layer";
@@ -195,11 +222,11 @@
     void poller.start();
     return { attach(next, title, nextOptions) {
       if(nextOptions)options=nextOptions;
-      if (page !== options.page()) { close(false); page = options.page(); }
+      const changed=page!==options.page();if(changed){close(false);page=options.page();feedback=null;clearTimeout(feedbackTimer);}
       pill = next; section = title || "Flow";
       pill.classList.add("activity-island"); pill.setAttribute("aria-haspopup", "false"); pill.setAttribute("aria-expanded", String(Boolean(layer)));
       if (!pill.dataset.islandBound) { pill.dataset.islandBound = "true"; pill.addEventListener("click", toggle); }
-      position();paint();
+      position();paint();if(changed&&!window.flowDigital?.reducedMotion?.()&&!document.hidden)pill.querySelector('.island-label')?.animate?.([{opacity:.35,translate:'0 3px'},{opacity:1,translate:'0 0'}],{duration:320,easing:'ease-out'});
     }, close };
   }
   window.FlowActivity = { model, eventStart, percent, createStateSource, createPoller, mount };
