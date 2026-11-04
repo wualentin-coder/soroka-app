@@ -7,13 +7,18 @@
   let geometry=null,cameraPreference=null;
   try{cameraPreference=JSON.parse(localStorage.getItem(cameraKey)||'null');}catch{}
   const cameraAvailable=()=>root.dataset.flowNative==='true'&&root.dataset.nativeCamera==='true';
-  const cameraProfile=value=>[value.width,value.cameraX,value.cameraBottom].map(Math.round).join(':');
+  const nativeCameraY=value=>Number.isFinite(value?.cameraY)&&value.cameraY>0&&value.cameraY<=value.cameraBottom?value.cameraY:null;
+  const cameraProfile=value=>{
+    const profile=[value.width,value.cameraX,value.cameraBottom].map(Math.round).join(':'),y=nativeCameraY(value);
+    return y===null?profile:profile+':y='+y.toFixed(3);
+  };
   function cameraY(){
     if(!geometry)return 27;
     const saved=cameraPreference?.version===1&&cameraPreference.profile===cameraProfile(geometry)&&Number.isFinite(cameraPreference.y)&&cameraPreference.y>=0&&cameraPreference.y<=.15?cameraPreference.y*innerWidth:null;
-    // Android's rectangle is an initial estimate; physical lens alignment is
-    // calibrated on this device, never inferred from the header's centre.
-    const initial=Number.isFinite(geometry.cameraBottom)&&geometry.cameraBottom>0?geometry.cameraBottom*innerWidth/geometry.width/2:27;
+    // Use the native camera centre when available. The protected rectangle is
+    // only a fallback; a manual correction belongs to this geometry profile.
+    const precise=nativeCameraY(geometry);
+    const initial=precise!==null?precise*innerWidth/geometry.width:Number.isFinite(geometry.cameraBottom)&&geometry.cameraBottom>0?geometry.cameraBottom*innerWidth/geometry.width/2:27;
     return Math.max(8,Math.min(44,saved??initial));
   }
   function paintCamera(){
