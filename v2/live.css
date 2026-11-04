@@ -1198,7 +1198,7 @@ body:has(.movie-library-screen) .fab { display:none; }
 .movie-library-screen .movie-folder-chips[hidden] + .saved-sort-row { display:none; }
 .movie-carousel-filters[hidden] { display:none!important; }
 body:has(.movie-deck) .mobile-nav { display:none; }
-.main:has(.movie-deck) { padding-bottom:max(8px,env(safe-area-inset-bottom)); }
+.main:has(.movie-deck) { padding-bottom:max(52px,env(safe-area-inset-bottom),calc(var(--native-safe-bottom,0px) + 16px)); }
 .movie-library-screen:has(.movie-deck) .saved-results { padding-bottom:0; }
 body:has(.movie-deck) .fab { bottom:max(8px,env(safe-area-inset-bottom)); }
 .movie-library-screen .notes-topline { gap:8px; }

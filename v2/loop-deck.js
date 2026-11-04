@@ -15,6 +15,10 @@ class LoopDeck {
     // Touch transfers implicit capture from the pressed button to this track.
     track.addEventListener('lostpointercapture',e=>{if(e.target===track&&this.drag&&!track.hasPointerCapture(e.pointerId))this.up(e,true);},options);
     track.addEventListener('click',e=>{if(performance.now()<this.ignoreClickUntil){e.preventDefault();e.stopImmediatePropagation();}},{...options,capture:true});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)this.cancelGesture();},options);
+    window.addEventListener('blur',()=>this.cancelGesture(),options);
+    window.addEventListener('pagehide',()=>this.cancelGesture(),options);
+    window.addEventListener('flow:suspend',()=>this.cancelGesture(),options);
     track.addEventListener('wheel',e=>{
       const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.shiftKey?e.deltaY:0;
       if(!delta||count<2)return;e.preventDefault();if(this.spinning)return;this.stop();
@@ -39,10 +43,22 @@ class LoopDeck {
     this.position=position;this.base=null;
   }
   stop(){
+    clearTimeout(this.actionTimer);this.actionTimer=0;
     if(this.paintFrame)cancelAnimationFrame(this.paintFrame);this.paintFrame=0;
     cancelAnimationFrame(this.frame);this.frame=0;this.velocity=0;clearTimeout(this.wheelTimer);
     if(this.spinMap){const nearest=Math.round(this.position),index=this.itemIndex(nearest);this.rebase(this.position+index-nearest);this.spinMap=null;}
     this.spinning=false;
+  }
+  cancelGesture(){
+    const drag=this.drag;this.drag=null;this.stop();this.lift=0;
+    this.track.classList.remove('dragging');delete this.track.dataset.cardAction;
+    if(drag&&this.track.hasPointerCapture(drag.id))this.track.releasePointerCapture(drag.id);
+    this.ignoreClickUntil=performance.now()+350;this.position=Math.round(this.position);this.paint();
+  }
+  systemGestureStart(y){
+    const viewport=window.visualViewport,bottom=viewport?viewport.height+viewport.offsetTop:innerHeight;
+    const insets=window.flowNativeInsets,nativeBottom=insets?.width>0?Math.max(0,insets.bottom||0)*innerWidth/insets.width:0;
+    return y>=bottom-Math.max(52,nativeBottom+16);
   }
   paint(){
     if(this.paintFrame)cancelAnimationFrame(this.paintFrame);this.paintFrame=0;
@@ -76,6 +92,7 @@ class LoopDeck {
   }
   down(e){
     if(e.button!==0||(!this.onAction&&this.count<2)||this.drag||this.spinning)return;
+    if(this.onAction&&this.systemGestureStart(e.clientY))return;
     this.stop();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastAt:performance.now(),start:this.position,moved:false};
     // A tap must keep its button target. Capture in move(), just before repainting a drag.
   }
@@ -105,8 +122,10 @@ class LoopDeck {
       const action=!cancelled && Math.abs(d.dy||0)>78 ? (d.dy<0?'viewed':'menu') : null;
       this.lift=Math.max(-95,Math.min(95,d.dy||0));
       const from=this.lift,to=action?(d.dy<0?-160:160):0,start=performance.now();
-      const finish=()=>{this.lift=0;this.paint();if(action)this.onAction?.(action,this.wrap(Math.round(this.position)));};
-      if(this.reduced){finish();return;}
+      const finish=()=>{this.actionTimer=0;this.lift=0;this.paint();if(action&&!(typeof document!=='undefined'&&document.hidden))this.onAction?.(action,this.wrap(Math.round(this.position)));};
+      // A system home gesture may release the pointer before the app loses focus.
+      // Keep its cancellation window even when visual motion is disabled.
+      if(this.reduced){this.lift=0;this.paint();if(action)this.actionTimer=setTimeout(finish,240);else finish();return;}
       const tick=now=>{
         const t=Math.min(1,(now-start)/240);this.lift=from+(to-from)*(1-Math.pow(1-t,3));this.paint();
         if(t<1)this.frame=requestAnimationFrame(tick);else {this.frame=0;finish();}
