@@ -1,4 +1,4 @@
-/* The existing assistant and manual owners share one compact native window. */
+/* The existing assistant and manual owners share the full transparent native overlay. */
 html[data-assistant-popup=true][data-flow-native=true] body{min-width:0;min-height:100dvh;overflow:hidden;background:transparent;}
 html[data-assistant-popup=true][data-flow-native=true] .app-shell{display:block;min-height:100dvh;background:transparent;}
 html[data-assistant-popup=true][data-flow-native=true] .app-shell>:is(.sidebar,.dm-workspace,.fab,.mobile-nav),html[data-assistant-popup=true][data-flow-native=true] .app-shell>div:not(.modal-backdrop){display:none!important;}
@@ -11,6 +11,6 @@ html[data-assistant-popup=true][data-flow-native=true] .composer-layer:not(.dm-c
 
 html[data-assistant-popup=true][data-flow-native=true]{background:transparent;color-scheme:normal;}
 html[data-assistant-popup=true][data-flow-native=true] .flow-assistant-layer{background:transparent;}
-html[data-assistant-popup=true][data-flow-native=true] .dm-live-assistant[data-layout=dock] .fa-screen-energy{inset:0;border-radius:0;}
+html[data-assistant-popup=true][data-flow-native=true] .dm-live-assistant[data-layout=dock] .fa-screen-energy{inset:0;border-radius:var(--fa-screen-corners,var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) var(--native-corner-bottom-right,36px) var(--native-corner-bottom-left,36px));}
 html[data-assistant-popup=true][data-flow-native=true] :is(.digital-atmosphere,.edge-energy){display:none!important;}
 html[data-assistant-popup=true][data-flow-native=true] :is(.flow-assistant-layer,.modal-backdrop,.composer-layer){color-scheme:dark;}

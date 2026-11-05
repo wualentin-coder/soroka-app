@@ -104,6 +104,11 @@
     root.dataset.flowNative='true';
     root.dataset.nativeCamera=String(value.cameraX>=0&&value.top>0);
     for(const edge of ['top','right','bottom','left'])root.style.setProperty('--native-safe-'+edge,Math.max(0,value[edge]/scale)+'px');
+    for(const [name,key] of [['top-left','cornerTopLeft'],['top-right','cornerTopRight'],['bottom-right','cornerBottomRight'],['bottom-left','cornerBottomLeft']]){
+      const radius=value[key],property='--native-corner-'+name;
+      if(typeof radius==='number'&&Number.isFinite(radius)&&radius>=0)root.style.setProperty(property,(radius/scale)+'px');
+      else root.style.removeProperty(property);
+    }
     root.style.setProperty('--native-camera-x',(value.cameraX/scale)+'px');
     root.style.setProperty('--native-camera-bottom',(value.cameraBottom/scale)+'px');
     paintCamera();

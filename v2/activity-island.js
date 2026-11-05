@@ -154,6 +154,7 @@
     return controller;
   }
   function createController(options) {
+    const leavingLayers=new Set();
     let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0,suspended=false,knownRender='';
     const magic=()=>document.documentElement?.dataset.flowDesign==='magic';
     const hidden=()=>document.hidden||suspended;
@@ -181,16 +182,21 @@
       state.attention=state.kind!=='idle'&&(state.kind!=='disconnected'||knownRender);
       return state;
     };
-    function close(restoreFocus = true,peek = true) {
+    function close(restoreFocus = true,peek = true,immediate = false) {
+      if(immediate)for(const leaving of leavingLayers){
+        leaving.querySelector('.activity-island-card')?.getAnimations?.().forEach(animation=>animation.cancel());
+        leaving.remove();leavingLayers.delete(leaving);
+      }
       if (!layer) return;
       const leaving=layer;layer=null;shown=null;lastPanelHTML="";
       leaving.style.pointerEvents='none';leaving.inert=true;leaving.setAttribute('aria-hidden','true');
       const card=leaving.querySelector('.activity-island-card');
-      if(magic()&&!hidden()&&!window.flowDigital?.reducedMotion?.()&&card?.animate){
+      if(!immediate&&magic()&&!hidden()&&!window.flowDigital?.reducedMotion?.()&&card?.animate){
         const current=getComputedStyle(card),from={opacity:current.opacity,translate:current.translate,scale:current.scale};
         card.getAnimations().filter(animation=>animation.id==='flow-island-open').forEach(animation=>animation.cancel());
         const exit=card.animate([from,{opacity:0,translate:'0 -8px',scale:'.98'}],{duration:220,easing:'cubic-bezier(.4,0,1,1)'});
-        exit.finished.catch(()=>{}).finally(()=>leaving.remove());
+        leavingLayers.add(leaving);
+        exit.finished.catch(()=>{}).finally(()=>{leavingLayers.delete(leaving);leaving.remove();});
       }else leaving.remove();
       pill?.setAttribute("aria-expanded", "false");
       if(magic()){if(peek&&current().attention)presentation.peek(1200);else presentation.collapse();}
@@ -262,7 +268,7 @@
       if(timeout)feedbackTimer=setTimeout(()=>{feedback=null;paint({quiet:true});},timeout);
     }
     document.addEventListener('flow:assistantphase',event=>{
-      const value=event.detail||{};if(value.open===false){pulse('return','Я рядом',1800);return;}
+      const value=event.detail||{};if(value.open)close(false,false,true);if(value.open===false){pulse('return','Я рядом',1800);return;}
       if(value.open&&value.opened){pulse('return','Ассистент Flow',1800);return;}
       const phase={listening:['listen','Слушаю'],thinking:['think','Обрабатываю'],speaking:['speak','Отвечаю'],success:['success','Готово'],error:['error','Нужна проверка']}[value.state];
       if(phase)pulse(...phase,value.state==='success'?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}
@@ -277,7 +283,7 @@
       else if(v.requestId===captureId&&captureId!=null){if(v.phase==='result'){captureId=null;const empty=!String(v.reply||'').trim()&&!(Array.isArray(v.records)&&v.records.length);pulse(empty?'error':'success',empty?'Ответ не получен':'Готово',empty?3200:2200);}else if(v.phase==='error'){captureId=null;pulse('error','Не отправилось',3200);}else if(v.phase==='pending'){captureId=null;pulse('return','Ответ придёт в чат',2400);}}
       else if(v.phase==='closed'&&!v.retain){const pending=captureId!==null;captureId=null;if(pending&&feedback?.kind==='think'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}}
     });
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(feedbackTimer);feedback=null;presentation.suspend();pill?.style.setProperty('--island-level','0');}});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){close(false,false,true);clearTimeout(feedbackTimer);feedback=null;presentation.suspend();pill?.style.setProperty('--island-level','0');}});
     function toggle() {
       if (layer) { close(); return; }
       layer = document.createElement("div"); layer.className = "activity-island-layer";
@@ -329,7 +335,7 @@
       catch (_) { unavailable = true; }
     } });
     document.addEventListener("visibilitychange", () => poller.visibility());
-    window.addEventListener?.('flow:suspend',()=>{suspended=true;presentation.suspend();poller.visibility();});
+    window.addEventListener?.('flow:suspend',()=>{close(false,false,true);suspended=true;presentation.suspend();poller.visibility();});
     window.addEventListener?.('flow:resume',()=>{suspended=false;poller.visibility();});
     window.addEventListener?.('pagehide',()=>presentation.suspend());
     void poller.start();
