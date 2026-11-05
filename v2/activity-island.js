@@ -194,7 +194,7 @@
         currentLabel=label;
         let mark=pill.querySelector('.island-section-symbol');const shape=category&&typeof savedIcon==='function'?savedIcon(category):({today:'calendar',tasks:'check',saved:'bookmark',finance:'wallet',more:'overview',settings:'settings',piano:'piano',english:'study',sport:'weight',pc:'desktop',render:'film',vpn:'key',server:'server',projects:'project',metrics:'chart',docs:'file',vault:'key',archive:'archive',inbox:'inbox'}[route]||'spark');
         if(!mark){mark=document.createElement('span');mark.className='island-section-symbol';mark.setAttribute('aria-hidden','true');pill.prepend(mark);}
-        const processShape={listen:'mic',think:'spark',speak:'music',success:'check',error:'bell',return:'spark'}[state.kind];
+        const processShape={render:'film',pause:'pause',event:'calendar',listen:'mic',think:'spark',speak:'music',success:'check',error:'bell',return:'spark'}[state.kind];
         const markKey=route+category+':'+(processShape?state.kind:'section');
         if(mark.dataset.route!==markKey){mark.dataset.route=markKey;mark.innerHTML=processShape==='spark'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1C13 9 15 11 23 12C15 13 13 15 12 23C11 15 9 13 1 12C9 11 11 9 12 1Z"/></svg>':processShape?(typeof icon==='function'?icon(processShape):''):!category&&typeof window.flowMagicObject==='function'?window.flowMagicObject(route):(typeof icon==='function'?icon(shape):'');}
         let text=pill.querySelector('.island-label');if(!text){text=document.createElement('span');text.className='island-label';pill.replaceChildren(text);}
@@ -248,8 +248,8 @@
     }else pill?.style.setProperty('--island-level','0');});
     document.addEventListener('flow:composecapture',event=>{const v=event.detail||{};
       if(v.phase==='submitting'){captureId=v.requestId;pulse('think','Передаю в Flow');}
-      else if(v.requestId===captureId&&captureId!=null){if(v.phase==='result'){captureId=null;pulse('success','Готово',2200);}else if(v.phase==='error'){captureId=null;pulse('error','Не отправилось',3200);}else if(v.phase==='pending'){captureId=null;pulse('return','Ответ придёт в чат',2400);}}
-      else if(v.phase==='closed'){const pending=captureId!==null;captureId=null;if(pending&&feedback?.kind==='think'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}}
+      else if(v.requestId===captureId&&captureId!=null){if(v.phase==='result'){captureId=null;const empty=!String(v.reply||'').trim()&&!(Array.isArray(v.records)&&v.records.length);pulse(empty?'error':'success',empty?'Ответ не получен':'Готово',empty?3200:2200);}else if(v.phase==='error'){captureId=null;pulse('error','Не отправилось',3200);}else if(v.phase==='pending'){captureId=null;pulse('return','Ответ придёт в чат',2400);}}
+      else if(v.phase==='closed'&&!v.retain){const pending=captureId!==null;captureId=null;if(pending&&feedback?.kind==='think'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}}
     });
     document.addEventListener('input',event=>{if(!magic()||hidden())return;const field=event.target.closest?.('textarea,input,[contenteditable="true"]');if(!field||field.matches('input[type=range],input[type=checkbox],input[type=radio],input[type=file]'))return;const now=Date.now();if(now-lastTyping>1200&&!layer)presentation.peek();lastTyping=now;},true);
     document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(feedbackTimer);feedback=null;presentation.suspend();pill?.style.setProperty('--island-level','0');}});

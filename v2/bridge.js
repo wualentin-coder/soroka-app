@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=564aa54c48","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=236808be43","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=33ff58d43f","integrity":null},{"src":"./sport-train.js?v=9c7fbd1905","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=40c4087fec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=294ca9db2e","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e17f99e8a0","integrity":null},{"src":"./app.js?v=5b6a4f981b","integrity":null},{"src":"./notes.js?v=4500b6613e","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=c9cbc1985e","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=e57c8bd34f","integrity":null},{"src":"./activity-island.js?v=0b86fe9bb3","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=bbc4eef619","integrity":null},{"src":"./digital-collections.js?v=bea37b57b3","integrity":null},{"src":"./digital-directory.js?v=e8afaae397","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./digital-runtime.js?v=d626420c0e","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./digital-assistant.js?v=b142dd80b7","integrity":null},{"src":"./digital-assistant-visual.js?v=c8e26feb4f","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=6b7c226e9f","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=564aa54c48","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=236808be43","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=33ff58d43f","integrity":null},{"src":"./sport-train.js?v=9c7fbd1905","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=40c4087fec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e17f99e8a0","integrity":null},{"src":"./app.js?v=5b6a4f981b","integrity":null},{"src":"./notes.js?v=4500b6613e","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=c9cbc1985e","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=e57c8bd34f","integrity":null},{"src":"./activity-island.js?v=a55b57b8d5","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=bbc4eef619","integrity":null},{"src":"./digital-collections.js?v=bea37b57b3","integrity":null},{"src":"./digital-directory.js?v=e8afaae397","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./digital-runtime.js?v=d626420c0e","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=7b59bd8336","integrity":null},{"src":"./digital-assistant.js?v=8025e26e95","integrity":null},{"src":"./digital-assistant-visual.js?v=c8e26feb4f","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=6b7c226e9f","integrity":null},{"src":"./native-island.js?v=4a1c0bc488","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -1289,7 +1289,7 @@
   const KIND_NAME = { task: "Дело", event: "Событие", note: "Заметка", link: "Материал", recipe: "Рецепт", movie: "Фильм",
     product: "Товар", debt: "Долг", payment: "Платёж", tx: "Операция", place: "Адрес", metric: "Показатель", list: "Список" };
 
-  let captureSequence = 0;
+  let captureSequence = 0, assistantCaptureOwner = null;
   function captureSignal(detail) {
     document.dispatchEvent(new CustomEvent("flow:composecapture", { detail }));
   }
@@ -1297,9 +1297,9 @@
     const embedded = options.embedded === true;
     const signal = (phase, detail = {}) => { if (embedded) captureSignal({ phase, requestId: options.requestId, item, ...detail }); };
     const layer = embedded ? null : document.createElement("div");
-    let open = true, timer = null;
-    const close = () => { open = false; clearTimeout(timer); layer?.remove(); document.removeEventListener("flow:composecapture", closed); };
-    function closed(event) { if (event.detail?.phase === "closed") close(); }
+    let open = true, timer = null, reading = false;
+    const close = () => { open = false; clearTimeout(timer); layer?.remove(); document.removeEventListener("flow:composecapture", closed); document.removeEventListener("visibilitychange", visibility); };
+    function closed(event) { if (event.detail?.phase === "closed" && !(options.retainOnClose === true && event.detail.retain === true && event.detail.requestId === options.requestId)) close(); }
     if (embedded) document.addEventListener("flow:composecapture", closed);
     if (layer) {
     layer.className = "modal-backdrop live-capture-backdrop";
@@ -1317,15 +1317,18 @@
     }
     const started = Date.now();
     const tick = async () => {
-      if (!open) return;
+      if (!open || reading || options.retainOnClose === true && document.hidden) return;
+      reading = true;
+      try {
       const status = await call({ action: "planner_capture_status", item }).catch(() => null);
       if (!open) return;
       if (status && status.done) {
-        await refresh(true);
+        await refresh(options.retainOnClose !== true);
         if (!open) return;
         const records = status.records || [];
         if (embedded) {
-          signal("result", { records: records.map(record => ({ ref: record.ref, kind: record.kind, title: record.title || "" })), recordCount: records.length, reply: typeof status.reply === "string" ? status.reply : typeof status.message === "string" ? status.message : "" });
+          const reply = typeof status.reply === "string" ? status.reply : typeof status.message === "string" ? status.message : "";
+          signal("result", { records: records.map(record => ({ ref: record.ref, kind: record.kind, title: record.title || "" })), recordCount: records.length, reply, empty: !records.length && !reply.trim() });
           close();
           return;
         }
@@ -1343,8 +1346,12 @@
         return;
       }
       timer = setTimeout(tick, 1500);
+      } finally { reading = false; }
     };
+    function visibility() { if (!open || options.retainOnClose !== true) return; clearTimeout(timer); if (!document.hidden && !reading) timer = setTimeout(tick, 0); }
+    if (options.retainOnClose === true) document.addEventListener("visibilitychange", visibility);
     timer = setTimeout(tick, 1200);
+    return close;
   }
 
   /**
@@ -1787,7 +1794,7 @@
     const field = layer.querySelector("textarea");
     const send = layer.querySelector(".composer-send");
     const results = layer.querySelector(".composer-results");
-    composer = { layer, ctx, conf, field, results, off, found: [], file: null };
+    composer = { layer, ctx, conf, field, results, off, found: [], file: null, assistantHandoff: preset?.assistantHandoff === true };
     const attachRow = layer.querySelector(".composer-attach-row");
     // Вложение: фото уменьшаем до 1600 px (JPEG) — быстрее уходит и читается так же.
     const attach = async (file) => {
@@ -1882,13 +1889,17 @@
       send.innerHTML = '<span class="live-spin"></span>';
       const embedded = Boolean(owner.layer.closest(".dm-live-assistant"));
       const requestId = `capture-${++captureSequence}`;
+      const handoff = embedded && owner.assistantHandoff ? { requestId, active: true, detached: false, draft: { text, file, context: ctx }, stop: null } : null;
+      if (handoff) { assistantCaptureOwner?.stop?.(); if (assistantCaptureOwner) assistantCaptureOwner.active = false; assistantCaptureOwner = handoff; owner.handoff = handoff; }
       if (embedded) captureSignal({ phase: "submitting", requestId, context: ctx });
       call({ action: "planner_capture", text: text ? (conf.hint || "") + text : file ? (conf.hint || "") : "", ...(file ? { file } : {}) }, file ? 60000 : 20000).then((answer) => {
-        if (composer !== owner) { say("Предыдущая запись передана в Flow"); return; }
+        if (composer !== owner && !(handoff?.active && handoff.detached && assistantCaptureOwner === handoff)) { say("Предыдущая запись передана в Flow"); return; }
         if (embedded) captureSignal({ phase: "accepted", requestId, item: answer.item });
-        closeComposer({ reason: "submitted", embedded });
-        captureProgress(text || (file ? `Файл: ${file.name}` : ""), answer.item, { embedded, requestId });
-      }).catch(() => { if (composer !== owner) return; send.disabled = false; send.innerHTML = icon("arrow"); if (embedded) captureSignal({ phase: "error", requestId, message: "Не отправилось — попробуйте ещё раз" }); say("Не отправилось — попробуйте ещё раз"); });
+        if (handoff) handoff.draft = null;
+        if (composer === owner) closeComposer({ reason: "submitted", embedded });
+        const stop = captureProgress(text || (file ? `Файл: ${file.name}` : ""), answer.item, { embedded, requestId, retainOnClose: Boolean(handoff) });
+        if (handoff) handoff.stop = () => { handoff.active = false; stop(); };
+      }).catch(() => { if (composer !== owner && !(handoff?.active && handoff.detached && assistantCaptureOwner === handoff)) return; if (composer === owner) { send.disabled = false; send.innerHTML = icon("arrow"); } if (embedded) captureSignal({ phase: "error", requestId, message: "Не отправилось — попробуйте ещё раз", ...(handoff ? { draft: handoff.draft } : {}) }); if (!handoff?.detached) say("Не отправилось — попробуйте ещё раз"); });
     });
     if (preset) {
       if (preset.text) field.value = preset.text;
@@ -1913,6 +1924,7 @@
   window.sorokaTakeShared = takeShared;
   function closeComposer(options = {}) {
     if (!composer) return;
+    if (options.handoff === true && composer.handoff?.active && assistantCaptureOwner === composer.handoff) composer.handoff.detached = true;
     composer.layer.remove();
     composer = null;
     document.documentElement.classList.remove("composer-open");
@@ -1921,6 +1933,7 @@
   // Presentation adapter only: submissions, permissions and saves stay in the existing composer.
   window.flowCompose = {
     open: preset => { openComposer(preset); return composer?.layer || null; },
+    adoptAssistant: layer => { if (!composer || composer.layer !== layer || !layer?.closest(".dm-live-assistant")) return false; composer.assistantHandoff = true; return true; },
     close: closeComposer,
     openRef,
     manual: (context, text = "") => { closeComposer(); composeManual(COMPOSE[context] ? context : composeContext(), text); },

@@ -198,6 +198,9 @@ ${row("SMS банков", p.smsPermission ? "Отправители, чьи SMS 
 ${pickLine(smsOn, "sms")}
 ${row("Сообщать, что записал", p.notifyPermission || !p.results ? "Уведомление «Flow записал: …» после разбора" : "Нет разрешения на уведомления", p.results && !p.notifyPermission ? fix("notifyPermission", "Разрешить") : toggle("results", p.results))}
 ${row("Уведомления бота", "Дублировать сообщения бота на телефон", toggle("feed", p.feed))}
+${p.islandAvailable ? row("Островок поверх приложений", !p.linked ? "Сначала подключи телефон к Flow" : !p.islandEnabled ? "Ассистент и текущий процесс рядом с камерой" : !p.islandPermission ? "Нужно разрешение на показ поверх приложений" : p.notifyPermission === false ? "Для работы островка разреши уведомления" : p.islandRunning ? "Нажми на кружок, чтобы обратиться к Flow" : "Включён · запускается при открытии Flow", toggle("island", p.islandEnabled)) : ""}
+${p.islandAvailable && p.islandEnabled && !p.islandPermission ? `<div class="settings-row settings-row-wide phone-sub">${fix("overlay", "Разрешить «поверх окон»")}</div>` : ""}
+${p.islandAvailable && p.islandEnabled && p.notifyPermission === false ? `<div class="settings-row settings-row-wide phone-sub">${fix("notifyPermission", "Разрешить уведомления")}</div>` : ""}
 ${p.renderLiveAvailable ? row("Рендер в Now Bar", p.renderLive ? (p.notifyPermission ? "Слежение за ПК при закрытом Flow · тихое уведомление в ожидании" : "Разрешите уведомления для запуска слежения") : "Процент и композиция в живом уведомлении", toggle("renderLive", p.renderLive)) : ""}
 ${p.renderLiveAvailable && p.renderLive ? `<div class="settings-row settings-row-wide phone-sub">${fix("renderSettings", "Настройки живых уведомлений")}</div>` : ""}
 ${row("Карты у края экрана", p.edge ? (p.edgeText || "Работает") : "Скидочная карта появится у магазина", toggle("edge", p.edge))}
