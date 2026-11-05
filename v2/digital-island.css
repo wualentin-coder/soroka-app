@@ -1,0 +1,22 @@
+/* Wide cutout · radius 36 / shoulders 36 / header 22. The content stays at 64px. */
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{height:64px;min-height:64px;padding:6px 28px 14px;border-bottom:0;border-radius:22px 22px 0 0;background:transparent;backdrop-filter:none;overflow:visible}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.dm-mobile-brand,.dm-toolbar,.dm-icon-button){height:44px;min-height:44px;position:relative;z-index:4}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-toolbar{position:static}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-icon-button{width:44px;min-width:44px}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy{display:block;position:absolute;inset:0;opacity:1;transform:none;transition:none;will-change:auto;pointer-events:none;z-index:1}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy svg{height:256px;width:100%;overflow:visible}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy-fill{fill:#08090b}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy-rim{stroke:rgba(var(--accent-rgb),.28)}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb]{position:absolute;left:var(--native-camera-x,50%);top:0;width:var(--island-label-width,120px);min-width:44px;max-width:none;height:var(--island-tongue-bottom,82px);min-height:44px;transform:translateX(-50%);padding:0;background:transparent;border:0;box-shadow:none;transition:none;z-index:3;overflow:visible}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb=true]{top:var(--native-camera-hit-top,0px);width:44px;max-width:44px;height:44px}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-orb{top:var(--native-camera-center-y,21px);width:28px;height:28px;opacity:1;transform:translate(-50%,-50%);transition:opacity 480ms;}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill[data-island-orb=true] .island-orb{top:var(--native-camera-light-offset,21px);transform:translate(-50%,-50%)}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-section-symbol{position:absolute;left:calc(50% - var(--island-label-width,120px)/2);top:51px;width:18px;height:18px;opacity:1;transform:none;transition:opacity 280ms 160ms}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-section-symbol :is(svg,.magic-object){width:18px;height:18px}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-label{left:calc(50% - var(--island-label-width,120px)/2 + 26px);right:auto;top:51px;width:calc(var(--island-label-width,120px) - 26px);max-width:none;height:auto;white-space:normal;overflow:visible;text-overflow:clip;text-align:center;font:650 12px/18px Manrope,sans-serif;transform:none;opacity:1;transition:opacity 280ms 160ms}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true][data-island-orb=true] :is(.island-label,.island-section-symbol){opacity:0;transform:none;transition:opacity 130ms;pointer-events:none}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-text-meter{position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;font:650 12px/18px Manrope,sans-serif;white-space:normal;width:max-content}
+html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.island-canopy,.island-label,.island-section-symbol){opacity:0!important;transition:none}
+html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island{top:var(--native-camera-hit-top,0px);width:44px;height:44px}
+html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-orb{top:var(--native-camera-light-offset,21px)}
+@media(max-width:359px){html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{padding-left:22px;padding-right:22px}}

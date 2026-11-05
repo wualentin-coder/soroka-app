@@ -152,6 +152,7 @@
           canopy.innerHTML='<svg viewBox="0 0 1000 72" preserveAspectRatio="none"><path class="island-canopy-fill" d="M0 0H240C310 0 290 64 400 64H600C710 64 690 0 760 0H1000V-8H0Z"/><path class="island-canopy-rim" d="M0 0H240C310 0 290 64 400 64H600C710 64 690 0 760 0H1000"/></svg>';
           bar.prepend(canopy);
         }
+        window.FlowIslandSurface?.sync(bar,pill);
       }
     }});
     const current = () => model({ section, pc, data: options.data(), unavailable });
@@ -207,6 +208,7 @@
         pill.dataset.progressKnown = String(state.progress !== null);
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);
         pill.setAttribute("aria-label", `${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — текущая активность. Открыть подробности`);
+        window.FlowIslandSurface?.sync(pill.closest('.dm-topbar'),pill);
       }
       if (layer) {
         shown = state;
