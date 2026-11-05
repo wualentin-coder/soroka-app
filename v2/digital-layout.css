@@ -827,3 +827,7 @@ html[data-motion=off] :is(.island-canopy,.island-orb,.island-label,.island-secti
 /* Scrolling remains native; the interface does not reserve a visible scrollbar rail. */
 html[data-flow-design=magic],html[data-flow-design=magic] *{scrollbar-width:none}
 html[data-flow-design=magic]::-webkit-scrollbar,html[data-flow-design=magic] *::-webkit-scrollbar{display:none;width:0;height:0}
+/* Camera-aligned hit bounds can touch the display edge; focus follows the light. */
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:focus-visible{outline:none}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:focus-visible .island-orb:before{outline:1px solid var(--energy-hot);outline-offset:2px}
+html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:focus-visible .island-label{text-decoration:underline;text-underline-offset:3px}

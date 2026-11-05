@@ -137,5 +137,7 @@ html[data-flow-native=true] .dm-live-assistant .fa-screen-energy:after{animation
 .dm-live-assistant[data-keyboard=true] .fa-status{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}
 .dm-live-assistant[data-keyboard=true] .fa-controls{flex:0 0 auto}
 .dm-live-assistant[data-keyboard=true] .fa-control-hint{display:none}
+/* The live pressed ring owns touch feedback; keep keyboard focus visible. */
+.fa-mic{-webkit-tap-highlight-color:transparent}
 .dm-live-assistant[data-keyboard=true] .fa-add-panel{top:64px;bottom:auto;left:auto;right:0;margin:0}
 @media(max-height:580px){.dm-live-assistant:not([data-keyboard=true]) .fa-controls{grid-template-columns:44px 68px 44px;gap:12px;margin-top:12px}.dm-live-assistant:not([data-keyboard=true]) .fa-controls .fa-mic{width:68px;height:68px}.fa-control-hint{margin-top:9px}.dm-live-assistant:not([data-keyboard=true]) .fa-add-panel{bottom:112px}}
