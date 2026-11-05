@@ -108,6 +108,7 @@
     if (command.type === 'navigate') {
       const state = { ...(command.page === 'saved' ? { savedSection: '', savedQuery: '', savedFilter: 'all', savedReturn: null, mapPlacing: false } : {}), ...command.state };
       if (!go(command.page,state)) return { status: 'cancelled', message: 'Переход отменён' };
+      window.flowAssistantPopup?.expand();
       if (command.action?.owner === 'english' && typeof englishAction === 'function') englishAction('en-tab', { dataset: { tab: command.action.tab } });
       else if (command.action?.owner === 'sport' && typeof sportAction === 'function') sportAction('sp-tab', { dataset: { tab: command.action.tab } });
       return { status: 'done', message: command.label };
@@ -117,7 +118,7 @@
       const selected = command.id ? matches.find(task => String(task.id) === String(command.id)) : matches.length === 1 ? matches[0] : null;
       if (!selected) return matches.length ? { status: 'choice', message: 'Есть несколько задач с этим названием. Выберите нужную.', choices: matches.map(task => ({ id: task.id, title: task.title, due: task.due || '', done: Boolean(task.done) })) } : { status: 'not-found', message: 'Задача с таким названием не найдена. Назовите её полностью.' };
       if (!go('tasks')) return { status: 'cancelled', message: 'Действие отменено' };
-      if (command.operation === 'open') openEntry('task', selected.due || '', selected.id);
+      if (command.operation === 'open') { openEntry('task', selected.due || '', selected.id); window.flowAssistantPopup?.expand(); }
       else if (!selected.done) { toggleTask(selected.id); render(); }
       return { status: 'done', message: command.operation === 'open' ? selected.title : 'Задача выполнена' };
     }
