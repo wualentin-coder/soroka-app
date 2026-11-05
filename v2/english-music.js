@@ -6,6 +6,7 @@
  const ic=name=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.music}</svg>`;
  const state={items:null,track:null,follow:true,translation:true,active:0,loop:false,rate:1,filter:'all',sheet:null,request:0};
  const unsavedAnalysis=new WeakSet(),analysisRefreshAt=new WeakMap();
+ let islandPlayback=null;
  let host,main,overlay,media,quiz,controller,frame=0,lastFrame=0,lastFocus,toastTimer,saveTimer,drag,dbPromise,libraryLoading=false,serverWrites=Promise.resolve(),timedRows=[],activeWords=[],activeWordRow=-1,sungWord=null,analysisTimer=0,analysisRun=null,analysisGeneration=0;
  const q=(s,base=host)=>base?.querySelector(s);
  const qa=(s,base=host)=>[...(base?.querySelectorAll(s)||[])];
@@ -17,6 +18,14 @@
  function selectedMedia(){return media.kind!=='youtube'||media.player?.getVideoData?.()?.video_id===state.track?.youtubeId;}
  function sampleListening(){quiz?.sample({time:media.currentTime,playing:!media.paused&&!document.hidden&&!host.hidden&&!state.loop&&selectedMedia(),rate:media.playbackRate});}
  function playbackState(message=''){state.playbackError=message;const el=q('#enm-playback-state');if(!el)return;el.hidden=!message;el.innerHTML=message?`<span>${h(message)}</span><button class="enm-icon-btn" data-enm="dismiss-playback" aria-label="Закрыть сообщение">${ic('close')}</button>`:'';}
+ function musicActivity(phase){
+  const track=state.track;if(!track||typeof CustomEvent!=='function'||!document.dispatchEvent)return;
+  const token=String(track.id||track.youtubeId||'local');
+  if(phase==='pause'&&(islandPlayback!==token||media?.error))return;
+  if(phase==='play')islandPlayback=token;
+  document.dispatchEvent(new CustomEvent('flow:media',{detail:{token,state:phase,title:track.title,active:!['ended','closed'].includes(phase)}}));
+  if(['ended','closed'].includes(phase))islandPlayback=null;
+ }
  function analysisPending(t){return ['queued','running'].includes(t?.analysisStatus?.status)||(!t?.analysisStatus&&!!t?.lines?.length&&!t.lines.some(l=>l.words?.length)&&!t.audioAnalysis);}
  function analysisSummary(t){const a=t?.analysisStatus;if(!t?.youtubeId||t.local)return '';if(t.audioAnalysis)return 'Слова синхронизированы по звуку на ПК';if(a?.status==='queued')return 'Анализ слов в очереди · ждёт свободного ПК';if(a?.status==='running'){const labels={starting:'Подготовка анализа',download:'Загрузка звука',decode:'Подготовка звука',model:'Подготовка распознавания',recognition:'Распознавание слов',matching:'Сопоставление слов',uploading:'Сохранение таймкодов'};return (labels[a.stage]||'Анализ звука на ПК')+(Number.isFinite(a.progress)?' · '+Math.round(a.progress)+'%':'');}if(a?.status==='error')return 'Анализ слов не завершён · текущие таймкоды сохранены';return '';}
  function sourceWarnings(t){return (t.lyricResult?.warnings||[]).filter(w=>!t.audioAnalysis||!/(Пословные таймкоды.*пока не найдены|Синхронная подсветка недоступна|точность построчная|Текст сохранён без синхронизации)/iu.test(w));}
@@ -51,8 +60,8 @@
   new ResizeObserver(resizeVideo).observe(q('#enm-youtube-panel'));
   media.addEventListener('timeupdate',()=>{tick();sampleListening();});
   media.addEventListener('ratechange',()=>{state.rate=media.playbackRate;updateRate();});
-  for(const name of ['play','pause','ended'])media.addEventListener(name,()=>{if(name==='play'){playbackState();followCurrent();refreshTerminalAnalysis();}sampleListening();if(name==='ended'&&!state.loop)quiz?.ended({loop:state.loop});const b=q('#enm-play');if(b){b.innerHTML=ic(media.paused?'play':'pause');b.setAttribute('aria-label',media.paused?'Воспроизвести':'Пауза');}if(media.paused){cancelAnimationFrame(frame);frame=0;persistProgress();}else if(!frame)frame=requestAnimationFrame(wordFrame);});
-  media.addEventListener('error',()=>playbackState(media.error?.message||'Не получилось загрузить аудио. Попробуй включить ещё раз.'));
+  for(const name of ['play','pause','ended'])media.addEventListener(name,()=>{if(name==='play'){playbackState();followCurrent();refreshTerminalAnalysis();}sampleListening();if(name==='ended'&&!state.loop)quiz?.ended({loop:state.loop});const b=q('#enm-play');if(b){b.innerHTML=ic(media.paused?'play':'pause');b.setAttribute('aria-label',media.paused?'Воспроизвести':'Пауза');}if(media.paused){cancelAnimationFrame(frame);frame=0;persistProgress();}else if(!frame)frame=requestAnimationFrame(wordFrame);musicActivity(name);});
+  media.addEventListener('error',()=>{playbackState(media.error?.message||'Не получилось загрузить аудио. Попробуй включить ещё раз.');musicActivity('error');});
   host.addEventListener('click',onClick);host.addEventListener('submit',onSubmit);
   host.addEventListener('input',e=>{if(e.target.id==='enm-seek')seek(Number(e.target.value));if(e.target.name==='url'&&e.target.form?.id==='enm-add-form'&&state.addKind==='youtube')resetAddSearch();});
   host.addEventListener('pointerdown',e=>{if(!e.target.classList.contains('enm-sheet-grip'))return;drag={y:e.clientY,panel:q('.enm-song-sheet')};e.target.setPointerCapture(e.pointerId);});
@@ -151,13 +160,14 @@
   try{let track=complete||item.local?item:(await api('song',{id:item.id})).item;if(request!==state.request||!allowed())return;
    if(track.local){if(!track.file)throw new Error('Аудиофайл не найден на этом устройстве.');track.source=URL.createObjectURL(track.file);}
    if(state.track?.local&&state.track.source?.startsWith('blob:'))URL.revokeObjectURL(state.track.source);
+   musicActivity('closed');
    document.getElementById('app').inert=true;state.track=track;quiz?.track(track);state.active=0;state.follow=true;state.loop=false;state.rate=track.rate||1;host.hidden=false;host.classList.remove('enm-modal-only');host.classList.add('enm-listening');host.classList.toggle('enm-youtube',!!track.youtubeId);
    state.resume=track.position>0&&track.position<(track.duration||Infinity)-.5?track.position:track.start||0;media.setTrack({...track,start:state.resume});q('#enm-youtube-panel').hidden=!track.youtubeId;q('#enm-youtube-panel').innerHTML=track.youtubeId?'<div id="enm-youtube-mount">Подключаю YouTube…</div>':'';paintPlayer();if(track.youtubeId)media.mount(q('#enm-youtube-mount'));
    if(track.youtubeId&&(!track.lines?.length||FlowSongRemote.shouldRefresh(track)))importLyrics(track);
    if(typeof enTgBack==='function')enTgBack(true);
   }catch(e){notice(e.message);}
  }
- function closePlayer(){++state.request;state.add=null;cancelImport();cancelAnalysis();quiz?.cancel();if(!host)return;persistProgress();media.pause();media.dispose();playbackState();cancelAnimationFrame(frame);frame=0;if(state.track?.local&&state.track.source?.startsWith('blob:'))URL.revokeObjectURL(state.track.source);state.track=null;overlay.innerHTML='';state.sheet=null;host.hidden=true;document.getElementById('app').inert=false;host.classList.remove('enm-listening','enm-modal-only');if(typeof enTgBack==='function')enTgBack(false);drawLibrary();}
+ function closePlayer(){++state.request;state.add=null;cancelImport();cancelAnalysis();quiz?.cancel();if(!host)return;persistProgress();media.pause();media.dispose();musicActivity('closed');playbackState();cancelAnimationFrame(frame);frame=0;if(state.track?.local&&state.track.source?.startsWith('blob:'))URL.revokeObjectURL(state.track.source);state.track=null;overlay.innerHTML='';state.sheet=null;host.hidden=true;document.getElementById('app').inert=false;host.classList.remove('enm-listening','enm-modal-only');if(typeof enTgBack==='function')enTgBack(false);drawLibrary();}
  const hasTiming=track=>!!track?.lines?.length&&track.lines.every(line=>Number.isFinite(line.time));
  const lineTime=line=>Math.max(0,(line?.time||0)+(state.track?.lyricOffset||0));
  function wordMarkup(line,index){
@@ -180,17 +190,21 @@
   el.hidden=!el.innerHTML;scheduleAnalysis();
   const empty=q('.enm-lyrics-empty',main);if(empty){empty.querySelector('h3').textContent=t.importing?'Ищу текст песни':'Текст пока не найден';empty.querySelector('p').textContent=t.importing?'Видео уже можно слушать.':'Попробуй поиск ещё раз или добавь свой текст.';empty.querySelector('button').hidden=!!t.importing;}
  }
- function cancelImport(){controller?.abort();controller=null;if(state.track)state.track.importing=false;paintStatus();}
- async function importLyrics(track,force=false,translationOnly=false){cancelImport();const c=new AbortController();controller=c;track.importing=true;track.importError='';track.stage={stage:translationOnly?'translation':'metadata',label:translationOnly?'Готовлю перевод':'Подключаю видео'};paintStatus();let applied='';
+ function cancelImport(){if(controller)importActivity(controller,'cancelled','Импорт отменён');controller?.abort();controller=null;if(state.track)state.track.importing=false;paintStatus();}
+ async function importLyrics(track,force=false,translationOnly=false){cancelImport();const c=new AbortController();controller=c;c.islandToken='lyrics-'+Date.now()+'-'+Math.random().toString(36).slice(2);track.importing=true;track.importError='';track.stage={stage:translationOnly?'translation':'metadata',label:translationOnly?'Готовлю перевод':'Подключаю видео'};importActivity(c,'working',track.stage.label);paintStatus();let applied='';
   const applyResult=async result=>{if(c.signal.aborted||track.deleting||state.track!==track)return;
    const signature=JSON.stringify([result.lines,result.source,result.alignment,result.translationComplete]);if(signature===applied)return;applied=signature;
    track.lines=result.lines;track.title=result.title;track.artist=result.artist;track.lyricResult=result;track.timing=result.timing;if(result.videoDuration)track.duration=result.videoDuration;
    if(state.track===track)paintPlayer();await saveTrack(track);
   };
   try{const run=translationOnly?FlowSongImport.retryTranslate:FlowSongImport.prepare;
-   const result=await run(track.youtubeId,{force,signal:c.signal,videoDuration:track.duration||undefined,getVideoDuration:()=>{if(state.track!==track||media.error)throw new Error('Видео недоступно');return media.duration;},onResult:applyResult,onMetadata:meta=>{if(c.signal.aborted||track.deleting)return;track.title=meta.title;track.artist=meta.artist;},onProgress:p=>{if(c.signal.aborted)return;track.stage=p;if(state.track===track)paintStatus();}});if(c.signal.aborted)return;
-   await applyResult(result);if(c.signal.aborted)return;track.importing=false;track.importError=result.translationComplete?'':result.translationError||'Перевод пока недоступен. Английский текст сохранён.';if(state.track===track){paintStatus();notice(result.translationComplete?'Текст и перевод сохранены':'Текст сохранён. Перевод можно повторить');}state.items=null;loadLibrary(true);
-  }catch(e){if(c.signal.aborted)return;track.importing=false;track.importError=e.message;if(state.track===track)paintStatus();}finally{if(controller===c)controller=null;}
+   const result=await run(track.youtubeId,{force,signal:c.signal,videoDuration:track.duration||undefined,getVideoDuration:()=>{if(state.track!==track||media.error)throw new Error('Видео недоступно');return media.duration;},onResult:applyResult,onMetadata:meta=>{if(c.signal.aborted||track.deleting)return;track.title=meta.title;track.artist=meta.artist;},onProgress:p=>{if(c.signal.aborted)return;track.stage=p;importActivity(c,'working',p.label,p.progress);if(state.track===track)paintStatus();}});if(c.signal.aborted)return;
+   await applyResult(result);if(c.signal.aborted)return;track.importing=false;track.importError=result.translationComplete?'':result.translationError||'Перевод пока недоступен. Английский текст сохранён.';importActivity(c,result.translationComplete?'success':'error',result.translationComplete?'Текст и перевод сохранены':'Текст сохранён · перевод недоступен');if(state.track===track){paintStatus();notice(result.translationComplete?'Текст и перевод сохранены':'Текст сохранён. Перевод можно повторить');}state.items=null;loadLibrary(true);
+  }catch(e){if(c.signal.aborted)return;track.importing=false;track.importError=e.message;importActivity(c,'error','Не удалось импортировать текст');if(state.track===track)paintStatus();}finally{if(controller===c)controller=null;}
+ }
+ function importActivity(c,phase,label,progress=null){
+  if(typeof CustomEvent!=='function'||!document.dispatchEvent)return;
+  document.dispatchEvent(new CustomEvent('flow:import',{detail:{token:c.islandToken,state:phase,label,progress,active:phase!=='cancelled'}}));
  }
  function followCurrent(){state.follow=true;const b=q('[data-enm=follow]');if(b)b.hidden=true;tick(true);}
  function stopFollow(){if(!hasTiming(state.track))return;state.follow=false;const b=q('[data-enm=follow]');if(b)b.hidden=false;}

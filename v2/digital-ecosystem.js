@@ -108,8 +108,9 @@
   }
   let publishedProcess='';
   function syncProcess() {
-    let scene = microphones.size?'listen':speaking ? 'speak' : ['requesting', 'listening', 'transcribing'].includes(voice) ? (voice === 'listening' ? 'listen' : 'think') : capture !== 'idle' ? capture : activity?.kind==='pause'?'pause':activity?.kind === 'render' ? 'render' : ['disconnected','error'].includes(activity?.kind) ? 'error' : activity?.kind === 'success' ? 'success' : 'idle';
-    const progress = ['render','pause'].includes(activity?.kind) ? activity.progress : null;
+    const scenes={pause:'pause',render:'render',timer:'render',think:'think',disconnected:'error',error:'error',success:'success',music:'idle',practice:'idle'};
+    const scene = microphones.size?'listen':speaking ? 'speak' : ['requesting', 'listening', 'transcribing'].includes(voice) ? (voice === 'listening' ? 'listen' : 'think') : capture !== 'idle' ? capture : scenes[activity?.kind]||'idle';
+    const progress = ['render','pause'].includes(scene)&&['render','pause','timer'].includes(activity?.kind) ? activity.progress : null;
     const focus=microphones.size||['requesting','listening','transcribing'].includes(voice)?'recording':speaking?'voice':media.size?'media':'none';
     const stamp=JSON.stringify([scene,voiceLevel,progress,focus]);if(stamp===publishedProcess)return;publishedProcess=stamp;
     root.dataset.magicScene = scene; root.style.setProperty('--magic-level', String(voiceLevel)); root.style.setProperty('--magic-progress', String(progress ?? 0));
@@ -124,7 +125,17 @@
   document.addEventListener('scroll', () => { for (const [surface] of inputs) clearInput(surface);schedule(); }, { capture: true, passive: true, signal });
   document.addEventListener('flow:voice', event => { voice = event.detail?.state || 'idle'; voiceLevel = event.detail?.level || 0; syncProcess(); }, { signal });
   document.addEventListener('flow:activity', event => { activity = event.detail; syncProcess(); }, { signal });
-  document.addEventListener('flow:composecapture', event => {const value=event.detail||{};if(value.phase==='submitting')captureRequest=value.requestId;else if(value.phase==='closed')captureRequest=null;else if(value.requestId!==captureRequest)return;clearTimeout(settleTimer); capture = ({ submitting: 'think', accepted: 'think', result: 'success', error: 'error', pending: 'idle', closed: 'idle' })[event.detail?.phase] || 'idle'; if(capture==='success')settleTimer=setTimeout(()=>{capture='idle';syncProcess();},1800);syncProcess(); }, { signal });
+  document.addEventListener('flow:composecapture', event => {
+    const value=event.detail||{};
+    if(value.phase==='submitting')captureRequest=value.requestId;
+    else if(value.phase==='closed'){if(value.retain)return;captureRequest=null;}
+    else if(value.requestId!==captureRequest)return;
+    clearTimeout(settleTimer);
+    const empty=value.phase==='result'&&!String(value.reply||'').trim()&&!(Array.isArray(value.records)&&value.records.length);
+    capture=empty?'error':({submitting:'think',accepted:'think',result:'success',error:'error',pending:'idle',closed:'idle'})[value.phase]||'idle';
+    if(['success','error'].includes(capture))settleTimer=setTimeout(()=>{capture='idle';syncProcess();},capture==='error'?3200:1800);
+    syncProcess();
+  }, { signal });
   document.addEventListener('flow:speech', event => { speaking = event.detail?.speaking === true; syncProcess(); }, { signal });
   document.addEventListener('play', event => { if (event.target instanceof HTMLMediaElement) { media.add(event.target); syncProcess(); } }, { capture: true, signal });
   for (const name of ['pause', 'ended', 'emptied']) document.addEventListener(name, event => { media.delete(event.target); syncProcess(); }, { capture: true, signal });

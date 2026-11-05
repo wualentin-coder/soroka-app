@@ -8,8 +8,8 @@
     for (const alias of aliases.split('|')) routes.set(alias, { type: 'navigate', page, label, state, action });
   }
   route('today', 'План', 'план|планы|календарь|календарю|сегодня|главную|главная|обзор');
-  route('tasks', 'Задачи', 'задачи|задачам|задания|дела|мои задачи|все задачи');
-  route('saved', 'Библиотека', 'библиотека|библиотеку|библиотеке|сохраненное|материалы', { savedCategory: 'overview' });
+  route('tasks', 'Задачи', 'задачи|задачам|задания|дела|мои задачи|все задачи|все дела');
+  route('saved', 'Библиотека', 'библиотека|библиотеку|библиотеке|сохраненное', { savedCategory: 'overview' });
   route('finance', 'Финансы', 'финансы|финансам|деньги', { financeTab: 'overview', financeCategory: '' });
   for (const [tab, label, aliases] of [
     ['debts', 'Долги', 'долги|долгам|долгов'], ['payments', 'Платежи', 'платежи|платежам'],
@@ -19,18 +19,25 @@
     ['rules', 'Правила финансов', 'правила финансов'],
   ]) {
     const names = aliases.split('|');
-    route('finance', label, [...names, ...names.map(name => `финансы ${name}`)].join('|'), { financeTab: tab, financeCategory: '' });
+    route('finance', label, [...names, ...names.map(name => `финансы ${name}`)].join('|'), { financeTab: tab, financeCategory: '', financeKind: '' });
   }
   for (const [category, label, aliases] of [
+    ['materials', 'Материалы', 'материалы|материалам'],
     ['notes', 'Заметки', 'заметки|заметкам'], ['lists', 'Списки', 'списки|спискам|списки покупок'],
     ['movies', 'Фильмы', 'фильмы|фильмам|кино'], ['files', 'Файлы', 'файлы|файлам'],
     ['posts', 'Посты', 'посты'], ['links', 'Ссылки', 'ссылки'], ['recipes', 'Рецепты', 'рецепты|рецептам'],
     ['products', 'Товары', 'товары|покупки'], ['addresses', 'Адреса', 'адреса|адресам|карту|карта'],
     ['tickets', 'Билеты', 'билеты|билетам'], ['cards', 'Карты', 'карты|карты лояльности|скидочные карты'],
-    ['birthdays', 'Дни рождения', 'дни рождения'], ['sites', 'Сайты', 'сайты'],
+    ['birthdays', 'Дни рождения', 'дни рождения|дням рождения'], ['sites', 'Мини-сайты', 'сайты|мини-сайты|мини сайты|минисайты'],
   ]) {
     const names = aliases.split('|');
-    route('saved', label, [...names, ...names.map(name => `библиотеку ${name}`), ...names.map(name => `библиотека ${name}`)].join('|'), { savedCategory: category });
+    route('saved', label, [...names, ...names.map(name => `библиотеку ${name}`), ...names.map(name => `библиотека ${name}`), ...names.map(name => `сохраненное ${name}`)].join('|'), { savedCategory: category });
+  }
+  route('saved', 'Товары', 'товары|товарам|покупки|библиотека товары|библиотеку товары|сохраненное товары', { savedCategory: 'products', productTab: 'products' });
+  route('saved', 'Хочу купить', 'хотелки|желания|список желаний|хочу купить|товары желания', { savedCategory: 'products', productTab: 'wishes' });
+  for(const [kind,label] of [['expense','Расходы'],['income','Доходы']]){
+    const alias=label.toLocaleLowerCase('ru');
+    route('finance',label,alias+'|финансы '+alias,{financeTab:'transactions',financeCategory:'',financeKind:kind});
   }
   for (const [page, label, aliases] of [
     ['pc', 'Компьютер', 'компьютер|пк|компьютеру'], ['render', 'Рендер', 'рендер|рендеры|очередь рендера|рендер менеджер'],
@@ -43,7 +50,7 @@
   ]) route(page, label, aliases);
   for (const [tab, label, aliases] of [
     ['today', 'Сегодня', 'сегодня|урок'], ['words', 'Слова', 'слова|словарь'], ['course', 'Курс', 'курс'],
-    ['read', 'Медиатека', 'медиатеку|медиатека|книги'], ['chat', 'Разговор', 'разговор'], ['progress', 'Прогресс', 'прогресс'],
+    ['read', 'Медиатека', 'медиатеку|медиатека|книги'], ['chat', 'Разговор', 'разговор'], ['progress', 'Прогресс', 'прогресс'], ['phrases', 'Мои фразы', 'фразы|мои фразы'],
   ]) route('english', `Английский · ${label}`, aliases.split('|').map(name => `английский ${name}`).join('|'), {}, { owner: 'english', tab });
   for (const [tab, label, aliases] of [
     ['today', 'Сегодня', 'сегодня'], ['training', 'Тренировка', 'тренировка|тренировку'],
@@ -86,21 +93,23 @@
     const found = routes.get(destination);
     return found ? { ...found, state: { ...found.state } } : null;
   }
-  function go(page) {
+  function go(page,state={}) {
     if (typeof navigate !== 'function' || typeof ui === 'undefined') return false;
-    navigate(page);
-    return ui.page === page && !ui.sheet;
+    const fast=!ui.sheet,previous=Object.entries(state).map(([key])=>[key,Object.hasOwn(ui,key),ui[key]]);
+    const restore=()=>{for(const [key,had,value]of previous){if(had)ui[key]=value;else delete ui[key];}};
+    if(fast)Object.assign(ui,state);
+    try{navigate(page);}catch(error){if(fast)restore();throw error;}
+    if(ui.page!==page||ui.sheet){if(fast)restore();return false;}
+    if(!fast){const changed=Object.entries(state).some(([key,value])=>ui[key]!==value);Object.assign(ui,state);if(changed)render();}
+    return true;
   }
   function execute(command) {
     if (!command) return { status: 'unhandled' };
     if (command.type === 'navigate') {
-      if (!go(command.page)) return { status: 'cancelled', message: 'Переход отменён' };
       const state = { ...(command.page === 'saved' ? { savedSection: '', savedQuery: '', savedFilter: 'all', savedReturn: null, mapPlacing: false } : {}), ...command.state };
-      const changed = Object.entries(state).some(([key, value]) => ui[key] !== value);
-      Object.assign(ui, state);
+      if (!go(command.page,state)) return { status: 'cancelled', message: 'Переход отменён' };
       if (command.action?.owner === 'english' && typeof englishAction === 'function') englishAction('en-tab', { dataset: { tab: command.action.tab } });
       else if (command.action?.owner === 'sport' && typeof sportAction === 'function') sportAction('sp-tab', { dataset: { tab: command.action.tab } });
-      else if (changed) render();
       return { status: 'done', message: command.label };
     }
     if (command.type === 'task') {

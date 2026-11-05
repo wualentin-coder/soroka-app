@@ -42,7 +42,7 @@ function spSetPhase(next, existing) {
   const C = SP();
   spTimer.phase = next;
   spTimer.ticked = null;
-  if (!next) { window.sorokaSportTimer?.stop(); spTimer.nativeToken = null; spTimer.clock = null; C.clearTimer(); spOverlay(true); return; }
+  if (!next) { spClockActivity(false); window.sorokaSportTimer?.stop(); spTimer.nativeToken = null; spTimer.clock = null; C.clearTimer(); spOverlay(true); return; }
   spTimer.clock = existing || new C.Countdown(spSecondsFor(next));
   spTimer.nativeToken = crypto.randomUUID();
   C.saveTimer({ workout: spTimer.session.key, phase: next, clock: spTimer.clock.snapshot() });
@@ -153,6 +153,7 @@ setInterval(() => {
 /** Цифры и кольцо таймера — без перерисовки страницы. */
 function spTimerPaint() {
   if (!spTimer.clock) return;
+  spClockActivity();
   const remaining = spTimer.clock.remaining();
   const text = `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`;
   for (const el of document.querySelectorAll("[data-sp-time]")) el.textContent = text;
@@ -589,8 +590,18 @@ Object.assign(SP_ACTIONS, {
 window.addEventListener("hashchange", () => setTimeout(() => spOverlay(true), 50));
 
 // Native owns only the current wall-clock interval. Completing sets remains in the workout state.
+function spClockActivity(active = true) {
+  if (typeof CustomEvent !== 'function' || !document.dispatchEvent) return;
+  if (active && (!spTimer.phase || !spTimer.clock || !spTimer.session)) return;
+  const detail = active ? { active, token: spTimer.nativeToken, stage: SP_PHASE_LABEL[spTimer.phase.kind], remaining: spTimer.clock.remaining(), total: Math.max(1, spSecondsFor(spTimer.phase), spTimer.clock.remaining()), running: spTimer.clock.running } : { active, token: spTimer.nativeToken };
+  const signature = JSON.stringify(detail), now = Date.now();
+  if (signature === spTimer.islandSnapshot?.signature && now - spTimer.islandSnapshot.at < 1000) return;
+  spTimer.islandSnapshot = { signature, at: now };
+  document.dispatchEvent(new CustomEvent('flow:sport-clock', { detail }));
+}
 function spPublishTimer() {
   if (!spTimer.phase || !spTimer.clock || !spTimer.session) return;
+  spClockActivity();
   const exercise = spTimer.session.option.plan.exercises[spTimer.phase.index];
   const ok = window.sorokaSportTimer?.update({ key: spTimer.session.key, token: spTimer.nativeToken,
     date: spTimer.session.option.date, kind: spTimer.session.option.kind, title: exercise.name, stage: SP_PHASE_LABEL[spTimer.phase.kind], total: Math.max(1, spSecondsFor(spTimer.phase)),

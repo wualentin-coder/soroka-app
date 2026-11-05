@@ -56,9 +56,10 @@
   window.FlowIslandSurface={sync,shape,refresh};
   window.addEventListener('flow:windowgeometry',refresh);
   window.addEventListener('resize',refresh);
-  window.addEventListener('flow:suspend',()=>{suspended=true;if(active){active.goal=null;refresh();}});
-  window.addEventListener('flow:resume',()=>{suspended=false;refresh();});
-  document.addEventListener('visibilitychange',()=>{if(active){active.goal=null;refresh();}});
+  const syncVisibility=()=>{root.dataset.islandSuspended=String(suspended||document.hidden);};
+  window.addEventListener('flow:suspend',()=>{suspended=true;syncVisibility();if(active){active.goal=null;refresh();}});
+  window.addEventListener('flow:resume',()=>{suspended=false;syncVisibility();refresh();});
+  document.addEventListener('visibilitychange',()=>{syncVisibility();if(active){active.goal=null;refresh();}});
   window.addEventListener('pagehide',release);
   document.fonts?.ready.then(refresh);
 })();

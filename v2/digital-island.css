@@ -1,11 +1,16 @@
-/* Wide cutout · radius 36 / shoulders 36 / header 22. The content stays at 64px. */
-html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{height:64px;min-height:64px;padding:6px 28px 14px;border-bottom:0;border-radius:22px 22px 0 0;background:transparent;backdrop-filter:none;overflow:visible}
+/* The camera, wordmark and settings share one optical axis. Activity overlays never move content. */
+html[data-flow-design=magic] #app .dm-topbar{background:color-mix(in srgb,var(--page) 76%,transparent);backdrop-filter:none}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{height:48px;min-height:48px;padding:0 28px;align-items:flex-start;border-bottom:0;border-radius:22px 22px 0 0;background:transparent;backdrop-filter:none;overflow:visible;--island-chrome-y:var(--native-camera-center-y,22px)}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.dm-mobile-brand,.dm-toolbar,.dm-icon-button){height:44px;min-height:44px;position:relative;z-index:4}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-toolbar{position:static}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.dm-mobile-brand,.dm-icon-button){top:calc(var(--island-chrome-y) - 22px)}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-icon-button{width:44px;min-width:44px}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-header-movie-start{height:44px;position:relative;top:calc(var(--island-chrome-y) - 22px);z-index:4}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-toolbar>.dm-header-view{position:relative;top:calc(var(--island-chrome-y) - 22px)}
+html[data-flow-design=magic][data-flow-compact=true] #app .dm-main{padding-top:8px}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy{display:block;position:absolute;inset:0;opacity:1;transform:none;transition:none;will-change:auto;pointer-events:none;z-index:1}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy svg{height:256px;width:100%;overflow:visible}
-html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy-fill{fill:#08090b}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy-fill{fill:color-mix(in srgb,var(--page) 76%,transparent)}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy-rim{stroke:rgba(var(--accent-rgb),.28)}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb]{position:absolute;left:var(--native-camera-x,50%);top:0;width:var(--island-label-width,120px);min-width:44px;max-width:none;height:var(--island-tongue-bottom,82px);min-height:44px;transform:translateX(-50%);padding:0;background:transparent;border:0;box-shadow:none;transition:none;z-index:3;overflow:visible}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb=true]{top:var(--native-camera-hit-top,0px);width:44px;max-width:44px;height:44px}
@@ -20,3 +25,17 @@ html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-
 html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island{top:var(--native-camera-hit-top,0px);width:44px;height:44px}
 html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-orb{top:var(--native-camera-light-offset,21px)}
 @media(max-width:359px){html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{padding-left:22px;padding-right:22px}}
+
+html[data-flow-design=magic] .island-orb-progress{position:absolute;left:50%;top:50%;width:36px;height:36px;max-width:none;overflow:visible;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none;opacity:.85;display:none}
+html[data-flow-design=magic] .head-pill[data-progress-known=true] .island-orb-progress{display:block}
+html[data-flow-design=magic] .island-orb-progress circle{fill:none;stroke:var(--energy-hot,var(--accent));stroke-width:1.3;stroke-linecap:round;transition:stroke-dasharray .24s ease}
+html[data-flow-design=magic] .head-pill[data-activity=pause] .island-orb-progress{opacity:.45}
+html[data-flow-design=magic] .head-pill[data-island-orb][data-activity=listen] .island-orb:before{animation:none;opacity:calc(.62 + var(--island-level,0)*.38);transform:scale(calc(.94 + var(--island-level,0)*.12));transition:opacity .1s,transform .1s}
+html[data-flow-design=magic] .head-pill:is([data-activity=render],[data-activity=timer],[data-activity=pause]) .island-orb:before{animation:none}
+html[data-flow-design=magic] .head-pill[data-activity=think] .island-orb:after{content:'';position:absolute;inset:-5px;border:1px solid rgba(var(--accent-rgb),.12);border-top-color:rgba(var(--accent-rgb),.85);border-radius:50%;animation:island-work-orbit 2.8s linear infinite;pointer-events:none}
+@keyframes island-work-orbit{to{transform:rotate(360deg)}}
+html[data-camera-calibration=true][data-flow-design=magic] .island-orb-progress{display:none!important}
+html[data-camera-calibration=true] .island-orb:after{display:none}
+html[data-motion=off] .island-orb:after,.digital-hidden .island-orb:after{animation:none!important}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .island-orb:after{animation:none!important}}
+html[data-island-suspended=true] :is(.island-orb,.island-section-symbol,.island-orb-progress circle),html[data-island-suspended=true] .island-orb:before,html[data-island-suspended=true] .island-orb:after{animation:none!important;transition:none!important}
