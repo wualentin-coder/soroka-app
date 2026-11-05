@@ -23,12 +23,21 @@
     ['devices','Устройства и работа',['pc','render','server','vpn']],
     ['preferences','Предпочтения',['settings']]
   ];
-  function moduleCard([page,title,description,name],practice=false){
+  function moduleCard([page,title,description,name],practice=false,status=''){
     const art=window.flowMagicObject?window.flowMagicObject(page):symbol(name);
-    return `<button class="dc-module-card ${practice?'dc-practice-card':'dc-route-row'} dc-module-${page}" type="button" data-action="navigate" data-page="${page}"><span class="module-symbol" aria-hidden="true">${art}</span><span class="dc-route-copy"><h3>${escape(title)}</h3><p>${escape(description)}</p></span><span class="dc-route-arrow" aria-hidden="true">${symbol('right')}</span></button>`;
+    const cue={pending:'Занятие ожидает выполнения',done:'Занятие выполнено',rest:'День отдыха'}[status];
+    return `<button class="dc-module-card ${practice?'dc-practice-card':'dc-route-row'} dc-module-${page}" type="button" data-action="navigate" data-page="${page}"${status?` data-practice-state="${status}"`:''}${cue?` aria-label="${escape(title)}. ${cue}" title="${cue}"`:''}><span class="module-symbol" aria-hidden="true">${art}</span><span class="dc-route-copy"><h3>${escape(title)}</h3><p>${escape(description)}</p></span><span class="dc-route-arrow" aria-hidden="true">${symbol('right')}</span></button>`;
   }
-  let practiceMarkup='';
-  window.flowMagicUI.practiceCards=()=>practiceMarkup||(practiceMarkup=`<div class="dc-directory dc-practice-directory">${['piano','english','sport'].map(page=>moduleCard(byPage.get(page),true)).join('')}</div>`);
+  function practiceStatus(page){
+    if(page==='piano')return window.FlowPiano?.practiceStatus?.().status||'unknown';
+    if(page==='english'){
+      if(typeof enHomeTile==='function')enHomeTile();
+      const s=typeof enState==='function'?enState():null;
+      return !s?.today||s.todayLoading||s.failedLoads?.today||new Date(s.todayAt||0).toDateString()!==new Date().toDateString()||typeof s.today.plan?.doneToday!=='boolean'?'unknown':s.today.plan.doneToday?'done':'pending';
+    }
+    return typeof spPracticeStatus==='function'?spPracticeStatus().status:'unknown';
+  }
+  window.flowMagicUI.practiceCards=()=>`<div class="dc-directory dc-practice-directory">${['piano','english','sport'].map(page=>moduleCard(byPage.get(page),true,ui.page==='today'?practiceStatus(page):'')).join('')}</div>`;
   replace('renderMorePage',()=>`<div class="wide-content dc-more">${heading('Все части твоего пространства','Ещё')}<div class="dc-module-groups">${groups.map(([id,title,pages],index)=>`<section class="dc-module-group dc-module-group-${id}" style="--group-delay:${index*70}ms"><h2>${title}</h2><div class="dc-directory ${id==='practice'?'dc-practice-directory':'dc-route-directory'}">${pages.map(page=>moduleCard(byPage.get(page),id==='practice')).join('')}</div>${id==='personal'?`<div class="dc-aux-routes" aria-label="Работа с записями">${[['inbox','Входящие'],['metrics','Показатели']].map(([page,label])=>`<button type="button" data-action="navigate" data-page="${page}"><span aria-hidden="true">${window.flowMagicObject?.(page,true)||symbol('chart')}</span>${label}${symbol('right')}</button>`).join('')}</div>`:''}</section>`).join('')}</div><section class="dc-chat-return"><div><h2>Продолжить в чате</h2><p>Текст, голос и файлы попадут в нужный раздел.</p></div><button class="secondary-button" type="button" data-action="return-chat">Открыть чат ${symbol('arrow')}</button></section>${window.SOROKA_LIVE?`<div class="dc-sync-line"><span>Записи Flow</span><button class="text-button" type="button" data-action="reset">Обновить записи ${symbol('reset')}</button></div>`:''}</div>`);
   const preferenceOpen=new Map();
   function effectState(){return window.flowDigital?.getState?.()||null;}

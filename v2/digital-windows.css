@@ -350,11 +350,17 @@ html[data-flow-design="magic"] .flow-effects-sheet .switch input:focus-visible+s
 html[data-flow-design="magic"] .flow-effects-sheet .switch input:disabled+span{opacity:.4}
 html[data-flow-design="magic"][data-motion="off"] .flow-effects-sheet .switch>span,html[data-flow-design="magic"][data-motion="off"] .flow-effects-sheet .switch>span::before{transition:none}
 
-.flow-living-surface{--surface-x:50%;--surface-y:24%;isolation:isolate}.flow-surface-static{position:relative}.flow-surface-contour{position:absolute;inset:0;border-radius:inherit;padding:1px;z-index:4;pointer-events:none;background:radial-gradient(ellipse 260px 190px at var(--surface-x) var(--surface-y),rgba(var(--accent-rgb),.8),rgba(var(--accent-rgb),.08));mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;opacity:.2;animation:flow-surface-breathe 7.8s ease-in-out infinite}
-.flow-surface-attention>.flow-surface-contour{opacity:.65}.flow-surface-focused>.flow-surface-contour{background:radial-gradient(ellipse 270px 170px at var(--surface-x) var(--surface-y),rgba(var(--accent-rgb),1),rgba(var(--accent-rgb),.16))}.flow-surface-resting>.flow-surface-contour{animation:none!important;opacity:.22}.flow-input-light{position:absolute;inset:0;z-index:5;border-radius:inherit;pointer-events:none;user-select:none;contain:layout style}.flow-input-light i{position:absolute;display:block;pointer-events:none;opacity:0}.flow-input-source{left:var(--input-left);top:var(--input-top);width:var(--input-width);height:var(--input-height);border-radius:var(--input-radius,12px);border:1px solid rgba(var(--accent-rgb),.78);box-shadow:0 0 16px rgba(var(--accent-rgb),.16),inset 0 0 9px rgba(var(--accent-rgb),.045)}.flow-input-light[data-rich] .flow-input-source{border:0;border-radius:12px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.06),rgba(var(--accent-rgb),.14) 40%,transparent);box-shadow:0 0 20px rgba(var(--accent-rgb),.13)}.flow-input-spread{inset:0;border-radius:inherit}.flow-input-spread:before,.flow-input-spread:after{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none}.flow-input-spread:before{padding:1.5px;background:radial-gradient(ellipse 390px 240px at var(--input-x) var(--input-y),rgba(var(--accent-rgb),.95),rgba(var(--accent-rgb),.38) 62%,rgba(var(--accent-rgb),.04));mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor}.flow-input-spread:after{border:1px solid rgba(var(--accent-rgb),.26);box-shadow:0 0 22px rgba(var(--accent-rgb),.24),0 0 52px rgba(var(--accent-rgb),.10)}
+.flow-living-surface{--surface-x:50%;--surface-y:24%;isolation:isolate}.flow-surface-static{position:relative}
+/* Only light opacity moves. The border has no animated mask or gradient geometry. */
+.flow-surface-contour{display:block;position:absolute;inset:0;border:1px solid rgba(var(--accent-rgb),.52);border-radius:inherit;z-index:4;pointer-events:none;background:none;box-shadow:inset 0 0 22px rgba(var(--accent-rgb),.055);opacity:.4;animation:flow-surface-breathe 7.8s ease-in-out infinite}
+.flow-surface-attention>.flow-surface-contour{border-color:rgba(var(--accent-rgb),.76)}.flow-surface-focused>.flow-surface-contour{box-shadow:inset 0 0 26px rgba(var(--accent-rgb),.09)}.flow-surface-resting>.flow-surface-contour{animation:none!important;opacity:.22}
+.flow-input-light{position:absolute;inset:0;z-index:5;border-radius:inherit;pointer-events:none;user-select:none;contain:layout style}.flow-input-light i{position:absolute;display:block;pointer-events:none;opacity:0}
+.flow-input-source{left:var(--input-left);top:var(--input-top);width:var(--input-width);height:var(--input-height);border-radius:var(--input-radius,12px);border:1px solid rgba(var(--accent-rgb),.78);box-shadow:0 0 16px rgba(var(--accent-rgb),.16),inset 0 0 9px rgba(var(--accent-rgb),.045)}.flow-input-light[data-rich] .flow-input-source{border:0;border-radius:12px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.06),rgba(var(--accent-rgb),.14) 40%,transparent);box-shadow:0 0 20px rgba(var(--accent-rgb),.13)}
+.flow-input-spread{inset:0;border-radius:inherit;border:1px solid rgba(var(--accent-rgb),.8);box-shadow:inset 0 0 30px rgba(var(--accent-rgb),.11),inset 0 0 4px rgba(var(--accent-rgb),.2)}
 .flow-effects-sheet .small-button,.flow-effects-sheet .icon-button,.flow-effects-sheet input[type=range]{min-height:44px}.flow-sound-params{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.flow-sound-params label{font-size:12px;min-width:0}.flow-sound-params input{display:block;width:100%;accent-color:var(--accent)}
-@keyframes flow-surface-breathe{0%,100%{opacity:.26}50%{opacity:.72}}
+@keyframes flow-surface-breathe{0%,100%{opacity:.3}50%{opacity:.78}}
 html[data-motion=off] .flow-surface-contour,.digital-hidden .flow-surface-contour{animation:none!important}.flow-living-surface :is(input,textarea,select){font-size:16px}.flow-living-surface :is(input,textarea,select):focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+@media(prefers-reduced-motion:reduce){html:not([data-motion-mode=on]) .flow-surface-contour{animation:none!important}}
 :host .flow-living-surface :is(button,input,select){min-height:44px}:host .flow-living-surface{color:var(--text);background:var(--surface-raised);border-color:var(--line)}
 
 .flow-living-surface :is(button,textarea,select),.flow-living-surface input:not([type=checkbox]):not([type=radio]):not([type=range]){min-height:44px}
@@ -378,26 +384,18 @@ html[data-flow-design="magic"] .dm-entry-body>.dm-entry-name{margin-top:10px}
 
 html[data-flow-design="magic"].kb-open .modal-backdrop{padding-bottom:var(--kb,0px)}
 html[data-flow-design="magic"].kb-open .sheet{max-height:calc(var(--vvh,100dvh) - 12px)}
-.flow-living-surface>.flow-surface-contour{padding:0;background:none;mask:none;-webkit-mask:none;animation:flow-stable-light 12s ease-in-out infinite;opacity:.5;overflow:hidden}
-.flow-surface-contour svg{position:absolute;inset:0;overflow:visible}
-.flow-surface-contour rect{fill:none;stroke:var(--accent);stroke-width:1.25}
-.flow-surface-attention>.flow-surface-contour{opacity:.75}
-.flow-surface-focused>.flow-surface-contour{background:none;opacity:.95}
-.flow-input-spread:before{padding:0;background:none;mask:none;-webkit-mask:none;border:1px solid rgba(var(--accent-rgb),.5);box-shadow:inset 0 0 22px rgba(var(--accent-rgb),.1)}
 /* Android WebView keeps one stable compositor layer for each visible surface. */
 html[data-flow-native=true] .modal-backdrop{backdrop-filter:none;-webkit-backdrop-filter:none;transform:translateZ(0);isolation:isolate;background:rgba(6,8,10,.76)}
 html[data-flow-native=true] .sheet{transform:translateZ(0);will-change:transform;overflow:auto}
 html[data-flow-native=true] .sheet .dm-entry-body{overflow:auto;overscroll-behavior:contain}
-.flow-living-surface>.flow-surface-contour{border:1px solid rgba(var(--accent-rgb),.45);border-radius:inherit;box-shadow:inset 0 0 16px rgba(var(--accent-rgb),.04)}
 html[data-flow-native=true] .modal-backdrop{padding:12px;}
 html[data-flow-native=true] .sheet{border-radius:28px;max-height:calc(100dvh - 24px - var(--native-safe-top,0px))}
-@keyframes flow-window-light{0%,100%{opacity:.55}50%{opacity:.72}}
-.flow-living-surface>.flow-surface-contour{animation:flow-window-light 12s ease-in-out infinite}
-.flow-surface-focused>.flow-surface-contour{animation:none;opacity:.85}
-
-html[data-flow-design=magic] .sheet.flow-living-surface>.flow-surface-contour{display:none}
 html[data-flow-design=magic] .sheet.flow-living-surface{border-color:rgba(var(--accent-rgb),.4)}
 html[data-flow-design=magic] .sheet.flow-surface-focused{border-color:rgba(var(--accent-rgb),.8);box-shadow:0 0 24px rgba(var(--accent-rgb),.12)}
+
+/* This sheet is also linked inside the Digital Magic shadow surfaces. */
+:host,:host *{scrollbar-width:none}
+:host::-webkit-scrollbar,:host *::-webkit-scrollbar{display:none;width:0;height:0}
 html[data-flow-design=magic] .sheet:is(.dc2-window,.dc2-note-sheet){overflow:hidden;min-height:0}
 html[data-flow-design=magic] .dc2-note-sheet .note-editor{flex:1 1 auto;min-height:0;overflow:auto;scroll-padding-bottom:32px}
 html[data-flow-design=magic] .dc2-note-sheet .note-rich{flex:0 0 auto;min-height:220px}

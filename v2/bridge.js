@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=564aa54c48","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=c5a8055734","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=33ff58d43f","integrity":null},{"src":"./sport-train.js?v=faa39836a3","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=40c4087fec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e17f99e8a0","integrity":null},{"src":"./app.js?v=5b6a4f981b","integrity":null},{"src":"./notes.js?v=4500b6613e","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=c9cbc1985e","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=d00eea7869","integrity":null},{"src":"./activity-island.js?v=1ce6ce5f0b","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=bbc4eef619","integrity":null},{"src":"./digital-collections.js?v=bea37b57b3","integrity":null},{"src":"./digital-directory.js?v=e8afaae397","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./digital-runtime.js?v=d626420c0e","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=7b0aaedc27","integrity":null},{"src":"./digital-assistant.js?v=ed43baf75c","integrity":null},{"src":"./digital-assistant-visual.js?v=c8e26feb4f","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=09fef8f912","integrity":null},{"src":"./native-island.js?v=4a1c0bc488","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=564aa54c48","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=c5a8055734","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=7313014bdd","integrity":null},{"src":"./sport-train.js?v=faa39836a3","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=40c4087fec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=8109bb1791","integrity":null},{"src":"./app.js?v=5b6a4f981b","integrity":null},{"src":"./notes.js?v=4500b6613e","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=c9cbc1985e","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=d00eea7869","integrity":null},{"src":"./activity-island.js?v=1ce6ce5f0b","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=d1157f3ca5","integrity":null},{"src":"./digital-collections.js?v=bea37b57b3","integrity":null},{"src":"./digital-directory.js?v=517d7def7d","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./digital-runtime.js?v=11bafd0041","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=7b0aaedc27","integrity":null},{"src":"./digital-assistant.js?v=ed43baf75c","integrity":null},{"src":"./digital-assistant-visual.js?v=c8e26feb4f","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=32ac7c6842","integrity":null},{"src":"./native-island.js?v=4a1c0bc488","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -38,6 +38,15 @@
    * либо только изменившимися разделами — тогда полный снимок собирается из
    * сохранённого и пришедшего. Разделы, которых больше нет, убираются.
    */
+  function widgetNoteRef(value) {
+    if(typeof value!=="string"||!/^note:[1-9]\d{0,18}$/.test(value))return null;
+    const id=value.slice(5);return id.length<19||id<="9223372036854775807"?value:null;
+  }
+  function widgetLaunchNote() {
+    const params=new URLSearchParams(location.search),page=params.get("page"),start=params.get("tgWebAppStartParam")||tg?.initDataUnsafe?.start_param||"";
+    return page==="notes"?widgetNoteRef("note:"+(params.get("rid")||"")):!page&&/^note_\d+$/.test(start)?widgetNoteRef("note:"+start.slice(5)):null;
+  }
+  let widgetNoteTarget=widgetLaunchNote(),widgetNoteIntent=null,widgetNoteRead=null,widgetNoteReadToken=null,warmWidgetSnapshot=null,widgetSnapshotWrites=0;
   const DELTA = new Set(["planner_snapshot", "planner_sync", "income_split"]);
   let lastFull = null;
   function remember(full) { if (full && full.__hashes) lastFull = JSON.parse(JSON.stringify(full)); }
@@ -61,7 +70,7 @@
     return full;
   }
 
-  async function call(body, timeout = 20000) {
+  async function call(body, timeout = 20000, noteRefreshes = 0, widgetRead = null) {
     if(nativeSuspended && (PAUSABLE_READS.has(body.action) || (body.action==='pc'&&body.op==='state'))) throw new Error('app-hidden');
     const init = tg && tg.initData;
     const device = init ? "" : deviceKey();
@@ -72,9 +81,13 @@
     const canNative = !init && android && android.api;
     const timer = setTimeout(() => controller.abort(), canNative ? Math.min(timeout, 20000) : timeout);
     const started = Date.now();
+    const noteHint=["planner_snapshot","planner_sync"].includes(body.action)?widgetNoteTarget:null;
+    if(noteHint)body={...body,noteId:noteHint};
     // Снимок по частям: отпечатки того, что уже есть, — в ответ только изменившееся.
     if (DELTA.has(body.action) && lastFull && lastFull.__hashes) body = { ...body, have: lastFull.__hashes };
     const payload = JSON.stringify(init ? { initData: init, ...body } : { device, ...body });
+    const snapshotWrite=DELTA.has(body.action)&&body.action!=="planner_snapshot";
+    if(snapshotWrite)widgetSnapshotWrites++;
     try {
       // Android: если окно уже не достучалось до сервера — сразу сетью приложения.
       const answer = useNative ? await nativeFetch(payload, timeout) : await fetch(API, {
@@ -93,6 +106,7 @@
         throw error;
       });
       const json = await answer.json().catch(() => ({}));
+      if(widgetRead?.cancelled)throw new Error("note-read-cancelled");
       if (!answer.ok) {
         const error = new Error(json.error || (answer.status === 401 ? "unauthorized" : "server"));
         error.status = answer.status;
@@ -102,13 +116,20 @@
       // Копия «как на сервере» — отдельно от данных на экране: правки на
       // экране не должны менять то, с чем сравниваются следующие ответы.
       if (body.action === "planner_sync") { try { android?.refreshWidgets?.(); } catch (_) {} }
+      // A reply started before the latest widget intent must not remove its old note.
+      if (body.action === "planner_snapshot" && noteHint !== widgetNoteTarget) {
+        if(noteRefreshes>=2)throw new Error("note-target-changed");
+        const current=await call({action:"planner_snapshot"},timeout,noteRefreshes+1,widgetRead);
+        return current;
+      }
       if (body.action === "planner_snapshot") { const full = expand(json); remember(full); return full; }
       if (DELTA.has(body.action) && json.snapshot) { json.snapshot = expand(json.snapshot); remember(json.snapshot); }
       return json;
     } catch (error) {
-      noteFailure(body.action, error, Date.now() - started);
+      if(error?.message!=="note-read-cancelled")noteFailure(body.action, error, Date.now() - started);
       throw error;
     } finally {
+      if(snapshotWrite)widgetSnapshotWrites--;
       clearTimeout(timer);
     }
   }
@@ -412,6 +433,8 @@
 
   async function push() {
     if (!base) return;
+    if(widgetNoteIntent&&!widgetNoteIntentCurrent(widgetNoteIntent))endWidgetNoteIntent(widgetNoteIntent);
+    if(widgetNoteRead){again=true;return;}
     // Открылись на прошлом снимке — правки ждут свежего, чтобы не спорить со старым.
     if (warming) { again = true; return; }
     if (flying) { again = true; return; }
@@ -510,7 +533,8 @@
 
   let lastRefreshAt = Date.now();
   async function refresh(force = false) {
-    if (!base || flying || refreshing) return;
+    if(widgetNoteIntent&&!widgetNoteIntentCurrent(widgetNoteIntent))endWidgetNoteIntent(widgetNoteIntent);
+    if (!base || flying || refreshing || widgetNoteRead) return;
     lastRefreshAt = Date.now();
     if (!force && diff(base, data).length) return;
     refreshing = true;
@@ -1400,10 +1424,72 @@
     ui.selected = date; ui.calendarAnchor = date; ui.month = date.slice(0,7) + "-01";
     render(); return true;
   };
+  function widgetNoteIntentCurrent(intent) {
+    return Boolean(intent)&&widgetNoteIntent===intent&&!intent.cancelled&&!nativeSuspended&&!document.hidden&&ui.page===intent.page&&ui.sheet===intent.sheet;
+  }
+  function endWidgetNoteIntent(intent, continuing = false) {
+    intent.cancelled=true;intent.cleanup();
+    if(widgetNoteIntent!==intent)return;
+    widgetNoteIntent=null;
+    if(!continuing&&widgetNoteReadToken){
+      widgetNoteReadToken.cancelled=true;widgetNoteReadToken=null;widgetNoteRead=null;
+      if(again&&!flying&&!warming){again=false;schedule(50);}
+    }
+  }
+  function readWidgetNoteSnapshot() {
+    if(widgetNoteRead)return widgetNoteRead;
+    const token={cancelled:false};widgetNoteReadToken=token;
+    let task;
+    task=(async()=>{
+      if(warming&&warmWidgetSnapshot)return await warmWidgetSnapshot;
+      const started=Date.now();
+      while(flying||refreshing||widgetSnapshotWrites){
+        if(token.cancelled||!widgetNoteIntentCurrent(widgetNoteIntent))return null;
+        if(Date.now()-started>20000)throw new Error("note-read-busy");
+        await new Promise(resolve=>setTimeout(resolve,50));
+      }
+      if(token.cancelled||!widgetNoteIntent||!widgetNoteIntentCurrent(widgetNoteIntent))return null;
+      const snapshot=await call({action:"planner_snapshot"},60000,0,token);
+      if(!token.cancelled&&widgetNoteIntent&&widgetNoteIntentCurrent(widgetNoteIntent))adopt(snapshot,{},diff(base,data));
+      return snapshot;
+    })().finally(()=>{
+      if(widgetNoteRead===task)widgetNoteRead=null;
+      if(widgetNoteReadToken===token)widgetNoteReadToken=null;
+      if(again&&!flying&&!warming){again=false;schedule(50);}
+    });
+    widgetNoteRead=task;return task;
+  }
+  window.sorokaOpenNote = (ref) => {
+    if(!widgetNoteRef(ref))return false;
+    if(typeof savedItems!=="function"||typeof data==="undefined"||typeof ui==="undefined"||!base)return null;
+    if(widgetNoteIntent)endWidgetNoteIntent(widgetNoteIntent,true);
+    if(!warming&&!flying&&!refreshing&&!widgetSnapshotWrites&&!widgetNoteRead&&savedItems("notes").some(note=>note.id===ref)){
+      navigate("saved");if(ui.page!=="saved"||ui.sheet)return false;
+      widgetNoteTarget=ref;openSavedRecord("notes",ref);return true;
+    }
+    widgetNoteTarget=ref;
+    const intent={ref,page:ui.page,sheet:ui.sheet,cancelled:false,cleanup:()=>{}};
+    const cancel=()=>endWidgetNoteIntent(intent),visibility=()=>{if(document.hidden)cancel();};
+    const events=["pointerdown","keydown","input","change"];
+    for(const event of events)document.addEventListener(event,cancel,true);
+    document.addEventListener("visibilitychange",visibility);window.addEventListener("flow:suspend",cancel);
+    intent.cleanup=()=>{for(const event of events)document.removeEventListener(event,cancel,true);document.removeEventListener("visibilitychange",visibility);window.removeEventListener("flow:suspend",cancel);};
+    widgetNoteIntent=intent;
+    readWidgetNoteSnapshot().then(snapshot=>{
+      if(!snapshot||!widgetNoteIntentCurrent(intent))return;
+      if(!savedItems("notes").some(note=>note.id===ref)){say("Заметка недоступна");return;}
+      navigate("saved");if(ui.page==="saved"&&!ui.sheet)openSavedRecord("notes",ref);
+    }).catch(error=>{if(widgetNoteIntentCurrent(intent)){if(error?.status===401)askReopen();else say("Не удалось открыть заметку. Проверьте связь и попробуйте ещё раз.");}})
+      .finally(()=>endWidgetNoteIntent(intent));
+    return true;
+  };
   function openDeepLink() {
     const params = new URLSearchParams(location.search);
     const page = params.get("page") || "";
     const rid = params.get("rid") || "";
+    const start=params.get("tgWebAppStartParam")||window.Telegram?.WebApp?.initDataUnsafe?.start_param||"";
+    if(!page&&/^note_[1-9]\d{0,18}$/.test(start)){window.sorokaOpenNote("note:"+start.slice(5));return;}
+    if(page==="notes"&&rid){window.sorokaOpenNote("note:"+rid);return;}
     if (page === "pc") { window.sorokaOpenPC(); return; }
     if (page === "render") { navigate("render"); render(); return; }
     if (page === "english") { navigate("english"); render(); return; }
@@ -1690,19 +1776,21 @@
         say("Возвращаю правки, которые не успели сохраниться");
         if (!warming) schedule(50);
       }
-      openDeepLink();
-      if (!warming) return;
-      freshSnapshot.then((snapshot) => {
+      if (!warming) { openDeepLink(); return; }
+      warmWidgetSnapshot=freshSnapshot.then((snapshot) => {
         // Правки, сделанные за эти секунды, ложатся поверх свежего снимка.
         const late = diff(base, data);
         warming = false;
         adopt(snapshot, {}, late);
         if (late.length) schedule(50);
+        return snapshot;
       }).catch((error) => {
         warming = false;
         if (error && error.status === 401) askReopen();
         else stale(true);
+        return null;
       });
+      openDeepLink();
     }, 0);
   }
 

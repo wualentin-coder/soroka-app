@@ -823,3 +823,7 @@ html[data-camera-calibration=true][data-flow-native=true][data-flow-design=magic
 html[data-motion=off] :is(.island-canopy,.island-orb,.island-label,.island-section-symbol),.digital-hidden :is(.island-canopy,.island-orb,.island-label,.island-section-symbol){transition:none!important}
 @media(prefers-reduced-motion:reduce){html:not([data-motion=on]) :is(.island-canopy,.island-orb,.island-label,.island-section-symbol){transition:none!important}}
 @media(max-width:359px){html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar{padding-left:20px;padding-right:20px}}
+
+/* Scrolling remains native; the interface does not reserve a visible scrollbar rail. */
+html[data-flow-design=magic],html[data-flow-design=magic] *{scrollbar-width:none}
+html[data-flow-design=magic]::-webkit-scrollbar,html[data-flow-design=magic] *::-webkit-scrollbar{display:none;width:0;height:0}

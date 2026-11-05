@@ -18,8 +18,9 @@
   function calendarDayMarkup(date) {
     const day=localIso(date),pending=tasksOn(day).filter(item=>!item.done).length,events=eventsOn(day).length;
     const info=typeof dayInfo==='function'?dayInfo(day):{},selected=day===ui.selected,today=day===todayIso(),outside=day.slice(0,7)!==ui.month.slice(0,7);
-    const label=[fullDate(day),selected?'выбрано':'',today?'сегодня':'',`${pending} ${word(pending,'задача','задачи','задач')}`,`${events} ${word(events,'событие','события','событий')}`,info.holiday||'',info.workday?'рабочий день':''].filter(Boolean).join(', ');
-    return `<button type="button" class="calendar-day dm-calendar-day${selected?' selected':''}${today?' today':''}${outside?' outside':''}${info.off?' is-off':''}" data-action="select-day" data-date="${day}" aria-label="${esc(label)}" aria-pressed="${selected}"><span>${date.getDate()}</span><span class="calendar-dots">${'<i title="Незавершённая задача"></i>'.repeat(Math.min(pending,events?2:3))}${events?'<i class="event-dot" title="События"></i>':''}</span></button>`;
+    const kind=info.holiday?'holiday':info.workday?'workday':info.off?'weekend':'ordinary';
+    const label=[fullDate(day),selected?'выбрано':'',today?'сегодня':'',`${pending} ${word(pending,'задача','задачи','задач')}`,`${events} ${word(events,'событие','события','событий')}`,info.holiday||'',kind==='weekend'?'выходной день':'',info.workday?'рабочий день':''].filter(Boolean).join(', ');
+    return `<button type="button" class="calendar-day dm-calendar-day${selected?' selected':''}${today?' today':''}${outside?' outside':''}${info.off?' is-off':''}" data-action="select-day" data-date="${day}" data-day-kind="${kind}"${info.holiday?` title="${esc(info.holiday)}"`:''} aria-label="${esc(label)}" aria-pressed="${selected}"><span>${date.getDate()}</span><span class="calendar-dots">${'<i title="Незавершённая задача"></i>'.repeat(Math.min(pending,events?2:3))}${events?'<i class="event-dot" title="События"></i>':''}</span></button>`;
   }
   window.calendarDay=calendarDayMarkup;
   window.flowMagicPatchPlan=(main,markup)=>{

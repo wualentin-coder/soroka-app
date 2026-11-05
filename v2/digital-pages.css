@@ -108,7 +108,11 @@ html[data-flow-design="magic"] .dm-plan .dm-calendar-living .swipe-row .swipe-co
 html[data-flow-design="magic"] .dm-plan .dm-calendar-living .dm-task-row.overdue{background:transparent;border-color:#ffffff0d}
 html[data-flow-design="magic"] .dm-calendar-living .task-list{border:0}
 html[data-flow-design="magic"] .dm-calendar-living .task-time[data-has-time=false]:not(:has(.task-drag-handle)){display:none}
-html[data-flow-design="magic"] .dm-calendar-surface .calendar-day.is-off:not(.selected)>span:first-child{color:var(--text)}
+html[data-flow-design="magic"] .dm-calendar-surface{--calendar-off:color-mix(in srgb,var(--energy-hot) 22%,#f3aaa0)}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-day.is-off:not(.selected)>span:first-child{color:var(--calendar-off)}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-weekdays>span:nth-last-child(-n+2){color:var(--calendar-off)}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-day[data-day-kind=holiday]:after{content:'';position:absolute;right:7px;top:7px;width:4px;height:4px;background:var(--calendar-off);transform:rotate(45deg);border-radius:1px;pointer-events:none}
+html[data-flow-design="magic"] .dm-calendar-surface .calendar-day[data-day-kind=workday]>span:first-child{text-decoration:underline;text-decoration-color:rgba(var(--accent-rgb),.45);text-underline-offset:4px}
 html[data-flow-design="magic"] .dm-calendar-living .dm-free-day{min-height:76px;padding:10px 0 9px 4px;font-size:12px}
 html[data-flow-design="magic"] .dm-calendar-spark{position:absolute;z-index:3;pointer-events:none;width:2px;height:2px;border-radius:50%;background:var(--energy-hot);box-shadow:0 0 6px rgba(var(--energy-rgb),.7)}
 html[data-flow-design="magic"] .dm-calendar-inactive:after,html[data-flow-design="magic"] .dm-calendar-inactive .dm-calendar-atmosphere:before,html[data-flow-design="magic"] .dm-calendar-inactive .dm-calendar-selection:before,html[data-flow-design="magic"] .dm-calendar-inactive .dm-calendar-selection:after{animation-play-state:paused}

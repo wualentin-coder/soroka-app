@@ -42,8 +42,9 @@
       localStorage.setItem(name,JSON.stringify(reset));
     }
   }
-  async function load(){
-    if(loadPromise)return loadPromise;
+  async function load(readOnly=false){
+    if(!readOnly)homeWarmOnly=false;
+    if(loadPromise){if(!readOnly&&state.loaded&&state.dirty&&state.sync==='pending'){clearTimeout(state.saveTimer);state.saveTimer=setTimeout(sync,700);}return loadPromise;}
     loadPromise=(async()=>{
       const m=await modules();
       applyLocalReset(m);
@@ -52,16 +53,26 @@
       try{
         const remote=await call('progress_load');
         if(state.profile!==remote.profileId){const unbound=state.profile===null?state.snapshot:null,unboundDirty=unbound&&state.dirty;if(state.engine){state.engine.destroy();state.engine=null;state.enginePromise=null;showPlayer(false);}state.profile=remote.profileId;try{const cached=JSON.parse(localStorage.getItem(key())||'{}');state.dirty=cached._sync?.dirty===true;state.snapshot=m.normalizePianoState(cached);}catch{state.snapshot=m.normalizePianoState({});}if(unbound){state.snapshot=m.mergePianoState(state.snapshot,unbound);state.dirty=state.dirty||unboundDirty;}}
-        state.snapshot=m.mergePianoState(remote.progress,state.snapshot);state.serverRevision=remote.revision;state.dirty=state.dirty||!m.samePianoProgress(remote.progress,state.snapshot);state.sync=state.dirty?'pending':'saved';cache();if(state.dirty){clearTimeout(state.saveTimer);state.saveTimer=setTimeout(sync,700);}
+        state.snapshot=m.mergePianoState(remote.progress,state.snapshot);state.serverRevision=remote.revision;state.dirty=state.dirty||!m.samePianoProgress(remote.progress,state.snapshot);state.sync=state.dirty?'pending':'saved';cache();if(state.dirty&&(!readOnly||state.active)){clearTimeout(state.saveTimer);state.saveTimer=setTimeout(sync,700);}
         const library=await call('composition_list');addLibrary(library.compositions||[]);
       }catch{state.sync='offline';}
       await restoreLibrary();
-      state.loaded=true;updatePlan();paint();return m;
+      state.loaded=true;updatePlan();paint();if(readOnly&&state.active&&state.dirty&&state.sync==='pending'&&!state.saveTimer)state.saveTimer=setTimeout(sync,700);return m;
     })().catch(error=>{state.error=error.message||'Не удалось открыть обучение.';state.sync='offline';paint();throw error;});
     return loadPromise;
   }
   function planOptions(){const song=state.library.find(c=>c.id===state.snapshot.favoriteSongId)||state.library.find(c=>c.id==='joy-beginner');return {date:localDate(),minutes:15,input:state.snapshot.input||'mic',song,goal:apiModule.learningGoals.getLearningGoal(song,state.snapshot.learningProgress,{date:localDate(),input:state.snapshot.input||'mic',hand:'right'})};}
   function updatePlan(){if(!apiModule)return;state.daily=apiModule.learning.createDailyPlan(state.snapshot.learningProgress,planOptions());}
+  let homeLoad=false,homeWarmOnly=false;
+  function practiceStatus(){
+    const date=localDate();
+    if(!state.loaded||!apiModule){
+      if(!homeLoad){homeLoad=true;homeWarmOnly=!state.active;load(true).then(()=>{if(typeof ui!=='undefined'&&ui.page==='today')render();}).catch(()=>{});}
+      return{date,status:'unknown'};
+    }
+    if(state.sync==='offline')return{date,status:'unknown'};
+    return{date,status:apiModule.learning.nextLearningTask(state.snapshot.learningProgress,planOptions())?'pending':'done'};
+  }
   const syncLabel=()=>state.sync==='saved'?'Прогресс сохранён в Flow':state.sync==='offline'?'На этом устройстве · офлайн':state.sync==='pending'?'Сохраняем…':'Загружаем твой прогресс…';
   function tabs(){return `<div class="pn-tabs" role="tablist" aria-label="Пианино">${[['today','Занятие'],['songs','Композиции'],['progress','Прогресс']].map(([id,label])=>`<button role="tab" data-pn-action="tab" data-tab="${id}" aria-selected="${id==='today'}" class="${id==='today'?'active':''}">${label}</button>`).join('')}</div>`;}
   function today(){
@@ -144,8 +155,8 @@
   });
   document.addEventListener('keydown',event=>{if(event.target.closest('#pn-song-deck')&&state.deck&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();state.deck.nudge(event.key==='ArrowRight'?1:-1);}});
   window.addEventListener('resize',size);window.visualViewport?.addEventListener('resize',size);
-  window.addEventListener('online',async()=>{if(!state.profile||state.sync==='offline'){loadPromise=null;try{await load();}catch{}}if(state.dirty)sync();});
-  window.FlowPiano={render:()=>`<section class="piano-screen"><header class="piano-header"><button id="pn-back" class="icon-button" data-pn-action="back" aria-label="К разделам Flow">${icon('left')}</button><span class="head-pill">${icon('piano','icon-sm')}Пианино</span><button id="pn-settings" class="icon-button" data-pn-action="settings" aria-label="Настройки пианино">${icon('settings')}</button></header>${tabs()}<div id="pn-content"></div></section>`,mount:()=>{
+  window.addEventListener('online',async()=>{if(!state.profile||state.sync==='offline'){loadPromise=null;try{await load(homeWarmOnly);if(homeWarmOnly&&typeof ui!=='undefined'&&ui.page==='today')render();}catch{}}if(state.dirty&&!homeWarmOnly)sync();});
+  window.FlowPiano={practiceStatus,render:()=>`<section class="piano-screen"><header class="piano-header"><button id="pn-back" class="icon-button" data-pn-action="back" aria-label="К разделам Flow">${icon('left')}</button><span class="head-pill">${icon('piano','icon-sm')}Пианино</span><button id="pn-settings" class="icon-button" data-pn-action="settings" aria-label="Настройки пианино">${icon('settings')}</button></header>${tabs()}<div id="pn-content"></div></section>`,mount:()=>{
     const active=typeof ui!=='undefined'&&ui.page==='piano';document.body.classList.toggle('piano-page',active);if(!active){if(!state.active)return;state.active=false;state.request++;destroyDeck();state.engine?.pause();if(state.player)showPlayer(false);document.body.classList.remove('piano-deck-open');state.screen=null;return;}
     state.active=true;const screen=document.querySelector('.piano-screen');if(screen!==state.screen){state.screen=screen;paint();load().catch(()=>{});}
   }};

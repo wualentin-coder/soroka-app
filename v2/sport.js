@@ -48,12 +48,22 @@ const spDateShort = date => new Intl.DateTimeFormat("ru-RU", { day: "numeric", m
 // ------------------------------------------------------------ загрузка и запись
 
 function spReady() { const s = spState(); return Boolean(SP() && s.state); }
-function spLoad() {
+function spPracticeStatus() {
+  const s=spState(),C=SP();
+  if(!C)return{status:'unknown'};
+  if(!s.state){if(!s.practiceRead&&!s.loading&&!s.error)spLoad(true);return{status:'unknown'};}
+  if(s.loading||s.error)return{status:'unknown'};
+  const workout=C.selectedOption(spOptions().visible,C.todayKey(),'main',s.state);
+  return{date:C.todayKey(),status:!workout?'rest':C.optionCompletion(workout,s.state)===100?'done':'pending'};
+}
+function spLoad(readOnly=false) {
   const s = spState();
-  if (s.loading || s.error || !SP()) return;
+  if (s.loading || s.error || !SP() || readOnly&&s.practiceRead) return;
   s.loading = true;
-  spCall("load").then(answer => {
+  if(readOnly)s.practiceRead=true;else s.practicePreview=false;
+  spCall(readOnly?"peek":"load").then(answer => {
     if (!answer || answer.error) throw new Error(answer?.error || "load");
+    if(readOnly&&!answer.state)return;
     const C = SP();
     s.state = C.applyStateChanges(answer.state || {}, s.pending);
     for (const key of ["notes", "tests", "checks", "showers", "readiness"]) s.state[key] ||= {};
@@ -61,21 +71,22 @@ function spLoad() {
     s.startedOn = answer.startedOn;
     s.demo = Boolean(answer.demo);
     s.planDays = s.demo ? C.DEMO_PLAN_DAYS : [];
-    C.setTimerIdentity("owner");
+    s.practicePreview=readOnly;
+    if(!readOnly)C.setTimerIdentity("owner");
     spZone();
     if (s.scheduleDay && s.date === s.scheduleDay) s.date = C.todayKey();
     s.scheduleDay = C.todayKey();
     s.date ||= C.todayKey();
     s.weekStart ||= C.startOfWeekKey(s.date);
     s.error = "";
-    if (s.pending.length) spFlush().catch(() => {});
+    if (!readOnly&&s.pending.length) spFlush().catch(() => {});
     // Первый вход в раздел заводит настройки уведомлений (как в WooSport):
     // с ними сервер начинает напоминать о душе, подъёме и тренировке.
-    if (!s.state.notificationSettings) {
+    if (!readOnly&&!s.state.notificationSettings) {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Moscow";
       spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings({ timeZone: zone }) })).catch(() => {});
     }
-  }).catch(error => { s.error = "Не удалось загрузить данные спорта. Проверьте связь."; console.warn(error); })
+  }).catch(error => { if(!readOnly){s.error = "Не удалось загрузить данные спорта. Проверьте связь.";console.warn(error);} })
     .finally(() => { s.loading = false; spRerender(true); });
 }
 function spZone() {
@@ -201,6 +212,7 @@ const SP_TABS = [["today", "Сегодня"], ["training", "Тренировка
 
 function renderSportPage() {
   const s = spState();
+  if(s.practicePreview&&!s.loading&&!s.error)spLoad();
   if (!SP()) return `${header("Спорт", "", "")}<div class="sp-page"><p class="section-note">Не загрузился модуль спорта — обновите приложение.</p></div>`;
   if (!s.state) {
     spLoad();
@@ -517,7 +529,7 @@ SP_SHEETS["wake-log"] = () => {
 function spHomeTile() {
   const s = spState();
   if (!SP()) return "";
-  if (!s.state) { spLoad(); return ""; }
+  if (!s.state) { spLoad(document.documentElement.dataset.flowDesign==='magic'&&ui.page==='today'); return ""; }
   const C = SP(), today = C.todayKey();
   const { visible } = spOptions();
   const workout = C.selectedOption(visible, today, "main", s.state);

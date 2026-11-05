@@ -176,3 +176,17 @@ html[data-flow-design=magic] body .dv-preferences .dv-system-card .dv-preference
 html[data-flow-design=magic] body .dv-preferences .dv-system-card .dv-preference-group>summary small{font-size:11px}
 @media(max-width:760px){html[data-flow-design=magic] body .dv-preference-workbench{grid-template-columns:minmax(0,1fr);gap:14px}html[data-flow-design=magic] body .dv-preferences .dv-preference-card{padding:18px;border-radius:22px}}
 
+/* Only a scheduled unfinished practice invites attention on Plan. */
+html[data-flow-design=magic] .dm-plan-practices .dc-practice-card .module-symbol{position:relative;isolation:isolate}
+html[data-flow-design=magic] .dm-plan-practices .dc-practice-card .li-aura{animation:none;opacity:.3}
+html[data-flow-design=magic] .dm-plan-practices [data-practice-state=pending]{border-color:rgba(var(--accent-rgb),.4)}
+html[data-flow-design=magic] .dm-plan-practices [data-practice-state=pending] .module-symbol:before{content:'';position:absolute;inset:-12px;z-index:-1;border-radius:50%;background:radial-gradient(ellipse,rgba(var(--accent-rgb),.22),rgba(var(--accent-rgb),.06) 48%,transparent 72%);opacity:.75;transform:scale(.9);animation:practice-waiting-light 8s ease-in-out infinite;pointer-events:none}
+html[data-flow-design=magic] .dm-plan-practices [data-practice-state=pending] .magic-object{animation:practice-waiting-sign 8s ease-in-out infinite;transform-origin:50% 70%}
+html[data-flow-design=magic] .dm-plan-practices [data-practice-state=pending] .li-aura{opacity:.7;animation:practice-waiting-aura 8s ease-in-out infinite}
+@keyframes practice-waiting-light{0%,18%,100%{opacity:.55;transform:scale(.9)}35%,49%{opacity:1;transform:scale(1.16)}72%{opacity:.7;transform:scale(.96)}}
+@keyframes practice-waiting-sign{0%,18%,60%,100%{transform:translateY(0) rotate(0) scale(1)}32%{transform:translateY(-2px) rotate(-2deg) scale(1.035)}45%{transform:translateY(-1px) rotate(1.2deg) scale(1.02)}}
+@keyframes practice-waiting-aura{0%,18%,100%{opacity:.48}35%,49%{opacity:.95}72%{opacity:.6}}
+html[data-flow-design=magic][data-motion=off] .dm-plan-practices [data-practice-state] :is(.magic-object,.li-aura),html[data-flow-design=magic][data-motion=off] .dm-plan-practices [data-practice-state] .module-symbol:before{animation:none!important}
+body.digital-hidden .dm-plan-practices [data-practice-state] :is(.magic-object,.li-aura),body.digital-hidden .dm-plan-practices [data-practice-state] .module-symbol:before,html[data-island-suspended=true] .dm-plan-practices [data-practice-state] :is(.magic-object,.li-aura),html[data-island-suspended=true] .dm-plan-practices [data-practice-state] .module-symbol:before{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){html[data-flow-design=magic]:not([data-motion-mode=on]) .dm-plan-practices [data-practice-state] :is(.magic-object,.li-aura),html[data-flow-design=magic]:not([data-motion-mode=on]) .dm-plan-practices [data-practice-state] .module-symbol:before{animation:none!important}}
+
