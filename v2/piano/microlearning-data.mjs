@@ -74,3 +74,13 @@ export const MICRO_HAND_BLOCKS=Object.freeze({
   'course-alternate':5,'course-hand-question':8,'course-low-answer':8,
   'course-dialogue':2,'course-hands-checkpoint':6,
 });
+
+// Callers that award evidence must supply their canonical lesson, never a task
+// flag. These first-position pitch exercises do not require a timed replay.
+export function isCompactFoundationLesson(lesson){
+  if(!lesson||lesson.practiceKind!=='notes'||lesson.hand!=='Правая рука'||lesson.polyphonic||
+    !['orientation','first-music','five-notes'].includes(lesson.moduleId)||!Array.isArray(lesson.notes)||!lesson.notes.length||lesson.notes.length>16)return false;
+  const pitches=[...new Set(lesson.notes.map(note=>note?.midi))];
+  return pitches.length<=5&&pitches.every(midi=>Number.isInteger(midi)&&midi>=0&&midi<=127)&&Math.max(...pitches)-Math.min(...pitches)<=7&&
+    lesson.notes.every(note=>!note.restBefore&&note.group===undefined&&note.time===undefined&&note.hand!=='left');
+}

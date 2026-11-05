@@ -1,10 +1,10 @@
-import {COURSE} from './course.mjs?v=ee88d828b262';
-import {createScoreTimeline} from './score.mjs?v=ee88d828b262';
-import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=ee88d828b262';
-import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS} from './microlearning-data.mjs?v=ee88d828b262';
-import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=ee88d828b262';
-import {createMixedPracticeStages} from './mixed-practice.mjs?v=ee88d828b262';
-import {supportLevel} from './support-policy.mjs?v=ee88d828b262';
+import {COURSE} from './course.mjs?v=0b58b5803e6f';
+import {createScoreTimeline} from './score.mjs?v=0b58b5803e6f';
+import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=0b58b5803e6f';
+import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS,isCompactFoundationLesson} from './microlearning-data.mjs?v=0b58b5803e6f';
+import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=0b58b5803e6f';
+import {createMixedPracticeStages} from './mixed-practice.mjs?v=0b58b5803e6f';
+import {supportLevel} from './support-policy.mjs?v=0b58b5803e6f';
 
 const MAX_NOTES=5000,MAX_STAGES=48;
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));
@@ -20,6 +20,13 @@ const familyFor=(lesson,kind)=>kind==='recall'?'memory':kind==='reading'?'readin
 const handFor=lesson=>['Левая рука','left'].includes(lesson.hand)?'left':'right';
 const sameHand=(a,b)=>a===b||['Левая рука','left'].includes(a)&&['Левая рука','left'].includes(b)||['Правая рука','right'].includes(a)&&['Правая рука','right'].includes(b);
 const pitches=notes=>[...new Set(notes.map(note=>note.midi))];
+
+function foundationRoute(lesson,kind,family,authored,stages){
+  if(!authored||kind!=='new'||family!=='notes'||!isCompactFoundationLesson(lesson))return null;
+  const stageIds=[...stages.filter(stage=>stage.purpose==='orient').map(stage=>stage.id),'whole'];
+  if(stageIds.length<2)return null;
+  return {kind:'adaptive-foundation',stageIds,remedialStageIds:stages.filter(stage=>!stageIds.includes(stage.id)).map(stage=>stage.id),seamless:true};
+}
 
 function validate(lesson,kind){
   if(!lesson||typeof lesson.id!=='string'||!/^[-A-Za-z0-9._:]{1,160}$/.test(lesson.id)||!supportedKind.has(kind)||
@@ -216,8 +223,33 @@ export function createMicroLesson(lesson,{kind='new',knownLessonIds=[]}={}){
   }
   stages.push({...whole(lesson,family),transitionIndices:authored?transitions.filter(index=>index<lesson.notes.length):[]});
   if(stages.length>MAX_STAGES)throw new RangeError('A micro lesson has too many scenes.');
-  const version='microlearning-v1:'+songFingerprint([JSON.stringify(stable({id:lesson.id,kind,family,notes:lesson.notes,...(guide&&authored?{guide}:{}),stages}))]);
-  return {id:lesson.id,version,authored,coverage:authored?'detailed':'legacy',...(guide&&authored?{guide:clone(guide)}:{}),stages};
+  const route=foundationRoute(lesson,kind,family,authored,stages);
+  const version='microlearning-v1:'+songFingerprint([JSON.stringify(stable({id:lesson.id,kind,family,notes:lesson.notes,...(guide&&authored?{guide}:{}),...(route?{route}:{}),stages}))]);
+  return {id:lesson.id,version,authored,coverage:authored?'detailed':'legacy',...(guide&&authored?{guide:clone(guide)}:{}),...(route?{route}:{}),stages};
+}
+
+/** Navigation only: optional support never creates a lesson assessment receipt. */
+export function chooseMicroNext(plan,stageId,report){
+  if(!Array.isArray(plan?.stages)||!plan.stages.length||plan.stages.length>MAX_STAGES)return null;
+  const index=plan.stages.findIndex(stage=>stage.id===stageId),stage=plan.stages[index];
+  if(index<0||stage.assessment||report?.finished!==true||report.demo||report.earlyAbort||report.total!==stage.notes?.length||
+    report.metric!==(stage.mode==='flow'?'timed-notes-v1':'first-attempt-v1')||
+    !['correct','firstAttemptCorrect','skipped'].every(key=>Number.isSafeInteger(report[key])&&report[key]>=0&&report[key]<=report.total)||
+    report.firstAttemptCorrect>report.correct||report.correct+report.skipped!==report.total||
+    !Array.isArray(report.targetOutcomes)||report.targetOutcomes.length!==report.total||
+    Array.from(report.targetOutcomes).some(value=>value!==0&&value!==1)||
+    report.targetOutcomes.filter(value=>value===1).length!==report.firstAttemptCorrect)return null;
+  // Learning scenes may be corrected in place. One wrong first press is not a
+  // reason to restart a one-note orientation; only the canonical whole is graded.
+  const ready=stage.mode==='learn'&&!stage.coverage?report.correct===report.total:report.firstAttemptCorrect*10>=report.total*8;
+  if(!ready)return null;
+  const route=plan.route;
+  if(route?.kind!=='adaptive-foundation')return plan.stages[index+1]?.id||null;
+  if(!Array.isArray(route.stageIds)||!Array.isArray(route.remedialStageIds)||route.stageIds.at(-1)!=='whole'||
+    new Set([...route.stageIds,...route.remedialStageIds]).size!==plan.stages.length||
+    [...route.stageIds,...route.remedialStageIds].some(id=>!plan.stages.some(stage=>stage.id===id)))return null;
+  const primary=route.stageIds.indexOf(stageId);
+  return primary>=0?route.stageIds[primary+1]||null:route.remedialStageIds.includes(stageId)?'whole':null;
 }
 
 /** Recommend one preparatory scene; this never changes an outcome or progress. */

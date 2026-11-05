@@ -843,3 +843,58 @@ body:has(#practice-view:not([hidden])) .toast{bottom:calc(20px + env(safe-area-i
   #practice-view .microstep-cue,#practice-view .microstep-help-status{display:none}
 }
 @media(prefers-reduced-motion:reduce){#practice-view .microstep-panel,#practice-view .microstep-panel *{animation:none;transition:none}}
+
+/* Sound setup uses the existing Flow transition surface; it is never a lesson. */
+#practice-view .input-calibration{width:min(540px,calc(100% - 24px));max-height:calc(100% - 12px);top:50%;padding:12px 16px;border-radius:var(--magic-control-radius,16px);white-space:normal;pointer-events:auto;animation:none;overflow:auto;font-size:14px}
+#practice-view .input-calibration[hidden]{display:none}
+#practice-view .input-calibration strong{font-size:16px}
+#practice-view .input-calibration p{margin:6px 0;line-height:1.4}
+#practice-view .input-calibration small{display:block;margin-top:6px;color:var(--muted);font-size:11px;font-weight:500}
+#practice-view .input-calibration-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+#practice-view .input-calibration-footer button{min-height:44px;padding:6px 12px}
+
+/* Piano's keybed: depth stays inside each key, preserving the score's x axis. */
+#practice-view #piano{background:var(--key-black);padding:0;box-shadow:inset 0 5px 8px color-mix(in srgb,var(--key-black) 85%,transparent),0 -2px 0 color-mix(in srgb,var(--key-white) 15%,var(--line));overflow:hidden}
+#practice-view #piano .piano-key{border-radius:0 0 3px 3px;transform-origin:50% 0;transition:transform 150ms var(--music-ease),box-shadow 150ms var(--music-ease),background-color 120ms ease-out;animation:none;--key-depth:12px;padding-bottom:calc(var(--key-depth) + 6px);border-color:color-mix(in srgb,var(--key-black) 36%,var(--key-white));border-top:0}
+#practice-view #piano .piano-key.white{background:linear-gradient(90deg,color-mix(in srgb,var(--key-black) 8%,transparent),transparent 9%,transparent 90%,color-mix(in srgb,var(--key-black) 10%,transparent)),linear-gradient(180deg,color-mix(in srgb,var(--key-white) 86%,var(--line)),var(--key-white) 16%,var(--key-white) calc(100% - var(--key-depth) - 2px),color-mix(in srgb,var(--key-white) 96%,white) calc(100% - var(--key-depth)),color-mix(in srgb,var(--key-white) 78%,var(--key-black)) calc(100% - var(--key-depth) + 1px),color-mix(in srgb,var(--key-white) 86%,var(--key-black)));box-shadow:inset 1px 0 0 color-mix(in srgb,var(--key-white) 80%,transparent),inset -1px 0 0 color-mix(in srgb,var(--key-black) 15%,transparent),0 3px 3px color-mix(in srgb,var(--key-black) 40%,transparent)}
+#practice-view #piano .piano-key.black{height:64%;--key-depth:9px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,color-mix(in srgb,var(--key-black) 68%,var(--key-white)),var(--key-black) 19%,var(--key-black) 76%,color-mix(in srgb,var(--key-black) 70%,var(--key-white))),linear-gradient(180deg,var(--key-black),var(--page));border:1px solid color-mix(in srgb,var(--key-black) 80%,var(--key-white));box-shadow:inset 0 2px 0 color-mix(in srgb,var(--key-white) 16%,transparent),inset 0 -9px 0 color-mix(in srgb,var(--key-black) 72%,black),2px 5px 4px color-mix(in srgb,var(--key-black) 60%,transparent)}
+#practice-view #piano .piano-key.target:not(.due):not(.pressed):not(.wrong){box-shadow:inset 0 3px 0 var(--key-cue),inset 0 -12px 0 color-mix(in srgb,var(--key-black) 16%,transparent);color:var(--key-white-text)}
+#practice-view #piano .piano-key.black.target:not(.due):not(.pressed):not(.wrong){color:var(--key-black-text)}
+#practice-view #piano .piano-key.due:not(.wrong),#practice-view #piano .piano-key.pressed:not(.wrong){background:linear-gradient(180deg,color-mix(in srgb,var(--key-cue) 35%,var(--key-white)),color-mix(in srgb,var(--key-cue) 75%,var(--key-white)) 72%,var(--key-cue) calc(100% - var(--key-depth)),color-mix(in srgb,var(--key-cue) 72%,var(--key-black)) calc(100% - var(--key-depth) + 1px));color:var(--accent-ink);border-top:0;box-shadow:inset 1px 1px 0 color-mix(in srgb,var(--key-white) 50%,transparent),0 -4px 16px color-mix(in srgb,var(--key-cue) 18%,transparent)}
+#practice-view #piano .piano-key.pressed,#practice-view #piano .piano-key.wrong{transform:translateY(4px);transition-duration:65ms;box-shadow:inset 0 -5px 0 color-mix(in srgb,var(--key-black) 22%,transparent)}
+#practice-view #piano .piano-key.black.pressed,#practice-view #piano .piano-key.black.wrong{transform:translateY(3px);box-shadow:inset 0 -4px 0 color-mix(in srgb,var(--key-black) 65%,black),1px 1px 2px var(--key-black)}
+#practice-view #piano .piano-key.wrong{background:linear-gradient(180deg,color-mix(in srgb,var(--warn) 55%,var(--key-white)),var(--warn) calc(100% - 10px),color-mix(in srgb,var(--warn) 75%,var(--key-black)) calc(100% - 9px));color:var(--accent-ink)}
+#practice-view #piano .piano-key:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+@media(max-height:380px){#practice-view #piano .piano-key{--key-depth:9px;padding-bottom:14px}#practice-view #piano .piano-key.black{--key-depth:7px;padding-bottom:7px}}
+@media(prefers-reduced-motion:reduce){#practice-view #piano .piano-key{transition:none!important;animation:none!important}#practice-view #piano .piano-key.pressed,#practice-view #piano .piano-key.wrong{transform:none}}
+
+/* Immersive practice: the score owns the screen, controls float above it. */
+#practice-view .practice-panel,#practice-view .practice-panel:has(>#microstep-panel:not([hidden])){grid-template-rows:minmax(0,1fr) clamp(104px,27dvh,180px)!important;gap:0;background:var(--page)}
+#practice-view .practice-toolbar{position:absolute;inset:0 0 auto;height:0;padding:0;background:none;z-index:12;pointer-events:none;display:block}
+#practice-view .practice-toolbar>*{display:none!important}
+#practice-view .practice-toolbar>#start-button,#practice-view .practice-toolbar>#exit-practice,#practice-view .practice-toolbar>[data-open="settings"]{display:grid!important;place-items:center;position:absolute;top:calc(10px + env(safe-area-inset-top));width:44px;height:44px;min-height:44px;pointer-events:auto;border-radius:50%;background:color-mix(in srgb,var(--surface) 82%,transparent);box-shadow:none}
+#practice-view #start-button{left:12px}#practice-view #exit-practice{right:64px}#practice-view .practice-toolbar>[data-open="settings"]{right:12px}
+#practice-view #microstep-panel,#practice-view #practice-route{display:none!important}
+#practice-view .progress-track{position:absolute;z-index:10;left:76px;right:122px;top:calc(24px + env(safe-area-inset-top));width:auto;height:12px!important;border:1px solid color-mix(in srgb,var(--text) 14%,var(--line));border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,transparent 0 15px,color-mix(in srgb,var(--text) 42%,transparent) 15px 16px,transparent 16px 18px),color-mix(in srgb,var(--surface) 88%,transparent)}
+#practice-view .progress-track>span{height:100%;border-radius:6px;background:var(--accent);opacity:.9}
+#practice-view .score-stage{grid-row:1;background:var(--page)}
+#practice-view .stage-label{display:none}
+#practice-view .stage-label.has-feedback{display:block;top:64px;right:12px;max-width:calc(100% - 24px);white-space:normal}
+#practice-view #piano{grid-row:2;transform:perspective(850px) rotateX(28deg);transform-origin:50% 0;height:111%;overflow:visible;align-self:start}
+#practice-view #piano .piano-key{border-radius:0 0 2px 2px}
+#practice-view #piano .piano-key span{display:none}
+#practice-view #piano .piano-key.anchor .note-name,#practice-view #piano .piano-key.target .note-name{display:block;font-size:9px}
+#practice-view #piano .piano-key.anchor .note-latin{display:block;font-size:8px}
+#practice-view .phrase-keyboard-map{position:absolute;z-index:8;left:20px;bottom:calc(clamp(104px,27dvh,180px) + 28px);width:min(290px,46%);height:40px;border:5px solid var(--surface-raised);border-radius:8px;background:var(--key-black);box-shadow:0 3px 18px color-mix(in srgb,var(--key-black) 45%,transparent);pointer-events:none}
+#practice-view .phrase-map-keys{position:absolute;inset:0}
+#practice-view .phrase-map-keys i{position:absolute;top:0;bottom:0;border-right:1px solid var(--key-black);background:var(--key-white);opacity:.4}
+#practice-view .phrase-map-keys i.black{height:62%;background:var(--key-black);z-index:1;opacity:1}
+#practice-view .phrase-map-window{position:absolute;top:-2px;bottom:-2px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);z-index:2}
+#practice-view .phrase-map-label{position:absolute;left:0;bottom:-25px;white-space:nowrap;font-size:10px;color:var(--muted)}
+#practice-view .phrase-keyboard-map{opacity:1;transform:translateY(0);visibility:visible;transition:opacity 240ms ease-out,transform 240ms ease-out,visibility 0s}
+#practice-view .phrase-keyboard-map[data-dismissed="true"]{opacity:0;transform:translateY(5px);visibility:hidden;transition:opacity 240ms ease-out,transform 240ms ease-out,visibility 0s 240ms}
+#practice-view #finger-hint{top:64px;right:12px;bottom:auto;max-width:min(46%,340px)}
+#practice-view .score-stage:has(#finger-hint:not([hidden])) #demo-banner{visibility:hidden}
+@media(prefers-reduced-motion:reduce){#practice-view .phrase-keyboard-map{transition:none!important;transform:none!important}}
+#practice-view #demo-banner{top:62px;bottom:auto;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);padding:5px 10px;white-space:normal;text-align:center;font-size:10px;line-height:1.4;pointer-events:none;z-index:5}
+@media(max-width:460px) and (orientation:portrait){#practice-view .progress-track{left:68px;right:116px}#practice-view .phrase-keyboard-map{width:55%;left:12px}}

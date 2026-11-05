@@ -1,6 +1,6 @@
-import {COURSE} from './course.mjs?v=ee88d828b262';
-import {createScoreTimeline} from './score.mjs?v=ee88d828b262';
-import {songOnsetGroups} from './song-learning.mjs?v=ee88d828b262';
+import {COURSE} from './course.mjs?v=0b58b5803e6f';
+import {createScoreTimeline} from './score.mjs?v=0b58b5803e6f';
+import {songOnsetGroups} from './song-learning.mjs?v=0b58b5803e6f';
 
 const clone=value=>structuredClone(value);
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));

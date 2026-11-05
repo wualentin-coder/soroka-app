@@ -1,7 +1,7 @@
 /* Native Flow navigation; the audio/score engine lives outside render(). */
 (() => {
   const base=new URL('./piano/',document.currentScript.src);
-  const revision='ee88d828b262';
+  const revision='0b58b5803e6f';
   const state={tab:'today',module:null,index:0,busy:false,error:'',sync:'loading',profile:null,snapshot:{},library:[],daily:null,readyDate:'',player:null,engine:null,deck:null,screen:null,request:0,saveTimer:0,saveBusy:false,dirty:false,serverRevision:0,loaded:false};
   let modulePromise=null,apiModule=null,loadPromise=null,deckObserver=null,practiceFocus=false;
   const publicStudyPlans=new Map();
@@ -71,15 +71,15 @@
       return{date,status:'unknown'};
     }
     if(state.sync==='offline')return{date,status:'unknown'};
-    return{date,status:apiModule.learning.nextLearningTask(state.snapshot.learningProgress,planOptions())?'pending':'done'};
+    return{date,status:apiModule.learning.createDailyPlan(state.snapshot.learningProgress,planOptions()).tasks.some(task=>!task.completed)?'pending':'done'};
   }
   const syncLabel=()=>state.sync==='saved'?'Прогресс сохранён в Flow':state.sync==='offline'?'На этом устройстве · офлайн':state.sync==='pending'?'Сохраняем…':'Загружаем твой прогресс…';
   function tabs(){return `<div class="pn-tabs" role="tablist" aria-label="Пианино">${[['today','Занятие'],['songs','Композиции'],['progress','Прогресс']].map(([id,label])=>`<button role="tab" data-pn-action="tab" data-tab="${id}" aria-selected="${id==='today'}" class="${id==='today'?'active':''}">${label}</button>`).join('')}</div>`;}
   function today(){
     if(!apiModule||!state.daily)return '<div class="pn-lesson-card" role="status">Готовим занятие…</div>';
     const options=planOptions(),task=apiModule.learning.nextLearningTask(state.snapshot.learningProgress,options),tasks=state.daily.tasks;
-    const title=task?.title||'На сегодня достаточно',detail=task?task.notice||'Короткий показ, твоя игра и один понятный совет.':'Все шаги занятия выполнены. Можно поиграть любимую композицию.';
-    return `<div class="pn-home-grid"><article class="pn-lesson-card"><small class="pn-eyebrow">${escape(task?`Твоё занятие · около ${state.daily.minutes} минут`:'Занятие завершено')}</small><h2>${escape(title)}</h2><p>${escape(detail)}</p><button class="primary-button pn-primary-action" data-pn-action="${task?'continue':'tab'}" ${task?'':'data-tab="songs"'} ${state.busy?'disabled':''}>${escape(state.busy?'Открываем…':task?'Продолжить обучение':'Выбрать композицию')}${icon('play','icon-sm')}</button><small id="pn-sync" class="pn-sync">${escape(syncLabel())}</small></article><aside class="pn-today-summary"><strong>Сегодня</strong><details class="pn-session-items"><summary>${tasks.filter(t=>t.completed).length} из ${tasks.length} шагов</summary>${tasks.map(t=>`<div class="pn-session-item"><span>${t.completed?'✓':'·'}</span><span>${escape(t.title)}</span></div>`).join('')}</details>${options.song?`<button class="pn-goal-link" data-pn-action="goal"><span>Моя цель</span><strong>${escape(options.song.title)}</strong>${icon('right','icon-sm')}</button><small>${escape(options.goal.status==='unknown'?'Своя композиция · можно разучивать по частям':options.goal.status==='ready'?'Можно начать первую фразу':options.goal.label+' для первого фрагмента')}</small>`:'<p>Повторение, новый приём и музыка.</p>'}</aside><button class="pn-skills-button" data-pn-action="program">Программа обучения ${icon('right','icon-sm')}</button></div>`;
+    const title=task?.title||'Закрепим знакомое',detail=task?task.notice||(task.continuation?'Дневная цель выполнена. Продолжай, пока хочется играть.':'Короткий показ, твоя игра и один понятный совет.'):'Можно повторить знакомый приём в программе или разучить композицию.';
+    return `<div class="pn-home-grid"><article class="pn-lesson-card"><small class="pn-eyebrow">${escape(task?.continuation?'Дневная цель выполнена · учимся дальше':task?`Твоё занятие · около ${state.daily.minutes} минут`:'Все доступные шаги выполнены')}</small><h2>${escape(title)}</h2><p>${escape(detail)}</p><button class="primary-button pn-primary-action" data-pn-action="${task?'continue':'tab'}" ${task?'':'data-tab="songs"'} ${state.busy?'disabled':''}>${escape(state.busy?'Открываем…':task?'Продолжить обучение':'Выбрать композицию')}${icon('play','icon-sm')}</button><small id="pn-sync" class="pn-sync">${escape(syncLabel())}</small></article><aside class="pn-today-summary"><strong>Сегодня</strong><details class="pn-session-items"><summary>${tasks.filter(t=>t.completed).length} из ${tasks.length} шагов</summary>${tasks.map(t=>`<div class="pn-session-item"><span>${t.completed?'✓':'·'}</span><span>${escape(t.title)}</span></div>`).join('')}</details>${options.song?`<button class="pn-goal-link" data-pn-action="goal"><span>Моя цель</span><strong>${escape(options.song.title)}</strong>${icon('right','icon-sm')}</button><small>${escape(options.goal.status==='unknown'?'Своя композиция · можно разучивать по частям':options.goal.status==='ready'?'Можно начать первую фразу':options.goal.label+' для первого фрагмента')}</small>`:'<p>Повторение, новый приём и музыка.</p>'}</aside><button class="pn-skills-button" data-pn-action="program">Программа обучения ${icon('right','icon-sm')}</button></div>`;
   }
   function program(){
     const groups=[...new Set(apiModule.COURSE.map(l=>l.moduleId))];state.module=groups.includes(state.module)?state.module:groups[0];

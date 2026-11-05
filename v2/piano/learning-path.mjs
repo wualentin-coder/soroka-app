@@ -1,5 +1,6 @@
-import { COURSE, normalizeCourseProgress } from './course.mjs?v=ee88d828b262';
-import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=ee88d828b262';
+import { COURSE, normalizeCourseProgress } from './course.mjs?v=0b58b5803e6f';
+import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=0b58b5803e6f';
+import { isCompactFoundationLesson } from './microlearning-data.mjs?v=0b58b5803e6f';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],
@@ -160,17 +161,18 @@ function sampleNotes(lesson, kind) {
 function taskFor(lesson, kind, date, minutes, input, role = kind) {
   const memory = kind === 'recall' || ['echo','recall'].includes(lesson.practiceKind);
   const rhythm = kind === 'rhythm';
+  const compact = kind === 'new' && isCompactFoundationLesson(lesson);
   const presentation = memory ? { target: false, names: false, staff: false, falling: false, preview: role === 'new' } : rhythm ?
     { target: false, names: false, staff: false, falling: false, preview: true, pulse: true } :
     { target: false, names: false, staff: true, falling: false, preview: lesson.practiceKind !== 'reading' };
   return { id: `${date}:${kind}:${lesson.id}`, date, kind, role, lessonId: lesson.id, skillIds: [...lesson.skillIds],
     title: kind === 'recall' && role !== 'new' ? `Вспомни: ${lesson.title}` : lesson.title, minutes, notes: sampleNotes(lesson, kind), presentation,
-    displayPracticeKind: lesson.practiceKind, completion: kind === 'new' && lesson.learningRoute !== 'guided-check' ? 'flow-60' : rhythm ? 'flow-80' : 'independent-80',
+    displayPracticeKind: lesson.practiceKind, completion: kind === 'new' && lesson.learningRoute !== 'guided-check' && !compact ? 'flow-60' : rhythm ? 'flow-80' : 'independent-80',
     requiredMetric: rhythm ? 'timed-notes-v1' : 'first-attempt-v1', passPercent: 80,
     evidenceKind: rhythm ? 'timed' : memory ? 'recall' : 'reading',
     requiresMidiForAssessment: lesson.requiresMidiForAssessment === true,
     ...(kind==='reading'&&typeof lesson.notationGuide==='string'?{notationGuide:lesson.notationGuide}:{}),
-    ...(kind === 'new' && lesson.learningRoute === 'guided-check' ? { learningRoute: 'guided-check', optionalFlow: true } : {}),
+    ...(kind === 'new' && (lesson.learningRoute === 'guided-check' || compact) ? { learningRoute: 'guided-check', optionalFlow: true } : {}),
     ...(rhythm && role === 'new' ? { guidedPresentation: { target: true, names: true, staff: false, falling: true, preview: true, pulse: true } } : {}),
     notice: lesson.requiresMidiForAssessment && input !== 'midi' ? 'Через микрофон это тренировка. Независимая проверка двух звуков — с MIDI.' : '',
     instruction: kind === 'recall' && role !== 'new' ? 'Вспомни короткий рисунок без показа. Если забыл, можно послушать помощь и потренироваться; память проверим в другой день.' : memory ?
@@ -191,11 +193,11 @@ export function createPracticeTask(lessonId,{date,input='mic',progress}={}){
 }
 
 /** A small queue: due retrieval, one new idea, rhythm, then music of the user's choice. */
-export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song = null, goal = null, courseProgress } = {}) {
+export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song = null, goal = null, courseProgress, continuation = false } = {}) {
   const progress = normalizeLearningProgress(saved, { courseProgress }), today = todayFor(date), covered = coveredSkills(progress), ready=readySkills(progress);
   const budget = Number.isFinite(minutes) ? clamp(Math.round(minutes), 5, 20) : 15, tasks = [];
   const completed = progress.days[today]?.completed || [], frozen = progress.days[today]?.selection;
-  if (frozen) return finishDailyPlan(frozen.tasks.map(item => item.kind === 'song' ? { ...item, id: `${today}:song:${item.songId || 'choice'}`, date: today, skillIds: [] } :
+  if (frozen && !continuation) return finishDailyPlan(frozen.tasks.map(item => item.kind === 'song' ? { ...item, id: `${today}:song:${item.songId || 'choice'}`, date: today, skillIds: [] } :
     taskFor(PATH_LESSONS.get(item.lessonId), item.kind, today, item.minutes, input,item.role)), today, frozen.tasks.reduce((sum, task) => sum + task.minutes, 0), completed);
   const goalEvidence=goal && goal.status!=='unknown' ? evaluateLearningGoal(progress,{compositionId:goal.compositionId,hand:goal.hand||'right',date:today}) : null;
   const suggestedSong=song?.id && (!goal || goalEvidence?.known&&goalEvidence.ready) ? song : null;
@@ -308,7 +310,11 @@ function applyLearningAttempt(progress, task, report, options = {}) {
   if (task.kind === 'new' && lesson.learningRoute !== 'guided-check' && mode === 'flow' && percent >= 60 && entry.coverageBest >= 8 && !report.earlyAbort && task.date === today && !day.completed.includes(task.id)) day.completed.push(task.id);
   const independent = mode !== 'learn' && assisted === false && report.assisted !== true && !report.earlyAbort && !beta &&
     (!lesson.requiresMidiForAssessment || source === 'midi');
-  if (task.kind === 'new' && lesson.learningRoute === 'guided-check' && mode === 'check' && percent >= 80 && hadGuidedPass && independent &&
+  const compact = isCompactFoundationLesson(lesson);
+  // A full canonical independent score is sufficient: missed targets already
+  // contribute zero. Do not require new event fields that older clients strip.
+  const priorGuidedPass = lesson.learningRoute === 'guided-check' && hadGuidedPass;
+  if (task.kind === 'new' && (compact || priorGuidedPass) && mode === 'check' && percent >= 80 && independent &&
       task.date === today && !day.completed.includes(task.id)) day.completed.push(task.id);
   const recall = task.kind === 'recall' || ['echo','recall'].includes(lesson.practiceKind);
   if ((recall || task.kind === 'rhythm') && (!independent || cueVisible !== false || percent < 80)) {
@@ -357,5 +363,12 @@ export function learningSummary(saved, { date, courseProgress } = {}) {
     completedToday: progress.days[today]?.completed.length || 0, skills };
 }
 export function nextLearningTask(progress, options) {
-  return createDailyPlan(progress, options).tasks.find(task => !task.completed) || null;
+  const next = createDailyPlan(progress, options).tasks.find(task => !task.completed);
+  if (next) return next;
+  // The saved daily selection is a goal and history, never a limit on learning.
+  // Re-evaluate prerequisites without replacing it or inventing achievements.
+  const extra = createDailyPlan(progress, { ...options, continuation: true }).tasks;
+  const task = extra.find(item => !item.completed && item.role === 'new') ||
+    extra.find(item => !item.completed && item.role === 'review');
+  return task ? { ...task, continuation: true } : null;
 }

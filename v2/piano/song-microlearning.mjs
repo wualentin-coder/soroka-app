@@ -1,5 +1,5 @@
-import {songOnsetGroups,songFingerprint,musicalNoteKey} from './song-learning.mjs?v=ee88d828b262';
-import {getFingeringPlan} from './fingering.mjs?v=ee88d828b262';
+import {songOnsetGroups,songFingerprint,musicalNoteKey} from './song-learning.mjs?v=0b58b5803e6f';
+import {getFingeringPlan} from './fingering.mjs?v=0b58b5803e6f';
 
 const MAX_NOTES=5000,MAX_PARENT_STAGES=2048,WINDOW=.035,EPSILON=1e-9;
 const GUIDED={target:true,names:true,staff:true,falling:true,preview:false,fingers:true};

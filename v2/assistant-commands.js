@@ -93,6 +93,13 @@
     const found = routes.get(destination);
     return found ? { ...found, state: { ...found.state } } : null;
   }
+  // A submitted general assistant text can name a section directly; voice still requires its command.
+  function parseText(text) {
+    const command = parse(text);
+    if (command) return command;
+    const found = routes.get(normalize(text));
+    return found ? { ...found, state: { ...found.state } } : null;
+  }
   function go(page,state={}) {
     if (typeof navigate !== 'function' || typeof ui === 'undefined') return false;
     const fast=!ui.sheet,previous=Object.entries(state).map(([key])=>[key,Object.hasOwn(ui,key),ui[key]]);
@@ -135,5 +142,5 @@
     }
     return { status: 'unhandled' };
   }
-  window.flowAssistantCommands = { parse, execute };
+  window.flowAssistantCommands = { parse, parseText, execute };
 })();
