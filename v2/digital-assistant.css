@@ -188,3 +188,15 @@ html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]{background:col
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]:has(:is(.fa-result,.fa-request):not([hidden])){background:color-mix(in srgb,var(--surface) 82%,transparent);}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-aura{display:none;animation:none;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-screen-energy,html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-screen-energy:after{animation:none;}
+
+/* Text has one compact close-star; IME resizing never carries the large hero. */
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode]{padding-top:calc(max(16px,var(--native-safe-top,0px),env(safe-area-inset-top)) + 64px);}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode] .fa-star{position:fixed;inset:auto;left:var(--fa-hero-left);top:var(--fa-hero-top);width:var(--fa-hero-size);height:var(--fa-hero-size);margin:0;z-index:20;}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode] .fa-star-canvas{width:var(--fa-hero-canvas-width);height:var(--fa-hero-canvas-height);}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-idle-copy{display:none!important;}
+
+/* Hide only functional content during native geometry settling; focus stays owned.
+  100ms quiet or a360ms hard bound, then120ms opacity reveal. No height tween. */
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-ime-settling=true] :is(.fa-context,.fa-request,.fa-result,.fa-status,.fa-answer,.fa-dock){opacity:0;animation:none!important;}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode] :is(.fa-context,.fa-request,.fa-result){animation:none;}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode] .fa-star:before{inset:-20px;animation:none;}

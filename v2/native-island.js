@@ -71,7 +71,7 @@
       let opened=false;
       if(request.action==='assistant'){
         if(window.flowAssistant){
-          if(!window.flowAssistant.getState().open)window.flowAssistant.open(document.querySelector('.activity-island'));
+          window.flowAssistant.open(document.querySelector('.activity-island'),{fresh:true});
           opened=window.flowAssistant.getState().open;
         }else if(document.documentElement.dataset.flowDesign==='classic'&&window.flowCompose){
           if(!window.flowCompose.getState().open)window.flowCompose.open({context:'any',...classicDraft,focus:false});
@@ -89,7 +89,7 @@
   function ready(){
     suspended=false;syncPopup();
     const manual=sheet()&&sheet()!==entrySheet;
-    if(popup&&popupOpened&&!closing&&!document.hidden&&!manual&&window.flowAssistant&&!window.flowAssistant.getState().open)window.flowAssistant.open();
+    if(popup&&popupOpened&&!closing&&!document.hidden&&!manual&&window.flowAssistant&&!window.flowAssistant.getState().open)window.flowAssistant.open(null,{resume:true});
     lastState='';publish();consume();try{bridge()?.islandReady?.();}catch{}
   }
   window.addEventListener('flow:nativeisland',event=>{
