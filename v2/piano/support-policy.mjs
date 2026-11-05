@@ -11,6 +11,7 @@ export function isSupportAnchor(stage,{index=0,afterPause=false,transition=false
 }
 
 export function resolveSupport(stage,context={}){
+  if(stage?.assessment&&context.independentRhythm===true)return {target:false,names:false,staff:false,falling:false,fingers:false,preview:false,pulse:true};
   const original=stage?.presentation||{},base=supportLevel(stage);
   const level=validLevel(context.helpLevel)?Math.min(base,context.helpLevel):base;
   const hidden=!original.target&&!original.names&&!original.staff&&!original.falling;

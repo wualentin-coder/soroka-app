@@ -1,5 +1,5 @@
 {
-  "version": "0b58b5803e6f",
+  "version": "119118b1bfbc",
   "files": [
     "player.mjs",
     "player-template.mjs",
@@ -20,6 +20,7 @@
     "postplay-coach.mjs",
     "pitch.mjs",
     "note-gate.mjs",
+    "piano-input-gate.mjs",
     "polyphonic.mjs",
     "midi-input.mjs",
     "lesson-intro.mjs",
@@ -53,6 +54,7 @@
     "mixed-practice.mjs",
     "support-policy.mjs",
     "input-calibration.mjs",
+    "practice-scene.mjs",
     "fonts/Bravura.woff2",
     "fonts/Bravura-LICENSE.txt",
     "fonts/README.md",

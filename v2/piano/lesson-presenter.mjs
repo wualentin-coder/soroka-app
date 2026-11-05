@@ -1,5 +1,5 @@
 /** Cancellable narration followed by a short, ungraded keyboard demonstration. */
-export function createLessonPresenter({ speak, cancelSpeech=()=>{}, onDemoStart=()=>{}, onStopAudio=()=>{}, onPhase=()=>{}, onFrame=()=>{}, onFinish=()=>{}, now=()=>performance.now(), requestFrame=callback=>requestAnimationFrame(callback), cancelFrame=id=>cancelAnimationFrame(id) }={}) {
+export function createLessonPresenter({ speak, prepareAudio, onAudioError=()=>{}, cancelSpeech=()=>{}, onDemoStart=()=>{}, onStopAudio=()=>{}, onPhase=()=>{}, onFrame=()=>{}, onFinish=()=>{}, now=()=>performance.now(), requestFrame=callback=>requestAnimationFrame(callback), cancelFrame=id=>cancelAnimationFrame(id) }={}) {
   let generation=0, frame=0, resolveRun=null;
   const settle=value=>{const resolve=resolveRun;resolveRun=null;resolve?.(value);};
   function cancel(){
@@ -15,6 +15,8 @@ export function createLessonPresenter({ speak, cancelSpeech=()=>{}, onDemoStart=
     onPhase('explaining');onFrame({playhead:-leadIn,active:[],index:0,beat:0,beatProgress:0,playing:false});
     (async()=>{
       if(voice&&typeof speak==='function')try{await speak(plan.spoken);}catch{}
+      if(token!==generation)return;
+      if(prepareAudio)try{await prepareAudio();}catch(error){if(token===generation){onPhase('audio-blocked');settle(false);onAudioError(error);}return;}
       if(token!==generation)return;
       onPhase('demonstrating');const started=now();onDemoStart(plan.frames,leadIn);
       function tick(){

@@ -1,4 +1,4 @@
-import {frequencyForMidi,noteInfo} from './pitch.mjs?v=0b58b5803e6f';
+import {frequencyForMidi,noteInfo} from './pitch.mjs?v=119118b1bfbc';
 
 const NOISE_MS=900,REFERENCE_MS=120,RELEASE_MS=100,MAX_DURATION_MS=60000;
 const MIN_NOISE_SAMPLES=8,MAX_NOISE_SAMPLES=64,MAX_PITCH_SAMPLES=16;
@@ -7,6 +7,19 @@ const validTime=value=>Number.isFinite(value)&&value>=0&&value<=8640000000000000
 const median=values=>{const sorted=[...values].sort((a,b)=>a-b),middle=Math.floor(sorted.length/2);return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;};
 const pitchMidi=frequency=>69+12*Math.log2(frequency/440);
 const validFrequency=value=>Number.isFinite(value)&&value>0&&value<=24000;
+
+/** Local microphone profile. Never synced as lesson progress or reused on another input. */
+export function readInputCalibration(storage,key,device='default'){
+  try{const p=JSON.parse(storage.getItem(key));return p?.version===1&&p.device===device&&
+    Number.isFinite(p.noiseFloor)&&p.noiseFloor>=0&&p.noiseFloor<=MAX_BACKGROUND_RMS&&
+    Number.isFinite(p.minRms)&&p.minRms>=.003&&p.minRms<=.06&&
+    Number.isFinite(p.centsOffset)&&Math.abs(p.centsOffset)<=MAX_TUNING_CENTS?p:null;}catch{return null;}
+}
+export function saveInputCalibration(storage,key,profile,device='default'){
+  const value={version:1,device,noiseFloor:profile.noiseFloor,minRms:profile.minRms,centsOffset:profile.centsOffset};
+  if(!readInputCalibration({getItem:()=>JSON.stringify(value)},key,device))return false;
+  try{storage.setItem(key,JSON.stringify(value));return true;}catch{return false;}
+}
 
 /** This measures one microphone stream, never a lesson, octave, or finger grade. */
 export function createInputCalibration({at=0,referenceMidi=60}={}){

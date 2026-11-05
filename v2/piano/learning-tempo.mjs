@@ -1,5 +1,5 @@
-import {musicalNoteKey,songFingerprint} from './song-learning.mjs?v=0b58b5803e6f';
-import {createScoreTimeline} from './score.mjs?v=0b58b5803e6f';
+import {musicalNoteKey,songFingerprint} from './song-learning.mjs?v=119118b1bfbc';
+import {createScoreTimeline} from './score.mjs?v=119118b1bfbc';
 
 const LEARNING_MODULE_BPM = Object.freeze({ orientation: 44, 'five-notes': 52, phrases: 56,
   'left-hand': 56, 'hands-dialogue': 52, 'keyboard-range': 58, 'black-keys': 54, 'to-compositions': 58 });

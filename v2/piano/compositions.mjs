@@ -1,6 +1,6 @@
-import { LESSONS } from './session.mjs?v=0b58b5803e6f';
-import { FUR_ELISE_DATA } from './fur-elise.mjs?v=0b58b5803e6f';
-import { BEGINNER_SONGS } from './beginner-songs.mjs?v=0b58b5803e6f';
+import { LESSONS } from './session.mjs?v=119118b1bfbc';
+import { FUR_ELISE_DATA } from './fur-elise.mjs?v=119118b1bfbc';
+import { BEGINNER_SONGS } from './beginner-songs.mjs?v=119118b1bfbc';
 
 export const MIDI_LIMITS = Object.freeze({ bytes: 2 * 1024 * 1024, notes: 5000, tracks: 64, events: 50000, seconds: 3600, minMidi: 48, maxMidi: 84 });
 

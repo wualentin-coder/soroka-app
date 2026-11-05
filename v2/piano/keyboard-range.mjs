@@ -1,6 +1,11 @@
 const isBlack = midi => [1,3,6,8,10].includes(midi % 12);
 const validMidi = midi => Number.isInteger(midi) && midi >= 0 && midi <= 127;
 
+// The selected phrase remains fixed; only an explicit viewport change reframes it.
+export function keyboardViewportOptions(width,height){
+  return Number.isFinite(width)&&Number.isFinite(height)&&width<height?{padding:2,minWhiteKeys:12}:{padding:3,minWhiteKeys:29};
+}
+
 /**
  * Stable geometry for one selected lesson/part, independent of viewport pixels
  * or the current target note. Only the student's supplied notes choose a range.

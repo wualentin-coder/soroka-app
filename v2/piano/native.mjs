@@ -1,18 +1,18 @@
-import {mountPianoPlayer} from './player.mjs?v=0b58b5803e6f';
-import {PLAYER_HTML} from './player-template.mjs?v=0b58b5803e6f';
-import {COMPOSITIONS,parseMidiComposition} from './compositions.mjs?v=0b58b5803e6f';
-import {COURSE} from './course.mjs?v=0b58b5803e6f';
-import * as learning from './learning-path.mjs?v=0b58b5803e6f';
-import * as learningGoals from './learning-goals.mjs?v=0b58b5803e6f';
-import {normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress} from './state.mjs?v=0b58b5803e6f';
+import {mountPianoPlayer} from './player.mjs?v=119118b1bfbc';
+import {PLAYER_HTML} from './player-template.mjs?v=119118b1bfbc';
+import {COMPOSITIONS,parseMidiComposition} from './compositions.mjs?v=119118b1bfbc';
+import {COURSE} from './course.mjs?v=119118b1bfbc';
+import * as learning from './learning-path.mjs?v=119118b1bfbc';
+import * as learningGoals from './learning-goals.mjs?v=119118b1bfbc';
+import {normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress} from './state.mjs?v=119118b1bfbc';
 
 export {COURSE,COMPOSITIONS,parseMidiComposition,learning,learningGoals,normalizePianoState,mergePianoState,toPianoProgress,samePianoProgress};
-export {resetPianoProgress} from './state.mjs?v=0b58b5803e6f';
-export {createMicroLesson} from './microlearning.mjs?v=0b58b5803e6f';
-export {createSongMicroLesson} from './song-microlearning.mjs?v=0b58b5803e6f';
-export {getMicroRun} from './microlearning-progress.mjs?v=0b58b5803e6f';
-export {createCompositionStudy,normalizeStudyProgress,studySummary} from './composition-study.mjs?v=0b58b5803e6f';
-export {putCachedComposition,getCachedComposition,listCachedCompositions} from './composition-cache.mjs?v=0b58b5803e6f';
+export {resetPianoProgress} from './state.mjs?v=119118b1bfbc';
+export {createMicroLesson} from './microlearning.mjs?v=119118b1bfbc';
+export {createSongMicroLesson} from './song-microlearning.mjs?v=119118b1bfbc';
+export {getMicroRun} from './microlearning-progress.mjs?v=119118b1bfbc';
+export {createCompositionStudy,normalizeStudyProgress,studySummary} from './composition-study.mjs?v=119118b1bfbc';
+export {putCachedComposition,getCachedComposition,listCachedCompositions} from './composition-cache.mjs?v=119118b1bfbc';
 export const pianoAsset=name=>new URL(name,import.meta.url).href;
 export function createTeacherFetch(call){
   return async(url,options={})=>{

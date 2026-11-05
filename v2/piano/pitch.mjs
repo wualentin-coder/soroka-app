@@ -82,6 +82,16 @@ export function detectPitch(samples, sampleRate, options = {}) {
     return curvature > 1e-12 ? Math.max(0, b - (a - c) ** 2 / (8 * curvature)) : b;
   }
   const initial = candidate;
+  function interpolatedPeriod(lag){
+    if(lag<=1||lag>=maxLag)return lag;
+    const a=cmnd[lag-1],b=cmnd[lag],c=cmnd[lag+1],d=2*(a-2*b+c);
+    return Math.abs(d)>1e-12?lag+Math.max(-1,Math.min(1,(a-c)/d)):lag;
+  }
+  function fundamentalEnergy(lag){
+    const angle=2*Math.PI/interpolatedPeriod(lag),coefficient=2*Math.cos(angle);let previous=0,before=0;
+    for(let i=0;i<length;i++){const next=frame[i]*(.5-.5*Math.cos(2*Math.PI*i/(length-1)))+coefficient*previous-before;before=previous;previous=next;}
+    return previous*previous+before*before-coefficient*previous*before;
+  }
   for (const multiple of [2, 3]) {
     const center = initial * multiple;
     if (center > maxLag) continue;
@@ -91,7 +101,9 @@ export function detectPitch(samples, sampleRate, options = {}) {
       if (cmnd[lag] < cmnd[better]) better = lag;
     }
     const currentDepth = dipDepth(candidate), betterDepth = dipDepth(better);
-    if (currentDepth - betterDepth > .008 && betterDepth < currentDepth * .35) candidate = better;
+    // A better sampled dip alone can halve a high note near the top of Casio's
+    // range. Require acoustic energy at the proposed lower fundamental too.
+    if (currentDepth - betterDepth > .008 && betterDepth < currentDepth * .35 && fundamentalEnergy(better)>fundamentalEnergy(initial)*.01) candidate = better;
   }
   const confidence = Math.max(0, Math.min(1, 1 - cmnd[candidate]));
   if (confidence < .82) return null;

@@ -1,6 +1,6 @@
-import { COURSE, normalizeCourseProgress } from './course.mjs?v=0b58b5803e6f';
-import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=0b58b5803e6f';
-import { isCompactFoundationLesson } from './microlearning-data.mjs?v=0b58b5803e6f';
+import { COURSE, normalizeCourseProgress } from './course.mjs?v=119118b1bfbc';
+import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=119118b1bfbc';
+import { isCompactFoundationLesson } from './microlearning-data.mjs?v=119118b1bfbc';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],
@@ -89,6 +89,12 @@ export function mergeLearningProgress(a,b) {
   // This compatibility baseline is reading only; new achievements always come from events below.
   for (const [id,row] of Object.entries(right.legacyReading)) if (!legacyReading[id] || row.score > legacyReading[id].score || row.score === legacyReading[id].score && row.at > legacyReading[id].at) legacyReading[id] = row;
   return normalizeLearningProgress({ version: LEARNING_PATH_VERSION, legacyReading, events: [...left.events,...right.events], conflicts: [...left.conflicts,...right.conflicts] });
+}
+
+/** Program badges use this lesson's own independent evidence, never sibling skills. */
+export function isLessonIndependentlyComplete(saved,lessonId){
+  const lesson=PATH_LESSONS.get(lessonId);if(!lesson)return false;
+  return criterionReached(lesson,normalizeLearningProgress(saved).lessons[lessonId]);
 }
 
 function criterionReached(lesson, entry) {
