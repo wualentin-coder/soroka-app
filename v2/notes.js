@@ -99,7 +99,7 @@ function renderNoteSheet(item) {
   const format = document.createElement("template"); format.innerHTML = noteFormatBar();
   if (magic) {
     format.content.querySelector("[data-note-voice]")?.remove();
-    const paths={h:'M5 5V21M16 5V21M5 13H16M20 7H27M23.5 7V21',ul:'M10 8H27M10 16H27M10 24H24M4 8H4.1M4 16H4.1M4 24H4.1',ol:'M12 8H28M12 16H28M12 24H26M4 4V11M3 4H4M2 16C2 13 7 13 7 16L2 20H7M2 24H6L3 27H7',check:'M3 9L6 12L11 5M15 9H28M3 23L6 26L11 19M15 23H28',bold:'M9 5H17C25 5 25 15 17 15H9ZM9 15H18C27 15 27 27 18 27H9Z',table:'M4 5H28V27H4ZM4 12H28M4 20H28M12 5V27M20 5V27'};
+    const paths={h:'M5 5V21M16 5V21M5 13H16M20 7H27M23.5 7V21',ul:'M10 8H27M10 16H27M10 24H24M4 8H4.1M4 16H4.1M4 24H4.1',ol:'M12 8H28M12 16H28M12 24H26M4 4V11M3 4H4M2 16C2 13 7 13 7 16L2 20H7M2 24H6L3 27H7',check:'M3 9L6 12L11 5M15 9H28M3 23L6 26L11 19M15 23H28',bold:'M9 5H17C25 5 25 15 17 15H9ZM9 15H18C27 15 27 27 18 27H9Z',table:'M4 5H28V27H4ZM4 12H28M4 20H28M12 5V27M20 5V27',italic:'M14 5H24M8 27H18M21 5L11 27',strikeThrough:'M5 16H27M10 10C10 6 22 6 22 10C22 13 18 14 16 16C14 18 10 19 10 22C10 26 22 26 22 22',quote:'M12 9H5V15H9C9 19 8 22 5 24M27 9H20V15H24C24 19 23 22 20 24',undo:'M12 9L5 16L12 23M5 16H20C24 16 27 19 27 23',redo:'M20 9L27 16L20 23M27 16H12C8 16 5 19 5 23'};
     for(const button of format.content.querySelectorAll('[data-note-cmd]')){
       button.innerHTML=`<svg class="note-light-glyph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[button.dataset.noteCmd]}"/></svg>`;
       button.setAttribute('aria-pressed','false');
@@ -114,14 +114,14 @@ window.flowNoteAssistantSession = function (opener) {
   const sheet = ui.sheet, item = sheet.id ? savedItem("notes", sheet.id) : null;
   let generation = 0;
   const current = () => { if (ui.sheet !== sheet) throw new Error("Заметка уже закрыта"); return noteDraft(item); };
-  const applyText = text => { const draft = current(); sheet.prevText = draft.description; draft.description = String(text || ""); render(); return draft.description; };
+  const applyText = text => { const draft = current(); sheet.prevText = draft.description; draft.description = window.flowNoteInk?.preserve(String(text||''),draft.description)??String(text||''); render(); return draft.description; };
   const applyVoice = text => { const draft = current(); return applyText([draft.description.trimEnd(), String(text || "").trim()].filter(Boolean).join("\n\n")); };
   return { opener, title: noteDraft(item).title || "Новая заметка", styles: NOTE_STYLES.map(([id,label,about]) => ({ id,label,about })), isCurrent: () => ui.sheet === sheet && sheet.kind === "saved" && sheet.category === "notes", getText: () => current().description, applyText, applyVoice, cancel: () => { generation++; },
     improve: async (style, options = {}) => {
       const source = current().description, request = ++generation;
       if (!source.trim()) throw new Error("Сначала напишите текст");
       if (typeof window.sorokaImproveNote !== "function") throw new Error("Обработка доступна в приложении Flow");
-      const text = await window.sorokaImproveNote(source, style);
+      const text = await window.sorokaImproveNote(window.flowNoteInk?.unpack(source).body??source, style);
       if (request !== generation || options.isCurrent?.() === false) throw new Error("Обработка отменена");
       if (current().description !== source) throw new Error("Текст уже изменился. Новая версия сохранена — повторите обработку.");
       return applyText(text);
@@ -147,10 +147,10 @@ function noteAction(action, control) {
     if (typeof window.sorokaImproveNote !== "function") { toast("Улучшение работает в приложении бота"); return true; }
     const sheet = ui.sheet;
     sheet.improve = false; sheet.improving = true; render();
-    window.sorokaImproveNote(d.description, control.dataset.style).then(text => {
+    window.sorokaImproveNote(window.flowNoteInk?.unpack(d.description).body??d.description, control.dataset.style).then(text => {
       if (ui.sheet !== sheet) return;
       sheet.prevText = d.description;
-      sheet.noteDraft.description = text;
+      sheet.noteDraft.description = window.flowNoteInk?.preserve(text,d.description)??text;
       sheet.improving = false;
       render();
       toast("Готово — сохранится при выходе");
@@ -197,6 +197,21 @@ closeSheet = function () {
   }
   saveNoteQuietly(); return closeSheetBeforeNotes.apply(this, arguments);
 };
+
+// The screen-edge frame answers typing as one smooth state, not per keystroke.
+(() => {
+  const timers = new WeakMap();
+  document.addEventListener('input', event => {
+    const sheet = event.target.closest?.('.dc2-note-sheet');
+    if (!sheet) return;
+    sheet.dataset.noteTyping = 'true';
+    clearTimeout(timers.get(sheet));
+    timers.set(sheet, setTimeout(() => {
+      if (sheet.isConnected) delete sheet.dataset.noteTyping;
+      timers.delete(sheet);
+    }, 700));
+  });
+})();
 
 // Formatting reads the current selection and keeps it when the toolbar receives keyboard focus.
 (() => {
