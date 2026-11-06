@@ -284,7 +284,7 @@ html[data-flow-design=magic] .note-backdrop{padding:0;align-items:stretch}
 html[data-flow-design=magic] .note-backdrop .sheet.dc2-note-sheet{--note-screen-corners:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) var(--native-corner-bottom-right,36px) var(--native-corner-bottom-left,36px);width:100%;max-width:none;max-height:none;margin:0;border:0;border-radius:var(--note-screen-corners)!important;box-shadow:none}
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-toolbar{padding-top:max(10px,env(safe-area-inset-top));padding-inline:max(16px,calc(max(var(--native-corner-top-left,36px),var(--native-corner-top-right,36px)) * .6))}
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-editor{width:100%;max-width:820px;margin-inline:auto}
-html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-format{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding-inline:max(14px,calc(max(var(--native-corner-bottom-left,36px),var(--native-corner-bottom-right,36px)) * .6))}
+html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-format{display:flex;flex-wrap:nowrap;justify-content:safe center;gap:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding-inline:max(14px,calc(max(var(--native-corner-bottom-left,36px),var(--native-corner-bottom-right,36px)) * .6))}
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-format::-webkit-scrollbar{display:none}
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-format>button{flex:0 0 44px!important;width:44px;min-width:44px!important;max-width:none}
 html.tg-fs .note-backdrop{padding-top:var(--tg-top)}
