@@ -289,6 +289,9 @@ html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-format::-webki
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet .note-format>button{flex:0 0 44px!important;width:44px;min-width:44px!important;max-width:none}
 html.tg-fs .note-backdrop{padding-top:var(--tg-top)}
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet>.flow-surface-contour{border-width:2px;border-color:rgba(var(--accent-rgb),.2);box-shadow:inset 0 0 22px rgba(var(--accent-rgb),.024),inset 0 0 3px rgba(var(--accent-rgb),.072);opacity:.22;animation:note-edge-breathe 6s ease-in-out infinite;transition:border-color .25s ease,box-shadow .25s ease}
+html[data-flow-design=magic] .note-backdrop .dc2-note-sheet>.note-history{margin:0 20px 10px;max-height:min(40dvh,320px);overflow:auto;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--surface) 82%,transparent);font-size:11px;flex:none}
+html[data-flow-design=magic] .note-backdrop .dc2-note-sheet>.note-history summary{display:flex;align-items:center;gap:8px;min-height:36px}
+html[data-flow-design=magic] .note-history-button[aria-expanded=true]{color:var(--accent);background:var(--accent-soft)}
 html[data-flow-design=magic] .note-backdrop .dc2-note-sheet[data-note-typing=true]>.flow-surface-contour{border-color:rgba(var(--accent-rgb),.38);box-shadow:inset 0 0 42px rgba(var(--accent-rgb),.088),inset 0 0 8px rgba(var(--accent-rgb),.2)}
 @keyframes note-edge-breathe{0%,100%{opacity:.168}50%{opacity:.272}}
 html.kb-open .note-backdrop .sheet.dc2-note-sheet{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}
@@ -305,6 +308,7 @@ html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists) .dc2-windo
 html.kb-open .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2-window-lists{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}
 html[data-native-keyboard=true] .note-backdrop .sheet.dc2-note-sheet{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}
 html[data-native-keyboard=true] .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2-window-lists{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}
+@media(max-height:560px){html[data-flow-design=magic] .note-backdrop .sheet.dc2-note-sheet,html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2-window-lists{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}}
 html[data-flow-design=magic] .dc2-window-lists .check-row.editing{align-items:stretch;padding:2px 0}
 html[data-flow-design=magic] .dc2-window-lists .check-row.editing textarea{width:100%;flex:1;min-width:0;min-height:44px;max-height:200px;margin:0;padding:10px 0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;color:var(--text);font:inherit;font-size:15px;line-height:1.55;outline:0;resize:none;overflow:hidden;overflow-wrap:anywhere;word-break:break-word}
 html[data-flow-design=magic] .dc2-record-lists .list-card-preview span{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;min-width:0}
