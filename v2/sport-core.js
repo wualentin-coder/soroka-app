@@ -816,6 +816,7 @@ var SportCore = (() => {
       rest: e.rest_seconds,
       technique: e.technique,
       video: e.video,
+      executionSeconds: e.execution_seconds,
       muscles: e.muscles,
       bodyweight: e.bodyweight,
       weight_kg: e.weight_kg,
@@ -2117,7 +2118,7 @@ var SportCore = (() => {
   // sport/core/src/trainingPacket.ts
   var instructionText = null;
   async function planInstruction() {
-    instructionText ?? (instructionText = fetch("./assets/sport-instruction.md?v=single-set-20261027").then((r) => {
+    instructionText ?? (instructionText = fetch("./assets/sport-instruction.md?v=ai-execution-20261105").then((r) => {
       if (!r.ok) throw new Error("instruction");
       return r.text();
     }).catch((error) => {
@@ -2341,7 +2342,7 @@ ${JSON.stringify(context, null, 2)}
         str(b.title, `${bp}.title`, 160);
         list(b.exercises, `${bp}.exercises`, 100).forEach((item3, ei) => {
           const ep = `${bp}.exercises[${ei}]`;
-          const e = object(item3, ep, ["id", "name", "sets", "mode", "work_seconds", "rest_seconds", "technique"], ["reps", "target", "video", "muscles", "bodyweight", "weight_kg", "weight_basis"]);
+          const e = object(item3, ep, ["id", "name", "sets", "mode", "work_seconds", "rest_seconds", "technique"], ["reps", "target", "video", "muscles", "bodyweight", "weight_kg", "weight_basis", "execution_seconds"]);
           id(e.id, `${ep}.id`);
           str(e.name, `${ep}.name`, 160);
           str(e.technique, `${ep}.technique`, 3e3);
@@ -2350,6 +2351,7 @@ ${JSON.stringify(context, null, 2)}
           integer(e.sets, `${ep}.sets`, 1, 100);
           integer(e.work_seconds, `${ep}.work_seconds`, 0, 86400);
           integer(e.rest_seconds, `${ep}.rest_seconds`, 0, 3600);
+          if (hasOwn(e, "execution_seconds")) integer(e.execution_seconds, `${ep}.execution_seconds`, 1, 86400);
           if (e.mode === "reps") {
             str(e.reps, `${ep}.reps`, 20);
             const reps = e.reps.trim().replace(/\s*[-–—]\s*/, "–").toLowerCase();

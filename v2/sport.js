@@ -57,11 +57,20 @@ function spPracticeStatus() {
   return{date:C.todayKey(),status:!workout?'rest':C.optionCompletion(workout,s.state)===100?'done':'pending'};
 }
 function spLoad(readOnly=false) {
+  const runtime = window.flowSportRuntime, lease = runtime?.capture();
+  if (runtime && !lease) return runtime.prepare().then(() => spLoad(readOnly)).catch(error => {
+    if(error.message==="sport_owner_changed"||runtime.capture())return;
+    const s = spState(), message = "Откройте Flow в своём аккаунте.";
+    if (s.error === message) return;
+    s.error = message; spRerender(true);
+  });
+  const current = () => window.flowSportRuntime===runtime && (!runtime || runtime.current(lease));
   const s = spState();
   if (s.loading || s.error || !SP() || readOnly&&s.practiceRead) return;
   s.loading = true;
   if(readOnly)s.practiceRead=true;else s.practicePreview=false;
-  spCall(readOnly?"peek":"load").then(answer => {
+  const accept = answer => {
+    if (!current()) return;
     if (!answer || answer.error) throw new Error(answer?.error || "load");
     if(readOnly&&!answer.state)return;
     const C = SP();
@@ -72,13 +81,14 @@ function spLoad(readOnly=false) {
     s.demo = Boolean(answer.demo);
     s.planDays = s.demo ? C.DEMO_PLAN_DAYS : [];
     s.practicePreview=readOnly;
-    if(!readOnly)C.setTimerIdentity("owner");
+    if(!readOnly)C.setTimerIdentity(runtime ? lease.scope : "owner");
     spZone();
     if (s.scheduleDay && s.date === s.scheduleDay) s.date = C.todayKey();
     s.scheduleDay = C.todayKey();
     s.date ||= C.todayKey();
     s.weekStart ||= C.startOfWeekKey(s.date);
     s.error = "";
+    runtime?.loaded(s, readOnly, answer.offline);
     if (!readOnly&&s.pending.length) spFlush().catch(() => {});
     // Первый вход в раздел заводит настройки уведомлений (как в WooSport):
     // с ними сервер начинает напоминать о душе, подъёме и тренировке.
@@ -86,8 +96,14 @@ function spLoad(readOnly=false) {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Moscow";
       spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings({ timeZone: zone }) })).catch(() => {});
     }
-  }).catch(error => { if(!readOnly){s.error = "Не удалось загрузить данные спорта. Проверьте связь.";console.warn(error);} })
-    .finally(() => { s.loading = false; spRerender(true); });
+  };
+  return spCall(readOnly?"peek":"load").then(accept).catch(error => {
+    if(!current())return;
+    const cached=!readOnly&&runtime?.recover();
+    if(cached){accept(cached);s.saveError="Нет связи. План сохранён на устройстве.";return;}
+    if(!readOnly){s.error = "Не удалось загрузить данные спорта. Проверьте связь.";console.warn(error);}
+  })
+    .finally(() => { if(current()){s.loading = false; spRerender(true);} });
 }
 function spZone() {
   const C = SP(), s = spState();
@@ -96,11 +112,16 @@ function spZone() {
 
 const SP_PENDING_KEY = "flow.sport.pending.v1";
 let spFlushing = null, spInFlight = [], spRetryTimer = null, spRevision = 0;
-function spReadPending() { try { const v = JSON.parse(localStorage.getItem(SP_PENDING_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
-function spPersistPending() { localStorage.setItem(SP_PENDING_KEY, JSON.stringify([...spInFlight, ...spState().pending])); }
+function spPendingKey() { return window.flowSportRuntime ? window.flowSportRuntime.storageKey("outbox") : SP_PENDING_KEY; }
+function spReadPending() { try { const v = JSON.parse(localStorage.getItem(spPendingKey()) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+function spPersistPending() { localStorage.setItem(spPendingKey(), JSON.stringify([...spInFlight, ...spState().pending])); }
+function spResetOwner() { clearTimeout(spRetryTimer); spRetryTimer=null; spFlushing=null; spInFlight=[]; spRevision++; ui.sp=null; }
 function spRetry() { clearTimeout(spRetryTimer); spRetryTimer = setTimeout(() => spFlush().catch(() => {}), 10000); }
 function spUpdate(fn) {
+  const runtime=window.flowSportRuntime, lease=runtime?.capture();
+  if(runtime&&!runtime.canWrite())return Promise.reject(new Error("sport_owner_not_ready"));
   const s = spState(), C = SP(), prev = s.state, next = fn(prev);
+  if(runtime&&!runtime.current(lease))return Promise.reject(new Error("sport_owner_changed"));
   if (!next || next === prev) return Promise.resolve();
   if (!s.demo) {
     const before = s.pending.length;
@@ -111,6 +132,9 @@ function spUpdate(fn) {
   return s.demo ? Promise.resolve() : spFlush();
 }
 function spFlush() {
+  const runtime=window.flowSportRuntime, lease=runtime?.capture();
+  if(runtime&&!runtime.canWrite())return Promise.resolve();
+  const current=()=>window.flowSportRuntime===runtime&&(!runtime||runtime.current(lease));
   if (spFlushing) return spFlushing;
   const s = spState(), C = SP();
   if (s.demo || !s.pending.length || !s.state) return Promise.resolve();
@@ -119,19 +143,22 @@ function spFlush() {
     // Yield once so the shared promise is installed before a fast failure.
     await Promise.resolve();
     try {
-      while (s.pending.length) {
+      while (current() && s.pending.length) {
         spInFlight = s.pending; s.pending = [];
         const answer = await spCall("patch", { changes: spInFlight });
+        if (!current()) return;
         if (!answer?.state || answer.error) throw new Error(answer?.error || "patch");
         s.state = C.applyStateChanges(answer.state, s.pending);
+        runtime?.cache(s);
         spInFlight = []; spPersistPending(); s.saveError = "";
       }
     } catch (error) {
+      if (!current()) return;
       s.pending = [...spInFlight, ...s.pending]; spInFlight = [];
       try { spPersistPending(); } catch (_) {}
       s.saveError = "Изменения сохранены на устройстве. Отправлю автоматически, когда появится связь.";
       spRetry(); throw error;
-    } finally { spFlushing = null; spRerender(); }
+    } finally { if(current()){spFlushing = null; spRerender();} }
   })();
   return spFlushing;
 }
@@ -145,13 +172,17 @@ function spRerender(force = false) {
 }
 // Вернулись в приложение — подтянуть то, что отметили кнопкой в Telegram.
 document.addEventListener("visibilitychange", () => {
+  const runtime=window.flowSportRuntime, lease=runtime?.capture();
+  if(runtime&&!runtime.canWrite())return;
   const s = spState(), C = SP();
   if (document.hidden || !s.state || s.demo || typeof window.sorokaSport !== "function") return;
   if (s.pending.length || spFlushing) { spFlush().catch(() => {}); return; }
   const revision = spRevision;
   spCall("load").then(answer => {
+    if(window.flowSportRuntime!==runtime||runtime&&!runtime.current(lease))return;
     if (answer?.state && !s.pending.length && !spFlushing && revision === spRevision) {
       s.state = answer.state; s.catalog = answer.catalog || {}; spZone();
+      runtime?.loaded(s,false);s.saveError="";
       if (s.scheduleDay && s.date === s.scheduleDay) s.date = C.todayKey();
       s.scheduleDay = C.todayKey(); spRerender();
     }

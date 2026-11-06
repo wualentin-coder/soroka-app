@@ -1,0 +1,12 @@
+/* Native English controls only; use alongside the current Flow shell. */
+.en-page .ef-today-actions {display:flex;justify-content:flex-end;margin:12px 0 16px;}
+.en-page .lv-lesson-scene>.ef-today-actions {justify-content:space-between;margin:0 0 8px;}
+.en-page .ef-today-actions>.lv-eyebrow {margin:0;}
+.en-page .ef-today-actions>button {display:inline-flex;align-items:center;gap:8px;min-height:44px;white-space:normal;}
+.en-page .ef-icon-control {position:relative;display:inline-grid;place-items:center;flex:none;width:44px;min-width:44px;min-height:44px;padding:10px;border-radius:var(--magic-control-radius,13px);color:var(--accent);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+.en-page .ef-icon-control:focus-visible {outline:2px solid var(--accent);outline-offset:3px;}
+.en-page .ef-icon-control small {position:absolute;top:-3px;right:-3px;min-width:18px;font:600 11px/18px Manrope,sans-serif;background:var(--surface-raised);border-radius:6px;}
+.en-page .ef-method summary {display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px;color:var(--muted);}
+.en-page .ef-method summary:after {content:'+';margin-left:auto;color:var(--accent);}
+.en-page .ef-method[open] summary:after {content:'−';}
+.en-page .ef-method p {margin-top:12px;}

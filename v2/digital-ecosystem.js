@@ -7,6 +7,95 @@
   const selector = '.sheet,.composer,.enm-song-sheet,.pins-drop-card,.pn-dialog,dialog,[role="dialog"]';
   const surfaces = new Set(), observers = new Map(), media = new Set(), inputs = new Map(), microphones = new Set(), pendingScopes = new Set();
   let frame = 0, interactionFrame = 0, disposed = false, suspended = false, pageActive = true, active = null, voice = 'idle', voiceLevel = 0, activity = null, capture = 'idle', captureRequest = null, speaking = false, settleTimer = 0;
+  // A surface operation is an exact DOM owner plus a superseding token, not a global scene.
+  const operations = new Map(), surfaceOwners = new WeakMap();
+  let operationSequence = 0, interactionEvents = [], interactionCleanup = 0;
+  function ownerIdentity(surface) {
+    const owner=surface.closest('#app')&&typeof sheetOwner==='function'?sheetOwner(surface):null;
+    return owner&&owner!==surface?{owner,stamp:JSON.stringify([owner.kind,owner.type,owner.category,owner.id,owner.mode])}:null;
+  }
+  function foreground(surface) {
+    return surface && visible(surface) && !surface.closest('[inert]') &&
+      [...surfaces].filter(node => visible(node) && !node.closest('[inert]')).at(-1) === surface;
+  }
+  function clearResponse(surface, forget = true) {
+    const record = operations.get(surface); if (!record) return;
+    clearTimeout(record.decay); for (const effect of record.effects) effect.cancel();
+    record.effects = []; record.layer?.remove(); record.layer = null;
+    delete surface.dataset.windowPhase;
+    if (forget) { clearTimeout(record.expiry); operations.delete(surface); }
+  }
+  function operationSurface(record) {
+    const previous=record.surface;
+    if(previous.isConnected)return previous;
+    if(!record.identity)return null;
+    for(const next of surfaces){
+      const identity=surfaceOwners.get(next);
+      if(!identity||identity.owner!==record.identity.owner||identity.stamp!==record.identity.stamp||!foreground(next)||operations.has(next))continue;
+      delete previous.dataset.windowPhase;operations.delete(previous);record.surface=next;operations.set(next,record);
+      if(record.layer){next.dataset.windowPhase=record.phase;for(const key of ['--surface-x','--surface-y']){const value=previous.style.getPropertyValue(key);if(value)next.style.setProperty(key,value);}next.append(record.layer);}
+      return next;
+    }
+    return null;
+  }
+  function operationPhase(surface, record, phase) {
+    if(!record.surface.isConnected){scan(document.body);surface=operationSurface(record)||surface;}else surface=record.surface;
+    if (operations.get(surface) !== record || !foreground(surface) || !moving() || performance.now() > record.expires) {
+      if (operations.get(surface) === record) clearResponse(surface); return false;
+    }
+    if (!['queued','processing','accepted','confirmed','rejected','pending','cancelled'].includes(phase)) return false;
+    clearResponse(surface, false);
+    if (phase === 'cancelled') { clearResponse(surface); return true; }
+    record.phase = phase; surface.dataset.windowPhase = phase;
+    const layer = document.createElement('i'); layer.className = 'flow-surface-response'; layer.setAttribute('aria-hidden','true');
+    layer.innerHTML = '<i class="flow-response-contour"></i><i class="flow-response-echo"></i>'; surface.append(layer); record.layer = layer;
+    const config = {
+      queued: [650,.46,.18], processing: [1150,.82,.40], accepted: [800,.60,.24],
+      confirmed: [1100,.96,.60], rejected: [1250,.92,.34], pending: [900,.38,.13]
+    }[phase];
+    record.effects = [...layer.children].map((node,index) => node.animate([
+      {opacity:0,transform:'scale(.997)'},
+      {opacity:config[index+1],transform:'scale(1)',offset:phase==='rejected'?.10:.20},
+      {opacity:config[index+1]*(phase==='rejected'?.32:.55),transform:'scale(1)',offset:.50},
+      ...(phase==='rejected'?[{opacity:config[index+1]*.72,transform:'scale(1)',offset:.64}]:[]),
+      {opacity:0,transform:index?'scale(1.012)':'scale(1)'}
+    ],{duration:config[0],easing:'cubic-bezier(.2,.6,.25,1)'}));
+    record.decay = setTimeout(() => { if (operations.get(record.surface) === record) clearResponse(record.surface,false); },config[0]+40);
+    document.dispatchEvent(new CustomEvent('flow:surfaceoperation',{detail:{id:record.id,phase}}));
+    return true;
+  }
+  function beginOperation(origin, phase = 'queued') {
+    const surface = origin instanceof Element ? surfaceOf(origin) : null;
+    if (!foreground(surface) || !moving()) return null;
+    clearResponse(surface);
+    const record = {id:++operationSequence,surface,identity:surfaceOwners.get(surface),phase:'',effects:[],layer:null,expires:performance.now()+65000};
+    operations.set(surface,record); record.expiry=setTimeout(()=>{if(operations.get(record.surface)===record)clearResponse(record.surface);},65000);
+    const handle = Object.freeze({current:()=>operations.get(record.surface)===record&&foreground(record.surface)&&moving()&&performance.now()<=record.expires,sameOwner:node=>{const identity=surfaceOwners.get(node);return node===record.surface||!!(identity&&record.identity&&identity.owner===record.identity.owner&&identity.stamp===record.identity.stamp);}, update:value=>operationPhase(record.surface,record,value), cancel:()=>{if(operations.get(record.surface)===record)clearResponse(record.surface);}});
+    operationPhase(surface,record,phase); return handle;
+  }
+  function clearInteractions() { clearTimeout(interactionCleanup);interactionCleanup=0;interactionEvents=[]; }
+  function currentInteractionOwner() {
+    // Chromium checkpoints microtasks between trusted listeners; dispatch itself is the authority.
+    const current=interactionEvents.findLast(record=>record.event.eventPhase>0);
+    if(!current?.surface)return null;
+    if(foreground(current.surface)){
+      const identity=ownerIdentity(current.surface);
+      if(!current.identity||identity&&identity.owner===current.identity.owner&&identity.stamp===current.identity.stamp)return current.surface;
+      return null;
+    }
+    if(current.surface.isConnected||!current.identity)return null;
+    scan(document.body);
+    return [...surfaces].findLast(surface=>{const identity=surfaceOwners.get(surface);return foreground(surface)&&identity&&identity.owner===current.identity.owner&&identity.stamp===current.identity.stamp;})||null;
+  }
+  function rememberInteraction(event) {
+    const origin=event.composedPath?.().find(node=>node instanceof Element),surface=surfaceOf(origin);
+    interactionEvents=interactionEvents.filter(record=>record.event.eventPhase>0);
+    interactionEvents.push({event,surface:foreground(surface)?surface:null,identity:surface&&surfaceOwners.get(surface)});
+    if(interactionEvents.length>8)interactionEvents.shift();
+    clearTimeout(interactionCleanup);interactionCleanup=setTimeout(clearInteractions,0);
+  }
+  for (const name of ['pointerdown','click','input','change','submit']) document.addEventListener(name,rememberInteraction,{capture:true,signal});
+  document.addEventListener('invalid',event=>{const surface=surfaceOf(event.target);if(foreground(surface)){focus(event);beginOperation(surface,'rejected');}},{capture:true,signal});
   const reduced = () => window.flowDigital?.reducedMotion?.() ?? matchMedia('(prefers-reduced-motion:reduce)').matches;
   const moving = () => !disposed && !suspended && pageActive && !document.hidden && root.dataset.motion !== 'off' && !reduced();
   const resize = new ResizeObserver(() => schedule());
@@ -14,7 +103,7 @@
   function clearInput(surface) { const owned = inputs.get(surface); if (!owned) return; for (const effect of owned.effects) effect.cancel(); owned.node.remove(); inputs.delete(surface); }
   function attach(surface) {
     if (surfaces.has(surface) || surface.closest('.dm-live-assistant') || surface.matches('.activity-island-card')) return;
-    surfaces.add(surface); surface.classList.add('flow-living-surface');
+    surfaces.add(surface);surfaceOwners.set(surface,ownerIdentity(surface)); surface.classList.add('flow-living-surface');
     if (getComputedStyle(surface).position === 'static') surface.classList.add('flow-surface-static');
     const contour = document.createElement('i'); contour.className = 'flow-surface-contour'; contour.setAttribute('aria-hidden', 'true');surface.append(contour);
     resize.observe(surface);
@@ -42,7 +131,7 @@
     frame = 0; if (disposed) return;
     for(const scope of pendingScopes)if(scope.isConnected)scan(scope);pendingScopes.clear();
     for (const scope of observers.keys()) if (scope instanceof ShadowRoot) { if (!scope.host.isConnected) { observers.get(scope).disconnect(); observers.delete(scope);microphones.delete(scope); } else {const badge=scope.querySelector('#mic-badge');if(badge?.classList.contains('on'))microphones.add(scope);else microphones.delete(scope);} }
-    for (const surface of surfaces) if (!surface.isConnected) { clearInput(surface); resize.unobserve(surface); surfaces.delete(surface); }
+    for (const surface of surfaces) if (!surface.isConnected) { clearInput(surface); const operation=operations.get(surface);if(operation)operationSurface(operation);clearResponse(surface); resize.unobserve(surface); surfaces.delete(surface); }
     const list = [...surfaces].filter(visible); active = list.at(-1) || null;
     for (const surface of surfaces) {
       surface.classList.toggle('flow-surface-attention', surface === active);
@@ -52,6 +141,7 @@
     }
     if (active) root.dataset.flowSurface = 'window'; else delete root.dataset.flowSurface;
     for (const [surface] of inputs) if (!moving() || !visible(surface) || surface !== active) clearInput(surface);
+    for (const [surface] of operations) if (!moving() || !foreground(surface)) clearResponse(surface);
     avoidAssistant();syncProcess();
     const pill = document.querySelector('.dm-topbar .head-pill');
     if (pill && !window.flowCompose && window.FlowActivity && typeof ui !== 'undefined' && typeof data !== 'undefined') window.FlowActivity.mount(pill, { section: 'Flow', page: () => ui.page, data: () => data, pinned: () => window.flowCompose?.open?.(), open: (kind, id) => { if (typeof openEntry === 'function') openEntry(kind, '', id); } });
@@ -118,7 +208,7 @@
     focus(event); pulse(field,surface);
   }
   function interact(event){const field=fieldOf(event),surface=surfaceOf(field);if(!surface||field.disabled)return;focus(event);pulse(field,surface);}
-  function rest(){for(const [surface]of inputs)clearInput(surface);for(const surface of surfaces)surface.classList.add('flow-surface-resting');if(interactionFrame)cancelAnimationFrame(interactionFrame);interactionFrame=0;}
+  function rest(){clearInteractions();for(const [surface]of operations)clearResponse(surface);for(const [surface]of inputs)clearInput(surface);for(const surface of surfaces)surface.classList.add('flow-surface-resting');if(interactionFrame)cancelAnimationFrame(interactionFrame);interactionFrame=0;}
   document.addEventListener('pointerdown', interact, { capture: true, signal });
   document.addEventListener('change', interact, { capture: true, signal });
   let publishedProcess='';
@@ -164,7 +254,7 @@
   window.addEventListener('flow:resume',()=>{suspended=false;schedule();}, {signal});
   window.addEventListener('pagehide', () => { pageActive=false;rest();if (frame) cancelAnimationFrame(frame); frame = 0; }, { signal });
   window.addEventListener('pageshow',()=>{pageActive=true;schedule();}, { signal });
-  window.flowEcosystem = { refresh() { pendingScopes.add(document.body);schedule(); }, getState: () => ({ surfaces: surfaces.size, activeSurface: !!active, typingLayers: inputs.size, typingAnimations: [...inputs.values()].reduce((n, item) => n + item.effects.filter(effect => effect.playState === 'running').length, 0), scene: root.dataset.magicScene, mediaOwners: media.size, microphoneOwners:microphones.size, voice, physicalHapticsVerified: false }), dispose() { disposed = true; abort.abort();rest();resize.disconnect();for(const fab of document.querySelectorAll('.assistant-fab')){fab.inert=false;fab.style.removeProperty('--assistant-avoid');fab.removeAttribute('data-avoid-hidden');} clearTimeout(settleTimer); if (frame) cancelAnimationFrame(frame); for (const observer of observers.values()) observer.disconnect(); for (const surface of surfaces) { surface.classList.remove('flow-living-surface','flow-surface-static','flow-surface-attention','flow-surface-resting','flow-surface-focused');surface.style.removeProperty('--surface-x');surface.style.removeProperty('--surface-y'); surface.querySelector(':scope>.flow-surface-contour')?.remove(); } } };
+  window.flowEcosystem = { beginOperation, interactionOwner:currentInteractionOwner, refresh() { pendingScopes.add(document.body);schedule(); }, getState: () => ({ surfaces: surfaces.size, activeSurface: !!active, responseLayers:[...operations.values()].filter(record=>record.layer).length,responseAnimations:[...operations.values()].reduce((n,record)=>n+record.effects.filter(effect=>effect.playState==='running').length,0),surfaceOperations:operations.size,typingLayers: inputs.size, typingAnimations: [...inputs.values()].reduce((n, item) => n + item.effects.filter(effect => effect.playState === 'running').length, 0), scene: root.dataset.magicScene, mediaOwners: media.size, microphoneOwners:microphones.size, voice, physicalHapticsVerified: false }), dispose() { disposed = true; abort.abort();rest();resize.disconnect();for(const fab of document.querySelectorAll('.assistant-fab')){fab.inert=false;fab.style.removeProperty('--assistant-avoid');fab.removeAttribute('data-avoid-hidden');} clearTimeout(settleTimer); if (frame) cancelAnimationFrame(frame); for (const observer of observers.values()) observer.disconnect(); for (const surface of surfaces) { surface.classList.remove('flow-living-surface','flow-surface-static','flow-surface-attention','flow-surface-resting','flow-surface-focused');surface.style.removeProperty('--surface-x');surface.style.removeProperty('--surface-y'); surface.querySelector(':scope>.flow-surface-contour')?.remove(); } } };
   document.addEventListener('click', event => {
     const field=fieldOf(event);if(!field||field.disabled)return;
     if(event.detail===0)interact(event);

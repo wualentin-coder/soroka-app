@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=564aa54c48","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=c5a8055734","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=45cae9ab62","integrity":null},{"src":"./sport.js?v=7313014bdd","integrity":null},{"src":"./sport-train.js?v=faa39836a3","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=dcb7934637","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=40c4087fec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=5b6a4f981b","integrity":null},{"src":"./notes.js?v=4500b6613e","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=bd795bf054","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=d00eea7869","integrity":null},{"src":"./activity-island.js?v=0da23a1d4b","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=d1157f3ca5","integrity":null},{"src":"./digital-collections.js?v=bea37b57b3","integrity":null},{"src":"./digital-directory.js?v=517d7def7d","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./digital-runtime.js?v=11bafd0041","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=1379e54fb0","integrity":null},{"src":"./digital-assistant-visual.js?v=9052e58507","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=32ac7c6842","integrity":null},{"src":"./native-island.js?v=69cb2c0e50","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=564aa54c48","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=c5a8055734","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=e5395cb4ab","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=d305611d40","integrity":null},{"src":"./sport-train.js?v=2ebd7da268","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=7177e21237","integrity":null},{"src":"./sport-session.js?v=1582fba907","integrity":null},{"src":"./sport-session-magic.js?v=f3ce4adae6","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=40c4087fec","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=5b6a4f981b","integrity":null},{"src":"./notes.js?v=4500b6613e","integrity":null},{"src":"./note-editor.js?v=d301cab1bd","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=6976037fef","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=d1157f3ca5","integrity":null},{"src":"./digital-collections.js?v=bea37b57b3","integrity":null},{"src":"./digital-directory.js?v=517d7def7d","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=578424cda2","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=1379e54fb0","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -426,6 +426,29 @@
   let again = false;
   let timer = null;
 
+  // Presentation follows the existing queue; unknown/mixed batches have no inferred UI owner.
+  let windowQueue = null, windowRetry = null;
+  function windowSignal(batch,phase) { try { return batch?.handle?.update(phase) || false; } catch (_) { return false; } }
+  function sameWindow(batch,owner) { try { return batch?.handle?.sameOwner(owner) || false; } catch (_) { return false; } }
+  function currentWindow(batch) { try { return batch?.handle?.current() || false; } catch (_) { return false; } }
+  function cancelWindow(batch) { try { batch?.handle?.cancel(); } catch (_) {} }
+  function startWindow(owner,phase) { try { return owner?window.flowEcosystem?.beginOperation?.(owner,phase):null; } catch (_) { return null; } }
+  function rememberWindowSave() {
+    try {
+      const owner = window.flowEcosystem?.interactionOwner?.() || null;
+      if (!windowQueue) {
+        const previous=windowRetry;windowRetry=null;
+        if(previous&&owner&&sameWindow(previous,owner)){windowQueue=previous;windowQueue.owner=owner;if(currentWindow(windowQueue))windowSignal(windowQueue,'queued');else windowQueue.handle=startWindow(owner,'queued');}
+        else { cancelWindow(previous);windowQueue={owner:previous?null:owner,handle:previous?null:startWindow(owner,'queued')}; }
+      } else if (!owner || !sameWindow(windowQueue,owner)) { cancelWindow(windowQueue);windowQueue={owner:null,handle:null}; }
+      else if(!currentWindow(windowQueue))windowQueue.handle=startWindow(owner,'queued');
+    } catch (_) { cancelWindow(windowQueue);windowQueue={owner:null,handle:null}; }
+  }
+  function takeWindowBatch() { const queued=windowQueue;windowQueue=null;const retry=windowRetry;windowRetry=null;if(queued){cancelWindow(retry);return queued;}return retry; }
+  function retainWindowBatch(batch) {
+    if(windowQueue){if(!batch?.owner||!sameWindow(batch,windowQueue.owner)){cancelWindow(windowQueue);windowQueue={owner:null,handle:null};}}
+    else windowRetry=batch || {owner:null,handle:null};
+  }
   function schedule(ms = 350) {
     clearTimeout(timer);
     timer = setTimeout(push, ms);
@@ -439,16 +462,18 @@
     if (warming) { again = true; return; }
     if (flying) { again = true; return; }
     const changes = diff(base, data);
-    if (!changes.length) return;
+    if (!changes.length) { cancelWindow(takeWindowBatch());return; }
     // Много удалений разом — почти наверняка сбой загрузки, а не решение
     // человека: не отправляем, перечитываем с сервера.
     if (changes.filter((c) => c.op === "delete").length > 12) {
+      cancelWindow(takeWindowBatch());
       say("Похоже на сбой загрузки — ничего не удалил, перечитываю данные");
       await refresh(true);
       return;
     }
     flying = true;
     const sent = clone(data);
+    const windowBatch=takeWindowBatch();windowSignal(windowBatch,'processing');
     try {
       const answer = await call({ action: "planner_sync", changes }, 60000);
       const late = diff(sent, data);
@@ -460,16 +485,19 @@
       if (answer.errors && answer.errors.length) say(human(answer.errors[0].error));
       if (late.length) again = true;
       unsaved(Boolean(failed.length || late.length));
+      windowSignal(windowBatch,failed.length?'rejected':'confirmed');
+      if(failed.length)retainWindowBatch(windowBatch);
     } catch (error) {
       flying = false;
-      if (error.status === 401) { askReopen(); return; }
-      if (error.message === "no-telegram") { say("Откройте приложение из Telegram"); return; }
+      if (error.status === 401) { windowSignal(windowBatch,'rejected');askReopen(); return; }
+      if (error.message === "no-telegram") { say("Откройте приложение из Telegram");windowSignal(windowBatch,'pending');return; }
       // Нет связи или сервер упал — правку не теряем: плашка «не сохранено»
       // висит, пока не уйдёт, и отправка повторяется сама.
-      if (!error.status || error.status >= 500) { unsaved(true); return; }
+      if (!error.status || error.status >= 500) { unsaved(true);windowSignal(windowBatch,'pending');retainWindowBatch(windowBatch);return; }
       // Сервер правку отклонил — возвращаемся к тому, что на нём есть. Раньше
       // это не срабатывало: refresh выходил, пока стоял флаг «летит».
       say("Сервер не принял правку — вернул как было");
+      windowSignal(windowBatch,'rejected');
       await refresh(true);
     } finally {
       flying = false;
@@ -1062,13 +1090,14 @@
   window.sorokaEnglish = (op, args) => call({ action: "english", op, args: args || {} }, ["rule", "booktr", "bookadd"].includes(op) ? 150000 : ["chat", "speech", "check", "debrief"].includes(op) ? 60000 : 20000);
   window.sorokaPiano = (op, args) => call({ action: "piano", op, args: args || {} }, ["review", "reply", "speak", "speech", "transcribe"].includes(op) ? 60000 : 20000);
   // Спорт (перенос WooSport): состояние, правки путями, импорт программы от ИИ.
+  const sportPhaseRead=()=>{try{return JSON.parse(android?.sportPhaseState?.()||"{}")}catch(_){return {}}};
   window.sorokaSportTimer = {
-    available: Boolean(android && android.sportTimerUpdate),
-    update: state => { try { return android?.sportTimerUpdate?.(JSON.stringify(state)) === true; } catch (_) { return false; } },
-    read: () => { try { return JSON.parse(android?.sportTimerState?.() || "{}"); } catch (_) { return {}; } },
-    stop: () => { try { android?.sportTimerStop?.(); } catch (_) {} },
+    get available(){const state=sportPhaseRead();return state.contract===2&&state.bindingValid===true&&state.capabilities?.phaseOnly===2;},
+    update: state => {try {if(state?.contract!==2)return window.flowSportNativeClock?.publishLegacy?.(state)===true;return android?.sportPhaseUpdate?.(JSON.stringify(state))===true;}catch(_){return false;}},
+    read: sportPhaseRead,
+    stop: expected => {if(!expected||expected.contract!==2)return false;try{return android?.sportPhaseUpdate?.(JSON.stringify({...expected,op:"stop"}))===true}catch(_){return false;}},
   };
-  window.sorokaOpenSport = () => { navigate("sport"); if (typeof spState === "function") { const s = spState(), saved = window.sorokaSportTimer?.read(); s.tab = "training"; if (saved?.date) s.date = saved.date; if (saved?.kind) s.kind = saved.kind; } render(); };
+  window.sorokaOpenSport = target => { if(target)return window.flowSportNativeClock?.open?.(target)===true;navigate("sport");if(typeof spState==="function")spState().tab="training";render();return true; };
   window.sorokaSport = (op, args) => call({ action: "sport", op, args: args || {} }, op === "import" ? 30000 : 20000);
   window.sorokaVpn = (op, args) => call({ action: "vpn", op, args: args || {} }, 30000);
   let pcStateSource = null;
@@ -1483,12 +1512,25 @@
       .finally(()=>endWidgetNoteIntent(intent));
     return true;
   };
+  // Widget + opens the existing ordinary-note editor; it never creates a record itself.
+  window.sorokaCreateNote = () => {
+    if(typeof data==="undefined"||typeof ui==="undefined"||!base||typeof openSavedRecord!=="function")return null;
+    if(document.hidden||(typeof window.sorokaCanPoll==="function"&&!window.sorokaCanPoll()))return null;
+    if(ui.page==="saved"&&ui.savedCategory==="notes"&&ui.sheet?.kind==="saved"&&ui.sheet.category==="notes"&&!ui.sheet.id)return true;
+    navigate("saved");
+    if(ui.page!=="saved"||ui.sheet)return false;
+    ui.savedCategory="notes";ui.savedSection="";ui.savedQuery="";
+    openSavedRecord("notes");
+    return true;
+  };
+
   function openDeepLink() {
     const params = new URLSearchParams(location.search);
     const page = params.get("page") || "";
     const rid = params.get("rid") || "";
     const start=params.get("tgWebAppStartParam")||window.Telegram?.WebApp?.initDataUnsafe?.start_param||"";
     if(!page&&/^note_[1-9]\d{0,18}$/.test(start)){window.sorokaOpenNote("note:"+start.slice(5));return;}
+    if(page==="notes"&&params.get("create")==="1"){window.sorokaCreateNote();return;}
     if(page==="notes"&&rid){window.sorokaOpenNote("note:"+rid);return;}
     if (page === "pc") { window.sorokaOpenPC(); return; }
     if (page === "render") { navigate("render"); render(); return; }
@@ -1753,6 +1795,7 @@
 
     const original = window.save;
     window.save = function () {
+      rememberWindowSave();
       try { localStorage.setItem("soroka-app-search", JSON.stringify(data.searchHistory || [])); } catch (_) {}
       schedule();
       return true;
@@ -1977,17 +2020,19 @@
       send.innerHTML = '<span class="live-spin"></span>';
       const embedded = Boolean(owner.layer.closest(".dm-live-assistant"));
       const requestId = `capture-${++captureSequence}`;
+      const windowResponse={handle:startWindow(owner.field,'processing')};
       const handoff = embedded && owner.assistantHandoff ? { requestId, active: true, detached: false, draft: { text, file, context: ctx }, stop: null } : null;
       if (handoff) { assistantCaptureOwner?.stop?.(); if (assistantCaptureOwner) assistantCaptureOwner.active = false; assistantCaptureOwner = handoff; owner.handoff = handoff; }
       if (embedded) captureSignal({ phase: "submitting", requestId, context: ctx });
       call({ action: "planner_capture", text: text ? (conf.hint || "") + text : file ? (conf.hint || "") : "", ...(file ? { file } : {}) }, file ? 60000 : 20000).then((answer) => {
         if (composer !== owner && !(handoff?.active && handoff.detached && assistantCaptureOwner === handoff)) { say("Предыдущая запись передана в Flow"); return; }
+        windowSignal(windowResponse,'accepted');
         if (embedded) captureSignal({ phase: "accepted", requestId, item: answer.item });
         if (handoff) handoff.draft = null;
         if (composer === owner) closeComposer({ reason: "submitted", embedded });
         const stop = captureProgress(text || (file ? `Файл: ${file.name}` : ""), answer.item, { embedded, requestId, retainOnClose: Boolean(handoff) });
         if (handoff) handoff.stop = () => { handoff.active = false; stop(); };
-      }).catch(() => { if (composer !== owner && !(handoff?.active && handoff.detached && assistantCaptureOwner === handoff)) return; if (composer === owner) { send.disabled = false; send.innerHTML = icon("arrow"); } if (embedded) captureSignal({ phase: "error", requestId, message: "Не отправилось — попробуйте ещё раз", ...(handoff ? { draft: handoff.draft } : {}) }); if (!handoff?.detached) say("Не отправилось — попробуйте ещё раз"); });
+      }).catch(() => { if (composer !== owner && !(handoff?.active && handoff.detached && assistantCaptureOwner === handoff)) return; windowSignal(windowResponse,'rejected');if (composer === owner) { send.disabled = false; send.innerHTML = icon("arrow"); } if (embedded) captureSignal({ phase: "error", requestId, message: "Не отправилось — попробуйте ещё раз", ...(handoff ? { draft: handoff.draft } : {}) }); if (!handoff?.detached) say("Не отправилось — попробуйте ещё раз"); });
     });
     if (preset) {
       if (preset.text) field.value = preset.text;

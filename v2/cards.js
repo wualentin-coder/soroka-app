@@ -191,18 +191,20 @@ function renderKeepLoyalty() {
 
 // ------------------------------------------------------------ код на весь экран
 
-function openLoyaltyFull(item) {
-  if (!item) return;
+function openLoyaltyFull(item, { onClose } = {}) {
+  if (!item) return null;
   const layer = document.createElement("div");
   layer.className = "loyalty-full";
   layer.innerHTML = `<div class="loyalty-full-top">${loyaltyBadge(item)}<b>${esc(item.title)}</b></div>${loyaltyCode(item, true)}<button type="button" class="loyalty-full-close">Закрыть</button>`;
   document.body.appendChild(layer);
   // Сканеру на кассе нужен яркий экран: на телефоне поднимаем яркость, пока код открыт.
   try { window.SorokaAndroid?.brightness?.(1); } catch (_) {}
-  const close = () => { layer.remove(); try { window.SorokaAndroid?.brightness?.(-1); } catch (_) {} document.removeEventListener("keydown", keys, true); };
-  const keys = event => { if (event.key === "Escape") close(); };
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; layer.remove(); try { window.SorokaAndroid?.brightness?.(-1); } catch (_) {} document.removeEventListener("keydown", keys, true); onClose?.(); };
+  const keys = event => { if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); close(); } };
   document.addEventListener("keydown", keys, true);
   layer.querySelector(".loyalty-full-close").addEventListener("click", close);
+  return { layer, close };
 }
 
 // ------------------------------------------------------------ рядом: карта выезжает сама
@@ -232,13 +234,23 @@ function onLoyaltyPosition(pos) {
   const sure = new Set(loyaltyMatches({ ...pos, acc: (Number(pos.acc) || 999) * 2 }).map(card => card.id));
   const ready = [...loyaltyNear.hits.entries()].filter(([cardId, n]) => (n >= 2 || sure.has(cardId)) && !loyaltyNear.dismissed.has(cardId)).map(([cardId]) => cardId);
   try { localStorage.setItem("soroka-loyalty-last", JSON.stringify({ lat: pos.lat, lng: pos.lng, acc: pos.acc, at: Number(pos.at) || Date.now() })); } catch (_) {}
-  if (ready.join() !== loyaltyNear.shown.join()) { loyaltyNear.shown = ready; drawLoyaltyPeek(); }
+  const changed = ready.join() !== loyaltyNear.shown.join();
+  if (changed) loyaltyNear.shown = ready;
+  // A new usable fix renews freshness; a render or an island read never does.
+  if (changed || window.flowCardIsland) drawLoyaltyPeek();
 }
 function drawLoyaltyPeek() {
   if (ui.page !== "saved" || ui.savedCategory !== "cards") walletIntroDone = false;
   let peek = document.getElementById("loyalty-peek");
   const cards = loyaltyNear.shown.map(cardId => savedItem("cards", cardId)).filter(Boolean);
   const root = document.documentElement;
+  if (window.flowCardIsland) {
+    root.classList.remove("loyalty-peek-on");
+    root.style.removeProperty("--peek-h");
+    peek?.remove();
+    window.flowCardIsland.updateWeb(cards, { expiresAt: Number(loyaltyNear.last?.at || 0) + 60000 });
+    return;
+  }
   if (!cards.length || ui.sheet) {
     root.classList.remove("loyalty-peek-on");
     if (peek) { peek.classList.add("leaving"); setTimeout(() => peek?.remove(), 220); }
@@ -310,6 +322,12 @@ function watchLoyaltyPlaces() {
   void tick();
 }
 
+document.addEventListener("flow:cardislandchange", event => {
+  if (event.detail?.reason !== "hide") return;
+  const ids = new Set(event.detail.dismissedIds || []);
+  for (const id of ids) if (loyaltyNear.shown.includes(id)) loyaltyNear.dismissed.add(id);
+  loyaltyNear.shown = loyaltyNear.shown.filter(id => !ids.has(id));
+});
 document.addEventListener("visibilitychange", watchLoyaltyPlaces);
 // Открыли приложение в том же магазине, где были минуту назад, — карта сразу, по прошлому месту.
 setTimeout(() => {

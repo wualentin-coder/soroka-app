@@ -1,7 +1,7 @@
 /* The approved wide island is an overlay. Its animation never changes page layout. */
 (() => {
   'use strict';
-  let active=null,suspended=false;
+  let active=null,suspended=false,fontEpoch=0;
   const root=document.documentElement;
   const reduced=()=>document.hidden||suspended||root.dataset.motion==='off'||window.flowDigital?.reducedMotion?.();
   function shape(width,center,floor,bottom,reveal){
@@ -23,21 +23,39 @@
     if(s?.bar!==bar){
       release();
       s=active={bar,pill,canopy,svg:canopy.querySelector('svg'),fill:canopy.querySelector('.island-canopy-fill'),rim:canopy.querySelector('.island-canopy-rim'),frame:0};
-      s.observer=new ResizeObserver(()=>sync(bar,pill));s.observer.observe(bar);
+      s.sizes=new Map();s.dirty=true;
+      s.observer=new ResizeObserver(entries=>{
+        if(active!==s)return;
+        for(const entry of entries){
+          const before=s.sizes.get(entry.target),size=[entry.contentRect.width,entry.contentRect.height];
+          if(before&&(before[0]!==size[0]||before[1]!==size[1]))s.dirty=true;
+          s.sizes.set(entry.target,size);
+        }
+        sync(bar,s.pill);
+      });s.observer.observe(bar);
       bar.dataset.islandSurface='true';
     }
     const text=pill.querySelector('.island-label');if(!text)return;
+    if(s.text!==text){if(s.text){s.observer.unobserve(s.text);s.sizes.delete(s.text);}s.text=text;s.pill=pill;s.dirty=true;s.observer.observe(text);}
+    const camera=root.dataset.flowNative==='true'&&root.dataset.nativeCamera==='true'&&root.dataset.nativeCameraEdge==='top';
+    const input=JSON.stringify([text.textContent,camera,root.style.getPropertyValue('--native-camera-x'),innerWidth,window.visualViewport?.scale,fontEpoch,
+      bar.className,bar.style.width,bar.style.maxWidth,bar.style.font,bar.style.letterSpacing]);
+    const reveal=pill.dataset.islandOrb==='true'||root.dataset.cameraCalibration==='true'?0:1;
+    if(!s.dirty&&s.input===input&&s.goal?.reveal===reveal)return;
     const width=bar.clientWidth;
-    const camera=root.dataset.flowNative==='true'&&root.dataset.nativeCamera==='true';
     const center=camera?parseFloat(getComputedStyle(root).getPropertyValue('--native-camera-x'))||width/2:width/2;
-    const measure=document.createElement('span');measure.className='island-text-meter';measure.textContent=text.textContent;
-    measure.style.maxWidth=Math.max(80,Math.min(center,width-center)*2-156)+'px';bar.append(measure);
-    const rect=measure.getBoundingClientRect(),labelWidth=Math.ceil(rect.width)+26,labelHeight=Math.max(18,Math.ceil(rect.height));measure.remove();
-    const target={floor:labelWidth+32,bottom:Math.max(82,51+labelHeight+13),reveal:pill.dataset.islandOrb==='true'||root.dataset.cameraCalibration==='true'?0:1};
-    bar.style.setProperty('--island-label-width',labelWidth+'px');bar.style.setProperty('--island-label-height',labelHeight+'px');
-    bar.style.setProperty('--island-tongue-bottom',target.bottom+'px');
-    s.svg.setAttribute('viewBox',`0 0 ${width} 256`);
+    if(s.dirty||s.input!==input||s.width!==width||s.center!==center){
+      const measure=document.createElement('span');measure.className='island-text-meter';measure.textContent=text.textContent;
+      measure.style.maxWidth=Math.max(80,Math.min(center,width-center)*2-156)+'px';bar.append(measure);
+      const rect=measure.getBoundingClientRect();s.labelWidth=Math.ceil(rect.width)+26;s.labelHeight=Math.max(18,Math.ceil(rect.height));measure.remove();
+      s.input=input;s.dirty=false;
+    }
+    const labelWidth=s.labelWidth,labelHeight=s.labelHeight,target={floor:labelWidth+32,bottom:Math.max(82,51+labelHeight+13),reveal};
     if(s.goal&&s.width===width&&s.center===center&&Object.keys(target).every(k=>s.goal[k]===target[k]))return;
+    for(const [property,value] of [['--island-label-width',labelWidth+'px'],['--island-label-height',labelHeight+'px'],['--island-tongue-bottom',target.bottom+'px']]){
+      if(bar.style.getPropertyValue(property)!==value)bar.style.setProperty(property,value);
+    }
+    const viewBox=`0 0 ${width} 256`;if(s.svg.getAttribute('viewBox')!==viewBox)s.svg.setAttribute('viewBox',viewBox);
     cancelAnimationFrame(s.frame);s.frame=0;
     const first=!s.goal,was=s.goal?.reveal;s.goal=target;s.width=width;s.center=center;
     if(first||reduced()){Object.assign(s,target);draw(s);return;}
@@ -53,13 +71,17 @@
     s.frame=requestAnimationFrame(step);
   }
   const refresh=()=>{const bar=document.querySelector('.dm-topbar');sync(bar,bar?.querySelector('.activity-island'));};
+  const geometryChanged=()=>{if(active)active.dirty=true;refresh();};
   window.FlowIslandSurface={sync,shape,refresh};
-  window.addEventListener('flow:windowgeometry',refresh);
-  window.addEventListener('resize',refresh);
+  window.addEventListener('flow:windowgeometry',geometryChanged);
+  window.addEventListener('resize',geometryChanged);
   const syncVisibility=()=>{root.dataset.islandSuspended=String(suspended||document.hidden);};
   window.addEventListener('flow:suspend',()=>{suspended=true;syncVisibility();if(active){active.goal=null;refresh();}});
   window.addEventListener('flow:resume',()=>{suspended=false;syncVisibility();refresh();});
   document.addEventListener('visibilitychange',()=>{syncVisibility();if(active){active.goal=null;refresh();}});
   window.addEventListener('pagehide',release);
-  document.fonts?.ready.then(refresh);
+  const fontsChanged=()=>{fontEpoch++;geometryChanged();};
+  document.fonts?.ready.then(fontsChanged);
+  document.fonts?.addEventListener('loadingdone',fontsChanged);
+  document.fonts?.addEventListener('loadingerror',fontsChanged);
 })();

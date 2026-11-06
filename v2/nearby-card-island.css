@@ -1,0 +1,29 @@
+.nearby-card-island-layer{position:fixed;inset:0;z-index:1200;pointer-events:none;background:none}
+.nearby-card-island-layer[hidden]{display:none!important}
+.nearby-card-island{position:absolute;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:12px;border:1px solid color-mix(in srgb,var(--accent,#75a7ff) 32%,var(--line,#3a3d42));border-radius:22px;background:var(--surface,#171a20);color:var(--text,#f1f1f2);box-shadow:0 10px 28px #0004,0 0 18px color-mix(in srgb,var(--accent,#75a7ff) 6%,transparent);font:500 13px/1.4 Manrope,system-ui,sans-serif;animation:nci-appear 180ms cubic-bezier(.19,1,.22,1)}
+.nearby-card-island:focus{outline:none}
+.nci-header{display:flex;align-items:center;gap:4px;min-height:44px}
+.nci-header h2{flex:1;min-width:0;margin:0;font:700 13px/1.25 Manrope,system-ui,sans-serif}
+.nci-list{display:grid;gap:8px;margin-top:8px}
+.nci-store{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:72px!important;padding:10px;border:1px solid color-mix(in srgb,var(--accent,#75a7ff) 13%,var(--line,#3a3d42))!important;border-radius:18px;background:color-mix(in srgb,var(--surface-raised,#202125) 55%,transparent);color:var(--text,#f1f1f2);text-align:left}
+.nci-store-title{display:grid;gap:4px;min-width:0}
+.nci-store-title strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;font:750 14px/1.2 Manrope,system-ui,sans-serif}
+.nci-store-title small{color:var(--muted,#a1a8b3);font-size:11px;font-weight:500;line-height:1.2;white-space:nowrap}
+.nci-badge{display:block;width:48px;pointer-events:none}
+.nci-badge .loyalty-badge{width:48px;height:48px;border-radius:14px;box-shadow:none}
+.nci-badge .loyalty-badge-mark{width:38px;height:38px;border-radius:10px}
+.nci-badge .loyalty-badge-mark img,.nci-badge .loyalty-badge-mark svg{width:32px;height:32px;object-fit:contain}
+.nearby-card-island button{box-sizing:border-box;min-height:44px;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font:650 12px/1.2 Manrope,system-ui,sans-serif}
+.nearby-card-island button:focus-visible{outline:2px solid var(--accent,#75a7ff);outline-offset:2px}
+.nci-icon{display:grid;place-items:center;width:44px;flex:0 0 44px;padding:0;border-radius:12px;background:transparent;color:var(--muted,#a1a8b3);font-size:24px!important}
+.nci-hide{min-width:44px;padding:0 6px;border-radius:12px;background:transparent;color:var(--muted,#a1a8b3);font-size:11px!important}
+.nci-code-label{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-height:44px;color:var(--text,#f1f1f2);white-space:nowrap;font-size:11px;font-weight:600}
+.nci-code-label svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nci-store:disabled{opacity:.5;cursor:default}
+.nci-owned-full{z-index:1201;background:#fff!important;color:#111!important;filter:none!important}
+.nci-owned-full .loyalty-code{padding:16px;background:#fff!important;color:#111!important;filter:none!important;box-shadow:none!important}
+.nci-owned-full .loyalty-code.bar svg{width:100%;height:auto;aspect-ratio:auto}
+@keyframes nci-appear{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:350px){.nearby-card-island{padding:10px}.nci-store{grid-template-columns:44px minmax(0,1fr) auto;gap:8px;padding:8px;border-radius:16px}.nci-badge,.nci-badge .loyalty-badge{width:44px;height:44px}.nci-badge .loyalty-badge-mark{width:34px;height:34px}.nci-badge .loyalty-badge-mark img,.nci-badge .loyalty-badge-mark svg{width:30px;height:30px}.nci-store-title strong{font-size:13px}.nci-store-title small{font-size:9px}.nci-code-label{gap:3px;font-size:10px}.nci-code-label svg{width:16px;height:16px}}
+@media(max-height:450px){.nearby-card-island{padding:10px}.nci-list{gap:4px;margin-top:4px}.nci-store{grid-template-columns:44px minmax(0,1fr) auto;min-height:56px!important;padding:4px 6px;gap:8px;border-radius:16px}.nci-badge,.nci-badge .loyalty-badge{width:44px;height:44px}.nci-badge .loyalty-badge-mark{width:34px;height:34px}.nci-badge .loyalty-badge-mark img,.nci-badge .loyalty-badge-mark svg{width:30px;height:30px}.nci-store-title{gap:2px}.nci-store-title strong{font-size:13px}.nci-store-title small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.nearby-card-island{animation:none}}

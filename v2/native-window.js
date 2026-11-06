@@ -7,30 +7,62 @@
   let geometry=null,cameraPreference=null;
   try{cameraPreference=JSON.parse(localStorage.getItem(cameraKey)||'null');}catch{}
   const cameraAvailable=()=>root.dataset.flowNative==='true'&&root.dataset.nativeCamera==='true';
-  const nativeCameraY=value=>Number.isFinite(value?.cameraY)&&value.cameraY>0&&value.cameraY<=value.cameraBottom?value.cameraY:null;
+  const nativeCameraY=value=>Number.isFinite(value?.cameraY)&&value.cameraY>=0&&value.cameraY<=value.cameraBottom?value.cameraY:null;
+  const cameraProperties=['--native-camera-x','--native-camera-bottom','--native-camera-center-y','--native-camera-hit-top','--native-camera-hit-left','--native-camera-light-offset','--native-camera-light-offset-x','--native-island-chrome-y'];
+  const rotateCamera=(x,y,width,height,rotation)=>rotation===0?{x,y}:rotation===1?{x:y,y:width-x}:rotation===2?{x:width-x,y:height-y}:{x:height-y,y:x};
+  function cameraReference(value){
+    if(!value||value.cameraAvailable===false||value.fullDisplay===false||!Number.isFinite(value.width)||!Number.isFinite(value.height)||value.width<=0||value.height<=0)return null;
+    const modern=value.cameraAvailable===true;
+    if(modern&&(value.fullDisplay!==true||!Number.isInteger(value.rotation)))return null;
+    const rotation=Number.isInteger(value.rotation)?value.rotation:0;
+    if(rotation<0||rotation>3)return null;
+    const x=value.cameraX,y=nativeCameraY(value);
+    if(!Number.isFinite(x)||x<=0||x>=value.width||y===null||y<=0||y>=value.height)return null;
+    if(!modern&&(rotation!==0||value.top<=0||value.width>value.height))return null;
+    const bounds=modern?{left:value.cameraLeft,top:value.cameraTop,right:value.cameraRight,bottom:value.cameraBottom}:{left:0,top:0,right:value.width,bottom:value.cameraBottom};
+    if(!Object.values(bounds).every(Number.isFinite)||bounds.left<0||bounds.top<0||bounds.right>value.width||bounds.bottom>value.height||bounds.right<=bounds.left||bounds.bottom<=bounds.top||x<bounds.left||x>=bounds.right||y<bounds.top||y>=bounds.bottom)return null;
+    const naturalWidth=modern?value.cameraNaturalWidth:value.width,naturalHeight=modern?value.cameraNaturalHeight:value.height;
+    const naturalX=modern?value.cameraNaturalX:x,naturalY=modern?value.cameraNaturalY:y,naturalBottom=modern?value.cameraNaturalBottom:value.cameraBottom;
+    if(![naturalWidth,naturalHeight,naturalX,naturalY,naturalBottom].every(Number.isFinite)||naturalWidth<=0||naturalHeight<=0||naturalX<0||naturalX>=naturalWidth||naturalY<0||naturalY>=naturalHeight||naturalBottom<=naturalY||naturalBottom>naturalHeight)return null;
+    if(value.width!==(rotation%2?naturalHeight:naturalWidth)||value.height!==(rotation%2?naturalWidth:naturalHeight))return null;
+    const projected=rotateCamera(naturalX,naturalY,naturalWidth,naturalHeight,rotation);
+    if(Math.abs(projected.x-x)>.01||Math.abs(projected.y-y)>.01)return null;
+    const edge=modern?value.cameraEdge:'top';
+    if(!['top','right','bottom','left'].includes(edge)||!({top:bounds.top===0,right:bounds.right===value.width,bottom:bounds.bottom===value.height,left:bounds.left===0}[edge]))return null;
+    return {x,y,bounds,rotation,naturalWidth,naturalHeight,naturalX,naturalY,naturalBottom,edge};
+  }
   const cameraProfile=value=>{
-    const profile=[value.width,value.cameraX,value.cameraBottom].map(Math.round).join(':'),y=nativeCameraY(value);
+    const ref=cameraReference(value),profile=[ref?.naturalWidth??value.width,ref?.naturalX??value.cameraX,ref?.naturalBottom??value.cameraBottom].map(Math.round).join(':'),y=ref?.naturalY??nativeCameraY(value);
     return y===null?profile:profile+':y='+y.toFixed(3);
   };
+  function cameraPoint(){
+    const ref=cameraReference(geometry);if(!ref)return null;
+    const saved=cameraPreference?.version===1&&cameraPreference.profile===cameraProfile(geometry)&&Number.isFinite(cameraPreference.y)&&cameraPreference.y>=0&&cameraPreference.y<=.15?cameraPreference.y*ref.naturalWidth:null;
+    const corrected=saved===null?ref:rotateCamera(ref.naturalX,saved,ref.naturalWidth,ref.naturalHeight,ref.rotation);
+    // Keep the user's matching portrait calibration through rotation, but never outside the actual cutout.
+    const point=corrected.x>0&&corrected.y>0&&corrected.x<geometry.width&&corrected.y<geometry.height&&corrected.x>=ref.bounds.left&&corrected.x<ref.bounds.right&&corrected.y>=ref.bounds.top&&corrected.y<ref.bounds.bottom?corrected:ref;
+    const scale=geometry.width/innerWidth;
+    return {x:point.x/scale,y:point.y/scale,ref};
+  }
   function cameraY(){
-    if(!geometry)return 27;
-    const saved=cameraPreference?.version===1&&cameraPreference.profile===cameraProfile(geometry)&&Number.isFinite(cameraPreference.y)&&cameraPreference.y>=0&&cameraPreference.y<=.15?cameraPreference.y*innerWidth:null;
-    // Use the native camera centre when available. The protected rectangle is
-    // only a fallback; a manual correction belongs to this geometry profile.
-    const precise=nativeCameraY(geometry);
-    const initial=precise!==null?precise*innerWidth/geometry.width:Number.isFinite(geometry.cameraBottom)&&geometry.cameraBottom>0?geometry.cameraBottom*innerWidth/geometry.width/2:27;
-    return Math.max(8,Math.min(44,saved??initial));
+    return cameraPoint()?.y??27;
   }
   function paintCamera(){
     if(!cameraAvailable()||!geometry)return;
-    const y=cameraY(),hitTop=Math.max(0,y-22);
+    const point=cameraPoint();if(!point)return;
+    const {x,y,ref}=point,hitTop=Math.max(0,Math.min(innerHeight-44,y-22)),hitLeft=Math.max(0,Math.min(innerWidth-44,x-22));
+    root.style.setProperty('--native-camera-x',x+'px');
+    root.style.setProperty('--native-camera-bottom',(geometry.cameraBottom*innerWidth/geometry.width)+'px');
     root.style.setProperty('--native-camera-center-y',y+'px');
     root.style.setProperty('--native-camera-hit-top',hitTop+'px');
+    root.style.setProperty('--native-camera-hit-left',hitLeft+'px');
+    root.style.setProperty('--native-camera-light-offset-x',(x-hitLeft)+'px');
     root.style.setProperty('--native-camera-light-offset',(y-hitTop)+'px');
+    root.style.setProperty('--native-island-chrome-y',(ref.edge==='top'?y:22)+'px');
     const range=document.querySelector('[data-native-camera-y]');if(range)range.value=String(y);
   }
   function setCameraY(y){
-    if(!cameraAvailable()||!geometry||!Number.isFinite(y))return;
+    if(!cameraAvailable()||!geometry||cameraReference(geometry)?.rotation!==0||!Number.isFinite(y))return;
     cameraPreference={version:1,profile:cameraProfile(geometry),y:Math.max(8,Math.min(44,y))/innerWidth};
     try{localStorage.setItem(cameraKey,JSON.stringify(cameraPreference));}catch{if(typeof toast==='function')toast('Положение изменено, но не удалось сохранить его на устройстве');}
     paintCamera();
@@ -41,7 +73,7 @@
     const button=document.querySelector('[data-native-camera-open]');if(button)button.setAttribute('aria-expanded',String(on));
   }
   function mountCameraControl(){
-    if(!cameraAvailable()||root.dataset.flowDesign!=='magic'||typeof ui==='undefined'||ui.page!=='settings'){
+    if(!cameraAvailable()||cameraReference(geometry)?.rotation!==0||root.dataset.flowDesign!=='magic'||typeof ui==='undefined'||ui.page!=='settings'){
       previewCamera(false);document.querySelector('.native-camera-calibration')?.remove();return;
     }
     const host=document.querySelector('.dv-visual-preferences');if(!host||host.querySelector('.native-camera-calibration'))return;
@@ -97,20 +129,23 @@
   }
   new MutationObserver(schedule).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
   function update(value=window.flowNativeInsets){
-    if(!value||!Number.isFinite(value.width)||value.width<=0)return;
+    const clearCamera=()=>{root.dataset.nativeCamera='false';delete root.dataset.nativeCameraEdge;for(const property of cameraProperties)root.style.removeProperty(property);previewCamera(false);};
+    if(!value||!Number.isFinite(value.width)||value.width<=0){clearCamera();return;}
     const scale=value.width/innerWidth;
-    if(!Number.isFinite(scale)||scale<=0)return;
+    if(!Number.isFinite(scale)||scale<=0){clearCamera();return;}
     geometry=value;
     root.dataset.flowNative='true';
-    root.dataset.nativeCamera=String(value.cameraX>=0&&value.top>0);
-    for(const edge of ['top','right','bottom','left'])root.style.setProperty('--native-safe-'+edge,Math.max(0,value[edge]/scale)+'px');
+    const expectedHeight=(value.height-Math.max(0,value.ime||0))/scale;
+    const viewportMatches=Number.isFinite(expectedHeight)&&Math.abs(innerHeight-expectedHeight)<=Math.max(8,innerHeight*.025);
+    const reference=viewportMatches?cameraReference(value):null;
+    root.dataset.nativeCamera=String(Boolean(reference));
+    if(reference)root.dataset.nativeCameraEdge=reference.edge;else clearCamera();
+    for(const edge of ['top','right','bottom','left'])root.style.setProperty('--native-safe-'+edge,(Number.isFinite(value[edge])?Math.max(0,value[edge]/scale):0)+'px');
     for(const [name,key] of [['top-left','cornerTopLeft'],['top-right','cornerTopRight'],['bottom-right','cornerBottomRight'],['bottom-left','cornerBottomLeft']]){
       const radius=value[key],property='--native-corner-'+name;
       if(typeof radius==='number'&&Number.isFinite(radius)&&radius>=0)root.style.setProperty(property,(radius/scale)+'px');
       else root.style.removeProperty(property);
     }
-    root.style.setProperty('--native-camera-x',(value.cameraX/scale)+'px');
-    root.style.setProperty('--native-camera-bottom',(value.cameraBottom/scale)+'px');
     paintCamera();
     if(!cameraAvailable())previewCamera(false);
     schedule();

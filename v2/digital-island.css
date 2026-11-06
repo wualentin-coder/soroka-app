@@ -1,6 +1,6 @@
 /* The camera, wordmark and settings share one optical axis. Activity overlays never move content. */
 html[data-flow-design=magic] #app .dm-topbar{background:color-mix(in srgb,var(--page) 76%,transparent);backdrop-filter:none}
-html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{height:48px;min-height:48px;padding:0 28px;align-items:flex-start;border-bottom:0;border-radius:22px 22px 0 0;background:transparent;backdrop-filter:none;overflow:visible;--island-chrome-y:var(--native-camera-center-y,22px)}
+html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{height:48px;min-height:48px;padding:0 28px;align-items:flex-start;border-bottom:0;border-radius:22px 22px 0 0;background:transparent;backdrop-filter:none;overflow:visible;--island-chrome-y:var(--native-island-chrome-y,22px)}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.dm-mobile-brand,.dm-toolbar,.dm-icon-button){height:44px;min-height:44px;position:relative;z-index:4}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .dm-toolbar{position:static}
 html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.dm-mobile-brand,.dm-icon-button){top:calc(var(--island-chrome-y) - 22px)}
@@ -24,6 +24,27 @@ html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-t
 html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] :is(.island-canopy,.island-label,.island-section-symbol){opacity:0!important;transition:none}
 html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island{top:var(--native-camera-hit-top,0px);width:44px;height:44px}
 html[data-camera-calibration=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-orb{top:var(--native-camera-light-offset,21px)}
+/* Current-display camera coordinates also work at the side and bottom edges. */
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb=true]{position:fixed;left:var(--native-camera-hit-left);top:var(--native-camera-hit-top);transform:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill[data-island-orb=true] .island-orb{left:var(--native-camera-light-offset-x);top:var(--native-camera-light-offset)}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic]:not([data-native-camera-edge=top]) #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb]{position:fixed;left:var(--native-camera-hit-left);top:var(--native-camera-hit-top);width:44px;min-width:44px;max-width:44px;height:44px;min-height:44px;transform:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic]:not([data-native-camera-edge=top]) #app .dm-topbar[data-island-surface=true] :is(.island-canopy,.island-label,.island-section-symbol){display:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic]:not([data-native-camera-edge=top]) #app .dm-topbar[data-island-surface=true] .island-orb{left:var(--native-camera-light-offset-x);top:var(--native-camera-light-offset);opacity:1;transform:translate(-50%,-50%)}
+/* A fullscreen practice keeps only the physical light, without reserving a header row. */
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-topbar{display:block;position:fixed;inset:0;height:0;min-height:0;padding:0;background:transparent;border:0;pointer-events:none;z-index:calc(var(--pn-player-z,500) + 1)}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-topbar>:not(.dm-toolbar):not(.head-pill),html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-toolbar>:not(.head-pill){display:none!important}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-topbar .dm-toolbar{display:block;position:static;height:0;min-height:0;padding:0;pointer-events:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-topbar .head-pill[data-island-orb]{position:fixed;left:var(--native-camera-hit-left);top:var(--native-camera-hit-top);width:44px;min-width:44px;max-width:44px;height:44px;min-height:44px;transform:none;pointer-events:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-topbar .head-pill :is(.island-label,.island-section-symbol){display:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic] body.piano-playing #app .dm-topbar .island-orb{left:var(--native-camera-light-offset-x);top:var(--native-camera-light-offset);opacity:1;transform:translate(-50%,-50%)}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic]:not([data-native-camera-edge=top]) body.piano-page #app .dm-topbar .head-pill{pointer-events:none}
+html[data-flow-native=true][data-native-camera=true][data-flow-design=magic]:not([data-native-camera-edge=top]) body.piano-page #app .dm-topbar .island-orb:before{background:transparent;border-color:rgba(var(--accent-rgb),.65);box-shadow:0 0 12px rgba(var(--accent-rgb),.32),inset 0 0 5px rgba(var(--accent-rgb),.12)}
+/* A missing/ambiguous native cutout has no surrogate camera circle at a guessed point. */
+html[data-flow-native=true][data-native-camera=false][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-orb{display:none}
+html[data-flow-native=true][data-native-camera=false][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .island-canopy{display:none}
+html[data-flow-native=true][data-native-camera=false][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill.activity-island[data-island-orb]{left:50%;top:0;width:var(--island-label-width,120px);min-width:112px;max-width:calc(100vw - 156px);height:44px;min-height:44px;transform:translateX(-50%);background:var(--surface);border:1px solid var(--line);border-radius:99px;visibility:visible;pointer-events:auto}
+html[data-flow-native=true][data-native-camera=false][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill .island-section-symbol{left:12px;top:13px;opacity:1;transform:none;transition:none}
+html[data-flow-native=true][data-native-camera=false][data-flow-design=magic] #app .dm-topbar[data-island-surface=true] .head-pill .island-label{left:38px;right:12px;top:13px;width:auto;max-width:none;height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:1;transform:none;transition:none}
 @media(max-width:359px){html[data-flow-design=magic] #app .dm-topbar[data-island-surface=true]{padding-left:22px;padding-right:22px}}
 
 html[data-flow-design=magic] .island-orb-progress{position:absolute;left:50%;top:50%;width:36px;height:36px;max-width:none;overflow:visible;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none;opacity:.85;display:none}
@@ -34,6 +55,11 @@ html[data-flow-design=magic] .head-pill[data-island-orb][data-activity=listen] .
 html[data-flow-design=magic] .head-pill:is([data-activity=render],[data-activity=timer],[data-activity=pause]) .island-orb:before{animation:none}
 html[data-flow-design=magic] .head-pill[data-activity=think] .island-orb:after{content:'';position:absolute;inset:-5px;border:1px solid rgba(var(--accent-rgb),.12);border-top-color:rgba(var(--accent-rgb),.85);border-radius:50%;animation:island-work-orbit 2.8s linear infinite;pointer-events:none}
 @keyframes island-work-orbit{to{transform:rotate(360deg)}}
+/* Directional work light stays within the existing 44px island; percentage is source-owned. */
+html[data-flow-design=magic] .head-pill[data-activity=render] .island-orb:after{content:'';position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px;border-radius:50%;background:var(--energy-hot,var(--accent));box-shadow:0 0 5px rgba(var(--accent-rgb),.6);transform:rotate(0deg) translateY(-20px);animation:island-render-glint 3.2s linear infinite;pointer-events:none;will-change:transform}
+@keyframes island-render-glint{to{transform:rotate(360deg) translateY(-20px)}}
+html[data-motion=off] .head-pill[data-activity=render] .island-orb:after,html[data-island-suspended=true] .head-pill[data-activity=render] .island-orb:after,.digital-hidden .head-pill[data-activity=render] .island-orb:after{display:none}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .head-pill[data-activity=render] .island-orb:after{display:none}}
 html[data-camera-calibration=true][data-flow-design=magic] .island-orb-progress{display:none!important}
 html[data-camera-calibration=true] .island-orb:after{display:none}
 html[data-motion=off] .island-orb:after,.digital-hidden .island-orb:after{animation:none!important}

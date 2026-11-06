@@ -410,3 +410,15 @@ html[data-flow-design=magic] .dc2-window>#saved-form{display:flex;flex-direction
 html[data-flow-design=magic] .dc2-window-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scroll-padding:20px;padding:0 2px 12px}
 html[data-flow-design=magic] .dc2-window-actions{position:relative;flex:none;background:var(--surface);z-index:2}
 
+
+/* A real owning operation spends one finite echo; never a page-wide scene. */
+.flow-surface-response{position:absolute;inset:0;z-index:5;border-radius:inherit;pointer-events:none;user-select:none;contain:layout style}
+.flow-surface-response>i{display:block;position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transform-origin:center}
+.flow-response-contour{border:1px solid rgba(var(--accent-rgb),.82);box-shadow:inset 0 0 30px rgba(var(--accent-rgb),.15),0 0 16px rgba(var(--accent-rgb),.12)}
+.flow-response-echo{background:radial-gradient(ellipse at var(--surface-x,50%) var(--surface-y,24%),rgba(var(--accent-rgb),.18),transparent 70%)}
+[data-window-phase=queued]>.flow-surface-response>.flow-response-contour,[data-window-phase=pending]>.flow-surface-response>.flow-response-contour{border-color:rgba(var(--accent-rgb),.55);box-shadow:inset 0 0 18px rgba(var(--accent-rgb),.08)}
+[data-window-phase=accepted]>.flow-surface-response>.flow-response-contour{border-color:rgba(var(--accent-rgb),.7);box-shadow:inset 0 0 22px rgba(var(--accent-rgb),.12)}
+[data-window-phase=confirmed]>.flow-surface-response>.flow-response-contour{border-color:rgba(var(--accent-rgb),1);box-shadow:inset 0 0 42px rgba(var(--accent-rgb),.24),0 0 18px rgba(var(--accent-rgb),.16)}
+[data-window-phase=rejected]>.flow-surface-response>.flow-response-contour{border-width:2px;border-color:rgba(var(--accent-rgb),.95);box-shadow:inset 0 0 24px rgba(var(--accent-rgb),.18)}
+html[data-motion=off] .flow-surface-response,.digital-hidden .flow-surface-response{display:none}
+@media(prefers-reduced-motion:reduce){html:not([data-motion-mode=on]) .flow-surface-response{display:none}}

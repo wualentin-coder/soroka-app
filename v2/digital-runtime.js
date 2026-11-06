@@ -6,7 +6,7 @@
   const root = document.documentElement;
   const base = new URL('.', document.currentScript?.src || document.baseURI);
   const shadowURL = new URL('digital-windows.css', base);
-  const windowsVersion = '1c884e58e0';
+  const windowsVersion = 'de11e14ebb';
   shadowURL.searchParams.set('v', windowsVersion.startsWith('__') ? new URL(document.currentScript?.src || document.baseURI).searchParams.get('v') || '20261103-magic-1' : windowsVersion);
   const storageKey = 'flow-digital-runtime-v1';
   const query = matchMedia('(prefers-reduced-motion: reduce)');

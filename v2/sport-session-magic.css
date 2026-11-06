@@ -1,0 +1,28 @@
+/* Flow note-editor material: quiet working typography, light belongs to an action. */
+html[data-flow-design="magic"] .ss-page{background:linear-gradient(155deg,var(--surface),var(--page));--ss-border:var(--line)}
+html[data-flow-design="magic"] .ss-page .ss-footer{background:transparent}
+html[data-flow-design="magic"] .ss-page .ss-route i.active{box-shadow:none}
+html[data-flow-design="magic"] .ss-page .ss-approach b{color:var(--text);font-size:18px;font-weight:600}
+html[data-flow-design="magic"] .ss-page .ss-timer-line{gap:12px}
+.ss-magic-face{position:relative;flex:1;min-width:0;min-height:168px;isolation:isolate}
+.ss-magic-face>.ss-timer-material,.ss-magic-face>.ss-timer-response{position:absolute;inset:0 -36px;z-index:-1;pointer-events:none;border-radius:50%}
+.ss-timer-material{background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--accent) 8%,var(--surface-raised)),transparent 70%);opacity:.75}
+.ss-timer-material:after{content:'';position:absolute;inset:auto 14% 22px;height:18px;border-radius:50%;border-bottom:1px solid color-mix(in srgb,var(--accent) 13%,transparent)}
+.ss-timer-response{background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 70%);opacity:0}
+html[data-flow-design="magic"] .ss-page .ss-magic-face>.ss-timer-tap{width:100%;height:168px;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;border-radius:24px}
+html[data-flow-design="magic"] .ss-page .ss-magic-face .ss-timer-tap b{font-family:Manrope,sans-serif;font-size:clamp(70px,22vw,90px);font-weight:450;letter-spacing:-.045em;line-height:1.05;color:var(--text);text-shadow:none}
+html[data-flow-design="magic"] .ss-page .ss-magic-face[data-long="true"] .ss-timer-tap b{font-size:clamp(46px,14vw,68px)}
+.ss-magic-face[data-paused="true"] .ss-timer-material{opacity:.3}
+html[data-flow-design="magic"] .ss-page .ss-magic-face[data-paused="true"] .ss-timer-tap b{color:var(--muted)}
+html[data-flow-design="magic"] .ss-page .ss-timer-adjust{background:transparent;color:var(--muted);border:1px solid var(--line);box-shadow:none;transition:background .18s,color .18s}
+html[data-flow-design="magic"] .ss-page .ss-timer-adjust:active{background:var(--accent-soft);color:var(--accent)}
+html[data-flow-design="magic"] .ss-page .ss-main.ss-has-flow{position:relative;isolation:isolate}
+html[data-flow-design="magic"] .ss-page .ss-main.ss-rest:before{content:none}
+html[data-flow-design="magic"] .ss-page .ss-primary{background:var(--accent-soft);color:var(--accent);border:1px solid var(--line);box-shadow:none}
+.ss-flow-column{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+.ss-flow-volume{position:absolute;inset:0;transform-origin:50% 100%;overflow:hidden;mask-image:linear-gradient(180deg,transparent,#000 8%,#000 80%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 6%,transparent),color-mix(in srgb,var(--accent) 2%,transparent) 35%,transparent 90%)}
+.ss-flow-refraction{position:absolute;inset:-5px -12% auto;height:10px;pointer-events:none;background:linear-gradient(90deg,transparent 15%,color-mix(in srgb,var(--text) 12%,transparent) 37%,color-mix(in srgb,var(--accent) 30%,transparent) 53%,transparent 80%)}
+.ss-flow-surface{position:absolute;inset:0;pointer-events:none}
+.ss-flow-surface:before{content:'';position:absolute;inset:-6px 0 auto;height:12px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 20%,transparent) 28%,color-mix(in srgb,var(--accent) 45%,transparent) 50%,color-mix(in srgb,var(--accent) 16%,transparent) 72%,transparent)}
+.ss-flow-surface:after{content:'';position:absolute;inset:-.5px 6% auto;height:1.5px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 75%,transparent) 22%,color-mix(in srgb,var(--accent) 82%,var(--text)) 50%,color-mix(in srgb,var(--accent) 75%,transparent) 78%,transparent)}
+@media(max-width:350px){html[data-flow-design="magic"] .ss-page .ss-timer-line{gap:8px}html[data-flow-design="magic"] .ss-page .ss-magic-face .ss-timer-tap b{font-size:68px}html[data-flow-design="magic"] .ss-page .ss-magic-face[data-long="true"] .ss-timer-tap b{font-size:43px}.ss-magic-face,.ss-page .ss-magic-face>.ss-timer-tap{min-height:146px;height:146px}.ss-magic-face>.ss-timer-material,.ss-magic-face>.ss-timer-response{inset:0 -20px}}
