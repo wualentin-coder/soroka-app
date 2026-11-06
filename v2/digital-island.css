@@ -55,6 +55,9 @@ html[data-flow-design=magic] .head-pill[data-island-orb][data-activity=listen] .
 html[data-flow-design=magic] .head-pill:is([data-activity=render],[data-activity=timer],[data-activity=pause]) .island-orb:before{animation:none}
 html[data-flow-design=magic] .head-pill[data-activity=think] .island-orb:after{content:'';position:absolute;inset:-5px;border:1px solid rgba(var(--accent-rgb),.12);border-top-color:rgba(var(--accent-rgb),.85);border-radius:50%;animation:island-work-orbit 2.8s linear infinite;pointer-events:none}
 @keyframes island-work-orbit{to{transform:rotate(360deg)}}
+/* Small optical reflection, not a full-screen repaint or a substitute progress ring. */
+html[data-flow-design=magic] .head-pill:not([data-activity=render]):not([data-activity=think]):not([data-activity=pause]):not([data-activity=error]):not([data-activity=disconnected]) .island-orb:after{content:'';position:absolute;inset:-2px;border:1px solid transparent;border-top-color:var(--energy-hot,var(--accent));border-right-color:rgba(var(--accent-rgb),.25);border-radius:50%;opacity:.72;pointer-events:none;animation:island-camera-reflection 6s linear infinite;}
+@keyframes island-camera-reflection{0%{transform:rotate(-35deg);opacity:.35}50%{opacity:.85}100%{transform:rotate(325deg);opacity:.35}}
 /* Directional work light stays within the existing 44px island; percentage is source-owned. */
 html[data-flow-design=magic] .head-pill[data-activity=render] .island-orb:after{content:'';position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px;border-radius:50%;background:var(--energy-hot,var(--accent));box-shadow:0 0 5px rgba(var(--accent-rgb),.6);transform:rotate(0deg) translateY(-20px);animation:island-render-glint 3.2s linear infinite;pointer-events:none;will-change:transform}
 @keyframes island-render-glint{to{transform:rotate(360deg) translateY(-20px)}}

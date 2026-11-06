@@ -148,7 +148,7 @@ html[data-flow-native=true] .dm-live-assistant .fa-screen-energy:after{animation
 @media(max-height:580px){.dm-live-assistant:not([data-keyboard=true]) .fa-controls{grid-template-columns:44px 68px 44px;gap:12px;margin-top:12px}.dm-live-assistant:not([data-keyboard=true]) .fa-controls .fa-mic{width:68px;height:68px}.fa-control-hint{margin-top:9px}.dm-live-assistant:not([data-keyboard=true]) .fa-add-panel{bottom:112px}}
 
 /* One fixed dock; all transcript, answer and editing content stays above it. */
-html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]{display:flex;flex-direction:column;align-items:center;gap:12px;padding:max(16px,var(--native-safe-top,0px),env(safe-area-inset-top)) 16px max(16px,var(--native-safe-bottom,0px),env(safe-area-inset-bottom));overflow:hidden;box-sizing:border-box;}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]{display:flex;flex-direction:column;align-items:center;gap:12px;padding:max(16px,var(--native-safe-top,0px),env(safe-area-inset-top)) 16px calc(max(var(--native-safe-bottom,0px),env(safe-area-inset-bottom)) + 28px);overflow:hidden;box-sizing:border-box;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-stage{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;flex:1;min-height:0;height:auto;width:min(570px,100%);margin:0;padding:20px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;overflow:visible;pointer-events:auto;text-align:center;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-stage:before{content:'';flex:1 0 0;min-height:0;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]:is(.fa-context-open,:has(.fa-result:not([hidden])),:has(.fa-request:not([hidden]))) .fa-stage{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;}
@@ -188,8 +188,9 @@ html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] :is(.fa-status
 html[data-flow-native=true][data-flow-design=magic] .dm-live-assistant[data-layout=dock]{--fa-screen-corners:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) var(--native-corner-bottom-right,36px) var(--native-corner-bottom-left,36px);}
 html[data-flow-native=true][data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-screen-energy{inset:0;border-radius:var(--fa-screen-corners);}
 
-/* A calm static scrim remains readable without cross-window blur. */
-html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]{background:color-mix(in srgb,var(--surface) 66%,transparent);backdrop-filter:none;}
+/* One fixed glass layer; never animate viewport blur during entry or IME changes. */
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]{background:color-mix(in srgb,var(--surface) 58%,transparent);backdrop-filter:blur(8px) saturate(115%);-webkit-backdrop-filter:blur(8px) saturate(115%);}
+html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-keyboard=true]{padding-bottom:18px;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock]:has(:is(.fa-result,.fa-request):not([hidden])){background:color-mix(in srgb,var(--surface) 82%,transparent);}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-aura{display:none;animation:none;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-screen-energy,html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-screen-energy:after{animation:none;}

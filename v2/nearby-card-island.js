@@ -141,7 +141,8 @@
       if (!control) return;
       event.preventDefault(); event.stopPropagation();
       const action = control.dataset.cardIsland;
-      if (action === 'close') close();
+      if (action === 'assistant') { const from = anchor; close({restoreFocus:false,reason:'assistant'}); window.flowAssistant?.open?.(from); }
+      else if (action === 'close') close();
       else if (action === 'hide') close({hide:true});
       else if (action === 'card') {
         sweep(); if (!entries.length) return;
@@ -172,7 +173,7 @@
     const key = JSON.stringify(rows.map(card => [card.id,card.title,card.badge,card.hasCode]));
     if (renderKey !== key) {
       const focused = panel.contains(document.activeElement) ? {action:document.activeElement.dataset.cardIsland,id:document.activeElement.dataset.cardId} : null;
-      panel.innerHTML = `<div class="nci-header"><h2 id="nearby-card-title">Скидочные карты рядом</h2><button type="button" class="nci-hide" data-card-island="hide">Скрыть</button><button type="button" class="nci-icon" data-card-island="close" aria-label="Свернуть скидочные карты">×</button></div><div class="nci-list">${rows.map(card => `<button type="button" class="nci-store" data-card-island="card" data-card-id="${escape(card.id)}" aria-label="${card.hasCode ? 'Открыть код скидочной карты' : 'Нет сохранённого кода'} ${escape(card.title)}" ${card.hasCode ? '' : 'disabled'}><span class="nci-badge" aria-hidden="true">${card.badge}</span><span class="nci-store-title"><strong>${escape(card.title)}</strong><small>Скидочная карта</small></span><span class="nci-code-label">${card.hasCode ? 'Открыть код' : 'Нет кода'}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5v4m10-4h4v4M5 15v4h4m10-4v4h-4"/></svg></span></button>`).join('')}</div>`;
+      panel.innerHTML = `<div class="nci-header"><h2 id="nearby-card-title">Скидочные карты рядом</h2><button type="button" class="nci-hide" data-card-island="hide">Скрыть</button><button type="button" class="nci-assistant" data-card-island="assistant" aria-label="Открыть ассистента Flow"><span aria-hidden="true">✦</span></button><button type="button" class="nci-icon" data-card-island="close" aria-label="Свернуть скидочные карты">×</button></div><div class="nci-list">${rows.map(card => `<button type="button" class="nci-store" data-card-island="card" data-card-id="${escape(card.id)}" aria-label="${card.hasCode ? 'Открыть код скидочной карты' : 'Нет сохранённого кода'} ${escape(card.title)}" ${card.hasCode ? '' : 'disabled'}><span class="nci-badge" aria-hidden="true">${card.badge}</span><span class="nci-store-title"><strong>${escape(card.title)}</strong><small>Скидочная карта</small></span><span class="nci-code-label">${card.hasCode ? 'Открыть код' : 'Нет кода'}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5v4m10-4h4v4M5 15v4h4m10-4v4h-4"/></svg></span></button>`).join('')}</div>`;
       renderKey = key;
       if (focused?.action) [...panel.querySelectorAll('[data-card-island]')].find(node => node.dataset.cardIsland === focused.action && node.dataset.cardId === focused.id)?.focus({preventScroll:true});
     }
@@ -220,7 +221,7 @@
   },true);
   window.addEventListener('keydown', event => {
     if (mode === 'closed' || nativeSource()) return;
-    if (event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    if (mode === 'full' && event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       const scope = mode === 'full' ? full?.layer : panel;
       const controls = [...scope?.querySelectorAll('button,a[href],input,select,textarea,[tabindex]') || []].filter(node => !node.disabled && node.tabIndex >= 0 && node.getClientRects().length);
       if (!controls.length) return;
