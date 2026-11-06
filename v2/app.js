@@ -280,8 +280,6 @@ const navigation = [
   ["docs", "Документы", "file"],
   ["archive", "Архив", "archive"],
   ["settings", "Настройки", "settings"],
-  ["inbox", "Входящие", "inbox"],
-  ["metrics", "Показатели", "chart"],
   ["more", "Все разделы", "overview"]
 ];
 const mobileNavigation = [["today", "План", "today"], navigation[3], navigation[4], ["more", "Ещё", "overview"]];
