@@ -141,6 +141,7 @@ async function insertNoteImage(file) {
     if (!url) throw new Error("upload");
     if (range) { selection.removeAllRanges(); selection.addRange(range); }
     document.execCommand("insertHTML", false, `<figure class="note-image"><img src="${esc(url)}" alt="" loading="lazy"></figure><p><br></p>`);
+    window.syncRichNote?.();
   } catch { notifyNote("Не удалось вставить картинку"); }
 }
 
