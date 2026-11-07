@@ -143,6 +143,8 @@
 .note-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
 .note-tags span { color: var(--muted); font-size: 12px; }
 .note-tags span::before { content: "#"; color: var(--accent); }
+.note-image { margin: 14px 0; }
+.note-image img { display: block; max-width: 100%; height: auto; border-radius: 14px; background: var(--surface-soft); }
 .note-history { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); }
 .note-history summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 800; }
 .note-history summary span { margin-left: 5px; color: var(--subtle); }
