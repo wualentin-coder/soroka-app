@@ -101,12 +101,13 @@ function renderNoteSheet(item) {
   if (magic) { const form = composition.content.querySelector("form"), meta = form.querySelector(".note-meta"); form.querySelector(".note-title-input").after(meta); if (item) meta.querySelector(".note-editor-details").insertAdjacentHTML("beforeend", `<button class="text-button danger dc2-note-delete" type="button" data-action="saved-delete">${icon("trash", "icon-sm")}Удалить заметку</button>`); }
   const format = document.createElement("template"); format.innerHTML = noteFormatBar();
   if (magic) {
-    format.content.querySelector("[data-note-voice]")?.remove();
     const paths={h:'M5 5V21M16 5V21M5 13H16M20 7H27M23.5 7V21',ul:'M10 8H27M10 16H27M10 24H24M4 8H4.1M4 16H4.1M4 24H4.1',ol:'M12 8H28M12 16H28M12 24H26M4 4V11M3 4H4M2 16C2 13 7 13 7 16L2 20H7M2 24H6L3 27H7',check:'M3 9L6 12L11 5M15 9H28M3 23L6 26L11 19M15 23H28',bold:'M9 5H17C25 5 25 15 17 15H9ZM9 15H18C27 15 27 27 18 27H9Z',table:'M4 5H28V27H4ZM4 12H28M4 20H28M12 5V27M20 5V27',italic:'M14 5H24M8 27H18M21 5L11 27',strikeThrough:'M5 16H27M10 10C10 6 22 6 22 10C22 13 18 14 16 16C14 18 10 19 10 22C10 26 22 26 22 22',quote:'M12 9H5V15H9C9 19 8 22 5 24M27 9H20V15H24C24 19 23 22 20 24',undo:'M12 9L5 16L12 23M5 16H20C24 16 27 19 27 23',redo:'M20 9L27 16L20 23M27 16H12C8 16 5 19 5 23'};
     for(const button of format.content.querySelectorAll('[data-note-cmd]')){
       button.innerHTML=`<svg class="note-light-glyph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[button.dataset.noteCmd]}"/></svg>`;
       button.setAttribute('aria-pressed','false');
     }
+    const voice=format.content.querySelector('[data-note-voice]');
+    if(voice)voice.innerHTML='<svg class="note-light-glyph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V8a4 4 0 0 1 4-4ZM7 15a9 9 0 0 0 18 0M16 24v4M11 28h10"/></svg>';
   }
   return `<div class="modal-backdrop note-backdrop" data-action="backdrop"><section class="sheet note-sheet ${magic ? "dc2-note-sheet" : ""}" role="dialog" aria-modal="true" aria-label="Заметка"><header class="note-toolbar"><button type="button" class="note-back" data-action="note-cancel">${icon("left", "icon-sm")}${returnLabel}</button><span class="note-tools">${tools}</span></header>${undo}${menu}${historyPanel}${composition.innerHTML}${format.innerHTML}${busy}</section></div>`;
 }
