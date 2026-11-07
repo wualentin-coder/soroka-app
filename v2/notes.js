@@ -31,6 +31,7 @@ function noteMarkdown(text) {
       continue;
     }
     let m;
+    if ((m = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/))) { out.push(`<figure class="note-image"><img src="${esc(m[2])}" alt="${esc(m[1])}" loading="lazy"></figure>`); continue; }
     if ((m = line.match(/^(#{1,3})\s+(.*)$/))) { out.push(`<h${m[1].length + 2} class="note-h">${inline(m[2])}</h${m[1].length + 2}>`); continue; }
     if ((m = line.match(/^\s*[-*]\s+\[( |x)\]\s+(.*)$/i))) { out.push(`<div class="note-check ${m[1].toLowerCase() === "x" ? "done" : ""}"><i></i><span>${inline(m[2])}</span></div>`); continue; }
     if ((m = line.match(/^\s*[-*•]\s+(.*)$/))) { out.push(`<div class="note-li">${inline(m[1])}</div>`); continue; }
