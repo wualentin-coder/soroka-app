@@ -31,6 +31,7 @@ function noteEditableHtml(text) {
       out.push(`<table><tbody>${body.map((r, n) => `<tr>${cells(r).map(c => n ? `<td>${noteInlineHtml(c) || "<br>"}</td>` : `<th>${noteInlineHtml(c) || "<br>"}</th>`).join("")}</tr>`).join("")}</tbody></table>`);
       continue;
     }
+    if ((m = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/))) { flush(); out.push(`<figure class="note-image"><img src="${esc(m[2])}" alt="${esc(m[1])}" loading="lazy"></figure>`); continue; }
     if ((m = line.match(/^(#{1,3})\s+(.*)$/))) { flush(); out.push(`<h${m[1].length + 2}>${noteInlineHtml(m[2]) || "<br>"}</h${m[1].length + 2}>`); continue; }
     // Отступ пункта (вложенный список) — data-indent, по два пробела на уровень.
     const lvl = s => { const n = Math.min(4, Math.floor(s.replace(/	/g, "  ").length / 2)); return n ? ` data-indent="${n}"` : ""; };
@@ -65,6 +66,8 @@ function noteSerialize(root) {
     const tag = node.tagName;
     if(node.classList.contains("note-ink-data")||node.classList.contains("note-ink-layer"))return;
     if(tag==="BLOCKQUOTE"){lines.push(`> ${inline(node)}`);return;}
+    if(tag==="FIGURE"&&node.querySelector("img")){const img=node.querySelector("img");lines.push(`![${img.getAttribute("alt")||""}](${img.getAttribute("src")||""})`);return;}
+    if(tag==="IMG"){lines.push(`![${node.getAttribute("alt")||""}](${node.getAttribute("src")||""})`);return;}
     if (/^H[1-6]$/.test(tag)) { lines.push(`${"#".repeat(Math.max(1, Math.min(3, Number(tag[1]) - 2)))} ${inline(node).trim()}`); return; }
     if (tag === "UL" || tag === "OL") {
       const checks = node.classList.contains("checks");
@@ -111,12 +114,40 @@ document.addEventListener("input", event => { if (event.target.closest?.(".note-
 // Новая строка — абзацем <p>, а не <div>: так разметка остаётся простой.
 document.addEventListener("focusin", event => { if (event.target.closest?.(".note-rich")) { try { document.execCommand("defaultParagraphSeparator", false, "p"); } catch (_) {} } });
 
-// Вставка — только текстом: чужие стили в заметке не нужны.
+// Вставка: текст — как текст, картинка — в Storage и Markdown-ссылкой в заметке.
 document.addEventListener("paste", event => {
   if (!event.target.closest?.(".note-rich")) return;
+  const data = event.clipboardData;
+  const files = [...(data?.files || [])].filter(file => /^image\/(png|jpeg|webp)$/.test(file.type));
+  if (!files.length) for (const item of data?.items || []) if (item.kind === "file" && /^image\/(png|jpeg|webp)$/.test(item.type)) { const file = item.getAsFile(); if (file) files.push(file); }
   event.preventDefault();
-  document.execCommand("insertText", false, event.clipboardData?.getData("text/plain") || "");
+  if (files.length) { void insertNoteImage(files[0]); return; }
+  document.execCommand("insertText", false, data?.getData("text/plain") || "");
 });
+
+async function insertNoteImage(file) {
+  if (file.size > 6 * 1024 * 1024) { notifyNote("Картинка больше 6 МБ"); return; }
+  const selection = getSelection(), range = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+    const url = window.sorokaUploadNoteImage
+      ? await window.sorokaUploadNoteImage(base64, file.type)
+      : await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || "")); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); });
+    if (!url) throw new Error("upload");
+    if (range) { selection.removeAllRanges(); selection.addRange(range); }
+    document.execCommand("insertHTML", false, `<figure class="note-image"><img src="${esc(url)}" alt="" loading="lazy"></figure><p><br></p>`);
+  } catch { notifyNote("Не удалось вставить картинку"); }
+}
+
+function notifyNote(message) {
+  if (typeof window.toast === "function") window.toast(message);
+  else window.notesUI?.status?.(message);
+}
 
 /** Блок верхнего уровня под курсором. */
 function noteCaretBlock() {
