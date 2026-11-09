@@ -99,7 +99,7 @@ function noteSerialize(root) {
 function noteFormatBar() {
   const paths={h:'M4 18l5-12 5 12M6 14h6M16 11h4v7M16 15h4',ul:'M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1',ol:'M10 6h11M10 12h11M10 18h11M3 4h2v5M3 13c4-2 4 1 0 5h4',check:'M4 4h16v16H4ZM7 12l3 3 7-7',bold:'M7 4h6a4 4 0 010 8H7ZM7 12h7a4 4 0 010 8H7Z',table:'M3 4h18v16H3ZM3 9h18M3 15h18M10 4v16',italic:'M10 4h9M5 20h9M15 4L9 20',strikeThrough:'M17 6c-7-5-14 4-5 6M7 18c5 4 12 0 9-4M3 12h18',quote:'M4 6h6v7H5l-1 5M14 6h6v7h-5l-1 5',undo:'M4 9h10a6 6 0 010 12M4 9l5-5M4 9l5 5',redo:'M20 9H10a6 6 0 000 12M20 9l-5-5M20 9l-5 5'};
   const b = (cmd, label, title) => `<button type="button" data-note-cmd="${cmd}" aria-label="${title}" title="${title}">${paths[cmd]?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[cmd]}"/></svg>`:label}</button>`;
-  return `<div class="note-format" role="toolbar" aria-label="Оформление">${b("h", "<b>Aa</b>", "Заголовок")}${b("ul", "•—", "Список")}${b("ol", "1.", "Нумерация")}${b("check", "☑", "Чек-лист")}${b("bold", "<b>B</b>", "Жирный")}${b("table", "▦", "Таблица")}${b("italic","<i>I</i>","Курсив")}${b("strikeThrough","<s>S</s>","Зачёркнутый")}${b("quote","❞","Цитата")}${b("undo","↶","Отменить")}${b("redo","↷","Повторить")}<button type="button" data-note-ink aria-label="Рисовать поверх текста" aria-pressed="false" title="Рисовать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20l4-1L20 7l-3-3L5 16Z M14 7l3 3 M4 20h16"/></svg></button><button type="button" data-note-voice aria-label="Надиктовать" title="Надиктовать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button></div>`;
+  return `<div class="note-format" role="toolbar" aria-label="Оформление">${b("h", "<b>Aa</b>", "Заголовок")}${b("ul", "•—", "Список")}${b("ol", "1.", "Нумерация")}${b("check", "☑", "Чек-лист")}${b("bold", "<b>B</b>", "Жирный")}${b("table", "▦", "Таблица")}${b("italic","<i>I</i>","Курсив")}${b("strikeThrough","<s>S</s>","Зачёркнутый")}${b("quote","❞","Цитата")}${b("undo","↶","Отменить")}${b("redo","↷","Повторить")}<button type="button" data-note-image aria-label="Вставить картинку" title="Вставить картинку"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></button><button type="button" data-note-ink aria-label="Рисовать поверх текста" aria-pressed="false" title="Рисовать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20l4-1L20 7l-3-3L5 16Z M14 7l3 3 M4 20h16"/></svg></button><button type="button" data-note-voice aria-label="Надиктовать" title="Надиктовать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button></div>`;
 }
 
 function syncRichNote() {
@@ -116,18 +116,56 @@ document.addEventListener("focusin", event => { if (event.target.closest?.(".not
 
 // Вставка: текст — как текст, картинка — в Storage и Markdown-ссылкой в заметке.
 document.addEventListener("paste", event => {
-  if (!event.target.closest?.(".note-rich")) return;
+  const editor = event.target.closest?.(".note-rich");
+  const sheet = event.target.closest?.(".dc2-note-sheet, #saved-form");
+  if (!editor && !sheet) return;
   const data = event.clipboardData;
   const files = [...(data?.files || [])].filter(file => /^image\/(png|jpeg|webp)$/.test(file.type));
   if (!files.length) for (const item of data?.items || []) if (item.kind === "file" && /^image\/(png|jpeg|webp)$/.test(item.type)) { const file = item.getAsFile(); if (file) files.push(file); }
+  if (!files.length && !editor) return;
   event.preventDefault();
-  if (files.length) { void insertNoteImage(files[0]); return; }
+  if (files.length) { if (!editor) focusNoteEditorEnd(); void insertNoteImage(files[0]); return; }
   document.execCommand("insertText", false, data?.getData("text/plain") || "");
 });
 
+document.addEventListener("click", event => {
+  const button = event.target.closest?.("[data-note-image]");
+  if (!button) return;
+  event.preventDefault();
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/png,image/jpeg,image/webp";
+  input.style.display = "none";
+  document.body.append(input);
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (file) void insertNoteImage(file);
+    input.remove();
+  }, { once: true });
+  input.click();
+  setTimeout(() => input.remove(), 60000);
+});
+
+function focusNoteEditorEnd() {
+  const editor = document.querySelector(".note-rich");
+  if (!editor) return;
+  editor.focus();
+  const selection = getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(editor);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
 async function insertNoteImage(file) {
   if (file.size > 6 * 1024 * 1024) { notifyNote("Картинка больше 6 МБ"); return; }
-  const selection = getSelection(), range = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+  const editor = document.querySelector(".note-rich");
+  if (!editor) { notifyNote("Откройте заметку"); return; }
+  let selection = getSelection();
+  if (!selection?.anchorNode || !editor.contains(selection.anchorNode)) { focusNoteEditorEnd(); selection = getSelection(); }
+  const range = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
   try {
     const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
