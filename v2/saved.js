@@ -1139,7 +1139,7 @@ function savedAction(action, control) {
   if (action === "list-subtask-remove") { control.closest(".dc2-compose-sub")?.remove(); return true; }
   if (action === "list-dictate" && item) {
     const field = document.querySelector("#list-item-form textarea");
-    if (field) { field.value = "позвонить врачу"; field.dispatchEvent(new Event("input", { bubbles: true })); field.focus(); }
+    if (field) window.flowDictateInto?.(field, "Диктуйте пункт…");
     return true;
   }
   if (action === "list-sub-toggle" && item) {
