@@ -681,7 +681,7 @@ function listMagicWave(source) {
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
   const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 24;
-  const duration = 820;
+  const duration = 620;
   const wave = document.createElement("span");
   wave.className = "list-magic-wave";
   wave.style.setProperty("--wave-x", `${x}px`);
@@ -689,20 +689,19 @@ function listMagicWave(source) {
   wave.style.setProperty("--wave-r", `${radius}px`);
   document.body.append(wave);
   wave.animate([
-    { opacity: 0, transform: "scale(.03)" },
-    { opacity: .72, offset: .1 },
-    { opacity: .48, offset: .55 },
-    { opacity: .22, offset: .82 },
-    { opacity: 0, transform: "scale(1.08)" }
+    { opacity: 0, transform: "scale(.45)" },
+    { opacity: .26, offset: .16 },
+    { opacity: .15, offset: .55 },
+    { opacity: 0, transform: "scale(1.02)" }
   ], { duration, easing: "cubic-bezier(.16,.72,.24,1)", fill: "forwards" });
   for (const [side, distance] of Object.entries({ top: y, right: innerWidth - x, bottom: innerHeight - y, left: x })) {
     const edge = document.createElement("span");
     edge.className = `list-magic-edge ${side}`;
     document.body.append(edge);
-    edge.animate([{ opacity: 0 }, { opacity: .82, offset: .2 }, { opacity: 0 }], { duration: 620, delay: Math.round(Math.min(640, (distance / radius) * duration)), easing: "ease-out", fill: "both" });
-    setTimeout(() => edge.remove(), 1450);
+    edge.animate([{ opacity: 0 }, { opacity: .38, offset: .2 }, { opacity: 0 }], { duration: 560, delay: Math.round(Math.min(640, (distance / radius) * duration)), easing: "ease-out", fill: "both" });
+    setTimeout(() => edge.remove(), 1300);
   }
-  setTimeout(() => wave.remove(), 1000);
+  setTimeout(() => wave.remove(), 900);
 }
 /**
  * Список как чек-лист: отметить — кружком, изменить — нажать на текст, удалить —
