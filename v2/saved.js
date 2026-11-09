@@ -144,7 +144,7 @@ function renderSavedAddMenuSheet() {
   const overview = category === "overview";
   const packing = (overview || category === "lists") && typeof packingOpen === "function" ? `<button type="button" data-action="packing-new">${icon("plane", "icon-sm")}<span>Сборы<small>Компактный список вещей под поездку</small></span>${icon("right", "icon-sm")}</button>` : "";
   const ai = `<button type="button" class="saved-add-ai" data-action="universal-add">${icon("note", "icon-sm")}<span>Написать как боту — ИИ разберёт<small>Одно сообщение, одна или несколько записей</small></span>${icon("right", "icon-sm")}</button>`;
-  const options = packing + ai + (overview || category === "materials" ? (overview ? SAVED_CATEGORIES.filter(([key]) => !MATERIAL_KINDS.some(([kind]) => kind === key)).concat(MATERIAL_KINDS) : MATERIAL_KINDS).map(([key, label]) => `<button type="button" data-action="saved-add-record" data-category="${key}">${icon(savedIcon(key), "icon-sm")}<span>${esc(label)}</span>${icon("right", "icon-sm")}</button>`).join("") : `<button type="button" data-action="saved-add-record" data-category="${category}">${icon(savedIcon(category), "icon-sm")}<span>${category === "lists" ? "Новый список" : category === "tickets" ? "Новый билет" : category === "notes" ? "Новая заметка" : `Новая запись · ${SAVED_NAMES[category]}`}</span>${icon("right", "icon-sm")}</button>${category === "addresses" ? `<button type="button" data-action="saved-add-map">${icon("pin", "icon-sm")}<span>Поставить метку на карте</span>${icon("right", "icon-sm")}</button>` : ""}`);
+  const options = packing + ai + (overview || category === "materials" ? (overview ? SAVED_CATEGORIES.filter(([key]) => !MATERIAL_KINDS.some(([kind]) => kind === key)).concat(MATERIAL_KINDS) : MATERIAL_KINDS).map(([key, label]) => `<button type="button" data-action="saved-add-record" data-category="${key}">${icon(savedIcon(key), "icon-sm")}<span>${esc(label)}</span>${icon("right", "icon-sm")}</button>`).join("") : `<button type="button" data-action="saved-add-record" data-category="${category}">${icon(savedIcon(category), "icon-sm")}<span>${category === "lists" ? "Обычный список" : category === "tickets" ? "Новый билет" : category === "notes" ? "Новая заметка" : `Новая запись · ${SAVED_NAMES[category]}`}</span>${icon("right", "icon-sm")}</button>${category === "addresses" ? `<button type="button" data-action="saved-add-map">${icon("pin", "icon-sm")}<span>Поставить метку на карте</span>${icon("right", "icon-sm")}</button>` : ""}`);
   const lists = !overview && category === "lists" && savedItems("lists").length ? `<form id="saved-add-list-item" class="saved-add-list-item"><h3>Пункт в существующий список</h3><label class="field">Список<select name="listId">${savedItems("lists").map(item => `<option value="${esc(item.id)}">${esc(item.title)}</option>`).join("")}</select></label><label class="field">Новый пункт<input name="text" type="text" placeholder="Что добавить?" maxlength="120" required></label><button class="primary-button" type="submit">Добавить пункт</button></form>` : "";
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet saved-add-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${overview ? "Добавить в сохранённое" : `Добавить · ${esc(SAVED_NAMES[category])}`}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="saved-add-options ${overview ? "is-overview" : ""}">${options}</div>${lists}</section></div>`;
 }
@@ -153,7 +153,7 @@ function openSavedRecord(category, recordId = null, mode = recordId ? "view" : "
   // Из «Материалов» запись открывается своим разделом, а после закрытия — снова «Материалы».
   if (ui.savedCategory === "materials" && MATERIAL_KINDS.some(([kind]) => kind === category)) ui.savedReturn = category;
   ui.savedCategory = category;
-  ui.sheet = { kind: "saved", category, id: recordId, mode, draft: !recordId ? { categoryId: ui.savedSection === "__none__" ? "" : ui.savedSection } : null, justRendered: false };
+  ui.sheet = { kind: "saved", category, id: recordId, mode, listAdding: false, draft: !recordId ? { categoryId: ui.savedSection === "__none__" ? "" : ui.savedSection } : null, justRendered: false };
   ui.menu = false;
   render();
 }
@@ -639,19 +639,17 @@ function renderKeepScroll(after) {
  */
 function renderChecklist(item) {
   const items = item.items || [];
-  const open = items.filter(entry => !entry.done);
-  const done = items.filter(entry => entry.done);
-  const row = entry => ui.sheet.editItemId === entry.id
-    ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}" data-state-key="${esc(item.id+':'+entry.id)}"><textarea name="text" rows="1" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта">${esc(entry.text)}</textarea></form>`
-    : `<div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button><button class="check-remove" type="button" data-action="list-remove" data-id="${esc(entry.id)}" aria-label="Удалить: ${esc(entry.text)}">${icon("close", "icon-sm")}</button></div>`;
-  const percent = items.length ? Math.round(done.length / items.length * 100) : 0;
-  const inToday = (data.tasks || []).some(task => task.listRef === item.id && !task.done);
-  return `<div class="checklist"><div class="checklist-progress"><div class="progress-track"><span style="width:${percent}%"></span></div><span id="saved-list-progress">${done.length} из ${items.length}</span></div>` +
-    `<button type="button" class="list-to-today ${inToday ? "is-on" : ""}" data-action="list-to-today">${icon("today", "icon-sm")}${inToday ? "В задачах на сегодня" : "Добавить в задачи на сегодня"}</button>` +
-    `<div class="checklist-rows" data-list-order="${esc(item.id)}">${open.map(row).join("")}</div>` +
-    `<form id="list-item-form" class="check-add" data-state-key="${esc(item.id+':'+(ui.sheet.listAddRevision||0))}"><span class="check-add-icon">${icon("plus", "icon-sm")}</span><textarea name="text" rows="1" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></textarea></form>` +
-    (done.length ? `<div class="checklist-done-head"><span>Выполнено · ${done.length}</span><button class="text-action" type="button" data-action="list-clear-done">Очистить</button></div><div class="checklist-rows">${done.map(row).join("")}</div>` : "") +
-    `</div>`;
+  const row = entry => {
+    const subtasks = entry.subtasks || [];
+    const subRows = subtasks.length ? `<div class="check-subs">${subtasks.map((sub, index) => `<div class="check-sub ${sub.done ? "done" : ""}"><button class="sub-check ${sub.done ? "checked" : ""}" type="button" data-action="list-sub-toggle" data-id="${esc(entry.id)}" data-index="${index}" aria-pressed="${Boolean(sub.done)}" aria-label="${sub.done ? "Вернуть" : "Выполнить"}: ${esc(sub.text)}">${icon("check", "icon-sm")}</button><span>${esc(sub.text)}</span></div>`).join("")}</div>` : "";
+    return ui.sheet.editItemId === entry.id
+      ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}" data-state-key="${esc(item.id+':'+entry.id)}"><textarea name="text" rows="1" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта">${esc(entry.text)}</textarea></form>`
+      : `<div class="check-entry"><div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"${entry.highlight ? ' data-highlight="true"' : ""}${ui.sheet.justToggled === entry.id ? ' data-just-toggled="true"' : ""}${ui.sheet.justCompleted === entry.id ? ' data-just-completed="true"' : ""}><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button></div>${subRows}</div>`;
+  };
+  const adding = ui.sheet?.listAdding === true;
+  const form = `<form id="list-item-form" class="check-add" data-state-key="${esc(item.id+':'+(ui.sheet.listAddRevision||0))}"><div class="dc2-compose-main"><textarea name="text" rows="1" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></textarea><button class="dc2-compose-mic" type="button" data-action="list-dictate" aria-label="Надиктовать">${icon("mic", "icon-sm")}</button><button class="dc2-compose-send" type="submit" aria-label="Добавить пункт">${icon("arrow", "icon-sm")}</button></div><div class="dc2-compose-subs" id="list-subtasks"></div><button class="dc2-compose-add-sub" type="button" data-action="list-subtask-add">${icon("subtask", "icon-sm")}Подзадача</button></form>`;
+  const add = adding ? form : `<button class="dc2-list-add-fab" type="button" data-action="list-add-open" aria-label="Добавить пункт">${icon("plus")}</button>`;
+  return `<div class="checklist"><div class="checklist-rows" data-list-order="${esc(item.id)}">${items.map(row).join("")}</div>${add}</div>`;
 }
 /** Пункт списка редактируется многострочно: поле растёт по тексту, но не выше 200px. */
 function fitListTextarea(field) {
@@ -995,6 +993,22 @@ function savedAction(action, control) {
   if (action === "post-bot-back" && item && ui.sheet.category === "posts") { ui.sheet.mode = "view"; render(); return true; }
   if (action === "saved-share" && item) { void shareRecord(`saved:${ui.sheet.category}`, item.id); return true; }
   if (action === "saved-edit" && item) { ui.sheet.mode = "edit"; ui.sheet.justRendered = false; render(); return true; }
+  if (action === "saved-title-edit" && item) {
+    ui.sheet.mode = "edit"; ui.sheet.justRendered = false; render();
+    const focusTitle = () => {
+      const win = [...document.querySelectorAll(".dc2-window-lists")].find(el => el.getClientRects().length);
+      const body = win?.querySelector(".dc2-window-body");
+      if (body) body.scrollTop = 0;
+      const form = win?.querySelector("#saved-form");
+      if (form) form.dataset.titleOnly = "true";
+      const input = win?.querySelector('#saved-form input[name="title"], #saved-form input[name="name"]');
+      if (input) { input.focus({ preventScroll: true }); input.select(); }
+    };
+    focusTitle();
+    setTimeout(focusTitle, 120);
+    setTimeout(focusTitle, 450);
+    return true;
+  }
   if (action === "saved-delete" && item) { deleteSavedRecord(ui.sheet.category, item.id); return true; }
   if (action === "saved-pin" && item) { item.pinned = !item.pinned; save(); render(); toast(item.pinned ? "Закреплено" : "Откреплено"); return true; }
   if (action === "saved-viewed" && item) { if (ui.sheet.category === "movies") toggleMovieViewed(item); else { item.viewed = !item.viewed; save(); toast(item.viewed ? "Отмечено просмотренным" : "Вернули в очередь"); } return true; }
@@ -1009,21 +1023,59 @@ function savedAction(action, control) {
     const entry = item.items?.find(x => x.id === control.dataset.id);
     if (entry) {
       entry.done = !entry.done;
+      if (Array.isArray(entry.subtasks)) entry.subtasks.forEach(sub => { sub.done = entry.done; });
+      ui.sheet.justToggled = entry.id;
+      if (entry.done) ui.sheet.justCompleted = entry.id; else delete ui.sheet.justCompleted;
+      const token = (ui.sheet.animToken || 0) + 1;
+      ui.sheet.animToken = token;
       save();
-      if (ui.sheet.mode === "view") { renderKeepScroll(); } else if (false) {
-        const line = control.closest(".saved-list-line");
-        line?.classList.toggle("done", entry.done);
-        const check = line?.querySelector(".task-check");
-        check?.classList.toggle("checked", entry.done);
-        check?.setAttribute("aria-pressed", String(entry.done));
-        line?.querySelectorAll("[data-action='list-toggle']").forEach(button => button.setAttribute("aria-label", `${entry.done ? "Вернуть" : "Выполнить"}: ${entry.text}`));
-        const progress = document.getElementById("saved-list-progress");
-        if (progress) progress.textContent = `${item.items.filter(x => x.done).length}/${item.items.length} выполнено`;
-      } else render();
+      if (ui.sheet.mode === "view") renderKeepScroll(); else render();
+      setTimeout(() => {
+        if (ui.sheet?.animToken !== token) return;
+        delete ui.sheet.justToggled;
+        delete ui.sheet.justCompleted;
+      }, 700);
     }
     return true;
   }
-  if (action === "list-edit" && item) { ui.sheet.editItemId = control.dataset.id; ui.sheet.justRendered = true; render(); const field=document.querySelector('#list-item-form textarea'); if(field){fitListTextarea(field);field.focus();} return true; }
+  if (action === "list-highlight" && item) {
+    const entry = item.items?.find(x => x.id === control.dataset.id);
+    if (entry) {
+      entry.highlight = !entry.highlight;
+      save();
+      renderKeepScroll();
+      toast(entry.highlight ? "Пункт выделен" : "Выделение снято");
+    }
+    return true;
+  }
+  if (action === "list-edit" && item) { ui.sheet.editItemId = control.dataset.id; ui.sheet.justRendered = true; render(); const field=document.querySelector('#list-edit-form textarea'); if(field){fitListTextarea(field);field.focus();} return true; }
+  if (action === "list-add-open" && item) { ui.sheet.listAdding = true; renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } }); return true; }
+  if (action === "list-subtask-add") {
+    const box = document.querySelector("#list-subtasks");
+    if (box) {
+      const row = document.createElement("div"); row.className = "dc2-compose-sub";
+      row.innerHTML = `<span class="dc2-sub-circle" aria-hidden="true"></span><input type="text" data-subtask-input maxlength="200" placeholder="Подзадача" aria-label="Подзадача"><button type="button" data-action="list-subtask-remove" aria-label="Удалить подзадачу">${icon("close", "icon-sm")}</button>`;
+      box.append(row); row.querySelector("input")?.focus();
+    }
+    return true;
+  }
+  if (action === "list-subtask-remove") { control.closest(".dc2-compose-sub")?.remove(); return true; }
+  if (action === "list-dictate" && item) {
+    const field = document.querySelector("#list-item-form textarea");
+    if (field) { field.value = "позвонить врачу"; field.dispatchEvent(new Event("input", { bubbles: true })); field.focus(); }
+    return true;
+  }
+  if (action === "list-sub-toggle" && item) {
+    const entry = item.items?.find(x => x.id === control.dataset.id);
+    const sub = entry?.subtasks?.[Number(control.dataset.index)];
+    if (sub) {
+      sub.done = !sub.done;
+      if (entry.subtasks.length) entry.done = entry.subtasks.every(one => one.done);
+      save(); renderKeepScroll();
+    }
+    return true;
+  }
+  if (action === "list-edit-cancel" && item) { ui.sheet.editItemId = null; renderKeepScroll(); return true; }
   if (["list-up", "list-down"].includes(action) && item) { const index = item.items.findIndex(x => x.id === control.dataset.id); const target = index + (action === "list-up" ? -1 : 1); if (index >= 0 && target >= 0 && target < item.items.length) { [item.items[index], item.items[target]] = [item.items[target], item.items[index]]; save(); render(); } return true; }
   if (action === "list-remove" && item) { item.items = item.items.filter(x => x.id !== control.dataset.id); if (ui.sheet.editItemId === control.dataset.id) ui.sheet.editItemId = null; save(); renderKeepScroll(); return true; }
   if (action === "list-item-edit" && item) { ui.sheet.editItemId = control.dataset.id; renderKeepScroll(() => { const field = document.querySelector("#list-edit-form textarea"); if (field) { fitListTextarea(field); field.focus(); field.setSelectionRange(field.value.length, field.value.length); } }); return true; }
@@ -1156,7 +1208,7 @@ function savedSubmit(event) {
     const list = savedItem("lists", ui.sheet.id);
     const text = String(new FormData(event.target).get("text") || "").trim();
     // В просмотре поле внизу только добавляет — и остаётся в фокусе для следующего пункта.
-    if (list && text && ui.sheet.mode === "view") { list.items.push({ id: id(), text, done: false }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } }); return true; }
+    if (list && text && ui.sheet.mode === "view") { const subtasks = [...event.target.querySelectorAll("[data-subtask-input]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false })); list.items.push({ id: id(), text, done: false, subtasks }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } }); return true; }
     if (list && text) { const existing = ui.sheet.editItemId ? list.items.find(x => x.id === ui.sheet.editItemId) : null; if (existing) existing.text = text; else list.items.push({ id: id(), text, done: false }); ui.sheet.editItemId = null; save(); render(); }
     return true;
   }
@@ -1175,6 +1227,12 @@ function savedSubmit(event) {
 document.addEventListener("focusout", event => {
   const form = event.target?.closest?.("#list-edit-form");
   if (form && !(event.relatedTarget && form.contains(event.relatedTarget))) setTimeout(() => { if (document.body.contains(form)) form.requestSubmit(); }, 0);
+});
+document.addEventListener("keydown", event => {
+  const field = event.target?.closest?.("#list-edit-form textarea");
+  if (!field) return;
+  if (event.key === "Escape") { event.preventDefault(); ui.sheet.editItemId = null; renderKeepScroll(); }
+  else if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); field.form?.requestSubmit(); }
 });
 document.addEventListener("focusin", event => {
   const field = event.target?.closest?.("#list-edit-form textarea, #list-item-form textarea, .list-item-form textarea");
@@ -1196,7 +1254,7 @@ document.addEventListener("focusin", event => {
 })();
 function savedInput(event) {
   const listField = event.target.closest?.("#list-edit-form textarea, #list-item-form textarea, .list-item-form textarea");
-  if (listField) { fitListTextarea(listField); return true; }
+  if (listField) { fitListTextarea(listField); const form=listField.closest?.("#list-item-form"); if(form)form.dataset.hasText=String(Boolean(listField.value.trim())); return true; }
   if (event.target.id === "saved-pins-search") {
     const query = event.target.value.trim().toLocaleLowerCase("ru-RU");
     ui.savedPinsQuery = event.target.value;
