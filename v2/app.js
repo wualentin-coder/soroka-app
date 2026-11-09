@@ -796,6 +796,43 @@ function toast(message) {
   render();
   toastTimer = setTimeout(() => { ui.toast = ""; app.querySelector(".toast")?.remove(); }, 2800);
 }
+function flowDictateInto(field, label = "Говорите…") {
+  if (!field) return;
+  const base = field.value.trim();
+  const put = text => {
+    const value = String(text || "").trim();
+    if (!value) return;
+    field.value = base ? `${base} ${value}` : value;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.focus();
+  };
+  const voice = window.flowVoice;
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const startRecognition = () => {
+    if (!Recognition) return false;
+    const recognition = new Recognition();
+    recognition.lang = "ru-RU";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.onresult = event => {
+      let text = "";
+      for (let i = 0; i < event.results.length; i++) text += event.results[i][0].transcript;
+      put(text);
+    };
+    recognition.onerror = () => toast("Не удалось включить микрофон");
+    try { recognition.start(); } catch (_) { toast("Не удалось включить микрофон"); }
+    return true;
+  };
+  const startVoice = () => {
+    if (!voice?.getState?.().supported) return false;
+    void voice.start(put, label);
+    return true;
+  };
+  const localHost = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  if (localHost ? (startRecognition() || startVoice()) : (startVoice() || startRecognition())) return;
+  toast("Голос работает в приложении бота");
+}
+window.flowDictateInto = flowDictateInto;
 function toggleTask(recordId) {
   const task = data.tasks.find(item => item.id === recordId);
   if (!task) return;
@@ -932,7 +969,7 @@ document.addEventListener("click", event => {
   if (action === "close-sheet") { closeSheet(); return; }
   if (action === "task-dictate") {
     const field = document.querySelector(".dm-task-add [name=title]");
-    if (field) { if (!field.value.trim()) field.value = "Позвонить врачу"; field.focus(); field.dispatchEvent(new Event("input", { bubbles: true })); }
+    if (field) flowDictateInto(field, "Диктуйте задачу…");
     return;
   }
   if (action === "task-subtask-add") {
