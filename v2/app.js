@@ -968,6 +968,10 @@ document.addEventListener("click", event => {
   }
   if (action === "close-sheet") { closeSheet(); return; }
   if (action === "task-dictate") {
+    if (typeof window.flowAssistant?.open === "function") {
+      window.flowAssistant.open("task");
+      return;
+    }
     const field = document.querySelector(".dm-task-add [name=title]");
     if (field) flowDictateInto(field, "Диктуйте задачу…");
     return;
