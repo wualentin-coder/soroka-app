@@ -1,4 +1,4 @@
-/* Дизайн-прототип: все записи хранятся только в этом браузере. */
+﻿/* Дизайн-прототип: все записи хранятся только в этом браузере. */
 const STORAGE_KEY = "soroka-planner-prototype-v1";
 function classicDesign() { return document.documentElement.dataset.flowDesign === "classic"; }
 /** The classic shell retains its original theme choices; Magic has three dark surfaces. */
@@ -73,6 +73,7 @@ const icons = {
   thumbDown: '<path d="M17 14V3M21 12V5a2 2 0 0 0-2-2H7.4a2 2 0 0 0-1.9 1.4L3.1 12.3A2 2 0 0 0 5 15h4.6l-.8 4.2a2 2 0 0 0 2 2.3c.5 0 1-.2 1.3-.6L17 14"/>',
   star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
+  assistantStar: '<path d="M12 2c.8 6.5 3.5 9.2 10 10-6.5.8-9.2 3.5-10 10-.8-6.5-3.5-9.2-10-10 6.5-.8 9.2-3.5 10-10Z" fill="currentColor" stroke="none"/>',
   locate: '<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>',
   server: '<rect x="4" y="4" width="16" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/><path d="M8 7.5h.01M8 16.5h.01M12 7.5h4M12 16.5h4"/>',
   plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
@@ -482,6 +483,11 @@ function record(type, recordId) {
   const list = type === "task" ? data.tasks : type === "event" ? data.events : data.notes;
   return list.find(item => item.id === recordId);
 }
+function syncTaskChecklist(form) {
+  const hidden = form?.querySelector('input[name="checklist"]');
+  if (!hidden) return;
+  hidden.value = [...form.querySelectorAll("[data-task-sub]")].map(input => input.value.trim()).filter(Boolean).join("\n");
+}
 function entrySheet() {
   const sheet = ui.sheet;
   const item = sheet.id ? record(sheet.type, sheet.id) : null;
@@ -489,10 +495,10 @@ function entrySheet() {
   const field = key => draft[key] ?? item?.[key] ?? "";
   const typeLabel = sheet.type === "event" ? "Событие" : sheet.type === "note" ? "Заметка" : "Задача";
   const title = item ? typeLabel : sheet.type === "event" ? "Новое событие" : sheet.type === "note" ? "Новая заметка" : "Новая задача";
-  const types = !item ? `<div class="sheet-type">${[["task", "Задача"], ["event", "Событие"], ["note", "Заметка"]].map(([type, label]) => `<button type="button" class="${sheet.type === type ? "active" : ""}" data-action="sheet-type" data-type="${type}">${label}</button>`).join("")}</div>` : (() => { const bd = sheet.type === "event" && typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item.title || "") && /^\d{4}-\d{2}-\d{2}$/.test(item.due || "") ? birthdayNext(item.due) : null; return bd ? `<p class="entry-when">${bd.days === 0 ? "Сегодня" : `Через ${bd.days} ${plural(bd.days, "день", "дня", "дней")}`} · ${bd.day} ${MONTHS_GEN[bd.month]}</p>` : ""; })();
+  const typeExtra = item ? (() => { const bd = sheet.type === "event" && typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item.title || "") && /^\d{4}-\d{2}-\d{2}$/.test(item.due || "") ? birthdayNext(item.due) : null; return bd ? `<p class="entry-when">${bd.days === 0 ? "Сегодня" : `Через ${bd.days} ${plural(bd.days, "день", "дня", "дней")}`} · ${bd.day} ${MONTHS_GEN[bd.month]}</p>` : ""; })() : "";
   const defaultDue = item || Object.prototype.hasOwnProperty.call(draft, "due") ? field("due") : sheet.date ?? (ui.page === "tasks" ? "" : ui.selected || todayIso());
   const dateFields = sheet.type !== "note" ? `<div class="field-row"><label class="field">Дата<input name="due" type="date" value="${esc(defaultDue)}" ${sheet.type === "event" ? "required" : ""}></label><label class="field">Время<input name="time" type="time" value="${esc(field("time"))}"></label></div>` : "";
-  const taskFields = sheet.type === "task" ? `<div class="field-row"><label class="field">Важность<select name="priority"><option value="high" ${field("priority") === "high" ? "selected" : ""}>Очень важно</option><option value="medium" ${!field("priority") || field("priority") === "medium" ? "selected" : ""}>Обычно</option><option value="low" ${field("priority") === "low" ? "selected" : ""}>Когда-нибудь</option></select></label><label class="field">Проект<select name="project"><option value="" ${!field("project") ? "selected" : ""}>Без проекта</option>${field("project") && !data.projects.some(p => p.name === field("project")) ? `<option value="${esc(field("project"))}" selected>${esc(field("project"))}</option>` : ""}${data.projects.map(p => `<option value="${esc(p.name)}" ${field("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>` : "";
+  const taskFields = sheet.type === "task" ? `<div class="field-row"><label class="field">Важность<select name="priority"><option value="high" ${field("priority") === "high" ? "selected" : ""}>Очень важно</option><option value="medium" ${!field("priority") || field("priority") === "medium" ? "selected" : ""}>Обычно</option><option value="low" ${field("priority") === "low" ? "selected" : ""}>Когда-нибудь</option></select></label><label class="field">Проект<select name="project"><option value="" ${!field("project") ? "selected" : ""}>Без проекта</option>${field("project") && !(data.projects || []).some(p => p.name === field("project")) ? `<option value="${esc(field("project"))}" selected>${esc(field("project"))}</option>` : ""}${(data.projects || []).map(p => `<option value="${esc(p.name)}" ${field("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>` : "";
   // Только то, что сервер выполняет: повтор задачи (день, будни, неделя, месяц, год),
   // у события — «каждый год» и «напомнить за…». О задаче со сроком бот напоминает в срок сам.
   const repeatValue = String(field("repeat") || "none");
@@ -500,10 +506,137 @@ function entrySheet() {
   const repeatOptions = sheet.type === "event" ? [["none", "Не повторять"], ["yearly", "Каждый год"]] : [["none", "Не повторять"], ["daily", "Каждый день"], ["weekdays", "По будням"], ["weekly", "Каждую неделю"], ["monthly", "Каждый месяц"], ["yearly", "Каждый год"], ["custom", "Каждые N дней"]];
   const reminderFields = sheet.type !== "note" ? `<div class="entry-reminders"><h3>${sheet.type === "event" ? "Повтор и напоминание" : "Повтор"}</h3><div class="field-row"><label class="field">Повторять<select name="repeat">${repeatOptions.map(([key, label]) => `<option value="${key}" ${repeatSelection === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>${sheet.type === "event" ? `<label class="field">Напомнить<select name="remindBefore">${[["none", "Не напоминать"], ["at", "В момент начала"], ["5m", "За 5 минут"], ["15m", "За 15 минут"], ["1h", "За 1 час"], ["1d", "За 1 день"]].map(([key, label]) => `<option value="${key}" ${String(field("remindBefore") || (item ? "none" : "1h")) === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>` : ""}</div>${sheet.type === "task" ? `${taskRepeatFields(repeatValue)}<p class="section-note">Следующая задача появится после выполнения; интервал считается от даты в плане. Со временем — бот напомнит в срок; без времени — утром в день срока.</p>` : ""}</div>` : "";
   if(!classicDesign()&&sheet.type==='task'){
-    const checklist=typeof field('checklist')==='string'?field('checklist'):(item?.checklist||[]).map(c=>c.text).join('\n');
-    return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace dm-task-editor" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div>${types}<form id="entry-form"><div class="dm-entry-body"><label class="field dm-entry-name">Название<input name="title" type="text" value="${esc(field('title'))}" placeholder="Что нужно сделать?" maxlength="120" required autofocus></label><fieldset class="dm-task-group dm-task-when"><legend>Срок</legend>${dateFields}</fieldset><fieldset class="dm-task-group dm-task-arrange"><legend>Приоритет и проект</legend>${taskFields}</fieldset><details class="dm-entry-options"><summary>Описание, чек-лист и повтор</summary><div class="dm-task-details"><label class="field">Описание<textarea name="description" rows="2" placeholder="Необязательно">${esc(field('description'))}</textarea></label><label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="По одному пункту на строку">${esc(checklist)}</textarea></label><div class="dm-task-repeat"><label class="field">Повторять<select name="repeat">${repeatOptions.map(([key,label])=>`<option value="${key}" ${repeatSelection===key?'selected':''}>${label}</option>`).join('')}</select></label>${taskRepeatFields(repeatValue)}</div></div></details></div><div class="sheet-actions dm-entry-footer"><button class="ghost-button" type="button" data-action="close-sheet">Отмена</button><button class="primary-button" type="submit">${item?'Сохранить':'Добавить'}</button>${item?`<button class="icon-button danger-button" type="button" aria-label="Удалить запись" data-action="delete-record" data-type="task" data-id="${esc(item.id)}">${icon('trash')}</button>`:''}</div></form></section></div>`;
+    return taskAddSheet(sheet, item, field);
   }
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${types}<form id="entry-form"><div class="dm-entry-body"><label class="field dm-entry-name">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><div class="dm-entry-schedule">${dateFields}</div>${sheet.type !== "note" ? `<details class="dm-entry-options" ${item || field("description") || field("repeat") && field("repeat") !== "none" ? "open" : ""}><summary>Детали и повтор</summary>` : ""}<label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${taskFields}${sheet.type === "event" && (sheet.birthday || (typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item?.title || ""))) ? renderGiftFields(item) : ""}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}${sheet.type !== "note" ? "</details>" : ""}</div><div class="sheet-actions dm-entry-footer"><button class="ghost-button" type="button" data-action="close-sheet">Отмена</button>${item ? `<button class="icon-button danger-button" type="button" aria-label="Удалить запись" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">${icon("trash")}</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><header class="sheet-head dc2-window-head dm-quick-head"><div><p>${typeLabel}</p><h2 id="sheet-title">${title}</h2></div><div class="dc2-window-tools"><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div></header>${typeExtra}<form id="entry-form"><div class="dm-entry-body"><label class="field dm-entry-name">Название<input name="title" type="text" value="${esc(field("title"))}" placeholder="${sheet.type === "event" ? "Например, встреча в 15:00" : sheet.type === "note" ? "О чём заметка?" : "Что нужно сделать?"}" maxlength="120" required autofocus></label><div class="dm-entry-schedule">${dateFields}</div>${sheet.type !== "note" ? `<details class="dm-entry-options" ${item || field("description") || field("repeat") && field("repeat") !== "none" ? "open" : ""}><summary>Детали и повтор</summary>` : ""}<label class="field">${sheet.type === "event" ? "Место и детали" : sheet.type === "note" ? "Текст" : "Описание"}<textarea name="description" placeholder="Необязательно">${esc(field("description"))}</textarea></label>${taskFields}${sheet.type === "event" && (sheet.birthday || (typeof BIRTHDAY_RE !== "undefined" && BIRTHDAY_RE.test(item?.title || ""))) ? renderGiftFields(item) : ""}${sheet.type === "task" ? `<label class="field">Чек-лист<textarea name="checklist" rows="3" placeholder="Каждый пункт с новой строки. Все отмечены — задача закроется сама">${esc((item?.checklist || []).map(c => c.text).join("\n"))}</textarea></label>` : ""}${reminderFields}${sheet.type !== "note" ? "</details>" : ""}</div><div class="sheet-actions dm-entry-footer"><button class="ghost-button" type="button" data-action="close-sheet">Отмена</button>${item ? `<button class="icon-button danger-button" type="button" aria-label="Удалить запись" data-action="delete-record" data-type="${sheet.type}" data-id="${esc(item.id)}">${icon("trash")}</button>` : ""}<button class="primary-button" type="submit">${item ? "Сохранить" : "Добавить"}</button></div></form></section></div>`;
+}
+function taskEntryValues(sheet, item, field) {
+  const draft = sheet.draft || {};
+  const has = key => Object.prototype.hasOwnProperty.call(draft, key);
+  const due = item || has("due") ? field("due") : sheet.date ?? (ui.page === "tasks" ? "" : ui.selected || todayIso());
+  return {
+    title: field("title"),
+    due,
+    time: field("time"),
+    priority: field("priority") || "medium",
+    project: field("project") || "",
+    description: field("description"),
+    checklist: typeof field("checklist") === "string" ? field("checklist") : (item?.checklist || []).map(c => c.text).join("\n"),
+    repeat: String(field("repeat") || "none")
+  };
+}
+const TASK_REPEAT_OPTIONS = [["none", "Нет"], ["daily", "Каждый день"], ["weekdays", "По будням"], ["weekly", "Каждую неделю"], ["monthly", "Каждый месяц"], ["yearly", "Каждый год"], ["custom", "Каждые N дней"]];
+function taskProjectNames() {
+  const names = (data.projects || []).map(project => project.name).filter(Boolean);
+  return names.length ? names : ["Личное", "Работа", "Финансы"];
+}
+function taskProjectOptions(selected) {
+  const names = taskProjectNames();
+  const extra = selected && !names.includes(selected) ? `<option value="${esc(selected)}" selected>${esc(selected)}</option>` : "";
+  return `<option value="" ${!selected ? "selected" : ""}>Без проекта</option>${extra}${names.map(name => `<option value="${esc(name)}" ${selected === name ? "selected" : ""}>${esc(name)}</option>`).join("")}`;
+}
+function taskSubtaskRows(checklist) {
+  return checklist.split("\n").map(text => text.trim()).filter(Boolean).map(text => `<div class="dm-quick-sub"><span class="dm-quick-sub-dot" aria-hidden="true"></span><input type="text" value="${esc(text)}" placeholder="Введите подзадачу" aria-label="Подзадача" maxlength="120" data-task-sub><button type="button" data-action="task-subtask-remove" aria-label="Удалить подзадачу">${icon("close", "icon-sm")}</button></div>`).join("");
+}
+function taskAddSheet(sheet, item, field) {
+  if (sheet.taskMode === "when") return taskWhenView(sheet, taskEntryValues(sheet, item, field));
+  const draft = sheet.draft || {};
+  const has = key => Object.prototype.hasOwnProperty.call(draft, key);
+  const mode = sheet.taskMode === "list" ? "list" : sheet.taskMode === "note" ? "note" : "task";
+  const due = item || has("due") ? field("due") : sheet.date ?? (ui.page === "tasks" ? "" : ui.selected || todayIso());
+  const time = field("time");
+  const title = field("title");
+  const checklist = typeof field("checklist") === "string" ? field("checklist") : (item?.checklist || []).map(c => c.text).join("\n");
+  const rowLabel = mode === "list" ? "Пункт списка" : "Подзадача";
+  const rows = checklist.split("\n").map(text => text.trim()).filter(Boolean).map(text => `<div class="dm-task-add-sub"><span class="dm-task-add-dot" aria-hidden="true"></span><input type="text" value="${esc(text)}" placeholder="${rowLabel}" aria-label="${rowLabel}" maxlength="200" data-task-sub><button type="button" data-action="task-subtask-remove" aria-label="Удалить">${icon("close", "icon-sm")}</button></div>`).join("");
+  const placeholder = mode === "list" ? "Название списка" : mode === "note" ? "О чём заметка?" : "Какой план на сегодня?";
+  const kicker = mode === "list" ? "Новый список" : mode === "note" ? "Новая заметка" : "Новая задача";
+  const sendLabel = mode === "list" ? "Создать список" : mode === "note" ? "Добавить заметку" : item ? "Сохранить" : "Добавить задачу";
+  const glyph = (name, fallback) => typeof window.flowMagicObject === "function" ? `<span class="dm-task-add-glyph">${window.flowMagicObject(name, true)}</span>` : icon(fallback, "icon-sm");
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-task-add" role="dialog" aria-modal="true" aria-label="${kicker}"><form id="entry-form"><div class="dm-task-add-field" data-has-text="${title.trim() ? "true" : "false"}"><textarea name="title" rows="1" placeholder="${placeholder}" aria-label="${mode === "list" ? "Название списка" : mode === "note" ? "Заголовок заметки" : "Название задачи"}" maxlength="120" required autofocus>${esc(title)}</textarea><button class="dm-task-add-star" type="button" data-action="task-dictate" aria-label="Надиктовать ассистенту"><span class="compose-assistant-star" aria-hidden="true"></span></button><button class="dm-task-add-send" type="submit" aria-label="${sendLabel}">${icon("arrow", "icon-sm")}</button></div><div class="dm-task-add-subs" data-task-sub-list ${mode === "note" ? "hidden" : ""}>${rows}</div><input type="hidden" name="checklist" value="${esc(checklist)}"><input type="hidden" name="due" value="${esc(due)}"><input type="hidden" name="time" value="${esc(time)}"><input type="hidden" name="priority" value="${esc(field("priority") || "medium")}"><input type="hidden" name="project" value="${esc(field("project") || "")}"><input type="hidden" name="description" value="${esc(field("description"))}"><input type="hidden" name="repeat" value="${esc(field("repeat") || "none")}"><div class="dm-task-add-actions"><button class="dm-task-add-action ${mode === "task" ? "active" : ""}" type="button" data-action="task-mode" data-mode="task" aria-label="Задача" title="Задача">${glyph("tasks", "check")}</button><button class="dm-task-add-action ${time ? "has-value" : ""}" type="button" data-action="task-when" ${mode !== "task" ? "disabled" : ""} aria-label="Время" title="Время">${glyph("today", "clock")}</button><button class="dm-task-add-action" type="button" data-action="task-subtask-add" ${mode === "note" ? "disabled" : ""} aria-label="Подзадача" title="Подзадача">${glyph("projects", "subtask")}</button><button class="dm-task-add-action ${mode === "note" ? "active" : ""}" type="button" data-action="task-mode" data-mode="note" aria-label="Заметка" title="Заметка">${glyph("notes", "note")}</button><button class="dm-task-add-action ${mode === "list" ? "active" : ""}" type="button" data-action="task-mode" data-mode="list" aria-label="Список" title="Список">${glyph("archive", "list")}</button></div></form></section></div>`;
+}
+function taskTimeDial(step, hour, minute) {
+  if (step === "minute") {
+    const values = Array.from({ length: 12 }, (_, index) => index * 5);
+    const selected = minute - (minute % 5);
+    return `<div class="dm-time-dial"><i class="dm-time-hand" style="--a:${minute * 6}deg;--h:118px"></i><span class="dm-time-center"></span>${values.map(value => `<button type="button" class="dm-time-num ${value === selected ? "selected" : ""}" style="--a:${value * 6}deg;--r:132px" data-action="task-time-pick" data-kind="minute" data-value="${value}">${String(value).padStart(2, "0")}</button>`).join("")}</div>`;
+  }
+  const outer = Array.from({ length: 12 }, (_, index) => index);
+  const inner = Array.from({ length: 12 }, (_, index) => index + 12);
+  const hand = (hour % 12) * 30;
+  const handLength = hour >= 12 ? 88 : 122;
+  const button = (value, radius) => `<button type="button" class="dm-time-num ${value === hour ? "selected" : ""}" style="--a:${(value % 12) * 30}deg;--r:${radius}px" data-action="task-time-pick" data-kind="hour" data-value="${value}">${value}</button>`;
+  return `<div class="dm-time-dial"><i class="dm-time-hand" style="--a:${hand}deg;--h:${handLength}px"></i><span class="dm-time-center"></span>${outer.map(value => button(value, 132)).join("")}${inner.map(value => button(value, 96)).join("")}</div>`;
+}
+function taskWhenView(sheet, values) {
+  const month = sheet.whenMonth || `${(values.due || todayIso()).slice(0, 7)}-01`;
+  const [year, number] = month.split("-").map(Number);
+  const cells = taskMonthCells(month, values.due);
+  const repeatCurrent = /^every:/.test(values.repeat) ? "custom" : values.repeat;
+  const repeatLabel = /^every:/.test(values.repeat) ? `Каждые ${Number(values.repeat.slice(6))} дн.` : (TASK_REPEAT_OPTIONS.find(([key]) => key === values.repeat)?.[1] || "Нет");
+  const priorityLabel = { high: "Очень важно", medium: "Обычно", low: "Когда-нибудь" }[values.priority] || "Обычно";
+  const projectLabel = values.project || "Без проекта";
+  const menu = sheet.whenMenu || "";
+  const timeOpen = Boolean(sheet.timePicker);
+  const timeDraft = sheet.timeDraft || "";
+  const [hour, minute] = (timeDraft || "09:00").split(":").map(Number);
+  const timeStep = sheet.timeStep === "minute" ? "minute" : "hour";
+  const option = (field, value, label, selected) => `<button type="button" class="dm-when-option ${selected ? "active" : ""}" data-action="task-when-pick" data-field="${field}" data-value="${esc(value)}">${esc(label)}${selected ? icon("check", "icon-sm") : ""}</button>`;
+  const repeatOptions = TASK_REPEAT_OPTIONS.map(([key, label]) => option("repeat", key, label, repeatCurrent === key)).join("");
+  const priorityOptions = [["high", "Очень важно"], ["medium", "Обычно"], ["low", "Когда-нибудь"]].map(([key, label]) => option("priority", key, label, values.priority === key)).join("");
+  const projectOptions = [["", "Без проекта"], ...taskProjectNames().map(name => [name, name])].map(([key, label]) => option("project", key, label, values.project === key)).join("");
+  const quick = [["Сегодня", todayIso()], ["Завтра", offsetIso(1)], ["3 дня спустя", offsetIso(3)], ["В это воскресенье", taskNextSundayIso()], ["Без даты", ""]];
+  const timeChips = [["", "Нет времени"], ["07:00", "07:00"], ["09:00", "09:00"], ["10:00", "10:00"], ["12:00", "12:00"], ["14:00", "14:00"], ["16:00", "16:00"], ["18:00", "18:00"]].map(([value, label]) => `<button type="button" class="dm-time-chip ${timeDraft === value ? "active" : ""}" data-action="task-time-quick" data-time="${value}">${label}</button>`).join("");
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-task-add dm-task-when-view" role="dialog" aria-modal="true" aria-label="Дата и время"><div class="dm-when-body"><div class="dm-when-month"><button type="button" data-action="task-month" data-dir="-1" aria-label="Предыдущий месяц">${icon("left", "icon-sm")}</button><strong>${MONTHS_NOM[number - 1]} ${year} г.</strong><button type="button" data-action="task-month" data-dir="1" aria-label="Следующий месяц">${icon("right", "icon-sm")}</button></div><div class="dm-when-week">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(day => `<span>${day}</span>`).join("")}</div><div class="dm-when-grid">${cells.map(cell => `<button type="button" class="dm-when-day ${cell.selected ? "selected" : ""} ${cell.muted ? "muted" : ""} ${cell.today ? "today" : ""}" data-action="task-day" data-date="${cell.iso}" aria-label="${fullDate(cell.iso)}">${cell.day}</button>`).join("")}</div><div class="dm-when-quick">${quick.map(([label, iso]) => `<button type="button" class="dm-when-chip ${values.due === iso ? "active" : ""}" data-action="task-quick-date" data-date="${iso}">${label}</button>`).join("")}</div><div class="dm-when-rows"><div class="dm-when-row dm-when-row-pick"><button class="dm-when-pick" type="button" data-action="task-time-open" aria-expanded="${timeOpen}"><span>${icon("clock", "icon-sm")}Время</span><b>${esc(values.time || "Нет")}</b>${icon("down", "icon-sm")}</button></div><div class="dm-when-row dm-when-row-pick"><button class="dm-when-pick" type="button" data-action="task-when-menu" data-field="repeat" aria-expanded="${menu === "repeat"}"><span>${icon("repeat", "icon-sm")}Повтор</span><b>${esc(repeatLabel)}</b>${icon("down", "icon-sm")}</button></div><div class="dm-when-row dm-when-row-pick"><button class="dm-when-pick" type="button" data-action="task-when-menu" data-field="priority" aria-expanded="${menu === "priority"}"><span>${icon("flag", "icon-sm")}Важность</span><b>${esc(priorityLabel)}</b>${icon("down", "icon-sm")}</button></div><div class="dm-when-row dm-when-row-pick"><button class="dm-when-pick" type="button" data-action="task-when-menu" data-field="project" aria-expanded="${menu === "project"}"><span>${icon("folder", "icon-sm")}Проект</span><b>${esc(projectLabel)}</b>${icon("down", "icon-sm")}</button></div></div><div class="dm-when-extras">${taskRepeatFields(values.repeat)}<label class="field"><textarea name="description" data-task-when-desc placeholder="Описание" aria-label="Описание">${esc(values.description)}</textarea></label></div><div class="sheet-actions dm-when-footer"><button class="ghost-button" type="button" data-action="task-when-cancel">Отмена</button><button class="primary-button" type="button" data-action="task-when-done">Готово</button></div></div>${menu ? `<div class="dm-when-menu-layer" data-action="task-when-menu-layer-close"><div class="dm-when-menu-card" role="listbox" aria-label="${menu === "repeat" ? "Повтор" : menu === "priority" ? "Важность" : "Проект"}">${menu === "repeat" ? repeatOptions : menu === "priority" ? priorityOptions : projectOptions}</div></div>` : ""}${timeOpen ? `<div class="dm-time-layer" data-action="task-time-layer-close"><div class="dm-time-card"><h3 class="dm-time-title">Установить время</h3><div class="dm-time-display"><button type="button" class="${timeStep === "hour" ? "active" : ""}" data-action="task-time-step" data-step="hour">${timeDraft ? String(hour).padStart(2, "0") : "--"}</button><span>:</span><button type="button" class="${timeStep === "minute" ? "active" : ""}" data-action="task-time-step" data-step="minute">${timeDraft ? String(minute).padStart(2, "0") : "--"}</button></div>${taskTimeDial(timeStep, hour, minute)}<div class="dm-time-quick">${timeChips}</div><div class="dm-time-actions"><button class="ghost-button" type="button" data-action="task-time-cancel">Отмена</button><button class="primary-button" type="button" data-action="task-time-done">Готово</button></div></div></div>` : ""}</section></div>`;
+}
+function taskEntrySheet(sheet, item, values) {
+  const mode = sheet.taskMode || "compose";
+  if (mode === "when") return taskWhenSheet(sheet, values);
+  if (mode === "time") return taskTimeSheet(sheet, values);
+  if (mode === "list") return taskListSheet(sheet);
+  return taskComposeSheet(sheet, item, values);
+}
+function taskComposeSheet(sheet, item, values) {
+  const day = values.due ? values.due.slice(8, 10) : "";
+  const hasText = values.title.trim() ? "true" : "false";
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace dm-task-editor dm-task-quick dm-task-compact" role="dialog" aria-modal="true" aria-label="${item ? "Задача" : "Новая задача"}"><div class="sheet-handle"></div><h2 id="sheet-title" class="dm-quick-sr">${item ? "Задача" : "Новая задача"}</h2><form id="entry-form"><div class="dm-quick-body"><div class="dm-quick-subs" data-task-sub-list>${taskSubtaskRows(values.checklist)}</div><input type="hidden" name="checklist" value="${esc(values.checklist)}"><input type="hidden" name="due" value="${esc(values.due)}"><input type="hidden" name="time" value="${esc(values.time)}"><input type="hidden" name="priority" value="${esc(values.priority)}"><input type="hidden" name="project" value="${esc(values.project)}"><input type="hidden" name="description" value="${esc(values.description)}"><input type="hidden" name="repeat" value="${esc(values.repeat)}"><div class="check-add dc2-list-compose dm-task-compose" data-has-text="${hasText}"><div class="dc2-compose-main"><textarea name="title" rows="1" placeholder="Какой план на сегодня?" aria-label="Название задачи" maxlength="120" required autofocus>${esc(values.title)}</textarea><button class="dc2-compose-mic" type="button" data-action="task-dictate" aria-label="Надиктовать ассистенту"><span class="compose-assistant-star" aria-hidden="true"></span></button><button class="dc2-compose-send" type="submit" aria-label="${item ? "Сохранить задачу" : "Добавить задачу"}">${icon("arrow", "icon-sm")}</button></div><div class="dm-task-compose-actions"><button class="dc2-compose-add-sub" type="button" data-action="task-subtask-add">${icon("subtask", "icon-sm")}Подзадача</button><div class="dm-task-tools"><button class="dm-quick-tool dm-quick-date" type="button" data-action="task-when" aria-label="Дата и время">${icon("calendar", "icon-sm")}${day ? `<b>${day}</b>` : ""}</button><button class="dm-quick-tool" type="button" data-action="task-list" aria-label="Создать список" title="Список">${icon("list", "icon-sm")}</button><button class="dm-quick-tool" type="button" data-action="task-note" aria-label="Создать заметку" title="Заметка">${icon("note", "icon-sm")}</button></div></div></div></div></form></section></div>`;
+}
+function taskListSheet(sheet) {
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace dm-task-editor dm-task-quick dm-task-list" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><header class="sheet-head dc2-window-head dm-quick-head"><div><p>Список</p><h2 id="sheet-title">Новый список</h2></div><div class="dc2-window-tools"><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div></header><form id="task-list-form"><div class="dm-quick-body"><label class="dm-quick-line"><input name="listTitle" type="text" placeholder="Название списка" aria-label="Название списка" maxlength="120" required autofocus></label><div class="dm-quick-subs" data-list-item-list></div><div class="dm-list-add"><input type="text" placeholder="Добавить пункт" aria-label="Новый пункт" maxlength="200" data-list-item-input><button type="button" data-action="task-list-item-add" aria-label="Добавить пункт">${icon("plus", "icon-sm")}</button></div></div><div class="sheet-actions dm-when-footer"><button class="ghost-button" type="button" data-action="task-list-cancel">Отмена</button><button class="primary-button" type="submit">Создать список</button></div></form></section></div>`;
+}
+function taskMonthCells(month, selected) {
+  const [year, number] = month.split("-").map(Number);
+  const first = new Date(year, number - 1, 1, 12);
+  const offset = (first.getDay() + 6) % 7;
+  const start = shiftDay(first, -offset);
+  const today = todayIso();
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = shiftDay(start, index);
+    const iso = localIso(date);
+    return { iso, day: date.getDate(), muted: date.getMonth() !== number - 1, today: iso === today, selected: iso === selected };
+  });
+}
+function taskNextSundayIso() {
+  const weekday = (new Date().getDay() + 6) % 7;
+  return offsetIso((6 - weekday + 7) % 7);
+}
+function taskWhenSheet(sheet, values) {
+  const month = sheet.whenMonth || `${(values.due || todayIso()).slice(0, 7)}-01`;
+  const [year, number] = month.split("-").map(Number);
+  const cells = taskMonthCells(month, values.due);
+  const repeatCurrent = /^every:/.test(values.repeat) ? "custom" : values.repeat;
+  const quick = [["Сегодня", todayIso()], ["Завтра", offsetIso(1)], ["3 дня спустя", offsetIso(3)], ["В это воскресенье", taskNextSundayIso()], ["Без даты", ""]];
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace dm-task-editor dm-task-quick dm-task-when-sheet" role="dialog" aria-modal="true" aria-labelledby="when-title"><div class="sheet-handle"></div><h2 id="when-title" class="dm-quick-sr">Дата и время</h2><div class="dm-when-body"><div class="dm-when-month"><button type="button" data-action="task-month" data-dir="-1" aria-label="Предыдущий месяц">${icon("left", "icon-sm")}</button><strong>${MONTHS_NOM[number - 1]} ${year} г.</strong><button type="button" data-action="task-month" data-dir="1" aria-label="Следующий месяц">${icon("right", "icon-sm")}</button></div><div class="dm-when-week">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(day => `<span>${day}</span>`).join("")}</div><div class="dm-when-grid">${cells.map(cell => `<button type="button" class="dm-when-day ${cell.selected ? "selected" : ""} ${cell.muted ? "muted" : ""} ${cell.today ? "today" : ""}" data-action="task-day" data-date="${cell.iso}" aria-label="${fullDate(cell.iso)}">${cell.day}</button>`).join("")}</div><div class="dm-when-quick">${quick.map(([label, iso]) => `<button type="button" class="dm-when-chip ${values.due === iso ? "active" : ""}" data-action="task-quick-date" data-date="${iso}">${label}</button>`).join("")}</div><div class="dm-when-rows"><button type="button" class="dm-when-row" data-action="task-time"><span>${icon("clock", "icon-sm")}Время</span><b>${values.time ? esc(values.time) : "Нет"}</b></button><div class="dm-when-row"><span>${icon("repeat", "icon-sm")}Повтор</span><select name="repeat" data-task-when-field aria-label="Повтор">${TASK_REPEAT_OPTIONS.map(([key, label]) => `<option value="${key}" ${repeatCurrent === key ? "selected" : ""}>${label}</option>`).join("")}</select></div><div class="dm-when-row"><span>${icon("flag", "icon-sm")}Важность</span><select name="priority" data-task-when-field aria-label="Важность">${[["high", "Очень важно"], ["medium", "Обычно"], ["low", "Когда-нибудь"]].map(([key, label]) => `<option value="${key}" ${values.priority === key ? "selected" : ""}>${label}</option>`).join("")}</select></div><div class="dm-when-row"><span>${icon("folder", "icon-sm")}Проект</span><select name="project" data-task-when-field aria-label="Проект">${taskProjectOptions(values.project)}</select></div></div><div class="dm-when-extras">${taskRepeatFields(values.repeat)}<label class="field"><textarea name="description" data-task-when-desc placeholder="Описание" aria-label="Описание">${esc(values.description)}</textarea></label></div></div><div class="sheet-actions dm-when-footer"><button class="ghost-button" type="button" data-action="task-when-cancel">Отмена</button><button class="primary-button" type="button" data-action="task-when-done">Готово</button></div></section></div>`;
+}
+function taskTimeSheet(sheet, values) {
+  const quick = [["Нет времени", ""], ["07:00", "07:00"], ["09:00", "09:00"], ["10:00", "10:00"], ["12:00", "12:00"], ["14:00", "14:00"], ["16:00", "16:00"], ["18:00", "18:00"]];
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet dm-entry-workspace dm-task-editor dm-task-quick dm-task-time-sheet" role="dialog" aria-modal="true" aria-labelledby="time-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="time-title">Установить время</h2></div><div class="dm-time-body"><input class="dm-time-input" type="time" value="${esc(values.time)}" data-task-time aria-label="Время"><div class="dm-when-quick">${quick.map(([label, value]) => `<button type="button" class="dm-when-chip ${values.time === value ? "active" : ""}" data-action="task-time-quick" data-time="${value}">${label}</button>`).join("")}</div></div><div class="sheet-actions dm-when-footer"><button class="ghost-button" type="button" data-action="task-time-cancel">Отмена</button><button class="primary-button" type="button" data-action="task-time-done">Готово</button></div></section></div>`;
+}
+function captureEntryDraft() {
+  const form = document.getElementById("entry-form");
+  if (!form || ui.sheet?.kind !== "entry") return;
+  syncTaskChecklist(form);
+  ui.sheet.draft = { ...(ui.sheet.draft || {}), ...Object.fromEntries(new FormData(form).entries()) };
 }
 function searchSheet() {
   return renderSearchSheetExt();
@@ -639,6 +772,19 @@ function afterRender(scroll) {
   if(repeatDays){repeatDays.hidden=repeatForm.elements.repeat.value!=='custom';repeatDays.querySelector('input').disabled=repeatDays.hidden;}
   restoreSheetScroll(scroll);
   renderedScrollIdentity = sheetScrollIdentity();
+  const quickTitle = app.querySelector(".dm-task-quick .dm-quick-title-input");
+  if (quickTitle) {
+    quickTitle.style.height = "auto";
+    quickTitle.style.height = `${Math.min(120, Math.max(40, quickTitle.scrollHeight))}px`;
+  }
+  const compactTitle = app.querySelector(".dm-task-add .dm-task-add-field [name=title]");
+  if (compactTitle) {
+    compactTitle.style.height = "auto";
+    compactTitle.style.height = `${Math.min(120, Math.max(44, compactTitle.scrollHeight))}px`;
+    const wrap = compactTitle.closest(".dm-task-add-field");
+    if (wrap) wrap.dataset.hasText = String(Boolean(compactTitle.value.trim()));
+  }
+  if (typeof startAssistantStarShimmer === "function") startAssistantStarShimmer();
   if (typeof movieWatchReturnCheck === "function") movieWatchReturnCheck();
   if (typeof syncMovieCarousel === "function") syncMovieCarousel();
   if (typeof refreshSavedAddressPreview === "function") refreshSavedAddressPreview();
@@ -784,14 +930,234 @@ document.addEventListener("click", event => {
     return;
   }
   if (action === "close-sheet") { closeSheet(); return; }
+  if (action === "task-dictate") {
+    const field = document.querySelector(".dm-task-add [name=title]");
+    if (field) { if (!field.value.trim()) field.value = "Позвонить врачу"; field.focus(); field.dispatchEvent(new Event("input", { bubbles: true })); }
+    return;
+  }
+  if (action === "task-subtask-add") {
+    const list = document.querySelector("#entry-form [data-task-sub-list]");
+    if (list) {
+      const mode = ui.sheet?.taskMode === "list" ? "list" : "task";
+      const row = document.createElement("div");
+      row.className = "dm-task-add-sub";
+      row.innerHTML = `<span class="dm-task-add-dot" aria-hidden="true"></span><input type="text" placeholder="${mode === "list" ? "Пункт списка" : "Подзадача"}" aria-label="${mode === "list" ? "Пункт списка" : "Подзадача"}" maxlength="200" data-task-sub><button type="button" data-action="task-subtask-remove" aria-label="Удалить">${icon("close", "icon-sm")}</button>`;
+      list.append(row);
+      const input = row.querySelector("input");
+      input.focus();
+      row.scrollIntoView({ block: "nearest" });
+    }
+    return;
+  }
+  if (action === "task-subtask-remove") {
+    const form = control.closest("#entry-form");
+    control.closest(".dm-task-add-sub")?.remove();
+    syncTaskChecklist(form);
+    return;
+  }
+  if (action === "task-mode") {
+    const form = document.getElementById("entry-form");
+    if (form) { syncTaskChecklist(form); ui.sheet.draft = { ...(ui.sheet.draft || {}), ...Object.fromEntries(new FormData(form).entries()) }; }
+    ui.sheet.taskMode = control.dataset.mode === "list" ? "list" : control.dataset.mode === "note" ? "note" : "task";
+    ui.sheet.timeOpen = false;
+    render();
+    return;
+  }
+  if (action === "task-time-toggle") {
+    const form = document.getElementById("entry-form");
+    if (form) { syncTaskChecklist(form); ui.sheet.draft = { ...(ui.sheet.draft || {}), ...Object.fromEntries(new FormData(form).entries()) }; }
+    ui.sheet.timeOpen = !ui.sheet.timeOpen;
+    render();
+    return;
+  }
+  if (action === "task-time-set") {
+    const form = document.getElementById("entry-form");
+    if (form) { syncTaskChecklist(form); ui.sheet.draft = { ...(ui.sheet.draft || {}), ...Object.fromEntries(new FormData(form).entries()), time: control.dataset.time || "" }; }
+    ui.sheet.timeOpen = true;
+    render();
+    return;
+  }
+  if (action === "task-when") {
+    captureEntryDraft();
+    const draft = ui.sheet.draft || {};
+    ui.sheet.whenBackup = { due: draft.due || "", time: draft.time || "", repeat: draft.repeat || "none", priority: draft.priority || "medium", project: draft.project || "", description: draft.description || "" };
+    ui.sheet.whenMonth = `${(draft.due || todayIso()).slice(0, 7)}-01`;
+    ui.sheet.whenMenu = null;
+    ui.sheet.timePicker = false;
+    ui.sheet.timeStep = "hour";
+    ui.sheet.taskMode = "when";
+    render();
+    return;
+  }
+  if (action === "task-when-menu") {
+    const field = control.dataset.field || "";
+    ui.sheet.whenMenu = ui.sheet.whenMenu === field ? null : field;
+    render();
+    return;
+  }
+  if (action === "task-when-pick") {
+    const field = control.dataset.field || "", value = control.dataset.value || "";
+    ui.sheet.draft = { ...(ui.sheet.draft || {}) };
+    if (field === "repeat" && value === "custom") ui.sheet.draft.repeat = "every:14";
+    else ui.sheet.draft[field] = value;
+    ui.sheet.whenMenu = null;
+    render();
+    return;
+  }
+  if (action === "task-when-menu-layer-close") {
+    if (event.target === control) {
+      ui.sheet.whenMenu = null;
+      render();
+    }
+    return;
+  }
+  if (action === "task-time-open") {
+    ui.sheet.timeDraft = ui.sheet.draft?.time || "09:00";
+    ui.sheet.timeBackup = ui.sheet.draft?.time || "";
+    ui.sheet.timeStep = "hour";
+    ui.sheet.timePicker = true;
+    ui.sheet.whenMenu = null;
+    render();
+    return;
+  }
+  if (action === "task-time-step") {
+    ui.sheet.timeStep = control.dataset.step === "minute" ? "minute" : "hour";
+    render();
+    return;
+  }
+  if (action === "task-time-pick") {
+    let draft = ui.sheet.timeDraft || "09:00";
+    let [hours, minutes] = draft.split(":").map(Number);
+    if (!Number.isFinite(hours)) hours = 9;
+    if (!Number.isFinite(minutes)) minutes = 0;
+    if (control.dataset.kind === "hour") {
+      hours = Math.max(0, Math.min(23, Number(control.dataset.value) || 0));
+      ui.sheet.timeStep = "minute";
+    } else {
+      minutes = Math.max(0, Math.min(55, Number(control.dataset.value) || 0));
+    }
+    ui.sheet.timeDraft = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    render();
+    return;
+  }
+  if (action === "task-time-quick") {
+    ui.sheet.timeDraft = control.dataset.time || "";
+    render();
+    return;
+  }
+  if (action === "task-time-cancel") {
+    ui.sheet.draft.time = ui.sheet.timeBackup || "";
+    ui.sheet.timePicker = false;
+    render();
+    return;
+  }
+  if (action === "task-time-layer-close") {
+    if (event.target === control) {
+      ui.sheet.draft.time = ui.sheet.timeBackup || "";
+      ui.sheet.timePicker = false;
+      render();
+    }
+    return;
+  }
+  if (action === "task-time-done") {
+    ui.sheet.draft.time = ui.sheet.timeDraft || "";
+    ui.sheet.timePicker = false;
+    render();
+    return;
+  }
+  if (action === "task-when-cancel") {
+    Object.assign(ui.sheet.draft || (ui.sheet.draft = {}), ui.sheet.whenBackup || {});
+    ui.sheet.taskMode = "task";
+    ui.sheet.whenMenu = null;
+    ui.sheet.timePicker = false;
+    render();
+    return;
+  }
+  if (action === "task-when-done") {
+    const repeat = document.querySelector("[data-task-when-field][name=repeat]");
+    if (repeat) {
+      if (repeat.value === "custom") {
+        const days = Number(document.querySelector(".dm-task-when-view [data-repeat-days] input")?.value || 0);
+        ui.sheet.draft.repeat = /^[1-9]\d{0,3}$/.test(String(days)) ? `every:${days}` : "none";
+      } else ui.sheet.draft.repeat = repeat.value;
+    }
+    const daysBox = document.querySelector(".dm-task-when-view [data-repeat-days]");
+    if (daysBox && !daysBox.hidden) {
+      const days = Number(daysBox.querySelector("input")?.value || 0);
+      if (days >= 1) ui.sheet.draft.repeat = `every:${days}`;
+    }
+    const time = document.querySelector("[data-task-when-time]");
+    if (time) ui.sheet.draft.time = time.value;
+    const description = document.querySelector("[data-task-when-desc]");
+    if (description) ui.sheet.draft.description = description.value;
+    ui.sheet.taskMode = "task";
+    ui.sheet.whenMenu = null;
+    ui.sheet.timePicker = false;
+    render();
+    return;
+  }
+  if (action === "task-month") {
+    const [year, number] = (ui.sheet.whenMonth || `${todayIso().slice(0, 7)}-01`).split("-").map(Number);
+    ui.sheet.whenMonth = localIso(new Date(year, number - 1 + (Number(control.dataset.dir) || 0), 1, 12));
+    render();
+    return;
+  }
+  if (action === "task-day" || action === "task-quick-date") {
+    const date = control.dataset.date || "";
+    ui.sheet.draft = { ...(ui.sheet.draft || {}), due: date };
+    if (date) ui.sheet.whenMonth = `${date.slice(0, 7)}-01`;
+    render();
+    return;
+  }
+  if (action === "task-time") {
+    ui.sheet.timeBackup = ui.sheet.draft?.time || "";
+    ui.sheet.taskMode = "time";
+    render();
+    return;
+  }
+  if (action === "task-time-cancel") {
+    ui.sheet.draft.time = ui.sheet.timeBackup || "";
+    ui.sheet.taskMode = "when";
+    render();
+    return;
+  }
+  if (action === "task-time-done") { ui.sheet.taskMode = "when"; render(); return; }
+  if (action === "task-time-quick") { ui.sheet.draft.time = control.dataset.time || ""; render(); return; }
   if (action === "add") { openEntry(control.dataset.type || "task"); return; }
   if (action === "edit") { openEntry(control.dataset.type, ui.page === "tasks" ? "" : ui.selected, control.dataset.id); return; }
-  if (action === "sheet-type") {
-    const form = document.getElementById("entry-form");
-    const formData = form ? new FormData(form) : null;
-    ui.sheet.draft = formData ? Object.fromEntries(formData.entries()) : {};
-    ui.sheet.type = control.dataset.type;
-    ui.sheet.justRendered = false;
+  if (action === "task-list") {
+    captureEntryDraft();
+    ui.sheet.taskMode = "list";
+    render(); return;
+  }
+  if (action === "task-list-cancel") {
+    ui.sheet.taskMode = "compose";
+    render(); return;
+  }
+  if (action === "task-list-item-add") {
+    const form = document.getElementById("task-list-form");
+    const input = form?.querySelector("[data-list-item-input]");
+    const list = form?.querySelector("[data-list-item-list]");
+    if (input && list) {
+      const text = input.value.trim();
+      if (!text) { input.focus(); return; }
+      const row = document.createElement("div");
+      row.className = "dm-quick-sub";
+      row.innerHTML = `<span class="dm-quick-sub-dot" aria-hidden="true"></span><input type="text" value="${esc(text)}" aria-label="Пункт списка" maxlength="200" data-list-item><button type="button" data-action="task-list-item-remove" aria-label="Удалить пункт">${icon("close", "icon-sm")}</button>`;
+      list.append(row);
+      input.value = "";
+      input.focus();
+    }
+    return;
+  }
+  if (action === "task-list-item-remove") {
+    control.closest(".dm-quick-sub")?.remove();
+    return;
+  }
+  if (action === "task-note") {
+    captureEntryDraft();
+    ui.sheet.type = "note";
+    ui.sheet.taskMode = "compose";
     render(); return;
   }
   if (action === "delete-record") {
@@ -835,6 +1201,27 @@ document.addEventListener("submit", event => {
   const form = new FormData(event.target);
   const title = String(form.get("title") || "").trim();
   if (!title) return;
+  if (ui.sheet.taskMode === "list") {
+    const items = [...event.target.querySelectorAll("[data-task-sub]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false }));
+    data.saved ||= {};
+    data.saved.lists ||= [];
+    const list = { id: id(), title, items, created: new Date().toISOString() };
+    data.saved.lists.push(list);
+    save();
+    if (typeof openSavedRecord === "function") openSavedRecord("lists", list.id, "view");
+    else { ui.sheet = null; render(); }
+    toast("Список создан");
+    return;
+  }
+  if (ui.sheet.taskMode === "note") {
+    const note = { id: id(), title, description: "", pinned: false, created: new Date().toISOString(), updated: new Date().toISOString() };
+    data.notes.push(note);
+    save();
+    if (typeof openSavedRecord === "function") openSavedRecord("notes", note.id, "view");
+    else { ui.sheet = null; render(); }
+    toast("Заметка создана");
+    return;
+  }
   const type = ui.sheet.type;
   let repeat;
   try { repeat = type === "task" ? readTaskRepeat(form) : String(form.get("repeat") || "none"); } catch (error) { toast(error.message); return; }
@@ -859,8 +1246,76 @@ document.addEventListener("submit", event => {
   save();
   toast(existing ? "Изменения сохранены" : type === "event" ? "Событие добавлено" : `${type === "task" ? "Задача" : "Заметка"} добавлена`);
 });
-document.addEventListener("input", event => { handleExtendedInput(event); });
-document.addEventListener("change", event => { handleExtendedChange(event); });
+document.addEventListener("submit", event => {
+  if (event.target.id !== "task-list-form" || !ui.sheet || ui.sheet.kind !== "entry") return;
+  event.preventDefault();
+  const title = String(new FormData(event.target).get("listTitle") || "").trim();
+  if (!title) { event.target.elements.listTitle?.focus(); return; }
+  const items = [...event.target.querySelectorAll("[data-list-item]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false }));
+  data.saved ||= {};
+  data.saved.lists ||= [];
+  data.saved.lists.push({ id: id(), title, items, created: new Date().toISOString() });
+  ui.sheet = null;
+  save();
+  toast("Список создан");
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey && event.target.matches?.("[data-list-item-input]")) {
+    event.preventDefault();
+    document.querySelector("#task-list-form [data-action='task-list-item-add']")?.click();
+  }
+  if (event.key === "Enter" && !event.shiftKey && event.target.matches?.("[data-subtask-compose]")) {
+    event.preventDefault();
+    document.querySelector("#entry-form [data-action='task-subtask-compose-add']")?.click();
+  }
+  if (event.key === "Enter" && !event.shiftKey && event.target.matches?.(".dm-task-add .dm-task-add-field [name=title]")) {
+    event.preventDefault();
+    event.target.closest("form")?.requestSubmit();
+  }
+});
+document.addEventListener("input", event => {
+  handleExtendedInput(event);
+  const subtask = event.target.closest?.("[data-task-sub]");
+  if (subtask) syncTaskChecklist(subtask.closest("#entry-form"));
+  const composeTitle = event.target.closest?.(".dm-task-add .dm-task-add-field [name=title]");
+  if (composeTitle) {
+    const wrap = composeTitle.closest(".dm-task-add-field");
+    if (wrap) wrap.dataset.hasText = String(Boolean(composeTitle.value.trim()));
+    composeTitle.style.height = "auto";
+    composeTitle.style.height = `${Math.min(120, Math.max(44, composeTitle.scrollHeight))}px`;
+  }
+  const whenDescription = event.target.closest?.("[data-task-when-desc]");
+  if (whenDescription && ui.sheet?.kind === "entry") ui.sheet.draft = { ...(ui.sheet.draft || {}), description: whenDescription.value };
+  const whenTimeInput = event.target.closest?.("[data-task-when-time]");
+  if (whenTimeInput && ui.sheet?.kind === "entry") ui.sheet.draft = { ...(ui.sheet.draft || {}), time: whenTimeInput.value };
+  const repeatDays = event.target.closest?.(".dm-task-when-view [data-repeat-days] input");
+  if (repeatDays && ui.sheet?.kind === "entry") {
+    const days = Number(repeatDays.value);
+    if (days >= 1) ui.sheet.draft = { ...(ui.sheet.draft || {}), repeat: `every:${days}` };
+  }
+  const time = event.target.closest?.("[data-task-time]");
+  if (time && ui.sheet?.kind === "entry") ui.sheet.draft = { ...(ui.sheet.draft || {}), time: time.value };
+});
+document.addEventListener("change", event => {
+  handleExtendedChange(event);
+  const select = event.target.closest?.("[data-task-when-field]");
+  if (select && ui.sheet?.kind === "entry") {
+    ui.sheet.draft = { ...(ui.sheet.draft || {}), [select.name]: select.value };
+    if (select.name === "repeat") {
+      const days = document.querySelector(".dm-task-when-view [data-repeat-days]");
+      if (days) { days.hidden = select.value !== "custom"; const input = days.querySelector("input"); if (input) input.disabled = days.hidden; }
+    }
+  }
+  const whenTimeInput = event.target.closest?.("[data-task-when-time]");
+  if (whenTimeInput && ui.sheet?.kind === "entry") ui.sheet.draft = { ...(ui.sheet.draft || {}), time: whenTimeInput.value };
+  const repeatDays = event.target.closest?.(".dm-task-when-view [data-repeat-days] input");
+  if (repeatDays && ui.sheet?.kind === "entry") {
+    const days = Number(repeatDays.value);
+    if (days >= 1) ui.sheet.draft = { ...(ui.sheet.draft || {}), repeat: `every:${days}` };
+  }
+  const time = event.target.closest?.("[data-task-time]");
+  if (time && ui.sheet?.kind === "entry") ui.sheet.draft = { ...(ui.sheet.draft || {}), time: time.value };
+});
 window.addEventListener("hashchange", () => { if (location.hash === "#sleep") history.replaceState(null, "", "#today"); const page = currentPage(); if (page !== ui.page) { if (!confirmSheetDiscard()) { history.replaceState(null, "", `#${ui.page}`); return; } ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
 let calendarPointerStart = null;
 let suppressCalendarClick = false;
