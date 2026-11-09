@@ -633,22 +633,102 @@ function renderKeepScroll(after) {
   if (sheet) sheet.scrollTop = scroll;
   if (after) after();
 }
+/** FLIP для списка: выполненный пункт плавно уезжает вниз, а не прыгает. */
+function listEntryPositions() {
+  const positions = new Map();
+  for (const node of document.querySelectorAll("[data-list-order] > *")) {
+    const key = node.dataset.orderKey || node.dataset.id;
+    if (key) positions.set(key, node.getBoundingClientRect().top);
+  }
+  return positions;
+}
+function animateListReorder(before) {
+  if (!before?.size) return;
+  requestAnimationFrame(() => {
+    for (const node of document.querySelectorAll("[data-list-order] > *")) {
+      const key = node.dataset.orderKey || node.dataset.id;
+      const oldTop = before.get(key);
+      if (oldTop == null) continue;
+      const delta = oldTop - node.getBoundingClientRect().top;
+      if (Math.abs(delta) < 2) continue;
+      node.animate([{ transform: `translateY(${delta}px)` }, { transform: "translateY(0)" }], { duration: 460, easing: "cubic-bezier(.2,.7,.2,1)" });
+    }
+  });
+}
+/** Показать последний добавленный пункт над композером. */
+function scrollListToItem(id) {
+  const entry = [...document.querySelectorAll("[data-list-order] > *")].find(node => node.dataset.orderKey === id && node.getClientRects().length);
+  const body = entry?.closest(".dc2-window-body");
+  if (!entry || !body) return;
+  const entryRect = entry.getBoundingClientRect(), bodyRect = body.getBoundingClientRect();
+  const target = body.scrollTop + (entryRect.top - bodyRect.top) - body.clientHeight + entryRect.height + Math.min(180, body.clientHeight * .38);
+  body.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+}
+/** Переливание звезды ассистента; WAAPI не зависит от системного reduced motion. */
+function startAssistantStarShimmer() {
+  const star = [...document.querySelectorAll("#list-item-form .compose-assistant-star, #entry-form .compose-assistant-star")].find(node => node.getClientRects().length);
+  if (!star || star.dataset.shimmer) return;
+  star.dataset.shimmer = "true";
+  star.animate([
+    { backgroundPosition: "0% 50%" },
+    { backgroundPosition: "240% 50%" }
+  ], { duration: 3000, iterations: Infinity, easing: "linear" });
+}
+/** Мягкая волна от нажатого чекбокса до краёв видимой области. */
+function listMagicWave(source) {
+  if (!source) return;
+  const rect = source.getBoundingClientRect();
+  const x = rect.left + rect.width / 2;
+  const y = rect.top + rect.height / 2;
+  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 24;
+  const duration = 820;
+  const wave = document.createElement("span");
+  wave.className = "list-magic-wave";
+  wave.style.setProperty("--wave-x", `${x}px`);
+  wave.style.setProperty("--wave-y", `${y}px`);
+  wave.style.setProperty("--wave-r", `${radius}px`);
+  document.body.append(wave);
+  wave.animate([
+    { opacity: 0, transform: "scale(.03)" },
+    { opacity: .72, offset: .1 },
+    { opacity: .48, offset: .55 },
+    { opacity: .22, offset: .82 },
+    { opacity: 0, transform: "scale(1.08)" }
+  ], { duration, easing: "cubic-bezier(.16,.72,.24,1)", fill: "forwards" });
+  for (const [side, distance] of Object.entries({ top: y, right: innerWidth - x, bottom: innerHeight - y, left: x })) {
+    const edge = document.createElement("span");
+    edge.className = `list-magic-edge ${side}`;
+    document.body.append(edge);
+    edge.animate([{ opacity: 0 }, { opacity: .82, offset: .2 }, { opacity: 0 }], { duration: 620, delay: Math.round(Math.min(640, (distance / radius) * duration)), easing: "ease-out", fill: "both" });
+    setTimeout(() => edge.remove(), 1450);
+  }
+  setTimeout(() => wave.remove(), 1000);
+}
 /**
  * Список как чек-лист: отметить — кружком, изменить — нажать на текст, удалить —
  * крестиком, добавить — поле внизу. Выполненные уходят вниз, их можно очистить.
  */
 function renderChecklist(item) {
-  const items = item.items || [];
+  const items = [...(item.items || [])].sort((a, b) => {
+    const doneA = Boolean(a.done), doneB = Boolean(b.done);
+    if (doneA !== doneB) return doneA ? 1 : -1;
+    if (doneA) {
+      const at = Number(a.doneAt) || 0, bt = Number(b.doneAt) || 0;
+      if (at !== bt) return bt - at;
+    }
+    return 0;
+  });
   const row = entry => {
     const subtasks = entry.subtasks || [];
     const subRows = subtasks.length ? `<div class="check-subs">${subtasks.map((sub, index) => `<div class="check-sub ${sub.done ? "done" : ""}"><button class="sub-check ${sub.done ? "checked" : ""}" type="button" data-action="list-sub-toggle" data-id="${esc(entry.id)}" data-index="${index}" aria-pressed="${Boolean(sub.done)}" aria-label="${sub.done ? "Вернуть" : "Выполнить"}: ${esc(sub.text)}">${icon("check", "icon-sm")}</button><span>${esc(sub.text)}</span></div>`).join("")}</div>` : "";
     return ui.sheet.editItemId === entry.id
-      ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}" data-state-key="${esc(item.id+':'+entry.id)}"><textarea name="text" rows="1" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта">${esc(entry.text)}</textarea></form>`
-      : `<div class="check-entry"><div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"${entry.highlight ? ' data-highlight="true"' : ""}${ui.sheet.justToggled === entry.id ? ' data-just-toggled="true"' : ""}${ui.sheet.justCompleted === entry.id ? ' data-just-completed="true"' : ""}><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button></div>${subRows}</div>`;
+      ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}" data-order-key="${esc(entry.id)}" data-state-key="${esc(item.id+':'+entry.id)}"><textarea name="text" rows="1" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта">${esc(entry.text)}</textarea></form>`
+      : `<div class="check-entry" data-order-key="${esc(entry.id)}"><div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"${entry.highlight ? ' data-highlight="true"' : ""}><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button></div>${subRows}</div>`;
   };
   const adding = ui.sheet?.listAdding === true;
-  const form = `<form id="list-item-form" class="check-add" data-state-key="${esc(item.id+':'+(ui.sheet.listAddRevision||0))}"><div class="dc2-compose-main"><textarea name="text" rows="1" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></textarea><button class="dc2-compose-mic" type="button" data-action="list-dictate" aria-label="Надиктовать">${icon("mic", "icon-sm")}</button><button class="dc2-compose-send" type="submit" aria-label="Добавить пункт">${icon("arrow", "icon-sm")}</button></div><div class="dc2-compose-subs" id="list-subtasks"></div><button class="dc2-compose-add-sub" type="button" data-action="list-subtask-add">${icon("subtask", "icon-sm")}Подзадача</button></form>`;
+  const form = `<form id="list-item-form" class="check-add" data-state-key="${esc(item.id+':'+(ui.sheet.listAddRevision||0))}"><div class="dc2-compose-main"><textarea name="text" rows="1" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></textarea><button class="dc2-compose-mic" type="button" data-action="list-dictate" aria-label="Надиктовать ассистенту"><span class="compose-assistant-star" aria-hidden="true"></span></button><button class="dc2-compose-send" type="submit" aria-label="Добавить пункт">${icon("arrow", "icon-sm")}</button></div><div class="dc2-compose-subs" id="list-subtasks"></div><button class="dc2-compose-add-sub" type="button" data-action="list-subtask-add">${icon("subtask", "icon-sm")}Подзадача</button></form>`;
   const add = adding ? form : `<button class="dc2-list-add-fab" type="button" data-action="list-add-open" aria-label="Добавить пункт">${icon("plus")}</button>`;
+  if (adding) requestAnimationFrame(startAssistantStarShimmer);
   return `<div class="checklist"><div class="checklist-rows" data-list-order="${esc(item.id)}">${items.map(row).join("")}</div>${add}</div>`;
 }
 /** Пункт списка редактируется многострочно: поле растёт по тексту, но не выше 200px. */
@@ -1022,19 +1102,16 @@ function savedAction(action, control) {
   if (action === "list-toggle" && item) {
     const entry = item.items?.find(x => x.id === control.dataset.id);
     if (entry) {
-      entry.done = !entry.done;
+      const completing = !entry.done;
+      const before = completing ? listEntryPositions() : null;
+      if (completing) listMagicWave(control);
+      entry.done = completing;
+      if (completing) entry.doneAt = Date.now();
+      else delete entry.doneAt;
       if (Array.isArray(entry.subtasks)) entry.subtasks.forEach(sub => { sub.done = entry.done; });
-      ui.sheet.justToggled = entry.id;
-      if (entry.done) ui.sheet.justCompleted = entry.id; else delete ui.sheet.justCompleted;
-      const token = (ui.sheet.animToken || 0) + 1;
-      ui.sheet.animToken = token;
       save();
-      if (ui.sheet.mode === "view") renderKeepScroll(); else render();
-      setTimeout(() => {
-        if (ui.sheet?.animToken !== token) return;
-        delete ui.sheet.justToggled;
-        delete ui.sheet.justCompleted;
-      }, 700);
+      if (ui.sheet.mode === "view") renderKeepScroll(() => { if (completing) animateListReorder(before); });
+      else { render(); if (completing) animateListReorder(before); }
     }
     return true;
   }
@@ -1069,9 +1146,17 @@ function savedAction(action, control) {
     const entry = item.items?.find(x => x.id === control.dataset.id);
     const sub = entry?.subtasks?.[Number(control.dataset.index)];
     if (sub) {
-      sub.done = !sub.done;
+      const completing = !sub.done;
+      const before = completing ? listEntryPositions() : null;
+      if (completing) listMagicWave(control);
+      sub.done = completing;
+      const wasDone = Boolean(entry.done);
       if (entry.subtasks.length) entry.done = entry.subtasks.every(one => one.done);
-      save(); renderKeepScroll();
+      if (entry.done && !wasDone) entry.doneAt = Date.now();
+      else if (!entry.done) delete entry.doneAt;
+      save();
+      if (completing) renderKeepScroll(() => animateListReorder(before));
+      else renderKeepScroll();
     }
     return true;
   }
@@ -1208,7 +1293,7 @@ function savedSubmit(event) {
     const list = savedItem("lists", ui.sheet.id);
     const text = String(new FormData(event.target).get("text") || "").trim();
     // В просмотре поле внизу только добавляет — и остаётся в фокусе для следующего пункта.
-    if (list && text && ui.sheet.mode === "view") { const subtasks = [...event.target.querySelectorAll("[data-subtask-input]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false })); list.items.push({ id: id(), text, done: false, subtasks }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } }); return true; }
+    if (list && text && ui.sheet.mode === "view") { const newId = id(); const subtasks = [...event.target.querySelectorAll("[data-subtask-input]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false })); list.items.push({ id: newId, text, done: false, subtasks }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } requestAnimationFrame(() => { scrollListToItem(newId); startAssistantStarShimmer(); }); }); return true; }
     if (list && text) { const existing = ui.sheet.editItemId ? list.items.find(x => x.id === ui.sheet.editItemId) : null; if (existing) existing.text = text; else list.items.push({ id: id(), text, done: false }); ui.sheet.editItemId = null; save(); render(); }
     return true;
   }
