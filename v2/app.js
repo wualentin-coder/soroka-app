@@ -31,6 +31,7 @@ const icons = {
   down: '<path d="m6 9 6 6 6-6"/>',
   up: '<path d="m6 15 6-6 6 6"/>',
   close: '<path d="M5 5 19 19M19 5 5 19"/>',
+  subtask: '<circle cx="6" cy="4.2" r="1.35" fill="currentColor" stroke="none"/><path d="M6 5.7V17a2 2 0 0 0 2 2h6"/><path d="M6 11.2h9.5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   play: '<path d="M8 5.5v13l10.5-6.5z"/>',
   heart: '<path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.1 4c2 0 3.6 1.1 4.9 2.9C13.3 5.1 14.9 4 16.9 4c3.3 0 5.5 3.2 4.3 6.6C19.5 15.4 12 20 12 20z"/>',
@@ -953,3 +954,47 @@ document.addEventListener('click', event => {
 document.addEventListener("click", event => {
   if (Date.now() < swipeSuppressCalendar && event.target.closest(".calendar-card")) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
+/* Подпись поля живёт внутри как placeholder: убираем отдельную строку над полем. */
+(() => {
+  const textTypes = new Set(["text", "search", "email", "tel", "url", "number", "password"]);
+  const skip = ".switch,.settings-row,.ss-preference,.sl-list-row,.sp-toggle,.sp-check-line,.sl-check,.gift-check,.accent-swatch,.loyalty-color-own,.loyalty-color-none,.rules-auto,.movie-cover-remove,.doc-photo-add,.pn-import,.en-go.en-upload";
+  const done = new WeakSet();
+  const controlOf = label => {
+    const inside = label.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=submit]):not([type=button]), textarea, select");
+    if (inside) return inside;
+    if (!label.htmlFor) return null;
+    const outside = document.getElementById(label.htmlFor);
+    return outside && outside.matches("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=submit]):not([type=button]), textarea, select") ? outside : null;
+  };
+  const captionOf = label => {
+    const direct = [...label.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent).join(" ").replace(/\s+/g, " ").trim();
+    if (direct) return { text: direct, node: null };
+    const child = [...label.children].find(node => /^(SPAN|STRONG|SMALL|B)$/.test(node.tagName) && !node.querySelector("input,textarea,select,button") && node.textContent.trim());
+    return child ? { text: child.textContent.trim(), node: child } : null;
+  };
+  const simplify = root => {
+    for (const label of root.querySelectorAll("label")) {
+      if (done.has(label) || label.matches(skip)) continue;
+      const control = controlOf(label);
+      if (!control || !control.getClientRects().length) continue;
+      const caption = captionOf(label);
+      if (!caption) continue;
+      const text = caption.text.replace(/\s+/g, " ").trim();
+      if (!text || text.length > 80) continue;
+      if (!control.getAttribute("aria-label")) control.setAttribute("aria-label", text);
+      if (!control.dataset.inFieldLabel) {
+        if ((control.tagName === "TEXTAREA" || (control.tagName === "INPUT" && textTypes.has(control.type))) && !control.placeholder) control.placeholder = text;
+        control.dataset.inFieldLabel = "true";
+      }
+      if (caption.node) caption.node.hidden = true;
+      else if (label.htmlFor) label.hidden = true;
+      else for (const node of [...label.childNodes]) if (node.nodeType === Node.TEXT_NODE) node.remove();
+      label.dataset.inFieldLabel = "true";
+      done.add(label);
+    }
+  };
+  let queued = false;
+  const schedule = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; simplify(document); }); };
+  const boot = () => { simplify(document); new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true }); };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true }); else boot();
+})();
