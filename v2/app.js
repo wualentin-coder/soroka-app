@@ -876,6 +876,7 @@ let sheetDrag = null;
 document.addEventListener("touchstart", event => {
   const sheet = event.target.closest?.(".sheet");
   if (!sheet || event.touches.length !== 1) return;
+  if (sheet.classList.contains("dc2-window-lists")) return;
   if (event.target.closest("input, textarea, select, .live-code-track, .leaflet-container, .swipe-row")) return;
   sheetDrag = { sheet, target: event.target, x: event.touches[0].clientX, y: event.touches[0].clientY, dy: 0, t: event.timeStamp, active: false };
 }, { passive: true });
