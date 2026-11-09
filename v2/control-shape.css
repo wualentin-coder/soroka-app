@@ -1,0 +1,63 @@
+/* Один язык формы: кнопки — скруглённые квадраты, без кругов и пилюль. */
+:root { --control-radius: 14px; }
+
+button,
+a.primary,
+a.secondary,
+a.primary-button,
+a.secondary-button,
+a.ghost-button,
+label.primary-button,
+label.secondary-button,
+label.ghost-button,
+.primary-button,
+.secondary-button,
+.ghost-button,
+.icon-button,
+.dm-icon-button,
+[role="button"]:not(.head-pill):not(.activity-island) {
+  border-radius: var(--control-radius) !important;
+}
+
+/* Поля поиска — такие же скруглённые квадраты, не пилюли. */
+.dc2-search,
+.notes-search,
+.saved-pins-search,
+.ds2-vault-search,
+.mu-search,
+.search-box {
+  border-radius: var(--control-radius) !important;
+}
+
+/* Форменные исключения: это переключатели и фирменные объекты, не кнопки-действия. */
+.assistant-fab,
+.fa-star {
+  border-radius: 50% !important;
+}
+
+.effects-toggle,
+.head-pill,
+.activity-island {
+  border-radius: 999px !important;
+}
+
+/* Чекбоксы и кольца выполнения — квадраты. */
+.task-check::before,
+.check-ring,
+.sub-check,
+.sp-check {
+  border-radius: 8px !important;
+}
+
+/* Интерактивные цветовые образцы — тоже квадраты, не круги. */
+.loyalty-colors label,
+.loyalty-colors label i,
+.loyalty-color-own,
+.loyalty-color-own i,
+.loyalty-color-none,
+.loyalty-color-none i,
+.accent-swatch,
+.accent-swatch > span,
+.dm-accent-button i {
+  border-radius: 9px !important;
+}
