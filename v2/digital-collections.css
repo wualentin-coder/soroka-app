@@ -64,7 +64,9 @@ html[data-flow-design=magic] .dc2-search{display:flex;align-items:center;gap:9px
 html[data-flow-design=magic] .dc2-search .icon{width:18px;height:18px;flex:none}
 html[data-flow-design=magic] .dc2-search input{width:100%;min-width:0;min-height:44px;padding:0;border:0;background:transparent;outline:none;font:400 16px/1.5 Manrope,sans-serif;color:var(--text)}
 html[data-flow-design=magic] .dc2-search:focus-within{border-color:var(--accent);box-shadow:0 0 20px color-mix(in srgb,var(--accent) 8%,transparent)}
-html[data-flow-design=magic] .dc2-search-row>.notes-folders-manage{display:grid;place-items:center;flex:none;width:46px;height:46px;min-width:46px;padding:0;font-size:0;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--muted)}
+html[data-flow-design=magic] .dc2-search-row>.notes-folders-manage,
+html[data-flow-design=magic] .dc2-search-row>button.icon-button{display:flex;align-items:center;justify-content:center;flex:none;width:46px;height:46px;min-width:46px;padding:0;border:0;border-radius:14px;background:transparent;color:var(--muted)}
+html[data-flow-design=magic] .dc2-search-row>.notes-folders-manage{font-size:0}
 html[data-flow-design=magic] .dc2-search-row>.notes-folders-manage .icon{width:20px;height:20px}
 html[data-flow-design=magic] .dc2-category-content{min-width:0}
 html[data-flow-design=magic] .dc2-category-content :where(.record-list,.record-grid,.notes-list){display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:0;border:0;background:transparent;border-radius:0;overflow:visible}
@@ -81,7 +83,7 @@ html[data-flow-design=magic] .dc2-category-content :where(.map-categories,.movie
 html[data-flow-design=magic] .dc2-category-content :where(.movie-seen-tabs,.product-wish-tabs){border-radius:20px;border:1px solid var(--line);padding:4px;background:color-mix(in srgb,var(--surface) 65%,transparent)}
 html[data-flow-design=magic] .dc2-category-content :where(.movie-seen-tabs,.product-wish-tabs)>button{min-height:44px;border-radius:16px;font-size:12px;white-space:normal}
 html[data-flow-design=magic] .dc2-category .record-card-shell{min-width:0;border:0;border-radius:22px;background:transparent;box-shadow:none;overflow:visible}
-html[data-flow-design=magic] .dc2-category .record-pin-toggle{z-index:2;width:44px;height:44px;right:5px;top:5px;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--muted)}
+html[data-flow-design=magic] .dc2-category .record-pin-toggle{z-index:2;width:44px;height:44px;right:5px;top:5px;border:0;border-radius:12px;background:transparent;box-shadow:none;color:var(--muted)}
 html[data-flow-design=magic] .dc2-category .record-pin-toggle.is-pinned{color:var(--accent)}
 html[data-flow-design=magic] .dc2-record{display:flex;flex-direction:row;align-items:flex-start;gap:14px;min-width:0;width:100%;min-height:110px;padding:18px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,var(--surface),color-mix(in srgb,var(--surface) 75%,var(--page)));color:var(--text);text-align:left;box-shadow:none;overflow:hidden}
 html[data-flow-design=magic] .dc2-record-symbol{display:grid;place-items:center;flex:none;width:34px;height:44px;color:var(--accent)}
@@ -115,10 +117,10 @@ html[data-flow-design=magic] .dc2-list-head .dc2-record-symbol{grid-column:1;gri
 html[data-flow-design=magic] .dc2-list-head .dc2-record-symbol .magic-object.light-glyph{width:26px;height:26px}
 html[data-flow-design=magic] .dc2-list-head small{grid-column:3;grid-row:1;align-self:center;padding-right:34px;white-space:nowrap;color:var(--muted);font:600 12px/1.2 Manrope,sans-serif;font-variant-numeric:tabular-nums}
 html[data-flow-design=magic] .dc2-record-lists>strong{grid-column:2;grid-row:1;align-self:center;font-size:16px;line-height:1.35;padding-right:2px}
-html[data-flow-design=magic] .dc2-record-lists .dc2-list-next{grid-column:2/-1;grid-row:2;min-width:0;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font:500 12.5px/1.45 Manrope,sans-serif}
+html[data-flow-design=magic] .dc2-record-lists .dc2-list-next{grid-column:1/-1;grid-row:2;min-width:0;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font:500 12.5px/1.45 Manrope,sans-serif}
 html[data-flow-design=magic] .dc2-record-lists .dc2-list-next i{font-style:normal;color:var(--subtle);margin-left:6px;font-size:11px}
-html[data-flow-design=magic] .dc2-record-lists .dc2-list-meter{grid-column:2/-1;grid-row:3;height:2px;margin-top:1px}
-html[data-flow-design=magic] .dc2-record-lists>em{grid-column:2/-1;grid-row:4;font-size:10px;line-height:1.4}
+html[data-flow-design=magic] .dc2-record-lists .dc2-list-meter{grid-column:1/-1;grid-row:3;height:2px;margin-top:1px}
+html[data-flow-design=magic] .dc2-record-lists>em{grid-column:1/-1;grid-row:4;font-size:10px;line-height:1.4}
 html[data-flow-design=magic] .dc2-list-meter{display:block;height:3px;width:100%;border-radius:5px;background:var(--surface-soft);overflow:hidden}
 html[data-flow-design=magic] .dc2-list-meter i{display:block;height:100%;border-radius:inherit;background:var(--accent);box-shadow:0 0 12px var(--accent-soft)}
 html[data-flow-design=magic] .dc2-category .notes-list .swipe-row{border:0;background:transparent;border-radius:22px;overflow:hidden}
@@ -261,19 +263,59 @@ html[data-flow-design=magic] .dc2-window .post-reading-actions button{flex:1;min
 html[data-flow-design=magic] .dc2-window .checklist-progress{display:flex;align-items:center;gap:12px;margin:0 0 16px}
 html[data-flow-design=magic] .dc2-window .checklist-progress>span{font-size:11px;color:var(--muted);flex:none}
 html[data-flow-design=magic] .dc2-window .checklist-progress .progress-track{height:3px}
+html[data-flow-design=magic] .dc2-window .dc2-list-summary{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 13px 13px 16px;margin:0 0 14px;border:1px solid color-mix(in srgb,var(--accent) 16%,var(--line));border-radius:22px;background:var(--surface)}
+html[data-flow-design=magic] .dc2-list-summary-symbol{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--accent-soft);color:var(--accent)}
+html[data-flow-design=magic] .dc2-list-summary-symbol svg{width:38px;height:38px}
+html[data-flow-design=magic] .dc2-list-summary-copy{min-width:0}
+html[data-flow-design=magic] .dc2-list-summary-copy .checklist-progress{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin:0}
+html[data-flow-design=magic] .dc2-list-summary-copy .checklist-progress>span{font-size:12px;font-weight:700;color:var(--text)}
+html[data-flow-design=magic] .dc2-window .dc2-list-today{display:inline-flex;align-items:center;gap:5px;min-height:34px;margin:0;padding:6px 10px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:999px;background:transparent;color:var(--accent);font-size:10px;font-weight:700;white-space:nowrap}
+html[data-flow-design=magic] .dc2-window .dc2-list-today .icon{width:14px;height:14px}
+@media(max-width:360px){html[data-flow-design=magic] .dc2-window .dc2-list-summary{grid-template-columns:38px minmax(0,1fr);gap:9px;padding:11px 11px 11px 13px}html[data-flow-design=magic] .dc2-list-summary-symbol{width:38px;height:38px}html[data-flow-design=magic] .dc2-list-today{grid-column:2;justify-self:start}}
 html[data-flow-design=magic] .dc2-window .list-to-today{min-height:44px;font-size:11px;padding:10px 14px;border-radius:24px;margin:0 0 14px;background:transparent}
-html[data-flow-design=magic] .dc2-window .check-row{display:flex;align-items:flex-start;min-height:58px;gap:8px;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 78%,transparent);background:transparent}
-html[data-flow-design=magic] .dc2-window .checklist-rows .check-row:last-child{border-bottom:0}
+html[data-flow-design=magic] .dc2-window .check-row{display:flex;align-items:center;min-height:58px;gap:8px;padding:6px 0;border-bottom:0;background:transparent}
+html[data-flow-design=magic] .dc2-window .checklist-rows>:not(:first-child){border-top:1px solid var(--line)}
 html[data-flow-design=magic] .dc2-window .check-text{font-size:15px;line-height:1.55;min-height:44px;padding:7px 4px;text-align:left;overflow-wrap:anywhere;flex:1;min-width:0}
 html[data-flow-design=magic] .dc2-window .check-row .task-check{width:32px;height:44px;min-width:32px;flex:none;border:0;background:transparent;box-shadow:none;position:relative;margin:0}
-html[data-flow-design=magic] .dc2-window .check-row .task-check:before{content:'';position:absolute;inset:10px 4px;border:1px solid var(--muted);border-radius:50%}
+html[data-flow-design=magic] .dc2-window .check-row .task-check:before{content:'';position:absolute;inset:8px 2px;border:1px solid var(--muted);border-radius:9px}
 html[data-flow-design=magic] .dc2-window .check-row .task-check.checked:before{background:var(--accent);border-color:var(--accent)}
 html[data-flow-design=magic] .dc2-window .check-row .task-check .icon{z-index:1;position:relative;width:14px;height:14px;color:var(--accent-ink)}
 html[data-flow-design=magic] .dc2-window .check-remove{width:32px;height:44px;min-width:32px;flex:none;padding:8px;border:0;background:transparent;color:var(--muted)}
 html[data-flow-design=magic] .dc2-window .dc2-list-compose{display:flex;align-items:center;gap:8px;min-height:52px;margin:14px 0 8px;padding:3px 4px 3px 16px;border:1px solid var(--line);border-radius:28px;background:var(--page)}
 html[data-flow-design=magic] .dc2-list-compose:focus-within{border-color:var(--accent);box-shadow:0 0 24px color-mix(in srgb,var(--accent) 8%,transparent)}
 html[data-flow-design=magic] .dc2-window .dc2-list-compose>input{min-height:44px;height:auto;min-width:0;flex:1;border:0!important;border-radius:0;box-shadow:none!important;outline:0!important;background:transparent;padding:6px 0;font-size:16px;color:var(--text)}
-html[data-flow-design=magic] .dc2-list-compose>button{display:grid;place-items:center;width:44px;height:44px;min-width:44px;border:0;border-radius:50%;background:var(--accent);color:var(--accent-ink)}
+html[data-flow-design=magic] .sheet.dc2-window-lists{position:relative}
+html[data-flow-design=magic] .dc2-window-lists .dc2-window-body{padding-bottom:100px}
+html[data-flow-design=magic] .dc2-window-lists .dc2-list-compose{position:absolute;z-index:8;bottom:max(12px,env(safe-area-inset-bottom));left:50%;width:min(calc(100% - 32px),788px);margin:0;transform:translateX(-50%);background:var(--page);box-shadow:0 -12px 28px color-mix(in srgb,var(--page) 88%,transparent);border-radius:18px}
+html[data-flow-design=magic] .dc2-list-add-fab{position:absolute;z-index:8;right:18px;bottom:max(18px,env(safe-area-inset-bottom));display:grid;place-items:center;width:56px;height:56px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 28px color-mix(in srgb,var(--accent) 28%,transparent)}
+html[data-flow-design=magic] .dc2-list-add-fab .icon{width:24px;height:24px;stroke-width:1.8}
+html[data-flow-design=magic] .dc2-window-lists .dc2-window-body{padding-bottom:220px}
+html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists) .dc2-window-body{padding-bottom:220px}
+html[data-flow-design=magic] .dc2-window .dc2-list-compose{display:block;min-height:0;padding:10px 10px 8px;border-radius:18px}
+html[data-flow-design=magic] .dc2-compose-main{display:flex;align-items:flex-end;gap:8px}
+html[data-flow-design=magic] .dc2-compose-main>textarea{flex:1;min-width:0;min-height:44px;max-height:120px;padding:10px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent!important;color:var(--text);font:inherit;font-size:16px;line-height:1.5;outline:0;resize:none;overflow:hidden}
+html[data-flow-design=magic] .dc2-compose-main>textarea:focus{border-bottom-color:var(--accent)}
+html[data-flow-design=magic] .dc2-compose-main>button{display:grid;place-items:center;width:44px;height:44px;min-width:44px;border:0;border-radius:14px;padding:0}
+html[data-flow-design=magic] .dc2-compose-mic{background:var(--surface-soft);color:var(--muted)}
+html[data-flow-design=magic] .dc2-list-compose .dc2-compose-send{display:none;background:var(--accent);color:var(--accent-ink)}
+html[data-flow-design=magic] .dc2-list-compose[data-has-text=true] .dc2-compose-mic{display:none}
+html[data-flow-design=magic] .dc2-list-compose[data-has-text=true] .dc2-compose-send{display:grid}
+html[data-flow-design=magic] .dc2-compose-add-sub{display:inline-flex;align-items:center;gap:4px;min-height:34px;margin:2px 0 0 4px;padding:4px 0;border:0;background:transparent;color:var(--accent);font:700 11px/1.2 Manrope,system-ui,sans-serif}
+html[data-flow-design=magic] .dc2-compose-add-sub .icon{width:16px;height:16px}
+html[data-flow-design=magic] .dc2-compose-sub{display:grid;grid-template-columns:22px minmax(0,1fr) 34px;align-items:center;gap:6px;margin-top:5px;padding-left:8px}
+html[data-flow-design=magic] .dc2-sub-circle{display:block;width:20px;height:20px;border:1px solid var(--muted);border-radius:6px}
+html[data-flow-design=magic] .dc2-compose-sub>input{min-width:0;min-height:36px;padding:6px 2px;border:0;border-radius:0;background:transparent!important;color:var(--text);font:inherit;font-size:16px;outline:0}
+html[data-flow-design=magic] .dc2-compose-sub>button{display:grid;place-items:center;width:34px;height:34px;min-width:34px;min-height:34px;border:0;border-radius:10px;background:transparent;color:var(--subtle)}
+html[data-flow-design=magic] .dc2-compose-sub>button:hover{color:var(--warn);background:var(--warn-soft)}
+html[data-flow-design=magic] .check-subs{display:grid;gap:0;margin:0 0 4px 14px;padding-left:0}
+html[data-flow-design=magic] .check-sub{position:relative;display:flex;align-items:center;gap:8px;min-height:58px;padding:6px 0;color:var(--text);font-size:15px;line-height:1.4}
+html[data-flow-design=magic] .check-sub:before{content:'';position:absolute;left:-12px;top:0;width:12px;height:50%;border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-bottom-left-radius:6px}
+html[data-flow-design=magic] .check-sub:after{content:'';position:absolute;left:-12px;right:0;top:0;height:1px;background:var(--line)}
+html[data-flow-design=magic] .check-sub .sub-check{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;min-width:28px;min-height:28px;border:1px solid var(--muted);border-radius:9px;background:transparent;color:var(--accent-ink);padding:0}
+html[data-flow-design=magic] .check-sub .sub-check.checked{background:var(--accent);border-color:var(--accent)}
+html[data-flow-design=magic] .check-sub .sub-check .icon{width:15px;height:15px;opacity:0}
+html[data-flow-design=magic] .check-sub .sub-check.checked .icon{opacity:1}
+html[data-flow-design=magic] .check-sub.done>span{color:var(--subtle);text-decoration:line-through}
 html[data-flow-design=magic] .dc2-window .checklist-done-head{margin:18px 0 0;min-height:44px;font-size:11px}
 html[data-flow-design=magic] .dc2-note-sheet{--dc-display:'Cormorant Garamond',Georgia,serif;display:flex;flex-direction:column;padding:0!important;max-width:820px;background:linear-gradient(155deg,var(--surface),var(--page));border-radius:26px!important;overflow:hidden}
 html[data-flow-design=magic] .dc2-note-sheet .note-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:64px;padding:10px 16px;border-bottom:1px solid var(--line);background:transparent;flex:none}
@@ -320,6 +362,18 @@ html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2
 html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2-window-lists>.flow-surface-contour{border-width:2px;border-color:rgba(var(--accent-rgb),.2);box-shadow:inset 0 0 22px rgba(var(--accent-rgb),.024),inset 0 0 3px rgba(var(--accent-rgb),.072);opacity:.22;animation:note-edge-breathe 6s ease-in-out infinite;transition:border-color .25s ease,box-shadow .25s ease}
 html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2-window-lists[data-list-typing=true]>.flow-surface-contour{border-color:rgba(var(--accent-rgb),.38);box-shadow:inset 0 0 42px rgba(var(--accent-rgb),.088),inset 0 0 8px rgba(var(--accent-rgb),.2)}
 html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists) .dc2-window-body{width:100%;max-width:820px;margin-inline:auto;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+html[data-flow-design=magic] .dc2-window-lists:has(#list-item-form) .dc2-window-body{padding-bottom:220px}
+html[data-flow-design=magic] .dc2-window-lists .dc2-window-head{margin-bottom:0}
+html[data-flow-design=magic] .dc2-window-lists .dc2-window-head h2 .dc2-title-button{display:inline;min-height:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:inherit;font:inherit;letter-spacing:inherit;text-align:left;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+html[data-flow-design=magic] .dc2-window-lists .dc2-window-head h2 .dc2-title-button:active{opacity:.65}
+html[data-flow-design=magic] .dc2-window-lists #saved-form{flex:0 0 auto;height:auto;overflow:visible}
+html[data-flow-design=magic] .dc2-window-lists #saved-form>.dc2-window-body{flex:none;height:auto;min-height:0;overflow:visible}
+html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true] .dc2-form-more,
+html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true] .dc2-window-actions{display:none}
+html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true]>.dc2-window-body{padding-bottom:0}
+html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true] .form-error:empty{display:none}
+html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true]~.dc2-list-editor{margin-top:12px;padding-top:0}
+html[data-flow-design=magic] .dc2-window-lists .checklist{margin-top:0}
 html[data-flow-design=magic] .modal-backdrop:has(> .dc2-window-lists) .dc2-window-actions{background:transparent;border-top-color:transparent}
 html.kb-open .modal-backdrop:has(> .dc2-window-lists)>.sheet.dc2-window-lists{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}
 html[data-native-keyboard=true] .note-backdrop .sheet.dc2-note-sheet{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}
@@ -327,12 +381,17 @@ html[data-native-keyboard=true] .modal-backdrop:has(> .dc2-window-lists)>.sheet.
 @media(max-height:560px){html[data-flow-design=magic] .sheet.dc2-note-sheet,html[data-flow-design=magic] .sheet.dc2-window-lists{border-radius:var(--native-corner-top-left,36px) var(--native-corner-top-right,36px) 0 0!important;height:100%;max-height:100%;min-height:0}}
 html[data-flow-design=magic] .sheet.dc2-window-lists .saved-view-actions{display:none}
 html[data-flow-design=magic] .dc2-window-lists .checklist-done-head .text-action{display:none}
-html[data-flow-design=magic] .dc2-window-lists .check-row.editing{align-items:stretch;padding:2px 0}
-html[data-flow-design=magic] .dc2-window-lists .check-row.editing textarea{width:100%;flex:1;min-width:0;min-height:44px;max-height:200px;margin:0;padding:10px 0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;color:var(--text);font:inherit;font-size:15px;line-height:1.55;outline:0;resize:none;overflow:hidden;overflow-wrap:anywhere;word-break:break-word}
+html[data-flow-design=magic] .dc2-window-lists .check-row.editing{align-items:flex-start;padding:6px 0;border-bottom:0;display:flex}
+html[data-flow-design=magic] .dc2-window-lists .check-row.editing textarea{width:100%;flex:1;min-width:0;min-height:0;max-height:200px;margin:0;padding:4px 0;border:0!important;border-bottom:1px solid var(--line);border-radius:0;background:transparent!important;box-shadow:none!important;color:var(--text);font:inherit;font-size:16px;line-height:1.55;outline:0;resize:none;overflow:hidden;overflow-wrap:anywhere;word-break:break-word}
+html[data-flow-design=magic] .check-edit-card{display:grid;gap:10px;padding:12px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:18px;background:var(--surface)}
+html[data-flow-design=magic] .check-edit-label{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+html[data-flow-design=magic] .check-edit-label .icon{width:14px;height:14px}
+html[data-flow-design=magic] .check-edit-actions{display:flex;justify-content:flex-end;gap:8px}
+html[data-flow-design=magic] .check-edit-actions .ghost-button,html[data-flow-design=magic] .check-edit-actions .primary-button{min-height:40px;padding:8px 14px;border-radius:20px;font-size:12px}
 html[data-flow-design=magic] .dc2-window-lists .check-text{overflow-wrap:anywhere;word-break:break-word}
 html[data-flow-design=magic] .dc2-window-lists .dc2-list-compose{align-items:flex-start}
 html[data-flow-design=magic] .dc2-window-lists .dc2-list-compose>textarea{min-height:44px;max-height:200px;min-width:0;flex:1;border:0!important;border-radius:0;box-shadow:none!important;outline:0!important;background:transparent;padding:10px 0;font-size:15px;line-height:1.5;color:var(--text);resize:none;overflow:hidden;overflow-wrap:anywhere}
-html[data-flow-design=magic] .dc2-window-lists .dc2-list-compose>button{align-self:flex-end;margin-bottom:4px}
+html[data-flow-design=magic] .dc2-window-lists .dc2-list-compose>button{align-self:flex-end}
 html[data-flow-design=magic] .dc2-window-lists .check-text{white-space:normal;height:auto}
 @media(hover:hover){html[data-flow-design=magic] .dc2-module:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}html[data-flow-design=magic] .dc2-module:hover .li-aura{opacity:.8}}
 @media(min-width:1100px){html[data-flow-design=magic] .dc2-category-content :where(.record-list,.record-grid,.notes-list),html[data-flow-design=magic] .dc2-movies #saved-results>.record-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
