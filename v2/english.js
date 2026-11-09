@@ -99,9 +99,14 @@ function enHomeTile() {
     if (!s.todayLoading) { s.todayAt = Date.now(); enLoad("today", "today"); }
     if (!s.today) return "";
   }
-  const t = s.today, done = t.plan.doneToday;
-  const title = done ? "Урок пройден" : `Урок ${t.unit.number} · ≈ ${t.plan.minutes} мин`;
-  const sub = `${enNum(t.words.known)} из ${enNum(t.words.total)} слов${t.streak ? ` · серия ${t.streak} ${enPlural(t.streak, "день", "дня", "дней")}` : ""}`;
+  const t = s.today;
+  if (!t?.plan) return "";
+  const done = Boolean(t.plan.doneToday);
+  const unit = t.unit?.number ? `Урок ${t.unit.number}` : "Урок";
+  const minutes = t.plan.minutes ? ` · ≈ ${t.plan.minutes} мин` : "";
+  const title = done ? "Урок пройден" : `${unit}${minutes}`;
+  const words = t.words || {};
+  const sub = words.total ? `${enNum(words.known)} из ${enNum(words.total)} слов${t.streak ? ` · серия ${t.streak} ${enPlural(t.streak, "день", "дня", "дней")}` : ""}` : "Продолжить занятие";
   return `<section class="section"><button type="button" class="en-home ${done ? "done" : ""}" data-action="en-home"><span class="en-step-ic">${icon(done ? "check" : "study", "icon-sm")}</span><span class="en-home-text"><small>Английский</small><b>${title}</b><span>${sub}</span></span>${icon("arrow", "icon-sm")}</button></section>`;
 }
 function enLoad(key, op, args = {}) {
