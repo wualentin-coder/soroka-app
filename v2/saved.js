@@ -738,6 +738,36 @@ function playListClearDone(item, done) {
   const finish = () => { if (--left <= 0) done(); };
   rows.forEach(row => collapseListRow(row, finish));
 }
+/** Переставить уже нарисованные строки в новый порядок — без перерисовки окна. */
+function listReorderInPlace(item) {
+  const box = document.querySelector("[data-list-order]");
+  if (!box) return false;
+  const order = [...(item.items || [])].sort(listEntryOrder);
+  const nodes = new Map();
+  for (const node of box.children) { const key = node.dataset.orderKey; if (key) nodes.set(key, node); }
+  if (nodes.size !== order.length) return false;
+  for (const entry of order) { const node = nodes.get(entry.id); if (!node) return false; box.append(node); }
+  return true;
+}
+/** Отметка без перерисовки окна: классы строки, состояние подзадач и новое место в списке.
+ *  Полная перерисовка пересоздаёт контур окна, и он «моргает» — поэтому правим на месте. */
+function listApplyToggle(entry, item) {
+  const node = listRow(entry.id);
+  const row = node?.querySelector(".check-row");
+  const box = row?.querySelector(".task-check");
+  if (!node || !row || !box) return false;
+  row.classList.toggle("done", Boolean(entry.done));
+  box.classList.toggle("checked", Boolean(entry.done));
+  box.setAttribute("aria-pressed", String(Boolean(entry.done)));
+  box.setAttribute("aria-label", `${entry.done ? "Вернуть" : "Выполнить"}: ${entry.text}`);
+  [...node.querySelectorAll(".check-sub")].forEach((subRow, index) => {
+    const sub = (entry.subtasks || [])[index];
+    if (!sub) return;
+    subRow.classList.toggle("done", Boolean(sub.done));
+    subRow.querySelector(".sub-check")?.classList.toggle("checked", Boolean(sub.done));
+  });
+  return listReorderInPlace(item);
+}
 /** Показать последний добавленный пункт над композером. */
 function scrollListToItem(id) {
   const entry = [...document.querySelectorAll("[data-list-order] > *")].find(node => node.dataset.orderKey === id && node.getClientRects().length);
@@ -761,16 +791,18 @@ function startAssistantStarShimmer() {
  * Список как чек-лист: отметить — кружком, изменить — нажать на текст, удалить —
  * крестиком, добавить — поле внизу. Выполненные уходят вниз, их можно очистить.
  */
+/** Порядок пунктов: выполненные вниз, новые сверху. Общий для отрисовки и правки на месте. */
+function listEntryOrder(a, b) {
+  const doneA = Boolean(a.done), doneB = Boolean(b.done);
+  if (doneA !== doneB) return doneA ? 1 : -1;
+  if (doneA) {
+    const at = Number(a.doneAt) || 0, bt = Number(b.doneAt) || 0;
+    if (at !== bt) return bt - at;
+  }
+  return 0;
+}
 function renderChecklist(item) {
-  const items = [...(item.items || [])].sort((a, b) => {
-    const doneA = Boolean(a.done), doneB = Boolean(b.done);
-    if (doneA !== doneB) return doneA ? 1 : -1;
-    if (doneA) {
-      const at = Number(a.doneAt) || 0, bt = Number(b.doneAt) || 0;
-      if (at !== bt) return bt - at;
-    }
-    return 0;
-  });
+  const items = [...(item.items || [])].sort(listEntryOrder);
   const row = entry => {
     const subtasks = entry.subtasks || [];
     const subRows = subtasks.length ? `<div class="check-subs">${subtasks.map((sub, index) => `<div class="check-sub ${sub.done ? "done" : ""}"><button class="sub-check ${sub.done ? "checked" : ""}" type="button" data-action="list-sub-toggle" data-id="${esc(entry.id)}" data-index="${index}" aria-pressed="${Boolean(sub.done)}" aria-label="${sub.done ? "Вернуть" : "Выполнить"}: ${esc(sub.text)}">${icon("check", "icon-sm")}</button><span>${esc(sub.text)}</span></div>`).join("")}</div>` : "";
@@ -1163,7 +1195,10 @@ function savedAction(action, control) {
       if (Array.isArray(entry.subtasks)) entry.subtasks.forEach(sub => { sub.done = entry.done; });
       save();
       const after = () => { if (completing) playListCheck(entry.id); playListGlide(before); };
-      if (ui.sheet.mode === "view") renderKeepScroll(after);
+      // Окно не перерисовываем: полная отрисовка пересоздаёт контур и фон окна, и они «моргают».
+      // Полная отрисовка остаётся запасным путём, если разметка не совпала с данными.
+      if (ui.sheet.mode === "view" && listApplyToggle(entry, item)) after();
+      else if (ui.sheet.mode === "view") renderKeepScroll(after);
       else { render(); after(); }
     }
     return true;
@@ -1207,7 +1242,8 @@ function savedAction(action, control) {
       if (entry.done && !wasDone) entry.doneAt = Date.now();
       else if (!entry.done) delete entry.doneAt;
       save();
-      renderKeepScroll(() => { if (completing) playListSubCheck(entry.id, Number(control.dataset.index)); playListGlide(before); });
+      const after = () => { if (completing) playListSubCheck(entry.id, Number(control.dataset.index)); playListGlide(before); };
+      if (listApplyToggle(entry, item)) after(); else renderKeepScroll(after);
     }
     return true;
   }
