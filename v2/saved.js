@@ -675,33 +675,38 @@ function startAssistantStarShimmer() {
   ], { duration: 3000, iterations: Infinity, easing: "linear" });
 }
 /** Мягкая волна от нажатого чекбокса до краёв видимой области. */
-function listMagicWave(source) {
+function listCheckPulse(source) {
   if (!source) return;
   const rect = source.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
-  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 24;
-  const duration = 620;
-  const wave = document.createElement("span");
-  wave.className = "list-magic-wave";
-  wave.style.setProperty("--wave-x", `${x}px`);
-  wave.style.setProperty("--wave-y", `${y}px`);
-  wave.style.setProperty("--wave-r", `${radius}px`);
-  document.body.append(wave);
-  wave.animate([
-    { opacity: 0, transform: "scale(.45)" },
-    { opacity: .26, offset: .16 },
-    { opacity: .15, offset: .55 },
-    { opacity: 0, transform: "scale(1.02)" }
-  ], { duration, easing: "cubic-bezier(.16,.72,.24,1)", fill: "forwards" });
-  for (const [side, distance] of Object.entries({ top: y, right: innerWidth - x, bottom: innerHeight - y, left: x })) {
+  // Небольшой локальный всплеск у чекбокса — без гигантского кольца.
+  const ripple = document.createElement("span");
+  ripple.className = "list-ripple";
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  document.body.append(ripple);
+  ripple.animate([
+    { opacity: 0, transform: "scale(.35)" },
+    { opacity: .34, offset: .16 },
+    { opacity: .14, offset: .55 },
+    { opacity: 0, transform: "scale(1.06)" }
+  ], { duration: 480, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" });
+  setTimeout(() => ripple.remove(), 620);
+  // Мягкий импульс по четырём краям: ближний край вспыхивает первым.
+  const sides = { top: y, right: innerWidth - x, bottom: innerHeight - y, left: x };
+  const farthest = Math.max(...Object.values(sides));
+  for (const [side, distance] of Object.entries(sides)) {
     const edge = document.createElement("span");
-    edge.className = `list-magic-edge ${side}`;
+    edge.className = `list-edge-pulse ${side}`;
     document.body.append(edge);
-    edge.animate([{ opacity: 0 }, { opacity: .38, offset: .2 }, { opacity: 0 }], { duration: 560, delay: Math.round(Math.min(640, (distance / radius) * duration)), easing: "ease-out", fill: "both" });
-    setTimeout(() => edge.remove(), 1300);
+    edge.animate([
+      { opacity: 0 },
+      { opacity: .3, offset: .25 },
+      { opacity: 0 }
+    ], { duration: 440, delay: 60 + Math.round((distance / farthest) * 200), easing: "ease-out", fill: "both" });
+    setTimeout(() => edge.remove(), 920);
   }
-  setTimeout(() => wave.remove(), 900);
 }
 /**
  * Список как чек-лист: отметить — кружком, изменить — нажать на текст, удалить —
@@ -1103,7 +1108,7 @@ function savedAction(action, control) {
     if (entry) {
       const completing = !entry.done;
       const before = completing ? listEntryPositions() : null;
-      if (completing) listMagicWave(control);
+      if (completing) listCheckPulse(control);
       entry.done = completing;
       if (completing) entry.doneAt = Date.now();
       else delete entry.doneAt;
@@ -1147,7 +1152,7 @@ function savedAction(action, control) {
     if (sub) {
       const completing = !sub.done;
       const before = completing ? listEntryPositions() : null;
-      if (completing) listMagicWave(control);
+      if (completing) listCheckPulse(control);
       sub.done = completing;
       const wasDone = Boolean(entry.done);
       if (entry.subtasks.length) entry.done = entry.subtasks.every(one => one.done);
