@@ -633,27 +633,109 @@ function renderKeepScroll(after) {
   if (sheet) sheet.scrollTop = scroll;
   if (after) after();
 }
-/** FLIP для списка: выполненный пункт плавно уезжает вниз, а не прыгает. */
+/* ── Движение раздела «Списки» ────────────────────────────────────────
+   Одна кривая и три длительности на весь раздел. Всё происходит в самой
+   строке: ни кругов поверх интерфейса, ни свечения по краям экрана —
+   только щелчок квадрата, прорисованная галочка, гаснущий текст и
+   переезд строк на новое место. Отключается настройкой «Движение
+   выключено» в «Ещё → Живой отклик». */
+const LIST_MOTION = { tap: 170, glide: 380, soft: 260, exit: 210 };
+const LIST_EASE = "cubic-bezier(.22,1,.36,1)";
+const listCalm = () => window.flowDigital?.getState?.().motionMode === "off";
+const listToken = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function listRows() { return [...document.querySelectorAll("[data-list-order] > *")]; }
+function listRow(id) { return listRows().find(node => (node.dataset.orderKey || node.dataset.id) === id); }
+/** Где строки стояли до перерисовки — чтобы переехать, а не прыгнуть. */
 function listEntryPositions() {
   const positions = new Map();
-  for (const node of document.querySelectorAll("[data-list-order] > *")) {
+  for (const node of listRows()) {
     const key = node.dataset.orderKey || node.dataset.id;
     if (key) positions.set(key, node.getBoundingClientRect().top);
   }
   return positions;
 }
-function animateListReorder(before) {
-  if (!before?.size) return;
+function playListGlide(before) {
+  if (listCalm() || !before?.size) return;
   requestAnimationFrame(() => {
-    for (const node of document.querySelectorAll("[data-list-order] > *")) {
-      const key = node.dataset.orderKey || node.dataset.id;
-      const oldTop = before.get(key);
+    for (const node of listRows()) {
+      const oldTop = before.get(node.dataset.orderKey || node.dataset.id);
       if (oldTop == null) continue;
       const delta = oldTop - node.getBoundingClientRect().top;
       if (Math.abs(delta) < 2) continue;
-      node.animate([{ transform: `translateY(${delta}px)` }, { transform: "translateY(0)" }], { duration: 460, easing: "cubic-bezier(.2,.7,.2,1)" });
+      node.animate([{ transform: `translateY(${delta}px)` }, { transform: "translateY(0)" }], { duration: LIST_MOTION.glide, easing: LIST_EASE });
     }
   });
+}
+/** Квадрат щёлкает, галочка прорисовывается, текст гаснет и зачёркивается. */
+function playListCheck(id) {
+  if (listCalm()) return;
+  requestAnimationFrame(() => {
+    const row = listRow(id)?.querySelector(".check-row");
+    if (!row) return;
+    const box = row.querySelector(".task-check"), text = row.querySelector(".check-text");
+    box?.animate([{ transform: "scale(.84)" }, { transform: "scale(1.07)", offset: .55 }, { transform: "scale(1)" }], { duration: LIST_MOTION.tap + 70, easing: LIST_EASE });
+    const tick = box?.querySelector("svg path");
+    if (tick?.getTotalLength) {
+      const length = tick.getTotalLength();
+      tick.animate([{ strokeDasharray: `${length}`, strokeDashoffset: `${length}` }, { strokeDasharray: `${length}`, strokeDashoffset: "0" }], { duration: LIST_MOTION.tap, delay: 40, easing: LIST_EASE, fill: "both" });
+    }
+    text?.animate([{ color: listToken("--text"), textDecorationColor: "transparent" }, { color: listToken("--subtle"), textDecorationColor: listToken("--subtle") }], { duration: LIST_MOTION.soft, easing: "ease-out", fill: "both" });
+    const wash = document.createElement("span");
+    wash.className = "list-wash";
+    wash.setAttribute("aria-hidden", "true");
+    row.append(wash);
+    wash.animate([{ opacity: 0, transform: "scaleX(.3)" }, { opacity: 1, offset: .34 }, { opacity: 0, transform: "scaleX(1)" }], { duration: LIST_MOTION.soft + 90, easing: "ease-out", fill: "both" });
+    setTimeout(() => wash.remove(), LIST_MOTION.soft + 140);
+  });
+}
+/** Подзадача: свой маленький щелчок; если она закрыла пункт — щёлкает и он. */
+function playListSubCheck(id, index) {
+  if (listCalm()) return;
+  requestAnimationFrame(() => {
+    const entry = listRow(id);
+    const box = entry?.querySelectorAll(".check-sub")[Number(index)]?.querySelector(".sub-check");
+    if (!box) return;
+    box.animate([{ transform: "scale(.86)" }, { transform: "scale(1.08)", offset: .55 }, { transform: "scale(1)" }], { duration: LIST_MOTION.tap + 60, easing: LIST_EASE });
+    const tick = box.querySelector(".icon");
+    tick?.animate([{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "scale(1)" }], { duration: LIST_MOTION.tap, delay: 30, easing: LIST_EASE, fill: "both" });
+    if (entry?.querySelector(".check-row.done")) playListCheck(id);
+  });
+}
+/** Новый пункт встаёт из-под композера. */
+function playListEnter(id) {
+  if (listCalm()) return;
+  requestAnimationFrame(() => {
+    const row = listRow(id);
+    row?.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: LIST_MOTION.soft, easing: LIST_EASE, fill: "both" });
+  });
+}
+/** Строка стала полем правки — мягко, без скачка высоты. */
+function playListEdit() {
+  if (listCalm()) return;
+  requestAnimationFrame(() => {
+    const form = document.querySelector("#list-edit-form");
+    form?.animate([{ opacity: 0, transform: "translateY(-4px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: LIST_MOTION.tap + 40, easing: LIST_EASE, fill: "both" });
+  });
+}
+/** Строка убирается: сначала складывается на месте, потом список перерисовывается. */
+function collapseListRow(row, done) {
+  if (!row || listCalm()) { done(); return; }
+  const height = row.getBoundingClientRect().height;
+  row.style.overflow = "hidden";
+  const effect = row.animate([
+    { height: `${height}px`, opacity: 1, transform: "translateX(0)" },
+    { opacity: 0, transform: "translateX(-10px)", offset: .55 },
+    { height: "0px", opacity: 0, transform: "translateX(-10px)" }
+  ], { duration: LIST_MOTION.exit, easing: LIST_EASE, fill: "both" });
+  effect.finished.then(done, done);
+}
+function playListExit(id, done) { collapseListRow(listRow(id), done); }
+function playListClearDone(item, done) {
+  const rows = (item.items || []).filter(entry => entry.done).map(entry => listRow(entry.id)).filter(Boolean);
+  if (!rows.length || listCalm()) { done(); return; }
+  let left = rows.length;
+  const finish = () => { if (--left <= 0) done(); };
+  rows.forEach(row => collapseListRow(row, finish));
 }
 /** Показать последний добавленный пункт над композером. */
 function scrollListToItem(id) {
@@ -673,40 +755,6 @@ function startAssistantStarShimmer() {
     { backgroundPosition: "0% 50%" },
     { backgroundPosition: "240% 50%" }
   ], { duration: 3000, iterations: Infinity, easing: "linear" });
-}
-/** Мягкая волна от нажатого чекбокса до краёв видимой области. */
-function listCheckPulse(source) {
-  if (!source) return;
-  const rect = source.getBoundingClientRect();
-  const x = rect.left + rect.width / 2;
-  const y = rect.top + rect.height / 2;
-  // Небольшой локальный всплеск у чекбокса — без гигантского кольца.
-  const ripple = document.createElement("span");
-  ripple.className = "list-ripple";
-  ripple.style.left = `${x}px`;
-  ripple.style.top = `${y}px`;
-  document.body.append(ripple);
-  ripple.animate([
-    { opacity: 0, transform: "scale(.35)" },
-    { opacity: .34, offset: .16 },
-    { opacity: .14, offset: .55 },
-    { opacity: 0, transform: "scale(1.06)" }
-  ], { duration: 480, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" });
-  setTimeout(() => ripple.remove(), 620);
-  // Мягкий импульс по четырём краям: ближний край вспыхивает первым.
-  const sides = { top: y, right: innerWidth - x, bottom: innerHeight - y, left: x };
-  const farthest = Math.max(...Object.values(sides));
-  for (const [side, distance] of Object.entries(sides)) {
-    const edge = document.createElement("span");
-    edge.className = `list-edge-pulse ${side}`;
-    document.body.append(edge);
-    edge.animate([
-      { opacity: 0 },
-      { opacity: .3, offset: .25 },
-      { opacity: 0 }
-    ], { duration: 440, delay: 60 + Math.round((distance / farthest) * 200), easing: "ease-out", fill: "both" });
-    setTimeout(() => edge.remove(), 920);
-  }
 }
 /**
  * Список как чек-лист: отметить — кружком, изменить — нажать на текст, удалить —
@@ -1107,15 +1155,15 @@ function savedAction(action, control) {
     const entry = item.items?.find(x => x.id === control.dataset.id);
     if (entry) {
       const completing = !entry.done;
-      const before = completing ? listEntryPositions() : null;
-      if (completing) listCheckPulse(control);
+      const before = listEntryPositions();
       entry.done = completing;
       if (completing) entry.doneAt = Date.now();
       else delete entry.doneAt;
       if (Array.isArray(entry.subtasks)) entry.subtasks.forEach(sub => { sub.done = entry.done; });
       save();
-      if (ui.sheet.mode === "view") renderKeepScroll(() => { if (completing) animateListReorder(before); });
-      else { render(); if (completing) animateListReorder(before); }
+      const after = () => { if (completing) playListCheck(entry.id); playListGlide(before); };
+      if (ui.sheet.mode === "view") renderKeepScroll(after);
+      else { render(); after(); }
     }
     return true;
   }
@@ -1129,7 +1177,7 @@ function savedAction(action, control) {
     }
     return true;
   }
-  if (action === "list-edit" && item) { ui.sheet.editItemId = control.dataset.id; ui.sheet.justRendered = true; render(); const field=document.querySelector('#list-edit-form textarea'); if(field){fitListTextarea(field);field.focus();} return true; }
+  if (action === "list-edit" && item) { ui.sheet.editItemId = control.dataset.id; ui.sheet.justRendered = true; render(); playListEdit(); const field=document.querySelector('#list-edit-form textarea'); if(field){fitListTextarea(field);field.focus();} return true; }
   if (action === "list-add-open" && item) { ui.sheet.listAdding = true; renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } }); return true; }
   if (action === "list-subtask-add") {
     const box = document.querySelector("#list-subtasks");
@@ -1151,24 +1199,22 @@ function savedAction(action, control) {
     const sub = entry?.subtasks?.[Number(control.dataset.index)];
     if (sub) {
       const completing = !sub.done;
-      const before = completing ? listEntryPositions() : null;
-      if (completing) listCheckPulse(control);
+      const before = listEntryPositions();
       sub.done = completing;
       const wasDone = Boolean(entry.done);
       if (entry.subtasks.length) entry.done = entry.subtasks.every(one => one.done);
       if (entry.done && !wasDone) entry.doneAt = Date.now();
       else if (!entry.done) delete entry.doneAt;
       save();
-      if (completing) renderKeepScroll(() => animateListReorder(before));
-      else renderKeepScroll();
+      renderKeepScroll(() => { if (completing) playListSubCheck(entry.id, Number(control.dataset.index)); playListGlide(before); });
     }
     return true;
   }
   if (action === "list-edit-cancel" && item) { ui.sheet.editItemId = null; renderKeepScroll(); return true; }
-  if (["list-up", "list-down"].includes(action) && item) { const index = item.items.findIndex(x => x.id === control.dataset.id); const target = index + (action === "list-up" ? -1 : 1); if (index >= 0 && target >= 0 && target < item.items.length) { [item.items[index], item.items[target]] = [item.items[target], item.items[index]]; save(); render(); } return true; }
-  if (action === "list-remove" && item) { item.items = item.items.filter(x => x.id !== control.dataset.id); if (ui.sheet.editItemId === control.dataset.id) ui.sheet.editItemId = null; save(); renderKeepScroll(); return true; }
-  if (action === "list-item-edit" && item) { ui.sheet.editItemId = control.dataset.id; renderKeepScroll(() => { const field = document.querySelector("#list-edit-form textarea"); if (field) { fitListTextarea(field); field.focus(); field.setSelectionRange(field.value.length, field.value.length); } }); return true; }
-  if (action === "list-clear-done" && item) { item.items = (item.items || []).filter(x => !x.done); save(); renderKeepScroll(); toast("Выполненные убраны"); return true; }
+  if (["list-up", "list-down"].includes(action) && item) { const index = item.items.findIndex(x => x.id === control.dataset.id); const target = index + (action === "list-up" ? -1 : 1); if (index >= 0 && target >= 0 && target < item.items.length) { const before = listEntryPositions(); [item.items[index], item.items[target]] = [item.items[target], item.items[index]]; save(); render(); playListGlide(before); } return true; }
+  if (action === "list-remove" && item) { const removed = control.dataset.id; item.items = item.items.filter(x => x.id !== removed); if (ui.sheet.editItemId === removed) ui.sheet.editItemId = null; save(); playListExit(removed, () => renderKeepScroll()); return true; }
+  if (action === "list-item-edit" && item) { ui.sheet.editItemId = control.dataset.id; renderKeepScroll(() => { playListEdit(); const field = document.querySelector("#list-edit-form textarea"); if (field) { fitListTextarea(field); field.focus(); field.setSelectionRange(field.value.length, field.value.length); } }); return true; }
+  if (action === "list-clear-done" && item) { playListClearDone(item, () => { item.items = (item.items || []).filter(x => !x.done); save(); renderKeepScroll(); toast("Выполненные убраны"); }); return true; }
   return false;
 }
 function savedSubmit(event) {
@@ -1297,7 +1343,7 @@ function savedSubmit(event) {
     const list = savedItem("lists", ui.sheet.id);
     const text = String(new FormData(event.target).get("text") || "").trim();
     // В просмотре поле внизу только добавляет — и остаётся в фокусе для следующего пункта.
-    if (list && text && ui.sheet.mode === "view") { const newId = id(); const subtasks = [...event.target.querySelectorAll("[data-subtask-input]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false })); list.items.push({ id: newId, text, done: false, subtasks }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } requestAnimationFrame(() => { scrollListToItem(newId); startAssistantStarShimmer(); }); }); return true; }
+    if (list && text && ui.sheet.mode === "view") { const newId = id(); const subtasks = [...event.target.querySelectorAll("[data-subtask-input]")].map(input => input.value.trim()).filter(Boolean).map(text => ({ id: id(), text, done: false })); list.items.push({ id: newId, text, done: false, subtasks }); ui.sheet.listAddRevision=(ui.sheet.listAddRevision||0)+1; save(); renderKeepScroll(() => { const field = document.querySelector("#list-item-form textarea"); if (field) { fitListTextarea(field); field.focus(); } requestAnimationFrame(() => { playListEnter(newId); scrollListToItem(newId); startAssistantStarShimmer(); }); }); return true; }
     if (list && text) { const existing = ui.sheet.editItemId ? list.items.find(x => x.id === ui.sheet.editItemId) : null; if (existing) existing.text = text; else list.items.push({ id: id(), text, done: false }); ui.sheet.editItemId = null; save(); render(); }
     return true;
   }
