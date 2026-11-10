@@ -546,8 +546,14 @@
     // Открыта форма (кредит, платёж, заметка) — не перерисовываем: иначе всё,
     // что человек успел ввести, сбрасывается к старым значениям. Новые данные
     // покажутся, когда форму закроют.
-    if (document.querySelector(".sheet form, .composer")) { heldRender = true; return; }
+    if (document.querySelector(".sheet form, .composer") || listViewOpen()) { heldRender = true; return; }
     if (!document.querySelector(".swipe-undo")) render();
+  }
+
+  /** Окно списка в просмотре: отметка уже применена на месте, а полная отрисовка
+   *  пересоздаёт контур окна — он «моргает». Ждём, пока окно закроют. */
+  function listViewOpen() {
+    return Boolean(ui.sheet && ui.sheet.kind === "saved" && ui.sheet.category === "lists" && ui.sheet.mode === "view");
   }
 
   /** Номера, которые сервер выдал новым записям, — и в открытых окнах. */
@@ -1815,7 +1821,7 @@
     document.addEventListener("visibilitychange", () => { if (document.hidden) stash(); });
     window.addEventListener("pagehide", stash);
     // Форму закрыли, а свежие данные ждали — показываем.
-    setInterval(() => { if (heldRender && !document.querySelector(".sheet form, .composer")) render(); }, 700);
+    setInterval(() => { if (heldRender && !document.querySelector(".sheet form, .composer") && !listViewOpen()) render(); }, 700);
     setTimeout(() => {
       base = clone(data);
       const pending = takePending();
