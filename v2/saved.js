@@ -657,34 +657,35 @@ function listEntryPositions() {
 function playListGlide(before) {
   if (listCalm() || !before?.size) return;
   requestAnimationFrame(() => {
+    const viewTop = -120, viewBottom = innerHeight + 120;
     for (const node of listRows()) {
+      const rect = node.getBoundingClientRect();
+      // Строки за пределами экрана не двигаем: переезда не видно, а кадры он отнимает.
+      if (rect.bottom < viewTop || rect.top > viewBottom) continue;
       const oldTop = before.get(node.dataset.orderKey || node.dataset.id);
       if (oldTop == null) continue;
-      const delta = oldTop - node.getBoundingClientRect().top;
+      const delta = oldTop - rect.top;
       if (Math.abs(delta) < 2) continue;
       node.animate([{ transform: `translateY(${delta}px)` }, { transform: "translateY(0)" }], { duration: LIST_MOTION.glide, easing: LIST_EASE });
     }
   });
 }
-/** Квадрат щёлкает, галочка прорисовывается, текст гаснет и зачёркивается. */
+/** Квадрат щёлкает, галочка появляется, по строке проходит заливка.
+ *  Только transform и opacity: анимация цвета текста и штриха SVG заставляет
+ *  перерисовывать строку каждый кадр и на телефоне роняет кадры. */
 function playListCheck(id) {
   if (listCalm()) return;
   requestAnimationFrame(() => {
     const row = listRow(id)?.querySelector(".check-row");
     if (!row) return;
-    const box = row.querySelector(".task-check"), text = row.querySelector(".check-text");
+    const box = row.querySelector(".task-check"), tick = box?.querySelector(".icon");
     box?.animate([{ transform: "scale(.84)" }, { transform: "scale(1.07)", offset: .55 }, { transform: "scale(1)" }], { duration: LIST_MOTION.tap + 70, easing: LIST_EASE });
-    const tick = box?.querySelector("svg path");
-    if (tick?.getTotalLength) {
-      const length = tick.getTotalLength();
-      tick.animate([{ strokeDasharray: `${length}`, strokeDashoffset: `${length}` }, { strokeDasharray: `${length}`, strokeDashoffset: "0" }], { duration: LIST_MOTION.tap, delay: 40, easing: LIST_EASE, fill: "both" });
-    }
-    text?.animate([{ color: listToken("--text"), textDecorationColor: "transparent" }, { color: listToken("--subtle"), textDecorationColor: listToken("--subtle") }], { duration: LIST_MOTION.soft, easing: "ease-out", fill: "both" });
+    tick?.animate([{ opacity: 0, transform: "scale(.55)" }, { opacity: 1, transform: "scale(1)" }], { duration: LIST_MOTION.tap, delay: 30, easing: LIST_EASE });
     const wash = document.createElement("span");
     wash.className = "list-wash";
     wash.setAttribute("aria-hidden", "true");
     row.append(wash);
-    wash.animate([{ opacity: 0, transform: "scaleX(.3)" }, { opacity: 1, offset: .34 }, { opacity: 0, transform: "scaleX(1)" }], { duration: LIST_MOTION.soft + 90, easing: "ease-out", fill: "both" });
+    wash.animate([{ opacity: 0, transform: "scaleX(.3)" }, { opacity: 1, offset: .34 }, { opacity: 0, transform: "scaleX(1)" }], { duration: LIST_MOTION.soft + 90, easing: "ease-out" });
     setTimeout(() => wash.remove(), LIST_MOTION.soft + 140);
   });
 }
