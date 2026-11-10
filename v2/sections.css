@@ -807,7 +807,7 @@ body.movie-undo-visible .toast{bottom:calc(160px + env(safe-area-inset-bottom))}
 .checklist-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .checklist-progress .progress-track { flex: 1; margin: 0; }
 .checklist-rows { display: grid; }
-.check-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: start; min-height: 44px; border-bottom: 1px solid var(--line); }
+.check-row { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: start; min-height: 44px; border-bottom: 1px solid var(--line); }
 .check-row .task-check { margin: 0 auto; }
 .check-text { min-height: 44px; padding: 10px 6px 10px 2px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; text-align: left; line-height: 1.3; }
 .check-row.done .check-text { color: var(--subtle); text-decoration: line-through; }
@@ -819,14 +819,8 @@ body.movie-undo-visible .toast{bottom:calc(160px + env(safe-area-inset-bottom))}
 .check-highlight.is-on .icon { fill: currentColor; fill-opacity: .18; }
 .check-row .task-check:before { transition: transform .22s var(--ease-out), background .22s, border-color .22s; }
 .check-row .task-check:active:before { transform: scale(.9); }
-.list-ripple { position: fixed; z-index: 9999; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 50%; pointer-events: none; opacity: 0; transform: scale(.35); border: 1.5px solid color-mix(in srgb, var(--accent) 45%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 68%); }
-.list-edge-pulse { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; filter: blur(6px); }
-.list-edge-pulse.top, .list-edge-pulse.bottom { left: 0; right: 0; height: 5px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 45%, transparent), transparent); }
-.list-edge-pulse.top { top: 0; }
-.list-edge-pulse.bottom { bottom: 0; }
-.list-edge-pulse.left, .list-edge-pulse.right { top: 0; bottom: 0; width: 5px; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 45%, transparent), transparent); }
-.list-edge-pulse.left { left: 0; }
-.list-edge-pulse.right { right: 0; }
+/* Мягкая заливка, которая проходит по строке при отметке пункта. */
+.list-wash { position: absolute; inset: 2px 0; border-radius: 12px; pointer-events: none; opacity: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 88%); transform-origin: left center; }
 
 .check-row.editing input { min-width: 0; height: 40px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; outline: 0; }
 .check-row.editing { grid-template-columns: minmax(0, 1fr); }
