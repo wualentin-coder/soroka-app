@@ -280,6 +280,8 @@ html[data-flow-design=magic] .dc2-window .check-row .task-check{width:32px;heigh
 html[data-flow-design=magic] .dc2-window .check-row .task-check:before{content:'';position:absolute;inset:8px 2px;border:1px solid var(--muted);border-radius:9px}
 html[data-flow-design=magic] .dc2-window .check-row .task-check.checked:before{background:var(--accent);border-color:var(--accent)}
 html[data-flow-design=magic] .dc2-window .check-row .task-check .icon{z-index:1;position:relative;width:14px;height:14px;color:var(--accent-ink)}
+/* Галочка живёт только в отмеченном пункте: иначе она читается и в пустом квадрате. */
+html[data-flow-design=magic] .dc2-window .check-row .task-check:not(.checked) .icon{opacity:0}
 html[data-flow-design=magic] .dc2-window .check-remove{width:32px;height:44px;min-width:32px;flex:none;padding:8px;border:0;background:transparent;color:var(--muted)}
 html[data-flow-design=magic] .dc2-window .dc2-list-compose{display:flex;align-items:center;gap:8px;min-height:52px;margin:14px 0 8px;padding:3px 4px 3px 16px;border:1px solid var(--line);border-radius:28px;background:var(--page)}
 html[data-flow-design=magic] .dc2-list-compose:focus-within{border-color:var(--accent);box-shadow:0 0 24px color-mix(in srgb,var(--accent) 8%,transparent)}
