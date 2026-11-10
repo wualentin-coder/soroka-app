@@ -1495,3 +1495,22 @@ document.addEventListener("click", event => {
   const boot = () => { simplify(document); new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true }); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true }); else boot();
 })();
+
+/* DEBUG (временно): счётчики полной отрисовки и пересоздания контура окна. */
+(function () {
+  const badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:99999;background:#000d;color:#0f0;font:12px monospace;padding:4px 7px;border-radius:8px;pointer-events:none;white-space:pre";
+  document.body.append(badge);
+  const state = { r: 0, c: 0, marks: [] };
+  const show = () => { badge.textContent = "R" + state.r + " C" + state.c + "\n" + state.marks.slice(-5).join(" "); };
+  const mark = (tag) => { state.marks.push(Math.round(performance.now() / 100) + tag); show(); };
+  window.__dbgMark = mark;
+  const original = render;
+  render = function () { state.r++; mark("r"); return original.apply(this, arguments); };
+  new MutationObserver((records) => {
+    for (const record of records) for (const node of record.addedNodes) {
+      if (node.nodeType === 1 && node.classList && node.classList.contains("flow-surface-contour")) { state.c++; mark("c"); }
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+  show();
+})();
