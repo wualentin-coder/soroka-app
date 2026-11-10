@@ -1512,5 +1512,12 @@ document.addEventListener("click", event => {
       if (node.nodeType === 1 && node.classList && node.classList.contains("flow-surface-contour")) { state.c++; mark("c"); }
     }
   }).observe(document.body, { childList: true, subtree: true });
-  show();
+  window.addEventListener("error", (event) => {
+    badge.style.background = "#400";
+    badge.textContent = "ERR " + String(event.message || "").slice(0, 90);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    badge.style.background = "#400";
+    badge.textContent = "REJ " + String((event.reason && event.reason.message) || event.reason).slice(0, 90);
+  });  show();
 })();
