@@ -25,15 +25,15 @@
     button.setAttribute('aria-pressed',String(!clock.running));button.setAttribute('aria-label',clock.running?'Приостановить таймер':'Продолжить таймер');
     if(signature!==id){
       signature=id;
-      if(column)for(const [selector,from,to]of [['.ss-flow-volume',`scaleY(${1-offset})`,'scaleY(0)'],['.ss-flow-surface',`translateY(${offset*100}%)`,'translateY(100%)']]){
-        const layer=column.querySelector(selector);drains.get(layer)?.cancel();layer.style.transform=from;
-        if(clock.running&&smooth&&ms>0)drains.set(layer,layer.animate([{transform:from},{transform:to}],{duration:ms,easing:'linear',fill:'forwards'}));
+      if(column)for(const [selector,property,from,to]of [['.ss-flow-volume','clipPath',`inset(${offset*100}% 0% 0% 0%)`,'inset(100% 0% 0% 0%)'],['.ss-flow-surface','transform',`translateY(${offset*100}%)`,'translateY(100%)']]){
+        const layer=column.querySelector(selector);drains.get(layer)?.cancel();layer.style[property]=from;
+        if(clock.running&&smooth&&ms>0)drains.set(layer,layer.animate([{[property]:from},{[property]:to}],{duration:ms,easing:'linear',fill:'forwards'}));
       }
       if(column){
         const sheen=column.querySelector('.ss-flow-refraction');drains.get(sheen)?.cancel();
         // The requested slow refraction is visual only and freezes with the same clock.
-        const a=sheen.animate([{transform:'translate3d(-3%,0,0)',opacity:.55},{transform:'translate3d(3%,2%,0)',opacity:1},{transform:'translate3d(-3%,0,0)',opacity:.55}],{duration:9000,iterations:Infinity,easing:'ease-in-out'});
-        a.currentTime=Math.max(0,durationTotal-ms)%9000;if(!clock.running||!smooth)a.pause();drains.set(sheen,a);
+        const a=sheen.animate([{transform:'translate3d(-3%,0,0)',opacity:.35},{transform:'translate3d(3%,2%,0)',opacity:.8},{transform:'translate3d(-3%,0,0)',opacity:.35}],{duration:9000,iterations:Infinity,easing:'ease-in-out'});
+        a.currentTime=Math.max(0,durationTotal-ms)%9000;if(!clock.running||quiet)a.pause();drains.set(sheen,a);
       }
       if(phaseKey!==key){
         if(phaseKey&&!quiet)respond();
@@ -50,7 +50,7 @@
     respond();button.animate([{transform:'scale(.98)'},{transform:'scale(1)'}],{duration:180,easing:'ease-out'});
   });
   window.flowSportMagic={
-    column:()=>document.documentElement.dataset.flowDesign==='classic'?'':'<div class="ss-flow-column" aria-hidden="true"><div class="ss-flow-volume"></div><div class="ss-flow-surface"><div class="ss-flow-refraction"></div></div></div>',
+    column:()=>document.documentElement.dataset.flowDesign==='classic'?'':'<div class="ss-flow-column" aria-hidden="true"><div class="ss-flow-volume"><div class="ss-flow-refraction"></div></div><div class="ss-flow-surface"></div></div>',
     face:content=>document.documentElement.dataset.flowDesign==='classic'?content:`<div class="ss-magic-face"><div class="ss-timer-material" aria-hidden="true"></div><div class="ss-timer-response" aria-hidden="true"></div>${content}</div>`,
     paint,
   };
