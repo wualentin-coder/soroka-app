@@ -110,9 +110,10 @@
     return `<section class="ss-main"><h1 data-ss-heading tabindex="-1">Упражнения</h1><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i)).join('')}</div><div class="ss-session-links">${el('sp-session-journal','Журнал','ss-text')}${el('sp-session-finish','Завершить','ss-text')}${el('sp-session-stop','Остановить','ss-text')}</div></section><footer class="ss-footer">${el('sp-session-back','Назад','primary-button ss-primary')}</footer>`;
   }
   function summary(m, confirm = false) {
-    const complete=m.done===m.exercises.length,saved=!spState().saveError&&!spState().pending?.length;
-    return `<section class="ss-main ss-summary"><h1 data-ss-heading tabindex="-1">${confirm?'Завершить?':'Готово'}</h1><p class="ss-setup-meta">${m.doneSets}/${m.totalSets} подходов · ${m.done}/${m.exercises.length} упражнений</p>${confirm&&!complete?'<p class="ss-quiet">Оставшиеся подходы не засчитаются.</p>':''}<details class="ss-disclosure"><summary>Результаты</summary><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i,false)).join('')}</div><p class="ss-quiet">${m.automatic?'Повторы и вес не измерялись. ':''}${saved?'Сохранено.':'Ожидает синхронизации.'}</p></details></section><footer class="ss-footer">${el(confirm?'sp-session-confirm-finish':'sp-session-minimize',confirm?'Завершить':'Закрыть','primary-button ss-primary')}${confirm?el('sp-session-back','Продолжить','ss-text'):''}</footer>`;
+    const complete=m.done===m.exercises.length;
+    return `<section class="ss-main ss-summary"><h1 data-ss-heading tabindex="-1">${confirm?'Завершить?':'Готово'}</h1><p class="ss-setup-meta">${m.doneSets}/${m.totalSets} подходов · ${m.done}/${m.exercises.length} упражнений</p>${confirm&&!complete?'<p class="ss-quiet">Оставшиеся подходы не засчитаются.</p>':''}<details class="ss-disclosure"><summary>Результаты</summary><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i,false)).join('')}</div><p class="ss-quiet">${m.automatic?'Повторы и вес не измерялись. ':''}<span data-ss-sync role="status">${syncText()}</span></p></details></section><footer class="ss-footer">${el(confirm?'sp-session-confirm-finish':'sp-session-minimize',confirm?'Завершить':'Закрыть','primary-button ss-primary')}${confirm?el('sp-session-back','Продолжить','ss-text'):''}</footer>`;
   }
+  const syncText=()=>!spState().saveError&&!spState().pending?.length&&!spFlushing?'Сохранено.':'Ожидает синхронизации.';
   function html() {
     if(result)return `<div class="sp-runner ss-page" role="dialog" aria-modal="true" aria-label="Результат тренировки">${header(result,'Итог')}<div class="ss-content">${summary(result)}</div></div>`;
     const m = current();
@@ -227,4 +228,7 @@
   },true);
   flowSportAuto.onFinish((model,info)=>{nativeFinish({dataset:{close:'1'}});result={...model,...info};spTimer.runner=true;redraw(true);});
   window.flowSportSession={current:()=>result||current(),html,reset:()=>{state=null;result=null;swipe=null;suppressClickUntil=0;}};
+  // Reuse the overlay's existing refresh, without replacing open details or losing scroll.
+  const nativeOverlay=spOverlay;
+  spOverlay=force=>{const status=document.querySelector('.ss-summary [data-ss-sync]');if(status){const value=syncText();if(status.textContent!==value)status.textContent=value;}return nativeOverlay(force);};
 })();
