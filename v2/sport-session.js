@@ -36,7 +36,7 @@
   function muscleIds(m) { return m.C.knownMuscles(m.exercise?.muscles?.primary); }
   function hasMap(m) { return muscleIds(m).length || m.C.knownMuscles(m.exercise?.muscles?.secondary).length; }
   function header(m, label) {
-    return `<header class="ss-head"><div class="ss-brand"><span class="ss-brand-mark" aria-hidden="true">${SP_ICON.play}</span><span>${ui.sp.kind==='splits'?'Растяжка':'Сила'}</span></div><div class="ss-head-actions">${flowSportAuto.view()?.active&&flowSportAuto.view().step.block==='warmup'&&flowSportAuto.view().step.kind!=='boundary'?el('sp-auto-skip-warmup','Пропустить','ss-text','aria-label="Пропустить разминку"'):''}${!result&&!m.session.finished?el('sp-session-list',icon('list'),'ss-icon','aria-label="Все упражнения"'):''}${el('sp-session-minimize', icon('close'), 'ss-icon', 'aria-label="Свернуть тренировку"')}</div></header>
+    return `<header class="ss-head"><div class="ss-brand"><span class="ss-brand-mark" aria-hidden="true">${SP_ICON.play}</span><span>${m.option.kind==='splits'?'Растяжка':'Сила'}</span></div><div class="ss-head-actions">${flowSportAuto.view()?.active&&flowSportAuto.view().step.block==='warmup'&&flowSportAuto.view().step.kind!=='boundary'?el('sp-auto-skip-warmup','Пропустить','ss-text','aria-label="Пропустить разминку"'):''}${!result&&!m.session.finished?el('sp-session-list',icon('list'),'ss-icon','aria-label="Все упражнения"'):''}${el('sp-session-minimize', icon('close'), 'ss-icon', 'aria-label="Свернуть тренировку"')}</div></header>
       <div class="ss-route" aria-label="Выполнено ${m.doneSets} из ${m.totalSets} подходов">${m.exercises.map((e, i) => `<i class="${m.counts[i] >= m.totals[i] ? 'done' : i === m.index ? 'active' : ''}" style="--ss-fill:${Math.round(m.counts[i] / m.totals[i] * 100)}%"></i>`).join('')}</div>
       <div class="ss-breadcrumb"><span>${flowSportAuto.view()?.active?'<b data-sp-elapsed aria-label="Время тренировки">00:00</b>':''}</span><span aria-label="Выполнено подходов">${m.doneSets}/${m.totalSets}</span></div>`;
   }
@@ -46,11 +46,11 @@
   function setup(m) {
     const warmup = m.option.warmup?.exercises || [];
     const config=flowSportAuto.settings();
-    return `<section class="ss-main ss-setup"><div class="ss-kind-switch" role="group" aria-label="Направление тренировки">${[['main','Сила'],['splits','Растяжка']].map(([kind,label])=>el('sp-session-kind',label,ui.sp.kind===kind?'on':'',`data-kind="${kind}" aria-pressed="${ui.sp.kind===kind}"`)).join('')}</div><h1 data-ss-heading tabindex="-1">${text(m.option.plan.title)}</h1>
+    return `<section class="ss-main ss-setup"><div class="ss-kind-switch" role="group" aria-label="Направление тренировки">${[['main','Сила'],['splits','Растяжка']].map(([kind,label])=>el('sp-session-kind',label,m.option.kind===kind?'on':'',`data-kind="${kind}" aria-pressed="${m.option.kind===kind}"`)).join('')}</div><h1 data-ss-heading tabindex="-1">${text(m.option.plan.title)}</h1>
       <p class="ss-setup-meta">${m.exercises.length} ${spPlural(m.exercises.length,'упражнение','упражнения','упражнений')} · ${m.totalSets} ${spPlural(m.totalSets,'подход','подхода','подходов')}</p>
       <details class="ss-disclosure"><summary>Упражнения</summary><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i,false)).join('')}</div></details>
       <details class="ss-disclosure"><summary>Настройки</summary>${warmup.length?`<label class="ss-preference"><span>Разминка</span><input type="checkbox" data-ss-auto-setting="warmup" ${config.warmup?'checked':''}></label>`:''}<label class="ss-preference"><span>Карта мышц</span><input type="checkbox" data-ss-map ${state.map?'checked':''}></label>${window.flowSportRuntime?'':el('sp-session-demo','Показ · 6 с','ss-text','aria-label="Быстрый показ с сокращёнными интервалами по 6 секунд"')}</details></section>
-      <footer class="ss-footer">${el('sp-session-begin',m.doneSets?'Продолжить':'Старт','primary-button ss-primary')}</footer>`;
+      <footer class="ss-footer">${flowSportAuto.startError()?`<p class="ss-quiet" role="alert">${text(flowSportAuto.startError())}</p>`:''}${el('sp-session-begin',m.doneSets?'Продолжить':'Старт','primary-button ss-primary')}</footer>`;
   }
   function automatic(m,auto){
     const stamp=`data-ss-step="${text(flowSportAuto.commandKey())}"`;
@@ -153,7 +153,7 @@
     },
     'sp-session-begin': () => {
       const m=safe();if(!m)return;
-      if(flowSportAuto.begin(m)===false)return;state.started=true;state.view='work';state.media=null;redraw(true);
+      if(flowSportAuto.begin(m)===false){redraw(true);return;}state.started=true;state.view='work';state.media=null;redraw(true);
     },
     'sp-session-demo': () => {const m=safe();if(!m)return;if(flowSportAuto.begin(m,true)===false)return;state.started=true;state.view='work';redraw(true);},
     'sp-auto-pause':control=>{if(flowSportAuto.accepts(control.dataset.ssStep))flowSportAuto.pause();},

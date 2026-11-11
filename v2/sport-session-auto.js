@@ -3,7 +3,7 @@
   'use strict';
   let key='flow.sport.auto.preview.v4',settingsKey='flow.sport.auto.settings.v4',owner=null;
   const defaults={prep:5,warmup:true};
-  let sequence=null,finishHandler=null,lastNativeAdoption=null;
+  let sequence=null,finishHandler=null,lastNativeAdoption=null,startError='';
   function settings(){try{const saved=JSON.parse(settingsKey&&localStorage.getItem(settingsKey)||'{}');return{...defaults,warmup:typeof saved.warmup==='boolean'?saved.warmup:defaults.warmup};}catch{return{...defaults};}}
   function configure(name,value){const next=settings();if(!settingsKey||name!=='warmup')return next;next.warmup=!!value;try{localStorage.setItem(settingsKey,JSON.stringify(next));}catch{}return next;}
   function makeSteps(option,counts,config){
@@ -36,7 +36,7 @@
   const matches=option=>!!sequence&&sequence.prescription===prescription(option);
   function bindOwner(scope){
     if(sequence?.active){if(spTimer.clock?.running){sequence.pausedAt=Date.now();spTimer.clock.pause();}persist();}
-    sequence=null;lastNativeAdoption=null;owner=scope;
+    sequence=null;lastNativeAdoption=null;startError='';owner=scope;
     key=scope?`flow.sport.session.v1:${scope}`:null;
     settingsKey=scope?`flow.sport.settings.v1:${scope}`:null;
   }
@@ -70,18 +70,21 @@
     resumeElapsed();spSetPhase(phaseFor(sequence.steps[sequence.position]));persist();
   }
   function begin(model,fast=false){
-    if(!ready()||window.flowSportRuntime&&fast)return false;
+    startError='';
+    if(!ready()||window.flowSportRuntime&&fast){startError='Тренировка пока недоступна. Попробуй ещё раз.';return false;}
     if(sequence?.active)return false;
     const config=settings();
     const exercises=[...model.option.plan.exercises,...(config.warmup?model.option.warmup?.exercises||[]:[])];
-    if(exercises.some(e=>!SP().holdSecondsFor(e)&&!(e.executionSeconds>0))){toast('В плане не хватает времени выполнения. Дополните длительности через ИИ.');return false;}
+    if(exercises.some(e=>!SP().holdSecondsFor(e)&&!(e.executionSeconds>0))){startError='В плане нет времени выполнения. Дополни длительности через ИИ.';return false;}
     if(model.phase)spSetPhase(null);
     const effective=fast?{...config,prep:2}:config;
     // Short preview also shortens timed holds; the ordinary workout keeps plan durations.
     const steps=makeSteps(model.option,model.counts,effective).map(step=>fast&&step.kind!=='boundary'?{...step,seconds:step.kind==='work'?6:step.kind==='prep'?2:4}:step);
+    const started=SP().startOption(spState().state,model.option);
+    spUpdate(()=>started).catch(()=>{});
+    if(spState().state!==started){startError='Не удалось сохранить старт. Освободи место и повтори.';return false;}
     sequence={schema:1,owner,prescription:prescription(model.option),initialCounts:[...model.counts],active:true,token:crypto.randomUUID(),workout:model.option.key,steps,position:0,skipped:[],fast,config:effective,startedAt:Date.now(),pausedAt:null,pausedTotal:0};
     spTimer.runner=true;spTimer.dismissed=false;
-    spUpdate(prev=>SP().startOption(prev,model.option)).catch(()=>{});
     enter();return true;
   }
   function advance(expected,reason='timer'){
@@ -90,8 +93,14 @@
     if(step.kind==='work'&&step.block==='main'){
       const option=spTimer.session.option;
       spUpdate(prev=>SP().confirmWorkoutSet(prev,option,step.index,step.set)).catch(()=>{});
-      if(SP().completedSets(spChecks()[step.index],step.total)<step.set){sequence.error='Подход не сохранился. Освободи место и повтори.';spTimer.clock.pause();persist();spOverlay(true);return;}
+      if(SP().completedSets(spChecks()[step.index],step.total)<step.set){
+        sequence.error='Подход не сохранился. Освободи место и повтори.';
+        const clock=spTimer.clock.snapshot();
+        spTimer.clock=SP().Countdown.restore({...clock,pausedMs:clock.pausedMs??Math.max(0,clock.deadline-Date.now())});
+        sequence.pausedAt??=Date.now();spNoteClock();spOverlay(true);return;
+      }
     }
+    sequence.error='';
     sequence.position++;enter();
   }
   const commandKey=()=>ready()&&sequence?.active?`${sequence.token}:${sequence.position}`:'';
@@ -203,5 +212,5 @@
     const root=document.querySelector('.ss-page');if(root&&left!==undefined)root.style.setProperty('--ss-timer-fill',`${100*Math.min(1,left/Math.max(view().step.seconds,left,1))}%`);
   };
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseOnly();});
-  window.flowSportAuto={settings,configure,makeSteps,begin,view,skipRest,completeNow,skipExercise,pause,pauseOnly,adoptNativeClock,stop,restore,bindOwner,matches,continueBlock,skipWarmup,commandKey,accepts,onFinish:fn=>finishHandler=fn};
+  window.flowSportAuto={settings,configure,makeSteps,begin,view,startError:()=>startError,skipRest,completeNow,skipExercise,pause,pauseOnly,adoptNativeClock,stop,restore,bindOwner,matches,continueBlock,skipWarmup,commandKey,accepts,onFinish:fn=>finishHandler=fn};
 })();
