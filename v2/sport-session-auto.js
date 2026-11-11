@@ -39,7 +39,7 @@
     // V2 keys identify the assignment independently of its rescheduled calendar date.
     // Retain the saved fingerprint format so existing scoped snapshots can resume.
     if(option.legacy)return false;
-    try{const parts=JSON.parse(saved);return Array.isArray(parts)&&parts.length===5&&/^\d{4}-\d{2}-\d{2}$/.test(parts[1])&&saved===prescription(option,parts[1]);}catch{return false;}
+    try{const parts=JSON.parse(saved);return Array.isArray(parts)&&parts.length===5&&typeof parts[1]==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(parts[1])&&saved===prescription(option,parts[1]);}catch{return false;}
   }
   const matches=option=>!!sequence&&samePrescription(sequence.prescription,option);
   function bindOwner(scope){
