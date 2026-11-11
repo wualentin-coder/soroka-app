@@ -32,8 +32,16 @@
   }
   const ready=()=>!window.flowSportRuntime||window.flowSportRuntime.canWrite();
   const owned=phase=>ready()&&!!sequence?.active&&phase?.guided===sequence.token;
-  const prescription=option=>JSON.stringify([option.key,option.date,option.kind,option.plan,option.warmup]);
-  const matches=option=>!!sequence&&sequence.prescription===prescription(option);
+  const prescription=(option,date=option.date)=>JSON.stringify([option.key,date,option.kind,option.plan,option.warmup]);
+  function samePrescription(saved,option){
+    if(option.historyOnly||option.date>SP().todayKey())return false;
+    if(saved===prescription(option))return true;
+    // V2 keys identify the assignment independently of its rescheduled calendar date.
+    // Retain the saved fingerprint format so existing scoped snapshots can resume.
+    if(option.legacy)return false;
+    try{const parts=JSON.parse(saved);return Array.isArray(parts)&&parts.length===5&&/^\d{4}-\d{2}-\d{2}$/.test(parts[1])&&saved===prescription(option,parts[1]);}catch{return false;}
+  }
+  const matches=option=>!!sequence&&samePrescription(sequence.prescription,option);
   function bindOwner(scope){
     if(sequence?.active){if(spTimer.clock?.running){sequence.pausedAt=Date.now();spTimer.clock.pause();}persist();}
     sequence=null;lastNativeAdoption=null;startError='';owner=scope;
@@ -156,7 +164,7 @@
     if(!saved?.active||saved.workout!==spTimer.session?.key||!Array.isArray(saved.steps)||!Number.isInteger(saved.position)||!saved.steps[saved.position]||Date.now()-saved.savedAt>6*3600000)return false;
     if(window.flowSportRuntime){
       const option=spTimer.session.option,C=SP(),finite=n=>typeof n==='number'&&Number.isFinite(n),limit=7*86400000;
-      if(saved.schema!==1||saved.owner!==owner||saved.prescription!==prescription(option)||saved.fast!==false||saved.config?.prep!==5||typeof saved.config.warmup!=='boolean')return false;
+      if(saved.schema!==1||saved.owner!==owner||!samePrescription(saved.prescription,option)||saved.fast!==false||saved.config?.prep!==5||typeof saved.config.warmup!=='boolean')return false;
       if(!finite(saved.savedAt)||saved.savedAt>Date.now()||!finite(saved.startedAt)||saved.startedAt>saved.savedAt||!finite(saved.pausedTotal)||saved.pausedTotal<0||!Array.isArray(saved.skipped))return false;
       if(saved.pausedAt!==null&&(!finite(saved.pausedAt)||saved.pausedAt>saved.savedAt))return false;
       if(typeof saved.token!=='string'||!saved.token||!Array.isArray(saved.initialCounts)||saved.initialCounts.length!==option.plan.exercises.length)return false;
