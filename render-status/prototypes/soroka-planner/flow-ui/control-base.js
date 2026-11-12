@@ -1,0 +1,16 @@
+import {feedbackSheet,bindFeedback,stopFeedback} from './feedback.js';
+export const controlSheet=new CSSStyleSheet();controlSheet.replaceSync(`
+:host{display:block;min-width:0;color:var(--fu-text);font:15px/1.5 var(--fu-font)}*{box-sizing:border-box}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}button:disabled,input:disabled,textarea:disabled{cursor:default;opacity:.5}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fu-accent);outline-offset:3px}.frame{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 12px;border:1px solid var(--fu-line);border-radius:12px;background:var(--fu-bg);transition:border-color var(--fu-time) var(--fu-ease)}.frame::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--fu-accent) 50%,transparent);opacity:0;pointer-events:none;transition:opacity var(--fu-time) var(--fu-ease)}.frame:focus-within::after,.frame[data-state=focus]::after{opacity:.8}.frame:focus-within,.frame[data-state=focus]{border-color:color-mix(in srgb,var(--fu-accent) 25%,var(--fu-line))}.frame[data-state=error]{border-color:var(--fu-danger)}.frame :is(input,textarea){width:100%;min-width:0;min-height:44px;border:0;padding:10px 0;background:none;outline:0}.frame :is(input,textarea)::placeholder{color:var(--fu-muted);opacity:.85}.hint{min-height:18px;margin:6px 0 0;font-size:12px;color:var(--fu-muted);overflow-wrap:anywhere}.hint:empty{min-height:0;margin:0}.hint[data-error]{color:var(--fu-danger)}svg{width:18px;height:18px;flex:none}.spinner{width:16px;height:16px;border:1px solid var(--fu-accent);border-right-color:transparent;border-radius:50%;flex:none;animation:spin 1.4s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}[hidden]{display:none!important}:host-context([data-reduce=true]) *,:host-context([data-reduce=true]) *::after,:host-context([data-reduce=true]) *::before{transition:none!important;animation:none!important}@media(prefers-reduced-motion:reduce){:host-context(html:not([data-motion=on])) *,:host-context(html:not([data-motion=on])) *::after,:host-context(html:not([data-motion=on])) *::before{transition:none!important;animation:none!important}}
+`);
+export class FlowControl extends HTMLElement{
+ constructor(){super();this.attachShadow({mode:'open'});this.shadowRoot.adoptedStyleSheets=[controlSheet,feedbackSheet];bindFeedback(this,event=>this.feedbackTarget(event));}
+ feedbackTarget(){return this.shadowRoot.querySelector("dialog[open],.frame,.tabs,.switch,.filters,.trigger");}
+ disconnectedCallback(){stopFeedback(this);}
+ emit(type,detail){this.dispatchEvent(new CustomEvent(type,{detail,bubbles:true,composed:true}));}
+}
+export function observeOwners(element,onHidden){
+ const hidden=()=>{let node=element;while(node){const css=getComputedStyle(node);if(node.hidden||css.display==='none'||css.visibility==='hidden')return true;node=node.parentElement||node.getRootNode().host;}return false;};
+ const observer=new MutationObserver(()=>{if(hidden())onHidden()});let node=element;
+ while(node){observer.observe(node,{attributes:true,attributeFilter:['hidden','style','class']});node=node.parentElement||node.getRootNode().host;}
+ return()=>observer.disconnect();
+}

@@ -1,0 +1,4 @@
+@import url("../assets/manrope.css");
+@font-face{font-family:FlowDisplay;src:url("../assets/cormorant-garamond-cyrillic-500.woff2") format("woff2");font-style:normal;font-weight:500;font-display:swap}
+:root{--fu-bg:#101317;--fu-surface:#1a1e24;--fu-text:#eeefed;--fu-muted:#9aa5b0;--fu-line:#343d47;--fu-accent:#8cbbff;--fu-on:#101923;--fu-danger:#f0a49b;--fu-radius:24px;--fu-gap:12px;--fu-pad:16px;--fu-glow:.12;--fu-ease:cubic-bezier(.22,.75,.2,1);--fu-time:480ms;--fu-font:Manrope,system-ui,-apple-system,'Segoe UI',sans-serif}
+@media(prefers-reduced-motion:reduce){:root{--fu-time:0ms}}
