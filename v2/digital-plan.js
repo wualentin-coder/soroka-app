@@ -16,7 +16,7 @@
  function clearResponses(){for(const item of responses.values()){item.animation.cancel();item.layer.remove();}responses.clear();}
  function cancel(){cancelMoves();for(const animation of lights)animation.cancel();lights.clear();clearResponses();}
  function light(node,frames,options,done){const animation=node.animate(frames,options);lights.add(animation);animation.finished.catch(()=>{}).finally(()=>{lights.delete(animation);done?.();});return animation;}
- const surfaceSelector='.dm-plan-schedule,.dm-overdue,.dm-plan-birthday,.dc-practice-card,.event-card,.ticket-card';
+ const surfaceSelector='.dm-plan-schedule,.dm-overdue,.dm-plan-birthday,.dc-practice-card,.event-card,.ticket-card,.ticket-mini';
  const allSurfaces=()=>[...document.querySelectorAll('.dm-plan13 '+surfaceSelector.split(',').join(',.dm-plan13 '))];
  const surfaceKey=node=>[...node.classList].filter(name=>surfaceSelector.split(',').includes('.'+name)).join(':')+':'+(node.matches('.dm-plan-schedule,.dm-overdue')?'':node.dataset.id||node.dataset.page||node.querySelector('[data-id]')?.dataset.id||'');
  function planSurface(origin){let node=origin.closest(surfaceSelector);const first=node;while(node){const css=getComputedStyle(node);if(parseFloat(css.borderRadius)>0&&parseFloat(css.borderTopWidth)>0&&css.borderTopStyle!=='none')return {node,framed:true};node=node.parentElement?.closest(surfaceSelector);}return first?{node:first,framed:false}:null;}
