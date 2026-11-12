@@ -11,6 +11,7 @@
  */
 
 function enCall(op, args = {}) {
+  if (window.sorokaEnglishSession?.version === 2 && !window.flowEnglishSession) return Promise.reject(new Error("english_owner_not_ready"));
   if (typeof window.sorokaEnglish === "function") return window.sorokaEnglish(op, args);
   return new Promise(done => setTimeout(() => done(enDemo(op, args)), 300));
 }
@@ -74,7 +75,7 @@ function enDemo(op, args) {
   return { ok: true };
 }
 
-const EN_TABS = [["today", "Сегодня"], ["words", "Слова"], ["course", "Курс"], ["read", "Медиатека"], ["chat", "Разговор"]];
+const EN_TABS = [["today", "Сегодня"], ["words", "Слова"], ["course", "Практика"], ["read", "Медиатека"], ["chat", "Разговор"]];
 const EN_RATINGS = [[1, "Не вспомнил"], [2, "С трудом"], [3, "Легко"]];
 const EN_TOTAL = 4380;
 
@@ -134,23 +135,51 @@ function enLoad(key, op, args = {}) {
 
 const enAudioUrls = new Map();
 let enPlayer = null;
+let enSpeechGeneration = 0, enViewGeneration = 0, enChatTurn = 0, enSpeechButton = null;
+function enCancelChat() {
+  enChatTurn++;
+  if (ui.en?.chat) ui.en.chat.busy = false;
+}
+// A rendered update is harmless; a different task, step, route or owner is not.
+function enViewGuard() {
+  const s = enState(), page = ui.page, tab = s.tab, ex = s.ex, index = ex?.index,
+    deck = s.deck || ex?.deck, card = deck?.i, chat = s.chat, book = s.book, generation = enViewGeneration;
+  return () => ui.en === s && ui.page === page && s.tab === tab && s.ex === ex && ex?.index === index &&
+    (s.deck || s.ex?.deck) === deck && deck?.i === card && s.chat === chat && s.book === book && generation === enViewGeneration;
+}
+function enStopSpeech() {
+  enSpeechGeneration++;
+  enPlayer?.pause(); enPlayer = null;
+  try { speechSynthesis.cancel(); } catch (_) {}
+  enSpeechButton?.classList.remove("is-busy"); enSpeechButton = null;
+}
+function enScheduleSpeak(text, delay) {
+  const current = enViewGuard(), generation = enSpeechGeneration;
+  enTimers.push(setTimeout(() => { if (current() && generation === enSpeechGeneration && !document.hidden) enSpeak(text); }, delay));
+}
 async function enSpeak(text, button) {
-  if (!text) return;
+  if (!text || document.hidden || ui.page !== "english") return;
+  enStopPcm();
+  const generation = enSpeechGeneration, view = enViewGuard();
+  const current = () => generation === enSpeechGeneration && view() && !document.hidden;
+  enSpeechButton = button;
   button?.classList.add("is-busy");
   try {
     let url = enAudioUrls.get(text);
     if (!url) {
       const answer = await enCall("speech", { text });
+      if (!current()) return;
       if (!answer?.url) throw new Error(answer?.error || "speech");
       url = answer.url; enAudioUrls.set(text, url);
     }
-    enPlayer?.pause();
+    if (!current()) return;
     enPlayer = new Audio(url);
     await enPlayer.play();
   } catch (_) {
+    if (!current()) return;
     // Нет озвучки с сервера — голос телефона, если он есть.
     try { const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (__) { toast("Озвучка недоступна"); }
-  } finally { button?.classList.remove("is-busy"); }
+  } finally { if (generation === enSpeechGeneration) { button?.classList.remove("is-busy"); enSpeechButton = null; } }
 }
 
 // ------------------------------------------------------------ страница
@@ -163,7 +192,7 @@ function renderEnglishPage() {
   const tabs = `<div class="en-tabs" role="tablist">${EN_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="en-tab" data-tab="${key}">${label}</button>`).join("")}</div>`;
   if (s.tab === "read" && s.mediaTab !== "music" && s.book) return enReaderScreen();
   const body = s.tab === "chat" ? enChatScreen() : s.tab === "phrases" ? enPhrasesScreen() : s.tab === "progress" ? enProgressScreen() : s.tab === "read" ? enMediaScreen()
-    : s.tab === "words" ? enWordsScreen() : s.tab === "course" ? enCourseScreen() : enTodayScreen();
+    : s.tab === "words" ? enWordsScreen() : s.tab === "course" ? enPracticeScreen() : enTodayScreen();
   return `${header("Английский", "", "")}<div class="en-page">${enSyncBanner()}${tabs}${body}</div>`;
 }
 
@@ -210,27 +239,36 @@ async function enRuleStart(id) {
   const s = enState();
   enStopPcm(); if (enLive.state !== "off") enLiveStop();
   const back = s.tab;
-  s.ex = { mode: "rule", loading: true };
+  const pending = s.ex = { mode: "rule", loading: true }, current = enViewGuard();
   render();
   try {
     const data = await enCall("rule", { id });
+    if (!current() || s.ex !== pending) return;
     if (data?.error || !data?.steps?.length) throw new Error(data?.error || "empty");
     s.ex = { mode: "rule", rule: data.rule, items: data.steps, index: 0, ok: 0, done: 0, picked: [], answer: null, back };
-  } catch (_) { s.ex = null; toast("Не получилось открыть правило — попробуйте ещё раз"); }
+    window.flowEnglishSession?.save();
+  } catch (_) { if (!current()) return; s.ex = null; toast("Не получилось открыть правило — попробуйте ещё раз"); }
   render();
 }
 /** Конец разбора: от 80% верных — «разобрано», дальше Эмма проверит в разговоре. */
 function enRuleFinish(ex) {
   if (ex.sent) return;
   ex.sent = true;
-  if (ex.done < 3) { ex.result = { few: true }; return; }
-  enQueue("ruledone", { id: ex.rule.id, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().rulesStale = true; render(); }).catch(() => {});
+  if (enAssessed(ex) < 3) { ex.result = { few: true }; return; }
+  const current = enViewGuard();
+  enQueue("ruledone", { id: ex.rule.id, score: ex.ok / enAssessed(ex) }).then(r => {
+    if (!current() || enState().ex !== ex) return;
+    ex.result = r; enState().rulesStale = true; render();
+  }).catch(() => {
+    if (!current() || enState().ex !== ex) return;
+    ex.result = { error: true }; render();
+  });
 }
 
 // ------------------------------------------------------------ колода слов
 // Свайп вправо — знаю, влево — не знаю, нажатие — перевернуть. «Не знаю» сразу
 // показывает перевод и пример (немедленная обратная связь), а слово ещё раз
-// выходит через несколько карточек — пока не скажете «знаю». Новые слова идут
+// выходит ещё не больше двух раз за занятие. Новые слова идут
 // сверху частотного списка; знакомые пролетают и не считаются: за сессию учим
 // столько незнакомых, сколько выбрано в настройке.
 
@@ -243,7 +281,9 @@ function enDeckFill(d) {
   if (d.i >= d.queue.length) d.done = true;
 }
 function enDeckTop(d) {
-  return `<div class="en-run-top"><button class="icon-button" type="button" data-action="en-deck-quit" aria-label="Закончить">${icon("close", "icon-sm")}</button><div class="en-bar"><i style="width:${d.placement ? Math.round(d.i / Math.max(1, d.queue.length) * 100) : Math.round(Math.min(1, d.newUnknown / Math.max(1, d.newGoal)) * 100)}%"></i></div><small>${d.placement ? `${d.i}/${d.queue.length}` : `${d.know + d.dont}`}</small></div>`;
+  const progress = d.done ? 1 : d.placement || (!d.fresh.length && !d.newUnknown)
+    ? d.i / Math.max(1, d.queue.length) : Math.min(1, d.newUnknown / Math.max(1, d.newGoal));
+  return `<div class="en-run-top"><button class="icon-button" type="button" data-action="en-deck-quit" aria-label="Закончить">${icon("close", "icon-sm")}</button><div class="en-bar"><i style="width:${Math.round(progress * 100)}%"></i></div><small>${d.placement ? `${d.i}/${d.queue.length}` : `${d.know + d.dont}`}</small></div>`;
 }
 function enDeckScreen(d) {
   enDeckFill(d);
@@ -251,7 +291,9 @@ function enDeckScreen(d) {
   const w = d.queue[d.i];
   const kicker = d.placement ? "Знаете это слово?" : w.again ? "Ещё раз" : w.isNew ? `Новое · №${w.id}${w.level ? ` · ${w.level}` : ""}` : "Повторить";
   const back = d.flipped || d.answer === "dont";
-  const goal = d.placement ? "" : `<p class="en-deck-goal">Новых к изучению: <b>${Math.min(d.newUnknown, d.newGoal)} из ${d.newGoal}</b> · знаю ${d.know}</p>`;
+  const goal = d.placement ? "" : !d.fresh.length && !d.newUnknown
+    ? `<p class="en-deck-goal">Разобрано слов: <b>${d.graded.size}</b></p>`
+    : `<p class="en-deck-goal">Новых к изучению: <b>${Math.min(d.newUnknown, d.newGoal)} из ${d.newGoal}</b> · знаю ${d.know}</p>`;
   const card = `<div class="en-swipe ${back ? "back" : ""}" data-swipe>
       <span class="en-swipe-hint know">Знаю</span><span class="en-swipe-hint dont">Не знаю</span>
       <div class="en-swipe-front"><b class="en-word">${esc(w.en)}</b><small>${[w.ipa ? `/${esc(w.ipa)}/` : "", esc(w.pos || "")].filter(Boolean).join(" · ")}</small>${back ? "" : `<small class="en-swipe-tip">нажмите, чтобы перевернуть</small>`}</div>
@@ -259,7 +301,7 @@ function enDeckScreen(d) {
       <button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(w.ex && back ? w.ex : w.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button>
     </div>`;
   const buttons = d.answer === "dont"
-    ? `<div class="en-deck-btns"><button class="primary-button" type="button" data-action="en-deck-next">Запомнил · дальше</button></div>`
+    ? `<div class="en-deck-btns"><button class="primary-button" type="button" data-action="en-deck-next">Дальше</button></div>`
     : `<div class="en-deck-btns two"><button type="button" class="en-dont" data-action="en-dont">${icon("close", "icon-sm")}Не знаю</button><button type="button" class="en-know" data-action="en-know">${icon("check", "icon-sm")}Знаю</button></div>`;
   return `<p class="en-kicker">${kicker}</p>${card}${buttons}${goal}`;
 }
@@ -268,6 +310,7 @@ function enDeckAnswer(know) {
   const d = s.deck || s.ex?.deck;
   if (!d || d.done || d.answer) return;
   const w = d.queue[d.i];
+  know = Boolean(know && !d.helped);
   // В расписание — только первый ответ на слово за сессию.
   if (!d.graded.has(w.id)) {
     if (!enRecord("swipe", { id: w.id, know, attempt: `w${w.id}-${Date.now()}` })) return;
@@ -291,7 +334,8 @@ function enDeckNext() {
   const s = enState();
   const d = s.deck || s.ex?.deck;
   if (!d) return;
-  d.i++; d.flipped = false; d.answer = null;
+  enStopPcm();
+  d.i++; d.flipped = false; d.helped = false; d.answer = null;
   enDeckFill(d);
   // Урок: колода пройдена — дальше по шагам, новые слова — в задание для разговора.
   if (d.done && d.inLesson) {
@@ -302,9 +346,17 @@ function enDeckNext() {
   }
   render();
 }
+function enDeckFlip() {
+  const s = enState(), d = s.deck || s.ex?.deck;
+  if (!d || d.done || d.answer) return;
+  d.flipped = !d.flipped; d.helped = true; render();
+  if (d.flipped) enSpeak(d.queue[d.i].en);
+}
 function enDeckDone(d) {
   enState().today = null; enState().words = null;
-  return `<div class="en-done"><div class="en-done-mark">${icon("check")}</div><h2>Слова на сегодня</h2><p class="muted">Знаю ${d.know} · новых к изучению ${d.newUnknown}</p>${d.learned.length ? `<div class="en-targets"><small>Учим:</small>${d.learned.slice(0, 12).map(x => `<b>${esc(x)}</b>`).join("")}</div>` : ""}
+  const count = d.graded.size;
+  const summary = count ? `Разобрано ${count} ${enPlural(count, "слово", "слова", "слов")}` : "Нет слов для повторения";
+  return `<div class="en-done"><div class="en-done-mark">${icon("check")}</div><h2>Слова на сегодня</h2><p class="muted">${summary}${d.newUnknown ? ` · Новых к изучению: ${d.newUnknown}` : ""}</p>${d.learned.length ? `<div class="en-targets"><small>Учим:</small>${d.learned.slice(0, 12).map(x => `<b>${esc(x)}</b>`).join("")}</div>` : ""}
     <button class="primary-button en-go" type="button" data-action="en-deck-more">Ещё слова</button><button class="ghost-button" type="button" data-action="en-deck-quit">Готово</button></div>`;
 }
 function enPlacementDone(d) {
@@ -320,14 +372,17 @@ function enPlacementDone(d) {
 }
 async function enDeckStart(placement = false) {
   const s = enState();
-  s.deck = { loading: true, queue: [], fresh: [] };
+  enStopPcm();
+  const pending = s.deck = { loading: true, queue: [], fresh: [] }, current = enViewGuard();
   render();
   try {
     const data = await enCall(placement ? "placement" : "deck");
+    if (!current() || s.deck !== pending) return;
     if (data?.error) throw new Error(data.error);
     s.deck = placement ? enDeckMake({ fresh: data.items, placement: true, newGoal: data.items.length }) : enDeckMake(data);
     if (placement) { s.deck.queue = s.deck.fresh; s.deck.fresh = []; }
-  } catch (_) { s.deck = null; toast("Не получилось загрузить слова"); }
+    if (window.flowEnglishSession && !window.flowEnglishSession.save()) s.deck = null;
+  } catch (_) { if (!current()) return; s.deck = null; toast("Не получилось загрузить слова"); }
   render();
 }
 
@@ -361,8 +416,7 @@ document.addEventListener("pointerup", event => {
   card.classList.remove("to-know", "to-dont");
   if (Math.abs(dx) < 6 && d) {
     if (d.answer === "dont") { enDeckNext(); return; }
-    d.flipped = !d.flipped; render();
-    if (d.flipped) enSpeak(d.queue[d.i].en);
+    enDeckFlip();
   }
 });
 document.addEventListener("pointercancel", () => { if (enDrag) { enDrag.card.style.transform = ""; enDrag = null; } });
@@ -371,7 +425,7 @@ document.addEventListener("keydown", event => {
   if (!d || ui.page !== "english" || event.target.closest?.("input, textarea")) return;
   if (event.key === "ArrowRight") { if (d.answer) enDeckNext(); else enDeckAnswer(true); }
   if (event.key === "ArrowLeft" && !d.answer) enDeckAnswer(false);
-  if (event.key === " ") { event.preventDefault(); d.flipped = !d.flipped; render(); }
+  if (event.key === " ") { event.preventDefault(); enDeckFlip(); }
 });
 
 // ------------------------------------------------------------ слова: прогресс
@@ -403,6 +457,14 @@ function enWordsScreen() {
 // ------------------------------------------------------------ курс
 
 const EN_LEVEL_NAMES = { A1: "A1 · начальный", A2: "A2 · базовый", B1: "B1 · средний", B2: "B2 · выше среднего" };
+function enPracticeScreen() {
+  const s = enState();
+  if (s.practiceView === 'media' && typeof enMediaPracticeScreen === 'function') return enMediaPracticeScreen();
+  if (s.practiceView?.startsWith('structured:') && typeof enStructuredCatalog === 'function') return enStructuredCatalog(s.practiceView.slice(11));
+  if (s.practiceView === "course") return `<button type="button" class="icon-button ef-icon-control" data-action="en-practice-back" aria-label="Вся практика" title="Вся практика">${icon("left", "icon-sm")}</button>${enCourseScreen()}`;
+  const row = (action, title, sub, glyph, attrs = "") => `<button type="button" class="en-step" data-action="${action}" ${attrs}><span class="en-step-ic" aria-hidden="true">${icon(glyph, "icon-sm")}</span><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${icon("arrow", "icon-sm")}</button>`;
+  return `<section class="en-practice-list en-steps" aria-label="Вся практика">${row("en-practice-course", "Курс", "A1–B2", "study")}${typeof enStructuredCatalog==='function'?[['mission','Ситуации','card'],['sounds','Звуки','mic'],['story','Истории','book'],['radio','Аудирование','play']].map(([kind,title,glyph])=>row('en-training-catalog',title,'',glyph,`data-kind="${kind}"`)).join(''):''}${typeof enMediaPracticeScreen==='function'?row('en-training-media-catalog','Музыка и видео','По выбранному фрагменту','play'):''}${EN_MODES.map(([key, title, sub, glyph]) => row("en-ex", key === "cards" ? "Карточки фраз" : title, sub, glyph, `data-mode="${key}"`)).join("")}</section>`;
+}
 function enCourseScreen() {
   const s = enState();
   if (!s.course) { enLoad("course", "course"); return enWait(); }
@@ -414,8 +476,7 @@ function enCourseScreen() {
     return `<section class="en-level"><div class="en-row"><b>${EN_LEVEL_NAMES[level]}</b><small>${done} из ${list.length}</small></div>${list.map(u => `<button type="button" class="en-unit ${u.status}" data-action="en-unit" data-key="${esc(u.key)}"><span class="en-unit-n">${u.status === "done" ? icon("check", "icon-sm") : u.number}</span><span><b>${esc(u.title)}</b><small>${esc(u.grammar)}</small></span>${u.score != null ? `<small class="en-unit-score">${Math.round(u.score * 100)}%</small>` : ""}</button>${s.openUnit === u.key ? `<div class="en-unit-more"><button class="primary-button" type="button" data-action="en-unit-go" data-key="${esc(u.key)}">Пройти урок</button><button class="ghost-button" type="button" data-action="en-ex" data-mode="theory" data-unit="${esc(u.key)}">Правило</button></div>` : ""}`).join("")}</section>`;
   }).join("");
   return `<section class="en-hero"><div class="en-hero-top"><div><small>Урок ${cur.number} из ${c.units.length} · ${cur.level}</small><h2>${esc(cur.title)}</h2><small>${esc(cur.grammar)}</small></div></div>
-      <div class="en-modes">${EN_MODES.map(([key, title, sub, ic]) => `<button type="button" class="en-mode" data-action="en-ex" data-mode="${key}"><span class="en-step-ic">${icon(ic, "icon-sm")}</span><b>${title}</b><small>${sub}</small></button>`).join("")}<button type="button" class="en-mode" data-action="en-ex" data-mode="theory" data-unit="${esc(cur.key)}"><span class="en-step-ic">${icon("study", "icon-sm")}</span><b>Теория</b><small>Правила, листать по урокам</small></button></div>
-      <p class="section-note">Упражнения — на предложениях текущего урока и на том, что пора повторить. Урок засчитывается от 70% верных ответов.</p></section>
+      <button type="button" class="primary-button en-go" data-action="en-start">Продолжить урок</button></section>
     ${levels}`;
 }
 
@@ -494,7 +555,7 @@ function enPlayPcm(b64) {
   src.start(at); enNextAt = at + buffer.duration; enSources.push(src);
 }
 let enTimers = [];
-function enStopPcm() { enSources.forEach(x => { try { x.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enPlayer?.pause(); enTimers.forEach(clearTimeout); enTimers = []; }
+function enStopPcm() { enStopSpeech(); enSources.forEach(x => { try { x.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enTimers.forEach(clearTimeout); enTimers = []; }
 /** Когда отзвучит всё, что поставлено в очередь (и файл озвучки), — cb. */
 function enWhenQuiet(cb) {
   const check = () => {
@@ -522,8 +583,12 @@ function enLiveSet(state) {
 async function enLiveStart() {
   const ctx = enAudioCtx();
   if (!ctx || !navigator.mediaDevices?.getUserMedia || typeof window.sorokaHear !== "function") { toast("Живой разговор работает в приложении Flow"); return; }
-  try { enLive.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
-  catch (error) { toast(error?.name === "NotAllowedError" ? "Нет доступа к микрофону — разрешите его в настройках" : "Микрофон не включился"); return; }
+  const current = enViewGuard(), request = enLive.request = Symbol();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    if (!current() || document.hidden || enLive.request !== request) { stream.getTracks().forEach(t => t.stop()); return; }
+    enLive.stream = stream;
+  } catch (error) { if (current() && enLive.request === request && !document.hidden) toast(error?.name === "NotAllowedError" ? "Нет доступа к микрофону — разрешите его в настройках" : "Микрофон не включился"); return; }
   enLive.source = ctx.createMediaStreamSource(enLive.stream);
   enLive.node = ctx.createScriptProcessor(4096, 1, 1);
   enLive.node.onaudioprocess = event => enLiveHear(event.inputBuffer.getChannelData(0), ctx.sampleRate);
@@ -536,6 +601,7 @@ async function enLiveStart() {
   else enLiveSet("listen");
 }
 function enLiveStop() {
+  enLive.request = null;
   enLive.node?.disconnect(); enLive.source?.disconnect();
   enLive.stream?.getTracks().forEach(t => t.stop());
   Object.assign(enLive, { stream: null, node: null, source: null, chunks: [], pre: [] });
@@ -612,6 +678,9 @@ function enRevealAt(msg, index, words) {
 }
 
 async function enChatSend(text) {
+  if (window.sorokaEnglishSession?.version === 2 && !window.flowEnglishSession?.ready()) {
+    toast("Не удалось подтвердить вход. Сообщение не отправлено."); return;
+  }
   const c = enState().chat;
   if (!c || !text.trim() || c.busy) return;
   const mine = { role: "me", text: text.trim() };
@@ -619,11 +688,18 @@ async function enChatSend(text) {
   const history = c.msgs.filter(m => m.role !== "debrief").map(m => ({ role: m.role, text: m.text, ...(m.correction ? { correction: m.correction, rule: m.rule?.title } : {}) }));
   c.msgs.push(mine); c.busy = true; c.sent = true;
   enStopPcm();
+  const view = enViewGuard(), generation = enSpeechGeneration, turn = ++enChatTurn;
+  const active = () => turn === enChatTurn;
+  const current = () => active() && view() && generation === enSpeechGeneration && !document.hidden;
+  const release = () => { if (active()) c.busy = false; };
   if (enLive.state !== "off") enLiveSet("think");
   render(); enScrollChat();
   const done = () => {
-    c.busy = false;
+    if (!active()) return;
+    release();
+    const quietGeneration = enSpeechGeneration;
     enWhenQuiet(() => {
+      if (!active() || !view() || quietGeneration !== enSpeechGeneration || document.hidden) return;
       // Всё отзвучало — показываем текст целиком и снова слушаем.
       const last = c.msgs[c.msgs.length - 1];
       if (last?.role === "ai") { last.shown = last.text; last.streaming = false; }
@@ -632,9 +708,11 @@ async function enChatSend(text) {
     });
   };
   try {
-    if (typeof window.sorokaEnglishStream !== "function") throw new Error("no-stream");
+    // The old stream reads current credentials at dispatch; version2 must use bound enCall below.
+    if (window.sorokaEnglishSession?.version === 2 || typeof window.sorokaEnglishStream !== "function") throw new Error("no-stream");
     let ai = null, index = -1;
     await window.sorokaEnglishStream({ situation: c.situation, history, text: mine.text, targets: c.targets || [], tone: enState().today?.tone }, (type, data) => {
+      if (!current()) return;
       if (type === "say") {
         if (!ai) { ai = { role: "ai", text: "", shown: "", streaming: true }; c.msgs.push(ai); index = c.msgs.length - 1; render(); if (enLive.state !== "off") enLiveSet("speak"); }
         ai.text += data.text; enRevealAt(ai, index, data.text);
@@ -644,19 +722,22 @@ async function enChatSend(text) {
       else if (type === "ru" && ai) ai.ru = data.ru;
       else if (type === "error" && !ai) throw new Error(data.error || "stream");
     });
+    if (!current()) { release(); return; }
     if (!ai) throw new Error("stream-empty");
     done();
   } catch (_) {
+    if (!current()) { release(); return; }
     // Без потока: обычный ответ, озвучка следом (файлом).
     try {
       const answer = await enCall("chat", { situation: c.situation, history, text: mine.text, targets: c.targets || [], tone: enState().today?.tone });
+      if (!current()) { release(); return; }
       enApplyFix(mine, answer);
       c.msgs.push({ role: "ai", text: answer.reply, ru: answer.replyRu });
       render(); enScrollChat();
       if (enLive.state !== "off") enLiveSet("speak");
       await enSpeak(answer.reply);
       done();
-    } catch (__) { c.busy = false; render(); toast("Тренер не ответил — попробуйте ещё раз"); if (enLive.state !== "off") enLiveSet("listen"); }
+    } catch (__) { release(); if (!active() || !view() || document.hidden) return; render(); toast("Тренер не ответил — попробуйте ещё раз"); if (enLive.state !== "off") enLiveSet("listen"); }
   }
 }
 function enScrollChat() { requestAnimationFrame(() => { const box = document.querySelector(".en-msgs"); if (box) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" }); }); }
@@ -675,29 +756,34 @@ const EN_MODES = [
 
 async function enExStart(mode, unitKey) {
   const s = enState();
-  s.ex = { mode, loading: true };
+  enStopPcm();
+  const pending = s.ex = { mode, loading: true }, current = enViewGuard();
   render();
   try {
     const unit = unitKey || s.today?.unit?.key || "";
     const data = await enCall(mode === "theory" ? "theory" : "practice", { mode, unit });
+    if (!current() || s.ex !== pending) return;
     if (data?.error) throw new Error(data.error);
     s.ex = mode === "theory" ? { mode, theory: data } : { mode, unit: data.unit, items: data.items || [], index: 0, ok: 0, done: 0, picked: [], answer: null };
     if (mode !== "theory" && !s.ex.items.length) { s.ex = null; toast("Пока не из чего — пройдите занятие на «Сегодня»"); }
-    else if (mode === "dictation") setTimeout(() => enSpeak(s.ex.items[0].en), 200);
-  } catch (_) { s.ex = null; toast("Не получилось загрузить упражнение"); }
+    else if (mode !== "theory" && (s.ex.items[0].mode || mode) === "dictation") enScheduleSpeak(s.ex.items[0].en, 200);
+    if (mode !== "theory" && s.ex) window.flowEnglishSession?.save();
+  } catch (_) { if (!current()) return; s.ex = null; toast("Не получилось загрузить упражнение"); }
   render();
 }
 
 async function enLessonStart(unitKey) {
   const s = enState();
-  s.ex = { mode: "lesson", loading: true };
+  enStopPcm();
+  const pending = s.ex = { mode: "lesson", loading: true }, current = enViewGuard();
   render();
   try {
     const data = await enCall("lesson", unitKey ? { unit: unitKey } : {});
+    if (!current() || s.ex !== pending) return;
     if (data?.error) throw new Error(data.error);
     s.ex = { mode: "lesson", unit: data.unit, items: data.steps || [], index: 0, ok: 0, done: 0, picked: [], answer: null };
     enLessonEnter();
-  } catch (_) { s.ex = null; toast("Не получилось собрать урок"); }
+  } catch (_) { if (!current()) return; s.ex = null; toast("Не получилось собрать урок"); }
   render();
 }
 /** Вход в шаг: колода слов, звук для новой фразы, «на слух», диктант. */
@@ -709,10 +795,10 @@ function enLessonEnter() {
     // Урок пройден до разговора — результат на сервер: от 70% — дальше по курсу.
     ex.sent = true;
     // Пропустили почти всё — урок не засчитываем: проходят упражнениями, а не кнопкой «Пропустить».
-    if (ex.done < 4) { ex.result = { few: true }; return; }
-    enQueue("unitdone", { unit: ex.unit.key, score: ex.ok / ex.done }).then(r => { ex.result = r; enState().today = null; enState().course = null; render(); }).catch(() => {});
+    if (enAssessed(ex) < 4) { ex.result = { few: true }; return; }
+    enQueue("unitdone", { unit: ex.unit.key, score: ex.ok / enAssessed(ex) }).then(r => { ex.result = r; enState().today = null; enState().course = null; render(); }).catch(() => {});
   }
-  if (["listen", "dictation"].includes(item.mode)) setTimeout(() => enSpeak(item.en), 150);
+  if (["listen", "dictation"].includes(item.mode)) enScheduleSpeak(item.en, 150);
 }
 const EN_SECTIONS = ["Слова", "Разминка", "Правило", "Тренировка", "Аудирование", "Проверка", "Разговор"];
 function enLessonTop(ex) {
@@ -723,17 +809,18 @@ function enLessonTop(ex) {
 }
 
 function enExScreen(ex) {
+  if (ex.mode === 'structured' && typeof enStructuredScreen === 'function') return enStructuredScreen(ex);
   if (ex.loading) return `<div class="en-run">${enWait()}${ex.mode === "rule" ? `<p class="section-note en-center">Эмма готовит объяснение и упражнения — новое правило до минуты</p>` : ""}</div>`;
   if (ex.mode === "theory") return enTheoryScreen(ex.theory);
   const total = ex.items.length;
   if (ex.mode === "rule" && ex.index >= total) {
     const r = ex.result;
-    const verdict = !r ? `<span class="live-spin"></span>` : r.few ? `<p class="section-note">Засчитывается по упражнениям — сделайте хотя бы три.</p>` : r.passed ? `<p class="en-ok">${icon("check", "icon-sm")}Разобрано. Теперь Эмма проверит его в разговоре: ${r.need} верных употребления — и правило освоено.</p>` : `<p class="en-fix">Верно меньше 80% — давайте ещё раз, предложения будут другие.</p>`;
-    return `<div class="en-run en-done"><div class="en-done-mark">${icon("study")}</div><h2>${esc(ex.rule.title)}</h2><p class="muted">Верно ${ex.ok} из ${ex.done}</p>${verdict}
-      ${r?.passed ? `<button class="primary-button en-go" type="button" data-action="en-rule-talk">${icon("mic", "icon-sm")}Проверить в разговоре</button>` : r && !r.few ? `<button class="primary-button en-go" type="button" data-action="en-rule" data-id="${ex.rule.id}">Ещё раз</button>` : ""}<button class="ghost-button" type="button" data-action="en-ex-quit">Готово</button></div>`;
+    const verdict = !r ? `<span class="live-spin"></span>` : r.error ? `<p class="section-note" role="status">Не удалось сохранить результат правила. Это не ошибка в ответах.</p>` : r.few ? `<p class="section-note">Засчитывается по упражнениям — сделайте хотя бы три.</p>` : r.passed ? `<p class="en-ok">${icon("check", "icon-sm")}Разобрано. Теперь Эмма проверит его в разговоре: ${r.need} верных употребления — и правило освоено.</p>` : `<p class="en-fix">Верно меньше 80% — давайте ещё раз, предложения будут другие.</p>`;
+    return `<div class="en-run en-done"><div class="en-done-mark">${icon("study")}</div><h2>${esc(ex.rule.title)}</h2><p class="muted">${enExerciseSummary(ex)}</p>${verdict}
+      ${r?.passed ? `<button class="primary-button en-go" type="button" data-action="en-rule-talk">${icon("mic", "icon-sm")}Проверить в разговоре</button>` : r && !r.few && !r.error ? `<button class="primary-button en-go" type="button" data-action="en-rule" data-id="${ex.rule.id}">Ещё раз</button>` : ""}<button class="ghost-button" type="button" data-action="en-ex-quit">Готово</button></div>`;
   }
   if (ex.index >= total) {
-    return `<div class="en-run en-done"><div class="en-done-mark">${icon("check")}</div><h2>Готово</h2><p class="muted">Верно ${ex.ok} из ${ex.done}</p>
+    return `<div class="en-run en-done"><div class="en-done-mark">${icon("check")}</div><h2>Готово</h2><p class="muted">${enExerciseSummary(ex)}</p>
       <button class="primary-button en-go" type="button" data-action="en-ex" data-mode="${ex.mode}">Ещё раз</button><button class="ghost-button" type="button" data-action="en-ex-quit">К курсу</button></div>`;
   }
   const item = ex.items[ex.index];
@@ -754,15 +841,15 @@ function enExScreen(ex) {
   }
   if (mode === "talk") {
     const r = ex.result;
-    const verdict = !r ? "" : r.few ? `<p class="section-note">Урок засчитается, когда сделаете упражнения — сейчас их почти не было.</p>` : r.passed ? `<p class="en-ok">${icon("check", "icon-sm")}Урок засчитан${r.next ? ` · дальше урок ${r.next.number}: ${esc(r.next.grammar)}` : ""}</p>` : `<p class="en-fix">Верно меньше 70% — завтра этот урок ещё раз, с другими предложениями.</p>`;
-    return `<div class="en-run en-done"><div class="en-done-mark">${icon("mic")}</div><h2>Разговор</h2><p class="muted">${esc(item.title)}: ${esc(item.goal)}</p>${ex.done ? `<p class="muted">Упражнения: верно ${ex.ok} из ${ex.done}</p>` : ""}${verdict}
+    const verdict = !r ? "" : r.error ? `<p class="section-note" role="status">Не удалось сохранить результат урока. Это не ошибка в ответах.</p>` : r.few ? `<p class="section-note">Урок засчитается, когда сделаете упражнения — сейчас их почти не было.</p>` : r.passed ? `<p class="en-ok">${icon("check", "icon-sm")}Урок засчитан${r.next ? ` · дальше урок ${r.next.number}: ${esc(r.next.grammar)}` : ""}</p>` : `<p class="en-fix">Верно меньше 70% — завтра этот урок ещё раз, с другими предложениями.</p>`;
+    return `<div class="en-run en-done"><div class="en-done-mark">${icon("mic")}</div><h2>Разговор</h2><p class="muted">${esc(item.title)}: ${esc(item.goal)}</p>${ex.done ? `<p class="muted">${enExerciseSummary(ex)}</p>` : ""}${verdict}
       ${item.targets?.length ? `<div class="en-targets"><small>Постарайтесь использовать:</small>${item.targets.map(t => `<b>${esc(t)}</b>`).join("")}</div>` : ""}
       <button class="primary-button en-go" type="button" data-action="en-talk">${icon("mic", "icon-sm")}Начать разговор</button><button class="ghost-button" type="button" data-action="en-ex-quit">Закончить урок</button></div>`;
   }
   const mo = mode === "recall" ? "translate" : mode;
   const a = ex.answer;
   const next = `<button class="primary-button en-go" type="button" data-action="en-ex-next">Дальше</button>`;
-  const result = ok => `<div class="en-card"><div class="en-en"><b>${esc(item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><p class="en-ru">${esc(item.ru)}</p>${ok ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : ""}${a?.explain ? `<p class="en-fix">${esc(a.explain)}</p>` : ""}</div>`;
+  const result = ok => `<div class="en-card"><div class="en-en"><b>${esc(a?.correction || item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(a?.correction || item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div><p class="en-ru">${esc(item.ru)}</p>${ok ? `<p class="en-ok">${icon("check", "icon-sm")}${a?.assisted ? "Верно с поддержкой" : "Верно"}</p>` : ""}${a?.explain || item.note || item.tip ? `<p class="en-fix">${esc(a?.explain || item.note || item.tip)}</p>` : ""}${a?.assisted && !ok ? `<small class="muted">С подсказкой · самостоятельный ответ не засчитан</small>` : ""}</div>`;
   if (mo === "cards") {
     return `<div class="en-run">${top}<h2 class="en-prompt">${esc(item.ru)}</h2>${a ? result(false) + `<p class="en-ask">Как вспомнилось?</p><div class="en-rate">${EN_RATINGS.map(([r, l]) => `<button type="button" data-action="en-ex-rate" data-rating="${r}">${l}</button>`).join("")}</div>`
       : `<p class="section-note">Вспомните фразу по-английски — вслух или про себя.</p><div class="en-answer"><button class="primary-button" type="button" data-action="en-ex-show">Показать</button></div>`}</div>`;
@@ -779,13 +866,13 @@ function enExScreen(ex) {
   }
   if (mo === "dictation") {
     return `<div class="en-run">${top}<div class="en-listen"><button class="en-mic" type="button" data-action="en-say" data-text="${esc(item.en)}" aria-label="Послушать ещё раз">${icon("play")}</button><small>Послушайте и запишите по-английски</small></div>
-      ${a ? `${a.typed ? `<p class="en-said">Вы написали: «${esc(a.typed)}»</p>` : ""}${result(a.ok)}${next}` : `<form class="en-write" data-en-dict><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Что вы услышали" aria-label="Что вы услышали"><button class="primary-button" type="submit">Проверить</button></form><button class="text-action" type="button" data-action="en-ex-show">Не разобрал — показать</button>`}</div>`;
+      ${a ? `${a.typed ? `<p class="en-said">Вы написали: «${esc(a.typed)}»</p>` : ""}${result(a.ok)}${next}` : `<form class="en-write" data-en-dict><input name="answer" value="${esc(ex.draft || "")}" autocomplete="off" autocapitalize="sentences" placeholder="Что вы услышали" aria-label="Что вы услышали"><button class="primary-button" type="submit">Проверить</button></form><button class="text-action" type="button" data-action="en-ex-show">Не разобрал — показать</button>`}</div>`;
   }
   // translate / recall
   return `<div class="en-run">${top}<p class="en-kicker">${item.source === "mistake" ? "Из ваших ошибок · " : ""}Скажите или напишите по-английски</p><h2 class="en-prompt">${esc(item.ru)}</h2>
-    ${a ? `${a.said ? `<p class="en-said">Вы сказали: «${esc(a.said)}»</p>` : ""}<div class="en-card"><div class="en-en"><b>${esc(a.correction || item.en)}</b><button class="icon-button en-play" type="button" data-action="en-say" data-text="${esc(a.correction || item.en)}" aria-label="Послушать">${icon("play", "icon-sm")}</button></div>${a.verdict === "correct" ? `<p class="en-ok">${icon("check", "icon-sm")}Верно</p>` : a.explain ? `<p class="en-fix">${esc(a.explain)}</p>` : ""}</div>${next}`
+    ${a ? `${a.said ? `<p class="en-said">Вы сказали: «${esc(a.said)}»</p>` : ""}${result(a.ok)}${next}`
     : ex.checking ? `<div class="en-wait small"><span class="live-spin"></span><small>Проверяю…</small></div>`
-    : `<form class="en-write" data-en-tr><input name="answer" autocomplete="off" autocapitalize="sentences" placeholder="Напишите по-английски" aria-label="Перевод"><button class="primary-button" type="submit">Проверить</button></form><div class="en-answer"><button class="en-mic" type="button" data-action="en-tr-speak" aria-label="Сказать">${icon("mic")}</button><button class="text-action" type="button" data-action="en-ex-show">Не помню — показать</button></div>`}</div>`;
+    : `<form class="en-write" data-en-tr><input name="answer" value="${esc(ex.draft || "")}" autocomplete="off" autocapitalize="sentences" placeholder="Напишите по-английски" aria-label="Перевод"><button class="primary-button" type="submit">Проверить</button></form><div class="en-answer"><button class="en-mic" type="button" data-action="en-tr-speak" aria-label="Сказать">${icon("mic")}</button><button class="text-action" type="button" data-action="en-ex-show">Не помню — показать</button></div>`}</div>`;
 }
 
 function enTheoryScreen(t) {
@@ -802,14 +889,18 @@ function enTheoryScreen(t) {
 
 const enNorm = v => String(v || "").toLowerCase().replace(/[’`]/g, "'").replace(/\bi'm\b/g, "i am").replace(/\b(\w+)n't\b/g, "$1 not").replace(/\bi'd\b/g, "i would").replace(/[.,!?;:"]/g, " ").replace(/\s+/g, " ").trim();
 
+function enAssessed(ex) { return Math.max(0, ex.done - (ex.practiceDone || 0)); }
+function enExerciseSummary(ex) { return `Самостоятельно: верно ${ex.ok} из ${enAssessed(ex)}${ex.practiceDone ? ` · С поддержкой / самопроверка: ${ex.practiceDone}` : ""}`; }
 function enExAnswer(ok, extra = {}) {
   const ex = enState().ex;
+  if (!ex || ex.answer) return;
   const item = ex.items[ex.index];
 // В расписание — только фразы, которые уже учатся; раньше срока сервер интервал не двигает.
   const mode = item.mode || ex.mode;
-  const real = ex.mode === "lesson" && mode === "recall"; // проверка без подсказки — настоящая оценка
-  if ((item.introduced || real) && !enRecord("grade", { id: item.id, rating: extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: ok, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` })) return;
-  ex.answer = { ok, ...extra }; ex.done++; if (ok) ex.ok++;
+  const repeat = Boolean(item.again), assisted = repeat || extra.verdict === "shown" || extra.assisted === true;
+  const real = ex.mode === "lesson" && mode === "recall" && !repeat;
+  if ((item.introduced || real) && !enRecord("grade", { id: item.id, rating: assisted ? 1 : extra.rating ?? (ok ? 3 : 1), answer: extra.typed || extra.said || "", correct: repeat ? null : ok && !assisted, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` })) return;
+  ex.answer = { ok, ...extra, assisted }; ex.done++; if (repeat) ex.practiceDone = (ex.practiceDone || 0) + 1; else if (ok && !assisted) ex.ok++;
   // Не вспомнили в уроке — ещё раз перед разговором (один раз).
   if (real && !ok && !item.again) { const talk = ex.items.findIndex(i => i.mode === "talk"); ex.items.splice(talk < 0 ? ex.items.length : talk, 0, { ...item, again: true }); }
   render();
@@ -817,11 +908,13 @@ function enExAnswer(ok, extra = {}) {
 }
 function enExNext() {
   const ex = enState().ex;
-  ex.index++; ex.answer = null; ex.picked = []; ex.checking = false;
+  if (!ex) return;
+  enStopPcm();
+  ex.index++; ex.answer = null; ex.picked = []; ex.checking = false; ex.draft = "";
   if (ex.mode === "lesson") enLessonEnter();
   if (ex.mode === "rule" && ex.index >= ex.items.length) enRuleFinish(ex);
   render();
-  if (ex.mode !== "lesson" && ex.items[ex.index] && ex.mode === "dictation") enSpeak(ex.items[ex.index].en);
+  if (ex.mode !== "lesson" && (ex.items[ex.index]?.mode || ex.mode) === "dictation" && ex.items[ex.index]?.en) enScheduleSpeak(ex.items[ex.index].en, 150);
 }
 
 // ------------------------------------------------------------ чтение
@@ -1260,6 +1353,9 @@ function englishAction(action, control) {
   if(typeof enBrowserAction==='function'&&enBrowserAction(action,control))return true;
   if (!action.startsWith("en-")) return false;
   const s = enState();
+  if (action.startsWith('en-training-') && typeof enStructuredAction === 'function') return enStructuredAction(action,control);
+  if (action === "en-tab" && control.dataset.tab === "course" && s.tab !== "course") s.practiceView = "hub";
+  if (["en-tab", "en-ex-quit", "en-deck-quit", "en-skip", "en-talk", "en-rule-talk", "en-media-tab", "en-chat-reset", "en-live-stop"].includes(action)) { enViewGeneration++; enCancelChat(); enStopPcm(); }
   if (action === "en-retry") {
     const key=control.dataset.key, failed=s.failedLoads?.[key];
     if(failed){delete s.failedLoads[key];s.error="";enLoad(key,failed.op,failed.args);enRerender();}
@@ -1301,7 +1397,7 @@ function englishAction(action, control) {
   if (action === "en-tab") { const keys=({today:['today'],chat:['today'],words:['words','wordlist'],course:['course'],read:['books'],progress:['progress'],phrases:['list']})[control.dataset.tab] || []; for(const key of keys)if(s.failedLoads)delete s.failedLoads[key];s.error=""; if (s.tab === "chat" && control.dataset.tab !== "chat") { enStopPcm(); enLiveStop(); } if (s.rulesStale && control.dataset.tab === "today") { s.today = null; s.rulesStale = false; } s.deck = null; s.tab = control.dataset.tab; if (s.tab === "phrases") s.list = null; if (s.tab === "progress") s.progress = null; if (s.tab === "words") { s.words = null; s.wordlist = null; } if (s.tab === "course") s.course = null; if (s.tab === "read") { s.books = null; s.book = null; s.pop = null; } render(); return true; }
   if (action === "en-start") { enLessonStart(); return true; }
   if (action === "en-home") { s.tab = "today"; navigate("english"); if (s.today && !s.today.plan.doneToday) enLessonStart(); else render(); return true; }
-  if (action === "en-say") { enSpeak(control.dataset.text, control); return true; }
+  if (action === "en-say") { enCancelChat(); enSpeak(control.dataset.text, control); return true; }
   // колода
   if (action === "en-deck") { enDeckStart(false); return true; }
   if (action === "en-place") { enDeckStart(true); return true; }
@@ -1316,6 +1412,7 @@ function englishAction(action, control) {
   if (action === "en-newwords") { const n = Number(control.dataset.n); if (s.words) s.words.newWords = n; render(); enQueue("newwords", { n }).then(() => { s.today = null; }); return true; }
   if (action === "en-wfilter") { s.wfilter = control.dataset.filter; s.wordlist = null; render(); return true; }
   // курс
+  if (action === "en-practice-course" || action === "en-practice-back") { s.tab = "course"; s.practiceView = action === "en-practice-course" ? "course" : "hub"; render(); return true; }
   if (action === "en-unit") { s.openUnit = s.openUnit === control.dataset.key ? null : control.dataset.key; render(); return true; }
   if (action === "en-unit-go") {
     const key = control.dataset.key;
@@ -1360,9 +1457,9 @@ function englishAction(action, control) {
   if (action === "en-ex-rate") {
     const r = Number(control.dataset.rating), ex = s.ex, item = ex.items[ex.index];
 
-    const real = ex.mode === "lesson" && (item.mode === "listen" || item.mode === "recall");
-    if (item.introduced && !enRecord("grade", { id: item.id, rating: r, practice: !real, attempt: `${item.id}-${Date.now()}-${ex.index}` })) return true;
-    ex.done++; if (r >= 3) ex.ok++;
+    if (![1,2,3].includes(r) || !ex.answer?.shown) return true;
+    if (item.introduced && !enRecord("grade", { id: item.id, rating: r, correct: null, practice: true, attempt: `${item.id}-${Date.now()}-${ex.index}` })) return true;
+    ex.done++; ex.practiceDone = (ex.practiceDone || 0) + 1;
     enExNext(); return true;
   }
   if (action === "en-tile") { const ex = s.ex; ex.picked.push(Number(control.dataset.ti)); const item = ex.items[ex.index]; if (ex.picked.length === item.tiles.length) { const said = ex.picked.map(i => item.tiles[i]).join(" "); enExAnswer(enNorm(said) === enNorm(item.en), { typed: said }); } else render(); return true; }
@@ -1423,11 +1520,15 @@ function englishAction(action, control) {
 
 async function enTranslate(text, spoken) {
   const ex = enState().ex;
+  if (!ex || ex.checking || ex.answer) return;
+  const current = enViewGuard();
   const item = ex.items[ex.index];
-  ex.checking = true; render();
+  ex.draft = text; ex.checking = true; render();
   let c;
-  try { c = await enCall("check", { id: item.id, answer: text }); } catch (_) { c = { verdict: "unknown", correction: item.en, explain: "" }; }
+  try { c = await enCall("check", { id: item.id, answer: text }); } catch (_) { c = null; }
+  if (!current()) return;
   ex.checking = false;
+  if (!c || c.error || !["correct", "close", "wrong"].includes(c.verdict)) { render(); toast("Проверка недоступна. Ответ сохранён — попробуйте ещё раз."); return; }
   enExAnswer(c.verdict === "correct", { ...c, [spoken ? "said" : "typed"]: text, rating: c.verdict === "correct" ? 3 : c.verdict === "close" ? 2 : 1 });
 }
 document.addEventListener("submit", event => {
@@ -1464,5 +1565,14 @@ document.addEventListener("input", event => {
 });
 
 // Ушли из раздела — живой микрофон выключаем (иначе он слушал бы на других экранах).
-window.addEventListener("hashchange", () => { if (!location.hash.includes("english") && enLive.state !== "off") { enStopPcm(); enLiveStop(); } });
-document.addEventListener("visibilitychange", () => { if (document.hidden && enLive.state !== "off") { enStopPcm(); enLiveStop(); } });
+function enLeaveEnglish() {
+  enViewGeneration++; enCancelChat(); enStopPcm();
+  const s = ui.en;
+  if (s?.ex?.loading) s.ex = null;
+  if (s?.deck?.loading) s.deck = null;
+  if (s?.ex) s.ex.checking = false;
+  if (enLive.state !== "off") enLiveStop();
+}
+window.addEventListener("hashchange", () => { if (!location.hash.includes("english")) enLeaveEnglish(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden) { enCancelChat(); enStopPcm(); enLiveStop(); } });
+window.addEventListener("pagehide", enLeaveEnglish);

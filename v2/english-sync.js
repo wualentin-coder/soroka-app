@@ -5,6 +5,9 @@ let enSyncRunning = false, enSyncTimer = null;
 const enSyncWaiters = new Map();
 function enStoreOutbox() { localStorage.setItem(EN_OUTBOX_KEY, JSON.stringify(enOutbox)); }
 function enQueue(op, args) {
+  if (window.sorokaEnglishSession?.version === 2 && !window.flowEnglishSession) {
+    const rejected = Promise.reject(new Error("english_owner_not_ready")); rejected.accepted = false; return rejected;
+  }
   if (typeof window.sorokaEnglish !== "function") return enCall(op, args);
   const id = crypto.randomUUID();
   const entry = { id, op, args: { ...args, attempt: args.attempt || id } };
@@ -22,6 +25,7 @@ function enRecord(op, args) {
   return result.accepted !== false;
 }
 async function enFlush() {
+  if (window.sorokaEnglishSession?.version === 2 && !window.flowEnglishSession) return;
   if (enSyncRunning || enSyncTimer || !enOutbox.length || typeof window.sorokaEnglish !== "function") return;
   clearTimeout(enSyncTimer); enSyncRunning = true;
   try {

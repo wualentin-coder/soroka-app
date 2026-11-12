@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=2ead4c6882","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-sync.js?v=29d14b5775","integrity":null},{"src":"./english-music-import.js?v=f26e0e61f0","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=c5a8055734","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=7636078c10","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=d305611d40","integrity":null},{"src":"./sport-train.js?v=2ebd7da268","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=20261111-livefix-dbf2c617b9","integrity":null},{"src":"./sport-session.js?v=20261111-livefix-e5d457d39d","integrity":null},{"src":"./sport-session-magic.js?v=20261112-column-33c526efae","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=5a3aaddac0","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=44f69b69b9","integrity":null},{"src":"./notes.js?v=56b28a58fe","integrity":null},{"src":"./note-ink.js?v=cb15b0542c","integrity":null},{"src":"./note-editor.js?v=dae2f78bfe","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=1a66622019","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=15b9671629","integrity":null},{"src":"./digital-collections.js?v=7066fcabe9","integrity":null},{"src":"./digital-directory.js?v=92a6742929","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=2bb272f8a5","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=b9fb2e7782","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=2ead4c6882","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-host.js?v=4c103a4d61","integrity":null},{"src":"./english-sync.js?v=d1d23b6369","integrity":null},{"src":"./english-music-import.js?v=ab39abb2f5","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=8e28e10253","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=fc45bba682","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=d305611d40","integrity":null},{"src":"./sport-train.js?v=2ebd7da268","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=20261111-livefix-dbf2c617b9","integrity":null},{"src":"./sport-session.js?v=20261111-livefix-e5d457d39d","integrity":null},{"src":"./sport-session-magic.js?v=20261112-column-33c526efae","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=5a3aaddac0","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=44f69b69b9","integrity":null},{"src":"./english-practice-core.js?v=cd3dd3b8b8","integrity":null},{"src":"./english-media-practice-core.js?v=972c83f48d","integrity":null},{"src":"./english-practice.js?v=976b0c88ee","integrity":null},{"src":"./english-media-practice.js?v=5e5f81cb96","integrity":null},{"src":"./english-session.js?v=9c1a83f4ef","integrity":null},{"src":"./notes.js?v=56b28a58fe","integrity":null},{"src":"./note-ink.js?v=cb15b0542c","integrity":null},{"src":"./note-editor.js?v=dae2f78bfe","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=1a66622019","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=15b9671629","integrity":null},{"src":"./digital-collections.js?v=7066fcabe9","integrity":null},{"src":"./digital-directory.js?v=92a6742929","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=2bb272f8a5","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=b9fb2e7782","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -70,11 +70,16 @@
     return full;
   }
 
-  async function call(body, timeout = 20000, noteRefreshes = 0, widgetRead = null) {
+  async function call(body, timeout = 20000, noteRefreshes = 0, widgetRead = null, englishBinding = null) {
+    const assertEnglishBinding = () => {
+      if (englishBinding && (body.action !== 'english' || englishBinding.isCurrent() !== true)) throw new Error('english_owner_changed');
+    };
+    assertEnglishBinding();
     if(nativeSuspended && (PAUSABLE_READS.has(body.action) || (body.action==='pc'&&body.op==='state'))) throw new Error('app-hidden');
-    const init = tg && tg.initData;
-    const device = init ? "" : deviceKey();
+    const init = englishBinding ? englishBinding.initData : tg && tg.initData;
+    const device = englishBinding ? englishBinding.device : init ? "" : deviceKey();
     if (!init && !device) throw new Error("no-telegram");
+    if (englishBinding) body = { ...body, englishOwnerProtocol: 2, englishOwnerScope: englishBinding.scope };
     const controller = new AbortController();
     // В Android-приложении окно ждёт не дольше 20 секунд: зависший запрос
     // (сеть режет большие ответы) повторяется сетью самого приложения.
@@ -96,6 +101,7 @@
         body: payload,
         signal: controller.signal,
       }).catch((error) => {
+        assertEnglishBinding();
         // Сеть окна не пускает (а уведомления с телефона доходят) — повторяем
         // запрос сетью Android-приложения и дальше ходим так же.
         if (canNative) {
@@ -105,7 +111,9 @@
         }
         throw error;
       });
+      assertEnglishBinding();
       const json = await answer.json().catch(() => ({}));
+      assertEnglishBinding();
       if(widgetRead?.cancelled)throw new Error("note-read-cancelled");
       if (!answer.ok) {
         const error = new Error(json.error || (answer.status === 401 ? "unauthorized" : "server"));
@@ -155,6 +163,86 @@
       try { android.api(id, payload); } catch (error) { delete nativeWaits[id]; fail(error); }
     });
   }
+
+  // English authorization is confirmed by the authenticated server, with credentials retained only here.
+  let englishObserved = null, englishContext = null, englishChecking = null, englishGeneration = 0, englishDenied = false;
+  const englishCredentials = new WeakMap(), englishCapabilities = new WeakMap(), englishAuthListeners = new Set();
+  const englishVisible = () => !document.hidden && !nativeSuspended;
+  function readEnglishCredentials() {
+    try {
+      const initData = String(window.Telegram?.WebApp?.initData || '');
+      const currentNative = window.SorokaAndroid;
+      return {initData, device: initData ? '' : currentNative?.deviceKey ? String(currentNative.deviceKey() || '') : ''};
+    } catch (_) { return {initData:'',device:''}; }
+  }
+  const sameEnglishCredentials = (a, b) => !!a && !!b && a.initData === b.initData && a.device === b.device;
+  function revokeEnglishAuth(denied = false) {
+    englishGeneration++; englishContext = null; englishChecking = null; englishDenied = denied;
+    for (const listener of [...englishAuthListeners]) { try { listener(); } catch (_) {} }
+  }
+  function observeEnglishCredentials() {
+    const next = readEnglishCredentials();
+    if (!sameEnglishCredentials(next, englishObserved)) {
+      englishObserved = next;
+      revokeEnglishAuth();
+      if (englishVisible()) Promise.resolve().then(() => confirmEnglishAuth());
+    }
+    return englishObserved;
+  }
+  function englishAuthCurrent(context) {
+    const credentials = observeEnglishCredentials();
+    return englishVisible() && !!context && context === englishContext && sameEnglishCredentials(credentials, englishCredentials.get(context));
+  }
+  async function confirmEnglishAuth() {
+    const credentials = observeEnglishCredentials();
+    if (!englishVisible() || englishDenied || (!credentials.initData && !credentials.device)) return null;
+    if (englishAuthCurrent(englishContext)) return englishContext;
+    if (englishChecking) return englishChecking;
+    const generation = englishGeneration, captured = {...credentials};
+    const current = () => generation === englishGeneration && englishVisible() && sameEnglishCredentials(captured, observeEnglishCredentials());
+    const pending = (async () => {
+      try {
+        const response = await call({action:'english', op:'context', args:{}}, 20000, 0, null, {...captured, isCurrent:current});
+        if (!current()) throw new Error('english_owner_changed');
+        if (response?.version !== 2 || !/^[a-f0-9]{64}$/.test(response.scope || '') || response.capabilities?.version !== 2 || typeof response.capabilities.completionAttempts !== 'boolean' || typeof response.capabilities.practiceEvents !== 'boolean') throw new Error('english_auth_contract');
+        const context = Object.freeze({scope:response.scope, epoch:Object.freeze({}), authorized:true});
+        englishCredentials.set(context, Object.freeze(captured));
+        englishCapabilities.set(context, Object.freeze({...response.capabilities}));
+        englishContext = context;
+        for (const listener of [...englishAuthListeners]) { try { listener(); } catch (_) {} }
+        return context;
+      } catch (error) {
+        if (generation === englishGeneration && error?.status === 401) revokeEnglishAuth(true);
+        return null;
+      } finally { if (englishChecking === pending) englishChecking = null; }
+    })();
+    englishChecking = pending;
+    return pending;
+  }
+  const englishAuthSource = Object.freeze({
+    version:1,
+    captureAuth(){ observeEnglishCredentials(); return englishAuthCurrent(englishContext) ? englishContext : null; },
+    isAuthCurrent:englishAuthCurrent,
+    confirmedCapabilities(context){ return englishAuthCurrent(context) ? englishCapabilities.get(context) : null; },
+    subscribeInvalidation(listener){ englishAuthListeners.add(listener); return () => englishAuthListeners.delete(listener); },
+    async sendEnglishBound(op, args, context) {
+      if (!englishAuthCurrent(context)) throw new Error('english_owner_changed');
+      const captured = englishCredentials.get(context);
+      try {
+        const response = await call({action:'english', op, args}, ['rule','booktr','bookadd'].includes(op)?150000:['chat','speech','check','debrief'].includes(op)?60000:20000, 0, null, {...captured,scope:context.scope,isCurrent:()=>englishAuthCurrent(context)});
+        if (!englishAuthCurrent(context)) throw new Error('english_owner_changed');
+        return response;
+      } catch (error) { if (error?.status === 401 && englishContext === context) revokeEnglishAuth(true); throw error; }
+    }
+  });
+  async function installEnglishHost() {
+    if (!window.flowEnglishHost?.create) throw new Error('english_host_missing');
+    if (!window.sorokaEnglishSession) window.sorokaEnglishSession = window.flowEnglishHost.create(englishAuthSource);
+    await confirmEnglishAuth();
+  }
+  for (const name of ['focus','pageshow','online']) window.addEventListener(name, () => { englishDenied=false; confirmEnglishAuth(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) revokeEnglishAuth(); else { englishDenied=false; confirmEnglishAuth(); } });
+  // End of the private English authorization adapter.
 
   /*
    * Сбои связи — в журнал: «отваливается» без подробностей не починить.
@@ -624,11 +712,13 @@
   // через visibilitychange, поэтому приложение зовёт сюда само.
   window.sorokaSuspend = () => {
     nativeSuspended=true;
+    revokeEnglishAuth();
     window.dispatchEvent(new Event('flow:suspend'));
     pcStateSource?.invalidate();
   };
   window.sorokaResume = (options = {}) => {
     nativeSuspended=false;
+    englishDenied=false; confirmEnglishAuth();
     if(typeof resumeProductWish==='function') resumeProductWish();
     return options?.refresh === false ? undefined : refresh(true);
   };
@@ -1726,7 +1816,9 @@
     } catch (_) {}
     for (const entry of SCRIPTS) {
       // Карта (Leaflet) не должна валить всё приложение, если CDN недоступен.
+      if (/\/(?:english-session)\.js(?:\?|$)/.test(entry.src)) await installEnglishHost();
       try { await loadScript(entry); } catch (error) { if (!entry.integrity) throw error; }
+      if (/\/(?:english-host)\.js(?:\?|$)/.test(entry.src)) await installEnglishHost();
     }
 
     // «Поделиться» — меню Telegram «Переслать в чат»: системное меню браузера

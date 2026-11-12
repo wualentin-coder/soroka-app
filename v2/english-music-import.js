@@ -3,7 +3,7 @@
   'use strict';
   const UNISON = 'https://unison.boidu.dev';
   const LYRICSPLUS = 'https://lyricsplus.prjktla.my.id';
-  const CACHE = 'flow-song-import-v4:';
+  const CACHE = 'flow-song-import-v5:';
   const CLIP_MAP_SOURCE = 'https://wualentin-coder.github.io/soroka-app/v2/assets/music-alignments.json';
   let clipManifest;
   const MAX_ROWS = 500, MAX_BYTES = 1500000, MAX_SECONDS = 7200;
@@ -79,18 +79,19 @@
   }
   function finish(rows) {
     if (rows.length > MAX_ROWS) throw new Error('В тексте слишком много строк.');
-    const timed = rows.some(row => Number.isFinite(row.time));
-    const seen = new Set();
     rows = rows.filter(row => {
       row.en = String(row.en || '').replace(/\s+/g, ' ').trim();
-      if ((timed && (!Number.isFinite(row.time) || row.time < 0 || row.time > MAX_SECONDS)) || !row.en || /^[♪♫\s]+$/.test(row.en)) return false;
+      if (!row.en || /^[♪♫\s]+$/.test(row.en)) return false;
       if (row.en.length > 2000) throw new Error('Строка текста слишком длинная.');
-      const key = `${row.time}:${row.en}`;
-      if (timed && seen.has(key)) return false;
-      seen.add(key);
       return true;
     });
-    if (timed) rows.sort((a, b) => a.time - b.time);
+    // Partial clocks must not delete words or chorus occurrences. Keep the text plain.
+    const timed = rows.length > 0 && rows.every(row => Number.isFinite(row.time) && row.time >= 0 && row.time <= MAX_SECONDS);
+    if (timed) {
+      const seen = new Set();
+      rows = rows.filter(row => { const key = `${row.time}:${row.en}`; if (seen.has(key)) return false; seen.add(key); return true; });
+      rows.sort((a, b) => a.time - b.time);
+    }
     return rows.map((row, index) => {
       const clean = { time: timed ? row.time : null,
         end: timed ? (Number.isFinite(row.end) && row.end > row.time && row.end <= MAX_SECONDS ? row.end : (rows[index + 1]?.time ?? null)) : null,
@@ -126,9 +127,9 @@
     const background = node => /(?:^|\s)x-bg(?:\s|$)/.test(role(node));
     function read(node) {
       if (node.nodeType === 3) return node.nodeValue;
-      if (background(node)) return '';
       if (node.localName === 'br') return ' ';
-      return [...node.childNodes].map(read).join('');
+      const text = [...node.childNodes].map(read).join('');
+      return background(node) ? ` ${text} ` : text;
     }
     function timedWords(node) {
       const words = [];
@@ -141,11 +142,10 @@
       }
       function visit(child) {
         if (child.nodeType === 3) { addText(child.nodeValue); return; }
-        if (background(child)) return;
         if (child.localName === 'br') { addText(' '); return; }
         const children = [...(child.childNodes || [])];
-        const timedDescendants = child.getElementsByTagNameNS ? [...child.getElementsByTagNameNS('*', 'span')].some(span => !background(span)
-          && Number.isFinite(time(span.getAttribute('begin'))) && Number.isFinite(time(span.getAttribute('end')))) : false;
+        const timedDescendants = child.getElementsByTagNameNS ? [...child.getElementsByTagNameNS('*', 'span')].some(span =>
+          Number.isFinite(time(span.getAttribute('begin'))) && Number.isFinite(time(span.getAttribute('end')))) : false;
         const start = time(child.getAttribute?.('begin')), end = time(child.getAttribute?.('end'));
         if (child.localName === 'span' && !timedDescendants && Number.isFinite(start) && Number.isFinite(end) && end > start) {
           const text = pendingSpace + read(child);
@@ -167,8 +167,7 @@
     }
     const rows = [];
     for (const node of xml.getElementsByTagNameNS('*', 'p')) {
-      if (background(node) || [...ancestors(node)].some(background)) continue;
-      const spans = [...node.getElementsByTagNameNS('*', 'span')].filter(span => !background(span) && ![...ancestors(span, node)].some(background));
+      const spans = [...node.getElementsByTagNameNS('*', 'span')];
       const spanStarts = spans.map(span => time(span.getAttribute('begin'))).filter(Number.isFinite);
       const spanEnds = spans.map(span => time(span.getAttribute('end'))).filter(Number.isFinite);
       const start = time(node.getAttribute('begin'));
@@ -177,7 +176,6 @@
     }
     return finish(rows);
   }
-  function* ancestors(node, stop) { for (let parent = node.parentElement; parent && parent !== stop; parent = parent.parentElement) yield parent; }
   function normalize(text) { return String(text || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); }
   function cleanTitle(text) {
     const versions = String(text || '').match(/[\[(][^\])]*\b(?:live|remix|cover|acoustic|instrumental|karaoke|slowed|sped[- ]up|version)\b[^\])]*[\])]/gi) || [];
@@ -420,7 +418,7 @@
       }
       const rank = found => timingOf(found.lines) === 'word' ? 3 : timingOf(found.lines) === 'line' ? 2 : found.source.exactVideo ? 1 : 0;
       matches.sort((a, b) => rank(b) - rank(a));
-      const timed = matches.find(found => timingOf(found.lines) !== 'none');
+      const timed = matches.find(found => timingOf(found.lines) !== 'none' && (!exactPlain || normalize(found.lines.map(row => row.en).join(' ')) === normalize(exactPlain.lines.map(row => row.en).join(' '))));
       if (timed) return timed;
       if (exactPlain) return exactPlain;
       if (matches.length) return matches[0];
