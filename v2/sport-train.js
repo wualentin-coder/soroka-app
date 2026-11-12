@@ -432,6 +432,18 @@ function spLoadControl(option, index) {
 // Результат по подходам: у упражнения с весом — вес и повторения каждого
 // подхода, без веса (подтягивания, отжимания) — повторения по подходам.
 const spRepsUnit = e => (SP().holdSecondsFor(e) > 0 ? "сек" : "повт.");
+function spPreviousResult(exercise, workout) {
+  const logs = SP().previousSetLogs(spState().state, exercise.name, workout)
+    .filter(l => Number.isFinite(l.actualReps) && l.actualReps > 0);
+  if (!logs.length) return null;
+  const unit = spRepsUnit(exercise);
+  const sameWeight = logs.every(l => l.kilograms === logs[0].kilograms && l.basis === logs[0].basis);
+  const values = logs.map(l => `${l.actualReps}`).join(' · ');
+  const weight = l => l.kilograms === null ? '' : `${spKg(l.kilograms)} кг${SP().WEIGHT_BASIS[l.basis] ? ` (${SP().WEIGHT_BASIS[l.basis].toLocaleLowerCase()})` : ''} × `;
+  const label = sameWeight ? `${weight(logs[0])}${values} ${unit}`
+    : logs.map(l => `${weight(l)}${l.actualReps} ${unit}`).join(' · ');
+  return { logs, label, date: logs[0].date, basis: logs.find(l => l.basis)?.basis || '' };
+}
 function spSetsSummary(option, index) {
   const C = SP(), s = spState(), e = option.plan.exercises[index], unit = spRepsUnit(e);
   const logs = C.exerciseSetLogs(s.state, option, index);
@@ -462,15 +474,15 @@ function spOpenWeight(option, index) {
   if (!exercise) return;
   const weighted = !C.isBodyweight(exercise);
   const mine = C.exerciseSetLogs(s.state, option, index);
-  const prev = mine.length ? [] : C.previousSetLogs(s.state, exercise.name, option.key);
+  const previous = spPreviousResult(exercise, option.key);
   const load = weighted ? C.workoutLoad(s.state, option, index) : null;
-  const reps = load?.actualReps || spPlanReps(exercise), kg = load?.kilograms ?? 0;
-  const from = mine.length ? mine : prev;
+  const todayLoad = load?.source === 'previous' ? null : load;
+  const reps = todayLoad?.actualReps || C.holdSecondsFor(exercise) || spPlanReps(exercise), kg = todayLoad?.kilograms ?? 0;
+  const from = mine;
   const sets = from.length
     ? from.map(l => ({ reps: l.actualReps || reps, kg: weighted ? l.kilograms ?? kg : null }))
     : Array.from({ length: C.exerciseSets(exercise) }, () => ({ reps, kg: weighted ? kg : null }));
-  spOpen("weight", { exercise, option: option.key, index, weighted, basis: mine.find(l => l.basis)?.basis || load?.basis || "", sets,
-    hint: !mine.length && prev.length ? "Подставлено как в прошлый раз — поправьте под сегодня" : "" });
+  spOpen("weight", { exercise, option: option.key, index, weighted, basis: mine.find(l => l.basis)?.basis || todayLoad?.basis || "", sets, previous });
 }
 SP_SHEETS.weight = sheet => {
   const unit = spRepsUnit(sheet.exercise) === "сек" ? "сек" : "повт.";
@@ -478,7 +490,7 @@ SP_SHEETS.weight = sheet => {
     ${sheet.weighted ? `<label class="sp-setlog-kg"><input type="number" min="0" max="2000" step="0.5" inputmode="decimal" value="${set.kg ?? 0}" data-sp-set="kg" data-k="${k}" aria-label="Вес, подход ${k + 1}"><small>кг</small></label>` : ""}
     <div class="sp-stepper sp-setlog-reps"><button type="button" data-action="sp-set-step" data-k="${k}" data-d="-1" aria-label="Меньше">−</button><input type="number" min="1" max="1000" step="1" inputmode="numeric" value="${set.reps}" data-sp-set="reps" data-k="${k}" aria-label="Повторения, подход ${k + 1}"><span>${unit}</span><button type="button" data-action="sp-set-step" data-k="${k}" data-d="1" aria-label="Больше">+</button></div>
     ${sheet.sets.length > 1 ? `<button type="button" class="icon-button" data-action="sp-set-del" data-k="${k}" aria-label="Убрать подход ${k + 1}">${icon("close", "icon-sm")}</button>` : ""}</div>`).join("");
-  return { title: "Подходы", body: `<p class="section-note">${spEsc(sheet.exercise.name)} · план ${spEsc(sheet.exercise.sets_reps)}</p>${sheet.hint ? `<p class="section-note">${spEsc(sheet.hint)}</p>` : ""}
+  return { title: "Подходы", body: `<p class="section-note">${spEsc(sheet.exercise.name)} · план ${spEsc(sheet.exercise.sets_reps)}</p>${sheet.previous ? `<div class="sp-previous-result"><span><small>В прошлый раз · ${spEsc(spDateShort(sheet.previous.date))}</small><b>${spEsc(sheet.previous.label)}</b></span><button type="button" class="text-action" data-action="sp-set-copy-previous">Повторить</button></div>` : ''}
     <div class="sp-setlog">${rows}</div>
     ${sheet.sets.length < SP().MAX_LOGGED_SETS ? `<button class="text-action" type="button" data-action="sp-set-add">+ Подход</button>` : ""}
     <button class="primary-button sp-wide" type="button" data-action="sp-weight-save">Сохранить</button>` };
@@ -573,6 +585,13 @@ Object.assign(SP_ACTIONS, {
   "sp-set-step": control => { const set = spState().sheet.sets[Number(control.dataset.k)]; set.reps = Math.max(1, Math.min(1000, (Number(set.reps) || 0) + Number(control.dataset.d))); render(); },
   "sp-set-add": () => { const sets = spState().sheet.sets, last = sets[sets.length - 1]; sets.push({ ...last }); render(); },
   "sp-set-del": control => { spState().sheet.sets.splice(Number(control.dataset.k), 1); render(); },
+  "sp-set-copy-previous": () => {
+    const sheet = spState().sheet;
+    if (sheet?.kind !== 'weight' || !sheet.previous) return;
+    sheet.sets = sheet.previous.logs.map(l => ({ reps: l.actualReps, kg: sheet.weighted ? l.kilograms ?? 0 : null }));
+    sheet.basis = sheet.previous.basis;
+    render();
+  },
   "sp-weight-save": async () => {
     const C = SP(), sheet = spState().sheet;
     const option = spOptions().all.find(o => o.key === sheet.option) || (spTimer.session?.option.key === sheet.option ? spTimer.session.option : null);

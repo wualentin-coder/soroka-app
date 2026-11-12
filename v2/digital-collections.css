@@ -541,3 +541,11 @@ html[data-flow-design=magic] .dc2-recommendations .reco-filter-bar button{min-he
 html[data-motion=off] .dc2-recommendations *{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){html:not([data-motion-mode=on]) .dc2-recommendations *{animation:none!important;transition:none!important}}
 @media(max-width:359px){html[data-flow-design=magic] .dc2-film-identity{grid-template-columns:84px minmax(0,1fr);gap:14px}html[data-flow-design=magic] .dc2-film-heading h2{font-size:28px}html[data-flow-design=magic] .dc2-record-products{grid-template-columns:94px minmax(0,1fr)}}
+
+/* 12 Nov: mature movie deck, one direct toolbar; no duplicate controls/count. */
+html[data-flow-design=magic] .movie-toolbar-compact{display:flex;justify-content:space-between;align-items:center;gap:12px}
+html[data-flow-design=magic] .movie-toolbar-actions{display:flex;align-items:center;gap:8px}
+html[data-flow-design=magic] .movie-toolbar-actions .icon-button{width:44px;height:44px;min-width:44px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+html[data-flow-design=magic] #movie-deck-count{display:none!important}
+html[data-flow-design=magic] .modal-backdrop:has(>.note-sheet,>.saved-view-lists){padding:0!important;inset:0!important;align-items:stretch!important}
+html[data-flow-design=magic] :is(.note-sheet,.saved-view-lists){width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important;margin:0!important}

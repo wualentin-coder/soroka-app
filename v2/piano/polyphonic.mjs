@@ -6,7 +6,7 @@
  * Harmonic collisions are intentionally rejected instead of awarding a chord.
  * Always pass the WHOLE current chord, including already matched pitches.
  */
-import { NoteGate } from './note-gate.mjs?v=119118b1bfbc';
+import { NoteGate } from './note-gate.mjs?v=1458d8543105';
 export const requiredFrameSize = 16384;
 const MIN_FRAME_SIZE = 8192;
 const MIN_MIDI = 36, MAX_MIDI = 96, HARMONICS = 8;

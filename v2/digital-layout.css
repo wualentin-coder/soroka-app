@@ -831,3 +831,6 @@ html[data-flow-design=magic]::-webkit-scrollbar,html[data-flow-design=magic] *::
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:focus-visible{outline:none}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:focus-visible .island-orb:before{outline:1px solid var(--energy-hot);outline-offset:2px}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:focus-visible .island-label{text-decoration:underline;text-underline-offset:3px}
+
+/* Mature shell spans the screen; content continues behind its translucent header. */
+html[data-flow-design=magic] .dm-topbar{background:color-mix(in srgb,var(--page) 65%,transparent)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;box-sizing:border-box;width:100%;max-width:none}

@@ -55,7 +55,7 @@ function validatePlan(plan){
   if(ids.some(stage=>stage===null)||new Set(ids).size!==ids.length)throw new TypeError('Invalid microlearning stage IDs.');
   return new Set(ids);
 }
-const fresh=plan=>({version:plan.version,stageId:plan.stages[0].id,completed:[],skipped:[],helpLevel:0,at:0});
+const fresh=plan=>({version:plan.version,stageId:plan.route?.stageIds?.[0]||plan.stages[0].id,completed:[],skipped:[],helpLevel:0,at:0});
 
 export function getMicroRun(map,plan){
   const allowed=validatePlan(plan),saved=normalizeMicroProgress(map)[plan.id];

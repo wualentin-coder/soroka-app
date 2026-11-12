@@ -19,7 +19,7 @@ export function resolveSupport(stage,context={}){
   return {...original,target:level===0,names:level<=1,
     staff:level<3?true:original.staff===true,
     falling:original.falling===true,fingers:hidden&&level===3?false:fingers,
-    preview:stage?.assessment?false:original.preview===true};
+    preview:stage?.assessment?stage.replayAllowed===true:original.preview===true};
 }
 
 export function nextHelpLevel(stage,current=supportLevel(stage)){

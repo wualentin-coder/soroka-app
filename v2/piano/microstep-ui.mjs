@@ -1,4 +1,4 @@
-import {pitchNotation} from './notation.mjs?v=119118b1bfbc';
+import {pitchNotation} from './notation.mjs?v=1458d8543105';
 
 const FINGERS=['','большой','указательный','средний','безымянный','мизинец'];
 const POINTS=[[9,29],[22,13],[36,8],[50,13],[63,22]];

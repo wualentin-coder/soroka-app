@@ -54,6 +54,7 @@ function rmProgress(j) {
   if (!j.done && j.stage && !j.stage.startsWith("рендер")) return null;
   return Math.max(0, Math.min(100, Number(j.percent)));
 }
+function rmCustomerButton(j){return Number.isSafeInteger(Number(j.id))&&Number(j.id)>0&&Number(j.started_at)>0?`<button type="button" class="small-button" data-action="rm-customer-share" data-id="${Number(j.id)}">${icon('share','icon-sm')}Для заказчика</button>`:'';}
 function rmActiveRow(j, fresh = true) {
   const pct = fresh ? rmProgress(j) : null;
   const facts = !fresh ? "Нет свежих данных с ПК" : j.status === "delivering" ? `переношу в облачную папку${j.delivery?.total ? ` · ${j.delivery.files || 0} из ${j.delivery.total} файлов` : ""}`
@@ -61,7 +62,7 @@ function rmActiveRow(j, fresh = true) {
     : [j.total ? `готово ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
   const bar = pct === null
     ? `<div class="pc-render-bar ${fresh ? "indeterminate" : "is-stale"}"><b></b></div>` : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
-  return `<div class="pc-render-live rm-live ${fresh ? "" : "is-stale"}" data-render-fresh="${fresh}"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p><p class="section-note rm-memory">${esc(rmMemoryText(j.resources,fresh))}</p>${j.resource_decision ? `<details class="rm-resource"><summary>${j.resource_decision.mode==='auto'?'Авто':'Вручную'} · частей: ${j.resource_decision.parallel}</summary><p class="section-note">${esc(rmResourceText(j.resource_decision))}</p></details>` : ''}${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<div class="rm-acts">${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
+  return `<div class="pc-render-live rm-live ${fresh ? "" : "is-stale"}" data-render-fresh="${fresh}"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p><p class="section-note rm-memory">${esc(rmMemoryText(j.resources,fresh))}</p>${j.resource_decision ? `<details class="rm-resource"><summary>${j.resource_decision.mode==='auto'?'Авто':'Вручную'} · частей: ${j.resource_decision.parallel}</summary><p class="section-note">${esc(rmResourceText(j.resource_decision))}</p></details>` : ''}${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<div class="rm-acts">${rmCustomerButton(j)}${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
 }
 function rmResourceText(r) { return [`${r.mode==='auto'?'Авто':'Вручную'} · частей: ${r.parallel}`,r.reason,r.warning].filter(Boolean).join(' · '); }
 function rmMemoryText(r, fresh=true) {
@@ -131,7 +132,7 @@ function rmElapsed(j) {
   return seconds<60?`${Math.round(seconds)} с`:rmMinutes(seconds);
 }
 function rmRecentRow(j) {
-  return `<button type="button" class="rm-history-open" data-action="rm-detail" data-id="${j.id}"><b>${esc(j.name)}</b><small>${esc(rmElapsed(j))}</small></button>`;
+  return `<button type="button" class="rm-history-open" data-action="rm-detail" data-id="${j.id}"><b>${esc(j.name)}</b><small>${esc(rmElapsed(j))}</small></button>${rmCustomerButton(j)}`;
 }
 function rmFrameChart(stats) {
   const points=(stats?.points||[]).filter(p=>Number.isFinite(p.frame)&&Number.isFinite(p.seconds)&&p.seconds>=0);
@@ -971,3 +972,16 @@ function rmAction(action, control) {
  document.addEventListener('pointercancel',e=>end(e,true));
  document.addEventListener('click',e=>{if(performance.now()<blockUntil && e.target.closest?.('.rm-history-swipe')){e.preventDefault();e.stopPropagation();}},true);
 })();
+
+// Existing owner-only server flow; explicit user click, stable retry identity.
+const rmCustomerIntents=new Map();
+document.addEventListener('click',async event=>{
+ const button=event.target.closest?.('[data-action="rm-customer-share"]');if(!button)return;event.preventDefault();event.stopPropagation();
+ const job=rmJobs().find(row=>String(row.id)===button.dataset.id);if(!job||typeof window.sorokaRenderShare!=='function')return;
+ const key=String(job.id)+':'+String(job.started_at);let intent=rmCustomerIntents.get(key);if(!intent){intent={requestId:crypto.randomUUID(),shareId:null,busy:false};rmCustomerIntents.set(key,intent);}if(intent.busy)return;
+ intent.busy=true;button.disabled=true;
+ try{
+  if(!intent.shareId){const answer=await window.sorokaRenderShare({op:'create',jobId:String(job.id),requestId:intent.requestId,label:'Готовность рендера'});if(typeof answer?.shareId!=='string')throw Error('share_unconfirmed');intent.shareId=answer.shareId;}
+  const sent=await window.sorokaRenderShare({op:'send_owner',shareId:intent.shareId,requestId:intent.requestId});if(sent?.sent!==true)throw Error('send_unconfirmed');toast('Карточка в чате Flow — её можно переслать заказчику');
+ }catch{toast('Отправка не подтверждена. Нажми ещё раз, чтобы проверить её.');}finally{intent.busy=false;if(button.isConnected)button.disabled=false;}
+},true);

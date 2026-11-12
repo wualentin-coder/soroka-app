@@ -13,7 +13,8 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=2ead4c6882","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-host.js?v=56fd6aed15","integrity":null},{"src":"./english-sync.js?v=d1d23b6369","integrity":null},{"src":"./english-music-import.js?v=ab39abb2f5","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=8e28e10253","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=269b51f261","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=d305611d40","integrity":null},{"src":"./sport-train.js?v=2ebd7da268","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=20261111-livefix-dbf2c617b9","integrity":null},{"src":"./sport-session.js?v=20261111-livefix-e5d457d39d","integrity":null},{"src":"./sport-session-magic.js?v=20261112-column-33c526efae","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=5a3aaddac0","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=44f69b69b9","integrity":null},{"src":"./english-practice-core.js?v=cd3dd3b8b8","integrity":null},{"src":"./english-media-practice-core.js?v=972c83f48d","integrity":null},{"src":"./english-lyrics-practice-core.js?v=69b2ae2add","integrity":null},{"src":"./english-lyrics-practice.js?v=6f68efe83c","integrity":null},{"src":"./english-practice.js?v=faa2e41e66","integrity":null},{"src":"./english-media-practice.js?v=5ba962b551","integrity":null},{"src":"./english-legacy-recovery.js?v=abc0c30d86","integrity":null},{"src":"./english-legacy-ui.js?v=4a092d9644","integrity":null},{"src":"./english-session.js?v=dee89ac9c3","integrity":null},{"src":"./notes.js?v=56b28a58fe","integrity":null},{"src":"./note-ink.js?v=cb15b0542c","integrity":null},{"src":"./note-editor.js?v=dae2f78bfe","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=1a66622019","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=15b9671629","integrity":null},{"src":"./digital-collections.js?v=7066fcabe9","integrity":null},{"src":"./digital-directory.js?v=92a6742929","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=2bb272f8a5","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=b9fb2e7782","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=3328ae8080","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=d80c7642d1","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-host.js?v=dfd448841a","integrity":null},{"src":"./english-sync.js?v=d1d23b6369","integrity":null},{"src":"./english-music-import.js?v=ab39abb2f5","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=8e28e10253","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=269b51f261","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=ebcd528049","integrity":null},{"src":"./sport-train.js?v=d138f31afd","integrity":null},{"src":"./sport-library.js?v=300008740c","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=dbf2c617b9","integrity":null},{"src":"./sport-session.js?v=4ca0d4836f","integrity":null},{"src":"./sport-session-magic.js?v=33c526efae","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=31fb24d13c","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=5a3aaddac0","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=0945fba433","integrity":null},{"src":"./app.js?v=44f69b69b9","integrity":null},{"src":"./english-practice-core.js?v=cd3dd3b8b8","integrity":null},{"src":"./english-media-practice-core.js?v=972c83f48d","integrity":null},{"src":"./english-practice.js?v=faa2e41e66","integrity":null},{"src":"./english-media-practice.js?v=5ba962b551","integrity":null},{"src":"./english-session.js?v=dee89ac9c3","integrity":null},{"src":"./notes.js?v=56b28a58fe","integrity":null},{"src":"./note-ink.js?v=cb15b0542c","integrity":null},{"src":"./note-editor.js?v=dae2f78bfe","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=1a66622019","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=15b9671629","integrity":null},{"src":"./digital-collections.js?v=7066fcabe9","integrity":null},{"src":"./digital-directory.js?v=92a6742929","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=2bb272f8a5","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=b9fb2e7782","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
+  const HEADLESS = window.FLOW_HEADLESS_PLANNER === true;
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -70,18 +71,22 @@
     return full;
   }
 
-  async function call(body, timeout = 20000, noteRefreshes = 0, widgetRead = null, englishBinding = null) {
+  async function call(body, timeout = 20000, noteRefreshes = 0, widgetRead = null, englishBinding = null, listImageBinding = null, plannerBinding = null) {
     const speechSignal=englishBinding?.signal;
     if(speechSignal&&(body.action!=='english'||body.op!=='speech'))throw new Error('english_abort_read_only');
     const speechCancelled=()=>{const error=new Error('english_speech_cancelled');error.name='AbortError';return error;};
     const assertEnglishBinding = () => {
       if(speechSignal?.aborted)throw speechCancelled();
+      if(listImageBinding&&(!['list_open','list_image','note_image'].includes(body.action)||listImageBinding.isCurrent()!==true))throw new Error('list_image_owner_changed');
+      if(plannerBinding&&(!(plannerBinding.module?body.action===plannerBinding.module:['planner_snapshot','planner_sync'].includes(body.action))||plannerBinding.isCurrent()!==true))throw new Error('planner_owner_changed');
       if (englishBinding && (body.action !== 'english' || englishBinding.isCurrent() !== true)) throw new Error('english_owner_changed');
     };
     assertEnglishBinding();
+    if(body.action==='english'&&['chat','word','bookword','bookadd'].includes(body.op)&&(body.args==null||typeof body.args==='object'&&!Array.isArray(body.args))&&!Object.prototype.hasOwnProperty.call(body.args||{},'attempt'))body={...body,args:{...(body.args||{}),attempt:crypto.randomUUID()}};
     if(nativeSuspended && (PAUSABLE_READS.has(body.action) || (body.action==='pc'&&body.op==='state'))) throw new Error('app-hidden');
-    const init = englishBinding ? englishBinding.initData : tg && tg.initData;
-    const device = englishBinding ? englishBinding.device : init ? "" : deviceKey();
+    const boundCredentials=englishBinding||listImageBinding||plannerBinding;
+    const init = boundCredentials ? boundCredentials.initData : tg && tg.initData;
+    const device = boundCredentials ? boundCredentials.device : init ? "" : deviceKey();
     if (!init && !device) throw new Error("no-telegram");
     if (englishBinding) body = { ...body, englishOwnerProtocol: 2, englishOwnerScope: englishBinding.scope };
     const controller = new AbortController();
@@ -107,6 +112,9 @@
         signal: controller.signal,
       }).catch((error) => {
         assertEnglishBinding();
+        // PC queue commands have no request receipt. A second transport could
+        // enqueue the same shutdown/render operation after a lost first reply.
+        if(plannerBinding?.module==='pc'&&body.op==='send'||plannerBinding?.module==='vault2_save'&&body.id==null){const uncertain=new Error(body.action==='pc'?'pc_delivery_unconfirmed':'vault_delivery_unconfirmed');uncertain.uncertain=true;throw uncertain;}
         // Сеть окна не пускает (а уведомления с телефона доходят) — повторяем
         // запрос сетью Android-приложения и дальше ходим так же.
         if (canNative) {
@@ -125,7 +133,7 @@
         error.status = answer.status;
         throw error;
       }
-      reportFailures(body.action);
+      if(!plannerBinding&&!englishBinding?.plannerRead)reportFailures(body.action);
       // Копия «как на сервере» — отдельно от данных на экране: правки на
       // экране не должны менять то, с чем сравниваются следующие ответы.
       if (body.action === "planner_sync") { try { android?.refreshWidgets?.(); } catch (_) {} }
@@ -139,7 +147,7 @@
       if (DELTA.has(body.action) && json.snapshot) { json.snapshot = expand(json.snapshot); remember(json.snapshot); }
       return json;
     } catch (error) {
-      if(error?.message!=="note-read-cancelled"&&!speechSignal?.aborted)noteFailure(body.action, error, Date.now() - started);
+      if(!plannerBinding&&!englishBinding?.plannerRead&&error?.message!=="note-read-cancelled"&&error?.message!=="list_image_owner_changed"&&!speechSignal?.aborted)noteFailure(body.action, error, Date.now() - started);
       throw error;
     } finally {
       if(snapshotWrite)widgetSnapshotWrites--;
@@ -521,6 +529,7 @@
       return saved && Date.now() - saved.at < days * 86400000 ? saved.snapshot : null;
     } catch (_) { return null; }
   }
+  let listImageInFlight=0;
   let flying = false;
   let again = false;
   let timer = null;
@@ -555,6 +564,7 @@
 
   async function push() {
     if (!base) return;
+    if(listImageInFlight){again=true;return;}
     if(widgetNoteIntent&&!widgetNoteIntentCurrent(widgetNoteIntent))endWidgetNoteIntent(widgetNoteIntent);
     if(widgetNoteRead){again=true;return;}
     // Открылись на прошлом снимке — правки ждут свежего, чтобы не спорить со старым.
@@ -623,12 +633,13 @@
     retryIn = Math.min(120, retryIn ? retryIn * 2 : 10);
     retryTimer = setTimeout(push, retryIn * 1000);
   }
+  window.sorokaRenderShare = args => call({action:'render_share',args},30000);
   window.sorokaExportAll = async () => {
     say("Собираю выгрузку…");
     try { const answer = await call({ action: "export_all" }, 60000); say(answer.text || "Выгрузка в чате"); }
     catch (_) { say("Не получилось — попробуйте ещё раз"); }
   };
-  window.addEventListener("online", () => { if (document.getElementById("sync-banner")) push(); });
+  if(!HEADLESS)window.addEventListener("online", () => { if (document.getElementById("sync-banner")) push(); });
 
   /** Принять снимок сервера. late — правки, сделанные за время запроса. */
   function adopt(snapshot, ids, late) {
@@ -667,7 +678,7 @@
   let lastRefreshAt = Date.now();
   async function refresh(force = false) {
     if(widgetNoteIntent&&!widgetNoteIntentCurrent(widgetNoteIntent))endWidgetNoteIntent(widgetNoteIntent);
-    if (!base || flying || refreshing || widgetNoteRead) return;
+    if (!base || flying || refreshing || widgetNoteRead || listImageInFlight) return;
     lastRefreshAt = Date.now();
     if (!force && diff(base, data).length) return;
     refreshing = true;
@@ -716,9 +727,11 @@
   // обновление — около 30 запросов к базе, а окно Flow, забытое открытым в
   // Telegram на компьютере, раз в минуту давало ~40 тыс. запросов в сутки.
   // Вернулись в окно — обновится сразу (visibilitychange / focus).
-  setInterval(() => { if (!document.hidden && document.hasFocus() && !document.querySelector(".sheet form, .composer")) refresh(); }, 180000);
-  window.addEventListener("focus", () => { if (Date.now() - lastRefreshAt > 60000) refresh(); });
-  window.addEventListener("online", () => refresh(true));
+  if(!HEADLESS){
+    setInterval(() => { if (!document.hidden && document.hasFocus() && !document.querySelector(".sheet form, .composer")) refresh(); }, 180000);
+    window.addEventListener("focus", () => { if (Date.now() - lastRefreshAt > 60000) refresh(); });
+    window.addEventListener("online", () => refresh(true));
+  }
   // Android-приложение вернулось из фона: WebView не всегда сообщает об этом
   // через visibilitychange, поэтому приложение зовёт сюда само.
   window.sorokaSuspend = () => {
@@ -730,6 +743,7 @@
   window.sorokaResume = (options = {}) => {
     nativeSuspended=false;
     englishDenied=false; confirmEnglishAuth();
+    if(HEADLESS){window.dispatchEvent(new CustomEvent('flow:resume',{detail:{refresh:options?.refresh!==false}}));return;}
     if(typeof resumeProductWish==='function') resumeProductWish();
     return options?.refresh === false ? undefined : refresh(true);
   };
@@ -885,7 +899,7 @@
   };
   const trustedPending = new Map();
   let trustedVisitAttempted = false;
-  function trustedRequest(action, master) {
+  function trustedRequest(action, master, binding = biometricBinding()) {
     return new Promise((resolve,reject) => {
       if (!window.FlowTrusted?.postMessage) { reject(new Error("trusted_unavailable")); return; }
       window.FlowTrusted.onmessage = event => {
@@ -897,7 +911,7 @@
       const id=crypto.randomUUID().replaceAll("-","");
       const timer=setTimeout(()=>{trustedPending.delete(id);reject(new Error("trusted_unavailable"));},15000);
       trustedPending.set(id,{resolve,reject,timer});
-      try { window.FlowTrusted.postMessage(JSON.stringify({id,action,binding:biometricBinding(),...(master===undefined?{}:{master})})); }
+      try { window.FlowTrusted.postMessage(JSON.stringify({id,action,binding,...(master===undefined?{}:{master})})); }
       catch (_) { trustedPending.delete(id);clearTimeout(timer);reject(new Error("trusted_unavailable")); }
     });
   }
@@ -979,7 +993,7 @@
       catch { window.__flowBiometric(id, false, "unavailable"); }
     });
   }
-  document.addEventListener("visibilitychange", () => { if (document.hidden) v2.lock(); });
+  if(!HEADLESS)document.addEventListener("visibilitychange", () => { if (document.hidden) v2.lock(); });
 
   /*
    * Документы — тем же ключом хранилища: поля и фото шифруются на устройстве,
@@ -1224,6 +1238,35 @@
   };
   window.sorokaHear = (audio) => call({ action: "voice_text", audio, format: "wav" }, 70000);
   window.sorokaFindRecipes = (query) => call({ action: "recipe_find", query }, 60000);
+  // List-image wire v1: credentials stay private and uploads never change owner.
+  const listImageOwnerCredentials=new WeakMap(),listImageCapabilities=new WeakSet();
+  let listImageOwnerToken=null,listImageObserved=null,listImageProvider=null;
+  function invalidateListImageOwner(){listImageOwnerToken=null;listImageObserved=null;listImageProvider=null;}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)invalidateListImageOwner();});
+  window.addEventListener('flow:suspend',invalidateListImageOwner);
+  function listImageOwner(){const value=readEnglishCredentials(),provider=value.initData?window.Telegram?.WebApp:window.SorokaAndroid;if(document.hidden||nativeSuspended||!value.initData&&!value.device){invalidateListImageOwner();return null;}if(!listImageOwnerToken||listImageProvider!==provider||!sameEnglishCredentials(value,listImageObserved)){listImageObserved={...value};listImageProvider=provider;listImageOwnerToken=Object.freeze({kind:'list-image-owner'});listImageOwnerCredentials.set(listImageOwnerToken,listImageObserved);}return listImageOwnerToken;}
+  function requireListImageOwner(owner){if(!owner||owner!==listImageOwner()||!listImageOwnerCredentials.has(owner))throw new Error('list_image_owner_changed');return listImageOwnerCredentials.get(owner);}
+  function listImageId(ref){const match=String(ref||'').match(/^list[:-](\d+)$/);if(!match||!Number.isSafeInteger(Number(match[1]))||Number(match[1])<1)throw new Error('list_image_invalid_ref');return Number(match[1]);}
+  async function listImageCall(body,owner){const captured=requireListImageOwner(owner),answer=await call(body,60000,0,null,null,{...captured,isCurrent:()=>owner===listImageOwner()});requireListImageOwner(owner);return answer;}
+  function reconcileListImage(ref,list,itemId){
+    const id=listImageId(ref),localId='list:'+id,accepted=list.items?.find(item=>String(item.id)===String(itemId));
+    if(!accepted)throw new Error('list_image_invalid_ack');
+    const patch=pool=>{const row=pool?.find(item=>String(item.id)===localId||String(item.id)===String(id));if(!row)return;const item=row.items?.find(item=>String(item.id)===String(itemId));if(item){if(accepted.image==null)delete item.image;else item.image=clone(accepted.image);}row.version=list.version;row.imageVersion=1;};
+    patch(base?.saved?.lists);patch(typeof data==='undefined'?null:data?.saved?.lists);patch(lastFull?.saved?.lists);keepPending();if(lastFull)keepSnapshot(lastFull);
+  }
+  window.sorokaListImage=Object.freeze({
+    owner:listImageOwner,
+    async open(ref,owner=listImageOwner()){const answer=await listImageCall({action:'list_open',id:listImageId(ref)},owner),list=answer.list;if(!list||list.imageVersion!==1)throw new Error('list_image_unsupported');listImageCapabilities.add(owner);return list;},
+    async upload(fileData,mime,owner=listImageOwner()){requireListImageOwner(owner);if(!listImageCapabilities.has(owner))throw new Error('list_image_unsupported');const answer=await listImageCall({action:'note_image',data:fileData,mime},owner);if(!answer.url)throw new Error(answer.error||'upload');return answer.url;},
+    async patch(ref,itemId,version,image,owner=listImageOwner()){
+      requireListImageOwner(owner);if(!listImageCapabilities.has(owner))throw new Error('list_image_unsupported');listImageInFlight++;
+      try{const until=Date.now()+60000;while(flying||refreshing){requireListImageOwner(owner);if(Date.now()>until)throw new Error('list_image_sync_busy');await new Promise(resolve=>setTimeout(resolve,30));}
+        const answer=await listImageCall({action:'list_image',id:listImageId(ref),itemId,version,imageVersion:1,image},owner),list=answer.list;
+        if(!list||list.imageVersion!==1)throw new Error('list_image_invalid_ack');reconcileListImage(ref,list,itemId);return list;
+      }finally{listImageInFlight--;if(again&&!flying)schedule(0);}
+    }
+  });
+
   /** Картинка из заметки: Storage возвращает публичный URL, тело остаётся Markdown. */
   window.sorokaUploadNoteImage = async (fileData, mime) => {
     const answer = await call({ action: "note_image", data: fileData, mime }, 60000);
@@ -2159,6 +2202,7 @@
   }
   // «Поделиться» на Android: присланное в Magpie открывается в «+» — текст в поле, фото вложением.
   function takeShared() {
+    if(HEADLESS)return false;
     try {
       const raw = android && android.takeShared ? android.takeShared() : "";
       if (!raw) return;
@@ -2168,7 +2212,7 @@
       openComposer({ text: shared.text || "", file: shared.file || null });
     } catch (_) {}
   }
-  window.addEventListener("soroka-shared", takeShared);
+  if(!HEADLESS)window.addEventListener("soroka-shared", takeShared);
   window.sorokaTakeShared = takeShared;
   function closeComposer(options = {}) {
     if (!composer) return;
@@ -2333,6 +2377,7 @@
    * Android окно само сжимается, на iOS — нет, поэтому считаем по visualViewport.
    */
   (function watchKeyboard() {
+    if(HEADLESS)return;
     const vv = window.visualViewport;
     if (!vv) return;
     let tallest = vv.height;
@@ -2478,7 +2523,105 @@
   }
 
   // Загрузка не должна висеть молча: что бы ни сломалось — сказать и дать повторить.
-  boot().catch((error) => {
+  // An opaque planner lease reuses this bridge's real Telegram/Android transport.
+  // The common-component RC does not load or render the historical application.
+  const plannerOwners=new WeakMap(),plannerListeners=new Set();
+  let plannerToken=null,plannerIdentity=null,plannerProvider=null;
+  function observePlannerOwner(){
+    const credentials=readEnglishCredentials(),provider=credentials.initData?window.Telegram?.WebApp:window.SorokaAndroid;
+    if(!sameEnglishCredentials(credentials,plannerIdentity)||provider!==plannerProvider){
+      const initialized=plannerIdentity!==null;
+      plannerIdentity=credentials;plannerProvider=provider;plannerToken=null;if(initialized)lastFull=null;
+      for(const listener of [...plannerListeners]){try{listener();}catch(_){}}
+    }
+    if(!credentials.initData&&!credentials.device)return null;
+    if(!plannerToken){plannerToken=Object.freeze({kind:'planner-owner'});plannerOwners.set(plannerToken,{...credentials,provider,epoch:crypto.randomUUID()});}
+    return plannerToken;
+  }
+  function currentPlannerOwner(token){
+    const captured=plannerOwners.get(token),credentials=readEnglishCredentials();
+    return !!captured&&token===plannerToken&&sameEnglishCredentials(captured,credentials)&&captured.provider===(credentials.initData?window.Telegram?.WebApp:window.SorokaAndroid);
+  }
+  window.sorokaPlannerSession=Object.freeze({
+    owner(){const token=observePlannerOwner();return document.hidden||nativeSuspended?null:token;},
+    isCurrent:currentPlannerOwner,
+    subscribe(listener){plannerListeners.add(listener);return()=>plannerListeners.delete(listener);},
+    async englishSession(token){
+      if(!currentPlannerOwner(token))throw Error('planner_owner_changed');
+      await installEnglishHost();
+      if(!currentPlannerOwner(token))throw Error('planner_owner_changed');
+      return window.sorokaEnglishSession;
+    },
+    async moduleSession(token,module){
+      const operations={piano:['progress_load','progress_save','composition_list','composition_get','composition_import'],sport:['load','patch','import'],pc:['state','send','result'],vpn:['summary','links','create','disable','enable','delete','rename','exceptions','restart','server','server-action','server-settings','service-route'],vault:['state','setup','rewrap','list','get','save','delete'],movies:['movie_find','movie_reco_get','movie_recommend','movie_similar','movie_card','movie_facts']};
+      if(!Object.hasOwn(operations,module)||!currentPlannerOwner(token))throw Error('planner_owner_changed');
+      const scope=await window.sorokaPlannerSession.scope(token),credentials=plannerOwners.get(token);
+      if(!currentPlannerOwner(token))throw Error('planner_owner_changed');
+      const owner=Object.freeze({scope,epoch:credentials.epoch});
+      let vaultLastState=null,vaultRewrap=null,vaultCleanupJob=null;
+      const vaultBinding=state=>state?.setup===true&&typeof state.publicKey?.x==='string'&&typeof state.publicKey?.y==='string'&&typeof state.salt==='string'?`${state.publicKey.x}.${state.publicKey.y}.${state.salt}`:null;
+      const clearDeviceAccess=()=>{
+        if(vaultCleanupJob)return vaultCleanupJob;
+        const attempted=vaultRewrap,native=window.SorokaNative,trusted=window.FlowTrusted;
+        const check=()=>{if(!currentPlannerOwner(token)||window.SorokaNative!==native||window.FlowTrusted!==trusted||vaultRewrap!==attempted)throw Error('planner_owner_changed');};
+        const job=(async()=>{
+          check();if(!attempted?.readback||!attempted.oldBinding||!attempted.newBinding)throw Error('vault_cleanup_readback_required');
+          const bindings=[...new Set([attempted.oldBinding,attempted.newBinding])];
+          const hasBiometric=typeof native?.vaultBiometricClear==='function'||typeof native?.vaultBiometricState==='function';
+          const hasTrusted=typeof trusted?.postMessage==='function';
+          if(hasBiometric){
+            if(typeof native.vaultBiometricClear!=='function'||typeof native.vaultBiometricState!=='function')throw Error('vault_cleanup_unconfirmed');
+            native.vaultBiometricClear();check();
+            for(const binding of bindings){const state=JSON.parse(native.vaultBiometricState(binding)||'{}');check();if(state.enrolled!==false)throw Error('vault_cleanup_unconfirmed');}
+          }
+          if(hasTrusted){
+            const cleared=await trustedRequest('clear',undefined,bindings[0]);check();if(cleared.ok!==true)throw Error('vault_cleanup_unconfirmed');
+            for(const binding of bindings){const state=await trustedRequest('state',undefined,binding);check();if(state.ok!==true||state.enrolled!==false)throw Error('vault_cleanup_unconfirmed');}
+          }
+          check();vaultRewrap=null;return{ok:true,biometric:hasBiometric?'cleared':'absent',trusted:hasTrusted?'cleared':'absent'};
+        })();
+        vaultCleanupJob=job;void job.finally(()=>{if(vaultCleanupJob===job)vaultCleanupJob=null;}).catch(()=>{});return job;
+      };
+      return Object.freeze({owner,isCurrent:()=>currentPlannerOwner(token),subscribe(listener){if(typeof listener!=='function')throw Error('provider_listener_required');plannerListeners.add(listener);return()=>plannerListeners.delete(listener);},...(module==='vault'?{clearDeviceAccess}:{}),async request(op,args={}){
+        if(!currentPlannerOwner(token))throw Error('planner_owner_changed');
+        if(!operations[module].includes(op)||!args||typeof args!=='object'||Array.isArray(args))throw Error('provider_operation_unavailable');
+        const action=module==='vault'?'vault2_'+op:module==='movies'?op:module,binding={...credentials,module:action,isCurrent:()=>currentPlannerOwner(token)};
+        let command=module==='pc'?{action:'pc',op,...(op==='send'?{cmd:args.cmd,args:structuredClone(args.args||{})}:op==='result'?{id:args.id}:{})}:{action:module,op,args:structuredClone(args)};
+        if(module==='vault'||module==='movies'){const fields=module==='vault'?{state:[],list:[],get:['id'],delete:['id'],save:['id','service','envelope'],setup:['publicKey','wrappedKey','salt','iterations'],rewrap:['wrappedKey','salt','iterations']}[op]:['query','ref','title','original_title','year','kind','genre'];command={action};for(const name of fields)if(Object.hasOwn(args,name))command[name]=structuredClone(args[name]);}
+        if(module==='vault'&&op==='rewrap'){
+          const oldBinding=vaultBinding(vaultLastState);if(!oldBinding||oldBinding.length>2000)throw Error('vault_cleanup_state_required');
+          vaultRewrap={oldBinding,publicX:vaultLastState.publicKey.x,publicY:vaultLastState.publicKey.y,wrappedKey:command.wrappedKey,salt:command.salt,iterations:command.iterations,readback:false};
+        }
+        const cleanupAttempt=vaultRewrap;
+        const answer=await call(command,module==='movies'?(op==='movie_find'?65000:op==='movie_similar'?75000:30000):module==='pc'||module==='vpn'||module==='sport'&&op==='import'?30000:20000,0,null,null,null,binding);
+        if(module==='vault'&&op==='state'){
+          vaultLastState=structuredClone(answer);
+          if(cleanupAttempt&&vaultRewrap===cleanupAttempt){const actual=vaultBinding(answer);cleanupAttempt.readback=!!actual&&actual.length<=2000&&answer.publicKey.x===cleanupAttempt.publicX&&answer.publicKey.y===cleanupAttempt.publicY&&['wrappedKey','salt','iterations'].every(key=>answer[key]===cleanupAttempt[key]);cleanupAttempt.newBinding=cleanupAttempt.readback?actual:null;}
+        }
+        return answer;
+      }});
+    },
+    async scope(token){
+      if(!currentPlannerOwner(token))throw Error('planner_owner_changed');
+      const credentials=plannerOwners.get(token);if(credentials.scope)return credentials.scope;
+      // Reuse the existing server-authenticated actor/chat HMAC identity. No
+      // English progress/provider capability is enabled by this read-only call.
+      const answer=await call({action:'english',op:'context',args:{}},20000,0,null,{...credentials,plannerRead:true,isCurrent:()=>currentPlannerOwner(token)});
+      if(!currentPlannerOwner(token)||answer?.version!==2||!/^[a-f0-9]{64}$/.test(answer.scope||''))throw Error('planner_verified_scope_required');
+      credentials.scope=answer.scope;return answer.scope;
+    },
+    async request(token,body){
+      if(!currentPlannerOwner(token)||!['planner_snapshot','planner_sync'].includes(body?.action))throw Error('planner_owner_changed');
+      if(body.action==='planner_sync'&&!Array.isArray(body.changes))throw Error('planner_changes_required');
+      const credentials=plannerOwners.get(token),binding={...credentials,isCurrent:()=>currentPlannerOwner(token)};
+      const command=body.action==='planner_sync'?{action:'planner_sync',changes:structuredClone(body.changes)}:{action:'planner_snapshot'};
+      return call(command,60000,0,null,null,null,binding);
+    }
+  });
+  for(const event of ['focus','pageshow','flow:resume'])window.addEventListener(event,observePlannerOwner);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)observePlannerOwner();});
+
+  if(!HEADLESS)boot().catch((error) => {
     const why = String((error && (error.stack || error.message)) || error).slice(0, 300);
     try { if (android && android.log) android.log(why); } catch (_) {}
     // Первый сбой — сбрасываем данные прошлого запуска и пробуем заново один раз:

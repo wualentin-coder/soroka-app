@@ -1,5 +1,5 @@
 {
-  "version": "119118b1bfbc",
+  "version": "1458d8543105",
   "files": [
     "player.mjs",
     "player-template.mjs",
@@ -53,8 +53,17 @@
     "fingering-cues.mjs",
     "mixed-practice.mjs",
     "support-policy.mjs",
-    "input-calibration.mjs",
     "practice-scene.mjs",
+    "curriculum-v2.mjs",
+    "practice-display.mjs",
+    "practice-outcome.mjs",
+    "practice-journal.mjs",
+    "harmonic-profile.mjs",
+    "mic-stream.mjs",
+    "mic-capture-worklet.mjs",
+    "mic-analysis-worker.mjs",
+    "mic-resampler.mjs",
+    "mic-detector.mjs",
     "fonts/Bravura.woff2",
     "fonts/Bravura-LICENSE.txt",
     "fonts/README.md",
@@ -66,6 +75,14 @@
     "vendor/tone-midi.js",
     "vendor/tone-midi.LICENSE",
     "vendor/MUTOPIA-FUR-ELISE.LICENSE",
+    "vendor/ort-1.24.3/ort.wasm.min.mjs",
+    "vendor/ort-1.24.3/ort-wasm-simd-threaded.mjs",
+    "vendor/ort-1.24.3/ort-wasm-simd-threaded.wasm",
+    "vendor/ort-1.24.3/LICENSE",
+    "vendor/ort-1.24.3/ThirdPartyNotices.txt",
+    "models/silero-v6.2.1.onnx",
+    "models/SILERO-LICENSE.txt",
+    "models/PROVENANCE.json",
     "player.css"
   ]
 }

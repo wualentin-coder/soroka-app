@@ -1,11 +1,13 @@
-import {songOnsetGroups,songFingerprint,musicalNoteKey} from './song-learning.mjs?v=119118b1bfbc';
-import {getFingeringPlan} from './fingering.mjs?v=119118b1bfbc';
+import {songOnsetGroups,songFingerprint,musicalNoteKey} from './song-learning.mjs?v=1458d8543105';
+import {getFingeringPlan} from './fingering.mjs?v=1458d8543105';
 
 const MAX_NOTES=5000,MAX_PARENT_STAGES=2048,WINDOW=.035,EPSILON=1e-9;
+// These flags keep notation formats available; practice-display selects the
+// learner's format independently of keyboard answers, names and fingers.
 const GUIDED={target:true,names:true,staff:true,falling:true,preview:false,fingers:true};
-const NAMES={target:false,names:true,staff:true,falling:false,preview:false,fingers:true};
-const FINGERS={target:false,names:false,staff:true,falling:false,preview:false,fingers:true};
-const STAFF={target:false,names:false,staff:true,falling:false,preview:false,fingers:false};
+const NAMES={target:false,names:true,staff:true,falling:true,preview:false,fingers:true};
+const FINGERS={target:false,names:false,staff:true,falling:true,preview:false,fingers:true};
+const UNASSISTED={target:false,names:false,staff:true,falling:true,preview:false,fingers:false};
 const clone=value=>structuredClone(value);
 const noteKey=note=>[...musicalNoteKey(note),note.restBefore??null,note.group??null,note.finger??null];
 const sameNotes=(a,b)=>a.length===b.length&&a.every((note,index)=>JSON.stringify(noteKey(note))===JSON.stringify(noteKey(b[index])));
@@ -79,11 +81,11 @@ export function createSongMicroLesson(parentPlan,parentStage){
     const stages=[
       stage('prepare','orient','Готовим начало',`Сыграй начало ${hand}, пока без спешки.`,prepare,{range:{start:0,end}}),
       stage('phrase','phrase','Фрагмент с подсказками',simultaneous?'Ноты одного столбика звучат вместе; соедини весь фрагмент.':`Соедини весь фрагмент ${hand}.`,clone(notes)),
-      stage('fade-keyboard','fade','Без подсветки клавиши','Названия и пальцы ещё помогают; прочитай тот же фрагмент.',clone(notes),{presentation:NAMES,supportLevel:1}),
-      stage('fade-names','fade','Читаем без названий','Пальцы подскажем только в начале и в местах перехода.',clone(notes),{presentation:FINGERS,supportLevel:2}),
-      stage('fade','fade','Только нотный стан','Повтори тот же фрагмент без названий и номеров пальцев.',clone(notes),{presentation:STAFF,supportLevel:3}),
-      stage('whole','whole','Фрагмент целиком','Сыграй этот фрагмент целиком, ориентируясь по стану.',clone(notes),
-        {assessment:true,presentation:STAFF,supportLevel:3,mode:source.requiredMode||'learn'}),
+      stage('fade-keyboard','fade','Без подсветки клавиши','Названия и пальцы ещё помогают; сыграй тот же фрагмент.',clone(notes),{presentation:NAMES,supportLevel:1}),
+      stage('fade-names','fade','Без названий нот','Пальцы подскажем только в начале и в местах перехода.',clone(notes),{presentation:FINGERS,supportLevel:2}),
+      stage('fade','fade','Без дополнительных подсказок','Повтори тот же фрагмент без названий и номеров пальцев.',clone(notes),{presentation:UNASSISTED,supportLevel:3}),
+      stage('whole','whole','Фрагмент целиком','Сыграй этот фрагмент целиком с выбранным видом дорожки.',clone(notes),
+        {assessment:true,presentation:UNASSISTED,supportLevel:3,mode:source.requiredMode||'learn'}),
     ];
     const signature=songFingerprint(['progressive-song-support-v2',parentPlan.version,source.id,source.hand,source.requiredMode||'learn',
       notes.map(noteKey),stages.map(item=>[item.id,item.instruction,item.presentation,item.supportLevel,item.transitionIndices,item.mode,item.sourceRange])]);

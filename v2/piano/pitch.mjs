@@ -105,7 +105,9 @@ export function detectPitch(samples, sampleRate, options = {}) {
     // range. Require acoustic energy at the proposed lower fundamental too.
     if (currentDepth - betterDepth > .008 && betterDepth < currentDepth * .35 && fundamentalEnergy(better)>fundamentalEnergy(initial)*.01) candidate = better;
   }
-  const confidence = Math.max(0, Math.min(1, 1 - cmnd[candidate]));
+  // Use the interpolated dip, like the frequency estimate below. Integer-lag
+  // quantization otherwise understates periodicity of high piano notes.
+  const confidence = Math.max(0, Math.min(1, 1 - dipDepth(candidate)));
   if (confidence < .82) return null;
 
   let period = candidate;

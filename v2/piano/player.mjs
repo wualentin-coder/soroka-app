@@ -1,41 +1,45 @@
-import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=119118b1bfbc';
-import { LESSONS, PracticeSession } from './session.mjs?v=119118b1bfbc';
-import { PianoInputGate } from './piano-input-gate.mjs?v=119118b1bfbc';
-import { COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, recommendedCourseLesson, courseLessonStatus } from './course.mjs?v=119118b1bfbc';
-import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=119118b1bfbc';
-import { createTeacher } from './teacher.mjs?v=119118b1bfbc';
-import { createScoreTimeline } from './score.mjs?v=119118b1bfbc';
-import { FollowTransport } from './transport.mjs?v=119118b1bfbc';
-import { ChordSession } from './chord-session.mjs?v=119118b1bfbc';
-import { createArrangement } from './arrangement.mjs?v=119118b1bfbc';
-import { createAccompanimentPlayer } from './accompaniment.mjs?v=119118b1bfbc';
-import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=119118b1bfbc';
-import { createMidiInput } from './midi-input.mjs?v=119118b1bfbc';
-import { EarlyInputBuffer } from './early-input.mjs?v=119118b1bfbc';
-import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=119118b1bfbc';
-import { createKeyboardRange, keyboardViewportOptions } from './keyboard-range.mjs?v=119118b1bfbc';
-import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=119118b1bfbc';
-import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=119118b1bfbc';
-import { createLessonPresenter } from './lesson-presenter.mjs?v=119118b1bfbc';
-import { drawNotation, describeStaffPosition } from './notation.mjs?v=119118b1bfbc';
-import { createMicroLesson, chooseMicroRepair, chooseMicroNext } from './microlearning.mjs?v=119118b1bfbc';
-import { isCompactFoundationLesson } from './microlearning-data.mjs?v=119118b1bfbc';
-import { createInputCalibration, compensatedPitch, readInputCalibration, saveInputCalibration } from './input-calibration.mjs?v=119118b1bfbc';
-import { createSongMicroLesson } from './song-microlearning.mjs?v=119118b1bfbc';
-import { normalizeMicroProgress, getMicroRun, updateMicroRun } from './microlearning-progress.mjs?v=119118b1bfbc';
-import { createMicrostepView } from './microstep-ui.mjs?v=119118b1bfbc';
-import { supportLevel, resolveSupport, nextHelpLevel, supportLabel } from './support-policy.mjs?v=119118b1bfbc';
-import { chooseNativeRoute } from './native-route.mjs?v=119118b1bfbc';
-import { createPracticeFingering, selectPracticeFingerCue } from './fingering-cues.mjs?v=119118b1bfbc';
-import { chooseLearningTempo, adaptLearningTempo, createPerformancePlan, advancePerformanceTempo } from './learning-tempo.mjs?v=119118b1bfbc';
-import { TimedSession } from './timed-session.mjs?v=119118b1bfbc';
-import { chooseFlowOutcome } from './flow-progression.mjs?v=119118b1bfbc';
-import { chooseTimingAdvice } from './timing-feedback.mjs?v=119118b1bfbc';
-import { practicePolicy } from './practice-policy.mjs?v=119118b1bfbc';
-import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=119118b1bfbc';
-import { createCoachFeedback } from './coach-feedback.mjs?v=119118b1bfbc';
-import { createPostplayCoach } from './postplay-coach.mjs?v=119118b1bfbc';
-import { createPracticeScene } from './practice-scene.mjs?v=119118b1bfbc';
+import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=1458d8543105';
+import { LESSONS, PracticeSession } from './session.mjs?v=1458d8543105';
+import { PianoInputGate } from './piano-input-gate.mjs?v=1458d8543105';
+import {createMicStream} from './mic-stream.mjs?v=1458d8543105';
+import { ALL_COURSE as COURSE, ACTIVE_COURSE, RECOMMENDED_COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, courseLessonStatus } from './course.mjs?v=1458d8543105';
+import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=1458d8543105';
+import { createTeacher } from './teacher.mjs?v=1458d8543105';
+import { createScoreTimeline } from './score.mjs?v=1458d8543105';
+import { FollowTransport } from './transport.mjs?v=1458d8543105';
+import { ChordSession } from './chord-session.mjs?v=1458d8543105';
+import { createArrangement } from './arrangement.mjs?v=1458d8543105';
+import { createAccompanimentPlayer } from './accompaniment.mjs?v=1458d8543105';
+import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=1458d8543105';
+import { createMidiInput } from './midi-input.mjs?v=1458d8543105';
+import { EarlyInputBuffer } from './early-input.mjs?v=1458d8543105';
+import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=1458d8543105';
+import { createKeyboardRange, keyboardViewportOptions } from './keyboard-range.mjs?v=1458d8543105';
+import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=1458d8543105';
+import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=1458d8543105';
+import { createLessonPresenter } from './lesson-presenter.mjs?v=1458d8543105';
+import { drawNotation, describeStaffPosition } from './notation.mjs?v=1458d8543105';
+import { createMicroLesson, chooseMicroRepair, chooseMicroNext } from './microlearning.mjs?v=1458d8543105';
+import {normalizeLearningProgress} from './learning-path.mjs?v=1458d8543105';
+import { isCompactFoundationLesson } from './microlearning-data.mjs?v=1458d8543105';
+import { selectedPracticeDisplay } from './practice-display.mjs?v=1458d8543105';
+import {practiceOutcome} from './practice-outcome.mjs?v=1458d8543105';
+import {recordPracticeActivity,readPracticeActivity} from './practice-journal.mjs?v=1458d8543105';
+import { createSongMicroLesson } from './song-microlearning.mjs?v=1458d8543105';
+import { normalizeMicroProgress, getMicroRun, updateMicroRun } from './microlearning-progress.mjs?v=1458d8543105';
+import { createMicrostepView } from './microstep-ui.mjs?v=1458d8543105';
+import { supportLevel, resolveSupport, nextHelpLevel, supportLabel } from './support-policy.mjs?v=1458d8543105';
+import { chooseNativeRoute } from './native-route.mjs?v=1458d8543105';
+import { createPracticeFingering, selectPracticeFingerCue } from './fingering-cues.mjs?v=1458d8543105';
+import { chooseLearningTempo, adaptLearningTempo, createPerformancePlan, advancePerformanceTempo } from './learning-tempo.mjs?v=1458d8543105';
+import { TimedSession } from './timed-session.mjs?v=1458d8543105';
+import { chooseFlowOutcome } from './flow-progression.mjs?v=1458d8543105';
+import { chooseTimingAdvice } from './timing-feedback.mjs?v=1458d8543105';
+import { practicePolicy } from './practice-policy.mjs?v=1458d8543105';
+import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=1458d8543105';
+import { createCoachFeedback } from './coach-feedback.mjs?v=1458d8543105';
+import { createPostplayCoach } from './postplay-coach.mjs?v=1458d8543105';
+import { createPracticeScene } from './practice-scene.mjs?v=1458d8543105';
 
 export function mountPianoPlayer(root, options = {}) {
 const mountAbort=new AbortController();let embeddedActive=false,taskHelpSticky=false,homeSettings=false;
@@ -45,8 +49,12 @@ const $ = selector => root.querySelector(selector);
 const $$ = selector => [...root.querySelectorAll(selector)];
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const STORE = options.storageKey || 'flow-piano-flow-v1';
-const CALIBRATION_STORE='flow-piano-microphone-calibration-v1';
-let calibrationDevice='default';
+const micAsset=name=>{
+ const base=new URL(options.assetBase||import.meta.url,import.meta.url),asset=new URL(name,base);
+ const revision=new URL(import.meta.url).searchParams.get('v')||base.searchParams.get('v');
+ if(revision&&name.endsWith('.mjs'))asset.searchParams.set('v',revision);
+ return asset.href;
+};
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const now = () => performance.now();
 const defaults = { theme:'dark', accent:false, octave:0, sensitivity:60, voice:true, teacherVoice:'tanya', tempo:60, lesson:'joy', history:[],accompaniment:true,backingVolume:.25,input:'mic',cropKeys:true,notation:'falling',intros:true,metronome:true };
@@ -93,10 +101,10 @@ const state = { view:'course', session:null, source:'mic', running:false, phase:
   studyPlan:null,studyStageId:null,studyPhase:'right',studyPage:0,courseModule:null,libraryPage:0,historyPage:0,
   nativeFlow:false,intro:null,needsIntro:false,transitioning:false,courseBrowse:false,tempoAutomatic:true,flowPolish:false,flowNext:null,flowGoalReached:false,flowLastIndex:-1,learningTask:null,assisted:false,attemptId:null,taskPassed:false,
   microPlan:null,microStageId:null,microHelpLevel:0,microRevealed:false,microRepairId:null,microReturnId:null,courseEntryPending:false,supportHintUntil:0,performancePlan:null,attemptBpm:null };
-let micContext=null, stream=null, analyser=null, micSource=null, audioBuffer=null, micGeneration=0,micCalibrated=false,inputIdleTimer=0;
-let calibrationView=null,calibratedMinRms=0,centsOffset=0,calibrationReleaseAt=null;
+let micContext=null, stream=null, analyser=null, micSource=null, audioBuffer=null, micGeneration=0,inputIdleTimer=0;
+let micCapture=null,micSpeechPaused=false;
 let animationFrame=0, lastFrame=0, countdownTimer=0, synthContext=null, playbackGeneration=0;
-let playbackNodes=[],playbackTimers=[],previewTimeline=[],previewStartedAt=0,scoreFrame=0,gateUntil=0,calibration=null,toastTimer=0;
+let playbackNodes=[],playbackTimers=[],previewTimeline=[],previewStartedAt=0,scoreFrame=0,gateUntil=0,toastTimer=0;
 let follow=null,followKey='',practiceTimeline=[],backingPlayer=null,backingKey='',lastPolyFrame=0,inputGeneration=0;
 let feedback=[],lastScoreFrame=0,keyFeedbackTimer=0,lastStageLabel='';
 const earlyNotes=new EarlyInputBuffer(),noteEvidence=new Map();
@@ -115,7 +123,7 @@ const postplay=createPostplayCoach({teacher,voice:()=>settings.voice,
   isActive:()=>!document.hidden&&state.view==='practice'&&(!options.embedded||!options.isActive||options.isActive()),
   onUpdate:renderPostplay,onClose:()=>{state.transitioning=false;if(state.phase==='coaching')state.phase='idle';renderPractice();},
   onContinue:()=>{const action=postplayAction;postplayAction=null;action?.();},
-  onRepeat:()=>{postplayAction=null;repeatLearningTask();},
+  onRepeat:()=>{const action=state.practiceOutcome?.assessed&&state.practiceOutcome.primary.action==='repeat'?postplayAction:null;postplayAction=null;(action||repeatLearningTask)();},
   onRepair:()=>{const repair=postplayFeedback?.repair,offset=state.breakdown?(state.sectionRange?.start||0):0;postplayAction=null;if(state.microPlan&&state.microRepairId&&!state.breakdown){const target=state.microRepairId;state.microReturnId=state.microStageId;enterMicroStage(target);return;}if(repair)repeatProblemSection(false,{start:repair.start+offset,end:repair.end+offset});else repeatLearningTask();}
 });
 const presenter=createLessonPresenter({speak:text=>teacher.speak(text),cancelSpeech:()=>teacher.cancel(),onStopAudio:()=>stopPlayback(),
@@ -127,7 +135,9 @@ const presenter=createLessonPresenter({speak:text=>teacher.speak(text),cancelSpe
   onFinish:()=>finishLessonIntro()
 });
 const lesson = () => {const selected=state.customLesson || COURSE.find(l=>l.id===state.courseId) || LESSONS.find(l=>l.id===settings.lesson) || LESSONS[0],base=state.learningTask?.notes?.length?{...selected,notes:state.learningTask.notes}:selected,micro=state.microPlan?.stages.find(s=>s.id===state.microStageId);return micro?{...base,notes:micro.notes,instruction:micro.instruction,introSpeech:micro.spoken||micro.instruction}:base;};
-function presentation(){if(state.courseId==='course-memory'&&state.mode==='flow'&&!state.breakdown)return {target:false,names:false,staff:false,falling:false,fingers:false,preview:false};if(state.performancePlan&&!state.breakdown)return state.performancePlan.stage.presentation;const micro=state.microPlan?.stages.find(s=>s.id===state.microStageId);if(micro)return resolveSupport(micro,{helpLevel:state.microHelpLevel,index:state.session?.index||0,afterPause:now()<state.supportHintUntil,independentRhythm:state.learningTask?.kind==='rhythm'&&micro.assessment&&!state.microRevealed});const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),raw=(!state.breakdown&&stage?.purpose==='independent'?stage.presentation:null)||(state.rhythmGuided?state.learningTask?.guidedPresentation:null)||state.learningTask?.presentation||lesson().hintPolicy;if(!raw)return null;const memory=['echo','recall'].includes(lesson().practiceKind),reading=lesson().practiceKind==='reading';return {target:state.mode==='check'?false:raw.target??true,names:state.mode==='check'?false:raw.names??true,preview:raw.preview??true,staff:raw.staff??(!memory&&(reading||settings.notation!=='falling')),falling:raw.falling??(!memory&&!reading&&settings.notation!=='staff')};}
+function presentation(){
+  const display=policy=>state.studyPlan||state.performancePlan||state.microPlan?.song||state.courseId?.startsWith('v2-')?selectedPracticeDisplay(policy,state.courseId?.startsWith('v2-')&&lesson().practiceKind==='reading'?'staff':settings.notation):policy;
+  if(state.courseId==='course-memory'&&state.mode==='flow'&&!state.breakdown)return {target:false,names:false,staff:false,falling:false,fingers:false,preview:false};if(state.performancePlan&&!state.breakdown)return display(state.performancePlan.stage.presentation);const micro=state.microPlan?.stages.find(s=>s.id===state.microStageId);if(micro)return display(resolveSupport(micro,{helpLevel:state.microHelpLevel,index:state.session?.index||0,afterPause:now()<state.supportHintUntil,independentRhythm:!state.courseId?.startsWith('v2-')&&state.learningTask?.kind==='rhythm'&&micro.assessment&&!state.microRevealed}));const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),raw=(!state.breakdown&&stage?.purpose==='independent'?stage.presentation:null)||(state.rhythmGuided?state.learningTask?.guidedPresentation:null)||state.learningTask?.presentation||lesson().hintPolicy;if(!raw)return null;const memory=['echo','recall'].includes(lesson().practiceKind),reading=lesson().practiceKind==='reading';return display({target:state.mode==='check'?false:raw.target??true,names:state.mode==='check'?false:raw.names??true,preview:raw.preview??true,staff:raw.staff??(!memory&&(reading||settings.notation!=='falling')),falling:raw.falling??(!memory&&!reading&&settings.notation!=='staff')});}
 function flowPassPercent(){return state.learningTask?.kind==='rhythm'||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.assessment&&state.mode==='flow'||!state.breakdown&&state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent'?80:60;}
 function strictMemory(){const p=presentation();return !!p&&p.target===false&&p.staff===false&&p.falling===false&&!state.intro&&!state.preview;}
 function markAssisted(){state.assisted=true;state.session?.markAssisted();if(state.learningTask||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.assessment||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent')taskHelpSticky=true;if(state.learningTask)options.onAssistance?.(state.learningTask);}
@@ -159,6 +169,7 @@ function rememberMicro(change={}){
 }
 function clearMicroLesson(){state.microPlan=null;state.microStageId=null;state.microRevealed=false;state.microRepairId=null;state.microReturnId=null;state.courseEntryPending=false;}
 function beginCourseEntry(){
+  if(state.courseId?.startsWith('v2-'))return false;
   if(!settings.intros||!isCourse()||state.microPlan||state.studyStageId||state.learningTask&&state.learningTask.kind!=='new')return false;
   if(isCompactFoundationLesson(COURSE.find(item=>item.id===state.courseId)))return false;
   const run=settings.microProgress?.[state.courseId],progress=settings.courseProgress?.lessons?.[state.courseId];
@@ -166,8 +177,9 @@ function beginCourseEntry(){
   state.courseEntryPending=true;startLessonIntro();return true;
 }
 function beginMicroLesson(){
-  if(state.learningTask&&state.learningTask.role!=='new'&&state.learningTask.kind!=='new')return false;
-  const current=lesson(),earned=COURSE.filter(item=>settings.courseProgress.lessons[item.id]?.passed===true).map(item=>item.id),saved=settings.flowProgress[current.id]?.mixedSourceId;
+  if(!state.courseId?.startsWith('v2-')&&state.learningTask&&state.learningTask.role!=='new'&&state.learningTask.kind!=='new')return false;
+  const learned=normalizeLearningProgress(options.getLearningProgress?.()||options.initialState?.learningProgress||settings.learningProgress);
+  const current=lesson(),earned=COURSE.filter(item=>settings.courseProgress.lessons[item.id]?.passed===true||learned.lessons[item.id]?.readingBest>=8||learned.lessons[item.id]?.timedBest>=80||learned.lessons[item.id]?.recallBest>=8).map(item=>item.id),saved=settings.flowProgress[current.id]?.mixedSourceId;
   const knownLessonIds=saved&&(saved===current.id||earned.includes(saved))?[saved]:earned;
   const plan=createMicroLesson(current,{kind:state.learningTask?.kind||'new',knownLessonIds});
   if(!plan.authored)return false;
@@ -213,7 +225,7 @@ function microCue(){
     ...(finger?{finger:finger.finger,position:finger.position?.text,preparation,suggested:finger.label==='Предложенная аппликатура'}:{})};
 }
 function renderMicroLesson(){
-  const stage=microStage(),visible=!!stage&&state.view==='practice'&&!state.breakdown&&!calibration,cue=visible?microCue():null;
+  const stage=microStage(),visible=!!stage&&state.view==='practice'&&!state.breakdown,cue=visible?microCue():null;
   const instruction=[cue?.suggested?'Предложенная аппликатура.':'',cue?.preparation,stage?.instruction].filter(Boolean).join(' ');
   const route=state.microPlan?.route?.stageIds,routeIndex=route?.indexOf(stage?.id),primary=routeIndex>=0;
   microView.render({visible,title:stage?.title||'',instruction,index:primary?routeIndex:state.microPlan?.stages.indexOf(stage)||0,total:primary?route.length:state.microPlan?.stages.length||0,
@@ -288,7 +300,7 @@ const isCourse = () => !!state.courseId;
 const notes = () => (state.breakdown ? lesson().notes.slice(state.sectionRange?.start||0,state.sectionRange?.end||3) : lesson().notes).map(n=>({ ...n, midi:n.midi+settings.octave*12 }));
 const expected = () => state.session && !state.session.finished ? state.session.expected : state.session?.finished ? null : notes()[0].midi;
 const expectedNotes=()=>state.session?.expectedNotes??(expected()===null?[]:[expected()]);
-const minRms = () => calibratedMinRms||Math.max(.002 + (100-settings.sensitivity)*.00013, Math.min(state.noiseFloor*2.5,.025));
+const minRms = () => .001 * 2 ** ((60-settings.sensitivity)/30);
 const durationText = seconds => `${Math.floor(seconds/60)}:${String(Math.round(seconds%60)).padStart(2,'0')}`;
 function persist() { settings.voiceV2=settings.voice;try { localStorage.setItem(STORE,JSON.stringify(settings));options.onStateChange?.(JSON.parse(JSON.stringify(settings)));return true; } catch { toast('Не удалось сохранить прогресс на устройстве. Освободи место и попробуй ещё раз.');return false; } }
 function toast(message) { clearTimeout(toastTimer); $('#toast').textContent=message; $('#toast').hidden=false; toastTimer=setTimeout(()=>$('#toast').hidden=true,4500); }
@@ -308,7 +320,7 @@ function ensureFollow(){
   const phrase=notes(),key=[lessonGeneration,settings.tempo,settings.octave,state.breakdown,phrase.length].join(':');
   if(key!==followKey){
     backingPlayer?.stop();backingKey='';
-    practiceTimeline=createScoreTimeline(phrase,{tempo:settings.tempo,preserveTiming:!!state.customLesson?.preserveTiming,sourceTempo:state.customLesson?.tempo||60});
+    practiceTimeline=createScoreTimeline(phrase,{tempo:settings.tempo,preserveTiming:!!lesson().preserveTiming,sourceTempo:lesson().sourceTempo||lesson().tempo||60});
     follow=new FollowTransport(practiceTimeline,{index:state.session?.index||0,leadIn:state.activePolicy?.leadIn??.65,now:now()});followKey=key;
   }
   return follow;
@@ -374,22 +386,49 @@ function renderPostplay(view){
   const panel=$('#postplay-coach');if(!panel)return;
   if(view.open){state.running=false;state.phase='coaching';state.transitioning=true;}
   panel.hidden=!view.open;panel.dataset.state=view.state||'idle';
-  $('#postplay-advice').textContent=view.advice||'';$('#postplay-status').textContent=view.status||'';
+  const outcome=state.practiceOutcome;
+  panel.dataset.outcome=outcome?.status||'';
+  if(outcome){$('#postplay-title').textContent=outcome.title;$('#postplay-score').textContent=outcome.showScore?`${outcome.percent}%`:'';$('#postplay-score').hidden=!outcome.showScore;}
+  $('#postplay-advice').textContent=view.advice||outcome?.description||'';$('#postplay-status').textContent=view.status||'';
   $('#postplay-question').hidden=!view.question;
   $('#postplay-question-label').textContent=typeof view.question==='string'?view.question:'Всё понятно?';
-  $('#postplay-repair').hidden=!view.repair;
-  $('#postplay-next').hidden=!postplayAction;$('#postplay-next').textContent=postplayNextLabel;
+  $('#postplay-repair').hidden=!view.repair||outcome?.status==='skipped'||outcome?.status==='input-problem';
+  const next=!!postplayAction&&outcome?.primary.action==='next';
+  $('#postplay-next').hidden=!next;$('#postplay-next').textContent='Дальше';
+  $('#postplay-repeat').hidden=false;$('#postplay-repeat').classList.toggle('primary-button',!next);$('#postplay-repeat').classList.toggle('secondary-button',next);
   $('#postplay-reply').hidden=!view.reply;$('#postplay-reply').textContent=view.reply||'';
   $('#postplay-voice').hidden=!!view.recording;$('#postplay-stop-voice').hidden=!view.recording;
 }
-function postplayTransition(report,action,{autoContinue=true,nextLabel='Продолжить'}={}){
+function returnToCourse(){pausePractice();stopPlayback();closeResult();navigate(state.compositionId?'library':'course');}
+function skipExercise(){
+  if(state.view!=='practice'||state.practiceOutcome?.status==='skipped'&&!$('#postplay-coach').hidden)return;
+  const task=state.learningTask,material=lesson(),study=state.studyPlan,stageId=state.studyStageId;
+  const activity={key:state.compositionId?`song:${state.compositionId}:${stageId||'whole'}`:`course:${state.courseId||material.id}`,status:'skipped',at:Date.now(),lessonId:state.courseId,compositionId:state.compositionId,stageId:stageId||state.microStageId,title:material.title};
+  pausePractice({keepInput:true});stopPlayback();closeResult();
+  if(!recordPracticeActivity(localStorage,STORE,activity))toast('Не удалось сохранить пропуск. Можно повторить сохранение.');
+  state.practiceOutcome=practiceOutcome({skipped:true});
+  postplayAction=()=>{if(task&&options.onTaskSkip){state.learningTask=null;options.onTaskSkip(task,activity);return;}
+    if(study&&stageId){const index=study.stages.findIndex(s=>s.id===stageId),next=study.stages[index+1];if(next){startStudyStage(next.id);return;}}
+    returnToCourse();};
+  postplayFeedback=null;postplayNextLabel='Дальше';
+  postplay.show({feedback:{valid:false,text:state.practiceOutcome.description,askUnderstanding:false},lesson:{id:material.id,title:material.title},report:null,autoContinue:false}).catch(()=>{});
+}
+function inputProblem(report){
+  if(state.source!=='mic'||!report?.finished||!state.inputInterrupted&&(report.correct>0||report.wrong>0))return false;
+  pausePractice({keepInput:true});stopPlayback();closeResult();state.practiceOutcome=practiceOutcome({report,inputIssue:true});
+  if(state.inputInterrupted){state.practiceOutcome.title='Проверка прервана';state.practiceOutcome.description='Слышна речь или помеха. Эта попытка без оценки — повторим в тишине.';}
+  if(typeof localStorage!=='undefined')recordPracticeActivity(localStorage,STORE,{key:state.compositionId?`song:${state.compositionId}:${state.studyStageId||'whole'}`:`course:${state.courseId||lesson().id}`,status:'input-problem',at:Date.now(),lessonId:state.courseId,compositionId:state.compositionId,stageId:state.studyStageId||state.microStageId,title:lesson().title});
+  postplayAction=repeatLearningTask;postplayFeedback=null;
+  postplay.show({feedback:{valid:false,text:state.practiceOutcome.description,askUnderstanding:false},lesson:{id:lesson().id,title:lesson().title},report,autoContinue:false}).catch(()=>{});return true;
+}
+function postplayTransition(report,action,{autoContinue=true,nextLabel='Продолжить',allowNext=action!==repeatLearningTask}={}){
   if(state.source==='demo'||report?.demo||!report?.finished)return false;
   const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId),beta=state.source==='mic'&&!!(lesson().polyphonic||stage?.requiresMidi);
   const feedback=createCoachFeedback({lesson:lesson(),notes:state.session?.notes||notes(),report,mode:state.mode,source:state.source,stage,assisted:state.assisted||report.assisted===true,beta,breakdown:state.breakdown});
   if(state.performancePlan&&!state.breakdown&&state.performanceNotice&&!feedback.creditNotice){feedback.creditNotice=state.performanceNotice;feedback.text=(feedback.text.match(/^[^.!?]+[.!?]?/u)?.[0]||feedback.text)+' '+state.performanceNotice;}
   if(!feedback.valid){nativeTransition(feedback.text,repeatLearningTask,{voice:true});return true;}
   if(state.microPlan?.route?.seamless){feedback.askUnderstanding=false;feedback.question=null;}
-  if(autoContinue&&!feedback.askUnderstanding&&feedback.kind!=='no-input'){
+  if(autoContinue&&!feedback.askUnderstanding&&feedback.kind!=='no-input'&&microStage()&&!microStage().assessment){
     postplay.cancel();closeResult();follow?.pause(now());backingPlayer?.stop();hideFingerHint();
     const correction=report.wrong>0||report.skipped>0||report.earlyAbort||state.assisted||report.assisted;
     nativeTransition(feedback.text,action,{voice:!!correction,delay:correction?650:550});return true;
@@ -397,10 +436,12 @@ function postplayTransition(report,action,{autoContinue=true,nextLabel='Прод
   closeResult();follow?.pause(now());backingPlayer?.stop();teacher.cancel();hideFingerHint();
   ++presentationGeneration;clearTimeout(transitionTimer);pendingNative=null;$('#stage-transition').hidden=true;
   state.running=false;state.phase='coaching';state.transitioning=true;postplayAction=action;postplayFeedback=feedback;postplayNextLabel=nextLabel;
-  $('#postplay-title').textContent=beta?'Преподаватель · тренировка':`Разбор · ${String(report.scoreOutOf10).replace('.',',')}/10`;
+  state.practiceOutcome=practiceOutcome({report,source:state.source,assisted:state.assisted||taskHelpSticky||report.assisted,beta,step:!!microStage()&&!microStage().assessment,allowNext,passPercent:state.mode==='flow'?flowPassPercent():80});
+  if(typeof localStorage!=='undefined'&&!state.breakdown&&(!microStage()||microStage().assessment))recordPracticeActivity(localStorage,STORE,{key:state.compositionId?`song:${state.compositionId}:${state.studyStageId||'whole'}`:`course:${state.courseId||lesson().id}`,status:state.practiceOutcome.status,at:Date.now(),lessonId:state.courseId,compositionId:state.compositionId,stageId:state.studyStageId||state.microStageId,title:lesson().title});
+  $('#postplay-title').textContent=state.practiceOutcome.title;
   const contextLesson={id:lesson().id,title:lesson().title,instruction:JSON.stringify(feedback.llmContext).slice(0,1000)};
   const contextReport={...report,mode:state.mode,source:state.source,assisted:state.assisted||report.assisted===true,beta,askUnderstanding:feedback.askUnderstanding};
-  renderPractice();postplay.show({feedback,lesson:contextLesson,report:contextReport,autoContinue:autoContinue&&!feedback.askUnderstanding&&feedback.kind!=='no-input'}).catch(()=>{});
+  renderPractice();postplay.show({feedback,lesson:contextLesson,report:contextReport,autoContinue:false}).catch(()=>{});
   return true;
 }
 function checkCurrentCourse(){pausePractice({keepInput:true});stopPlayback();state.quickStart=true;state.mode='check';state.session=null;state.saved=false;state.revealed=false;state.needsIntro=false;resetFollow();renderPractice();startPractice().catch(()=>failMic({}));}
@@ -474,7 +515,7 @@ function continueAfterFlow(){
 function completeStudyCheck(report,{demo,beta}){
   const stage=state.studyPlan?.stages.find(s=>s.id===state.studyStageId);
   if(!stage||stage.purpose!=='independent'||state.breakdown)return false;
-  const previous=studyProgress(),attempt=recordStudyAttempt(state.studyPlan,{...previous,mastery:null},stage.id,report,{demo,beta,breakdown:false,mode:state.mode,source:state.source,assisted:state.assisted||taskHelpSticky,answerShown:state.revealed||!!(presentation()?.target||presentation()?.names||presentation()?.falling),at:Date.now()});
+  const previous=studyProgress(),attempt=recordStudyAttempt(state.studyPlan,{...previous,mastery:null},stage.id,report,{demo,beta,breakdown:false,mode:state.mode,source:state.source,assisted:state.assisted||taskHelpSticky,answerShown:state.revealed||!!(presentation()?.target||presentation()?.names),at:Date.now()});
   const passed=isStudyStageComplete(state.studyPlan,attempt,stage.id);
   settings.studyProgress[state.studyPlan.id]=passed?{...attempt,mastery:previous.mastery?.scorePercent>attempt.mastery.scorePercent?previous.mastery:attempt.mastery}:previous;
   if(!demo)taskHelpSticky=false;
@@ -492,6 +533,7 @@ function completeStudyCheck(report,{demo,beta}){
 function completeFlowPractice(){
   $('#flow-next').textContent='Дальше →';
   state.session.pause(now());const report=state.session.report(now()),demo=state.source==='demo',microFinal=state.microPlan?.stages.find(s=>s.id===state.microStageId)?.assessment;
+  if(inputProblem(report))return;
   const microFailed=microFinal&&(report.scorePercent<80||state.assisted||taskHelpSticky||report.assisted||lesson().polyphonic&&state.source==='mic');
   const outcome=!demo&&(microFailed||state.learningTask?.kind==='rhythm'&&report.scorePercent<80)?'retry':chooseFlowOutcome(report,{polish:state.flowPolish,demo});
   state.running=false;state.phase='idle';state.lastReport=report;++autoGeneration;clearTimeout(autoTimer);keepInputWarm();backingPlayer?.stop();teacher.cancel();hideFingerHint();
@@ -505,7 +547,7 @@ function completeFlowPractice(){
   if(completeStudyCheck(report,{demo,beta:assessmentBeta}))return;
   if(state.studyStageId&&outcome==='retry'&&!demo){state.songFailures=(state.songFailureStage===state.studyStageId?state.songFailures||0:0)+1;state.songFailureStage=state.studyStageId;}else state.songFailures=0;
   if(state.learningTask?.kind==='rhythm'&&state.rhythmGuided&&report.scorePercent>=80&&!demo){state.rhythmGuided=false;postplayTransition(report,()=>startFlowLevel(state.flowNext,{immediate:true}),{nextLabel:'Самостоятельно'});return;}
-  if(outcome==='retry'){postplayTransition(report,()=>startFlowLevel(state.flowNext,{polish:state.flowPolish,immediate:true}),{nextLabel:'Повторить в темпе'});return;}
+  if(outcome==='retry'){postplayTransition(report,()=>startFlowLevel(state.flowNext,{polish:state.flowPolish,immediate:true}),{nextLabel:'Повторить в темпе',allowNext:false});return;}
   if(outcome==='offer-polish'||outcome==='complete')state.flowGoalReached=true;
   if(settings.pendingFlow){settings.pendingFlow.goalReached=state.flowGoalReached;persist();}
   if(outcome==='complete'&&!demo){postplayTransition(report,continueAfterFlow);return;}
@@ -529,7 +571,7 @@ function keyboardPhrase(){
   // Neither the current target nor the remaining suffix may move its keys.
   const phrase=state.studyPlan?.stages.find(stage=>stage.id===state.studyStageId)?.notes||state.learningTask?.notes||COURSE.find(item=>item.id===state.courseId)?.notes;
   const selected=phrase?phrase.map(note=>({...note,midi:note.midi+settings.octave*12})):notes();
-  return calibration?[...selected,{midi:60}]:selected;
+  return selected;
 }
 function renderPiano() {
   const range=settings.cropKeys?createKeyboardRange(keyboardPhrase(),keyboardViewportOptions(innerWidth,innerHeight)):createKeyboardRange([{midi:36},{midi:96}],{padding:0}),piano=$('#piano');keyboardRange=range;
@@ -543,7 +585,7 @@ function renderPiano() {
 function renderKeyboardMap(range){
   const piano=$('#piano');let map=$('#phrase-keyboard-map');
   if(!map){piano.insertAdjacentHTML('beforebegin','<div id="phrase-keyboard-map" class="phrase-keyboard-map" role="img"><div class="phrase-map-keys"></div><div class="phrase-map-window"></div><span class="phrase-map-label"></span></div>');map=$('#phrase-keyboard-map');}
-  const phraseId=[state.courseId,state.compositionId,state.studyStageId,settings.lesson,settings.octave,state.breakdown?range.signature:'',!!calibration].join(':');
+  const phraseId=[state.courseId,state.compositionId,state.studyStageId,settings.lesson,settings.octave,state.breakdown?range.signature:''].join(':');
   map.hidden=!settings.cropKeys||range.min===36&&range.max===96;
   if(map.dataset.range===range.signature&&map.dataset.phrase===phraseId)return;
   map.dataset.dismissed='false';
@@ -556,15 +598,14 @@ function renderKeyboardMap(range){
   map.querySelector('.phrase-map-label').textContent=label;map.setAttribute('aria-label',`Видимый участок клавиатуры ${label}`);map.dataset.range=range.signature;map.dataset.phrase=phraseId;
 }
 function highlightKeys(pressed=null, wrong=false) {
-  const showTarget=!!calibration||!!state.intro||state.preview||presentation()?.target!==false&&((!isCourse()&&!state.customLesson) || state.mode==='learn' || state.revealed || state.source==='demo');
-  const targets=new Set(calibration?calibrationView?.phase==='noise'?[]:[60]:state.intro?state.intro.active||[]:state.preview?[notes()[state.previewStep??0]?.midi]:expectedNotes());
+  const showTarget=!!state.intro||state.preview||presentation()?.target!==false&&((!isCourse()&&!state.customLesson) || state.mode==='learn' || state.revealed || state.source==='demo');
+  const targets=new Set(state.intro?state.intro.active||[]:state.preview?[notes()[state.previewStep??0]?.midi]:expectedNotes());
   const phrase=teachingPhrase(state.intro?.frames||state.session?.notes||notes(),state.breakdown?(state.sectionRange?.start||0):0),at=state.intro?.index??state.previewStep??state.session?.index??0,groupTime=phrase[at]?.time;
   const leftNotes=new Set(phrase.slice(at).filter((n,i)=>(i===0||n.time<=groupTime+.035)&&n.hand==='left').map(n=>n.midi));
   if(lesson().hand==='Левая рука')for(const midi of targets)leftNotes.add(midi);
   for(const key of $$('.piano-key')) {
     const midi=Number(key.dataset.midi);
     key.classList.toggle('target',showTarget&&targets.has(midi));
-    if(calibration)key.classList.toggle('due',calibrationView?.phase!=='noise'&&targets.has(midi));
     key.classList.toggle('target-left',showTarget&&targets.has(midi)&&leftNotes.has(midi));
     const recent=feedback.findLast(hit=>hit.midi===midi&&now()-hit.at>=0&&now()-hit.at<160);
     key.classList.toggle('pressed',midi===pressed||!!recent||!!state.intro?.active?.includes(midi));
@@ -590,7 +631,6 @@ function needsMidiRelease(waiting){
 function drawScore() {
   const canvas=$('#score');if(!canvas)return;
   const width=canvas.clientWidth,canvasHeight=canvas.clientHeight;if(!width||!canvasHeight)return;
-  if(calibration){canvas.getContext('2d')?.clearRect(0,0,canvas.width,canvas.height);return;}
   const time=now(),intro=state.intro,previewing=!!intro||state.preview;
   $('.stage-label').classList.toggle('has-feedback',state.feedbackUntil>time);
   if(state.feedbackUntil>time)queueScore();
@@ -683,16 +723,16 @@ function renderPractice() {
   $('#lesson-progress').style.width='100%';$('#lesson-progress').style.transform=`scaleX(${percent/100})`;
   $('.progress-track').setAttribute('aria-valuenow',Math.round(percent));
   $('#target-note').innerHTML=info ? `${expectedNotes().map(m=>noteInfo(m).name).join(' + ')}<span>${info.latin}</span>` : s?.earlyAbort?'Повторим':'Готово';
-  const stage=state.phase==='coaching'?'Преподаватель объясняет':state.phase==='permission' ? 'Разреши доступ к микрофону' : state.phase==='calibrating' ? 'Секунда тишины — слушаю фон' : state.phase==='countdown' ? `Приготовься: ${state.countdown}` : state.preview ? 'Слушай пример' : s?.finished ? 'Попытка завершена' : state.running ? state.source==='demo' ? 'Демо на экранной клавиатуре' : 'Сыграй на синтезаторе' : s ? 'Практика на паузе' : 'Нажми ▶, чтобы начать';
+  const stage=state.phase==='coaching'?'Преподаватель объясняет':state.phase==='permission' ? 'Разреши доступ к микрофону' : state.phase==='countdown' ? `Приготовься: ${state.countdown}` : state.preview ? 'Слушай пример' : s?.finished ? 'Попытка завершена' : state.running ? state.source==='demo' ? 'Демо на экранной клавиатуре' : 'Сыграй на синтезаторе' : s ? 'Практика на паузе' : 'Нажми ▶, чтобы начать';
   $('#stage-state').textContent=state.feedbackUntil>now()?state.feedbackMessage:stage;
   $('#score').setAttribute('aria-label',info ? `Дорожка нот. Следующая нота — ${info.name}, ${info.latin}.` : s?.earlyAbort?'Попытка завершена после серии ошибок.':'Попытка завершена.');
-  if(memory)$('#score').setAttribute('aria-label','Игра без показа ответа.');else if(p?.names===false&&!state.preview&&!state.intro)$('#score').setAttribute('aria-label','Нотный стан. Прочитай и сыграй самостоятельно.');
-  const busy=['permission','calibrating','countdown','coaching','intro'].includes(state.phase);
+  if(memory)$('#score').setAttribute('aria-label','Игра без показа ответа.');else if(p?.names===false&&!state.preview&&!state.intro)$('#score').setAttribute('aria-label',settings.notation==='falling'?'Сыграй падающие ноты самостоятельно.':'Сыграй ноты самостоятельно.');
+  const busy=['permission','countdown','coaching','intro'].includes(state.phase);
   $('.practice-panel').classList.toggle('introducing',!!state.intro);$('#intro-caption').hidden=!state.intro;
 
   $('#auto-tempo').classList.toggle('selected',state.tempoAutomatic);$('#auto-tempo').setAttribute('aria-pressed',String(state.tempoAutomatic));
   $('#crop-keys').checked=settings.cropKeys;
-  $('#notation-options').closest('fieldset').hidden=!state.breakdown&&state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent';
+  $('#notation-options').closest('fieldset').hidden=false;
   for(const b of $$('#notation-options button')){b.classList.toggle('selected',b.dataset.notation===settings.notation);b.setAttribute('aria-pressed',String(b.dataset.notation===settings.notation));}
   $('.practice-panel').classList.toggle('coaching',state.phase==='coaching');
   const startLabel=state.intro?'Пауза объяснения':state.preview?'Пауза показа':busy ? 'Отменить' : state.running ? 'Пауза' : state.needsIntro?'Продолжить объяснение':s && !s.finished ? 'Продолжить' : s?.finished ? 'Сыграть ещё раз' : settings.input==='midi'?'Начать с MIDI':'Начать с микрофоном';
@@ -710,15 +750,16 @@ function renderPractice() {
   badge.textContent=state.phase==='permission' ? 'Запрос доступа' : state.mic ? (micContext?.state==='running' ? 'Слушаю' : 'На паузе') : state.phase==='error' ? 'Нет доступа' : 'Выключен';
   badge.classList.toggle('on',state.mic && micContext?.state==='running');badge.classList.toggle('error',state.phase==='error');
   renderCompositionControls();$('#whole-piece').hidden=!state.breakdown;
-  renderPracticeRoute();renderMicroLesson();renderCalibration();
+  renderPracticeRoute();renderMicroLesson();
   highlightKeys();drawScore();
 }
 function updateSignal(pitch,rms,time) {
+  practiceScene?.refresh();
   const level=rms>0 ? clamp((20*Math.log10(rms)+60)*2,0,100) : 0;
   $('#level-fill').style.width=`${level}%`;
   $('.level-meter').setAttribute('aria-valuenow',Math.round(level));
   $('#signal-label').textContent=!state.mic ? 'Нет сигнала' : rms>.3 ? 'Слишком громко' : rms<minRms() ? 'Тихий фон' : 'Есть звук';
-  if(pitch) {state.heard=pitch;state.heardAt=time;}
+  if(pitch) {state.heard=pitch;state.heardAt=time;state.inputHeard=pitch.midi;}
   if(state.heard && time-state.heardAt<450) {
     const info=noteInfo(state.heard.midi);
     $('#heard-note').innerHTML=`${info.name}<small>${info.latin}</small>`;
@@ -729,6 +770,7 @@ function updateSignal(pitch,rms,time) {
 function failMic(error) {
   const name=error?.name||'';
   const message=['NotAllowedError','SecurityError'].includes(name) ? 'Микрофон недоступен. Открой сайт напрямую в Chrome или Safari и разреши микрофон в настройках сайта.' :
+    name==='InputProtectionError' ? 'Не удалось включить защиту от речи. Попробуй снова в Chrome. Можно пропустить упражнение без оценки.' :
     name==='NotFoundError' ? 'Микрофон не найден. Проверь, подключён ли он, и попробуй снова.' :
     name==='NotReadableError' ? 'Микрофон занят или недоступен. Закрой другое приложение со звуком и попробуй снова.' :
     name==='UnsupportedError' ? 'В этом окне нет доступа к микрофону. Открой ссылку сайта напрямую в Chrome или Safari.' :
@@ -738,12 +780,11 @@ function failMic(error) {
 }
 async function enableMic() {
   if('speechSynthesis' in window) speechSynthesis.cancel();
-  gateUntil=now()+300;
   if(state.mic && micContext) {
     // Called from a click so suspended mobile contexts can resume with a gesture.
     try {await micContext.resume();} catch{}
     if(micContext.state!=='running') {micMessage('Нажми «Проверить микрофон», чтобы активировать звук в браузере.',true);return false;}
-    return true;
+    micCapture?.configure({minRms:minRms(),polyphonic:!!lesson().polyphonic});return true;
   }
   if(!navigator.mediaDevices?.getUserMedia || !window.isSecureContext || !(window.AudioContext||window.webkitAudioContext)) {failMic({name:'UnsupportedError'});return false;}
   const generation=++micGeneration;
@@ -756,25 +797,29 @@ async function enableMic() {
     ctx.resume().catch(()=>{});
     const acquired=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!!(settings.accompaniment&&state.customLesson?.backing?.length),noiseSuppression:false,autoGainControl:false,channelCount:1},video:false});
     if(generation!==micGeneration) {acquired.getTracks().forEach(t=>t.stop());ctx.close().catch(()=>{});return false;}
-    stream=acquired;analyser=ctx.createAnalyser();analyser.fftSize=lesson().polyphonic?requiredFrameSize:4096;analyser.smoothingTimeConstant=0;
-    audioBuffer=new Float32Array(analyser.fftSize);micSource=ctx.createMediaStreamSource(stream);micSource.connect(analyser);
-    // The microphone is intentionally never connected to the audio destination.
+    stream=acquired;micSource=ctx.createMediaStreamSource(stream);
+    micCapture=createMicStream({context:ctx,source:micSource,assetURL:micAsset,
+      onEvidence:evidence=>{if(generation===micGeneration)receiveMicEvidence(evidence);},
+      onError:()=>{if(generation===micGeneration)failMic({name:'InputProtectionError'});}});
+    micMessage('Готовим защиту от речи…');
+    await micCapture.start();
+    if(generation!==micGeneration){ctx.close().catch(()=>{});return false;}
+    micCapture.configure({minRms:minRms(),polyphonic:!!lesson().polyphonic});
+    // Capture's output is always zero; microphone monitoring is never audible.
     state.mic=true;state.phase='idle';
-    calibrationDevice=stream.getAudioTracks()[0]?.getSettings?.().deviceId||'default';
-    const savedCalibration=readInputCalibration(localStorage,CALIBRATION_STORE,calibrationDevice);
-    micCalibrated=!!savedCalibration;state.noiseFloor=savedCalibration?.noiseFloor||0;calibratedMinRms=savedCalibration?.minRms||0;centsOffset=savedCalibration?.centsOffset||0;resetDetector();
+    state.noiseFloor=0;resetDetector();
     for(const track of stream.getAudioTracks()) {
       track.addEventListener('ended',()=>{if(generation===micGeneration) {pausePractice();state.phase='error';micMessage('Микрофон отключился. Нажми «Продолжить», чтобы подключить его снова.',true);renderPractice();}});
       track.addEventListener('mute',()=>{if(generation===micGeneration) {pausePractice();micMessage('Браузер приостановил микрофон. Вернись на страницу и нажми «Продолжить».');}});
     }
     ctx.onstatechange=()=>{
       if(ctx!==micContext || !state.mic) return;
-      if(ctx.state!=='running' && (state.running || ['calibrating','countdown'].includes(state.phase))) {pausePractice();micMessage('Звук приостановлен браузером. Нажми кнопку практики, когда вернёшься.');}
+      if(ctx.state!=='running' && (state.running || ['countdown'].includes(state.phase))) {pausePractice();micMessage('Звук приостановлен браузером. Нажми кнопку практики, когда вернёшься.');}
       renderPractice();
     };
     micMessage('Микрофон подключён. Играй по одной ноте тембром Piano.');
     if(ctx.state!=='running') micMessage('Нажми «Начать с микрофоном» ещё раз, чтобы активировать звук.',true);
-    lastFrame=0;animationFrame=requestAnimationFrame(analyseAudio);renderPractice();
+    renderPractice();
     return ctx.state==='running';
   } catch(error) {
     if(generation!==micGeneration) {ctx?.close().catch(()=>{});return false;}
@@ -782,57 +827,51 @@ async function enableMic() {
   }
 }
 function stopMic() {
-  clearTimeout(inputIdleTimer);micCalibrated=false;calibrationView=null;calibratedMinRms=0;centsOffset=0;calibrationReleaseAt=null;
-  ++micGeneration;cancelAnimationFrame(animationFrame);animationFrame=0;calibration=null;
+  clearTimeout(inputIdleTimer);
+  ++micGeneration;cancelAnimationFrame(animationFrame);animationFrame=0;
+  micCapture?.stop();micCapture=null;micSpeechPaused=false;
   const oldStream=stream,oldContext=micContext;stream=null;micContext=null;
   oldStream?.getTracks().forEach(t=>t.stop());micSource?.disconnect();micSource=null;analyser=null;audioBuffer=null;
   if(oldContext && oldContext.state!=='closed') oldContext.close().catch(()=>{});
   state.mic=false;state.heard=null;resetDetector();updateSignal(null,0,now());
 }
-function analyseAudio(time) {
-  if(!state.mic || !analyser || !audioBuffer) return;
-  animationFrame=requestAnimationFrame(analyseAudio);
-  if(time-lastFrame<48 || micContext?.state!=='running') return;lastFrame=time;
-  analyser.getFloatTimeDomainData(audioBuffer);
-  let sum=0;for(const sample of audioBuffer) sum+=sample*sample;
-  const rms=Math.sqrt(sum/audioBuffer.length);
-  if(calibration) {
-    let peak=0;for(const sample of audioBuffer)peak=Math.max(peak,Math.abs(sample));
-    const pitch=detectPitch(audioBuffer,micContext.sampleRate,{minFrequency:110,maxFrequency:1200,minRms:.002});
-    calibrationView=calibration.update({at:time,rms,peak,pitch});updateSignal(pitch,rms,time);
-    if(calibrationView.phase==='ready'){
-      if(rms>=calibrationView.minRms*.65)calibrationReleaseAt=null;
-      else calibrationReleaseAt??=time;
-      if(calibrationReleaseAt===null||time-calibrationReleaseAt<120){
-        calibrationView={...calibrationView,phase:'release',message:'Отпусти клавишу — после затихания начнём упражнение.'};renderCalibration();return;
-      }
-      state.noiseFloor=calibrationView.noiseFloor;calibratedMinRms=calibrationView.minRms;centsOffset=calibrationView.centsOffset;
-      saveInputCalibration(localStorage,CALIBRATION_STORE,calibrationView,calibrationDevice);
-      calibration=null;micCalibrated=true;resetDetector();micMessage('Калибровка завершена. Инструмент слышно, начинаем.');beginCountdown();
-    }else renderCalibration();
-    return;
+function receiveMicEvidence(evidence) {
+  if(evidence?.type!=='evidence'||!state.mic||!micContext||micContext.state!=='running')return;
+  const time=now(),offset=time-micContext.currentTime*1000;
+  const captureAge=micContext.currentTime-evidence.captureAt;
+  if(!Number.isFinite(evidence.captureAt)||captureAge>.16||captureAge<-128/micContext.sampleRate){
+    if(state.running){state.inputInterrupted=true;state.session?.pause(time);follow?.pause(time);state.running=false;}
+    failMic({name:'InputProtectionError'});return;
   }
-  if(time<gateUntil) {resetDetector();updateSignal(null,rms,time);return;}
+  if(evidence.speech){state.heard=null;state.inputHeard=null;}
+  const heard=Number.isInteger(evidence.midi)||Number.isInteger(evidence.heldMidi);
+  updateSignal(heard&&!evidence.speech?evidence.pitch:null,evidence.rms,time);
+  if(!state.running&&!micSpeechPaused)return;
+  if(time<gateUntil)return;
+  const waiting=evidence.speech||evidence.uncertain&&evidence.midi===null;
+  if(waiting){
+    if(state.running){state.session?.pause(time);follow?.pause(time);backingPlayer?.stop();state.running=false;micSpeechPaused=true;}
+    if(evidence.speech&&state.mode==='flow')state.inputInterrupted=true;
+    renderPractice();$('#stage-state').textContent=evidence.speech?'Слышу речь — подожду тишины.':'Уточняю звук — это не ошибка.';return;
+  }
+  if(micSpeechPaused){
+    micSpeechPaused=false;
+    if(state.view!=='practice'||state.source!=='mic'||!state.session||state.session.finished)return;
+    state.session.resume(time);follow?.play(time);state.running=true;renderPractice();
+  }
+  if(Number.isInteger(evidence.midi))noteEvidence.set(evidence.midi,time);
+  if(Number.isInteger(evidence.heldMidi))noteEvidence.set(evidence.heldMidi,time);
   const polySession=state.session instanceof ChordSession||(state.mode==='flow'&&lesson().polyphonic&&state.session instanceof TimedSession);
-  if(state.running&&polySession){
-    if(time-lastPolyFrame<95)return;lastPolyFrame=time;
-    const group=state.session.groupNotes,pending=state.session.expectedNotes;
-    const result=polyInput.process(audioBuffer,micContext.sampleRate,group,time,{minRms:minRms(),groupId:`${lessonGeneration}:${state.session.index}`,resolvedNotes:group.filter(m=>!pending.includes(m))});
+  if(polySession&&evidence.polySamples&&time-lastPolyFrame>=95){
+    lastPolyFrame=time;const group=state.session.groupNotes,pending=state.session.expectedNotes;
+    const result=polyInput.process(evidence.polySamples,micContext.sampleRate,group,time,{minRms:minRms(),groupId:`${lessonGeneration}:${state.session.index}`,resolvedNotes:group.filter(m=>!pending.includes(m))});
     state.polyNeedsRelease=result.needsRelease.length>0;
     for(const hit of result.detected)noteEvidence.set(hit.midi,time);
-    updateSignal(result.detected[0]||null,rms,time);
     if(result.onsets.length){for(const midi of result.onsets)processNote(midi,'mic');return;}
-    if(result.detected.length||result.needsRelease.length){drawScore();return;}
   }
-  const monoFrame=audioBuffer.length>4096?audioBuffer.subarray(audioBuffer.length-4096):audioBuffer;
-  const pitch=detectPitch(monoFrame,micContext.sampleRate,{minFrequency:60,maxFrequency:2150,minRms:minRms()});
-  const tuned=compensatedPitch(pitch,centsOffset);
-  const stablePitch=tuned&&tuned.confidence>=.82&&Math.abs(tuned.cents)<=40?tuned:null;
-  if(stablePitch)noteEvidence.set(stablePitch.midi,time);
-  updateSignal(stablePitch,rms,time);
-  const onset=noteGate.update(stablePitch,rms,time);
-  if(onset!==null&&(!polySession||!state.session.groupNotes.includes(onset)))processNote(onset,'mic',noteGate.lastOnsetAt);
+  if(Number.isInteger(evidence.midi)&&(!polySession||!state.session.groupNotes.includes(evidence.midi)))processNote(evidence.midi,'mic',Number.isFinite(evidence.onsetAt)?evidence.onsetAt+offset:null);
 }
+
 function beginCountdown() {
   if(!state.mic || state.view!=='practice' || micContext?.state!=='running') return;
   // The moving score supplies the only count-in; do not stack a second timer.
@@ -842,7 +881,7 @@ function activateSession(source) {
   embeddedActive=true;
   clearTimeout(inputIdleTimer);
   state.source=source;
-  if(!state.session || state.session.finished) {resetFollow();const score=notes(),timeline=createScoreTimeline(score,{tempo:settings.tempo,preserveTiming:!!state.customLesson?.preserveTiming,sourceTempo:state.customLesson?.tempo||60});state.activePolicy=practicePolicy({lesson:lesson(),mode:state.mode,source,retry:state.quickStart===true,timeline});state.quickStart=false;state.attemptId=globalThis.crypto?.randomUUID?.()||Date.now()+':'+Math.random();state.assisted=!!(taskHelpSticky||state.microRevealed||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.coverage&&state.mode==='check');state.session=state.mode==='flow'?new TimedSession(score,{timeline,now:now(),leadIn:state.activePolicy.leadIn,window:state.activePolicy.windowSeconds,inputGrace:state.activePolicy.inputGrace,maxConsecutive:state.activePolicy.maxConsecutive,strictRests:!state.rhythmGuided&&(state.learningTask?.kind==='rhythm'||lesson().practiceKind==='rhythm')}):lesson().polyphonic?new ChordSession(score.map((n,i)=>({...n,time:n.time??timeline[i].time,duration:n.duration??timeline[i].duration})),now()):new MasterySession(score,now());state.saved=false;state.revealed=state.microRevealed===true&&state.microHelpLevel<=1;state.attemptBpm=settings.tempo;}
+  if(!state.session || state.session.finished) {state.practiceOutcome=null;state.inputInterrupted=false;state.inputHeard=null;state.inputAccepted=null;resetFollow();const score=notes(),timeline=createScoreTimeline(score,{tempo:settings.tempo,preserveTiming:!!lesson().preserveTiming,sourceTempo:lesson().sourceTempo||lesson().tempo||60});state.activePolicy=practicePolicy({lesson:lesson(),mode:state.mode,source,retry:state.quickStart===true,timeline});state.quickStart=false;state.attemptId=globalThis.crypto?.randomUUID?.()||Date.now()+':'+Math.random();state.assisted=!!(taskHelpSticky||state.microRevealed||state.microPlan?.stages.find(s=>s.id===state.microStageId)?.coverage&&state.mode==='check');state.session=state.mode==='flow'?new TimedSession(score,{timeline,now:now(),leadIn:state.activePolicy.leadIn,window:state.activePolicy.windowSeconds,inputGrace:state.activePolicy.inputGrace,maxConsecutive:state.activePolicy.maxConsecutive,strictRests:!state.rhythmGuided&&(state.learningTask?.kind==='rhythm'||lesson().practiceKind==='rhythm')}):lesson().polyphonic?new ChordSession(score.map((n,i)=>({...n,time:n.time??timeline[i].time,duration:n.duration??timeline[i].duration})),now()):new MasterySession(score,now());state.saved=false;state.revealed=state.microRevealed===true&&state.microHelpLevel<=1;state.attemptBpm=settings.tempo;}
   else state.session.resume(now());
   if(state.microPlan&&state.assisted)state.session.markAssisted?.();
   resetDetector();state.running=true;state.phase='idle';
@@ -869,7 +908,7 @@ async function startPractice() {
   if(options.embedded&&options.isActive&&!options.isActive())return;
   clearTimeout(inputIdleTimer);
   teacher.unlock().catch(()=>{});
-  if(['permission','calibrating','countdown','coaching','intro'].includes(state.phase)) {pausePractice();return;}
+  if(['permission','countdown','coaching','intro'].includes(state.phase)) {pausePractice();return;}
   if(state.running) {pausePractice();return;}
   teacher.cancel();
   stopPlayback();
@@ -882,37 +921,22 @@ async function startPractice() {
     catch(error){if(generation===inputGeneration){state.phase='idle';toast(error.message||'Не удалось подключить MIDI.');renderPractice();}}return;
   }
   state.source='mic';
+  const generation=++inputGeneration;
   const ready=await enableMic();
-  if(!ready || state.view!=='practice' || !state.mic) return;
-  if(micCalibrated) {activateSession('mic');return;}
-  startInputCalibration();
-}
-function startInputCalibration(){
-  if(!state.mic||micContext?.state!=='running')return;
-  state.phase='calibrating';state.running=false;calibrationReleaseAt=null;calibration=createInputCalibration({at:now(),referenceMidi:60});calibrationView=calibration.view();
-  coach('Сначала секунда тишины, затем дважды сыграй подсвеченную До. Это проверка звука, без оценки.');renderPractice();
-}
-function renderCalibration(){
-  const panel=$('#input-calibration');if(!panel)return;panel.hidden=!calibration;
-  if(!calibration)return;
-  const view=calibrationView||calibration.view();panel.dataset.phase=view.phase;
-  const text=(selector,value)=>{const node=$(selector);if(node.textContent!==value)node.textContent=value;};
-  text('#calibration-title','Настройка звука');
-  text('#calibration-message',view.message);
-  text('#calibration-count',view.phase==='noise'?'Секунда тишины':`До4 · ${view.strikes} из 2`);
-  text('#stage-state',view.phase==='noise'?'Секунда тишины — слушаю фон':view.phase==='release'?'Отпусти клавишу':`Сыграй До4 · ${view.strikes} из 2`);
-  $('#calibration-retry').hidden=!['timeout','clipping','invalid-level'].includes(view.issue);
-  highlightKeys();
+  if(generation!==inputGeneration || !ready || state.view!=='practice' || !state.mic) return;
+  activateSession('mic');
 }
 function keepInputWarm(){clearTimeout(inputIdleTimer);inputIdleTimer=setTimeout(()=>{if(!state.running){midiInput.stop();stopMic();}},15000);}
 function pausePractice({keepInput=false}={}) {
+  micSpeechPaused=false;
+  if(state.phase==='permission'&&!state.mic)stopMic();
   postplay.cancel();postplayAction=null;postplayFeedback=null;
   hideFingerHint();
   ++presentationGeneration;clearTimeout(transitionTimer);state.transitioning=false;$('#stage-transition').hidden=true;
   presenter.cancel();state.intro=null;
   ++inputGeneration;if(!keepInput)midiInput.stop();follow?.pause(now());backingPlayer?.stop();
   ++autoGeneration;clearTimeout(autoTimer);teacher.cancel();
-  clearInterval(countdownTimer);calibration=null;
+  clearInterval(countdownTimer);
   if(state.session) state.session.pause(now());
   state.running=false;state.phase='idle';if(keepInput)keepInputWarm();else stopMic();
   if('speechSynthesis' in window) speechSynthesis.cancel();
@@ -927,6 +951,8 @@ function processNote(midi,source,onsetAt=null) {
   const time=now(),transport=ensureFollow(),gateTime=practiceTimeline[state.session.index]?.time??Infinity;
   if(state.mode!=='flow'&&!strictMemory()&&transport.tick(time).time<gateTime-.12){if(expectedNotes().includes(midi))earlyNotes.remember(midi,{index:state.session.index,source,at:time});if(time-earlyPromptAt>3000){toast('Дождись, когда нота подойдёт к клавиатуре.');earlyPromptAt=time;}return;}
   const result=state.session instanceof TimedSession?state.session.play(midi,time,source==='mic'&&state.activePolicy?.inputGrace>0&&Number.isFinite(onsetAt)?{onsetAt}:{}):state.session.play(midi,time);
+  state.inputHeard=midi;practiceScene?.refresh();
+  if(result.kind!=='wrong'&&result.kind!=='ignored')state.inputAccepted=midi;
   if(result.kind==='ignored'){if(result.timing==='late'){state.feedbackMessage='Нота верная — сыграй чуть раньше.';state.feedbackUntil=time+1100;}return;}
   if(result.kind!=='wrong'){state.feedbackUntil=0;state.feedbackMessage='';follow?.seekIndex(state.session.index,now());}
   feedback.push({midi,at:now(),wrong:result.kind==='wrong'});
@@ -964,6 +990,7 @@ function completePractice() {
   follow?.pause(now());backingPlayer?.stop();
   const beta=lesson().polyphonic&&state.source==='mic';
   const report={...state.session.report(now()),mode:beta?'learn':state.mode}, demo=state.source==='demo';
+  if(inputProblem(report))return;
   ++autoGeneration;
   state.running=false;state.phase='idle';state.lastReport=report;state.reviewText='';
   if(state.microPlan&&completeMicroPractice(report,{beta,demo}))return;
@@ -1049,21 +1076,24 @@ function soundNote(midi,start,duration=.4) {
   fundamental.onended=()=>{fundamental.disconnect();harmonic.disconnect();harmonicGain.disconnect();filter.disconnect();gain.disconnect();playbackNodes=playbackNodes.filter(n=>!pair.includes(n));};
 }
 function stopPlayback() {
+  const wasPlaying=state.preview||playbackNodes.length>0||playbackTimers.length>0;
   ++playbackGeneration;
   cancelAnimationFrame(scoreFrame);scoreFrame=0;
   playbackTimers.forEach(clearTimeout);playbackTimers=[];
   for(const node of playbackNodes) {try{node.stop();}catch{}}playbackNodes=[];
-  state.preview=false;state.previewStep=null;gateUntil=now()+300;
+  state.preview=false;state.previewStep=null;
+  if(wasPlaying)gateUntil=Math.max(gateUntil,now()+300);
 }
 async function playExample() {
-  if(state.microPlan){state.assisted=true;state.session?.markAssisted();state.microRevealed=true;state.microHelpLevel=0;state.revealed=true;if(microStage()?.assessment)markAssisted();rememberMicro();}
-  else if(state.learningTask||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent')markAssisted();
+  const allowedStimulus=state.courseId?.startsWith('v2-')&&microStage()?.replayAllowed===true&&(state.session?.index||0)===0;
+  if(state.microPlan&&!allowedStimulus){state.assisted=true;state.session?.markAssisted();state.microRevealed=true;state.microHelpLevel=0;state.revealed=true;if(microStage()?.assessment)markAssisted();rememberMicro();}
+  else if(!allowedStimulus&&(state.learningTask||state.studyPlan?.stages.find(s=>s.id===state.studyStageId)?.purpose==='independent'))markAssisted();
   if(state.preview) {stopPlayback();renderPractice();return;}
   const ctx=ensureSynth();if(!ctx)return;
   pausePractice();stopPlayback();const generation=playbackGeneration;
   try{await ctx.resume();}catch{toast('Нажми «Послушать» ещё раз, чтобы включить звук.');return;}
   if(generation!==playbackGeneration||ctx.state!=='running')return;
-  const phrase=notes();previewTimeline=createScoreTimeline(phrase,{tempo:settings.tempo,preserveTiming:!!state.customLesson?.preserveTiming,sourceTempo:state.customLesson?.tempo||60});
+  const phrase=notes();previewTimeline=createScoreTimeline(phrase,{tempo:settings.tempo,preserveTiming:!!lesson().preserveTiming,sourceTempo:lesson().sourceTempo||lesson().tempo||60});
   previewStartedAt=now()+80;state.preview=true;renderPractice();
   let offset=.08;const audioStart=ctx.currentTime;
   previewTimeline.forEach((n,i)=>{
@@ -1075,7 +1105,7 @@ async function playExample() {
   playbackTimers.push(setTimeout(()=>{if(generation!==playbackGeneration)return;stopPlayback();renderPractice();},(offset+.15)*1000));
 }
 function auditionKey(midi) {
-  if(['permission','calibrating','countdown','coaching','intro'].includes(state.phase)) return;
+  if(['permission','countdown','coaching','intro'].includes(state.phase)) return;
   const map=$('#phrase-keyboard-map');if(map?.dataset){map.dataset.dismissed='true';map.setAttribute?.('aria-hidden','true');}
   if((isCourse()||state.customLesson)&&['check','flow'].includes(state.mode)&&state.source!=='demo'&&state.session&&!state.session.finished){markAssisted();state.revealed=true;}
   const ctx=ensureSynth();if(ctx){soundNote(midi,ctx.currentTime,.35);gateUntil=now()+700;resetDetector();}
@@ -1166,17 +1196,17 @@ function renderCompositionControls(){
   for(const button of $$('#input-options button')){button.classList.toggle('selected',button.dataset.input===settings.input);button.setAttribute('aria-pressed',String(button.dataset.input===settings.input));}
 }
 function renderCourse(){
-  const recommended=COURSE.find(l=>l.id===settings.pendingFlow?.courseId)||recommendedCourseLesson(settings.courseProgress),completed=COURSE.filter(l=>courseLessonStatus(settings.courseProgress,l.id).passed).length;
+  const recommended=ACTIVE_COURSE.find(l=>l.id===settings.pendingFlow?.courseId)||(RECOMMENDED_COURSE.find(l=>!courseLessonStatus(settings.courseProgress,l.id).passed)||RECOMMENDED_COURSE.at(-1)),completed=ACTIVE_COURSE.filter(l=>courseLessonStatus(settings.courseProgress,l.id).passed).length;
   const statusText=$('#tutor-availability')?.textContent||'Подключаем преподавателя…';
   $('#course-home').hidden=state.courseBrowse;$('#course-browse').hidden=!state.courseBrowse;
-  $('#course-next').innerHTML=`<small class="home-eyebrow">${escapeHtml(recommended.moduleTitle||'Учимся играть')} · ${completed}/${COURSE.length}</small><h1>${escapeHtml(recommended.title)}</h1><p>${escapeHtml(recommended.description)}</p><div class="course-home-actions"><button class="primary-button" data-course="${recommended.id}">Продолжить обучение${icon('play')}</button><button class="text-button" data-course-browse>Все уроки</button></div><small id="tutor-availability" role="status">${escapeHtml(statusText)}</small>`;
+  $('#course-next').innerHTML=`<small class="home-eyebrow">${escapeHtml(recommended.moduleTitle||'Учимся играть')} · ${completed}/${ACTIVE_COURSE.length}</small><h1>${escapeHtml(recommended.title)}</h1><p>${escapeHtml(recommended.description)}</p><div class="course-home-actions"><button class="primary-button" data-course="${recommended.id}">Продолжить обучение${icon('play')}</button><button class="text-button" data-course-browse>Все уроки</button></div><small id="tutor-availability" role="status">${escapeHtml(statusText)}</small>`;
 
-  const modules=[...new Set(COURSE.map(l=>l.moduleId||'basics'))];
+  const modules=[...new Set(ACTIVE_COURSE.map(l=>l.moduleId||'basics'))];
   state.courseModule=modules.includes(state.courseModule)?state.courseModule:recommended.moduleId||'basics';
-  $('#course-module').innerHTML=modules.map((id,i)=>`<option value="${id}" ${id===state.courseModule?'selected':''}>${i+1} · ${escapeHtml(COURSE.find(l=>(l.moduleId||'basics')===id).moduleTitle||'Первые навыки')}</option>`).join('');
-  $('#course-list').innerHTML=COURSE.filter(l=>(l.moduleId||'basics')===state.courseModule).map(l=>{const status=courseLessonStatus(settings.courseProgress,l.id);return `<button class="course-row ${status.passed?'passed':''}" data-course="${l.id}"><span class="course-number">${status.passed?'✓':COURSE.indexOf(l)+1}</span><span class="course-copy"><strong>${escapeHtml(l.title)}</strong></span><span class="course-grade">${status.attempts?status.bestScore+'/10':'→'}</span></button>`;}).join('');
+  $('#course-module').innerHTML=modules.map((id,i)=>`<option value="${id}" ${id===state.courseModule?'selected':''}>${i+1} · ${escapeHtml(ACTIVE_COURSE.find(l=>(l.moduleId||'basics')===id).moduleTitle||'Первые навыки')}</option>`).join('');
+  $('#course-list').innerHTML=ACTIVE_COURSE.filter(l=>(l.moduleId||'basics')===state.courseModule).map(l=>{const status=courseLessonStatus(settings.courseProgress,l.id);return `<button class="course-row ${status.passed?'passed':''}" data-course="${l.id}"><span class="course-number">${status.passed?'✓':ACTIVE_COURSE.indexOf(l)+1}</span><span class="course-copy"><strong>${escapeHtml(l.title)}</strong></span><span class="course-grade">${status.attempts?status.bestScore+'/10':'→'}</span></button>`;}).join('');
 }
-function chooseCourse(id,{start=true}={}){const l=COURSE.find(l=>l.id===id);if(!l)return;clearMicroLesson();state.rhythmGuided=false;pausePractice({keepInput:state.view==='practice'});stopPlayback();pendingNative=null;++lessonGeneration;resetFlowState();state.nativeFlow=true;state.needsIntro=true;state.studyStageId=null;state.courseModule=l.moduleId;state.courseId=id;state.compositionId=null;state.hand=l.polyphonic||/Обе|Две|очеред/.test(l.hand)?'both':l.hand==='Левая рука'?'left':'right';state.customLesson=null;state.compositionKey=null;state.mode='learn';state.breakdown=false;state.session=null;state.source=settings.input;state.saved=false;state.revealed=false;applyLessonTempo();coach(l.instruction);navigate('practice');if(!start)return;const pending=settings.pendingFlow;if(pending?.courseId===id){state.flowGoalReached=pending.goalReached===true;startFlowLevel(flowDestination(),{polish:pending.polish===true});}else if(!beginCourseEntry()&&!beginMicroLesson())startLessonIntro();}
+function chooseCourse(id,{start=true}={}){const l=COURSE.find(l=>l.id===id);if(!l)return;clearMicroLesson();state.rhythmGuided=false;pausePractice({keepInput:state.view==='practice'});stopPlayback();pendingNative=null;++lessonGeneration;resetFlowState();state.nativeFlow=true;state.needsIntro=true;state.studyStageId=null;state.courseModule=l.moduleId;state.courseId=id;state.practiceOutcome=null;state.inputHeard=null;state.inputAccepted=null;state.compositionId=null;state.hand=l.polyphonic||/Обе|Две|очеред/.test(l.hand)?'both':l.hand==='Левая рука'?'left':'right';state.customLesson=null;state.compositionKey=null;state.mode='learn';state.breakdown=false;state.session=null;state.source=settings.input;state.saved=false;state.revealed=false;applyLessonTempo();coach(l.instruction);navigate('practice');if(!start)return;const pending=settings.pendingFlow;if(pending?.courseId===id){state.flowGoalReached=pending.goalReached===true;startFlowLevel(flowDestination(),{polish:pending.polish===true});}else if(!beginCourseEntry()&&!beginMicroLesson())startLessonIntro();}
 
 function renderProgress() {
   const history=settings.history,perPage=2,pages=Math.max(1,Math.ceil(history.length/perPage));state.historyPage=clamp(state.historyPage,0,pages-1);
@@ -1254,8 +1284,8 @@ root.addEventListener('click',event=>{
   if(button.dataset.answer==='explain')sendTeacherReply('Объясни иначе, совсем простыми словами, и предложи короткий повтор.');
   if(button.dataset.midi)auditionKey(Number(button.dataset.midi));
 });
-for(const [id,action]of [['next','continue'],['understood','continue'],['repeat','repeat'],['repair','repair'],['explain','explain'],['voice','record'],['stop-voice','stopRecording'],['dismiss','cancel']]){
-  $('#postplay-'+id).addEventListener('click',()=>{Promise.resolve(postplay[action]()).catch(()=>{});});
+for(const [id,action]of [['next','continue'],['repeat','repeat'],['repair','repair'],['explain','explain'],['voice','record'],['stop-voice','stopRecording'],['dismiss','course']]){
+  $('#postplay-'+id).addEventListener('click',()=>{if(action==='course'){returnToCourse();return;}Promise.resolve(postplay[action]()).catch(()=>{});});
 }
 $('#start-button').addEventListener('click',()=>{if(state.intro||state.transitioning){pausePractice();return;}if(pendingNative?.lesson===lessonGeneration){const next=pendingNative;pendingNative=null;next.run();return;}if(state.preview){stopPlayback();renderPractice();return;}if(state.needsIntro){startLessonIntro();return;}startPractice().catch(()=>failMic({}));});
 $('#mic-toggle').addEventListener('click',()=>{
@@ -1264,7 +1294,6 @@ $('#mic-toggle').addEventListener('click',()=>{
   if(state.source==='demo'){state.session=null;state.source='mic';}
   enableMic().catch(()=>failMic({}));
 });
-$('#calibration-retry').addEventListener('click',()=>{resetDetector();startInputCalibration();});
 $('#settings-dialog').addEventListener('close',()=>{if(options.embedded&&(homeSettings||state.view!=='practice')){homeSettings=false;options.onNavigate?.('course');}});
 $('#intro-skip').addEventListener('click',()=>{if(state.intro?.audioBlocked)startLessonIntro();else skipLessonIntro();});
 $('#close-course-browse').addEventListener('click',()=>{state.courseBrowse=false;renderCourse();});
@@ -1297,7 +1326,7 @@ $('#tempo').min='20';$('#tempo').max='300';$('#tempo').step='any';$('#tempo').va
 $('#tempo').addEventListener('input',event=>{pausePractice();state.tempoAutomatic=false;settings.tempo=clamp(Number(event.target.value)||60,20,300);$('#tempo-value').value=settings.tempo;if(state.mode==='flow')state.session=null;resetFollow();persist();if(state.preview)stopPlayback();renderPractice();});
 $('#sensitivity').value=settings.sensitivity;
 function sensitivityLabel(){const v=settings.sensitivity;$('#sensitivity-value').textContent=v>75?'Высокая':v<35?'Низкая':'Средняя';}
-$('#sensitivity').addEventListener('input',e=>{settings.sensitivity=Number(e.target.value);state.noiseFloor=0;sensitivityLabel();persist();});
+$('#sensitivity').addEventListener('input',e=>{settings.sensitivity=Number(e.target.value);state.noiseFloor=0;micCapture?.configure({minRms:minRms()});sensitivityLabel();persist();});
 $('#metronome').checked=settings.metronome;$('#metronome').addEventListener('change',e=>{settings.metronome=e.target.checked;persist();});
 $('#intro-voice').value=settings.teacherVoice;$('#intro-voice').addEventListener('change',e=>chooseIntroVoice(e.target.value));
 $('#accent').checked=settings.accent;$('#accent').addEventListener('change',e=>{settings.accent=e.target.checked;persist();applyTheme();});
@@ -1306,7 +1335,13 @@ listenDocument('visibilitychange',()=>{if(document.hidden&&(!options.embedded||e
 listenWindow('pagehide',()=>{if(!options.embedded||embeddedActive){pausePractice();stopPlayback();}synthContext?.close().catch(()=>{});},{signal:mountAbort.signal});
 const scoreObserver=new ResizeObserver(()=>drawScore());scoreObserver.observe($('#score'));
 let layoutTimer;listenWindow('resize',()=>{clearTimeout(layoutTimer);layoutTimer=setTimeout(()=>{if(state.view==='library')renderLibrary();else if(state.view==='practice'){renderPiano();drawScore();}},100);});
-const practiceScene=createPracticeScene(root,{onPaletteChange:drawScore,snapshot:()=>({phase:state.phase,intro:!!state.intro,transitioning:state.transitioning,hand:state.hand,stageTitle:microStage()?.title||'',instruction:!strictMemory()&&state.session?.index===0?microStage()?.instruction||lesson().instruction:'',canSkip:!state.intro&&!state.transitioning&&state.view==='practice',canRecalibrate:settings.input==='mic'&&!state.intro,canHelp:!!microStage()&&!state.intro&&!state.transitioning,cue:$('#finger-hint').hidden?null:currentFingerCue('transition')}),onHelp:()=>{$('#settings-dialog').close();helpMicroLesson();startPractice().catch(()=>failMic({}));},onSkip:()=>{$('#settings-dialog').close();if(microStage()&&!microStage().assessment){skipMicroStage();return;}const task=state.learningTask;pausePractice();stopPlayback();if(task&&options.onTaskSkip){state.learningTask=null;options.onTaskSkip(task);}else options.onNavigate?.(state.compositionId?'library':'course');},onRecalibrate:async()=>{$('#settings-dialog').close();pausePractice();if(await enableMic())startInputCalibration();}});
+const practiceScene=createPracticeScene(root,{onPaletteChange:drawScore,snapshot:()=>({phase:state.phase,intro:!!state.intro,transitioning:state.transitioning,hand:state.hand,
+  stageTitle:microStage()?.title||'',instruction:!strictMemory()&&state.session?.index===0?microStage()?.instruction||lesson().instruction:'',
+  canSkip:state.view==='practice',canHelp:!!microStage()&&!state.intro&&!state.transitioning,
+  heard:Number.isInteger(state.inputHeard)?noteInfo(state.inputHeard).name+' '+noteInfo(state.inputHeard).latin:'—',
+  accepted:Number.isInteger(state.inputAccepted)?noteInfo(state.inputAccepted).name+' '+noteInfo(state.inputAccepted).latin:'—',
+  cue:$('#finger-hint').hidden?null:currentFingerCue('transition')}),
+  onHelp:()=>{$('#settings-dialog').close();helpMicroLesson();startPractice().catch(()=>failMic({}));},onSkip:()=>{$('#settings-dialog').close();skipExercise();}});
 setupLearningUI();renderCourse();renderLibrary();sensitivityLabel();applyTheme();renderPiano();renderPractice();
 
 function lessonForReview(report){
@@ -1378,7 +1413,7 @@ function setupLearningUI(){
 return {
  openCourse:id=>{state.learningTask=null;state.rhythmGuided=false;chooseCourse(id);},openTask:openLearningTask,openComposition:(id,task=null)=>{state.learningTask=task;state.rhythmGuided=false;openCompositionStudy(id);},redraw:()=>renderPractice(),
  pause:()=>{if(!options.embedded||embeddedActive){pausePractice();stopPlayback();}embeddedActive=false;},showSettings:()=>{homeSettings=true;openDialog('settings');setSettingsTab('sound');},
- getState:()=>JSON.parse(JSON.stringify(settings)),
+ getState:()=>JSON.parse(JSON.stringify(settings)),getActivity:()=>readPracticeActivity(localStorage,STORE),
  getCompositions:()=>allCompositions().map(c=>({id:c.id,title:c.title,author:c.author,source:c.source})),
  addComposition:composition=>{createCompositionStudy(composition);externalCompositions=[...externalCompositions.filter(c=>c.id!==composition.id),composition];},
  destroy:()=>{pausePractice();stopPlayback();practiceScene.destroy();microView.destroy();mountAbort.abort();scoreObserver.disconnect();clearTimeout(layoutTimer);clearTimeout(toastTimer);clearTimeout(keyFeedbackTimer);embeddedActive=false;synthContext?.close().catch(()=>{});root.replaceChildren();}

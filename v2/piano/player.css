@@ -1023,12 +1023,20 @@ body:has(#practice-view:not([hidden])) .toast{bottom:calc(20px + env(safe-area-i
 #practice-view .strike-caption{left:14px;right:auto;bottom:calc(var(--strike-inset) + 8px);padding:0;border:0;background:none;font-size:9px;color:var(--muted)}
 #practice-view .scene-teacher{max-width:min(76%,640px)}
 #practice-view .scene-teacher span{white-space:normal;line-height:1.35}
+#practice-view #scene-skip{position:absolute;top:10px;right:68px;width:44px;height:44px;min-width:44px;padding:11px;z-index:10;border-radius:50%;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+#practice-view #scene-skip svg{width:22px;height:22px}
+#practice-view .scene-caption,#practice-view .progress-track{right:128px}
+#practice-view .scene-heard{position:absolute;left:14px;bottom:7px;z-index:7;display:flex;gap:14px;align-items:center;color:var(--muted);font-size:10px;pointer-events:none;font-variant-numeric:tabular-nums}
+#practice-view .scene-heard strong{color:var(--accent);font-weight:600}
+#practice-view .scene-heard[hidden]{display:none}
+#practice-view .postplay-score{font-size:24px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+#practice-view .postplay-coach[data-outcome="skipped"] .postplay-score,#practice-view .postplay-coach[data-outcome="input-problem"] .postplay-score{display:none}
+#practice-view .postplay-heading{align-items:center}
+#practice-view :is(.piano-key,#scene-skip,.postplay-actions button){-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;touch-action:manipulation}
+#practice-view :is(.piano-key,#scene-skip,.postplay-actions button):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#practice-view .postplay-coach:not([data-outcome="passed"]) [data-coach-icon="idle"]{display:none!important}
+@media(max-width:460px) and (orientation:portrait){#practice-view .scene-caption,#practice-view .progress-track{right:128px}#practice-view .scene-heard{font-size:9px;gap:10px;left:10px}}
 #practice-view .practice-panel:not(.introducing) .rotate-hint{display:none}
-#practice-view .input-calibration{width:min(390px,calc(100% - 32px));min-height:180px;box-sizing:border-box}
-#practice-view .input-calibration #calibration-title{min-height:24px}
-#practice-view .input-calibration #calibration-message{min-height:48px}
-#practice-view .input-calibration .input-calibration-footer{min-height:44px}
-#practice-view .input-calibration #calibration-retry[hidden]{display:block!important;visibility:hidden;pointer-events:none}
 @media(max-height:320px){#practice-view .scene-hand svg{width:50px;height:62px}#practice-view .scene-hands{bottom:29px;max-width:70%;gap:8px}#practice-view .scene-hand>div{max-width:150px}#practice-view .scene-hand span{font-size:8px}#practice-view .scene-teacher{top:54px}#practice-view .phrase-keyboard-map{width:122px;right:15px}}
-@media(max-width:460px) and (orientation:portrait){#practice-view .scene-caption{left:122px;right:72px;font-size:8px}#practice-view .progress-track{left:122px;right:72px}#practice-view .scene-caption span+span{display:none}#practice-view .scene-teacher{max-width:90%;top:76px}#practice-view .scene-hands{left:16px;max-width:85%;bottom:55px;flex-wrap:wrap}#practice-view .scene-hand span{max-width:170px}#practice-view .phrase-keyboard-map{width:125px;right:14px}#practice-view .scene-hand-legend{top:120px;right:14px}}
+@media(max-width:460px) and (orientation:portrait){#practice-view .scene-caption{left:122px;right:128px;font-size:8px}#practice-view .progress-track{left:122px;right:128px}#practice-view .scene-caption span+span{display:none}#practice-view .scene-teacher{max-width:90%;top:76px}#practice-view .scene-hands{left:16px;max-width:85%;bottom:55px;flex-wrap:wrap}#practice-view .scene-hand span{max-width:170px}#practice-view .phrase-keyboard-map{width:125px;right:14px}#practice-view .scene-hand-legend{top:120px;right:14px}}
 @media(prefers-reduced-motion:reduce){#practice-view .piano-key-face,#practice-view #piano .piano-key>span,#practice-view .progress-track>span,#practice-view .phrase-keyboard-map{transition:none!important}#practice-view .piano-key:is(.pressed,.wrong)>.piano-key-face{transform:none}#practice-view #piano .piano-key:is(.pressed,.wrong)>span{translate:none}#practice-view .scene-hands{animation:none}}

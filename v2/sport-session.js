@@ -35,6 +35,10 @@
   }
   function muscleIds(m) { return m.C.knownMuscles(m.exercise?.muscles?.primary); }
   function hasMap(m) { return muscleIds(m).length || m.C.knownMuscles(m.exercise?.muscles?.secondary).length; }
+  function previous(m, exercise = m.exercise) {
+    const result = spPreviousResult(exercise, m.option.key);
+    return result ? el('sp-session-journal', `<small>В прошлый раз</small><span>${text(result.label)}</span>`, 'ss-previous-result', `aria-label="Прошлый результат: ${text(result.label)}. Открыть журнал"`) : '';
+  }
   function header(m, label) {
     return `<header class="ss-head"><div class="ss-brand"><span class="ss-brand-mark" aria-hidden="true">${SP_ICON.play}</span><span>${m.option.kind==='splits'?'Растяжка':'Сила'}</span></div><div class="ss-head-actions">${flowSportAuto.view()?.active&&flowSportAuto.view().step.block==='warmup'&&flowSportAuto.view().step.kind!=='boundary'?el('sp-auto-skip-warmup','Пропустить','ss-text','aria-label="Пропустить разминку"'):''}${!result&&!m.session.finished?el('sp-session-list',icon('list'),'ss-icon','aria-label="Все упражнения"'):''}${el('sp-session-minimize', icon('close'), 'ss-icon', 'aria-label="Свернуть тренировку"')}</div></header>
       <div class="ss-route" aria-label="Выполнено ${m.doneSets} из ${m.totalSets} подходов">${m.exercises.map((e, i) => `<i class="${m.counts[i] >= m.totals[i] ? 'done' : i === m.index ? 'active' : ''}" style="--ss-fill:${Math.round(m.counts[i] / m.totals[i] * 100)}%"></i>`).join('')}</div>
@@ -62,7 +66,7 @@
     const clock=`<div class="ss-timer-cluster"><div class="ss-timer-line">${el('sp-adjust','−','ss-timer-adjust',`${stamp} data-d="-15" aria-label="Уменьшить время на 15 секунд"`)}${window.flowSportMagic?flowSportMagic.face(digits):digits}${el('sp-adjust','+','ss-timer-adjust',`${stamp} data-d="15" aria-label="Добавить 15 секунд"`)}</div></div>`;
     const dose=target(e),doseLabel=m.C.holdSecondsFor(e)||e.mode==='manual'?dose:`${dose} повт.`;
     const setTrack=`<div class="ss-approach"><strong>Подход <b>${step.set}</b><span> / ${step.total}</span></strong><small>${text(doseLabel)}</small></div>`;
-    const headline=resting||preparing?`<div class="ss-rest-title"><h1 data-ss-heading tabindex="-1">${preparing?'Подготовка':'Отдых'}</h1></div>${setTrack}${clock}${nextCard}`:`<div class="ss-exercise-title"><h1 data-ss-heading tabindex="-1">${text(e.name)}</h1></div>${setTrack}${clock}${media({...m,exercise:e})}`;
+    const headline=resting||preparing?`<div class="ss-rest-title"><h1 data-ss-heading tabindex="-1">${preparing?'Подготовка':'Отдых'}</h1></div>${setTrack}${clock}${nextCard}`:`<div class="ss-exercise-title"><h1 data-ss-heading tabindex="-1">${text(e.name)}</h1></div>${setTrack}${step.block==='main'?previous(m,e):''}${clock}${media({...m,exercise:e})}`;
     return `<section class="ss-main ${resting||preparing?'ss-rest':'ss-automatic-work'} ss-has-flow" data-ss-swipe="${resting?'rest':'exercise'}" ${stamp}>${window.flowSportMagic?.column()||''}${auto.fast?'<p class="ss-demo-pill">Показ · 6 с</p>':''}${headline}${auto.error?`<p class="ss-quiet" role="alert">${text(auto.error)}</p>`:''}</section><footer class="ss-footer ${resting?'':'ss-footer-minimal'}">${resting?el('sp-auto-skip-rest','← Пропустить','primary-button ss-primary',`${stamp} aria-label="Пропустить отдых"`):el('sp-auto-skip-exercise','← Пропустить','ss-text',`${stamp} aria-label="Пропустить упражнение"`)+el(preparing?'sp-auto-skip-rest':'sp-auto-complete',preparing?'Продолжить':'Готово','primary-button ss-primary',`${stamp} aria-label="${preparing?'Начать сейчас':'Закончить подход раньше'}"`)}</footer>`;
   }
   function warmup(m) {
@@ -78,13 +82,14 @@
   function media(m) {
     const e = m.exercise, muscles = hasMap(m), video = m.C.exerciseVideoId(e);
     const tab = state.media === 'muscles' && !muscles ? 'technique' : state.media;
-    const tabs = `<div class="ss-tabs" role="group" aria-label="Сведения об упражнении">${[['technique','Техника'],['video','Видео'],...(muscles ? [['muscles','Мышцы']] : [])].map(([key,label]) => el('sp-session-media', label, tab===key?'on':'',`aria-expanded="${tab===key}" aria-controls="ss-media-panel" data-media="${key}"`)).join('')}</div>`;
+    const tabs = `<div class="ss-tabs" role="group" aria-label="Сведения об упражнении">${[['technique','Техника'],...(window.flowSportLibrary ? [['animation','Анимация']] : []),['video','Видео'],...(muscles ? [['muscles','Мышцы']] : [])].map(([key,label]) => el('sp-session-media', label, tab===key?'on':'',`aria-expanded="${tab===key}" aria-controls="ss-media-panel" data-media="${key}"`)).join('')}</div>`;
     if(!tab)return `<section class="ss-media">${tabs}</section>`;
     let body;
-    if (tab === 'video') body = video ? videoHtml(m, video) : `<div class="ss-no-media">${el('sp-external','Найти на YouTube ↗','ghost-button',`data-url="${text(m.C.videoSearchUrl(e))}"`)}</div>`;
+    if (tab === 'animation') body = window.flowSportLibrary?.html(e) || '';
+    else if (tab === 'video') body = video ? videoHtml(m, video) : `<div class="ss-no-media">${el('sp-external','Найти на YouTube ↗','ghost-button',`data-url="${text(m.C.videoSearchUrl(e))}"`)}</div>`;
     else if (tab === 'muscles') body = spMuscleMap(e.muscles);
     else body = `${e.technique ? `<p class="ss-tech-copy">${text(e.technique)}</p>` : '<p class="ss-quiet">Описание не добавлено</p>'}${state.map && muscles ? `<div class="ss-inline-map">${spMuscleMap(e.muscles)}</div>` : ''}`;
-    return `<section class="ss-media">${tabs}<div class="ss-media-body" id="ss-media-panel" role="region" aria-label="${tab==='technique'?'Техника':tab==='video'?'YouTube':'Мышцы'}">${body}</div></section>`;
+    return `<section class="ss-media">${tabs}<div class="ss-media-body" id="ss-media-panel" role="region" aria-label="${tab==='technique'?'Техника':tab==='animation'?'Анимация':tab==='video'?'YouTube':'Мышцы'}">${body}</div></section>`;
   }
   function next(m) {
     const index = m.index;
@@ -176,8 +181,9 @@
     },
     'sp-session-media': control => {
       const m=current();if(!m)return;
-      const selected=control.dataset.media;state.media=state.media===selected?null:selected;spTimer.videoOpen=false;redraw();
+      const selected=control.dataset.media;if(selected==='animation')flowSportAuto.pauseOnly();state.media=state.media===selected?null:selected;spTimer.videoOpen=false;redraw();
       document.querySelector(`.ss-tabs [data-media="${selected}"]`)?.focus({preventScroll:true});
+      if(state.media==='animation')requestAnimationFrame(()=>document.querySelector('#ss-media-panel')?.scrollIntoView({block:'nearest'}));
     },
     'sp-session-list': () => { current();flowSportAuto.pauseOnly();state.view='list';spTimer.videoOpen=false;redraw(true); },
     'sp-session-back': () => { current();state.view=flowSportAuto.view()?.active||state.started?'work':'setup';redraw(true); },
@@ -198,7 +204,7 @@
   document.addEventListener('pointerdown',event=>{
     if(!event.isPrimary||event.button!==0)return;
     const root=event.target.closest?.('[data-ss-swipe]');
-    if(!root||event.target.closest('a,input,iframe,[role="tab"],button:not([data-ss-clock-tap])'))return;
+    if(!root||event.target.closest('a,input,iframe,flow-sport-library,[role="tab"],button:not([data-ss-clock-tap])'))return;
     swipe={id:event.pointerId,x:event.clientX,y:event.clientY,root,stamp:root.dataset.ssStep,kind:root.dataset.ssSwipe,vertical:false};
   });
   document.addEventListener('pointermove',event=>{

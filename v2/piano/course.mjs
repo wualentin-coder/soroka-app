@@ -1,5 +1,6 @@
-import { PracticeSession } from './session.mjs?v=119118b1bfbc';
-import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=119118b1bfbc';
+import {CURRICULUM_V2,CURRICULUM_V2_RECOMMENDED} from './curriculum-v2.mjs?v=1458d8543105';
+import { PracticeSession } from './session.mjs?v=1458d8543105';
+import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=1458d8543105';
 
 export const MASTERY_METRIC = 'first-attempt-v1';
 export const COURSE_PROGRESS_VERSION = 1;
@@ -233,6 +234,10 @@ export const COURSE = COURSE_MODULES.flatMap((module, moduleIndex) => module.les
   };
 })).map((lesson, index, lessons) => ({ ...lesson, nextId: lessons[index + 1]?.id ?? null }));
 
+export const ALL_COURSE=[...COURSE,...CURRICULUM_V2];
+export const ACTIVE_COURSE=CURRICULUM_V2;
+export const RECOMMENDED_COURSE=CURRICULUM_V2_RECOMMENDED;
+
 export class MasterySession extends PracticeSession {
   constructor(notes, now = 0) {
     if (!Array.isArray(notes) || !notes.length || notes.some(n => !n || !Number.isInteger(n.midi) || n.midi < 0 || n.midi > 127 || !Number.isFinite(n.beats) || n.beats <= 0)) {
@@ -283,7 +288,7 @@ const emptyStatus = () => ({ attempts: 0, bestScore: 0, lastScore: 0, passed: fa
 export function normalizeCourseProgress(value) {
   const progress = { version: COURSE_PROGRESS_VERSION, metric: MASTERY_METRIC, lessons: {} };
   if (!value || value.version !== COURSE_PROGRESS_VERSION || value.metric !== MASTERY_METRIC || !value.lessons || typeof value.lessons !== 'object') return progress;
-  for (const lesson of COURSE) {
+  for (const lesson of ALL_COURSE) {
     const entry = value.lessons[lesson.id];
     if (!entry || typeof entry !== 'object') continue;
     const attempts = integer(entry.attempts), bestScore = score(entry.bestScore);
@@ -306,7 +311,7 @@ export function recommendedCourseLesson(progress) {
 
 export function recordCourseAttempt(progress, id, report, { demo = false, at = Date.now() } = {}) {
   const normalized = normalizeCourseProgress(progress);
-  const lesson = COURSE.find(item => item.id === id);
+  const lesson = ALL_COURSE.find(item => item.id === id);
   if (demo || !lesson || !report?.finished || report.metric !== MASTERY_METRIC || report.total !== lesson.notes.length ||
       !Array.isArray(report.targetOutcomes) || report.targetOutcomes.length !== report.total ||
       report.targetOutcomes.some(outcome => outcome !== 0 && outcome !== 1)) return normalized;

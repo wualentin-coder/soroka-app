@@ -808,7 +808,7 @@ function renderChecklist(item) {
     const subRows = subtasks.length ? `<div class="check-subs">${subtasks.map((sub, index) => `<div class="check-sub ${sub.done ? "done" : ""}"><button class="sub-check ${sub.done ? "checked" : ""}" type="button" data-action="list-sub-toggle" data-id="${esc(entry.id)}" data-index="${index}" aria-pressed="${Boolean(sub.done)}" aria-label="${sub.done ? "Вернуть" : "Выполнить"}: ${esc(sub.text)}">${icon("check", "icon-sm")}</button><span>${esc(sub.text)}</span></div>`).join("")}</div>` : "";
     return ui.sheet.editItemId === entry.id
       ? `<form class="check-row editing" id="list-edit-form" data-id="${esc(entry.id)}" data-order-key="${esc(entry.id)}" data-state-key="${esc(item.id+':'+entry.id)}"><textarea name="text" rows="1" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Текст пункта">${esc(entry.text)}</textarea></form>`
-      : `<div class="check-entry" data-order-key="${esc(entry.id)}"><div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"${entry.highlight ? ' data-highlight="true"' : ""}><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button></div>${subRows}</div>`;
+      : `<div class="check-entry" data-order-key="${esc(entry.id)}"><div class="check-row ${entry.done ? "done" : ""}" data-order-key="${esc(entry.id)}"${entry.highlight ? ' data-highlight="true"' : ""}><button class="task-check ${entry.done ? "checked" : ""}" type="button" data-action="list-toggle" data-id="${esc(entry.id)}" aria-pressed="${Boolean(entry.done)}" aria-label="${entry.done ? "Вернуть" : "Выполнить"}: ${esc(entry.text)}">${icon("check", "icon-sm")}</button><button class="check-text" type="button" data-action="list-item-edit" data-id="${esc(entry.id)}" aria-label="Изменить: ${esc(entry.text)}">${esc(entry.text)}</button><button type="button" class="icon-button" data-list-image-pick="${esc(entry.id)}" aria-label="Картинка пункта">${icon("clip", "icon-sm")}</button>${entry.image ? `<button type="button" class="icon-button" data-list-image-remove="${esc(entry.id)}" aria-label="Убрать картинку">${icon("close", "icon-sm")}</button>` : ""}</div>${entry.image?.v===1 && /^https:\/\//.test(entry.image.url) ? `<figure class="note-image"><img src="${esc(entry.image.url)}" alt="${esc(entry.image.name || entry.text)}" width="160" loading="lazy"></figure>` : ""}${window.flowListImageDraft?.(item.id,entry.id) ? `<button type="button" class="ghost-button" data-list-image-retry="${esc(entry.id)}">Повторить картинку</button>` : ""}${subRows}</div>`;
   };
   const adding = ui.sheet?.listAdding === true;
   const form = `<form id="list-item-form" class="check-add" data-state-key="${esc(item.id+':'+(ui.sheet.listAddRevision||0))}"><div class="dc2-compose-main"><textarea name="text" rows="1" placeholder="Добавить пункт" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Новый пункт"></textarea><button class="dc2-compose-mic" type="button" data-action="list-dictate" aria-label="Надиктовать ассистенту"><span class="compose-assistant-star" aria-hidden="true"></span></button><button class="dc2-compose-send" type="submit" aria-label="Добавить пункт">${icon("arrow", "icon-sm")}</button></div><div class="dc2-compose-subs" id="list-subtasks"></div><button class="dc2-compose-add-sub" type="button" data-action="list-subtask-add">${icon("subtask", "icon-sm")}Подзадача</button></form>`;
@@ -1781,3 +1781,66 @@ document.addEventListener("click", event => {
   const results = document.getElementById("saved-results");
   if (results) results.innerHTML = renderSavedResults(); else render();
 }, true);
+
+// List image writes use an acknowledged, versioned list API, not the optimistic text outbox.
+(() => {
+  const pending=new Map();
+  window.flowListImageDraft=(ref,itemId)=>{const draft=pending.get(ref+':'+itemId);return !!draft?.file&&!draft.busy&&draft.owner===window.sorokaListImage?.owner?.();};
+  const current=()=>ui.sheet?.kind==='saved'&&ui.sheet.category==='lists'?savedItem('lists',ui.sheet.id):null;
+  const same=(list,sheet,owner)=>current()===list&&ui.sheet===sheet&&window.sorokaListImage?.owner?.()===owner;
+  function message(error){return /stale|conflict/.test(String(error))?'Список изменили в другом окне. Картинка не сохранена — откройте список заново.':/unsupported/.test(String(error))?'Для картинок нужно обновление сервера Flow':'Картинка не сохранена. Можно повторить загрузку.';}
+  function receipt(list,itemId,error){
+    const row=listRow(itemId);if(!row)return;
+    row.querySelector('[data-list-image-retry]')?.remove();
+    const button=document.createElement('button');button.type='button';button.className='ghost-button';button.dataset.listImageRetry=itemId;button.textContent='Повторить картинку';button.setAttribute('aria-label',error);row.append(button);
+  }
+  async function upload(itemId,file,remove=false){
+    const list=current(),sheet=ui.sheet,api=window.sorokaListImage;
+    if(!list||!api||typeof api.owner!=='function'){toast('Для картинок нужно обновление Flow');return;}
+    if(!remove&&(!/^image\/(png|jpeg|webp)$/.test(file?.type)||file.size<8||file.size>6*1024*1024)){toast('PNG, JPEG или WebP до 6 МБ');return;}
+    const owner=api.owner(),key=list.id+':'+itemId;
+    if(pending.get(key)?.busy)return;
+    const state={file,busy:true,owner};pending.set(key,state);
+    let remote;
+    try {
+      // This capability check precedes reading/uploading bytes. Older APIs cannot silently strip images.
+      remote=await api.open(list.id,owner);
+      if(!same(list,sheet,owner))return;
+      if(remote?.imageVersion!==1||!Number.isSafeInteger(remote.version))throw Error('image_version_unsupported');
+      const local=list.items.find(item=>item.id===itemId),stored=remote.items.find(item=>item.id===itemId);
+      if(!stored||!local||stored.text!==local.text||stored.done!==local.done)throw Error('stale_list');
+      let image=null;
+      if(!remove){
+        const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(Error('file_read'));reader.readAsDataURL(file);});
+        if(!same(list,sheet,owner))return;
+        const url=await api.upload(data,file.type,owner);
+        if(!same(list,sheet,owner))return;
+        image={v:1,url,mime:file.type,size:file.size,name:file.name.replace(/[\u0000-\u001f]/g,'').slice(0,120)};
+      }
+      const value=await api.patch(list.id,itemId,remote.version,image,owner);
+      if(!same(list,sheet,owner))return;
+      const saved=value?.items?.find(item=>item.id===itemId);
+      if(value?.imageVersion!==1||JSON.stringify(saved?.image)!==JSON.stringify(image))throw Error('invalid_response');
+      local.image=saved.image;list.version=value.version;list.imageVersion=1;
+      pending.delete(key);renderKeepScroll();
+    }catch(error){if(same(list,sheet,owner)){state.busy=false;toast(message(error));if(file)receipt(list,itemId,message(error));}}
+    finally{if(!same(list,sheet,owner))pending.delete(key);else state.busy=false;}
+  }
+  document.addEventListener('click',event=>{
+    const pick=event.target.closest?.('[data-list-image-pick]'),remove=event.target.closest?.('[data-list-image-remove]'),retry=event.target.closest?.('[data-list-image-retry]');
+    if(!pick&&!remove&&!retry)return;event.preventDefault();event.stopImmediatePropagation();
+    const list=current();if(!list)return;
+    if(remove){upload(remove.dataset.listImageRemove,null,true);return;}
+    if(retry){const draft=pending.get(list.id+':'+retry.dataset.listImageRetry);if(draft?.file&&draft.owner===window.sorokaListImage?.owner?.())upload(retry.dataset.listImageRetry,draft.file);return;}
+    const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';input.hidden=true;document.body.append(input);
+    input.onchange=()=>{const file=input.files?.[0];input.remove();if(file)upload(pick.dataset.listImagePick,file);};input.click();
+  },true);
+  document.addEventListener('paste',event=>{
+    if(!current())return;
+    const file=[...(event.clipboardData?.files||[])].find(file=>file.type.startsWith('image/'));
+    if(!file)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    const node=event.target.closest?.('[data-order-key]');
+    if(node?.dataset.orderKey)upload(node.dataset.orderKey,file);else toast('Выберите пункт списка для картинки');
+  },true);
+})();

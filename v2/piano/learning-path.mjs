@@ -1,11 +1,15 @@
-import { COURSE, normalizeCourseProgress } from './course.mjs?v=119118b1bfbc';
-import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=119118b1bfbc';
-import { isCompactFoundationLesson } from './microlearning-data.mjs?v=119118b1bfbc';
+import { COURSE, ALL_COURSE, RECOMMENDED_COURSE, normalizeCourseProgress } from './course.mjs?v=1458d8543105';
+import { CURRICULUM_V2_SKILLS } from './curriculum-v2.mjs?v=1458d8543105';
+import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=1458d8543105';
+import { isCompactFoundationLesson } from './microlearning-data.mjs?v=1458d8543105';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],
   checkpointIds: [...skill.checkpointIds], lessonIds: COURSE.filter(lesson => lesson.skillIds.includes(skill.id)).map(lesson => lesson.id) }));
-const PATH_LESSONS = new Map(COURSE.map(lesson => [lesson.id, lesson]));
+export const V2_SKILLS=CURRICULUM_V2_SKILLS.map(skill=>({...skill,courseVersion:2}));
+const PATH_LESSONS = new Map(ALL_COURSE.map(lesson => [lesson.id, lesson]));
+const isV2=lesson=>lesson?.id?.startsWith('v2-')===true;
+const v2Kind=lesson=>lesson.practiceKind==='rhythm'?'rhythm':lesson.practiceKind==='reading'?'reading':'new';
 const REVIEW_INTERVALS = [1, 3, 7]; // Product policy, not a claim about a learner's retention.
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const finiteScore = (value, max) => Number.isFinite(value) && value >= 0 && value <= max ? value : 0;
@@ -99,19 +103,20 @@ export function isLessonIndependentlyComplete(saved,lessonId){
 
 function criterionReached(lesson, entry) {
   if (!entry) return false;
+  if(isV2(lesson))return lesson.practiceKind==='rhythm'?entry.timedBest>=80:entry.readingBest>=8&&(!lesson.requiresMidiForAssessment||entry.readingMidi);
   if (lesson.practiceKind === 'rhythm') return entry.timedBest >= 80;
   if (['echo','recall'].includes(lesson.practiceKind)) return entry.recallBest >= 8;
   return entry.readingBest >= 8 && (!lesson.requiresMidiForAssessment || entry.readingMidi);
 }
-const checkpointChoices = skill => [skill.checkpointIds, ...(CURRICULUM_CHECKPOINT_ALTERNATIVES[skill.id] || [])];
+const checkpointChoices = skill => [skill.checkpointIds, ...(skill.courseVersion===2?[]:CURRICULUM_CHECKPOINT_ALTERNATIVES[skill.id] || [])];
 const checkpointsReached = (skill, progress, predicate) => checkpointChoices(skill).some(ids =>
   ids.every(id => predicate(PATH_LESSONS.get(id), progress.lessons[id])));
-function readySkills(progress) {
-  return new Set(SKILLS.filter(skill => checkpointsReached(skill, progress, criterionReached)).map(skill => skill.id));
+function readySkills(progress,skills=SKILLS) {
+  return new Set(skills.filter(skill => checkpointsReached(skill, progress, criterionReached)).map(skill => skill.id));
 }
 const coveredLesson = entry => entry && (entry.coverageBest >= 8 || entry.timedCoverageBest >= 80 || entry.readingBest >= 8 || entry.recallBest >= 8 || entry.timedBest >= 80);
-function coveredSkills(progress) {
-  return new Set(SKILLS.filter(skill => checkpointsReached(skill, progress, (_lesson, entry) => coveredLesson(entry))).map(skill => skill.id));
+function coveredSkills(progress,skills=SKILLS) {
+  return new Set(skills.filter(skill => checkpointsReached(skill, progress, (_lesson, entry) => coveredLesson(entry))).map(skill => skill.id));
 }
 const hasIndependent = entry => entry && (entry.readingBest >= 8 || entry.recallBest >= 8 || entry.timedBest >= 80);
 
@@ -145,9 +150,9 @@ export function evaluateLearningGoal(saved,{compositionId,hand='right',date}={})
   return {known:true,requiredSkillIds,missingSkillIds,recommendedLessonIds,ready:missingSkillIds.length===0};
 }
 
-export function skillState(progress, id, { date } = {}) {
-  const skill = SKILLS.find(item => item.id === id); if (!skill) return null;
-  const normalized = normalizeLearningProgress(progress), ready = readySkills(normalized), covered = coveredSkills(normalized), today = todayFor(date);
+export function skillState(progress, id, { date,courseVersion=1 } = {}) {
+  const skills=courseVersion===2?V2_SKILLS:SKILLS,skill = skills.find(item => item.id === id); if (!skill) return null;
+  const normalized = normalizeLearningProgress(progress), ready = readySkills(normalized,skills), covered = coveredSkills(normalized,skills), today = todayFor(date);
   const entries = skill.lessonIds.map(lessonId => normalized.lessons[lessonId]).filter(Boolean);
   const retained = ready.has(id) && checkpointsReached(skill, normalized, (_lesson, entry) => entry?.reviewStep >= 3);
   return { id, title: skill.title, ready: ready.has(id), covered: covered.has(id), retained,
@@ -165,6 +170,15 @@ function sampleNotes(lesson, kind) {
   return lesson.notes.slice(0, 6).map(note => ({ ...note }));
 }
 function taskFor(lesson, kind, date, minutes, input, role = kind) {
+  if(isV2(lesson)){
+    kind=v2Kind(lesson);
+    return {id:`${date}:${kind}:${lesson.id}`,date,kind,role,lessonId:lesson.id,skillIds:[...lesson.skillIds],title:role==='review'?`Повторим: ${lesson.title}`:lesson.title,minutes,
+      courseVersion:2,notes:structuredClone(lesson.notes),presentation:structuredClone(lesson.authoredMicrosteps.at(-1).presentation),
+      displayPracticeKind:lesson.practiceKind,completion:kind==='rhythm'?'flow-80':'independent-80',requiredMetric:kind==='rhythm'?'timed-notes-v1':'first-attempt-v1',
+      passPercent:80,evidenceKind:kind==='rhythm'?'timed':'reading',requiresMidiForAssessment:lesson.requiresMidiForAssessment===true,
+      learningRoute:'guided-check',optionalFlow:true,replayAllowed:lesson.replayAllowed===true,memoryRequired:false,
+      notice:lesson.requiresMidiForAssessment&&input!=='midi'?'Через микрофон — практика. Проверка высот группы нот доступна с MIDI.':'',instruction:lesson.instruction};
+  }
   const memory = kind === 'recall' || ['echo','recall'].includes(lesson.practiceKind);
   const rhythm = kind === 'rhythm';
   const compact = kind === 'new' && isCompactFoundationLesson(lesson);
@@ -193,16 +207,30 @@ function finishDailyPlan(tasks, today, budget, completed) {
     title: 'Сегодня у клавиш', description: 'Немного вспомнить, освоить одно новое движение и сыграть музыку.' };
 }
 /** Optional program browsing uses the same evidence contract as the daily route. */
-export function createPracticeTask(lessonId,{date,input='mic',progress}={}){
-  const lesson=PATH_LESSONS.get(lessonId);if(!lesson)return null;const day=todayFor(date),kind=lesson.practiceKind==='reading'?'reading':['echo','recall'].includes(lesson.practiceKind)?'recall':lesson.practiceKind==='rhythm'?'rhythm':'new';
-  const task=taskFor(lesson,kind,day,4,input,'new'),plan=createDailyPlan(progress,{date:day,input});task.daySelection=plan.tasks[0]?.daySelection||null;return task;
+export function createPracticeTask(lessonId,{date,input='mic',progress,courseVersion,deferredLessonIds=[]}={}){
+  const lesson=PATH_LESSONS.get(lessonId);if(!lesson)return null;const day=todayFor(date),kind=isV2(lesson)?v2Kind(lesson):lesson.practiceKind==='reading'?'reading':['echo','recall'].includes(lesson.practiceKind)?'recall':lesson.practiceKind==='rhythm'?'rhythm':'new';
+  const task=taskFor(lesson,kind,day,4,input,'new'),plan=createDailyPlan(progress,{date:day,input,courseVersion:courseVersion??(isV2(lesson)?2:1),deferredLessonIds});task.daySelection=plan.tasks[0]?.daySelection||null;return task;
 }
 
 /** A small queue: due retrieval, one new idea, rhythm, then music of the user's choice. */
-export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song = null, goal = null, courseProgress, continuation = false } = {}) {
+export function createDailyPlan(saved, { date, minutes = 15, input = 'mic', song = null, goal = null, courseProgress, continuation = false,courseVersion=1,deferredLessonIds=[] } = {}) {
   const progress = normalizeLearningProgress(saved, { courseProgress }), today = todayFor(date), covered = coveredSkills(progress), ready=readySkills(progress);
   const budget = Number.isFinite(minutes) ? clamp(Math.round(minutes), 5, 20) : 15, tasks = [];
   const completed = progress.days[today]?.completed || [], frozen = progress.days[today]?.selection;
+  if(courseVersion===2){
+    const deferred=new Set(Array.isArray(deferredLessonIds)?deferredLessonIds.filter(id=>RECOMMENDED_COURSE.some(lesson=>lesson.id===id)):[]);
+    const selections=frozen&&!continuation&&frozen.tasks.every(task=>isV2(PATH_LESSONS.get(task.lessonId)))?frozen.tasks.filter(task=>!deferred.has(task.lessonId)):null;
+    const reviewSlotUsed=continuation&&frozen?.tasks.some(task=>isV2(PATH_LESSONS.get(task.lessonId))&&task.role==='review');
+    const due=reviewSlotUsed?null:RECOMMENDED_COURSE.filter(lesson=>{
+      const entry=progress.lessons[lesson.id];
+      return !deferred.has(lesson.id)&&criterionReached(lesson,entry)&&entry.nextReviewDate&&entry.nextReviewDate<=today&&!entry.reviewDays.includes(today)&&!completed.includes(`${today}:${v2Kind(lesson)}:${lesson.id}`);
+    }).sort((a,b)=>progress.lessons[a.id].nextReviewDate.localeCompare(progress.lessons[b.id].nextReviewDate))[0];
+    const fresh=RECOMMENDED_COURSE.filter(lesson=>!deferred.has(lesson.id)&&!criterionReached(lesson,progress.lessons[lesson.id])).slice(0,due?1:2);
+    const selected=selections?selections.map(item=>taskFor(PATH_LESSONS.get(item.lessonId),item.kind,today,item.minutes,input,item.role)):
+      [...(due?[taskFor(due,v2Kind(due),today,2,input,'review')]:[]),...fresh.map(lesson=>taskFor(lesson,v2Kind(lesson),today,2,input,'new'))];
+    return {...finishDailyPlan(selected,today,selected.reduce((sum,task)=>sum+task.minutes,0),completed),courseVersion:2,
+      description:'Короткий музыкальный жест, твоя попытка и самостоятельный результат.'};
+  }
   if (frozen && !continuation) return finishDailyPlan(frozen.tasks.map(item => item.kind === 'song' ? { ...item, id: `${today}:song:${item.songId || 'choice'}`, date: today, skillIds: [] } :
     taskFor(PATH_LESSONS.get(item.lessonId), item.kind, today, item.minutes, input,item.role)), today, frozen.tasks.reduce((sum, task) => sum + task.minutes, 0), completed);
   const goalEvidence=goal && goal.status!=='unknown' ? evaluateLearningGoal(progress,{compositionId:goal.compositionId,hand:goal.hand||'right',date:today}) : null;
@@ -292,7 +320,9 @@ function applyLearningAttempt(progress, task, report, options = {}) {
   if (!lesson ||
       source === 'tap' && lesson.practiceKind !== 'rhythm' || breakdown || report?.demo || !Number.isFinite(at) || at < 0 || at > 8640000000000000 ||
       !Array.isArray(task.notes) || task.notes.length !== sampleNotes(lesson,task.kind).length ||
-      task.notes.some((note,index) => note.midi !== lesson.notes[index].midi || note.beats !== lesson.notes[index].beats || note.group !== lesson.notes[index].group || note.restBefore !== lesson.notes[index].restBefore)) return false;
+      Array.from(task.notes).some((note,index) => !note || note.midi !== lesson.notes[index].midi || note.beats !== lesson.notes[index].beats || note.group !== lesson.notes[index].group || note.restBefore !== lesson.notes[index].restBefore)) return false;
+  if(isV2(lesson)&&(task.kind!==v2Kind(lesson)||task.notes.some((note,index)=>
+    ['time','duration','hand','finger','positionId','fingerProvenance'].some(field=>note[field]!==lesson.notes[index][field]))))return false;
   const metric = task.kind === 'rhythm' || task.kind === 'new' && mode === 'flow' ? 'timed-notes-v1' : 'first-attempt-v1';
   if (!verifiedReport(report, task.notes.length, metric) || !['learn','check','flow'].includes(mode) || metric === 'timed-notes-v1' && mode !== 'flow' ||
       ['reading','recall'].includes(task.kind) && mode !== 'check') return false;
@@ -316,6 +346,26 @@ function applyLearningAttempt(progress, task, report, options = {}) {
   if (task.kind === 'new' && lesson.learningRoute !== 'guided-check' && mode === 'flow' && percent >= 60 && entry.coverageBest >= 8 && !report.earlyAbort && task.date === today && !day.completed.includes(task.id)) day.completed.push(task.id);
   const independent = mode !== 'learn' && assisted === false && report.assisted !== true && !report.earlyAbort && !beta &&
     (!lesson.requiresMidiForAssessment || source === 'midi');
+  if(isV2(lesson)){
+    const wasDue=criterionReached(lesson,entry)&&entry.nextReviewDate&&today>=entry.nextReviewDate;
+    const failed=!independent||mode!==(lesson.practiceKind==='rhythm'?'flow':'check')||percent<80;
+    if(failed&&wasDue){
+      if(!entry.reviewBlockedDays.includes(today))entry.reviewBlockedDays=[...entry.reviewBlockedDays,today].sort().slice(-28);
+      entry.reviewStep=0;entry.nextReviewDate=addDays(today,1);
+    }
+    if(!independent||mode!==(lesson.practiceKind==='rhythm'?'flow':'check')){entry.guidedBest=Math.max(entry.guidedBest,value);return true;}
+    const field=lesson.practiceKind==='rhythm'?'timedBest':'readingBest';
+    entry[field]=Math.max(entry[field],field==='timedBest'?percent:value);
+    if(field==='readingBest'&&source==='midi'&&value>=8)entry.readingMidi=true;
+    if(percent>=80){
+      if(wasDue&&!entry.reviewDays.includes(today)&&!entry.reviewBlockedDays.includes(today)){
+        entry.reviewDays=[...entry.reviewDays,today].sort().slice(-8);entry.reviewStep=Math.min(3,entry.reviewStep+1);
+        entry.nextReviewDate=addDays(today,REVIEW_INTERVALS[entry.reviewStep]??7);
+      }else entry.nextReviewDate||=addDays(today,1);
+      if(task.date===today&&!day.completed.includes(task.id))day.completed.push(task.id);
+    }
+    return true;
+  }
   const compact = isCompactFoundationLesson(lesson);
   // A full canonical independent score is sufficient: missed targets already
   // contribute zero. Do not require new event fields that older clients strip.
@@ -361,11 +411,12 @@ export function isLearningTaskComplete(progress,task) {
   return !!task && (normalizeLearningProgress(progress).days[task.date]?.completed.includes(task.id) || false);
 }
 
-export function learningSummary(saved, { date, courseProgress } = {}) {
+export function learningSummary(saved, { date, courseProgress,courseVersion=1 } = {}) {
   const progress = normalizeLearningProgress(saved, { courseProgress }), today = todayFor(date);
-  const skills = SKILLS.map(skill => skillState(progress, skill.id, { date: today }));
+  const skills = (courseVersion===2?V2_SKILLS:SKILLS).map(skill => skillState(progress, skill.id, { date: today,courseVersion }));
+  const lessonEntries=(courseVersion===2?ALL_COURSE.filter(isV2):COURSE).map(lesson=>progress.lessons[lesson.id]).filter(Boolean);
   return { totalSkills: skills.length, coveredSkills: skills.filter(skill => skill.covered).length, readySkills: skills.filter(skill => skill.ready).length, retainedSkills: skills.filter(skill => skill.retained).length,
-    dueLessons: Object.values(progress.lessons).filter(entry => hasIndependent(entry) && entry.nextReviewDate && entry.nextReviewDate <= today).length,
+    dueLessons: lessonEntries.filter(entry => hasIndependent(entry) && entry.nextReviewDate && entry.nextReviewDate <= today).length,
     completedToday: progress.days[today]?.completed.length || 0, skills };
 }
 export function nextLearningTask(progress, options) {

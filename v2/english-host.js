@@ -91,7 +91,9 @@
       listeners.add(listener);
       return () => listeners.delete(listener);
     }
-    const capabilities = Object.freeze({get completionAttempts(){return capability('completionAttempts');},get practiceEvents(){return capability('practiceEvents');},get speechAbort(){return !!captureOwner()&&speechAbort(binding.context)===true;}});
+    const capabilities = {get completionAttempts(){return capability('completionAttempts');},get practiceEvents(){return capability('practiceEvents');},get speechAbort(){return !!captureOwner()&&speechAbort(binding.context)===true;}};
+    for(const name of ['swipes','grades','lessons','preferences','rules','serverChecking','reader','readerBookmarks','readerImport','readerDelete','readerMarks','readerTranslation','readerWordLearning','conversation','conversationErrors','conversationWrites'])Object.defineProperty(capabilities,name,{enumerable:true,get:()=>capability(name)});
+    Object.freeze(capabilities);
     const host = Object.freeze({version: 2, capabilities, captureOwner, isCurrent, send, subscribeInvalidation});
     if (typeof auth.subscribeInvalidation(invalidate) !== 'function') throw error('auth_subscription');
     return host;

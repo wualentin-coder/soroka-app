@@ -1,7 +1,7 @@
-import {COURSE} from './course.mjs?v=119118b1bfbc';
-import {COMPOSITIONS} from './compositions.mjs?v=119118b1bfbc';
-import {noteInfo} from './pitch.mjs?v=119118b1bfbc';
-import {COURSE_FINGERINGS,SONG_FINGERINGS} from './fingering-data.mjs?v=119118b1bfbc';
+import {ALL_COURSE as COURSE} from './course.mjs?v=1458d8543105';
+import {COMPOSITIONS} from './compositions.mjs?v=1458d8543105';
+import {noteInfo} from './pitch.mjs?v=1458d8543105';
+import {COURSE_FINGERINGS,SONG_FINGERINGS} from './fingering-data.mjs?v=1458d8543105';
 
 const NAMES=['','большой палец','указательный палец','средний палец','безымянный палец','мизинец'];
 const COURSES=new Map(COURSE.map(lesson=>[lesson.id,lesson]));
@@ -89,6 +89,28 @@ function uniquePositions(notes){
   const positions=[];
   for(const note of notes)if(note.position&&!positions.some(position=>samePosition(position,note.position)))positions.push(note.position);
   return positions;
+}
+
+function curriculumPositionPlan(lesson,options){
+  const source=COURSES.get(options.sourceLessonId||lesson.sourceLessonId||lesson.id);
+  if(!source?.id.startsWith('v2-')||!source.fingering?.positions)return undefined;
+  const notes=[],movements=[],previous=new Map(),transpose=options.octave*12;
+  for(const [index,input]of lesson.notes.entries()){
+    const row=source.fingering.positions[input.positionId];
+    if(!row||row.hand!==input.hand||!validFinger(input.finger)||row.keys[input.finger-1]!==input.midi)return null;
+    const position=positionFor(row,row.hand,transpose);if(!position)return null;
+    const note={index,sourceIndex:input.sourceIndex??(options.sourceRange?.start||0)+index,midi:input.midi+transpose,
+      hand:row.hand,finger:input.finger,position,provenance:'suggested'};
+    const last=previous.get(note.hand),afterRest=input.restBefore>0;
+    if(last&&!samePosition(last.position,position)||afterRest){
+      const kind=last&&!samePosition(last.position,position)?'shift':'reset';
+      note.movement={...makeMovement(note,last,kind,index,last?.index??-1,afterRest),provenance:'suggested'};
+      movements.push(note.movement);
+    }
+    notes.push(note);previous.set(note.hand,note);
+  }
+  return {provenance:'suggested',label:'Предложенная аппликатура',notes,positions:uniquePositions(notes),movements,
+    limitations:[source.fingering.limitations]};
 }
 
 function authoredPlan(lesson,references){
@@ -203,6 +225,8 @@ export function getFingeringPlan(lesson,options={}){
       Object.hasOwn(note,'finger')&&!validFinger(note.finger))||options.hand!==undefined&&!['right','left','both'].includes(options.hand)||
     ![-1,0,1].includes(options.octave??0))return null;
   const normalized={...options,octave:options.octave??0};
+  const curriculum=curriculumPositionPlan(lesson,normalized);
+  if(curriculum!==undefined)return curriculum;
   const references=authoredReferences(lesson,normalized);
   if(references)return authoredPlan(lesson,references);
   if(lesson.notes.some(note=>{

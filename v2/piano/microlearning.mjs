@@ -1,10 +1,11 @@
-import {COURSE} from './course.mjs?v=119118b1bfbc';
-import {createScoreTimeline} from './score.mjs?v=119118b1bfbc';
-import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=119118b1bfbc';
-import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS,isCompactFoundationLesson} from './microlearning-data.mjs?v=119118b1bfbc';
-import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=119118b1bfbc';
-import {createMixedPracticeStages} from './mixed-practice.mjs?v=119118b1bfbc';
-import {supportLevel} from './support-policy.mjs?v=119118b1bfbc';
+import {ALL_COURSE as COURSE} from './course.mjs?v=1458d8543105';
+import {CURRICULUM_V2_GUIDES} from './curriculum-v2.mjs?v=1458d8543105';
+import {createScoreTimeline} from './score.mjs?v=1458d8543105';
+import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=1458d8543105';
+import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS,isCompactFoundationLesson} from './microlearning-data.mjs?v=1458d8543105';
+import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=1458d8543105';
+import {createMixedPracticeStages} from './mixed-practice.mjs?v=1458d8543105';
+import {supportLevel} from './support-policy.mjs?v=1458d8543105';
 
 const MAX_NOTES=5000,MAX_STAGES=48;
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));
@@ -132,6 +133,17 @@ function authoredScenes(lesson,groups,family,add,guide){
 
 /** Teaching scenes are provisional; only the final canonical whole is assessment. */
 export function createMicroLesson(lesson,{kind='new',knownLessonIds=[]}={}){
+  const v2=CURRICULUM_V2_GUIDES[lesson?.id],canonicalV2=canonical.get(lesson?.id);
+  if(v2&&canonicalV2&&same(lesson.notes,canonicalV2.notes)){
+    validate(lesson,kind);
+    const stages=clone(v2.stages),familiar=knownLessonIds.some(id=>canonical.get(id)?.skillIds.some(skill=>lesson.skillIds.includes(skill)));
+    const stageIds=familiar?['whole']:['prepare','whole'];
+    const route={kind:'adaptive-foundation',stageIds,remedialStageIds:stages.filter(stage=>!stageIds.includes(stage.id)).map(stage=>stage.id),seamless:true};
+    // The cursor schema is unchanged; keep the server's v1 wire format.
+    // New lesson IDs and this namespace invalidate only the rebuilt material.
+    const version='microlearning-v1:'+songFingerprint(['musical-actions-v2',JSON.stringify(stable({id:lesson.id,kind,stages,route}))]);
+    return {id:lesson.id,version,authored:true,coverage:'detailed',guide:clone(v2),route,stages};
+  }
   const groups=validate(lesson,kind),family=familyFor(lesson,kind),known=canonical.get(lesson.id),data=MICROLESSONS[lesson.id],guide=LESSON_GUIDES[lesson.id];
   const transitions=guide?.transitionIndices||FOUNDATION_TRANSITIONS[lesson.id]||[];
   const exact=known&&(lesson.practiceKind===undefined||lesson.practiceKind===known.practiceKind)&&

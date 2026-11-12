@@ -484,20 +484,37 @@ SP_ACTIONS["sp-habit-rem-add"] = () => { spHabitDraftFromForm(); const d = spSta
 SP_ACTIONS["sp-habit-rem-del"] = control => { spHabitDraftFromForm(); spState().sheet.draft.reminders.splice(Number(control.dataset.i), 1); render(); };
 SP_FORMS.habit = form => {
   const s = spState(), C = SP(), sheet = s.sheet;
+  if (sheet?.kind !== 'habit' || form !== document.querySelector('[data-sp-form="habit"]')) return;
   spHabitDraftFromForm();
   const d = sheet.draft, name = d.name.trim();
   if (!name) return spSheetError("Введите название.");
+  if (d.deliveryMode === 'timed' && !d.reminders.length) return spSheetError("Добавьте время или выберите «Не напоминать».");
   if (d.reminders.some(t => !C.validReminderTime(t))) return spSheetError("Проверьте время напоминаний.");
   if (new Set(d.reminders).size !== d.reminders.length) return spSheetError("Два напоминания на одно время — уберите повтор.");
   const key = sheet.id || crypto.randomUUID();
   const taken = ["контрастный душ", "утренняя разминка"].includes(name.toLocaleLowerCase()) || Object.entries(s.state.customHabits || {}).some(([id, h]) => id !== key && h.name.toLocaleLowerCase() === name.toLocaleLowerCase());
   if (taken) return spSheetError("Такая привычка уже есть, в том числе в архиве.");
   const reminders = [...d.reminders].sort().map(time => ({ time }));
-  spUpdate(prev => {
-    const { reminder: _old, notify: _quiet, ...rest } = prev.customHabits?.[key] || {};
-    return { ...prev, customHabits: { ...prev.customHabits, [key]: { ...rest, name, createdOn: prev.customHabits?.[key]?.createdOn || C.todayKey(), reminders, deliveryMode:d.deliveryMode || undefined, ...(d.notify ? {} : { notify: false }) } } };
-  }).catch(() => {});
-  spClose();
+  const runtime = window.flowSportRuntime, lease = runtime?.capture();
+  const sameForm = () => window.flowSportRuntime === runtime && (!runtime || (lease ? runtime.current(lease) : runtime.capture() === lease)) && spState() === s && s.sheet === sheet;
+  const failed = error => {
+    if (!sameForm()) return;
+    spSheetError(error?.message === 'outbox_storage' ? 'Не хватает места. Освободите память и повторите.'
+      : error?.message === 'sport_owner_not_ready' || error?.message === 'sport_owner_changed' ? 'Аккаунт пока не готов. Откройте Flow в своём аккаунте и повторите.'
+      : 'Не удалось сохранить. Проверьте данные и повторите.');
+  };
+  try {
+    let next;
+    const saving = spUpdate(prev => {
+      const { reminder: _old, notify: _quiet, ...rest } = prev.customHabits?.[key] || {};
+      next = { ...prev, customHabits: { ...prev.customHabits, [key]: { ...rest, name, createdOn: prev.customHabits?.[key]?.createdOn || C.todayKey(), reminders, deliveryMode:d.deliveryMode || undefined, ...(d.notify ? {} : { notify: false }) } } };
+      return next;
+    });
+    // spUpdate accepts state only after persisting the outbox, before any network ACK.
+    const accepted = next && s.state === next;
+    if (accepted && sameForm()) { s.sheet = null; s.sheetError = ''; render(); }
+    return saving.catch(error => { if (!accepted) failed(error); });
+  } catch (error) { failed(error); }
 };
 
 SP_SHEETS.counter = sheet => {
