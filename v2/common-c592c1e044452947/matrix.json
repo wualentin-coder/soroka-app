@@ -1,0 +1,3068 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-12",
+  "scope": "Local shared-map assembly only. No product/native/backend deployment.",
+  "ports": {
+    "catalog": 58482,
+    "rejectedActualRuntimePreview": 58483,
+    "boundAssembly": 58484
+  },
+  "statusDefinitions": {
+    "pending": "Intended mapping only; no executable shared consumer is claimed.",
+    "implemented_pending_test": "Owner reports executable binding is being assembled; independent end-to-end verification and user design approval are pending.",
+    "bound_slice_tested": "Actual same-class owner binding and stated browser checks passed in the limited vertical slice. Full category acceptance and user design approval remain separate."
+  },
+  "hashPolicy": {
+    "algorithm": "SHA-256",
+    "stage": "server_after_freeze",
+    "resolved": true,
+    "note": "Raw module hashes refreshed after scoped freeze. Any later shared edit requires refresh."
+  },
+  "evidence": {
+    "catalogue": "80 shared component families; user decisions preserved, no design acceptance inferred.",
+    "implementedRows": "Focused common-entry browser suites flow-bound-*; real-static Piano/controller; actual WebCrypto; no human design acceptance or device proof.",
+    "designAccepted": false,
+    "productionMigrated": false,
+    "independentReview": "Fresh bounded reviews closed findings in task/film, collection/living, finance, Saved/preferences, hub/event/film, personal/vault, rich-note3rounds, learningbindings2rounds and assistant2rounds. These are technical scope receipts, not human design acceptance."
+  },
+  "components": [
+    {
+      "id": "F01",
+      "version": "0.4.0",
+      "tag": "flow-surface",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "B01",
+      "version": "0.3.0",
+      "tag": "flow-button",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "B02",
+      "version": "0.1.0",
+      "tag": "flow-actions",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/actions.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/actions.js": "e204c56631ec035d9cbc430ee21e60ebb15beda093e402fd19f2f0dfa42c122c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "C01",
+      "version": "0.3.0",
+      "tag": "flow-check",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R01",
+      "version": "0.4.0",
+      "tag": "flow-row",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R02",
+      "version": "0.3.0",
+      "tag": "flow-row",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R03",
+      "version": "0.3.0",
+      "tag": "flow-line-row",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R04",
+      "version": "0.3.0",
+      "tag": "flow-line-row",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "M01",
+      "version": "0.3.0",
+      "tag": "flow-select",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "D03",
+      "version": "0.1.0",
+      "tag": "flow-date-time",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/date-time.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/date-time.js": "9366e24f71db2e383895bd9d7b02d34befd5e2006c8acdb8b60ca2a93cece666",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "D04",
+      "version": "0.1.0",
+      "tag": "flow-date-time",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/date-time.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/date-time.js": "9366e24f71db2e383895bd9d7b02d34befd5e2006c8acdb8b60ca2a93cece666",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "W01",
+      "version": "0.10.0",
+      "tag": "flow-entry",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/entry-details.js",
+        "prototypes/soroka-planner/flow-ui/date-time.js",
+        "prototypes/soroka-planner/flow-ui/field.js",
+        "prototypes/soroka-planner/flow-ui/text-area.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/entry-details.js": "b28c07c9bbaff796b06eacc91e4de7fcaed160c1a3cfb9f485e8ff67bcb3a77a",
+        "prototypes/soroka-planner/flow-ui/date-time.js": "9366e24f71db2e383895bd9d7b02d34befd5e2006c8acdb8b60ca2a93cece666",
+        "prototypes/soroka-planner/flow-ui/field.js": "1c66b6c845557e79fd51b2e1b9c31a04b7dbd4e6f88150ca3ea007eccb4a915a",
+        "prototypes/soroka-planner/flow-ui/text-area.js": "d0e897e9b5efed815544849a31fe8a9c49ba7c1ddc76a901885ae69656af4326",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I01",
+      "version": "0.4.0",
+      "tag": "flow-field",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/field.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/field.js": "1c66b6c845557e79fd51b2e1b9c31a04b7dbd4e6f88150ca3ea007eccb4a915a",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I02",
+      "version": "0.4.0",
+      "tag": "flow-search",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/search.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/search.js": "a265f96f8f7f1ec6227b3add2ac4f1d42341d97ff264515aca75274890a98d3a",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "S01",
+      "version": "0.4.0",
+      "tag": "flow-switch",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/switch.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/switch.js": "32f4df885996d4a1a59ac0f92bfce04ee5477f1d9ae25a06ebb4248abd5d5954",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "T01",
+      "version": "0.6.0",
+      "tag": "flow-tabs",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/tabs.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/tabs.js": "a78fe039112542200e337ec2764522221501711a682bc511155fb6ffb6efb707",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "D01",
+      "version": "0.7.0",
+      "tag": "flow-confirm",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/confirm.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/confirm.js": "c8f44db69ca4b064a48b7bd069db339a1e5e97658a4495eb32d3421ac320a092",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "D02",
+      "version": "0.2.0",
+      "tag": "flow-select",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/flow-select.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/flow-select.js": "8e05b2b4dede1b3246029b5ef6620b365bf32c05e34f8dbcdc0380987bbb2461",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I03",
+      "version": "0.2.0",
+      "tag": "flow-text-area",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/text-area.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/text-area.js": "d0e897e9b5efed815544849a31fe8a9c49ba7c1ddc76a901885ae69656af4326",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "T02",
+      "version": "0.4.0",
+      "tag": "flow-filters",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/filters.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/filters.js": "a1cb65a1e720ddc700a52fd4992d4458cf71e4b8143bd893a7c26ae765a97e1d",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R05",
+      "version": "0.2.0",
+      "tag": "flow-record-card",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/record-card.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/record-card.js": "0c03d37edbab1bc0e9a32c687220af5f81273b7b273de7edbb3e3757bb6d2f5b",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "P01",
+      "version": "0.2.0",
+      "tag": "flow-content-state",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/content-state.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/content-state.js": "e84d911109c0ef9427d67f0c82cebae61773e6041a01cbabaff6b708b86ff05a",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R06",
+      "version": "0.4.0",
+      "tag": "flow-check-group",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/check-group.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/check-group.js": "30c7b2608f8aaa8dfdfe2adc85ce16e4a56825c4b9f8fdf10e6386064e01e9d1",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R07",
+      "version": "0.2.0",
+      "tag": "flow-setting-row",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/setting-row.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/setting-row.js": "2e98334ed7e42942470e7df83b278c7ac00d0a2df5c5168b45fff26cbc0deca1",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "A01",
+      "version": "0.1.0",
+      "tag": "flow-attachment",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/attachment.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/attachment.js": "94467d166f56ba755e905badabf855cc0827441add7f571382db0006f2414165",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "D05",
+      "version": "0.2.0",
+      "tag": "flow-discard-example",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/confirm.js",
+        "docs/design/component-map/packet7.js",
+        "docs/design/component-map/packet7.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/confirm.js": "c8f44db69ca4b064a48b7bd069db339a1e5e97658a4495eb32d3421ac320a092",
+        "docs/design/component-map/packet7.js": "58a0d2fb85ef4d3d9e2bf5e008cd73764ce46eca2ae9c26deb3f3454f446006c",
+        "docs/design/component-map/packet7.css": "95ab3dd089f4e83bae464f731691ad5d40b37f9bf62c595af25b4e7350ab3db0",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "N01",
+      "version": "0.1.0",
+      "tag": "flow-map-navigation",
+      "files": [
+        "docs/design/component-map/packet8.js",
+        "docs/design/component-map/packet8.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet8.js": "1218d74eb6538694502f049ba4d64804133a4e63e3cbac5a11203a48d96594b5",
+        "docs/design/component-map/packet8.css": "347291eb750cd500db308701494a3b031cd92f6560feeb094847e88b9544bc6f",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "N02",
+      "version": "0.1.0",
+      "tag": "flow-map-header",
+      "files": [
+        "docs/design/component-map/packet8.js",
+        "docs/design/component-map/packet8.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet8.js": "1218d74eb6538694502f049ba4d64804133a4e63e3cbac5a11203a48d96594b5",
+        "docs/design/component-map/packet8.css": "347291eb750cd500db308701494a3b031cd92f6560feeb094847e88b9544bc6f",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "N03",
+      "version": "0.3.0",
+      "tag": "flow-activity-tongue",
+      "files": [
+        "docs/design/component-map/activity-tongue.js",
+        "docs/design/component-map/activity-tongue.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/activity-tongue.js": "6bd91126e71a3766cb66d7b490d7da12bcec8956edf0334eed2d8f5295aea311",
+        "docs/design/component-map/activity-tongue.css": "45c6029ab30dfc412afb84d160bbf15c7ad2a5cddac5fb812b10d07a94b2d3d5",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "K01",
+      "version": "0.3.0",
+      "tag": "flow-app-calendar",
+      "files": [
+        "docs/design/component-map/packet8.js",
+        "docs/design/component-map/packet8.css",
+        "docs/design/component-map/app-calendar.js",
+        "docs/design/component-map/app-calendar.css",
+        "docs/design/component-map/app-calendar-markup.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet8.js": "1218d74eb6538694502f049ba4d64804133a4e63e3cbac5a11203a48d96594b5",
+        "docs/design/component-map/packet8.css": "347291eb750cd500db308701494a3b031cd92f6560feeb094847e88b9544bc6f",
+        "docs/design/component-map/app-calendar.js": "f17bda5eadde41136ad50d833644dc117dfd82950d3e6e2f6203c70b4fd3fd25",
+        "docs/design/component-map/app-calendar.css": "e72eb1a0ac7b70aecc4d936ea0e932cc83459905d667d4a960efb8f0854d327d",
+        "docs/design/component-map/app-calendar-markup.js": "f0eb8c5b2660705704d6ee95ef6855589e4cda5ede73b6f41533c316a4e68682",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "K02",
+      "version": "0.3.0",
+      "tag": "flow-app-calendar",
+      "files": [
+        "docs/design/component-map/packet8.js",
+        "docs/design/component-map/packet8.css",
+        "docs/design/component-map/app-calendar.js",
+        "docs/design/component-map/app-calendar.css",
+        "docs/design/component-map/app-calendar-markup.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet8.js": "1218d74eb6538694502f049ba4d64804133a4e63e3cbac5a11203a48d96594b5",
+        "docs/design/component-map/packet8.css": "347291eb750cd500db308701494a3b031cd92f6560feeb094847e88b9544bc6f",
+        "docs/design/component-map/app-calendar.js": "f17bda5eadde41136ad50d833644dc117dfd82950d3e6e2f6203c70b4fd3fd25",
+        "docs/design/component-map/app-calendar.css": "e72eb1a0ac7b70aecc4d936ea0e932cc83459905d667d4a960efb8f0854d327d",
+        "docs/design/component-map/app-calendar-markup.js": "f0eb8c5b2660705704d6ee95ef6855589e4cda5ede73b6f41533c316a4e68682",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "K03",
+      "version": "0.2.0",
+      "tag": "flow-map-agenda",
+      "files": [
+        "docs/design/component-map/packet8.js",
+        "docs/design/component-map/packet8.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet8.js": "1218d74eb6538694502f049ba4d64804133a4e63e3cbac5a11203a48d96594b5",
+        "docs/design/component-map/packet8.css": "347291eb750cd500db308701494a3b031cd92f6560feeb094847e88b9544bc6f",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "F02",
+      "version": "0.1.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R08",
+      "version": "0.1.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R09",
+      "version": "0.2.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "F03",
+      "version": "0.1.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R10",
+      "version": "0.9.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/film-editor.js",
+        "prototypes/soroka-planner/flow-ui/film-state.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/film-editor.js": "4be75bd74a02d42cf9a0685159055c8e0c5e49d27922d730ae007b8215e2dbd4",
+        "prototypes/soroka-planner/flow-ui/film-state.js": "89412503ab3704f61eec9e2773258b0b66cc5872381d013fae3599ead514e76e",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R11",
+      "version": "0.1.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R12",
+      "version": "0.2.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R13",
+      "version": "0.3.0",
+      "tag": "flow-record-example",
+      "files": [
+        "docs/design/component-map/packet9.js",
+        "docs/design/component-map/packet9.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet9.js": "c959345bd51b3a4a7c228d59ba9e58cdeba838f6ca916ee2774dd94d69255217",
+        "docs/design/component-map/packet9.css": "a8e4f71249ea5bf801e400ec49d3d34db6768b8be44f33274eaaa3e33c78b4d2",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I04",
+      "version": "0.1.0",
+      "tag": "flow-range-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I05",
+      "version": "0.1.0",
+      "tag": "flow-stepper-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I06",
+      "version": "0.1.0",
+      "tag": "flow-color-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "E01",
+      "version": "0.1.0",
+      "tag": "flow-editor-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "E02",
+      "version": "0.1.0",
+      "tag": "flow-editor-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "M02",
+      "version": "0.1.0",
+      "tag": "flow-menu-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "D06",
+      "version": "0.1.0",
+      "tag": "flow-sheet-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "P02",
+      "version": "0.1.0",
+      "tag": "flow-undo-sample",
+      "files": [
+        "docs/design/component-map/packet10.js",
+        "docs/design/component-map/packet10.css",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet10.js": "502eb7f13f25ce54964715f4c51a41077723c71f0394b7a8525e6ce733f264e0",
+        "docs/design/component-map/packet10.css": "e97afc62478296cc343073c6155c11491c07685e95fe1843d98a3929a95b6e0f",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "G01",
+      "version": "0.5.0",
+      "tag": "flow-screen-sample",
+      "files": [
+        "docs/design/component-map/packet11.js",
+        "docs/design/component-map/packet11.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet11.js": "684c15574e9645a8dcc2b1590f002718d05e4c4a7a63b932c09d45a0544be81d",
+        "docs/design/component-map/packet11.css": "b1771656d6af858900c2ce041d05e1eed7daac2494aa166a8473def79678253c",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "G02",
+      "version": "0.3.0",
+      "tag": "flow-screen-sample",
+      "files": [
+        "docs/design/component-map/packet11.js",
+        "docs/design/component-map/packet11.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet11.js": "684c15574e9645a8dcc2b1590f002718d05e4c4a7a63b932c09d45a0544be81d",
+        "docs/design/component-map/packet11.css": "b1771656d6af858900c2ce041d05e1eed7daac2494aa166a8473def79678253c",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R14",
+      "version": "0.1.0",
+      "tag": "flow-map-address",
+      "files": [
+        "docs/design/component-map/packet12.js",
+        "docs/design/component-map/packet12.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet12.js": "5ef85a5630645c2a9eaf3a519a190de41651625903e6b155940ff32e0d50da1e",
+        "docs/design/component-map/packet12.css": "cd1439e1d2678ade50c953113e99ab95ace25db80e12ac7db00918bead74b5f7",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R15",
+      "version": "0.1.0",
+      "tag": "flow-map-recipe",
+      "files": [
+        "docs/design/component-map/packet12.js",
+        "docs/design/component-map/packet12.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet12.js": "5ef85a5630645c2a9eaf3a519a190de41651625903e6b155940ff32e0d50da1e",
+        "docs/design/component-map/packet12.css": "cd1439e1d2678ade50c953113e99ab95ace25db80e12ac7db00918bead74b5f7",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R16",
+      "version": "0.1.0",
+      "tag": "flow-map-document",
+      "files": [
+        "docs/design/component-map/packet12.js",
+        "docs/design/component-map/packet12.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet12.js": "5ef85a5630645c2a9eaf3a519a190de41651625903e6b155940ff32e0d50da1e",
+        "docs/design/component-map/packet12.css": "cd1439e1d2678ade50c953113e99ab95ace25db80e12ac7db00918bead74b5f7",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R17",
+      "version": "0.1.0",
+      "tag": "flow-map-project",
+      "files": [
+        "docs/design/component-map/packet12.js",
+        "docs/design/component-map/packet12.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet12.js": "5ef85a5630645c2a9eaf3a519a190de41651625903e6b155940ff32e0d50da1e",
+        "docs/design/component-map/packet12.css": "cd1439e1d2678ade50c953113e99ab95ace25db80e12ac7db00918bead74b5f7",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R18",
+      "version": "0.1.0",
+      "tag": "flow-map-render",
+      "files": [
+        "docs/design/component-map/packet12.js",
+        "docs/design/component-map/packet12.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet12.js": "5ef85a5630645c2a9eaf3a519a190de41651625903e6b155940ff32e0d50da1e",
+        "docs/design/component-map/packet12.css": "cd1439e1d2678ade50c953113e99ab95ace25db80e12ac7db00918bead74b5f7",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "A02",
+      "version": "0.1.0",
+      "tag": "flow-map-gallery",
+      "files": [
+        "docs/design/component-map/packet12.js",
+        "docs/design/component-map/packet12.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet12.js": "5ef85a5630645c2a9eaf3a519a190de41651625903e6b155940ff32e0d50da1e",
+        "docs/design/component-map/packet12.css": "cd1439e1d2678ade50c953113e99ab95ace25db80e12ac7db00918bead74b5f7",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "I07",
+      "version": "0.1.0",
+      "tag": "flow-tag-field",
+      "files": [
+        "docs/design/component-map/packet13.js",
+        "docs/design/component-map/packet13.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet13.js": "0fb3ad291ea74eb244226eac59e16f57d96a00a80f96714830ecf4c644e2f486",
+        "docs/design/component-map/packet13.css": "b1e31a6f26a339ad4324467be5334e071daa3a5ed8a8a00113dd0b17d5e4e031",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L01",
+      "version": "0.4.0",
+      "tag": "flow-library-directory",
+      "files": [
+        "docs/design/component-map/packet13.js",
+        "docs/design/component-map/packet13.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet13.js": "0fb3ad291ea74eb244226eac59e16f57d96a00a80f96714830ecf4c644e2f486",
+        "docs/design/component-map/packet13.css": "b1e31a6f26a339ad4324467be5334e071daa3a5ed8a8a00113dd0b17d5e4e031",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R19",
+      "version": "0.1.0",
+      "tag": "flow-birthday-card",
+      "files": [
+        "docs/design/component-map/packet13.js",
+        "docs/design/component-map/packet13.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet13.js": "0fb3ad291ea74eb244226eac59e16f57d96a00a80f96714830ecf4c644e2f486",
+        "docs/design/component-map/packet13.css": "b1e31a6f26a339ad4324467be5334e071daa3a5ed8a8a00113dd0b17d5e4e031",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R20",
+      "version": "0.1.0",
+      "tag": "flow-credential-card",
+      "files": [
+        "docs/design/component-map/packet13.js",
+        "docs/design/component-map/packet13.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet13.js": "0fb3ad291ea74eb244226eac59e16f57d96a00a80f96714830ecf4c644e2f486",
+        "docs/design/component-map/packet13.css": "b1e31a6f26a339ad4324467be5334e071daa3a5ed8a8a00113dd0b17d5e4e031",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R21",
+      "version": "0.3.0",
+      "tag": "flow-hobby-card",
+      "files": [
+        "docs/design/component-map/packet13.js",
+        "docs/design/component-map/packet13.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet13.js": "0fb3ad291ea74eb244226eac59e16f57d96a00a80f96714830ecf4c644e2f486",
+        "docs/design/component-map/packet13.css": "b1e31a6f26a339ad4324467be5334e071daa3a5ed8a8a00113dd0b17d5e4e031",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "W02",
+      "version": "0.1.0",
+      "tag": "flow-widget-frame",
+      "files": [
+        "docs/design/component-map/packet13.js",
+        "docs/design/component-map/packet13.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet13.js": "0fb3ad291ea74eb244226eac59e16f57d96a00a80f96714830ecf4c644e2f486",
+        "docs/design/component-map/packet13.css": "b1e31a6f26a339ad4324467be5334e071daa3a5ed8a8a00113dd0b17d5e4e031",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "A03",
+      "version": "0.2.0",
+      "tag": "flow-assistant-study",
+      "files": [
+        "docs/design/component-map/packet14.js",
+        "docs/design/component-map/packet14.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "docs/design/component-map/packet14.js": "bc23f4623d097edc6274f019ddcdb45a1c8b13dba1e7d19406b11c9d9f6c6e65",
+        "docs/design/component-map/packet14.css": "db103f0034608006348b52646be4655d4a6847d88506c43c7c3382a79fd0b974",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "W04",
+      "tag": "flow-note-workspace",
+      "version": "0.4.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/collection-workspace.js",
+        "docs/design/component-map/packet15.js",
+        "docs/design/component-map/packet15.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/format-icons.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js",
+        "prototypes/soroka-planner/flow-ui/note-workspace-ink.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/collection-workspace.js": "111b438d8d33068bba742f96031bb2e6fed9bdfdd5f07106f268641eb4846694",
+        "docs/design/component-map/packet15.js": "b9d0dbd394682ef7c4b33f5c546fbe448cb71c1ada36027f67f8731ce77a93bc",
+        "docs/design/component-map/packet15.css": "a7e0f611743eabdef224f02de63207d81ddaaaa3431e95c639172a08865b7adb",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/format-icons.js": "c49d721e4d003ec7550b19ff80d127fc2f87e6e6d2914be48e2b2e62ddb3cc90",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380",
+        "prototypes/soroka-planner/flow-ui/note-workspace-ink.js": "7a49d7d0db72b3eeb09125a2e602045a2543ebda54af7212c3afba6df3fb3c51"
+      }
+    },
+    {
+      "id": "W05",
+      "tag": "flow-list-workspace",
+      "version": "0.3.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/collection-workspace.js",
+        "docs/design/component-map/packet15.js",
+        "docs/design/component-map/packet15.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/format-icons.js",
+        "prototypes/soroka-planner/flow-ui/grocery-catalog.js",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/collection-workspace.js": "111b438d8d33068bba742f96031bb2e6fed9bdfdd5f07106f268641eb4846694",
+        "docs/design/component-map/packet15.js": "b9d0dbd394682ef7c4b33f5c546fbe448cb71c1ada36027f67f8731ce77a93bc",
+        "docs/design/component-map/packet15.css": "a7e0f611743eabdef224f02de63207d81ddaaaa3431e95c639172a08865b7adb",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/format-icons.js": "c49d721e4d003ec7550b19ff80d127fc2f87e6e6d2914be48e2b2e62ddb3cc90",
+        "prototypes/soroka-planner/flow-ui/grocery-catalog.js": "1d2899d12be9bd1a98a92ccc39c01c31e767b687023c0781964fedfb053dabda",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "R22",
+      "tag": "flow-overdue-panel",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/overdue-panel.js",
+        "docs/design/component-map/packet16.js",
+        "docs/design/component-map/packet16.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/overdue-panel.js": "d13c698b1405d9d62396ac4ffcfba6717114903be6cdf069f59b465a975578fb",
+        "docs/design/component-map/packet16.js": "919d1a2b1386ef81468a05890e40382af8b0ec6f610f8ddf12e499c0e2dc532b",
+        "docs/design/component-map/packet16.css": "726186c98f83ac610687cbddd82f7c7fa80dd15d7534f7fa0f281ac4a2e41187",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "F04",
+      "tag": "flow-finance-workspace",
+      "version": "0.2.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/finance-workspace.js",
+        "docs/design/component-map/packet17.js",
+        "docs/design/component-map/packet17.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/finance-workspace.js": "3250c05ef40699d898df6a4ee4dccf2a2935bc788396dc782c25de7d080a9a37",
+        "docs/design/component-map/packet17.js": "6768337a9c7a5e46058b07f7d56b81ca6eb53b5f1f2d2a7de36502b007a5248f",
+        "docs/design/component-map/packet17.css": "0b1802e78b8eaab8c5d87447f7c33b6b28aa0efe767f23de0a646341d65c36d5",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L02",
+      "tag": "flow-saved-workspace",
+      "version": "0.3.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/saved-workspace.js",
+        "docs/design/component-map/packet18.js",
+        "docs/design/component-map/packet18.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/saved-workspace.js": "17493b6fb25459079177b602f11e66ff2d6074be1a9d92eff86a5d4784b271bd",
+        "docs/design/component-map/packet18.js": "bf5e49bc959344ecd6d693c198c65982f1e07a78e4bb6d6bec8c2f7213a029eb",
+        "docs/design/component-map/packet18.css": "6b3dfd578624f8a76f4421c02c3c7390c0a9be14e81e4cec29dec512b741d9c1",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "PN08",
+      "tag": "flow-piano-workspace",
+      "version": "0.2.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/piano-workspace.js",
+        "docs/design/component-map/packet19.js",
+        "docs/design/component-map/packet19.css",
+        "docs/design/app-prototype/bound/piano-context.js",
+        "docs/design/app-prototype/bound/piano-owner.js",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/piano-workspace.js": "0d18e802c4316a2a87dee1fc74013ba38bb25a81bde297c2cdcb82213073fac3",
+        "docs/design/component-map/packet19.js": "fcdfed7310d503a8913f64637c747690fa5720b29a32d2ae4a871f04e31b05e1",
+        "docs/design/component-map/packet19.css": "c1468a9fb4a0b9b0cc7119170d6307f726e725c297e5bedab8bf6c76ad39c539",
+        "docs/design/app-prototype/bound/piano-context.js": "958563e29b3e9f80b82cc9ce4d875249e787d8a28bed897baec72b6582709c54",
+        "docs/design/app-prototype/bound/piano-owner.js": "2b34b1b5982745bacc1c1e85a83d008973cf8e7e125e0a8c168522abf721da2d",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L03",
+      "tag": "flow-settings-workspace",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/settings-workspace.js",
+        "docs/design/component-map/packet20.js",
+        "docs/design/component-map/packet20.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/settings-workspace.js": "2bcc575495d5429b91615bfa8f89751a08c2242cfe2915bf9c542b36ca80f4a0",
+        "docs/design/component-map/packet20.js": "43b1b9a6c7c92fbfd4973bed1ff2d6e4a8745757536ae876fb19fb2bd1b80c6c",
+        "docs/design/component-map/packet20.css": "78ec22a150d33a55d46148df1c48a58f88788763e1136ecd263866364291e319",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "V01",
+      "tag": "flow-service-workspace",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/service-workspace.js",
+        "docs/design/component-map/packet20.js",
+        "docs/design/component-map/packet20.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/service-workspace.js": "380c51eda37a3c2d036f1e01048e540dcfd63014a969e13d7e633a2b53b4427c",
+        "docs/design/component-map/packet20.js": "43b1b9a6c7c92fbfd4973bed1ff2d6e4a8745757536ae876fb19fb2bd1b80c6c",
+        "docs/design/component-map/packet20.css": "78ec22a150d33a55d46148df1c48a58f88788763e1136ecd263866364291e319",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L04",
+      "tag": "flow-workspace-hub",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/workspace-hub.js",
+        "docs/design/component-map/packet21.js",
+        "docs/design/component-map/packet21.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/workspace-hub.js": "b22cd78b6e4830514ab9523dab57e75780a22e1bd02a4e080998249c3e4e3476",
+        "docs/design/component-map/packet21.js": "ffd6aedbcf48956e0ce1a2c1b9fc2c4b8817cfbfdfdf228df5199a0093e81642",
+        "docs/design/component-map/packet21.css": "1411e40e7d024250705ae6c73717ea058072acc683001d5352495bab124c509d",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "K04",
+      "tag": "flow-workspace-hub",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/workspace-hub.js",
+        "docs/design/component-map/packet21.js",
+        "docs/design/component-map/packet21.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/workspace-hub.js": "b22cd78b6e4830514ab9523dab57e75780a22e1bd02a4e080998249c3e4e3476",
+        "docs/design/component-map/packet21.js": "ffd6aedbcf48956e0ce1a2c1b9fc2c4b8817cfbfdfdf228df5199a0093e81642",
+        "docs/design/component-map/packet21.css": "1411e40e7d024250705ae6c73717ea058072acc683001d5352495bab124c509d",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "W06",
+      "tag": "flow-event-editor",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/event-editor.js",
+        "docs/design/component-map/packet23.js",
+        "docs/design/component-map/packet23.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/event-editor.js": "ce9c92511eee04240fe3afbd830516956b2cf8e45ce461567f7777af3827b57d",
+        "docs/design/component-map/packet23.js": "068b13f32f4ce29fa028a2e42abaa36e7f78a90d3ae8269ff6f5c038405fb208",
+        "docs/design/component-map/packet23.css": "fd539ad96c5a35b5bcb9a6f57b6aaa735cd2dce118c4173b5aa67e1399020371",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L05",
+      "tag": "flow-film-library",
+      "version": "0.2.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/film-library.js",
+        "docs/design/component-map/packet22.js",
+        "docs/design/component-map/packet22.css",
+        "prototypes/soroka-planner/loop-deck.js",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/film-library.js": "e2fe2bcfb6d66c179478e5d9a87a085b84fccb05bdd88b97d25b1e17b78b00d3",
+        "docs/design/component-map/packet22.js": "93e5d7983ed8b1cfc1e43a02c6671c24e276138163452f4300e9c09b5a50d869",
+        "docs/design/component-map/packet22.css": "67c8b3401c1657ddf5cbe550b5b0aa52976f71282aab7c7dae67a7933ced2984",
+        "prototypes/soroka-planner/loop-deck.js": "f80f96b70c42c52c3d69ac983bc22d24b48b7c53e7a20fe81e6a0c4fe6502a26",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L06",
+      "tag": "flow-personal-workspace",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/personal-workspace.js",
+        "docs/design/component-map/packet24.js",
+        "docs/design/component-map/packet24.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/personal-workspace.js": "bff387fb7b8c581ddcdad2917a709aea298068c429a44803409c03a79c4578a2",
+        "docs/design/component-map/packet24.js": "def1de59af913b884ce4c5c6a0c229afdb05e6ec3573c7efa69adacc23ab8190",
+        "docs/design/component-map/packet24.css": "85dd4c20c4bb5e83b19d32add2c3c3519af62524255feaa42f37d8f5d869d432",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L07",
+      "tag": "flow-vault-workspace",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/vault-workspace.js",
+        "docs/design/component-map/packet25.js",
+        "docs/design/component-map/packet25.css",
+        "prototypes/soroka-planner/vault-crypto.js",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/vault-workspace.js": "0e374bc97202b7080d890a4b774232e8e1e94380d0c6faf91942d83528736f65",
+        "docs/design/component-map/packet25.js": "8be0b37994f26b65380c9a2e8a6be0be41a1d6a6f4eb6e0f7665d19d90551438",
+        "docs/design/component-map/packet25.css": "21ad7d3808c938ca79af6e82e7aa36964cc4cd4398796e85fb1d7572d35efd1b",
+        "prototypes/soroka-planner/vault-crypto.js": "44894fa796d3a423e11504909b16d24223dc86e99878933e113a6753bc5a069c",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "L08",
+      "tag": "flow-connection-workspace",
+      "version": "0.1.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/connection-workspace.js",
+        "docs/design/component-map/packet26.js",
+        "docs/design/component-map/packet26.css",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/connection-workspace.js": "0f6878ec196afe58634a6aa2e8f986722fe44bc05a05a82a352fc06b10181048",
+        "docs/design/component-map/packet26.js": "d897dd37d706038192218bb6bbd90bd35f0382a8c0fa771900aef83ad5f3d5ee",
+        "docs/design/component-map/packet26.css": "fc53f0d7ab5eb4731c5c16a791f67425242f87154dad42809dc59f553eb5a90f",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "SP14",
+      "tag": "flow-sport-workspace",
+      "version": "0.2.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/sport-workspace.js",
+        "docs/design/component-map/packet27.js",
+        "docs/design/component-map/packet27.css",
+        "prototypes/soroka-planner/sport-owner.mjs",
+        "prototypes/soroka-planner/sport-sequence.mjs",
+        "prototypes/soroka-planner/sport-core.js",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/sport-workspace.js": "689853650a8a602c3e71de0b50d222987b99ee1c096d0a5c9a878c2bacaa9285",
+        "docs/design/component-map/packet27.js": "b11ddf39b87923dc97007b49696224216c60c31838dc332d79460946ce02f7f4",
+        "docs/design/component-map/packet27.css": "e69b350c1d9b1952b26129caf44dc281b2316d5ed0fdb5a5e2dfdc4afcdaca85",
+        "prototypes/soroka-planner/sport-owner.mjs": "2b94a6e4636a7ed0b992b8340565ccec29c3b5d6c8f99c2107e62b383d033dd4",
+        "prototypes/soroka-planner/sport-sequence.mjs": "39579aa89619cf4c4aa1b9e4a7c5b2428f2440cfd8fb3212f383b2ad98433f08",
+        "prototypes/soroka-planner/sport-core.js": "27db67cbdc1b4d7ff68cfd1a66b7642e2b5da15163d1cb8296d626ffac7ddc96",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    },
+    {
+      "id": "EN14",
+      "tag": "flow-english-workspace",
+      "version": "0.3.0",
+      "files": [
+        "prototypes/soroka-planner/flow-ui/english-workspace.js",
+        "docs/design/component-map/packet28.js",
+        "docs/design/component-map/packet28.css",
+        "prototypes/soroka-planner/english-domain.mjs",
+        "prototypes/soroka-planner/english-domain-journal.mjs",
+        "prototypes/soroka-planner/english-domain-deck.mjs",
+        "prototypes/soroka-planner/english-domain-media.mjs",
+        "prototypes/soroka-planner/english-practice-core.js",
+        "prototypes/soroka-planner/english-media-practice-core.js",
+        "prototypes/soroka-planner/english-lyrics-practice-core.js",
+        "prototypes/soroka-planner/flow-ui/components.js",
+        "prototypes/soroka-planner/flow-ui/control-base.js",
+        "prototypes/soroka-planner/flow-ui/feedback.js",
+        "prototypes/soroka-planner/flow-ui/tokens.css",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js"
+      ],
+      "sourceHashes": {
+        "prototypes/soroka-planner/flow-ui/english-workspace.js": "e8c24a76887d3b5c1b03e3645d0b27ab5faeeaf28053d8a4dd78c22b9aa2f4e4",
+        "docs/design/component-map/packet28.js": "789e02967213b4a8cc773c7a8c530373bab88841527fe6bce80d971e4c467273",
+        "docs/design/component-map/packet28.css": "f4f51846bbc7767cb72eb335ad2a499f56611a123351d87a867a4eabe3983ee2",
+        "prototypes/soroka-planner/english-domain.mjs": "885d6adaad952eb08b1e1d21c4a9a7dbfd501837956febeb6c8f9e57027ef5c1",
+        "prototypes/soroka-planner/english-domain-journal.mjs": "f926b40140717ba9925d0bd7fd1aeec83cc65d660f5e850cd6216a80091cf856",
+        "prototypes/soroka-planner/english-domain-deck.mjs": "f89c8f0bdf47e15f59c2cdc9229a395421176d6fd268f1580b324097ce8d936f",
+        "prototypes/soroka-planner/english-domain-media.mjs": "39da45c4df56deb4b875891f55340ec4d9fe1d18d3dee323d6d7fa5cb5035f06",
+        "prototypes/soroka-planner/english-practice-core.js": "cd3dd3b8b800b9869b36028da51b954946cdbd071ca7505b0389d150f5d7aa7f",
+        "prototypes/soroka-planner/english-media-practice-core.js": "972c83f48d6e69b246460c9e73717dc0f4ee139bab6a55c4790c1db0455f9ab5",
+        "prototypes/soroka-planner/english-lyrics-practice-core.js": "69b2ae2add893dd4b897abf03175f28526b1168c01261540ed7c5ab0e0509c46",
+        "prototypes/soroka-planner/flow-ui/components.js": "f23d7531c37f31fe1b217a3e18272bc744b6fe18ed49906808fb7a7a78197f8c",
+        "prototypes/soroka-planner/flow-ui/control-base.js": "794a78bf6fa5b59623446e9374eabdd69298744569b1350b33e8208132bb286f",
+        "prototypes/soroka-planner/flow-ui/feedback.js": "5242208e4d1952c4ab2e18c917ccbc22dcb3e5497520f81d64036e15723130e1",
+        "prototypes/soroka-planner/flow-ui/tokens.css": "61861d78108527487d46fa0caf6c75c48c9e63a75a5f58b4c299c93f022feffc",
+        "prototypes/soroka-planner/flow-ui/sensory-feedback.js": "b162e758b3b810214e718372f3f91b2bf01ea00119f7f94997f0b738012c1380"
+      }
+    }
+  ],
+  "rows": [
+    {
+      "screen": "today",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "K01",
+        "K02",
+        "K03",
+        "R03",
+        "R21",
+        "W01",
+        "R22"
+      ],
+      "previous": "58483 /_flow/index.html#today: todayPage / flowMagicToday",
+      "previousFiles": [
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#today; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Calendar expansion/reversal and actual pending/done overdue owner; needs-action contract pending/done/rest/unknown. Daily practice uses local synthetic owner state; actual module completion owners remain pending."
+    },
+    {
+      "screen": "upcoming",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "K03",
+        "R03",
+        "R19",
+        "K04"
+      ],
+      "previous": "58483 /_flow/index.html#upcoming: upcomingPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#upcoming; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native-shaped local records, route guards, capture, retained completion, archive restore/permanent purge checked. Live synchronization remains separate."
+    },
+    {
+      "screen": "tasks",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R03",
+        "R06",
+        "W01",
+        "T02",
+        "K04"
+      ],
+      "previous": "58483 /_flow/index.html#tasks: renderTasksPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#tasks; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native-shaped local records, route guards, capture, retained completion, archive restore/permanent purge checked. Live synchronization remains separate."
+    },
+    {
+      "screen": "saved",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "L01"
+      ],
+      "previous": "58483 /_flow/index.html#saved: renderSavedPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual counts/order are bound; category pages except film are pending. Reorder/max6 need final owner geometry checks."
+    },
+    {
+      "screen": "finance",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "F02",
+        "F03",
+        "R08",
+        "R09",
+        "T01",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: renderFinancePage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "vault",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R20",
+        "I01",
+        "D05",
+        "L07"
+      ],
+      "previous": "58483 /_flow/index.html#vault: renderVaultPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#vault; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Unchanged FlowVault crypto, cipher-only local persistence, unlock/edit/rewrap/quota/lifecycle browser checks. Native clipboard/device and real account sync not accepted."
+    },
+    {
+      "screen": "inbox",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "M02",
+        "D01",
+        "K04"
+      ],
+      "previous": "58483 /_flow/index.html#inbox: renderInboxPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#inbox; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native-shaped local records, route guards, capture, retained completion, archive restore/permanent purge checked. Live synchronization remains separate."
+    },
+    {
+      "screen": "overview",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "K01",
+        "K02",
+        "R03",
+        "K04"
+      ],
+      "previous": "58483 /_flow/index.html#overview: currentPage alias → today",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#overview; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native-shaped local records, route guards, capture, retained completion, archive restore/permanent purge checked. Live synchronization remains separate."
+    },
+    {
+      "screen": "projects",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R17",
+        "R03",
+        "R06",
+        "V01"
+      ],
+      "previous": "58483 /_flow/index.html#projects: renderProjectsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#projects; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Preferences persist actual shared tokens; projects preserve name links and drafts. PC/render absent providers stay offline; physical control/real render progress are not claimed."
+    },
+    {
+      "screen": "metrics",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "F01",
+        "I04",
+        "T01",
+        "L06"
+      ],
+      "previous": "58483 /_flow/index.html#metrics: renderMetricsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#metrics; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Measurement history and nativeHTML metadata/body edit/static sandbox preview checked. Preview deliberately does not execute interactive scripts; remote sync remains pending."
+    },
+    {
+      "screen": "archive",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "P02",
+        "D01",
+        "K04"
+      ],
+      "previous": "58483 /_flow/index.html#archive: renderArchivePage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#archive; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native-shaped local records, route guards, capture, retained completion, archive restore/permanent purge checked. Live synchronization remains separate."
+    },
+    {
+      "screen": "settings",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R07",
+        "S01",
+        "I06",
+        "I04",
+        "M01",
+        "L03"
+      ],
+      "previous": "58483 /_flow/index.html#settings: renderSettingsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#settings; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Preferences persist actual shared tokens; projects preserve name links and drafts. PC/render absent providers stay offline; physical control/real render progress are not claimed."
+    },
+    {
+      "screen": "more",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R21",
+        "R07",
+        "L01",
+        "L04"
+      ],
+      "previous": "58483 /_flow/index.html#more: renderMorePage",
+      "previousFiles": [
+        "prototypes/soroka-planner/more.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#more; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native-shaped local records, route guards, capture, retained completion, archive restore/permanent purge checked. Live synchronization remains separate."
+    },
+    {
+      "screen": "docs",
+      "group": "main",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R16",
+        "A01",
+        "D06",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#docs: document records via extendedPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-pages.js",
+        "prototypes/soroka-planner/digital-runtime.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#docs; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/notes",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "W04",
+        "B02",
+        "D05",
+        "D01",
+        "A01"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Notes collection / note-editor.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js",
+        "prototypes/soroka-planner/note-editor.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/notes; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full rich formatting and over-text v1 ink, unifiedUndo, unknown markers and lateACK drafts passed author checks +3round independent review. AI provider/native widgets/synchronization remain pending."
+    },
+    {
+      "screen": "saved/materials",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "A01",
+        "A02",
+        "I07",
+        "R16",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Material records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/materials; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/recipes",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R15",
+        "I05",
+        "R06",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Recipe records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/recipes; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/movies",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R10",
+        "D05",
+        "D01",
+        "B02",
+        "L05"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Movie collection / record detail",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/movies; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Original LoopDeck + local owner, watched/Undo/folders/create/fullR10; native cover crop and hidden navigation in carousel checked. External catalog/recommendation/share/play providers are not connected."
+    },
+    {
+      "screen": "saved/addresses",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R14",
+        "I02",
+        "D06",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Address records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/addresses; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/tickets",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R12",
+        "A01",
+        "D06",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Ticket records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/tickets; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/lists",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "W05",
+        "B02",
+        "D05",
+        "D01",
+        "A01"
+      ],
+      "previous": "58483 /_flow/index.html#saved: List records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/lists; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Local read/check/save/groups/image/dirty/delete/restore and grocery catalogue/quantity/groups share W05. Native widgets and synchronization remain pending."
+    },
+    {
+      "screen": "saved/products",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R11",
+        "A02",
+        "I05",
+        "I02",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Product records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/products; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/cards",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R13",
+        "I02",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Loyalty cards / loyalty.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/cards; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/birthdays",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R19",
+        "R05",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Birthday records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/birthdays; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "saved/sites",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R16",
+        "D06",
+        "A01",
+        "L06"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Mini-site records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/sites; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Measurement history and nativeHTML metadata/body edit/static sandbox preview checked. Preview deliberately does not execute interactive scripts; remote sync remains pending."
+    },
+    {
+      "screen": "saved/projects",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R17",
+        "R06",
+        "R03",
+        "V01"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Project records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/projects; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Preferences persist actual shared tokens; projects preserve name links and drafts. PC/render absent providers stay offline; physical control/real render progress are not claimed."
+    },
+    {
+      "screen": "saved/vault",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R20",
+        "I01",
+        "D05",
+        "L07"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Vault collection",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/vault; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Unchanged FlowVault crypto, cipher-only local persistence, unlock/edit/rewrap/quota/lifecycle browser checks. Native clipboard/device and real account sync not accepted."
+    },
+    {
+      "screen": "saved/docs",
+      "group": "saved",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R16",
+        "A01",
+        "A02",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#saved: Document records",
+      "previousFiles": [
+        "prototypes/soroka-planner/saved.js",
+        "prototypes/soroka-planner/digital-collections.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#saved/docs; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full native fields and owner ACK local binding. Provider execution/map/real code generation and synchronization remain pending; not physical acceptance."
+    },
+    {
+      "screen": "finance/overview",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "F02",
+        "F03",
+        "R09",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeOverview",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/overview; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/transactions",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R08",
+        "T02",
+        "I02",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeTransactionsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/transactions; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/accounts",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "F02",
+        "R07",
+        "I04",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeAccountsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/accounts; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/transfers",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R08",
+        "R07",
+        "D06",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeTransfersPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/transfers; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/budgets",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "F03",
+        "I04",
+        "D06",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeBudgetsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/budgets; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/goals",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "F02",
+        "I04",
+        "D06",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeGoalsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/goals; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/payments",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R09",
+        "D03",
+        "D02",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financePaymentsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/payments; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/debts",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R08",
+        "R07",
+        "D06",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeDebtsPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/debts; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "finance/rules",
+      "group": "finance",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R07",
+        "M01",
+        "S01",
+        "T01",
+        "B02",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#finance: financeRulesPage",
+      "previousFiles": [
+        "prototypes/soroka-planner/finance.js",
+        "prototypes/soroka-planner/digital-pages.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#finance/rules; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Bound immutable finance model, specialized forms and local ledger reducer. Server recurring/bank/FX providers, distribution/export/receipts remain pending."
+    },
+    {
+      "screen": "english",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "T01",
+        "I02",
+        "R05",
+        "R21",
+        "P01",
+        "EN14"
+      ],
+      "previous": "58483 /_flow/index.html#english: renderEnglishPage / enCall→enDemo",
+      "previousFiles": [
+        "prototypes/soroka-planner/english.js",
+        "prototypes/soroka-planner/english-presentation-install.js",
+        "prototypes/soroka-planner/english-practice.js",
+        "prototypes/soroka-planner/english-music.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#english; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual48authored core/domain/journal + isolated SQLpractice ACK + original MP3 evidence + quota/nav/reload tested. Reader/chat/fulllegacylesson/media source library/nativeFSRS deck remain unconnected; no fake ACK.",
+      "nested": [
+        "today",
+        "words/deck/placement",
+        "course/lesson/rule/exercise",
+        "read/books/reader/settings/word-popup",
+        "read/music/import/song/player",
+        "chat/phrases/progress"
+      ]
+    },
+    {
+      "screen": "sport",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "T01",
+        "R21",
+        "R03",
+        "R06",
+        "I04",
+        "I05",
+        "P01",
+        "SP14"
+      ],
+      "previous": "58483 /_flow/index.html#sport: renderSportPage / spCall→spDemo",
+      "previousFiles": [
+        "prototypes/soroka-planner/sport.js",
+        "prototypes/soroka-planner/sport-train.js",
+        "prototypes/soroka-planner/sport-plan.js",
+        "prototypes/soroka-planner/sport-more.js",
+        "prototypes/soroka-planner/sport-session.js",
+        "prototypes/soroka-planner/sport-session-auto.js",
+        "prototypes/soroka-planner/sport-session-magic.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#sport; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual original Core + new sequence/Countdown owner + sharedUI: local profile, pause/nav/reentry/reload tested. Synthetic workouts only; private media/native phase and actual user program not connected.",
+      "nested": [
+        "today",
+        "training/workout/sets/weights",
+        "goals",
+        "profile/measurements/equipment/history",
+        "session/setup/work/rest/summary",
+        "technique/video/muscles/animation",
+        "program/import"
+      ]
+    },
+    {
+      "screen": "piano",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "T01",
+        "R21",
+        "R05",
+        "I04",
+        "P01",
+        "PN08"
+      ],
+      "previous": "58483 /_flow/index.html#piano: renderPianoPage / native player",
+      "previousFiles": [
+        "prototypes/soroka-planner/piano.js",
+        "prototypes/soroka-planner/piano/native.mjs"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#piano; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "1458 original controller + durable local owner passed real-static and common-entry browser checks. Physical mic/landscape, simultaneous speech and35 new recorded introductions remain separate gates.",
+      "nested": [
+        "today",
+        "songs",
+        "progress",
+        "program",
+        "practice/score/keys",
+        "input/settings/import"
+      ]
+    },
+    {
+      "screen": "pc",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R07",
+        "I02",
+        "I04",
+        "B02",
+        "D01",
+        "V01"
+      ],
+      "previous": "58483 /_flow/index.html#pc: renderPcPage / pcCall→pcDemo",
+      "previousFiles": [
+        "prototypes/soroka-planner/pc.js",
+        "prototypes/soroka-planner/digital-services.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#pc; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Preferences persist actual shared tokens; projects preserve name links and drafts. PC/render absent providers stay offline; physical control/real render progress are not claimed.",
+      "nested": [
+        "overview/resources",
+        "actions/processes/screenshot/power",
+        "media",
+        "search/open/pending/result"
+      ]
+    },
+    {
+      "screen": "render",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R18",
+        "I04",
+        "R07",
+        "B02",
+        "D01",
+        "V01"
+      ],
+      "previous": "58483 /_flow/index.html#render: renderRenderPage / flowRenderMotion",
+      "previousFiles": [
+        "prototypes/soroka-planner/render-queue.js",
+        "prototypes/soroka-planner/pc.js",
+        "prototypes/soroka-planner/digital-services.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#render; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Preferences persist actual shared tokens; projects preserve name links and drafts. PC/render absent providers stay offline; physical control/real render progress are not claimed.",
+      "nested": [
+        "queue/active/paused/history/detail",
+        "scenes/new",
+        "settings/formats/batching/benchmark",
+        "after-render"
+      ]
+    },
+    {
+      "screen": "server",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R07",
+        "I04",
+        "T01",
+        "D01",
+        "L08"
+      ],
+      "previous": "58483 /_flow/index.html#server: renderServerPage / serverCall demo",
+      "previousFiles": [
+        "prototypes/soroka-planner/server.js",
+        "prototypes/soroka-planner/digital-services.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#server; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Shared source and common offline/native-size preview browser checks passed. No operational provider is connected.",
+      "nested": [
+        "overview/telemetry/chart",
+        "services/containers",
+        "database/crons",
+        "backups/log/settings"
+      ]
+    },
+    {
+      "screen": "vpn",
+      "group": "module",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R07",
+        "I02",
+        "I04",
+        "S01",
+        "D01",
+        "L08"
+      ],
+      "previous": "58483 /_flow/index.html#vpn: renderVpnPage / vpnCall demo",
+      "previousFiles": [
+        "prototypes/soroka-planner/vpn.js",
+        "prototypes/soroka-planner/digital-services.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#vpn; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Shared source and common offline/native-size preview browser checks passed. No operational provider is connected.",
+      "nested": [
+        "keys/clients/traffic",
+        "key-detail/new-key",
+        "services",
+        "exceptions/settings"
+      ]
+    },
+    {
+      "screen": "window/task-add-edit",
+      "group": "window",
+      "components": [
+        "W01",
+        "F01",
+        "B01",
+        "B02",
+        "C01",
+        "I01",
+        "I03",
+        "M01",
+        "D02",
+        "D03",
+        "D04",
+        "D05",
+        "D01"
+      ],
+      "previous": "58483 /_flow/index.html#today: app.js::entrySheet + sheet-state.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/task-add-edit; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Rich record, typed controls, due/time/recurrence metadata, subtasks and dirty/delete owner tested. Server recurrence scheduler is not part of local fixture."
+    },
+    {
+      "screen": "window/date",
+      "group": "window",
+      "components": [
+        "D03",
+        "B02"
+      ],
+      "previous": "58483 /_flow/index.html#today: flow-ui/date-time.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/date; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual shared picker nested in bound editor tested, no duplicate header."
+    },
+    {
+      "screen": "window/time",
+      "group": "window",
+      "components": [
+        "D04",
+        "B02"
+      ],
+      "previous": "58483 /_flow/index.html#today: flow-ui/date-time.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/time; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual shared wheel Home/ArrowDown/Save commits01:00 in assembled owner."
+    },
+    {
+      "screen": "window/repeat",
+      "group": "window",
+      "components": [
+        "D02",
+        "M01"
+      ],
+      "previous": "58483 /_flow/index.html#today: app.js repeat chooser",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/repeat; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual shared dialog saves daily; every:N validated in shared Entry. Backend scheduling remains outside local model."
+    },
+    {
+      "screen": "window/discard-delete",
+      "group": "window",
+      "components": [
+        "D05",
+        "D01",
+        "B02"
+      ],
+      "previous": "58483 /_flow/index.html#today: sheet-state.js::confirmSheetDiscard",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/discard-delete; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Continue/Discard/Delete/Undo tested; independent owner lifecycle review pending."
+    },
+    {
+      "screen": "window/film-detail",
+      "group": "window",
+      "components": [
+        "R10",
+        "B02",
+        "D01",
+        "L05"
+      ],
+      "previous": "58483 /_flow/index.html#today: saved.js movie view + movie-carousel.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/film-detail; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Original LoopDeck + local owner, watched/Undo/folders/create/fullR10; native cover crop and hidden navigation in carousel checked. External catalog/recommendation/share/play providers are not connected."
+    },
+    {
+      "screen": "window/record-edit",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "D06",
+        "I01",
+        "I03",
+        "I07",
+        "A01",
+        "B02",
+        "D05",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#today: saved.js record editor",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/record-edit; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Native-shaped record/form and supplied-code handling; absent barcode/provider stays explicit, no fabricated valid code."
+    },
+    {
+      "screen": "window/note-editor",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "W04",
+        "B02",
+        "D05",
+        "D01",
+        "A01"
+      ],
+      "previous": "58483 /_flow/index.html#today: note-editor.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/note-editor; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Full rich formatting and over-text v1 ink, unifiedUndo, unknown markers and lateACK drafts passed author checks +3round independent review. AI provider/native widgets/synchronization remain pending."
+    },
+    {
+      "screen": "window/attachments",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "A01",
+        "A02",
+        "R16",
+        "D06"
+      ],
+      "previous": "58483 /_flow/index.html#today: saved.js file/image viewer",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/attachments; direct shared map components, no 58483 renderer",
+      "status": "pending",
+      "remaining": "Domain content, controls, windows and owner-data contracts still need a shared implementation. Existing map specimens do not prove this screen has migrated."
+    },
+    {
+      "screen": "window/list-items",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R05",
+        "W05",
+        "B02",
+        "D05",
+        "D01",
+        "A01"
+      ],
+      "previous": "58483 /_flow/index.html#today: saved.js list detail",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/list-items; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Local read/check/save/groups/image/dirty/delete/restore and grocery catalogue/quantity/groups share W05. Native widgets and synchronization remain pending."
+    },
+    {
+      "screen": "window/library-arrange",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "L01",
+        "R07"
+      ],
+      "previous": "58483 /_flow/index.html#today: saved.js directory arrangement",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/library-arrange; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Shared local ordering/cards-to-list model, maximum6cards; real account synchronization separate."
+    },
+    {
+      "screen": "window/loyalty-code",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R13",
+        "D06",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#today: loyalty.js card viewer",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/loyalty-code; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Native-shaped record/form and supplied-code handling; absent barcode/provider stays explicit, no fabricated valid code."
+    },
+    {
+      "screen": "window/ticket-code",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "R12",
+        "D06",
+        "L02"
+      ],
+      "previous": "58483 /_flow/index.html#today: saved.js ticket code",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/ticket-code; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Native-shaped record/form and supplied-code handling; absent barcode/provider stays explicit, no fabricated valid code."
+    },
+    {
+      "screen": "window/finance-edit",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "D06",
+        "I01",
+        "I03",
+        "M01",
+        "D03",
+        "B02",
+        "D01",
+        "F04"
+      ],
+      "previous": "58483 /_flow/index.html#today: finance.js transaction/account/transfer/payment/budget/goal/debt/rule editor",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/finance-edit; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Specialized local forms and immutable ledger reducer checked, no live transaction/provider execution."
+    },
+    {
+      "screen": "window/english",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "D06",
+        "T01",
+        "I02",
+        "P01",
+        "EN14"
+      ],
+      "previous": "58483 /_flow/index.html#today: english.js lesson/deck/placement/reader/music/chat",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/english; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual48authored core/domain/journal + isolated SQLpractice ACK + original MP3 evidence + quota/nav/reload tested. Reader/chat/fulllegacylesson/media source library/nativeFSRS deck remain unconnected; no fake ACK."
+    },
+    {
+      "screen": "window/sport-session",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "B02",
+        "I04",
+        "R06",
+        "SP14"
+      ],
+      "previous": "58483 /_flow/index.html#today: sport-session.js + sport-session-auto.js + sport-session-magic.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/sport-session; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Actual original Core + new sequence/Countdown owner + sharedUI: local profile, pause/nav/reentry/reload tested. Synthetic workouts only; private media/native phase and actual user program not connected."
+    },
+    {
+      "screen": "window/piano-player",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "B02",
+        "I04",
+        "PN08"
+      ],
+      "previous": "58483 /_flow/index.html#today: piano/native.mjs + player.mjs",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/piano-player; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "Original player/context/controller and common navigation/save/reload/audio cleanup tested; physical microphone acceptance separate."
+    },
+    {
+      "screen": "window/device-actions",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "D06",
+        "D01",
+        "I02",
+        "B02"
+      ],
+      "previous": "58483 /_flow/index.html#today: pc.js/server.js/vpn.js/render-queue.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/device-actions; direct shared map components, no 58483 renderer",
+      "status": "pending",
+      "remaining": "Power/scene/format/key/service confirmations and editable settings remain domain-specific old owners."
+    },
+    {
+      "screen": "window/assistant",
+      "group": "window",
+      "components": [
+        "A03",
+        "G01",
+        "G02",
+        "N03"
+      ],
+      "previous": "58483 /_flow/index.html#today: digital-assistant.js/native-assistant-popup.css",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/assistant; direct shared map components, no 58483 renderer",
+      "status": "bound_slice_tested",
+      "remaining": "SAME shared overlay/static8blur/canonicalstar/4corners/current-pose motion/inert/blank close/context draft forms/local navigation tested and fresh review approved. Voice/AI remain explicit unavailable, no permissions/fake recording. Physical IME/native overlay separate."
+    },
+    {
+      "screen": "window/widget",
+      "group": "window",
+      "components": [
+        "G01",
+        "G02",
+        "N03",
+        "N01",
+        "W02",
+        "E01",
+        "E02",
+        "K01",
+        "K02",
+        "R03",
+        "R04"
+      ],
+      "previous": "58483 /_flow/index.html#today: deploy/pc/notes_ui/widget.js",
+      "previousFiles": [
+        "prototypes/soroka-planner/app.js",
+        "prototypes/soroka-planner/sheet-state.js"
+      ],
+      "consumer": "58484 /docs/design/app-prototype/bound/#window/widget; direct shared map components, no 58483 renderer",
+      "status": "pending",
+      "remaining": "Desktop/Android native wrappers, interaction, sizing grid and synchronization are not proven by this local web map."
+    },
+    {
+      "screen": "window/event-add-edit",
+      "components": [
+        "W06",
+        "D05",
+        "D01",
+        "D03",
+        "D04",
+        "B02"
+      ],
+      "status": "bound_slice_tested",
+      "remaining": "Full record create/edit/repeat/quota/delete/exactUndo via actual Plan entry checked; live sync separate."
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+:is(#N01,#N02,#N03,#K01,#K02,#K03) .spec-preview>*{display:block;width:100%;min-width:0}
+
+#K01 .spec-preview>flow-app-calendar,#K02 .spec-preview>flow-app-calendar{width:100%;min-width:0}

@@ -1,0 +1,2 @@
+/* Packet 10 uses shared Flow tokens and isolated local controllers. */
+.spec-preview :is(flow-range-sample,flow-stepper-sample,flow-color-sample,flow-editor-sample,flow-menu-sample,flow-sheet-sample,flow-undo-sample){display:block;width:100%;min-width:0}

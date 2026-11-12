@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title">
+  <title id="title">Твоя композиция — оригинальная обложка Flow Piano</title>
+  <defs>
+    <linearGradient id="room" x2=".8" y2="1"><stop stop-color="#255652"/><stop offset=".5" stop-color="#244649"/><stop offset="1" stop-color="#102932"/></linearGradient>
+    <radialGradient id="aura"><stop stop-color="#8cc4ad" stop-opacity=".24"/><stop offset="1" stop-color="#70b3a9" stop-opacity="0"/></radialGradient>
+    <linearGradient id="glass" x2="1" y2="1"><stop stop-color="#a9caba" stop-opacity=".18"/><stop offset="1" stop-color="#759b94" stop-opacity=".03"/></linearGradient>
+    <linearGradient id="ivory" x2=".5" y2="1"><stop stop-color="#d6e0c9"/><stop offset="1" stop-color="#8caca1"/></linearGradient>
+  </defs>
+  <path d="M0 0h400v600H0z" fill="url(#room)"/>
+  <circle cx="216" cy="193" r="205" fill="url(#aura)"/>
+  <g fill="none" stroke="#b3cbb8" stroke-opacity=".12"><path d="M0 102h400M0 145h400M0 188h400M0 231h400M0 274h400M0 317h400M0 360h400M74 0v600M137 0v600M200 0v600M263 0v600M326 0v600"/><circle cx="202" cy="215" r="145"/></g>
+  <g transform="translate(83 104) rotate(9 112 148)">
+    <rect x="19" y="20" width="225" height="285" rx="16" fill="#0c252c" opacity=".26"/>
+    <rect x="0" y="0" width="225" height="285" rx="16" fill="url(#glass)" stroke="#a5c8b5" stroke-opacity=".43"/>
+    <path d="M23 47h179M23 74h179M23 101h179M23 128h179M23 155h179M23 182h179M23 209h179M23 236h179" stroke="#bad0bd" stroke-opacity=".16"/>
+    <g fill="#aad1bd"><rect x="37" y="77" width="16" height="53" rx="4" opacity=".65"/><rect x="73" y="51" width="16" height="52" rx="4"/><rect x="109" y="77" width="16" height="25" rx="4" opacity=".7"/><rect x="145" y="104" width="16" height="78" rx="4" opacity=".8"/><rect x="181" y="155" width="16" height="53" rx="4" opacity=".45"/></g>
+    <path d="M24 252h176" stroke="#a6c7b7" stroke-opacity=".5" stroke-width="2"/>
+  </g>
+  <path d="M20 340c35-23 66 38 104 13s51-28 80-5 48-23 76-12 51 37 100 5" fill="none" stroke="#8ac1af" stroke-opacity=".34" stroke-width="2"/>
+  <g transform="translate(-26 420) rotate(-8 225 50)">
+    <path d="M0-18h452v147H0z" fill="#10282e"/>
+    <path d="M0 6h452v87H0z" fill="url(#ivory)"/>
+    <path d="M23 6v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87m26-87v87" stroke="#5f887d" stroke-width="1.2"/>
+    <path d="M16 6h15v51H16zm26 0h15v51H42zm52 0h15v51H94zm26 0h15v51h-15zm26 0h15v51h-15zm52 0h15v51h-15zm26 0h15v51h-15zm52 0h15v51h-15zm26 0h15v51h-15zm26 0h15v51h-15zm52 0h15v51h-15zm26 0h15v51h-15z" fill="#14312f"/>
+    <path d="M0 94h452v6H0z" fill="#82b1a0" opacity=".3"/>
+  </g>
+</svg>

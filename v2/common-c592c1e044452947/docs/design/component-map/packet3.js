@@ -1,0 +1,7 @@
+import'../../../prototypes/soroka-planner/flow-ui/text-area.js';
+import'../../../prototypes/soroka-planner/flow-ui/filters.js';
+export const packetThree=[
+ {id:'D02',name:'Окно выбора',version:'0.2.0',source:'flow-select.js',layout:'packet3.css',deps:['M01','F01'],uses:['Повтор внизу формы','Выбор поверх карточки'],target:['app.js','saved.js'],render:s=>`<flow-select presentation="dialog" aria-label="Повтор" value="none" ${s==='disabled'?'disabled':''}><option value="none">Не повторять</option><option value="daily">Каждый день</option><option value="weekly">Каждую неделю</option></flow-select>`,states:['rest','disabled']},
+ {id:'I03',name:'Многострочный ввод',version:'0.2.0',source:'text-area.js',layout:'packet3.css',deps:['I01'],uses:['Описание задачи','Текст заметки'],target:['app.js','note-editor.js'],render:s=>`<flow-text-area aria-label="Описание" placeholder="Описание" name="description" maxlength="4000" state="${s}"></flow-text-area>`,states:['rest','focus','loading','error','offline','disabled']},
+ {id:'T02',name:'Фильтры',version:'0.4.0',source:'filters.js',layout:'packet3.css',deps:['F01'],uses:['Тип записи в библиотеке','Фильтр операций'],target:['saved.js','digital-pages.js'],render:s=>`<flow-filters aria-label="Тип записи" value="all" ${s==='disabled'?'disabled':''}><option value="all" data-count="6" data-result="Все 6 записей">Все</option><option value="notes" data-count="4" data-result="4 заметки">Заметки</option><option value="lists" data-count="2" data-result="2 списка">Списки</option></flow-filters>`,states:['rest','disabled']}
+];

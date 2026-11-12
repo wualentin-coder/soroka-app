@@ -1,0 +1,21 @@
+import '../../../prototypes/soroka-planner/flow-ui/collection-workspace.js';
+import '../../../prototypes/soroka-planner/flow-ui/confirm.js';
+
+// Explicit local catalog records. The same workspaces accept full product records.
+const samples={note:{id:'map-note-15',title:'Идеи для поездки',description:'Маршрут, билеты и места, которые хочется посмотреть.',descriptionHtml:'<p>Маршрут, <strong>билеты</strong> и места, которые хочется посмотреть.</p><ul><li>Сохранить адреса</li><li>Оставить время для прогулки</li></ul>',topic:'Поездки',categoryId:'trips',tags:['идеи']},list:{id:'map-list-15',title:'Покупки на неделю',description:'',topic:'Дом',categoryId:'home',tags:['покупки'],items:[{id:'map-milk',text:'Молоко',done:false,quantity:'1 л'},{id:'map-coffee',text:'Кофе',done:false,quantity:'250 г'},{id:'map-fruit',text:'Овощи и фрукты',done:false,subtasks:[{text:'Огурцы',done:false},{text:'Помидоры',done:true}]}]}};
+class CollectionSample extends HTMLElement{
+ constructor(){super();this.attachShadow({mode:'open'});}
+ connectedCallback(){
+  if(this.shadowRoot.firstChild)return;const kind=this.getAttribute('kind')==='list'?'list':'note',state=this.getAttribute('state')||'read',tag=`flow-${kind}-workspace`;
+  const workspace=document.createElement(tag);workspace.record=state==='create'?{}:kind==='list'&&state==='grocery'?{...structuredClone(samples.list),listType:'grocery',title:'Продукты',items:[{id:'grocery-milk',text:'Молоко',productId:'milk',productCategory:'dairy',quantityValue:1,quantityUnit:'л',quantity:'1 л',done:false},{id:'grocery-apples',text:'Яблоки',productId:'apple',productCategory:'produce',quantityValue:1,quantityUnit:'кг',quantity:'1 кг',done:false}]}:structuredClone(samples[kind]);workspace.sections=[{id:'home',name:'Дом'},{id:'trips',name:'Поездки'}];workspace.mode=state==='read'?'read':'edit';this.shadowRoot.append(workspace);
+  const confirm=document.createElement('flow-confirm');confirm.setAttribute('trigger-hidden','');this.shadowRoot.append(confirm);let pending=null;
+  workspace.addEventListener(`${tag}-save`,event=>{event.preventDefault();const saved={...event.detail,id:event.detail.id||`map-${kind}-created`};if(kind==='note')workspace.acceptSaved(saved);else{workspace.record=saved;workspace.mode='read';}});
+  workspace.addEventListener(`${tag}-change`,event=>{if(kind==='list'&&workspace.mode==='read'&&['toggle','toggle-subtask'].includes(event.detail.reason))workspace.acceptSaved(event.detail.draft);});
+  workspace.addEventListener(`${tag}-delete`,event=>{event.preventDefault();pending='delete';confirm.setAttribute('purpose','delete');confirm.open();});
+  workspace.addEventListener(`${tag}-close`,event=>{event.preventDefault();if(kind==='note'){if(workspace.dirty&&workspace.hasContent)workspace.save();return;}if(!event.detail.dirty){workspace.mode='read';return;}pending='discard';confirm.setAttribute('purpose','discard');confirm.open();});
+  confirm.addEventListener('flow-confirm-result',event=>{if(event.detail.confirmed){if(pending==='delete'){workspace.record={};workspace.mode='edit';}else{workspace.record=workspace.record;workspace.mode='read';}}pending=null;});
+ }
+}
+if(!customElements.get('flow-collection-sample'))customElements.define('flow-collection-sample',CollectionSample);
+const spec=(id,name,kind,target)=>({id,name,version:kind==='list'?'0.3.0':'0.4.0',source:'collection-workspace.js',sample:'packet15.js',layout:'packet15.css',extraSources:kind==='list'?['collection-workspace.js','grocery-catalog.js','format-icons.js','confirm.js']:['collection-workspace.js','note-workspace-ink.js','format-icons.js','confirm.js'],deps:['F01','B02','I01','I03','R05','R06','A01'],icons:true,states:kind==='list'?['read','edit','create','grocery']:['edit','create','read'],uses:[kind==='note'?'Прямое редактирование, прежняя композиция, история и рисование поверх текста':'Пункты, подпункты, отметки, порядок и локальные изображения','Один компонент в карте и локальном приложении'],target:[target],render:state=>`<flow-collection-sample kind="${kind}" state="${state}"></flow-collection-sample>`});
+export const packetFifteen=[spec('W04','Заметка · редактор','note','notes.js'),spec('W05','Список · пункты и группы','list','saved.js')];

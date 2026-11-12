@@ -1,0 +1,35 @@
+{
+  "runtime": {
+    "source": "https://registry.npmjs.org/onnxruntime-web/-/onnxruntime-web-1.24.3.tgz",
+    "version": "1.24.3",
+    "integrity": "sha512-41dDq7fxtTm0XzGE7N0d6m8FcOY8EWtUA65GkOixJPB/G7DGzBmiDAnVVXHznRw9bgUZpb+4/1lQK/PNxGpbrQ==",
+    "license": "MIT",
+    "tarBytes": 30848838,
+    "files": [
+      {
+        "name": "ort.wasm.min.mjs",
+        "bytes": 49997,
+        "sha256": "d5a6d7bc8ee587648fb3742dde8c0094d17cbd3822a68bbec8ddfcd4f2adb88e"
+      },
+      {
+        "name": "ort-wasm-simd-threaded.mjs",
+        "bytes": 24274,
+        "sha256": "5687566b1bc1c8cf628d76c2ddb16b2a3b81a7997273d4666564880495088e57"
+      },
+      {
+        "name": "ort-wasm-simd-threaded.wasm",
+        "bytes": 12361745,
+        "sha256": "be0e129949062ad50290ef94683fac8be5bb6156f709e030b7a5f1661a2f6c17"
+      }
+    ]
+  },
+  "model": {
+    "repository": "snakers4/silero-vad",
+    "treeSha": "066409f3d9db45a30d21dfcbf9147826ffdd7052",
+    "source": "https://raw.githubusercontent.com/snakers4/silero-vad/066409f3d9db45a30d21dfcbf9147826ffdd7052/src/silero_vad/data/silero_vad.onnx",
+    "bytes": 2327524,
+    "sha256": "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3",
+    "license": "MIT",
+    "modelPath": "src/silero_vad/data/silero_vad.onnx"
+  }
+}

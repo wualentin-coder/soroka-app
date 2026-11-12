@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title">
+  <title id="title">Маленькая звезда — оригинальная обложка Flow Piano</title>
+  <defs>
+    <linearGradient id="sky" x2=".7" y2="1"><stop stop-color="#253c62"/><stop offset=".55" stop-color="#20394d"/><stop offset="1" stop-color="#102b34"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#a6c9d3" stop-opacity=".35"/><stop offset="1" stop-color="#95bdd0" stop-opacity="0"/></radialGradient>
+    <linearGradient id="star" x2=".6" y2="1"><stop stop-color="#f2ead0"/><stop offset="1" stop-color="#a2cac9"/></linearGradient>
+    <linearGradient id="white" x2=".5" y2="1"><stop stop-color="#d8e4dd"/><stop offset="1" stop-color="#8daeb0"/></linearGradient>
+  </defs>
+  <path d="M0 0h400v600H0z" fill="url(#sky)"/>
+  <circle cx="240" cy="191" r="181" fill="url(#halo)"/>
+  <g fill="none" stroke="#93b6c5" stroke-opacity=".27"><path d="M16 302c22-110 113-207 239-210M8 337C23 179 151 46 322 65M40 351c102-64 211-83 332-56"/><path d="m78 182 72 42 47-89 72 39 45-49"/></g>
+  <g fill="#c9d8d1"><circle cx="78" cy="182" r="3"/><circle cx="150" cy="224" r="2.4"/><circle cx="197" cy="135" r="2.7"/><circle cx="269" cy="174" r="2.4"/><circle cx="314" cy="125" r="3"/><circle cx="62" cy="83" r="1.5"/><circle cx="112" cy="51" r="1.4"/><circle cx="349" cy="256" r="1.6"/><circle cx="335" cy="65" r="1.6"/><circle cx="40" cy="254" r="1.3"/></g>
+  <path d="m246 139 17 40 43 13-42 17-17 44-17-43-42-17 41-14z" fill="url(#star)"/>
+  <path d="m247 161 6 29 28 3-28 8-6 30-7-29-28-9 28-5z" fill="#e8e9ce"/>
+  <g fill="#c4d9d5" opacity=".65"><path d="m98 291 4 11 11 4-11 4-4 11-4-11-11-4 11-4zm230-91 3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/></g>
+  <path d="M0 399c86-79 214-105 400-31v232H0z" fill="#122e39"/>
+  <path d="M-20 427c124-101 261-83 440-22" fill="none" stroke="#82b0b5" stroke-opacity=".4" stroke-width="2"/>
+  <g transform="translate(-45 404) rotate(-13 230 60)">
+    <path d="M0-18h487v154H0z" fill="#102834"/>
+    <path d="M0 7h487v89H0z" fill="url(#white)"/>
+    <path d="M22 7v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89m28-89v89" stroke="#5e8d95" stroke-width="1.2"/>
+    <path d="M15 7h15v53H15zm28 0h15v53H43zm56 0h15v53H99zm28 0h15v53h-15zm28 0h15v53h-15zm56 0h15v53h-15zm28 0h15v53h-15zm56 0h15v53h-15zm28 0h15v53h-15zm28 0h15v53h-15zm56 0h15v53h-15zm28 0h15v53h-15z" fill="#15313e"/>
+    <path d="M0 97h487v6H0z" fill="#8eb9ba" opacity=".3"/>
+  </g>
+</svg>
