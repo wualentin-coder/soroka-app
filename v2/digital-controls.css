@@ -35,29 +35,50 @@ html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not
 html[data-flow-controls=on][data-motion=off] input::after{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){html[data-flow-controls=on]:not([data-motion=on]) input::after{animation:none!important;transition:none!important}}
 
-/* R06: one quiet spine, equal first/last spacing, no separate bracket boxes. */
-html[data-flow-controls=on] .task-sub{min-width:0;align-self:stretch}
-html[data-flow-controls=on] .task-checklist-toggle{display:flex;align-items:center;gap:8px;justify-content:flex-start;width:100%;min-height:44px;padding:4px 0;border:0;background:none;box-shadow:none;color:var(--muted);font-size:12px;font-weight:500}
-html[data-flow-controls=on] .task-checklist-toggle>svg:last-child{margin-left:auto;transition:transform 440ms var(--flow-control-ease)}
-html[data-flow-controls=on] :is(.task-checklist,.check-subs,.mu-episode-list){position:relative;display:block;min-width:0;margin:0 0 2px 10px;padding:0 0 0 16px;border:0;list-style:none;animation:none}
-html[data-flow-controls=on] :is(.task-checklist,.check-subs,.mu-episode-list)::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;border:0;border-radius:999px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 26%,var(--line)) 18%,var(--line) 78%,transparent);opacity:.65;pointer-events:none}
-html[data-flow-controls=on] .task-sub .task-checklist{margin-top:0;margin-left:10px;padding-left:16px;animation:none}
-html[data-flow-controls=on] :is(.task-checklist li,.check-sub){position:relative;margin:0;padding:0;min-height:44px;border:0}
+/* Native projection of the existing R03/R06 geometry, not a second list design.
+ * Sources: flow-ui/components.js (LineRow), flow-ui/check-group.js (group/children).
+ * Preserve native actions; task title edits the task, children stay directly visible. */
+html[data-flow-controls=on] .dm-main .dm-plan .dm-task-row{grid-template-columns:44px minmax(0,1fr) auto;column-gap:8px}
+html[data-flow-controls=on] .dm-main .dm-task-row .task-check{width:44px;height:44px;min-width:44px;margin-left:0}
+html[data-flow-controls=on] .dm-main .dm-task-row .check-ring{width:22px;height:22px;min-width:22px;border-radius:7px!important}
+html[data-flow-controls=on] .dm-main .dm-task-row .task-name{font-size:15px;font-weight:550;line-height:1.5}
+html[data-flow-controls=on] .dm-main .dm-task-row:not(:has(>.task-sub)){min-height:61px;padding:8px 0}
+html[data-flow-controls=on] :is(.dm-main .dm-task-row:has(>.task-sub),.check-entry:has(>.check-subs),.mu-series-entry:has(>.mu-episode-panel)){position:relative;isolation:isolate;padding:8px;border:1px solid var(--line);border-radius:24px;background:var(--surface);margin:8px 0;box-shadow:none;min-width:0}
+html[data-flow-controls=on] .dm-main .dm-task-row:has(>.task-sub){column-gap:4px}
+html[data-flow-controls=on] .dm-main .dm-task-row:has(>.task-sub)>.task-info{min-height:52px;display:flex;flex-direction:column;justify-content:center}
+html[data-flow-controls=on] .dm-main .dm-task-row:has(>.task-sub)>.task-info .task-name{min-height:44px;padding-block:6px}
+html[data-flow-controls=on] .dm-main .dm-task-row>.task-sub{position:relative;grid-column:1/-1!important;min-width:0;margin:0!important;padding:8px 0 0!important;align-self:stretch}
+html[data-flow-controls=on] .dm-main .dm-task-row>.task-sub::before{content:'';position:absolute;left:4px;right:4px;top:0;height:1px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--accent) 65%,var(--line)) 52%,var(--line));opacity:.75}
+html[data-flow-controls=on] :is(.task-sub .task-checklist,.check-subs,.mu-episode-list){position:relative;display:block;min-width:0;margin:0 0 2px 22px;padding:0 0 0 16px;border:0;list-style:none;animation:none}
+html[data-flow-controls=on] :is(.task-checklist,.check-subs,.mu-episode-list)::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:2px;border:0;border-radius:999px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 26%,var(--line)) 18%,var(--line) 78%,transparent);opacity:.65;pointer-events:none}
+html[data-flow-controls=on] :is(.task-checklist li,.check-sub){position:relative;margin:0;padding:0;min-height:0;border:0}
+html[data-flow-controls=on] .task-checklist li{border-bottom:1px solid var(--line)}
+html[data-flow-controls=on] .task-checklist li:last-child{border-bottom:0}
 html[data-flow-controls=on] :is(.check-sub::before,.check-sub::after){content:none}
-html[data-flow-controls=on] :is(.task-checklist-item,.check-sub,.mu-episode-row){display:flex;align-items:center;gap:10px;min-height:48px;width:100%;padding:2px 0;border:0;border-radius:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-size:14px;text-align:left}
-html[data-flow-controls=on] .task-checklist-item{gap:21px;padding-left:11px}
-html[data-flow-controls=on] .task-checklist-item>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.45}
+html[data-flow-controls=on] :is(.task-checklist-item,.check-sub,.mu-episode-row){display:flex;align-items:center;gap:8px;width:100%;min-height:61px;padding:8px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-size:15px;line-height:1.5;text-align:left}
+html[data-flow-controls=on] .task-sub .task-checklist .task-checklist-item{gap:19px;padding-left:11px;min-height:60px;padding-block:8px;border:0}
+html[data-flow-controls=on] .task-checklist-item>span:last-child{min-width:0;overflow-wrap:anywhere;font-weight:550}
+html[data-flow-controls=on] :is(.task-checklist li:last-child>.task-checklist-item,.check-sub:last-child,.mu-episode-row:last-child){border-bottom:0}
 html[data-flow-controls=on] .task-checklist-box{display:grid;place-items:center;width:22px;height:22px;min-width:22px;flex:0 0 22px;aspect-ratio:1;border:1px solid var(--muted);border-radius:7px;transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)}
-html[data-flow-controls=on] .task-checklist-box svg{width:15px;height:15px}
+html[data-flow-controls=on] .task-checklist-box svg{width:16px;height:16px}
+html[data-flow-controls=on] .task-check[aria-checked=mixed] .check-ring{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--accent)}
+html[data-flow-controls=on] .dm-sub-count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+html[data-flow-controls=on] .dm-main .dm-task-row .task-time:has(.dm-sub-count){display:flex!important;gap:8px!important}
+html[data-flow-controls=on] .check-entry:has(>.check-subs)>.check-row{position:relative;min-height:60px;border-bottom:1px solid var(--line);padding:0 0 8px}
+html[data-flow-controls=on] .check-entry>.check-subs{margin-top:0;padding-top:0}
+html[data-flow-controls=on] .dc2-window .check-row .task-check{width:44px;height:44px;min-width:44px}
+html[data-flow-controls=on] .dc2-window .check-row .task-check::before{inset:11px;border-radius:7px!important}
+html[data-flow-controls=on] .dc2-window .check-row .task-check .icon{width:16px;height:16px}
+html[data-flow-controls=on] .dc2-window .check-row{min-height:61px;padding-block:8px}
+html[data-flow-controls=on] .checklist-rows>.check-entry:not(:last-child):not(:has(>.check-subs)){border-bottom:1px solid var(--line)}
+html[data-flow-controls=on] .check-sub{gap:8px}
+html[data-flow-controls=on] .check-sub>span{font-weight:550;min-width:0;overflow-wrap:anywhere}
 html[data-flow-controls=on] .sub-check{display:grid;place-items:center;width:44px;height:44px;min-width:44px;flex:0 0 44px;position:relative;isolation:isolate;border:0!important;background:transparent!important;box-shadow:none;color:var(--accent-ink)}
 html[data-flow-controls=on] .sub-check::before{content:'';position:absolute;inset:11px;border:1px solid var(--muted);border-radius:7px;z-index:-1;transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)}
 html[data-flow-controls=on] .sub-check.checked::before{background:var(--accent);border-color:var(--accent)}
-html[data-flow-controls=on] .sub-check svg{width:15px;height:15px}
-html[data-flow-controls=on] .mu-part-row.is-series{margin-left:0}
+html[data-flow-controls=on] .sub-check svg{width:16px;height:16px}
+html[data-flow-controls=on] .mu-part-row.is-series{margin-left:0;padding-block:0;border:0}
 html[data-flow-controls=on] .mu-part-row.is-series::before{content:none}
-html[data-flow-controls=on] .mu-episode-panel{position:relative;margin:0 0 8px 20px;padding:0 0 0 16px;border:0}
-html[data-flow-controls=on] .mu-episode-panel::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:999px;background:linear-gradient(transparent,var(--line) 18%,var(--line) 78%,transparent);opacity:.65}
+html[data-flow-controls=on] .mu-episode-panel{position:relative;margin:8px 0 2px;padding:8px 0 0;border:0;border-top:1px solid var(--line)}
 html[data-flow-controls=on] .mu-season{margin:0;padding:0;border:0;border-radius:0;background:none}
-html[data-flow-controls=on] .mu-season-head{min-height:48px;padding:2px 0;gap:10px}
-html[data-flow-controls=on] .mu-episode-row{border-bottom:1px solid var(--line)}
-html[data-flow-controls=on] .mu-episode-row:last-child{border-bottom:0}
+html[data-flow-controls=on] .mu-season-head{min-height:52px;padding:0 0 8px;gap:4px}

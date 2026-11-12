@@ -441,12 +441,13 @@ html[data-flow-design=magic] .ds2-render-notice button{min-height:44px;display:f
 html[data-render-state=rendering] .ds2-render-light,html[data-render-state=paused] .ds2-render-light{opacity:1;animation:ds2-render-pass 11s linear infinite alternate}
 html[data-render-state=paused] .ds2-render-light{animation-play-state:paused;opacity:.22}
 html[data-render-attention=quiet] .ds2-render-light{opacity:.1;animation-play-state:paused}
-html[data-render-attention=available][data-render-state=rendering][data-render-known=true] .flow-edge-line rect,html[data-render-attention=available][data-render-state=paused][data-render-known=true] .flow-edge-line rect{stroke-dasharray:var(--render-progress) 100;opacity:.7}
+html[data-render-attention=available][data-render-state=rendering][data-render-known=true] .flow-edge-line :is(rect,.flow-edge-progress),html[data-render-attention=available][data-render-state=paused][data-render-known=true] .flow-edge-line :is(rect,.flow-edge-progress){stroke-dasharray:none;opacity:.45}
 html[data-render-attention=available]:is([data-render-state=rendering],[data-render-state=paused]) .edge-energy{background:none;mask:none;padding:0}
 html[data-render-attention=available][data-render-state=paused] .edge-energy{animation-play-state:paused!important;opacity:.3}
 html[data-render-attention=available]:is([data-render-state=paused],[data-render-state=error],[data-render-state=stale]) .flow-edge-line{animation-play-state:paused!important}
 html[data-render-attention=available][data-render-state=paused] :is(.digital-aura,.digital-stars i){animation-play-state:paused!important}
 html[data-render-attention=available]:is([data-render-state=error],[data-render-state=stale]) .edge-energy{animation:none;border-color:var(--danger,var(--accent));opacity:.35}
+html[data-render-attention=available]:is([data-render-state=error],[data-render-state=stale]) .flow-edge-progress{stroke:var(--danger,var(--accent))}
 html[data-render-attention=available][data-render-state=success] .edge-energy{animation:ds2-render-finish 1.5s ease-out both}
 html[data-render-state=success] .ds2-render-light{background:radial-gradient(ellipse at 50% 65%,rgba(var(--energy-rgb),.16),transparent 66%);animation:ds2-render-release 1.5s ease-out both}
 html[data-render-state=error] .ds2-render-light,html[data-render-state=stale] .ds2-render-light{opacity:.14;animation:none}

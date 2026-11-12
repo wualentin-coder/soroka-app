@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "build": "fd62c47408b6f62b",
-  "runtime": "native-mature-shared-controls",
+  "build": "34249f32e0c9804c",
+  "runtime": "native-mature-map-parity",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
   "backendChanged": false,
@@ -2495,7 +2495,7 @@
     {
       "path": "bridge.js",
       "bytes": 186187,
-      "sha256": "8327849656507a4641523d807dcfa5f840237daca0ecc77b3e94abdd9d91826a"
+      "sha256": "457cd8f3a1931f40e7c3d9017f04e6d5bd42cfdccc90da1a3dcd67ca17e901ea"
     },
     {
       "path": "calendar-drag.js",
@@ -2569,13 +2569,13 @@
     },
     {
       "path": "digital-controls.css",
-      "bytes": 9926,
-      "sha256": "77b3c6220ae482dee64f9460d2f876acf236da7e5c8fc849603583b2df48f36d"
+      "bytes": 12669,
+      "sha256": "1ffe92927dd1be2176bb937a125688f152a394b635ff9a2f702c0aa35998f4a4"
     },
     {
       "path": "digital-controls.js",
-      "bytes": 10288,
-      "sha256": "8aa756f9239071d3888f2b529ab3e998abb9639337254ecd308d3dc8501cf798"
+      "bytes": 10342,
+      "sha256": "1815e251e888c01aea3b72f16832e52ad1345f4aff06d34679f0c87c5c6225ec"
     },
     {
       "path": "digital-directory.css",
@@ -2594,13 +2594,13 @@
     },
     {
       "path": "digital-effects.css",
-      "bytes": 22428,
-      "sha256": "5aca113d5c41f9c91ed9162586b5351d0fdabb978f4cc08a2e1b83f71c697ea2"
+      "bytes": 22556,
+      "sha256": "5b93d5aecc8bef7e33bc393e32bb770245cf0d2107299aee3218cd2d38c4e128"
     },
     {
       "path": "digital-effects.js",
-      "bytes": 6737,
-      "sha256": "b06ae856a9e90815ece027ad1290bd6f8e2b0a4b759befca922d4b0e6fb7bf4d"
+      "bytes": 8112,
+      "sha256": "2e67b24ff8e395dcca749ba2f0b9721078cbc502cf54507900ceb520fe948e72"
     },
     {
       "path": "digital-icons.css",
@@ -2624,8 +2624,8 @@
     },
     {
       "path": "digital-layout.css",
-      "bytes": 80194,
-      "sha256": "e9fed487f897d06765b26e2d5ae4ff150cde9d2ac9289bbce9d5e6f314de023a"
+      "bytes": 80335,
+      "sha256": "b431cc8671f656f9dd06ae2277c7bd70de8e849ba86ac7cca0d8d927c645d159"
     },
     {
       "path": "digital-learning.css",
@@ -2644,13 +2644,13 @@
     },
     {
       "path": "digital-pages.css",
-      "bytes": 89187,
-      "sha256": "7d66c19ae4b86d3bc2227eff4fde1207d9993e00e7fa76af35610ef98c7ec5bf"
+      "bytes": 89229,
+      "sha256": "7d1d2f96d858a0426f0eede2e8fc43f1605453dd4c318dac24e615374a93df18"
     },
     {
       "path": "digital-pages.js",
-      "bytes": 25451,
-      "sha256": "ae117b9cacdbd0eb7ae1f8cddcb824a18e85f269f36cc695ab1bc87affe27c89"
+      "bytes": 25957,
+      "sha256": "454977685fc30efb218f21683d81a5b9cab1db0be0d132f0ef7c01321e12cfdf"
     },
     {
       "path": "digital-runtime.js",
@@ -2659,8 +2659,8 @@
     },
     {
       "path": "digital-services.css",
-      "bytes": 61389,
-      "sha256": "ba868a2e2369ce0f30523971485ad7fca306b29fb8a1df05f250abc44cde8b53"
+      "bytes": 62027,
+      "sha256": "cb7c1a247a75c9fba9d9235996486bdca1b11f0d45b354c36f0cdecb66d20828"
     },
     {
       "path": "digital-services.js",
@@ -2815,7 +2815,7 @@
     {
       "path": "index.html",
       "bytes": 3822,
-      "sha256": "ca8e43a8de25e8676550b57821b97ebd79a0b82afee95ddc9af522c03c73ac98"
+      "sha256": "35ce3556bf589c74ae1f4259006cf14f44c31bf750366270f80e0ea885a12f23"
     },
     {
       "path": "live.css",
@@ -3535,7 +3535,7 @@
     {
       "path": "sw.js",
       "bytes": 41750,
-      "sha256": "f2dd6a93188f00e85c11abf0b03c35ae7f7c206d3de4b0a8c79f39a27f2be52d"
+      "sha256": "2d7df39dccb30ac30d5d6ac3bb63dfddda230a500e99ce285b8e744da17e3315"
     },
     {
       "path": "task-drag.js",

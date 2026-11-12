@@ -6,7 +6,19 @@
   const reduced=()=>window.flowDigital?.reducedMotion?.()??matchMedia('(prefers-reduced-motion: reduce)').matches;
   const atmosphere=document.createElement('div');atmosphere.className='digital-atmosphere';atmosphere.setAttribute('aria-hidden','true');atmosphere.innerHTML='<div class="digital-aura aura-one"></div><div class="digital-aura aura-two"></div><div class="digital-grid"></div><div class="digital-stars"></div>';
   const stars=atmosphere.querySelector('.digital-stars');for(let i=0;i<24;i++){const point=document.createElement('i');point.style.cssText=`--x:${(i*37.73+7)%100}%;--y:${(i*61.91+13)%100}%;--s:${i%5===0?2:1}px;--t:${4+i%7}s;--d:-${i%9}s`;stars.append(point);}document.body.prepend(atmosphere);
-  const edge=document.createElement('div');edge.className='edge-energy';edge.setAttribute('aria-hidden','true');edge.innerHTML='<svg class="flow-edge-line" width="100%" height="100%"><rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="28" pathLength="100"/></svg>';document.body.append(edge);
+  const edge=document.createElement('div');edge.className='edge-energy';edge.setAttribute('aria-hidden','true');edge.innerHTML='<svg class="flow-edge-line" width="100%" height="100%"><path class="flow-edge-track" pathLength="100"/><path class="flow-edge-progress" pathLength="100"/></svg>';document.body.append(edge);
+  // Both light layers use the exact same physical-screen path. Never mix an
+  // independently rounded CSS border with a hard-coded SVG rounded rectangle.
+  let edgeFrame=0;
+  function fitEdge(){edgeFrame=0;const box=edge.getBoundingClientRect(),style=getComputedStyle(edge),inset=1,w=Math.max(0,box.width-2*inset),h=Math.max(0,box.height-2*inset);if(!w||!h)return;
+    let [tl,tr,br,bl]=['borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius'].map(name=>Math.max(0,(parseFloat(style[name])||0)-inset));
+    const scale=Math.min(1,w/Math.max(1,tl+tr),w/Math.max(1,bl+br),h/Math.max(1,tl+bl),h/Math.max(1,tr+br));[tl,tr,br,bl]=[tl,tr,br,bl].map(r=>r*scale);
+    const x=inset,y=inset,r=x+w,b=y+h,arc=(radius,to)=>radius?`A${radius} ${radius} 0 0 1 ${to}`:`L${to}`;
+    const d=`M${x+tl} ${y}H${r-tr}${arc(tr,`${r} ${y+tr}`)}V${b-br}${arc(br,`${r-br} ${b}`)}H${x+bl}${arc(bl,`${x} ${b-bl}`)}V${y+tl}${arc(tl,`${x+tl} ${y}`)}Z`;
+    for(const path of edge.querySelectorAll('path'))if(path.getAttribute('d')!==d)path.setAttribute('d',d);
+  }
+  function scheduleEdge(){if(!edgeFrame)edgeFrame=requestAnimationFrame(fitEdge);}
+  const edgeSize=new ResizeObserver(scheduleEdge);edgeSize.observe(edge);window.addEventListener('flow:windowgeometry',scheduleEdge);window.addEventListener('resize',scheduleEdge);scheduleEdge();
   let stamp='',scheduled=0,entries=[],aligned=new WeakSet(),entrances=0,bursts=0,ripples=0,disposed=false;
   const watched=new Set(), visibility=new IntersectionObserver(items=>{for(const item of items)item.target.classList.toggle('magic-out-of-view',!item.isIntersecting);},{rootMargin:'60px'});
   function observeScenes(main){for(const node of watched)if(!node.isConnected){visibility.unobserve(node);watched.delete(node);}for(const node of main.querySelectorAll('.hero-card,.content-aside,.aside-section,.dc-module-group,.lv-lesson-scene,.lv-workout,.dm-calendar-living,.rhythm-card,.dc-practice-card'))if(!watched.has(node)){watched.add(node);visibility.observe(node);}}

@@ -667,7 +667,7 @@ html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .head-pill .pill-idle{padding-left:36px}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill:active{transform:translateX(-50%) scale(.98)}
 html[data-flow-native=true][data-flow-design=magic] .dm-app-shell{padding-left:var(--native-safe-left,0px);padding-right:var(--native-safe-right,0px)}
-html[data-flow-native=true][data-flow-design=magic] .edge-energy{inset:1px;border-radius:30px}
+html[data-flow-native=true][data-flow-design=magic] .edge-energy{inset:0;border-radius:var(--native-corner-top-left,30px) var(--native-corner-top-right,30px) var(--native-corner-bottom-right,30px) var(--native-corner-bottom-left,30px)}
 html[data-flow-native=true][data-flow-design=magic] .dm-bottom-nav{bottom:max(10px,var(--native-safe-bottom,0px))}
 html[data-flow-native=true][data-native-keyboard=true] .dm-bottom-nav{display:none}
 html[data-flow-native=true][data-flow-design=magic][data-native-camera=true] .dm-topbar .head-pill{width:190px;padding:0 12px;justify-content:space-between;gap:38px}

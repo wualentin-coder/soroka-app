@@ -51,13 +51,14 @@ html[data-flow-design=magic] .head-pill.activity-island{min-height:48px;min-widt
 
 .island-render-controls{display:flex;gap:8px;margin-top:14px}.island-render-controls button{flex:1;min-height:44px;border:1px solid rgba(var(--energy-rgb),.3);border-radius:99px;background:rgba(var(--energy-rgb),.07);color:var(--text)}html[data-magic-scene=pause] :is(.digital-aura,.digital-stars i,.edge-energy){animation-play-state:paused!important;opacity:.2}
 /* Stable contour geometry: animate light, never repaint a composite mask. */
-html[data-flow-design=magic] .edge-energy{animation:none;opacity:1;mask:none;-webkit-mask:none;background:none;padding:0;border-color:rgba(var(--accent-rgb),.12);transition:box-shadow .4s,border-color .4s}
+html[data-flow-design=magic] .edge-energy{animation:none;opacity:1;mask:none;-webkit-mask:none;background:none;padding:0;border:0;box-shadow:none;transition:opacity .4s}
 html[data-flow-design=magic] .edge-energy::after{content:none}
 .flow-edge-line{position:absolute;inset:0;overflow:visible;pointer-events:none}
-.flow-edge-line rect{fill:none;stroke:var(--accent);stroke-width:1;opacity:.3;animation:flow-stable-light 12s ease-in-out infinite}
-html[data-magic-scene=render] .flow-edge-line rect{stroke-dasharray:var(--magic-progress) 100;opacity:.7}
-html[data-magic-scene=pause] .flow-edge-line rect{stroke-dasharray:var(--magic-progress) 100;opacity:.35}
-html[data-flow-surface=window] .flow-edge-line rect{opacity:.12}
+.flow-edge-line :is(rect,path){fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round;opacity:.3}
+.flow-edge-line .flow-edge-track{opacity:.12}
+html[data-magic-scene=render] .flow-edge-line :is(rect,.flow-edge-progress){stroke-dasharray:none;opacity:.45}
+html[data-magic-scene=pause] .flow-edge-line :is(rect,.flow-edge-progress){stroke-dasharray:none;opacity:.24}
+html[data-flow-surface=window] .flow-edge-line :is(rect,.flow-edge-progress){opacity:.12}
 @keyframes flow-stable-light{0%,100%{stroke-opacity:.65}50%{stroke-opacity:.9}}
 html[data-flow-native=true] .edge-energy{contain:strict;isolation:isolate;transform:translateZ(0)}
 html[data-flow-native=true] .primary-button::after{display:none}
@@ -65,10 +66,10 @@ html[data-flow-native=true] .primary-button::after{display:none}
    tested device. Keep ambient light/particles and a stable two-dimensional grid. */
 html[data-flow-native=true] .digital-grid{transform:none;opacity:.03}
 
-.flow-edge-line rect{animation:none;stroke-opacity:.8}
+.flow-edge-line :is(rect,.flow-edge-progress){animation:none;stroke-opacity:.8}
 /* Work direction lives on the small island; the source-bound viewport contour stays still. */
 .flow-edge-line{animation:none}
-html[data-magic-scene=pause] .flow-edge-line,html[data-magic-scene=pause] .flow-edge-line rect{animation-play-state:paused!important}
+html[data-magic-scene=pause] .flow-edge-line,html[data-magic-scene=pause] .flow-edge-line :is(rect,.flow-edge-progress){animation-play-state:paused!important}
 @keyframes edge-light-opacity{0%,100%{opacity:.65}50%{opacity:.9}}
 html[data-motion=off] .flow-edge-line,.digital-hidden .flow-edge-line{animation:none!important}
 @media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .flow-edge-line{animation:none!important}}
