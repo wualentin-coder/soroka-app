@@ -44,6 +44,12 @@ html[data-flow-design=magic] .dm-plan13 .dm-plan-nearby>.section-heading{margin:
 .dm-plan13 .dm-plan-birthday-when{flex:none;padding:0;border:0;background:none;color:var(--accent);font-size:12px;line-height:1.5;white-space:nowrap}
 .dm-plan13 .dm-plan-birthday:has(:focus-visible){border-color:var(--accent)}
 .dm-plan13 .dm-plan-birthday-open:focus-visible{outline:none;box-shadow:none}
+/* One finite material/contour response for every Plan surface; no flat-row boxes. */
+.dm-plan-response{position:fixed;z-index:80;pointer-events:none;display:block;opacity:0;overflow:hidden;contain:strict}
+.dm-plan-response>i{position:absolute;inset:0;display:block;border-radius:inherit;pointer-events:none}
+.dm-plan-response-material{background:radial-gradient(ellipse at var(--plan-hit,50%) 20%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 75%)}
+.dm-plan-response-edge{border:1px solid color-mix(in srgb,var(--accent) 58%,transparent);background:radial-gradient(ellipse at var(--plan-hit,50%) 100%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 65%)}
+.dm-plan-response[data-framed=false] .dm-plan-response-edge{display:none}
 html[data-flow-design=magic] .dm-plan13 .dm-plan-upcoming-event{padding:10px 0;border:0}
 html[data-flow-design=magic] .dm-plan13 .dm-plan-upcoming-event>small{color:var(--muted);font-size:12px}
 @media(max-width:760px){html[data-flow-design=magic] .dm-main:has(>.dm-plan13){padding:10px 16px 115px}html[data-flow-design=magic] .dm-plan13 .dm-plan-practices .dc-module-card{min-height:105px}}
