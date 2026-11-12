@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "build": "c1d54ec6cedfa873",
+  "build": "fd62c47408b6f62b",
   "runtime": "native-mature-shared-controls",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
@@ -19,8 +19,8 @@
     },
     {
       "path": "app.js",
-      "bytes": 134214,
-      "sha256": "21eb0aff412045d9e0118081b51b757653a81191257fabdb8df7c700c7568af7"
+      "bytes": 133424,
+      "sha256": "0a6c2b4f7bdd4d5ef1b726e688c4f5785c3031c7f3e06b02853ef572237597ca"
     },
     {
       "path": "assets/cormorant-garamond-cyrillic-500.woff2",
@@ -2495,7 +2495,7 @@
     {
       "path": "bridge.js",
       "bytes": 186187,
-      "sha256": "9e1a9f434c4bec2aefe3c8301e6a95e3aa095fbd4f0aed6201100a2a982f64a1"
+      "sha256": "8327849656507a4641523d807dcfa5f840237daca0ecc77b3e94abdd9d91826a"
     },
     {
       "path": "calendar-drag.js",
@@ -2815,7 +2815,7 @@
     {
       "path": "index.html",
       "bytes": 3822,
-      "sha256": "3a242a9a97fba20e8972370b60d63353e4924cd7013828457ea646d6442adf8e"
+      "sha256": "ca8e43a8de25e8676550b57821b97ebd79a0b82afee95ddc9af522c03c73ac98"
     },
     {
       "path": "live.css",
@@ -3535,7 +3535,7 @@
     {
       "path": "sw.js",
       "bytes": 41750,
-      "sha256": "1a1c10e355def038ca13afd687ce5f4dfa60c079c1f7415525bc1503b80b0f7b"
+      "sha256": "f2dd6a93188f00e85c11abf0b03c35ae7f7c206d3de4b0a8c79f39a27f2be52d"
     },
     {
       "path": "task-drag.js",
