@@ -134,7 +134,7 @@ function enLoad(key, op, args = {}) {
 // ------------------------------------------------------------ звук
 
 const enAudioUrls = new Map();
-let enPlayer = null;
+let enPlayer = null, enSpeechRequest = null;
 let enSpeechGeneration = 0, enViewGeneration = 0, enChatTurn = 0, enSpeechButton = null;
 function enCancelChat() {
   enChatTurn++;
@@ -149,7 +149,8 @@ function enViewGuard() {
 }
 function enStopSpeech() {
   enSpeechGeneration++;
-  enPlayer?.pause(); enPlayer = null;
+  enSpeechRequest?.abort(); enSpeechRequest = null;
+  if(enPlayer){enPlayer.pause();enPlayer.removeAttribute?.('src');enPlayer.load?.();enPlayer=null;}
   try { speechSynthesis.cancel(); } catch (_) {}
   enSpeechButton?.classList.remove("is-busy"); enSpeechButton = null;
 }
@@ -162,12 +163,14 @@ async function enSpeak(text, button) {
   enStopPcm();
   const generation = enSpeechGeneration, view = enViewGuard();
   const current = () => generation === enSpeechGeneration && view() && !document.hidden;
+  const request=window.sorokaEnglishSession?.capabilities?.speechAbort===true?new AbortController():null;
+  enSpeechRequest=request;
   enSpeechButton = button;
   button?.classList.add("is-busy");
   try {
     let url = enAudioUrls.get(text);
     if (!url) {
-      const answer = await enCall("speech", { text });
+      const answer = await enCall("speech", { text },request?{signal:request.signal}:undefined);
       if (!current()) return;
       if (!answer?.url) throw new Error(answer?.error || "speech");
       url = answer.url; enAudioUrls.set(text, url);
@@ -179,7 +182,7 @@ async function enSpeak(text, button) {
     if (!current()) return;
     // Нет озвучки с сервера — голос телефона, если он есть.
     try { const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (__) { toast("Озвучка недоступна"); }
-  } finally { if (generation === enSpeechGeneration) { button?.classList.remove("is-busy"); enSpeechButton = null; } }
+  } finally { if(enSpeechRequest===request)enSpeechRequest=null;if (generation === enSpeechGeneration) { button?.classList.remove("is-busy"); enSpeechButton = null; } }
 }
 
 // ------------------------------------------------------------ страница

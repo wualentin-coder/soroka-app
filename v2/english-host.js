@@ -11,6 +11,7 @@
     if (source?.version !== 1 || required.some(name => typeof source[name] !== 'function')) throw error('auth_contract');
     const auth = Object.fromEntries(required.map(name => [name, source[name].bind(source)]));
     const confirmedCapabilities = typeof source.confirmedCapabilities === 'function' ? source.confirmedCapabilities.bind(source) : () => null;
+    const speechAbort = typeof source.speechAbort === 'function' ? source.speechAbort.bind(source) : () => false;
     const listeners = new Set(), revoked = new WeakSet(), epochs = new WeakSet();
     let binding = null, generation = 0, checking = false;
 
@@ -64,8 +65,11 @@
         return !!value && Object.isFrozen(value) && value.version === 2 && value[name] === true;
       } catch (_) { return false; }
     }
-    async function send(op, args = {}, lease) {
+    async function send(op, args = {}, lease, options={}) {
       if (!isCurrent(lease)) throw error('owner_changed');
+      const signal=options?.signal;
+      if(signal&&(op!=='speech'||!speechAbort(binding.context)||typeof signal.aborted!=='boolean'||typeof signal.addEventListener!=='function'||typeof signal.removeEventListener!=='function'))throw error('abort_read_only');
+      if(signal?.aborted){const stopped=error('speech_cancelled');stopped.name='AbortError';throw stopped;}
       if (typeof op !== 'string' || !/^[a-z][a-z0-9_]{0,63}$/.test(op) || !args || typeof args !== 'object' || Array.isArray(args)) throw error('bad_request');
       if (completion.has(op) && !capability('completionAttempts')) throw error('completion_contract');
       if (practice.has(op) && !capability('practiceEvents')) throw error('practice_contract');
@@ -73,7 +77,7 @@
       const current = binding, captured = JSON.parse(JSON.stringify(args));
       if (!isCurrent(lease) || binding !== current) throw error('owner_changed');
       try {
-        const answer = await auth.sendEnglishBound(op, captured, current.context);
+        const answer = await auth.sendEnglishBound(op, captured, current.context,signal?Object.freeze({signal}):undefined);
         if (!isCurrent(lease)) throw error('owner_changed');
         return answer;
       } catch (cause) {
@@ -87,7 +91,7 @@
       listeners.add(listener);
       return () => listeners.delete(listener);
     }
-    const capabilities = Object.freeze({get completionAttempts(){return capability('completionAttempts');},get practiceEvents(){return capability('practiceEvents');}});
+    const capabilities = Object.freeze({get completionAttempts(){return capability('completionAttempts');},get practiceEvents(){return capability('practiceEvents');},get speechAbort(){return !!captureOwner()&&speechAbort(binding.context)===true;}});
     const host = Object.freeze({version: 2, capabilities, captureOwner, isCurrent, send, subscribeInvalidation});
     if (typeof auth.subscribeInvalidation(invalidate) !== 'function') throw error('auth_subscription');
     return host;

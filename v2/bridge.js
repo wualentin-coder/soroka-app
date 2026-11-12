@@ -13,7 +13,7 @@
 (function () {
   "use strict";
   const API = "https://flow.woosport.ru/functions/v1/soroka-app";
-  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=2ead4c6882","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-host.js?v=4c103a4d61","integrity":null},{"src":"./english-sync.js?v=d1d23b6369","integrity":null},{"src":"./english-music-import.js?v=ab39abb2f5","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=8e28e10253","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=fc45bba682","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=d305611d40","integrity":null},{"src":"./sport-train.js?v=2ebd7da268","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=20261111-livefix-dbf2c617b9","integrity":null},{"src":"./sport-session.js?v=20261111-livefix-e5d457d39d","integrity":null},{"src":"./sport-session-magic.js?v=20261112-column-33c526efae","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=5a3aaddac0","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=44f69b69b9","integrity":null},{"src":"./english-practice-core.js?v=cd3dd3b8b8","integrity":null},{"src":"./english-media-practice-core.js?v=972c83f48d","integrity":null},{"src":"./english-practice.js?v=976b0c88ee","integrity":null},{"src":"./english-media-practice.js?v=5e5f81cb96","integrity":null},{"src":"./english-session.js?v=9c1a83f4ef","integrity":null},{"src":"./notes.js?v=56b28a58fe","integrity":null},{"src":"./note-ink.js?v=cb15b0542c","integrity":null},{"src":"./note-editor.js?v=dae2f78bfe","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=1a66622019","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=15b9671629","integrity":null},{"src":"./digital-collections.js?v=7066fcabe9","integrity":null},{"src":"./digital-directory.js?v=92a6742929","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=2bb272f8a5","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=b9fb2e7782","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
+  const SCRIPTS = [{"src":"./design-mode.js?v=527cb75cef","integrity":null},{"src":"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js","integrity":"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="},{"src":"./movie-player.js?v=0fda78d56a","integrity":null},{"src":"./saved.js?v=2ead4c6882","integrity":null},{"src":"./movie-series.js?v=c3b2324a21","integrity":null},{"src":"./movie-universes.js?v=6e01e0ad17","integrity":null},{"src":"./movie-universe-status.js?v=57999d157e","integrity":null},{"src":"./movie-universe-episodes.js?v=b491d832d1","integrity":null},{"src":"./movie-marathon-cards.js?v=fc0fd565b4","integrity":null},{"src":"./loop-deck.js?v=f80f96b70c","integrity":null},{"src":"./movie-carousel.js?v=124d11e1c9","integrity":null},{"src":"./movies.js?v=f4e511e1f2","integrity":null},{"src":"./recipes.js?v=a35bb7a125","integrity":null},{"src":"./goods.js?v=fbd22b0a88","integrity":null},{"src":"./product-wishes.js?v=b6015f6bb5","integrity":null},{"src":"./birthdays.js?v=7e4240e22b","integrity":null},{"src":"./sites.js?v=4b1ceed7a2","integrity":null},{"src":"./vpn.js?v=67f482c70e","integrity":null},{"src":"./server.js?v=e9537e8f86","integrity":null},{"src":"./pc.js?v=2861a05007","integrity":null},{"src":"./english-host.js?v=56fd6aed15","integrity":null},{"src":"./english-sync.js?v=d1d23b6369","integrity":null},{"src":"./english-music-import.js?v=ab39abb2f5","integrity":null},{"src":"./english-music-media.js?v=368e691eb5","integrity":null},{"src":"./english-music-remote.js?v=2ce8f2712a","integrity":null},{"src":"./english-music-quiz.js?v=5d825081b6","integrity":null},{"src":"./english-music.js?v=8e28e10253","integrity":null},{"src":"./english-browser.js?v=e2971b7278","integrity":null},{"src":"./english.js?v=269b51f261","integrity":null},{"src":"./sport-core.js?v=27db67cbdc","integrity":null},{"src":"./sport.js?v=d305611d40","integrity":null},{"src":"./sport-train.js?v=2ebd7da268","integrity":null},{"src":"./sport-plan.js?v=4725a6f0fa","integrity":null},{"src":"./sport-more.js?v=8c9ddd8b60","integrity":null},{"src":"./sport-fingers.js?v=583a827080","integrity":null},{"src":"./sport-ai.js?v=e71074b322","integrity":null},{"src":"./sport-assistant.js?v=72a3106f65","integrity":null},{"src":"./sport-session-auto.js?v=20261111-livefix-dbf2c617b9","integrity":null},{"src":"./sport-session.js?v=20261111-livefix-e5d457d39d","integrity":null},{"src":"./sport-session-magic.js?v=20261112-column-33c526efae","integrity":null},{"src":"./sport-session-runtime.js?v=6464f538f9","integrity":null},{"src":"./sport-native-clock.js?v=1357ec562e","integrity":null},{"src":"./render-queue.js?v=36ac70040a","integrity":null},{"src":"./card-logos.js?v=52040d6e58","integrity":null},{"src":"./cards.js?v=66ad767710","integrity":null},{"src":"./card-swipe.js?v=1c084bc4c0","integrity":null},{"src":"./address-map.js?v=48c2939ebf","integrity":null},{"src":"./finance.js?v=5a3aaddac0","integrity":null},{"src":"./vault-crypto.js?v=44894fa796","integrity":null},{"src":"./docs.js?v=8ecc60432e","integrity":null},{"src":"./more.js?v=ab663f2771","integrity":null},{"src":"./capture.js?v=a841fbe2e4","integrity":null},{"src":"./holidays.js?v=707e8c4040","integrity":null},{"src":"./today-cards.js?v=659041b4d7","integrity":null},{"src":"./sections.js?v=b8d5a7d318","integrity":null},{"src":"./packing-core.js?v=42d1c55510","integrity":null},{"src":"./packing.js?v=30074c8e0c","integrity":null},{"src":"./sheet-state.js?v=c249cf4b04","integrity":null},{"src":"./task-repeat.js?v=fb04dd4907","integrity":null},{"src":"./piano/vendor/tone-midi.js?v=9165a2b3de","integrity":null},{"src":"./piano-voices.js?v=f570f34d18","integrity":null},{"src":"./piano.js?v=e3f9c46a72","integrity":null},{"src":"./app.js?v=44f69b69b9","integrity":null},{"src":"./english-practice-core.js?v=cd3dd3b8b8","integrity":null},{"src":"./english-media-practice-core.js?v=972c83f48d","integrity":null},{"src":"./english-lyrics-practice-core.js?v=69b2ae2add","integrity":null},{"src":"./english-lyrics-practice.js?v=6f68efe83c","integrity":null},{"src":"./english-practice.js?v=faa2e41e66","integrity":null},{"src":"./english-media-practice.js?v=5ba962b551","integrity":null},{"src":"./english-legacy-recovery.js?v=abc0c30d86","integrity":null},{"src":"./english-legacy-ui.js?v=4a092d9644","integrity":null},{"src":"./english-session.js?v=dee89ac9c3","integrity":null},{"src":"./notes.js?v=56b28a58fe","integrity":null},{"src":"./note-ink.js?v=cb15b0542c","integrity":null},{"src":"./note-editor.js?v=dae2f78bfe","integrity":null},{"src":"./voice.js?v=7731bd9a42","integrity":null},{"src":"./task-drag.js?v=d7ce68af9e","integrity":null},{"src":"./native-window.js?v=02644c6a91","integrity":null},{"src":"./motion.js?v=a7efad2b0b","integrity":null},{"src":"./calendar-drag.js?v=246035af96","integrity":null},{"src":"./digital-island.js?v=f617920885","integrity":null},{"src":"./activity-island.js?v=29ed13f2dc","integrity":null},{"src":"./nearby-card-island.js?v=1a66622019","integrity":null},{"src":"./digital-sound.js?v=3c27d0feab","integrity":null},{"src":"./digital-icons.js?v=a0f9371442","integrity":null},{"src":"./digital-pages.js?v=15b9671629","integrity":null},{"src":"./digital-collections.js?v=7066fcabe9","integrity":null},{"src":"./digital-directory.js?v=92a6742929","integrity":null},{"src":"./digital-services.js?v=6a880ecb9f","integrity":null},{"src":"./digital-workspaces.js?v=1409e7ff79","integrity":null},{"src":"./digital-learning.js?v=d0f369f539","integrity":null},{"src":"./english-presentation.js?v=72399fed96","integrity":null},{"src":"./english-presentation-install.js?v=e10a978901","integrity":null},{"src":"./digital-runtime.js?v=2bb272f8a5","integrity":null},{"src":"./digital-brand.js?v=04dbf9134c","integrity":null},{"src":"./assistant-commands.js?v=9f1c6e9e87","integrity":null},{"src":"./digital-assistant.js?v=b9fb2e7782","integrity":null},{"src":"./digital-assistant-visual.js?v=355f1a42e0","integrity":null},{"src":"./digital-effects.js?v=f77c4b9e83","integrity":null},{"src":"./digital-ecosystem.js?v=0db9121233","integrity":null},{"src":"./native-island.js?v=df49708c9f","integrity":null}];
   const tg = window.Telegram && window.Telegram.WebApp;
   const root = document.getElementById("app");
 
@@ -71,7 +71,11 @@
   }
 
   async function call(body, timeout = 20000, noteRefreshes = 0, widgetRead = null, englishBinding = null) {
+    const speechSignal=englishBinding?.signal;
+    if(speechSignal&&(body.action!=='english'||body.op!=='speech'))throw new Error('english_abort_read_only');
+    const speechCancelled=()=>{const error=new Error('english_speech_cancelled');error.name='AbortError';return error;};
     const assertEnglishBinding = () => {
+      if(speechSignal?.aborted)throw speechCancelled();
       if (englishBinding && (body.action !== 'english' || englishBinding.isCurrent() !== true)) throw new Error('english_owner_changed');
     };
     assertEnglishBinding();
@@ -81,6 +85,7 @@
     if (!init && !device) throw new Error("no-telegram");
     if (englishBinding) body = { ...body, englishOwnerProtocol: 2, englishOwnerScope: englishBinding.scope };
     const controller = new AbortController();
+    const abortSpeech=()=>controller.abort();speechSignal?.addEventListener('abort',abortSpeech,{once:true});if(speechSignal?.aborted)abortSpeech();
     // В Android-приложении окно ждёт не дольше 20 секунд: зависший запрос
     // (сеть режет большие ответы) повторяется сетью самого приложения.
     const canNative = !init && android && android.api;
@@ -95,7 +100,7 @@
     if(snapshotWrite)widgetSnapshotWrites++;
     try {
       // Android: если окно уже не достучалось до сервера — сразу сетью приложения.
-      const answer = useNative ? await nativeFetch(payload, timeout) : await fetch(API, {
+      const answer = useNative ? await nativeFetch(payload, timeout,speechSignal) : await fetch(API, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: payload,
@@ -107,7 +112,7 @@
         if (canNative) {
           useNative = true;
           try { android.log(`связь: ${body.action} ${error && error.name === "AbortError" ? "зависло" : "ошибка"} — повторяю сетью приложения`); } catch (_) {}
-          return nativeFetch(payload, timeout);
+          return nativeFetch(payload, timeout,speechSignal);
         }
         throw error;
       });
@@ -134,11 +139,11 @@
       if (DELTA.has(body.action) && json.snapshot) { json.snapshot = expand(json.snapshot); remember(json.snapshot); }
       return json;
     } catch (error) {
-      if(error?.message!=="note-read-cancelled")noteFailure(body.action, error, Date.now() - started);
+      if(error?.message!=="note-read-cancelled"&&!speechSignal?.aborted)noteFailure(body.action, error, Date.now() - started);
       throw error;
     } finally {
       if(snapshotWrite)widgetSnapshotWrites--;
-      clearTimeout(timer);
+      clearTimeout(timer);speechSignal?.removeEventListener('abort',abortSpeech);
     }
   }
 
@@ -155,12 +160,17 @@
     if (!status) { wait.fail(new TypeError("native: " + text)); return; }
     wait.done({ ok: status < 400, status, json: async () => JSON.parse(text) });
   };
-  function nativeFetch(payload, timeout) {
+  function nativeFetch(payload, timeout, signal=null) {
     return new Promise((done, fail) => {
       const id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      nativeWaits[id] = { done, fail };
-      setTimeout(() => { if (nativeWaits[id]) { delete nativeWaits[id]; const e = new Error("timeout"); e.name = "AbortError"; fail(e); } }, timeout + 5000);
-      try { android.api(id, payload); } catch (error) { delete nativeWaits[id]; fail(error); }
+      let timer;
+      const cleanup=()=>{delete nativeWaits[id];clearTimeout(timer);signal?.removeEventListener('abort',cancel);};
+      const cancel=()=>{cleanup();const error=new Error('english_speech_cancelled');error.name='AbortError';fail(error);};
+      if(signal?.aborted){cancel();return;}
+      nativeWaits[id]={done:value=>{cleanup();done(value);},fail:error=>{cleanup();fail(error);}};
+      timer=setTimeout(()=>{if(nativeWaits[id]){const error=new Error("timeout");error.name="AbortError";nativeWaits[id].fail(error);}},timeout+5000);
+      signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted){cancel();return;}
+      try { android.api(id, payload); } catch (error) { cleanup();fail(error); }
     });
   }
 
@@ -225,11 +235,12 @@
     isAuthCurrent:englishAuthCurrent,
     confirmedCapabilities(context){ return englishAuthCurrent(context) ? englishCapabilities.get(context) : null; },
     subscribeInvalidation(listener){ englishAuthListeners.add(listener); return () => englishAuthListeners.delete(listener); },
-    async sendEnglishBound(op, args, context) {
+    speechAbort(context){return englishAuthCurrent(context);},
+    async sendEnglishBound(op, args, context, options={}) {
       if (!englishAuthCurrent(context)) throw new Error('english_owner_changed');
       const captured = englishCredentials.get(context);
       try {
-        const response = await call({action:'english', op, args}, ['rule','booktr','bookadd'].includes(op)?150000:['chat','speech','check','debrief'].includes(op)?60000:20000, 0, null, {...captured,scope:context.scope,isCurrent:()=>englishAuthCurrent(context)});
+        const response = await call({action:'english', op, args}, ['rule','booktr','bookadd'].includes(op)?150000:['chat','speech','check','debrief'].includes(op)?60000:20000, 0, null, {...captured,scope:context.scope,signal:options.signal,isCurrent:()=>englishAuthCurrent(context)});
         if (!englishAuthCurrent(context)) throw new Error('english_owner_changed');
         return response;
       } catch (error) { if (error?.status === 401 && englishContext === context) revokeEnglishAuth(true); throw error; }

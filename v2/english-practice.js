@@ -2,10 +2,10 @@
 (()=>{'use strict';
 const core=window.FlowEnglishPracticeCore;if(!core)return;
 const names={mission:'Ситуации',sounds:'Звуки',story:'Истории',radio:'Аудирование',media:'Музыка и видео'};
-const engine=ex=>ex.practiceKind==='media'?window.FlowEnglishMediaPracticeCore:core;
+const engine=ex=>window.FlowEnglishLyricsPractice?.owns(ex)?window.FlowEnglishLyricsPracticeCore:ex.practiceKind==='media'?window.FlowEnglishMediaPracticeCore:core;
 const h=value=>esc(String(value??'')),button=(label,action,attrs='',primary=false)=>`<button type="button" class="${primary?'primary-button':'ghost-button'}" data-action="en-training-${action}" ${attrs}>${label}</button>`;
 let sound=null,generation=0;
-function stop(){generation++;window.FlowEnglishMediaPractice?.stop();if(sound){sound.pause();sound.onended=null;sound.onerror=null;sound.ontimeupdate=null;sound=null;}}
+function stop(){generation++;window.FlowEnglishMediaPractice?.stop();window.FlowEnglishLyricsPractice?.stop();if(sound){sound.pause();sound.onended=null;sound.onerror=null;sound.ontimeupdate=null;sound=null;}}
 const originalStop=window.enStopPcm;window.enStopPcm=function(...args){stop();return originalStop?.(...args);};
 const task=()=>enState().ex?.mode==='structured'?enState().ex:null;
 const step=ex=>engine(ex).resolve(ex.items[ex.index],ex.branch||0);
@@ -37,6 +37,7 @@ window.enStructuredCatalog=function(kind){
 };
 window.enStructuredScreen=function(ex){
  if(ex.blockedReason||ex.contentRevision!==engine(ex)?.revision)return `<section class="en-run"><h2>Материал обновился</h2><p>Прежние ответы сохранены на устройстве для проверки. Можно выбрать другое занятие.</p>${button('К практике','close')}</section>`;
+ if(window.FlowEnglishLyricsPractice?.owns(ex))return window.FlowEnglishLyricsPractice.screen(ex);
  if(ex.index>=ex.items.length){const summary=ex.result?.summary||core.summary(ex.items),saved=ex.result?.completed;return `<section class="en-run en-done"><h2>${saved?'Занятие завершено':'Ответы сохранены на устройстве'}</h2><p>${h(ex.title)}</p><p>Самостоятельно: ${summary.independent||0}${summary.aided?' · с поддержкой: '+summary.aided:''}${summary.selfcheck?' · самопроверка: '+summary.selfcheck:''}${summary.skipped?' · пропущено: '+summary.skipped:''}</p>${!saved?'<p class="section-note" role="status">Ждём подтверждения сохранения результата.</p>':''}${button('К практике','close','',true)}${ex.sourceMeta?.songId?button('К песне','media-return'):''}</section>`;}
  const q=step(ex),raw=ex.items[ex.index],result=raw.result,parts=q.kind==='info'&&q.phonetics?q.examples.flat():null;
  const top=`<div class="en-run-top"><button class="icon-button" data-action="en-ex-quit" aria-label="Закончить">${icon('close','icon-sm')}</button><div class="en-bar"><i style="width:${Math.round(ex.index/ex.items.length*100)}%"></i></div><small>${ex.index+1}/${ex.items.length}</small></div><p class="en-kicker">${h(q.section||names[ex.practiceKind])}</p>`;
@@ -60,6 +61,7 @@ window.enStructuredAck=function(ex,item,result){if(item.op==='practiceevent'&&it
 window.enStructuredAction=function(action,control){
  if(!action.startsWith('en-training-'))return false;const s=enState(),a=action.slice(12),d=control.dataset||{};
  if(a.startsWith('media-'))return window.FlowEnglishMediaPractice?.action(a.slice(6),control)??true;
+ if(a.startsWith('lyrics-'))return window.FlowEnglishLyricsPractice?.action(a.slice(7),control)??true;
  if(a==='catalog'){s.tab='course';s.practiceView='structured:'+d.kind;render();return true;}
  if(a==='close'){stop();s.ex=null;s.tab='course';s.practiceView='hub';render();return true;}
  if(a==='start'){if(window.sorokaEnglishSession?.capabilities?.practiceEvents!==true)throw Error('practice_contract');stop();s.ex=core.create(d.kind,d.id,crypto.getRandomValues(new Uint32Array(1))[0]);s.ex.sessionId=crypto.randomUUID();s.deck=null;s.tab='course';render();return true;}

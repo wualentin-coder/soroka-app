@@ -44,14 +44,14 @@ window.enMediaPracticeScreen=function(){
  if(p.type==='songs')body=p.busy?'<p role="status">Загружаем музыку…</p>':`<div class="en-steps">${(p.songs||[]).map(song=>action(`<b>${h(song.title)}</b><small>${h(song.artist)}</small>`,'song',`data-id="${h(song.id)}"`)).join('')||'<p>Сначала добавь песню в медиатеку.</p>'}</div>`;
  else{
   const importFields=p.type==='song'?`<h3>${h(p.track.title)}</h3><p class="section-note">${h(p.track.artist)}</p>`:`${p.type==='youtube'?`<label class="field"><span>Ссылка на YouTube</span><input name="url" type="url" value="${h(p.url||'')}" autocomplete="off"></label>`:`<label class="field"><span>Видео</span><input name="video" type="file" accept="video/mp4,video/webm,video/*"></label>${p.file?`<p class="section-note">${h(p.file.name)}</p>`:''}`}<label class="field"><span>Субтитры SRT / VTT</span><input name="subtitles" type="file" accept=".srt,.vtt,text/vtt,text/plain"></label><label class="field"><span>Или вставь субтитры</span><textarea name="subtitlesText" rows="3" maxlength="256000" placeholder="00:00:01.000 --&gt; 00:00:04.000&#10;English line | Перевод">${h(p.text||'')}</textarea></label>${action('Прочитать субтитры','parse')}<p class="section-note">Перевод необязателен. Текст берётся из твоих субтитров, без автоматического распознавания.</p>`;
-  const selection=p.lines.length?`<div class="en-media-range"><label class="field"><span>С первой строки</span><select name="from">${p.lines.map((line,i)=>`<option value="${i}" ${p.index===i?'selected':''}>${Math.floor(line.time/60)}:${String(Math.floor(line.time%60)).padStart(2,'0')} · ${h(line.en.slice(0,70))}</option>`).join('')}</select></label><label class="field"><span>Строк</span><select name="count">${[1,2,3,4,5,6].map(n=>`<option ${p.count===n?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="en-card" data-en-media-preview>${preview(p)}</div>${action(p.busy?'Готовим…':'Начать упражнение','prepare',p.busy?'disabled':'',true)}`:p.type==='song'?'<p>У этой песни пока нет таймкодов строк. Обнови текст в медиатеке или выбери другую песню.</p>':'';
+  const selection=p.lines.length?`<div class="en-media-range"><label class="field"><span>С первой строки</span><select name="from">${p.lines.map((line,i)=>`<option value="${i}" ${p.index===i?'selected':''}>${Math.floor(line.time/60)}:${String(Math.floor(line.time%60)).padStart(2,'0')} · ${h(line.en.slice(0,70))}</option>`).join('')}</select></label><label class="field"><span>Строк</span><select name="count">${(window.FlowEnglishLyricsPracticeCore?[1,2,3,4,5,6,7,8,9,10,11,12]:[1,2,3,4,5,6]).map(n=>`<option ${p.count===n?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="en-card" data-en-media-preview>${preview(p)}</div>${window.FlowEnglishLyricsPracticeCore?action(p.busy?'Готовим…':'По строкам песни','lyrics-prepare',p.busy?'disabled':'',true):''}${action(p.busy?'Готовим…':window.FlowEnglishLyricsPracticeCore?'Упражнение по фрагменту':'Начать упражнение','prepare',p.busy?'disabled':'',!window.FlowEnglishLyricsPracticeCore)}`:p.type==='song'?'<p>У этой песни пока нет таймкодов строк. Обнови текст в медиатеке или выбери другую песню.</p>':'';
   body=`<form data-en-media-source-form>${importFields}${selection}</form>`;
  }
  return `<section class="en-structured en-media-source"><button class="icon-button" data-action="en-practice-back" aria-label="Вся практика">${icon('left','icon-sm')}</button><h2>Музыка и видео</h2>${tabs}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
 };
 function sourceForm(){return document.querySelector('[data-en-media-source-form]');}
 function captureForm(p){const form=sourceForm();if(!form)return;if(form.elements.url)p.url=form.elements.url.value;if(form.elements.subtitlesText)p.text=form.elements.subtitlesText.value;if(form.elements.from)p.index=Number(form.elements.from.value);if(form.elements.count)p.count=Number(form.elements.count.value);}
-async function prepare(p){
+async function prepare(p,style){
  if(p.busy)return;captureForm(p);p.busy=true;p.error='';const serial=++request;render();
  try{
   if(p.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
@@ -59,7 +59,7 @@ async function prepare(p){
   let source;if(p.type==='song')source={type:'song',songId:p.track.id,start,end};
   else if(p.type==='youtube'){const link=FlowSongMedia.parseLink(p.url||'');source={type:'youtube',youtubeId:link.id,title:'Фрагмент видео',start,end,lines};}
   else{if(!p.file)throw Error('Сначала выбери видео.');source={type:'file',file:p.file,title:p.file.name,start,end,lines};}
-  const result=await enCall('practicesource',{source,seed:crypto.getRandomValues(new Uint32Array(1))[0]});
+  const result=await enCall('practicesource',{source,seed:crypto.getRandomValues(new Uint32Array(1))[0],...(style==='lyrics'?{style}:{})});
   if(serial!==request||!isPicker(p))return;
   const accepted=englishAction('en-training-media-ready',{dataset:{},exercise:result.exercise,owner:p.owner,serial});
   if(accepted===false)throw Error('Не удалось сохранить упражнение на устройстве. Освободи память и попробуй ещё раз.');
@@ -72,13 +72,14 @@ function actionHandler(name,control){
  if(name==='ready'){
   if(!picker||control.serial!==request||!current(control.owner)||!isPicker(picker))return true;
   if(control.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
-  const ex=control.exercise;if(ex?.practiceKind!=='media'||ex.contentRevision!==window.FlowEnglishMediaPracticeCore?.revision)throw Error('practice_content_changed');
+  const ex=control.exercise;if(ex?.practiceKind!=='media'||![window.FlowEnglishMediaPracticeCore?.revision,window.FlowEnglishLyricsPracticeCore?.revision].filter(Boolean).includes(ex.contentRevision))throw Error('practice_content_changed');
   ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{enStopPcm();picker=null;});render();return true;
  }
  const p=picker;if(!p||!current(p.owner))return true;
  if(name==='type'){captureForm(p);p.error='';p.busy=false;p.type=d.type;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs')loadSongs(p);else render();return true;}
  if(name==='song'){loadSong(p,d.id);return true;}
  if(name==='parse'){captureForm(p);try{p.lines=parseSubtitles(p.text||'');p.index=0;p.count=Math.min(3,p.lines.length);p.error='';}catch(error){p.error=failText(error);}render();return true;}
+ if(name==='lyrics-prepare'){prepare(p,'lyrics');return true;}
  if(name==='prepare'){prepare(p);return true;}
  return true;
 }
@@ -116,11 +117,11 @@ document.addEventListener('change',async event=>{
  const field=event.target,p=picker;if(!p||!field.closest?.('[data-en-media-source-form]')||!current(p.owner))return;
  captureForm(p);
  if(field.name==='from'||field.name==='count'){const node=document.querySelector('[data-en-media-preview]');if(node)node.innerHTML=preview(p);return;}
- if(field.name==='video'){p.busy=true;const serial=++request;try{const identity=await attachFile(field.files?.[0],null,()=>serial===request&&isPicker(p));if(serial!==request||!isPicker(p))return;p.file=identity;p.busy=false;p.error='';render();}catch(error){if(serial===request)paintError(p,error);}}
+ if(field.name==='video'){p.busy=true;const serial=++request;try{const identity=await attachFile(field.files?.[0],null,()=>serial===request&&isPicker(p));if(serial!==request||!isPicker(p))return;captureForm(p);p.file=identity;p.busy=false;p.error='';render();}catch(error){if(serial===request){captureForm(p);paintError(p,error);}}}
  if(field.name==='subtitles'){try{const serial=++request,file=field.files?.[0];if(!file||file.size>256000)throw Error('Выбери субтитры до 256 КБ.');const text=await file.text();if(serial!==request||!isPicker(p))return;p.text=text;p.lines=parseSubtitles(text);p.index=0;p.count=Math.min(3,p.lines.length);p.error='';render();}catch(error){paintError(p,error);}}
 });
 document.addEventListener('submit',event=>{if(event.target.matches?.('[data-en-media-source-form]')){event.preventDefault();if(picker)prepare(picker);}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)closePlayback();});window.addEventListener('pagehide',leave);
 window.sorokaEnglishSession?.subscribeInvalidation(()=>{leave();});
-window.FlowEnglishMediaPractice={action:actionHandler,openSong(track){openPicker(track);},play,stop,tools:{parseSubtitles,selectLines,coverage,timedLines,fileIdentity}};
+window.FlowEnglishMediaPractice={action:actionHandler,openSong(track){openPicker(track);},play,stop,tools:{parseSubtitles,selectLines,coverage,timedLines,fileIdentity,fileSource(source){return source?.type==='file'&&localFile?.sha256===source.file?.sha256&&localFile?.size===source.file?.size?localURL:null;}}};
 })();
