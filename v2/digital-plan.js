@@ -47,14 +47,14 @@
  }
  const nativeRender=window.render;
  window.render=function(...args){
-  const nextScope=ui.page+':'+(ui.selected||''),inPlan=['today','tasks','upcoming'].includes(ui.page),sameScope=scope===nextScope;
+  const pageChanged=scope.split(':')[0]!==ui.page,nextScope=ui.page+':'+(ui.selected||''),inPlan=['today','tasks','upcoming'].includes(ui.page),sameScope=scope===nextScope;
   if(!sameScope){cancel();models.clear();completedOverdue.clear();}
   const before=new Map((inPlan&&sameScope?rows():[]).map(node=>[String(node.dataset.taskId),{node,owner:owner(node),top:owner(node).getBoundingClientRect().top,done:node.classList.contains('is-done'),model:models.get(String(node.dataset.taskId))}]));
   for(const [id,old] of before){const task=record(id);if(!task?.done)completedOverdue.delete(id);else if(!old.done&&old.node.closest('.dm-overdue'))completedOverdue.add(id);}
   const result=nativeRender.apply(this,args);scope=ui.page+':'+(ui.selected||'');
   if(document.querySelector('.modal-backdrop'))clearResponses();
   else for(const item of responses.values()){const surface=allSurfaces().find(node=>surfaceKey(node)===item.key);if(surface){const box=surface.getBoundingClientRect();Object.assign(item.layer.style,{left:box.left+'px',top:box.top+'px',width:box.width+'px',height:box.height+'px'});}else{item.animation.cancel();item.layer.remove();}}
-  if(!sameScope&&ui.page==='today')enter();
+  if(pageChanged&&ui.page==='today')enter();
   if(!inPlan||scope!==nextScope){cancel();models.clear();return result;}
   // Preserve complete existing swipe owners, including pointer listeners/focus.
   for(const node of rows()){const id=String(node.dataset.taskId),old=before.get(id),freshOwner=owner(node);if(old&&old.model===model(id)&&freshOwner!==old.owner&&!old.owner.isConnected&&freshOwner.tagName===old.owner.tagName)freshOwner.replaceWith(old.owner);}

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "build": "b4236b51b65694c7",
+  "build": "6cb88991fc470fb5",
   "runtime": "native-plan-motion",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
@@ -2495,7 +2495,7 @@
     {
       "path": "bridge.js",
       "bytes": 186245,
-      "sha256": "b95488db453bd9643898d62d95f07ff65fc3d9e21e76ec79217c335a02533f1c"
+      "sha256": "3b944d1a47cb3234e1fbfa402fd4c1b76dafa6f6e6c697dc0d8baa417b741fb1"
     },
     {
       "path": "calendar-drag.js",
@@ -6309,8 +6309,8 @@
     },
     {
       "path": "digital-plan.js",
-      "bytes": 9353,
-      "sha256": "1efcb713e282adeaaade8023b817fb32b4f9f5da4ad9ebba33d47da71e714c18"
+      "bytes": 9396,
+      "sha256": "3a82469c0cdab8a2dcab37be98c2928e27a063d77a746aec009fb676b7c00764"
     },
     {
       "path": "digital-runtime.js",
@@ -6500,7 +6500,7 @@
     {
       "path": "index.html",
       "bytes": 3947,
-      "sha256": "14a121352922c72c1db72af58a9fb807429f2bd8bee9c908d3012faea59b93c2"
+      "sha256": "9accd207194e19c60a0a499a28c8abb7dc1738a9ced6c956b5e0efe1b0bc9e20"
     },
     {
       "path": "live.css",
@@ -7225,7 +7225,7 @@
     {
       "path": "sw.js",
       "bytes": 41901,
-      "sha256": "633957403367657993547d4daf3817028bf629f9c7602c1c27da926432cc74bf"
+      "sha256": "c661e21ce1da9c8965de31d2bb9279eb6fc5fa3653171910ab1e3f50a7c303d8"
     },
     {
       "path": "task-drag.js",
