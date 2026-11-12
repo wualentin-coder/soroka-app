@@ -32,6 +32,18 @@ html[data-flow-design=magic] .dm-plan13 .dm-overdue h2,html[data-flow-design=mag
 html[data-flow-design=magic] .dm-plan13 :is(.task-list,.task-stack,.swipe-content){background:transparent}
 html[data-flow-design=magic] .dm-plan13 .dm-overdue .task-description{display:none}
 html[data-flow-design=magic] .dm-plan13 .dm-plan-nearby>.section-heading{margin:0 0 10px;min-height:44px;border:0}
+/* R19: same calendar accent and date badge as the component library. */
+.dm-plan13 .dm-plan-birthday{min-width:0;padding:16px;border:1px solid var(--line);border-radius:24px;background:var(--surface);transition:border-color 440ms var(--flow-control-ease)}
+.dm-plan13 .dm-plan-birthday-open{display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:61px;margin:0;padding:0;border:0;border-radius:12px;background:none;color:var(--text);text-align:left;font:15px/1.5 Manrope,system-ui,sans-serif;box-shadow:none}
+.dm-plan13 .dm-plan-birthday-date{display:grid;justify-items:center;align-content:center;gap:2px;flex:0 0 52px;min-width:52px;padding:8px;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--accent) 5%,var(--surface));color:var(--accent);font-variant-numeric:tabular-nums}
+.dm-plan13 .dm-plan-birthday-date strong{font-size:24px;font-weight:550;line-height:1.1}
+.dm-plan13 .dm-plan-birthday-date small{font-size:10px;line-height:15px;color:var(--muted)}
+.dm-plan13 .dm-plan-birthday-copy{flex:1;min-width:0}
+.dm-plan13 .dm-plan-birthday-copy strong{display:block;font-size:15px;font-weight:550;line-height:1.5;overflow-wrap:anywhere}
+.dm-plan13 .dm-plan-birthday-copy small{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.55}
+.dm-plan13 .dm-plan-birthday-when{flex:none;padding:0;border:0;background:none;color:var(--accent);font-size:12px;line-height:1.5;white-space:nowrap}
+.dm-plan13 .dm-plan-birthday:has(:focus-visible){border-color:var(--accent)}
+.dm-plan13 .dm-plan-birthday-open:focus-visible{outline:none;box-shadow:none}
 html[data-flow-design=magic] .dm-plan13 .dm-plan-upcoming-event{padding:10px 0;border:0}
 html[data-flow-design=magic] .dm-plan13 .dm-plan-upcoming-event>small{color:var(--muted);font-size:12px}
 @media(max-width:760px){html[data-flow-design=magic] .dm-main:has(>.dm-plan13){padding:10px 16px 115px}html[data-flow-design=magic] .dm-plan13 .dm-plan-practices .dc-module-card{min-height:105px}}

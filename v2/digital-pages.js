@@ -75,6 +75,12 @@
     const title=key==='english'?'Английский':'Спорт',step=doc.content.querySelector('.en-home-text b')?.textContent||title,meta=doc.content.querySelector('.en-home-text>span')?.textContent||'';
     return `<button class="dm-home-learning" type="button" data-action="${key==='english'?'en-home':'sp-home'}"><span class="dm-home-subject">${window.flowMagicObject?.(key)||icon(key)}</span><span class="dm-home-copy"><strong>${title}</strong><span>${esc(step)}</span><small>${esc(meta)}</small></span>${icon('arrow')}</button>`;
   }
+  // R19's date badge and quiet metadata, preserving the native event/gift owner.
+  function planBirthdayRow(b){
+    const gifts=(b.e.gifts||[]).filter(item=>!item.done).length,when=birthdayWhen(b),month=MONTHS_NOM[b.month].slice(0,3).toUpperCase();
+    const label=`День рождения ${b.name}, ${b.day} ${MONTHS_GEN[b.month]}${when?', '+when:''}${gifts?`, ${gifts} ${plural(gifts,'идея','идеи','идей')} подарка`:''}`;
+    return `<article class="dm-plan-birthday"><button class="dm-plan-birthday-open" type="button" data-action="birthday-open" data-id="${esc(b.e.id)}" aria-label="${esc(label)}"><time class="dm-plan-birthday-date" datetime="${esc(localIso(b.date))}"><strong>${b.day}</strong><small>${month}</small></time><span class="dm-plan-birthday-copy"><strong>${esc(b.name)}</strong><small>День рождения${gifts?` · ${gifts} ${plural(gifts,'идея','идеи','идей')}`:''}</small></span>${when?`<span class="dm-plan-birthday-when">${esc(when.charAt(0).toUpperCase()+when.slice(1))}</span>`:''}</button></article>`;
+  }
   // Whole Plan composition from docs/design/app-prototype/app.js planPage:
   // calendar + agenda, three hobbies, overdue, then upcoming. Native owners stay.
   window.todayPage=function(){
@@ -86,8 +92,9 @@
     const shownTickets=new Set(meetings.map(eventTicket).filter(Boolean).map(item=>item.id));
     const tickets=isToday&&typeof todayTicketsSection==='function'?todayTicketsSection(shownTickets):'';
     const soonBirthdays=isToday&&typeof birthdays==='function'?birthdays().filter(item=>item.days<=14).slice(0,4):[];
-    const soonEvents=isToday?(data.events||[]).filter(item=>item.due>selected&&item.due<=offsetIso(14)).sort((a,b)=>(a.due+(a.time||'')).localeCompare(b.due+(b.time||''))).slice(0,4):[];
-    const nearby=soonBirthdays.length||soonEvents.length||tickets?`<section class="dm-plan-nearby">${sectionHeading('Ближайшее')}<div class="birthday-soon">${soonBirthdays.map(birthdayRow).join('')}</div>${soonEvents.map(item=>`<div class="dm-plan-upcoming-event"><small>${esc(dateLabel(item.due))}</small>${eventCard(item)}</div>`).join('')}${tickets}</section>`:'';
+    const birthdayIds=new Set(soonBirthdays.map(item=>item.e.id));
+    const soonEvents=isToday?(data.events||[]).filter(item=>!birthdayIds.has(item.id)&&item.due>selected&&item.due<=offsetIso(14)).sort((a,b)=>(a.due+(a.time||'')).localeCompare(b.due+(b.time||''))).slice(0,4):[];
+    const nearby=soonBirthdays.length||soonEvents.length||tickets?`<section class="dm-plan-nearby">${sectionHeading('Ближайшее')}<div class="birthday-soon">${soonBirthdays.map(planBirthdayRow).join('')}</div>${soonEvents.map(item=>`<div class="dm-plan-upcoming-event"><small>${esc(dateLabel(item.due))}</small>${eventCard(item)}</div>`).join('')}${tickets}</section>`:'';
     const date=fullDate(selected),add=`<button class="text-button" type="button" data-action="add" data-type="task" aria-label="Добавить задачу">${icon('plus')}</button>`;
     const overdue=late.length?`<section class="dm-overdue">${sectionHeading(pendingLate.length?`Просрочено · ${pendingLate.length}`:'Выполнено',pendingLate.length?`<button class="text-button" type="button" data-action="move-overdue">Перенести ${icon('arrow')}</button>`:'')}<div class="dm-overdue-list task-list task-stack">${late.map(taskRow).join('')}</div></section>`:'';
     return `<div class="page-layout dm-plan dm-plan13"><div class="main-column"><div class="dm-plan-schedule dm-calendar-living" role="region" aria-label="Календарь и дела дня"><div class="dm-calendar-atmosphere" aria-hidden="true"></div>${week()}<section class="dm-plan-agenda">${sectionHeading(esc(date.charAt(0).toUpperCase()+date.slice(1)),add)}<div class="task-list task-stack">${daily.map(taskRow).join('')}${paymentRows}${!daily.length&&!duePays.length?'<p class="dm-free-day">На этот день пока нет дел.</p>':''}</div>${meetings.length?`<div class="dm-native-events">${meetings.map(eventCard).join('')}</div>`:''}</section></div>${modules}${overdue}${nearby}</div><aside class="aside-column" hidden></aside></div>`;
