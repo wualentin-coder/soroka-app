@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "build": "34249f32e0c9804c",
-  "runtime": "native-mature-map-parity",
+  "build": "c40f5810d41a0c30",
+  "runtime": "native-mature-full-plan",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
   "backendChanged": false,
@@ -19,8 +19,8 @@
     },
     {
       "path": "app.js",
-      "bytes": 133424,
-      "sha256": "0a6c2b4f7bdd4d5ef1b726e688c4f5785c3031c7f3e06b02853ef572237597ca"
+      "bytes": 133748,
+      "sha256": "010cf3674dc830d6cfddccbe27f849baece55ef5052e3fe74fff129813aad86c"
     },
     {
       "path": "assets/cormorant-garamond-cyrillic-500.woff2",
@@ -2494,8 +2494,8 @@
     },
     {
       "path": "bridge.js",
-      "bytes": 186187,
-      "sha256": "457cd8f3a1931f40e7c3d9017f04e6d5bd42cfdccc90da1a3dcd67ca17e901ea"
+      "bytes": 186245,
+      "sha256": "fe7b4823c7291bbb2bba92175667663a70b723476dea7ccc762111406c3b3ba9"
     },
     {
       "path": "calendar-drag.js",
@@ -2649,8 +2649,18 @@
     },
     {
       "path": "digital-pages.js",
-      "bytes": 25957,
-      "sha256": "454977685fc30efb218f21683d81a5b9cab1db0be0d132f0ef7c01321e12cfdf"
+      "bytes": 25262,
+      "sha256": "002393d52fe6a2be2abf4b8c69962864e417e3dbcef1c68b32062f5bdf0be03f"
+    },
+    {
+      "path": "digital-plan.css",
+      "bytes": 5340,
+      "sha256": "d9e7bb95ee2009a24129be64d15814f515237221528e68b283e4b6866969ae30"
+    },
+    {
+      "path": "digital-plan.js",
+      "bytes": 4813,
+      "sha256": "1a765afd627546d0eaef704d1b1dec0764e91e7bb3d6f7a053ff9d543e7c93fe"
     },
     {
       "path": "digital-runtime.js",
@@ -2814,8 +2824,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 3822,
-      "sha256": "35ce3556bf589c74ae1f4259006cf14f44c31bf750366270f80e0ea885a12f23"
+      "bytes": 3887,
+      "sha256": "adcf05df58a5a16cd4ede1922d55f25e4a7c9aebf787d8e36437a9d59be8dae4"
     },
     {
       "path": "live.css",
@@ -3534,8 +3544,8 @@
     },
     {
       "path": "sw.js",
-      "bytes": 41750,
-      "sha256": "2d7df39dccb30ac30d5d6ac3bb63dfddda230a500e99ce285b8e744da17e3315"
+      "bytes": 41817,
+      "sha256": "c5e8e5bb0cb19b8470eb9f365e4688f2180a02eccf7d1be4a2efbc2a57ee7471"
     },
     {
       "path": "task-drag.js",

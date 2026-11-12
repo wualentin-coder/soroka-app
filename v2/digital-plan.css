@@ -1,0 +1,41 @@
+/* One complete Plan composition: docs/design/app-prototype/app.js planPage,
+ * app.css surfaces/hobby-grid, components.js LineRow + TaskStack. */
+html[data-flow-design=magic] .dm-main:has(>.dm-plan13){padding:12px 22px 115px;max-width:850px;margin-inline:auto;width:100%}
+html[data-flow-design=magic] .dm-plan13{display:block;min-width:0;margin:0}
+html[data-flow-design=magic] .dm-plan13>.main-column{display:grid;gap:18px;align-content:start;min-width:0}
+html[data-flow-design=magic] .dm-plan13 .aside-column{display:none}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-schedule{border-radius:28px;border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line));padding:18px;box-shadow:none}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-schedule::after{content:none}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-agenda{padding:12px 0 0;margin-top:8px}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-agenda>.section-heading{margin:0 0 8px;padding:0;min-height:44px;border:0}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-agenda>.section-heading h2{font-size:15px;line-height:1.5}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-agenda>.section-heading .text-button{width:44px;padding:0;display:grid;place-items:center}
+html[data-flow-controls=on] .dm-main .dm-plan13 :is(.dm-task-row,.dm-task-row:has(>.task-sub)){display:grid;grid-template-columns:44px minmax(0,1fr) auto;column-gap:8px;min-height:61px;padding:8px 0;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;box-shadow:none}
+html[data-flow-controls=on] .dm-main .dm-plan13 .task-stack>.swipe-row:last-child .dm-task-row{border-bottom:0}
+html[data-flow-controls=on] .dm-main .dm-plan13 .dm-task-row>.task-info{min-height:44px}
+html[data-flow-controls=on] .dm-main .dm-plan13 .dm-task-row .task-name{font:550 15px/1.5 Manrope,system-ui,sans-serif;min-height:44px;padding:8px 0}
+html[data-flow-design=magic] .dm-plan13 .task-time{min-height:0;padding:0!important;border:0;background:none;box-shadow:none;gap:0}
+html[data-flow-design=magic] .dm-plan13 .dm-task-clock{position:relative;isolation:isolate;overflow:hidden;font-size:14px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--accent);padding:6px 9px;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 5%,transparent)}
+html[data-flow-design=magic] .dm-plan13 .dm-task-clock::after{content:'';position:absolute;inset:0 -70%;pointer-events:none;opacity:0;background:linear-gradient(110deg,transparent 35%,color-mix(in srgb,var(--accent) 24%,transparent) 49%,transparent 63%);transform:translateX(-45%);animation:dm-plan-clock-light 1350ms cubic-bezier(.22,.75,.2,1)}
+@keyframes dm-plan-clock-light{0%{transform:translateX(-45%);opacity:0}20%{opacity:.75}100%{transform:translateX(45%);opacity:0}}
+html[data-motion=off] .dm-plan13 .dm-task-clock::after{animation:none}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .dm-plan13 .dm-task-clock::after{animation:none}}
+html[data-flow-design=magic] .dm-plan13 .task-time:not(:has(.dm-task-clock,.task-drag-handle)){display:none!important}
+html[data-flow-design=magic] .dm-plan13 .dm-native-events{margin-top:8px}
+html[data-flow-design=magic] .dm-plan13 .dm-native-events .event-card{border:0;margin:0;padding:12px 0;min-height:60px}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-practices{margin:0}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-practices .dc-module-group{margin:0}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-practices .dc-module-card{min-height:115px;border-radius:24px}
+html[data-flow-design=magic] .dm-plan13 .dm-overdue{padding:16px;margin:0;border:1px solid var(--line);border-radius:28px;background:var(--surface);box-shadow:none;min-height:0}
+html[data-flow-design=magic] .dm-plan13 .dm-overdue>.section-heading{margin:0 0 8px;padding:0;min-height:44px;border:0}
+html[data-flow-design=magic] .dm-plan13 .dm-overdue h2,html[data-flow-design=magic] .dm-plan13 .dm-plan-nearby h2{font-size:15px;font-weight:600}
+html[data-flow-design=magic] .dm-plan13 :is(.task-list,.task-stack,.swipe-content){background:transparent}
+html[data-flow-design=magic] .dm-plan13 .dm-overdue .task-description{display:none}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-nearby>.section-heading{margin:0 0 10px;min-height:44px;border:0}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-upcoming-event{padding:10px 0;border:0}
+html[data-flow-design=magic] .dm-plan13 .dm-plan-upcoming-event>small{color:var(--muted);font-size:12px}
+@media(max-width:760px){html[data-flow-design=magic] .dm-main:has(>.dm-plan13){padding:10px 16px 115px}html[data-flow-design=magic] .dm-plan13 .dm-plan-practices .dc-module-card{min-height:105px}}
+.dm-plan-edit-actions{display:flex;gap:10px;margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+.dm-plan-edit-actions>button{display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:0;min-height:44px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--danger,#f0a49b);font:inherit}
+.dm-plan-edit-actions>button.primary-button{color:var(--accent-ink);background:var(--accent);border-color:var(--accent);box-shadow:none}
+.dm-task-add:has(.dm-plan-edit-actions) .dm-task-add-field>button[type=submit]{display:none}
