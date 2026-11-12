@@ -981,7 +981,7 @@ document.addEventListener('click',async event=>{
  const key=String(job.id)+':'+String(job.started_at);let intent=rmCustomerIntents.get(key);if(!intent){intent={requestId:crypto.randomUUID(),shareId:null,busy:false};rmCustomerIntents.set(key,intent);}if(intent.busy)return;
  intent.busy=true;button.disabled=true;
  try{
-  if(!intent.shareId){const answer=await window.sorokaRenderShare({op:'create',jobId:String(job.id),requestId:intent.requestId,label:'Готовность рендера'});if(typeof answer?.shareId!=='string')throw Error('share_unconfirmed');intent.shareId=answer.shareId;}
+  if(!intent.shareId){const answer=await window.sorokaRenderShare({op:'create',jobId:String(job.id),requestId:intent.requestId,label:String(job.name||'Рендер').trim().slice(0,120)});if(typeof answer?.shareId!=='string')throw Error('share_unconfirmed');intent.shareId=answer.shareId;}
   const sent=await window.sorokaRenderShare({op:'send_owner',shareId:intent.shareId,requestId:intent.requestId});if(sent?.sent!==true)throw Error('send_unconfirmed');toast('Карточка в чате Flow — её можно переслать заказчику');
  }catch{toast('Отправка не подтверждена. Нажми ещё раз, чтобы проверить её.');}finally{intent.busy=false;if(button.isConnected)button.disabled=false;}
 },true);

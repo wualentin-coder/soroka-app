@@ -1,0 +1,63 @@
+/* One control vocabulary, same approved 440/480/520ms rhythm. */
+html[data-flow-controls=on]{--flow-control-ease:cubic-bezier(.4,0,.2,1);--flow-control-time:440ms}
+html[data-flow-controls=on] :is(button,a,summary,input){-webkit-tap-highlight-color:transparent}
+html[data-flow-controls=on] :is(button,summary){touch-action:manipulation}
+html[data-flow-controls=on] button:not(.piano-key):not(.pn-player-shell button):not(.flow-assistant-layer button):not(.dm-live-assistant button){transition:background-color 440ms var(--flow-control-ease),border-color 440ms var(--flow-control-ease),color 440ms var(--flow-control-ease),scale 220ms var(--flow-control-ease)}
+html[data-flow-controls=on] button:not(.piano-key):not(.pn-player-shell button):not(.flow-assistant-layer button):not(.dm-live-assistant button):active{scale:.985}
+html[data-flow-controls=on] :is(button,a,input,textarea,select):focus:not(:focus-visible){outline:none!important}
+.flow-control-response{position:fixed;pointer-events:none;z-index:120;opacity:0;background:radial-gradient(ellipse at var(--flow-hit-x,50%) 50%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 76%);border:0;box-shadow:none;contain:strict}
+.flow-control-response[data-mode=line]{background:none}
+.flow-control-response[data-mode=line]::after{content:'';position:absolute;left:8px;right:8px;bottom:0;height:1px;border-radius:4px;background:linear-gradient(90deg,transparent,var(--accent) var(--flow-hit-x,50%),transparent)}
+html[data-flow-controls=on] .flow-motion-bar{isolation:isolate}
+html[data-flow-controls=on] .flow-motion-bar>:is(button,a,[role=tab]){position:relative;z-index:1}
+html[data-flow-controls=on] .flow-motion-bar>:is(button,a,[role=tab]).active,html[data-flow-controls=on] .flow-motion-bar>[aria-selected=true],html[data-flow-controls=on] .flow-motion-bar>[aria-pressed=true]{background:transparent!important;box-shadow:none!important}
+.flow-motion-indicator{position:absolute;z-index:0;display:block;pointer-events:none;background:color-mix(in srgb,var(--accent) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));box-sizing:border-box}
+html[data-flow-controls=on] .switch>span{transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)!important}
+html[data-flow-controls=on] .switch>span::before,html[data-flow-controls=on] .switch>span::after{transition:transform 520ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease)!important}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select){transition:border-color 480ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease);caret-color:var(--accent)}
+html[data-flow-controls=on] :is(.search-box,.dc-category-search,.dc-movie-search){transition:border-color 480ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease)}
+html[data-flow-controls=on] :is(.search-box,.dc-category-search,.dc-movie-search):focus-within{border-color:color-mix(in srgb,var(--accent) 52%,var(--line));box-shadow:none}
+html[data-flow-controls=on] :is(.task-check,.sl-check,.gift-check) .check-ring{transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease);flex:none;aspect-ratio:1}
+html[data-flow-controls=on] .flow-check-changed{animation:flow-check-arrive 520ms var(--flow-control-ease)}
+@keyframes flow-check-arrive{0%{opacity:.62}100%{opacity:1}}
+html[data-flow-controls=on][data-motion=off] :is(button,input,textarea,select,.switch>span,.switch>span::before,.switch>span::after){transition:none!important;animation:none!important}
+@media(prefers-reduced-motion:reduce){html[data-flow-controls=on]:not([data-motion=on]) :is(button,input,textarea,select,.switch>span,.switch>span::before,.switch>span::after){transition:none!important;animation:none!important}}
+
+html[data-flow-controls=on] input[type=checkbox]:not(.switch input,.ss-toggle input,.sp-switch input){appearance:none;-webkit-appearance:none;position:relative;display:inline-grid;place-items:center;width:22px;height:22px;min-height:22px!important;min-width:22px;flex:0 0 22px;aspect-ratio:1;margin:0;border:1px solid var(--muted);border-radius:7px;background:transparent;color:var(--accent-ink);vertical-align:middle;transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)}
+html[data-flow-controls=on] input[type=checkbox]:not(.switch input,.ss-toggle input,.sp-switch input):checked{background:var(--accent);border-color:var(--accent)}
+html[data-flow-controls=on] input[type=checkbox]:not(.switch input,.ss-toggle input,.sp-switch input)::after{content:'';width:12px;height:9px;clip-path:polygon(0 42%,15% 26%,39% 66%,86% 0,100% 15%,39% 100%);background:currentColor;opacity:0;transform:scale(.78);transition:opacity 440ms var(--flow-control-ease),transform 520ms var(--flow-control-ease)}
+html[data-flow-controls=on] input[type=checkbox]:not(.switch input,.ss-toggle input,.sp-switch input):checked::after{opacity:1;transform:scale(1)}
+html[data-flow-controls=on] input.flow-check-changed:checked::after{animation:flow-check-draw 520ms var(--flow-control-ease)}
+@keyframes flow-check-draw{from{opacity:0;transform:scale(.65)}to{opacity:1;transform:scale(1)}}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select){border-radius:12px}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]),textarea,select):focus{outline:none!important}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not(.search-box input),textarea,select):focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 38%,transparent)}
+html[data-flow-controls=on][data-motion=off] input::after{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){html[data-flow-controls=on]:not([data-motion=on]) input::after{animation:none!important;transition:none!important}}
+
+/* R06: one quiet spine, equal first/last spacing, no separate bracket boxes. */
+html[data-flow-controls=on] .task-sub{min-width:0;align-self:stretch}
+html[data-flow-controls=on] .task-checklist-toggle{display:flex;align-items:center;gap:8px;justify-content:flex-start;width:100%;min-height:44px;padding:4px 0;border:0;background:none;box-shadow:none;color:var(--muted);font-size:12px;font-weight:500}
+html[data-flow-controls=on] .task-checklist-toggle>svg:last-child{margin-left:auto;transition:transform 440ms var(--flow-control-ease)}
+html[data-flow-controls=on] :is(.task-checklist,.check-subs,.mu-episode-list){position:relative;display:block;min-width:0;margin:0 0 2px 10px;padding:0 0 0 16px;border:0;list-style:none;animation:none}
+html[data-flow-controls=on] :is(.task-checklist,.check-subs,.mu-episode-list)::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;border:0;border-radius:999px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 26%,var(--line)) 18%,var(--line) 78%,transparent);opacity:.65;pointer-events:none}
+html[data-flow-controls=on] .task-sub .task-checklist{margin-top:0;margin-left:10px;padding-left:16px;animation:none}
+html[data-flow-controls=on] :is(.task-checklist li,.check-sub){position:relative;margin:0;padding:0;min-height:44px;border:0}
+html[data-flow-controls=on] :is(.check-sub::before,.check-sub::after){content:none}
+html[data-flow-controls=on] :is(.task-checklist-item,.check-sub,.mu-episode-row){display:flex;align-items:center;gap:10px;min-height:48px;width:100%;padding:2px 0;border:0;border-radius:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-size:14px;text-align:left}
+html[data-flow-controls=on] .task-checklist-item{gap:21px;padding-left:11px}
+html[data-flow-controls=on] .task-checklist-item>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.45}
+html[data-flow-controls=on] .task-checklist-box{display:grid;place-items:center;width:22px;height:22px;min-width:22px;flex:0 0 22px;aspect-ratio:1;border:1px solid var(--muted);border-radius:7px;transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)}
+html[data-flow-controls=on] .task-checklist-box svg{width:15px;height:15px}
+html[data-flow-controls=on] .sub-check{display:grid;place-items:center;width:44px;height:44px;min-width:44px;flex:0 0 44px;position:relative;isolation:isolate;border:0!important;background:transparent!important;box-shadow:none;color:var(--accent-ink)}
+html[data-flow-controls=on] .sub-check::before{content:'';position:absolute;inset:11px;border:1px solid var(--muted);border-radius:7px;z-index:-1;transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)}
+html[data-flow-controls=on] .sub-check.checked::before{background:var(--accent);border-color:var(--accent)}
+html[data-flow-controls=on] .sub-check svg{width:15px;height:15px}
+html[data-flow-controls=on] .mu-part-row.is-series{margin-left:0}
+html[data-flow-controls=on] .mu-part-row.is-series::before{content:none}
+html[data-flow-controls=on] .mu-episode-panel{position:relative;margin:0 0 8px 20px;padding:0 0 0 16px;border:0}
+html[data-flow-controls=on] .mu-episode-panel::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:999px;background:linear-gradient(transparent,var(--line) 18%,var(--line) 78%,transparent);opacity:.65}
+html[data-flow-controls=on] .mu-season{margin:0;padding:0;border:0;border-radius:0;background:none}
+html[data-flow-controls=on] .mu-season-head{min-height:48px;padding:2px 0;gap:10px}
+html[data-flow-controls=on] .mu-episode-row{border-bottom:1px solid var(--line)}
+html[data-flow-controls=on] .mu-episode-row:last-child{border-bottom:0}

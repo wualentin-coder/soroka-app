@@ -309,7 +309,7 @@ function checklistProgress(task) {
 function checklistBlock(task) {
   const list = task.checklist || [];
   if (!list.length) return "";
-  const open = (ui.openChecklists || []).includes(task.id);
+  const open = !(ui.closedChecklists || []).includes(task.id);
   const head = `<button type="button" class="task-checklist-toggle ${open ? "open" : ""}" data-action="task-checklist-toggle" data-id="${esc(task.id)}" aria-expanded="${open}">${icon(task.listRef ? "list" : "check", "icon-sm")}<span>${task.listRef ? "Список" : "Подзадачи"} · ${list.filter(c => c.done).length} из ${list.length}</span>${icon("down", "icon-sm")}</button>`;
   if (!open) return `<div class="task-sub">${head}</div>`;
   // Отмеченные — вниз, порядок внутри групп как в списке; номер пункта прежний.
@@ -337,7 +337,7 @@ function toggleChecklistItem(recordId, index) {
   document.querySelectorAll(`.task-card[data-task-id="${CSS.escape(recordId)}"] [data-sub]`).forEach(li => {
     const was = before.get(li.dataset.sub);
     const shift = was === undefined ? 0 : was - li.getBoundingClientRect().top;
-    if (Math.abs(shift) > 1) li.animate([{ transform: `translateY(${shift}px)` }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,.8,.3,1)" });
+    if (!window.flowCommonControls && Math.abs(shift) > 1 && document.documentElement.dataset.motion !== "off") li.animate([{ transform: `translateY(${shift}px)` }, { transform: "none" }], { duration: 620, easing: "cubic-bezier(.4,0,.2,1)" });
   });
 }
 function taskCard(task) {
@@ -1221,7 +1221,7 @@ document.addEventListener("click", event => {
   if (action === "toggle-task") { toggleTask(control.dataset.id); return; }
   if (action === "finance-open-payments") { navigate("finance"); ui.financeTab = "payments"; render(); return; }
   if (action === "task-check-item") { toggleChecklistItem(control.dataset.id, Number(control.dataset.index)); return; }
-  if (action === "task-checklist-toggle") { const openIds = new Set(ui.openChecklists || []); openIds.has(control.dataset.id) ? openIds.delete(control.dataset.id) : openIds.add(control.dataset.id); ui.openChecklists = [...openIds]; render(); return; }
+  if (action === "task-checklist-toggle") { const closedIds = new Set(ui.closedChecklists || []); closedIds.has(control.dataset.id) ? closedIds.delete(control.dataset.id) : closedIds.add(control.dataset.id); ui.closedChecklists = [...closedIds]; render(); return; }
   if (action === "move-overdue") {
     const late = overdueTasks();
     late.forEach(task => { task.due = todayIso(); });

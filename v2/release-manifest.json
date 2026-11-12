@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "build": "b80a3965ad8c8618",
-  "runtime": "native-mature-plan12",
+  "build": "c1d54ec6cedfa873",
+  "runtime": "native-mature-shared-controls",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
   "backendChanged": false,
@@ -19,8 +19,8 @@
     },
     {
       "path": "app.js",
-      "bytes": 134115,
-      "sha256": "713ad1b973a35683ac43776aff8640bc4108c5405eba1faaaef5ef6bb3eaff34"
+      "bytes": 134214,
+      "sha256": "21eb0aff412045d9e0118081b51b757653a81191257fabdb8df7c700c7568af7"
     },
     {
       "path": "assets/cormorant-garamond-cyrillic-500.woff2",
@@ -2494,8 +2494,8 @@
     },
     {
       "path": "bridge.js",
-      "bytes": 186125,
-      "sha256": "e7c17e1d2d52a6e97817085036d2027cde1f6c7bce7c8303a355074f75e179e6"
+      "bytes": 186187,
+      "sha256": "9e1a9f434c4bec2aefe3c8301e6a95e3aa095fbd4f0aed6201100a2a982f64a1"
     },
     {
       "path": "calendar-drag.js",
@@ -2568,6 +2568,16 @@
       "sha256": "7066fcabe98c67f3172902733148c1d82e40c9fbc1353243df079592693b3b8d"
     },
     {
+      "path": "digital-controls.css",
+      "bytes": 9926,
+      "sha256": "77b3c6220ae482dee64f9460d2f876acf236da7e5c8fc849603583b2df48f36d"
+    },
+    {
+      "path": "digital-controls.js",
+      "bytes": 10288,
+      "sha256": "8aa756f9239071d3888f2b529ab3e998abb9639337254ecd308d3dc8501cf798"
+    },
+    {
       "path": "digital-directory.css",
       "bytes": 24204,
       "sha256": "53a81d145f052d2a742ada93d8e2ccb928fc125aa3287614e2616acb3d5f759b"
@@ -2579,8 +2589,8 @@
     },
     {
       "path": "digital-ecosystem.js",
-      "bytes": 25860,
-      "sha256": "0db9121233340299b99ad98085b80c677c15af0238f49615ca885367c27eb657"
+      "bytes": 25984,
+      "sha256": "95281ed1fb002ca16feb187aa2bf3e1836c75d56db25aac970ccaea93d7e9d05"
     },
     {
       "path": "digital-effects.css",
@@ -2589,8 +2599,8 @@
     },
     {
       "path": "digital-effects.js",
-      "bytes": 6688,
-      "sha256": "f77c4b9e83fa8181fdb27dbc176cce5d119269a5083327821dccdf8679dff582"
+      "bytes": 6737,
+      "sha256": "b06ae856a9e90815ece027ad1290bd6f8e2b0a4b759befca922d4b0e6fb7bf4d"
     },
     {
       "path": "digital-icons.css",
@@ -2634,8 +2644,8 @@
     },
     {
       "path": "digital-pages.css",
-      "bytes": 88931,
-      "sha256": "a08005c4c86f7973dcfd9e7c7bc6eece64f6113e75b0e49648bd201bb9574d73"
+      "bytes": 89187,
+      "sha256": "7d66c19ae4b86d3bc2227eff4fde1207d9993e00e7fa76af35610ef98c7ec5bf"
     },
     {
       "path": "digital-pages.js",
@@ -2804,8 +2814,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 3753,
-      "sha256": "097f7876313c7a0d591dec0f82bb26c4d3312a500e7139ceb9546675598a7fed"
+      "bytes": 3822,
+      "sha256": "3a242a9a97fba20e8972370b60d63353e4924cd7013828457ea646d6442adf8e"
     },
     {
       "path": "live.css",
@@ -3394,13 +3404,13 @@
     },
     {
       "path": "render-queue.js",
-      "bytes": 95567,
-      "sha256": "31fb24d13ce9e7121b30fedf4b96243ab204796f5c5bcd381f4a38a3ce547bd7"
+      "bytes": 95582,
+      "sha256": "0c902dad72ae514764c557c40a7aeb29abd24720483e7808f113c236905046ba"
     },
     {
       "path": "saved.js",
-      "bytes": 196026,
-      "sha256": "3328ae808068703d359297313404702eec12e71e4296d09cf5a4f7e7f04460f4"
+      "bytes": 196136,
+      "sha256": "e3cae321b59f0a782c662699ef1f38b6cd96d929a03bb1eef9ac3f9e7d113c01"
     },
     {
       "path": "sections.css",
@@ -3524,8 +3534,8 @@
     },
     {
       "path": "sw.js",
-      "bytes": 41675,
-      "sha256": "b673a9aca663c87d2ccfc1f4affcca0766d604ad3e1b8fd12c00a2fe5e34b362"
+      "bytes": 41750,
+      "sha256": "1a1c10e355def038ca13afd687ce5f4dfa60c079c1f7415525bc1503b80b0f7b"
     },
     {
       "path": "task-drag.js",

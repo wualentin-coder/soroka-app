@@ -207,7 +207,7 @@
     const field = fieldOf(event), surface = surfaceOf(field); if(!surface&&field?.closest('.dm-live-assistant')){if(moving())window.flowAssistantVisual?.react?.('typing');return;}if (!surface || field.matches('input[type=range],input[type=checkbox],input[type=radio],input[type=file]')) return;
     focus(event); pulse(field,surface);
   }
-  function interact(event){const field=fieldOf(event),surface=surfaceOf(field);if(!surface||field.disabled)return;focus(event);pulse(field,surface);}
+  function interact(event){const field=fieldOf(event),surface=surfaceOf(field);if(window.flowCommonControls?.owns(event)){if(surface)focus(event);return;}if(!surface||field.disabled)return;focus(event);pulse(field,surface);}
   function rest(){clearInteractions();for(const [surface]of operations)clearResponse(surface);for(const [surface]of inputs)clearInput(surface);for(const surface of surfaces)surface.classList.add('flow-surface-resting');if(interactionFrame)cancelAnimationFrame(interactionFrame);interactionFrame=0;}
   document.addEventListener('pointerdown', interact, { capture: true, signal });
   document.addEventListener('change', interact, { capture: true, signal });
@@ -257,7 +257,7 @@
   window.flowEcosystem = { beginOperation, interactionOwner:currentInteractionOwner, refresh() { pendingScopes.add(document.body);schedule(); }, getState: () => ({ surfaces: surfaces.size, activeSurface: !!active, responseLayers:[...operations.values()].filter(record=>record.layer).length,responseAnimations:[...operations.values()].reduce((n,record)=>n+record.effects.filter(effect=>effect.playState==='running').length,0),surfaceOperations:operations.size,typingLayers: inputs.size, typingAnimations: [...inputs.values()].reduce((n, item) => n + item.effects.filter(effect => effect.playState === 'running').length, 0), scene: root.dataset.magicScene, mediaOwners: media.size, microphoneOwners:microphones.size, voice, physicalHapticsVerified: false }), dispose() { disposed = true; abort.abort();rest();resize.disconnect();for(const fab of document.querySelectorAll('.assistant-fab')){fab.inert=false;fab.style.removeProperty('--assistant-avoid');fab.removeAttribute('data-avoid-hidden');} clearTimeout(settleTimer); if (frame) cancelAnimationFrame(frame); for (const observer of observers.values()) observer.disconnect(); for (const surface of surfaces) { surface.classList.remove('flow-living-surface','flow-surface-static','flow-surface-attention','flow-surface-resting','flow-surface-focused');surface.style.removeProperty('--surface-x');surface.style.removeProperty('--surface-y'); surface.querySelector(':scope>.flow-surface-contour')?.remove(); } } };
   document.addEventListener('click', event => {
     const field=fieldOf(event);if(!field||field.disabled)return;
-    if(event.detail===0)interact(event);
+    if(event.detail===0)interact(event);if(window.flowCommonControls?.owns(event))return;
     if(!field.matches('[data-action="list-toggle"]')||!moving())return;
     const id=field.dataset.id;
     if(interactionFrame)cancelAnimationFrame(interactionFrame);
