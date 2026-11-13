@@ -28,8 +28,8 @@ function loadYouTubeAPI(){
  });return youtubeAPI;
 }
 class SongMedia extends EventTarget {
- constructor(native,options={}){super();this.native=native;this.options={controls:options.controls!==false,autoplay:options.autoplay===true};this.kind='audio';this.player=null;this.ready=false;this.status=-1;this.generation=0;this.message=null;this._rate=1;this._muted=false;
-  for(const name of ['loadedmetadata','timeupdate','play','pause','ended','error','ratechange'])native.addEventListener(name,()=>{if(this.kind==='audio')this.dispatchEvent(new Event(name));});
+ constructor(native,options={}){super();this.native=native;this.options={controls:options.controls!==false,autoplay:options.autoplay===true,captions:options.captions!==false};this.kind='audio';this.player=null;this.ready=false;this.status=-1;this.generation=0;this.message=null;this._rate=1;this._muted=false;
+  for(const name of ['loadedmetadata','timeupdate','play','pause','ended','error','ratechange'])native.addEventListener(name,()=>{if(this.kind==='audio'){if(name==='loadedmetadata')this.suppressCaptions();this.dispatchEvent(new Event(name));}});
  }
  get currentTime(){return this.kind==='youtube'?(this.ready?this.player.getCurrentTime():this.track?.start||0):this.native.currentTime;}
  set currentTime(value){if(this.kind==='youtube'){if(this.ready)this.player.seekTo(value,true);else this.pendingSeek=value;}else this.native.currentTime=value;}
@@ -56,19 +56,20 @@ class SongMedia extends EventTarget {
   this.readyPromise=new Promise(resolve=>this.resolveReady=resolve);
   try{
    await loadYouTubeAPI();if(generation!==this.generation||!node.isConnected)return;
-   const start=this.pendingSeek||this.track.start||0;
+   const start=this.pendingSeek??this.track.start??0;
    this.player=new YT.Player(node,{host:'https://www.youtube.com',width:'100%',height:'200',videoId:this.track.youtubeId,
-    playerVars:{playsinline:1,origin:location.origin,autoplay:this.options.autoplay?1:0,controls:this.options.controls?1:0,fs:this.options.controls?1:0,disablekb:this.options.controls?0:1,start,rel:0},
+    playerVars:{playsinline:1,origin:location.origin,autoplay:this.options.autoplay?1:0,controls:this.options.controls?1:0,fs:this.options.controls?1:0,disablekb:this.options.controls?0:1,start:Math.floor(start),rel:0,...(!this.options.captions?{cc_load_policy:0}:{})},
     events:{
      onReady:()=>{
       if(generation!==this.generation)return;
-      this.ready=true;this.framePermissions();
+      this.ready=true;this.framePermissions();this.suppressCaptions();
       if(this._muted)this.player.mute();else if(this.options.autoplay&&!this.options.controls)this.player.unMute();
-      if(this.pendingSeek)this.player.seekTo(this.pendingSeek,true);
+      if(this.pendingSeek!=null)this.player.seekTo(this.pendingSeek,true);
       this.pendingSeek=null;this.resolveReady?.(true);this.emit('loadedmetadata');this.emit('timeupdate');
       this.timer=setInterval(()=>{if(this.status===1)this.emit('timeupdate');},200);
      },
-     onStateChange:event=>{if(generation!==this.generation)return;this.status=event.data;if(event.data===1)this.message=null;if(this.duration>0)this.emit('loadedmetadata');this.emit(event.data===1?'play':event.data===0?'ended':'pause');this.emit('timeupdate');},
+     onApiChange:()=>{if(generation===this.generation)this.suppressCaptions();},
+     onStateChange:event=>{if(generation!==this.generation)return;this.status=event.data;if(event.data===1){this.message=null;this.suppressCaptions();}if(this.duration>0)this.emit('loadedmetadata');this.emit(event.data===1?'play':event.data===0?'ended':'pause');this.emit('timeupdate');},
      onPlaybackRateChange:()=>{if(generation===this.generation)this.emit('ratechange');},
      onAutoplayBlocked:()=>{if(generation===this.generation){if(this.options.controls){this.fail('Браузер остановил запуск. Нажми Play прямо на видео.');return;}this.message='Нажми ▶ в упражнении, чтобы включить звук.';this.status=2;this.emit('autoplayblocked');this.emit('pause');}},
      onError:event=>{if(generation!==this.generation)return;const messages={2:'Не удалось открыть это видео.',5:'Браузер не смог воспроизвести видео.',100:'Видео удалено или недоступно.',101:'Автор запретил воспроизведение на других сайтах.',150:'Автор запретил воспроизведение на других сайтах.',153:'YouTube не разрешил запуск в этом окне. Открой видео на YouTube.'};this.resolveReady?.(false);this.fail(messages[event.data]||'YouTube не смог воспроизвести видео.');}
@@ -78,6 +79,12 @@ class SongMedia extends EventTarget {
   finally{if(generation===this.generation)this.loading=false;}
  }
  framePermissions(){const frame=this.player?.getIframe();if(!frame)return;frame.setAttribute('title','Видео песни на YouTube');frame.setAttribute('referrerpolicy','strict-origin-when-cross-origin');const permissions=(frame.getAttribute('allow')||'').split(';').map(x=>x.trim()).filter(x=>x&&!/^autoplay(?:\s|$)/.test(x));frame.setAttribute('allow',[...permissions,'autoplay'].join('; '));}
+ suppressCaptions(){
+  if(this.options.captions)return;
+  if(this.kind==='audio'){for(const track of this.native.textTracks||[])track.mode='disabled';return;}
+  // Caption modules can arrive after onReady. Old/new YouTube builds expose different controls.
+  try{if(this.player?.getOptions?.().includes('captions')){if(this.player.unloadModule)this.player.unloadModule('captions');else this.player.setOption?.('captions','track',{});}}catch{/* The picture switch still protects videos with embedded words. */}
+ }
  async getMetadata(){
   const generation=this.generation;if(this.kind!=='youtube')return null;
   if(!this.ready){if(!this.readyPromise||!await this.readyPromise)return null;}
@@ -89,7 +96,7 @@ class SongMedia extends EventTarget {
   if(this.kind==='audio')return this.native.play();
   const generation=this.generation;
   if(!this.ready){if(!this.readyPromise)throw new Error('Плеер ещё загружается');let timer;const ready=await Promise.race([this.readyPromise,new Promise(resolve=>{timer=setTimeout(()=>resolve(false),13000);})]);clearTimeout(timer);if(generation!==this.generation){const error=Error('Воспроизведение отменено');error.name='AbortError';throw error;}if(!ready){this.fail(this.message||'YouTube не ответил. Попробуй подключиться ещё раз.');throw new Error(this.message);}}
-  this.message=null;if(!this.options.controls&&!this._muted)this.player.unMute();this.player.playVideo();
+  this.message=null;this.suppressCaptions();if(!this.options.controls&&!this._muted)this.player.unMute();this.player.playVideo();
  }
  pause(){this.native.pause();if(this.ready&&this.player)this.player.pauseVideo();}
  dispose(){this.native.pause();clearInterval(this.timer);this.generation++;this.resolveReady?.(false);this.readyPromise=null;this.player?.destroy();this.player=null;this.ready=false;this.loading=false;this.status=-1;}
@@ -110,7 +117,12 @@ function phraseBounds(track){
     if(first<0)first=at;last=at+parts.length;cursor=last;
    }
    if(valid){
-    if(first>0){const before=i===0?0:ends[i-1];if(Number.isFinite(before)&&before<=start)start=Math.max(0,before);}
+    if(first>0){
+     const before=i===0?0:ends[i-1],durations=line.words.map(word=>(word.end-word.start)/tokens(word.text).length).sort((a,b)=>a-b);
+     // Missing prefix words need a bounded audio lead-in, never the entire intro.
+     const pace=Math.max(.2,Math.min(1.5,durations[Math.floor(durations.length/2)])),lead=Math.min(6,first*pace+.2);
+     if(Number.isFinite(before)&&before<=start)start=Math.max(0,before,line.words[0].start-lead);
+    }else start=Math.max(start,line.words[0].start-.12);
     const next=all[i+1]?.time;
     if(last<expected.length){const after=Number.isFinite(next)?next:track.duration;if(Number.isFinite(after)&&after>=end)end=after;}
     else end=Math.min(end+.15,Number.isFinite(next)?Math.max(ends[i],next):Number.isFinite(track.duration)?Math.max(ends[i],track.duration):end+.15);
