@@ -93,6 +93,7 @@
   function consume(){
     if(working||!pending||document.hidden||suspended)return;
     const request=pending;
+    if(request.action==='assistant'&&popup){pending=null;ack(request.id);bridge()?.assistantPopupClose?.();return;}
     if(done.has(request.id)){pending=null;ack(request.id);return;}
     working=true;
     try{
@@ -127,9 +128,11 @@
   });
   document.addEventListener('flow:activity',event=>{const value=event.detail?.kind==='card'?(event.detail.baseActivity||{kind:'idle',label:'Flow',progress:null,fresh:true}):event.detail;activity=value||activity;observedAt=Date.now();if(!timer)timer=setTimeout(publish,120);});
   document.addEventListener('flow:effectschange',()=>{lastState='';publish();});
+  window.addEventListener('flow:assistantready',consume);
   window.addEventListener('flow:resume',ready);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)ready();});
   window.addEventListener('pageshow',ready);
   window.addEventListener('pagehide',()=>{clearTimeout(timer);timer=0;});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();
+
