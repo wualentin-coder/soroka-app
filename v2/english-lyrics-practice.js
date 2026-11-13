@@ -85,7 +85,7 @@ function mount(ex){
   if(e.key==='Tab'){const nodes=[...node.querySelectorAll('button:not([disabled]),input:not([disabled]),summary,video,iframe')].filter(x=>x.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
  });
  node.addEventListener('click',e=>{if(!valid(r))return;const word=e.target.closest('[data-lyrics-word]');if(word){dispatch('word',{index:Number(word.dataset.lyricsWord),term:Number(word.dataset.term)});paint(r);return;}const b=e.target.closest('[data-lyrics]');if(!b)return;dispatch(b.dataset.lyrics==='back'?'close':b.dataset.lyrics);if(valid(r)){paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
- r.media.addEventListener('loadedmetadata',()=>{if(!valid(r))return;r.mediaProblem='';if(!r.initialized){r.initialized=true;r.media.currentTime=r.clip.start;}paint(r);});
+ r.media.addEventListener('loadedmetadata',()=>{if(!valid(r))return;r.mediaProblem='';if(!r.initialized){r.initialized=true;r.media.currentTime=r.clip.start;if(exNow().autoPlay)dispatch('start');}paint(r);});
  r.media.addEventListener('timeupdate',()=>tick(r));
  r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.anchor={time:r.media.currentTime,at:performance.now()};paint(r);});
  r.media.addEventListener('ratechange',()=>{if(valid(r)&&r.media.playbackRate<1)dispatch('support');});
@@ -124,8 +124,9 @@ function action(name,control){
  if(name==='heard'){q.heard=['clip:0'];return true;}
  if(name==='support'){q.assistance.hint=true;run?.supported?.add(ex.index);return true;}
  if(name==='native-play'){if(!q.listens||!run?.lineStarted||run?.atEnd){q.listens=(q.listens||0)+1;q.assistance.replays=q.listens;if(q.listens>1){q.assistance.hint=true;run?.supported?.add(ex.index);}}return true;}
- if(name==='play'||name==='replay'||name==='continue'){
+ if(name==='play'||name==='replay'||name==='continue'||name==='start'){
   const r=run;if(!r||!valid(r))return true;
+  if(name==='start')ex.autoPlay=false;
   r.nextBlocked=false;
   if(name==='play'&&!r.media.paused){effect(()=>r.media.pause());return true;}
   const restart=name==='replay'||r.media.currentTime>=r.clip.end||r.media.currentTime<r.clip.start;

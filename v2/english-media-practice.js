@@ -30,15 +30,24 @@ function stop(){request++;closePlayback();}
 function leave(){stop();picker=null;releaseFile();}
 function isPicker(p){return picker===p&&current(p.owner)&&ui.page==='english'&&enState().practiceView==='media';}
 function paintError(p,error){if(!isPicker(p))return;p.error=failText(error);p.busy=false;render();}
+function startSong(p){
+ if(!isPicker(p)||p.busy)return;
+ p.direct=true;p.index=0;p.count=0;
+ for(const line of p.lines){if(p.count===12||line.end-p.lines[0].time>120)break;p.count++;}
+ if(!p.count){paintError(p,Error('Для этого материала пока не готов текст. Выбери другой или обнови его в медиатеке.'));return;}
+ prepare(p,'lyrics');
+}
 function openPicker(track){
  stop();const c=owner();picker={owner:c,type:track?'song':'songs',track:track||null,lines:track?timedLines(track):[],index:0,count:1,error:'',busy:false};
- const s=enState();s.ex=null;s.deck=null;s.tab='course';s.practiceView='media';render();if(!track)loadSongs(picker);
+ const s=enState();s.ex=null;s.deck=null;s.tab='course';s.practiceView='media';render();if(!track&&!window.FlowEnglishMusic?.screen)loadSongs(picker);else if(track&&window.FlowEnglishLyricsPracticeCore)startSong(picker);
 }
 async function loadSongs(p){const serial=++request;p.busy=true;render();try{const result=await enCall('songs');if(serial!==request||!isPicker(p))return;p.songs=result.items||result.songs||result||[];if(!Array.isArray(p.songs))p.songs=[];p.busy=false;render();}catch(error){if(serial===request)paintError(p,error);}}
-async function loadSong(p,id){const serial=++request;p.busy=true;p.error='';render();try{const result=await enCall('song',{id});if(serial!==request||!isPicker(p))return;p.track=result.item||result.track||result;p.lines=timedLines(p.track);p.type='song';p.index=0;p.count=Math.min(3,p.lines.length)||1;p.busy=false;render();}catch(error){if(serial===request)paintError(p,error);}}
+async function loadSong(p,id){const serial=++request;p.busy=true;p.error='';render();try{const result=await enCall('song',{id});if(serial!==request||!isPicker(p))return;p.track=result.item||result.track||result;p.lines=timedLines(p.track);p.type='song';p.index=0;p.count=Math.min(3,p.lines.length)||1;p.busy=false;if(window.FlowEnglishLyricsPracticeCore)startSong(p);else render();}catch(error){if(serial===request)paintError(p,error);}}
 function preview(p){try{return selectLines(p.lines,p.index,p.count).map(line=>`<p lang="en">${h(line.en)}</p>`).join('');}catch{return'<p class="section-note">Выбери более короткий отрывок.</p>';}}
 window.enMediaPracticeScreen=function(){
- const p=picker;if(!p||!current(p.owner))return`<p>Выбери источник упражнения.</p>${action('Музыка и видео','catalog')}`;
+ const p=picker;if(!p||!current(p.owner))return`<p>Выберите источник упражнения.</p>${action('Музыка и видео','catalog')}`;
+ if(p.direct)return `<section class="en-structured en-media-source"><button type="button" class="en-back" data-action="en-training-media-catalog">${icon('left','icon-sm')}Выбрать другое</button><h2 class="en-catalog-title">${h(p.track.title)}</h2>${p.error?`<p role="alert">${h(p.error)}</p>${action('Повторить','song-retry')}`:'<p role="status">Открываем упражнение…</p>'}</section>`;
+ if(p.type==='songs'&&window.FlowEnglishMusic?.screen)return `<section class="en-structured en-media-source lv-music"><button type="button" class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button>${window.FlowEnglishMusic.screen()}</section>`;
  const tabs=`<div class="en-structured-actions" role="group" aria-label="Источник">${[['songs','Музыка'],['youtube','YouTube'],['file','Файл']].map(([type,label])=>action(label,'type',`data-type="${type}" aria-pressed="${p.type===type||type==='songs'&&p.type==='song'}"`)).join('')}</div>`;
  let body='';
  if(p.type==='songs')body=p.busy?'<p role="status">Загружаем музыку…</p>':`<div class="en-steps">${(p.songs||[]).map(song=>action(`<b>${h(song.title)}</b><small>${h(song.artist)}</small>`,'song',`data-id="${h(song.id)}"`)).join('')||'<p>Сначала добавь песню в медиатеку.</p>'}</div>`;
@@ -47,10 +56,10 @@ window.enMediaPracticeScreen=function(){
   const selection=p.lines.length?`<div class="en-media-range"><label class="field"><span>С первой строки</span><select name="from">${p.lines.map((line,i)=>`<option value="${i}" ${p.index===i?'selected':''}>${Math.floor(line.time/60)}:${String(Math.floor(line.time%60)).padStart(2,'0')} · ${h(line.en.slice(0,70))}</option>`).join('')}</select></label><label class="field"><span>Строк</span><select name="count">${(window.FlowEnglishLyricsPracticeCore?[1,2,3,4,5,6,7,8,9,10,11,12]:[1,2,3,4,5,6]).map(n=>`<option ${p.count===n?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="en-card" data-en-media-preview>${preview(p)}</div>${window.FlowEnglishLyricsPracticeCore?action(p.busy?'Готовим…':'По строкам песни','lyrics-prepare',p.busy?'disabled':'',true):''}${action(p.busy?'Готовим…':window.FlowEnglishLyricsPracticeCore?'Упражнение по фрагменту':'Начать упражнение','prepare',p.busy?'disabled':'',!window.FlowEnglishLyricsPracticeCore)}`:p.type==='song'?'<p>У этой песни пока нет таймкодов строк. Обнови текст в медиатеке или выбери другую песню.</p>':'';
   body=`<form data-en-media-source-form>${importFields}${selection}</form>`;
  }
- return `<section class="en-structured en-media-source"><button class="icon-button" data-action="en-practice-back" aria-label="Вся практика">${icon('left','icon-sm')}</button><h2>Музыка и видео</h2>${tabs}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
+ return `<section class="en-structured en-media-source"><button class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button><h2 class="en-catalog-title">Музыка и видео</h2>${tabs}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
 };
 function sourceForm(){return document.querySelector('[data-en-media-source-form]');}
-function captureForm(p){const form=sourceForm();if(!form)return;if(form.elements.url)p.url=form.elements.url.value;if(form.elements.subtitlesText)p.text=form.elements.subtitlesText.value;if(form.elements.from)p.index=Number(form.elements.from.value);if(form.elements.count)p.count=Number(form.elements.count.value);}
+function captureForm(p){if(p.direct)return;const form=sourceForm();if(!form)return;if(form.elements.url)p.url=form.elements.url.value;if(form.elements.subtitlesText)p.text=form.elements.subtitlesText.value;if(form.elements.from)p.index=Number(form.elements.from.value);if(form.elements.count)p.count=Number(form.elements.count.value);}
 async function prepare(p,style){
  if(p.busy)return;captureForm(p);p.busy=true;p.error='';const serial=++request;render();
  try{
@@ -73,11 +82,12 @@ function actionHandler(name,control){
   if(!picker||control.serial!==request||!current(control.owner)||!isPicker(picker))return true;
   if(control.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
   const ex=control.exercise;if(ex?.practiceKind!=='media'||![window.FlowEnglishMediaPracticeCore?.revision,window.FlowEnglishLyricsPracticeCore?.revision].filter(Boolean).includes(ex.contentRevision))throw Error('practice_content_changed');
-  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{enStopPcm();picker=null;});render();return true;
+  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=ex.contentRevision===window.FlowEnglishLyricsPracticeCore?.revision;s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{enStopPcm();picker=null;});render();return true;
  }
  const p=picker;if(!p||!current(p.owner))return true;
  if(name==='type'){captureForm(p);p.error='';p.busy=false;p.type=d.type;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs')loadSongs(p);else render();return true;}
  if(name==='song'){loadSong(p,d.id);return true;}
+ if(name==='song-retry'){startSong(p);return true;}
  if(name==='parse'){captureForm(p);try{p.lines=parseSubtitles(p.text||'');p.index=0;p.count=Math.min(3,p.lines.length);p.error='';}catch(error){p.error=failText(error);}render();return true;}
  if(name==='lyrics-prepare'){prepare(p,'lyrics');return true;}
  if(name==='prepare'){prepare(p);return true;}

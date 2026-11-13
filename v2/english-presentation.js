@@ -41,6 +41,7 @@
   if(tab!=='today')return;
   const previous=page.querySelector('.lv-lesson-scene>.ef-today-actions'),previousStamp=previous?.querySelector('.lv-eyebrow');if(previousStamp)previous.before(previousStamp);
   page.querySelectorAll('[data-action=en-tab][data-tab=progress],.ef-today-actions').forEach(node=>node.remove());
+  if(page.querySelector('.en-head .en-progress-open'))return;
   const region=document.createElement('div');region.className='ef-today-actions';
   const button=document.createElement('button');button.type='button';button.className='icon-button ef-icon-control';button.setAttribute('aria-label','Мой прогресс');button.title='Мой прогресс';button.innerHTML=icon('chart','icon-sm');
   if(native){button.dataset.action='en-tab';button.dataset.tab='progress';}else button.dataset.efRoute='progress';
@@ -50,6 +51,8 @@
   page.querySelectorAll('.en-today-links:empty,.lv-quick-links:empty').forEach(node=>node.remove());
  }
  function installNative({getState,icon}={}){
+  // The current composition owns its compact navigation and progress screen.
+  if(window.FlowEnglishComposition?.version>=2)return {installed:true,reason:'english_composition_v2'};
   // A missing real bridge is a failed preflight, never a request to install demo providers.
   if(typeof window.sorokaEnglish!=='function'||typeof window.renderEnglishPage!=='function'||typeof getState!=='function'||typeof icon!=='function')return {installed:false,reason:'native_bridge_required'};
   if(window.renderEnglishPage.flowEnglishMinimal)return {installed:true,repeated:true};

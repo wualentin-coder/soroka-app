@@ -47,7 +47,7 @@ async function enFlush() {
   } catch (_) { enSyncTimer = setTimeout(() => { enSyncTimer = null; enFlush(); }, 10000); }
   finally { enSyncRunning = false; enRerender(); }
 }
-function enSyncBanner() { return enOutbox.length ? `<p class="section-note" role="status">Ответы сохранены на устройстве · ожидают отправки: ${enOutbox.length}</p>` : ""; }
+function enSyncBanner() { return enOutbox.length ? `<div class="en-sync">${icon("inbox", "icon-sm")}<span role="status">Ответы сохранены на устройстве · ждут отправки: ${enOutbox.length}</span><button type="button" class="en-sync-send" data-action="en-sync-send">Отправить</button></div>` : ""; }
 function enSyncWake() { clearTimeout(enSyncTimer); enSyncTimer = null; enFlush(); }
 window.addEventListener("online", enSyncWake);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) enSyncWake(); });
