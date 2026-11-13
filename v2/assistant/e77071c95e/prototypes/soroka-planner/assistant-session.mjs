@@ -1,0 +1,79 @@
+const PHONE=/^\+?\d{7,15}$/;
+const REF=/^(task|event|note|link|recipe|movie|product|debt|payment|money|list|place|metric|card):[1-9]\d{0,14}$/;
+const failure=code=>Object.assign(new Error(code),{code});
+const CONTACT=/^contact:[a-f\d]{24}$/;
+const sourceValid=s=>s&&typeof s.title==='string'&&(REF.test(s.ref)||CONTACT.test(s.ref)&&safeSource(s.url));
+function safeSource(raw){try{const u=new URL(raw);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&!/(?:^|\.)(?:localhost|local|internal)$/.test(u.hostname)&&u.hostname.includes('.');}catch{return false;}}
+function actionValid(action,requestId){
+ if(!action||typeof action.id!=='string'||!action.id.startsWith(requestId+':'))return false;
+ if(action.kind==='dial')return PHONE.test(action.phone)&&!/^\+?0+$/.test(action.phone)&&sourceValid(action.source);
+ if(action.kind==='open_record')return REF.test(action.source?.ref)&&typeof action.source?.title==='string';
+ return action.kind==='open_section'&&typeof action.section==='string'&&/^[a-z_/-]{1,80}$/.test(action.section);
+}
+/** Captured host ownership and sequence guards apply before every device action. */
+export function createAssistantSession(getHost,{executeAction,canAct=()=>true,storage=globalThis.localStorage}={}){
+ let sequence=0,choices=new Map(),activations=new Map(),history=[],refs=[],scope=null,pending=null,sources=new Map(),confirmations=new Map();
+ function bind(host){
+  const next=typeof host.owner?.scope==='string'?host.owner.scope:null;if(next===scope)return;
+  scope=next;history=[];refs=[];pending=null;
+  if(!scope)return;
+  try{const saved=JSON.parse(storage?.getItem('flow.assistant.v1.'+scope)||'null');if(saved&&saved.at>Date.now()-86400000){history=Array.isArray(saved.history)?saved.history.slice(-8).filter(v=>['user','assistant'].includes(v?.role)&&typeof v.text==='string').map(v=>({role:v.role,text:v.text.slice(0,1200)})):[];refs=Array.isArray(saved.refs)?saved.refs.filter(v=>REF.test(v)).slice(-6):[];pending=saved.pending&&typeof saved.pending.text==='string'&&/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(saved.pending.id)?saved.pending:null;}}catch{}
+ }
+ function persist(){if(scope)try{storage?.setItem('flow.assistant.v1.'+scope,JSON.stringify({at:Date.now(),history,refs,pending}));}catch{}}
+const delivered=new Set();
+ const available=host=>host&&typeof host.request==='function'&&typeof host.isCurrent==='function'&&host.isCurrent()===true;
+ const check=(token,host)=>{if(token!==sequence||!available(host)||!canAct())throw failure('assistant_owner_changed');};
+ async function execute(action,token,host,activation=false){
+  check(token,host);if(delivered.has(action.id))return{status:'already_requested'};
+  if(typeof executeAction!=='function')throw failure('assistant_action_unavailable');
+  // A pending user button is not a device action; consuming it happens on activation.
+  delivered.add(action.id);
+  try{const result=await executeAction(action,{activation,isCurrent:()=>token===sequence&&available(host)&&canAct(),ownerCurrent:()=>available(host)});
+   if(result?.status==='activation_required'){delivered.delete(action.id);activations.set(action.id,{action,token,host});}
+   return result||{status:'requested'};
+  }catch(error){throw error;}
+ }
+ async function request(op,args){
+  const token=++sequence;choices.clear();activations.clear();sources.clear();confirmations.clear();const host=await getHost();check(token,host);bind(host);
+  if(op==='turn')args={...args,history:structuredClone(history),context:{...args.context,refs:[...refs]}};
+  const identity=JSON.stringify({text:args.text,section:args.context?.section,ref:args.context?.ref});
+  const requestId=op==='turn'&&pending?.identity===identity?pending.id:crypto.randomUUID();
+  if(op==='turn'){pending={id:requestId,identity,text:String(args.text)};persist();}
+  const response=await host.request(op,{...args,requestId});check(token,host);
+  if(response?.requestId!==requestId||typeof response.text!=='string'||!Array.isArray(response.actions)||response.actions.length>1||!response.actions.every(action=>actionValid(action,requestId)))throw failure('assistant_invalid_response');
+  const result={...response,activations:[]};
+  for(const choice of response.choices||[]){if(typeof choice.id!=='string'||!choice.id.startsWith(requestId+':phone:')||!PHONE.test(choice.phone)||!sourceValid(choice.source)||CONTACT.test(choice.source?.ref)&&typeof choice.proof!=='string')throw failure('assistant_invalid_choice');choices.set(choice.id,{choice:structuredClone(choice),token,host});}
+  for(const source of response.sources||[]){if(typeof source.id!=='string'||!source.id.startsWith(requestId+':source:')||!safeSource(source.url))throw failure('assistant_invalid_source');sources.set(source.id,{source:structuredClone(source),token,host});}
+  if(response.confirmations!==undefined&&(!Array.isArray(response.confirmations)||response.confirmations.length>1))throw failure('assistant_invalid_response');
+  for(const c of response.confirmations||[]){if(c.id!==requestId+':delete'||!REF.test(c.ref)||typeof c.title!=='string'||typeof c.proof!=='string'||c.proof.length>2000)throw failure('assistant_invalid_response');confirmations.set(c.id,{value:structuredClone(c),token,host});}
+  if(op==='turn')history=[...history,{role:'user',text:String(args.text).slice(0,1200)},{role:'assistant',text:response.text.slice(0,1200)}].slice(-8);
+  refs=[...new Set([...refs,...(response.refs||[]).filter(v=>REF.test(v))])].slice(-6);if(op==='turn')pending=null;persist();
+  for(const action of response.actions){const outcome=await execute(action,token,host);if(outcome.status==='activation_required'){result.activations.push(action);if(action.kind==='dial')result.text=`Номер из «${action.source.title}»: ${action.phone}. Открыть набор?`;}}
+  return result;
+ }
+ return{
+  turn(text,context={}){return request('turn',{text,context,history:structuredClone(history)});},
+  confirm(id){const c=confirmations.get(id);if(!c)throw failure('assistant_choice_expired');check(c.token,c.host);confirmations.delete(id);return request('confirm_delete',{proof:c.value.proof,confirmed:true});},
+  decline(){confirmations.clear();return{text:'Оставил запись.',actions:[],choices:[]};},
+  choose(id){const pending=choices.get(id);if(!pending)throw failure('assistant_choice_expired');check(pending.token,pending.host);const choice=pending.choice;return request('dial',choice.proof?{proof:choice.proof}:{ref:choice.source.ref,phone:choice.phone});},
+  source(id){const item=sources.get(id);if(!item)throw failure('assistant_choice_expired');check(item.token,item.host);globalThis.window.open(item.source.url,'_blank','noopener,noreferrer');return {text:'Открыл источник.',choices:[],activations:[]};},
+  async activate(id){const current=activations.get(id);if(!current)throw failure('assistant_choice_expired');activations.delete(id);return execute(current.action,current.token,current.host,true);},
+  cancel(){sequence++;choices.clear();activations.clear();sources.clear();confirmations.clear();},
+  dispose(){sequence++;choices.clear();activations.clear();history=[];refs=[];pending=null;scope=null;sources.clear();delivered.clear();}
+ };
+}
+
+/** tel: asks for a dialer. Android's native URL policy uses ACTION_DIAL, not CALL. */
+export function createAssistantDeviceExecutor({window:win=globalThis.window,navigate,openRecord,isCurrent=()=>true}={}){
+ return async(action,meta={})=>{
+  if(!isCurrent()||meta.isCurrent?.()===false||win.document.hidden)throw failure('assistant_owner_changed');
+  if(action.kind==='dial'){
+   if(!PHONE.test(action.phone)||/^\+?0+$/.test(action.phone))throw failure('assistant_invalid_phone');
+   if(!win.SorokaAndroid&&!win.SorokaNative&&!meta.activation)return{status:'activation_required'};
+   win.location.assign('tel:'+action.phone);return{status:'requested'};
+  }
+  if(action.kind==='open_section'&&typeof navigate==='function'){if(await navigate(action.section,meta)===false)throw failure('assistant_navigation_cancelled');return{status:'requested'};}
+  if(action.kind==='open_record'&&typeof openRecord==='function'){if(await openRecord(action.source.ref,meta)===false)throw failure('assistant_navigation_cancelled');return{status:'requested'};}
+  throw failure('assistant_action_unavailable');
+ };
+}

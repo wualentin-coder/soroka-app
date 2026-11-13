@@ -703,6 +703,8 @@ function applyFlowCustomAccent(value){
 }
 document.addEventListener('change',event=>{const field=event.target.closest?.('input[data-custom-accent]');if(!field)return;const value=field.value.trim();if(!/^#[0-9a-f]{6}$/i.test(value)){field.setCustomValidity('Цвет в формате #RRGGBB');field.reportValidity();return;}field.setCustomValidity('');data.settings.accent=value.toLowerCase();save();render();});
 function render() {
+  // The live bridge installs page owners before committing the first complete shell.
+  if (window.FLOW_SHELL_BOOTING === true) return;
   const retainRouteFocus = !ui.sheet && document.activeElement?.dataset.flowRouteFocus === ui.page;
   const navigationFocus = !ui.sheet && document.activeElement?.dataset.flowNavFocus === ui.page
     ? document.activeElement.closest('.mobile-nav') ? '.mobile-nav' : '.sidebar' : null;
