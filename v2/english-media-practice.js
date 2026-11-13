@@ -29,7 +29,7 @@ function closePlayback(){const run=playing;if(!run)return;playing=null;const pre
 function stop(){request++;closePlayback();}
 function leave(){stop();picker=null;releaseFile();}
 function isPicker(p){return picker===p&&current(p.owner)&&ui.page==='english'&&enState().practiceView==='media';}
-function paintError(p,error){if(!isPicker(p))return;p.error=failText(error);p.busy=false;render();}
+function paintError(p,error){if(!isPicker(p))return;window.FlowEnglishLyricsPractice?.cancelPrepared(undefined,false);p.error=failText(error);p.busy=false;render();}
 function startSong(p){
  if(!isPicker(p)||p.busy)return;
  p.direct=true;p.index=0;p.count=0;
@@ -62,6 +62,8 @@ function sourceForm(){return document.querySelector('[data-en-media-source-form]
 function captureForm(p){if(p.direct)return;const form=sourceForm();if(!form)return;if(form.elements.url)p.url=form.elements.url.value;if(form.elements.subtitlesText)p.text=form.elements.subtitlesText.value;if(form.elements.from)p.index=Number(form.elements.from.value);if(form.elements.count)p.count=Number(form.elements.count.value);}
 async function prepare(p,style){
  if(p.busy)return;captureForm(p);p.busy=true;p.error='';const serial=++request;render();
+ const typing=style==='lyrics'?window.FlowEnglishLyricsPractice?.prepareInput():null;
+ if(typing)typing.onCancel=()=>{if(serial!==request||!isPicker(p))return;request++;picker=null;const s=enState();if(s.tab==='course'){s.ex=null;s.practiceView='media';render();}};
  try{
   if(p.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
   const lines=selectLines(p.lines,p.index,p.count),offset=p.type==='song'?(p.track.lyricOffset||0):0,start=Math.max(0,lines[0].time+offset),end=lines.at(-1).end+offset;
@@ -69,7 +71,7 @@ async function prepare(p,style){
   else if(p.type==='youtube'){const link=FlowSongMedia.parseLink(p.url||'');source={type:'youtube',youtubeId:link.id,title:'Фрагмент видео',start,end,lines};}
   else{if(!p.file)throw Error('Сначала выбери видео.');source={type:'file',file:p.file,title:p.file.name,start,end,lines};}
   const result=await enCall('practicesource',{source,seed:crypto.getRandomValues(new Uint32Array(1))[0],...(style==='lyrics'?{style}:{})});
-  if(serial!==request||!isPicker(p))return;
+  if(serial!==request||!isPicker(p)||typing&&!window.FlowEnglishLyricsPractice.inputPrepared(typing))return;
   const accepted=englishAction('en-training-media-ready',{dataset:{},exercise:result.exercise,owner:p.owner,serial});
   if(accepted===false)throw Error('Не удалось сохранить упражнение на устройстве. Освободи память и попробуй ещё раз.');
  }catch(error){if(serial===request)paintError(p,error);}
@@ -82,7 +84,7 @@ function actionHandler(name,control){
   if(!picker||control.serial!==request||!current(control.owner)||!isPicker(picker))return true;
   if(control.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
   const ex=control.exercise;if(ex?.practiceKind!=='media'||![window.FlowEnglishMediaPracticeCore?.revision,window.FlowEnglishLyricsPracticeCore?.revision].filter(Boolean).includes(ex.contentRevision))throw Error('practice_content_changed');
-  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=ex.contentRevision===window.FlowEnglishLyricsPracticeCore?.revision;s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{enStopPcm();picker=null;});render();return true;
+  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=ex.contentRevision===window.FlowEnglishLyricsPracticeCore?.revision;s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{if(s.ex.autoPlay&&window.FlowEnglishLyricsPractice?.keepPreparedDuring)window.FlowEnglishLyricsPractice.keepPreparedDuring(enStopPcm);else enStopPcm();picker=null;});render();return true;
  }
  const p=picker;if(!p||!current(p.owner))return true;
  if(name==='type'){captureForm(p);p.error='';p.busy=false;p.type=d.type;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs')loadSongs(p);else render();return true;}
