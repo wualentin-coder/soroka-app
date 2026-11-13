@@ -101,21 +101,27 @@
   const resize = new ResizeObserver(() => schedule());
   function visible(node) { return node.isConnected && !node.hidden && node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'; }
   function clearInput(surface) { const owned = inputs.get(surface); if (!owned) return; for (const effect of owned.effects) effect.cancel(); owned.node.remove(); inputs.delete(surface); }
+  // Self-presented assistant controls own their shadow feedback and layout.
+  function assistantSurface(node) {
+    for(let current=node?.host||node;current;current=current.parentElement||current.getRootNode?.().host)if(current.matches?.('flow-assistant-study,.dm-live-assistant'))return true;
+    return false;
+  }
   function attach(surface) {
-    if (surfaces.has(surface) || surface.closest('.dm-live-assistant') || surface.matches('.activity-island-card')) return;
+    if (surfaces.has(surface) || assistantSurface(surface) || surface.closest('.dm-live-assistant') || surface.matches('.activity-island-card')) return;
     surfaces.add(surface);surfaceOwners.set(surface,ownerIdentity(surface)); surface.classList.add('flow-living-surface');
     if (getComputedStyle(surface).position === 'static') surface.classList.add('flow-surface-static');
     const contour = document.createElement('i'); contour.className = 'flow-surface-contour'; contour.setAttribute('aria-hidden', 'true');surface.append(contour);
     resize.observe(surface);
   }
   function scan(scope) {
+    if(assistantSurface(scope))return;
     if(scope.matches?.(selector))attach(scope);
     for (const node of scope.querySelectorAll(selector)) attach(node);
     if(scope.shadowRoot&&!observers.has(scope.shadowRoot))watch(scope.shadowRoot);
     for (const host of scope.querySelectorAll('*')) if (host.shadowRoot && !observers.has(host.shadowRoot)) watch(host.shadowRoot);
   }
   function watch(scope) {
-    if (observers.has(scope)) return;
+    if (assistantSurface(scope) || observers.has(scope)) return;
     const observer = new MutationObserver(records => {
       let changed=false;
       for(const record of records){
@@ -179,7 +185,7 @@
     const bottom = Math.min(box.bottom, caret ? caret.bottom + 6 : top + (parseFloat(getComputedStyle(field).lineHeight) || 26) + 12);
     return { left: box.left, right: box.right, top, bottom, width: box.width, height: bottom - top };
   }
-  function surfaceOf(field) { if(!field)return null;let surface=field.closest('.flow-living-surface');if(!surface){surface=field.closest(selector)||field.closest('form');if(surface&&!surface.closest('.dm-live-assistant'))attach(surface);}return surface?.classList.contains('flow-living-surface')?surface:null; }
+  function surfaceOf(field) { if(!field||assistantSurface(field))return null;let surface=field.closest('.flow-living-surface');if(!surface){surface=field.closest(selector)||field.closest('form');if(surface&&!surface.closest('.dm-live-assistant'))attach(surface);}return surface?.classList.contains('flow-living-surface')?surface:null; }
   function focus(event) {
     const field = fieldOf(event), surface = surfaceOf(field); if (!surface) return;
     const a = surface.getBoundingClientRect(), b = fieldBounds(field);

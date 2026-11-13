@@ -47,7 +47,7 @@ function voiceFail(session, message) {
   if (!current) return;
   voice = null;
   voicePublish("error");
-  toast(message);
+  if(typeof session.onError==='function')session.onError(message);else toast(message);
 }
 
 function voiceSupported() {
@@ -85,11 +85,11 @@ function wavBase64(chunks, rate) {
 }
 
 /** Начать запись; onText получит расшифровку (или ничего, если отменили). */
-async function startVoice(onText, label = "Говорите…") {
+async function startVoice(onText, label = "Говорите…", options = {}) {
   if (voice) return;
   if (document.hidden) { voicePublish("idle"); return; }
   if (!voiceSupported()) { voicePublish("error"); toast("Голос работает в приложении бота"); return; }
-  const session = { generation: ++voiceGeneration, phase: "requesting", ctx: null, stream: null, source: null, node: null, bar: null, timer: null, chunks: [], loudest: 0, cancelled: false, finish: null };
+  const session = { generation: ++voiceGeneration, phase: "requesting", ctx: null, stream: null, source: null, node: null, bar: null, timer: null, chunks: [], loudest: 0, cancelled: false, finish: null, onError: options.onError };
   voice = session;
   session.finish = async keep => {
     if (!voiceCurrent(session)) return;
@@ -132,6 +132,7 @@ async function startVoice(onText, label = "Говорите…") {
     session.source = source; session.node = node;
     const bar = document.createElement("div"); session.bar = bar;
     bar.className = "voice-bar";
+    bar.hidden = options.inline === true;
     bar.innerHTML = `<span class="voice-dot"></span><span class="voice-level"><i></i></span><b class="voice-time">0:00</b><small>${esc(label)}</small><button type="button" class="voice-cancel" aria-label="Отменить">${icon("close", "icon-sm")}</button><button type="button" class="voice-done">Готово</button>`;
     document.body.appendChild(bar);
     const started = Date.now();
@@ -180,11 +181,15 @@ document.addEventListener("click", event => {
   if (!button) return;
   event.preventDefault(); event.stopImmediatePropagation();
   const editor = document.querySelector(".note-rich");
+  if (!editor) return;
+  const ownerSheet = typeof ui === "undefined" ? null : ui.sheet;
+  const ownerId = ownerSheet?.id, ownerDraft = ownerSheet?.noteDraft;
   const sel = getSelection();
   const range = editor && sel?.rangeCount && editor.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null;
   void startVoice(text => {
     const rich = document.querySelector(".note-rich");
-    if (!rich) return;
+    if (rich !== editor || !editor.isConnected) return;
+    if (ownerSheet && (typeof ui === "undefined" || ui.sheet !== ownerSheet || ui.sheet.id !== ownerId || ui.sheet.noteDraft !== ownerDraft)) return;
     rich.focus();
     const r = range && rich.contains(range.startContainer) ? range : (() => { const x = document.createRange(); x.selectNodeContents(rich); x.collapse(false); return x; })();
     getSelection().removeAllRanges(); getSelection().addRange(r);
