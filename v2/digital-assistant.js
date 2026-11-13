@@ -1,6 +1,7 @@
 /* Ambient presentation of Flow's existing authenticated composer and voice input. */
 (() => {
   'use strict';
+  // Temporarily disabled by the user; keep a stable API for existing callers.  const assistantEnabled=false;  if(!assistantEnabled){    document.documentElement.dataset.flowAssistant='off';    window.flowAssistant={open:()=>false,openNote:()=>false,close:()=>{},dismiss:()=>{},stop:()=>{},getState:()=>({open:false,disabled:true,state:'disabled',microphone:false})};    return;  }
   if (document.documentElement.dataset.flowDesign === 'classic') return;
   const root=document.documentElement;
   const ic=name=>typeof icon==='function'?icon(name):'';

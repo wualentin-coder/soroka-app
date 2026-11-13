@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "build": "d5ea1b8ec4b3cff9",
-  "runtime": "native-mature-films",
+  "build": "2e9305c79679c854",
+  "runtime": "native-entry-forms",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
   "backendChanged": false,
@@ -2493,8 +2493,8 @@
     },
     {
       "path": "bridge.js",
-      "bytes": 186304,
-      "sha256": "bf0095b435dbc98738a2bb93b418bc56a778d6f9b05715c9ecf38125efea4998"
+      "bytes": 186363,
+      "sha256": "1e20f4b46e014a4e0c9403bab909b66fbc2ca646c03abb5391fe277f72422c70"
     },
     {
       "path": "calendar-drag.js",
@@ -6198,8 +6198,8 @@
     },
     {
       "path": "digital-assistant.js",
-      "bytes": 42518,
-      "sha256": "b9fb2e778287341948292a8ca714b31575a1e142fc81c56db482301e1b60d0dc"
+      "bytes": 42908,
+      "sha256": "f7ea9338e2feb4b6377b34a2ca179e249d0b3c1ada430b3bb24a6f3772481296"
     },
     {
       "path": "digital-brand.js",
@@ -6252,14 +6252,24 @@
       "sha256": "2e67b24ff8e395dcca749ba2f0b9721078cbc502cf54507900ceb520fe948e72"
     },
     {
+      "path": "digital-entry.css",
+      "bytes": 6171,
+      "sha256": "fc1c286f06a52be32da99760b835721dfe87d4664274115c0d320df52fd98f93"
+    },
+    {
+      "path": "digital-entry.js",
+      "bytes": 6028,
+      "sha256": "b29c7503883ef4c37d88f42214e740553f3dfbe5d77b9487eece3e08e746da33"
+    },
+    {
       "path": "digital-films.css",
-      "bytes": 20560,
-      "sha256": "65702908060eccad8cda19ad85a7ac684aba3db27b697a30e153543a09598674"
+      "bytes": 20727,
+      "sha256": "1a4f234ee382d0ab0048acdcde93e06e4ab52df9887f4e7eec4484718232a687"
     },
     {
       "path": "digital-films.js",
-      "bytes": 14941,
-      "sha256": "620f175873e3cba30841c45bd5d23e22c72263f3209baf60426bb1df9c3cdea2"
+      "bytes": 15039,
+      "sha256": "9db51ad965fd394bd7ee82b21dfe77cef367cfe1b16cf7cc304918c511eed8f3"
     },
     {
       "path": "digital-icons.css",
@@ -6508,8 +6518,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 4013,
-      "sha256": "f4f69e5f7a410a2cf5f8f99190f4deda0d401917b4f23199c5b1195fcfadf9c4"
+      "bytes": 4079,
+      "sha256": "59a5b1ee4b8caa7984706bfac2a95f38113fe8cd1045a493cb5a9f81c0414c0c"
     },
     {
       "path": "live.css",
@@ -7233,8 +7243,8 @@
     },
     {
       "path": "sw.js",
-      "bytes": 41966,
-      "sha256": "1eeb88b80d933e053fe42e9958af2b323ce2b568cde914092cc6c7f22143f93e"
+      "bytes": 42035,
+      "sha256": "e025bd57016abe4c6df1b9d472c49c2546bed6711c0a3915a713b13585a401ff"
     },
     {
       "path": "task-drag.js",
