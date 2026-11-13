@@ -734,6 +734,12 @@ function render() {
     afterRender(scroll);
     return;
   }
+  // Exercise updates retain the live shell, input focus and completed entry animation.
+  if(nav&&ui.page==='english'&&!ui.sheet&&shellChrome===renderedShellChrome&&window.FlowEnglishRender?.patch(app,page)){
+    renderedShell=page;
+    while(nav.nextSibling)nav.nextSibling.remove();nav.insertAdjacentHTML('afterend',overlay);
+    afterRender(scroll);return;
+  }
   // Calendar changes replace their content, keeping the live header and navigation.
   const plan=app.querySelector('.dm-main > .dm-plan');
   if(!classicDesign()&&nav&&ui.page==='today'&&plan&&shellChrome===renderedShellChrome&&!hasMap(sheet)&&!nav.parentElement.querySelector(':scope > .mobile-nav ~ * .leaflet-container')){

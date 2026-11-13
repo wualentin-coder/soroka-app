@@ -421,7 +421,7 @@ function enDeckScreen(d) {
   const goal = d.placement ? "" : !d.fresh.length && !d.newUnknown
     ? `<p class="en-deck-goal">Разобрано слов: <b>${d.graded.size}</b></p>`
     : `<p class="en-deck-goal">Новых к изучению: <b>${Math.min(d.newUnknown, d.newGoal)} из ${d.newGoal}</b> · знаю ${d.know}</p>`;
-  const card = `<div class="en-swipe ${back ? "back" : ""}" data-swipe>
+  const card = `<div class="en-swipe ${back ? "back" : ""}" data-swipe data-en-card-id="${esc(w.id)}">
       <span class="en-swipe-hint know">Знаю</span><span class="en-swipe-hint dont">Не знаю</span>
       <div class="en-swipe-front"><b class="en-word">${esc(w.en)}</b><small>${[w.ipa ? `/${esc(w.ipa)}/` : "", esc(w.pos || "")].filter(Boolean).join(" · ")}</small>${back ? "" : `<small class="en-swipe-tip">нажмите, чтобы перевернуть</small>`}</div>
       ${back ? `<div class="en-swipe-back"><p class="en-word-ru">${esc(w.ru)}</p>${w.ex ? `<p class="en-word-ex">${esc(w.ex)}</p><small>${esc(w.exRu || "")}</small>` : ""}</div>` : ""}

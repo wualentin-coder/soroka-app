@@ -2277,3 +2277,15 @@ html[data-flow-design=magic] body .dm-main .en-practice-workspace [data-en-train
 .en-practice-player>input[type=range]{flex:1;min-width:0;width:100%;height:44px;min-height:44px;padding:0;margin:0;border:0;background:transparent;accent-color:var(--accent);touch-action:pan-y}
 .en-practice-player>output{flex:none;min-width:66px;font-size:11px;line-height:1.4;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
 .en-practice-player>input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:12px}
+
+/* A task is a workspace, not a framed form. Actual cards and fields keep rounded edges. */
+.en-practice-workspace [data-en-training-form]::before,.en-practice-workspace [data-en-training-form]::after{display:none}
+.en-practice-workspace [data-en-training-form]>.flow-surface-contour,.en-practice-workspace [data-en-training-form]>.flow-response-layer{display:none}
+.en-practice-workspace .en-card{border-radius:18px}
+@media(max-width:760px){
+ html:has(.en-practice-workspace[data-en-viewport=stable]),body:has(.en-practice-workspace[data-en-viewport=stable]){overflow:hidden;overscroll-behavior:none}
+ html body .main .en-run.en-practice-workspace[data-en-viewport=stable]{position:fixed;top:var(--en-practice-top);left:20px;right:20px;width:auto;height:var(--en-practice-height);max-height:var(--en-practice-height);margin:0 auto;padding:0 0 8px;display:flex;flex-direction:column;gap:12px;overflow:hidden;animation:none}
+ .en-practice-workspace[data-en-viewport=stable]>.en-run-top{flex:none}
+ .en-practice-workspace[data-en-viewport=stable]>[data-en-training-form]{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;align-content:start;scroll-padding-block:12px;padding:4px 0 16px}
+ .en-practice-workspace[data-en-viewport=stable]>.en-practice-vocab{flex:none;max-height:30%;overflow:auto}
+}
