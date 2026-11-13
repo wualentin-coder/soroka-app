@@ -128,7 +128,7 @@ async function startVoice(onText, label = "Говорите…", options = {}) {
     if (!voiceCurrent(session) || document.hidden) { voiceRelease(session); if (voiceCurrent(session)) voiceCancel(); return; }
     try { await ctx.resume(); } catch (_) {}
     if (!voiceCurrent(session) || document.hidden) { voiceRelease(session); if (voiceCurrent(session)) voiceCancel(); return; }
-    const source = ctx.createMediaStreamSource(session.stream), node = ctx.createScriptProcessor(4096, 1, 1);
+    const source = ctx.createMediaStreamSource(session.stream), node = ctx.createScriptProcessor(2048, 1, 1);
     session.source = source; session.node = node;
     const bar = document.createElement("div"); session.bar = bar;
     bar.className = "voice-bar";
