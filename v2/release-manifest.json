@@ -1,11 +1,10 @@
 {
   "version": 1,
-  "build": "f854ea02d7380fe9",
-  "runtime": "native-plan-motion",
+  "build": "d5ea1b8ec4b3cff9",
+  "runtime": "native-mature-films",
   "fixtures": false,
   "entry": "/soroka-app/v2/index.html",
   "backendChanged": false,
-  "pianoVersion": "1458d8543105",
   "files": [
     {
       "path": "activity-island.js",
@@ -19,8 +18,8 @@
     },
     {
       "path": "app.js",
-      "bytes": 133748,
-      "sha256": "010cf3674dc830d6cfddccbe27f849baece55ef5052e3fe74fff129813aad86c"
+      "bytes": 133753,
+      "sha256": "5b05b34a1ccd60d1bbc01b18d57982cd61bf03cb088a7cf1ead31a830ce522d2"
     },
     {
       "path": "assets/cormorant-garamond-cyrillic-500.woff2",
@@ -2494,8 +2493,8 @@
     },
     {
       "path": "bridge.js",
-      "bytes": 186245,
-      "sha256": "50eef058b777e19fe1e506d39188fd27401de62d310fac8f5d1baa2808cb5e6a"
+      "bytes": 186304,
+      "sha256": "bf0095b435dbc98738a2bb93b418bc56a778d6f9b05715c9ecf38125efea4998"
     },
     {
       "path": "calendar-drag.js",
@@ -6214,8 +6213,8 @@
     },
     {
       "path": "digital-collections.js",
-      "bytes": 26973,
-      "sha256": "7066fcabe98c67f3172902733148c1d82e40c9fbc1353243df079592693b3b8d"
+      "bytes": 26872,
+      "sha256": "5bffa58e3c877cf89a7002fa1ef25a68298a2c3bf14556922f14676b41ae6876"
     },
     {
       "path": "digital-controls.css",
@@ -6251,6 +6250,16 @@
       "path": "digital-effects.js",
       "bytes": 8112,
       "sha256": "2e67b24ff8e395dcca749ba2f0b9721078cbc502cf54507900ceb520fe948e72"
+    },
+    {
+      "path": "digital-films.css",
+      "bytes": 20560,
+      "sha256": "65702908060eccad8cda19ad85a7ac684aba3db27b697a30e153543a09598674"
+    },
+    {
+      "path": "digital-films.js",
+      "bytes": 14941,
+      "sha256": "620f175873e3cba30841c45bd5d23e22c72263f3209baf60426bb1df9c3cdea2"
     },
     {
       "path": "digital-icons.css",
@@ -6304,13 +6313,13 @@
     },
     {
       "path": "digital-plan.css",
-      "bytes": 7753,
-      "sha256": "a5bbdc55c248bb0b4272cff2709c5dcf0732ca0bdb5f17c03c2d88db397dc95d"
+      "bytes": 7812,
+      "sha256": "9f6cde498f9ec18c1d1c58c3d47cf799aae487dafa11fde3dc26cc15d19a9807"
     },
     {
       "path": "digital-plan.js",
-      "bytes": 9409,
-      "sha256": "443c8f5d01dd27fd2024bd0504fa96b189a46fd5993c7a9a99c2c697e3c8d318"
+      "bytes": 9483,
+      "sha256": "63b2d793c1e76fc6e2b36241a2b1ec8b01e2fa43043ec3ca15fe67cfe681fdeb"
     },
     {
       "path": "digital-runtime.js",
@@ -6499,8 +6508,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 3947,
-      "sha256": "76290b7cd66031aa05ff7b09208f27acb1bc06313604de9e4332a8b1de260a1f"
+      "bytes": 4013,
+      "sha256": "f4f69e5f7a410a2cf5f8f99190f4deda0d401917b4f23199c5b1195fcfadf9c4"
     },
     {
       "path": "live.css",
@@ -7224,8 +7233,8 @@
     },
     {
       "path": "sw.js",
-      "bytes": 41901,
-      "sha256": "a66f089bf267fbe567930d0ea947afb5f12a4ef6faa544a1111115b69440bd79"
+      "bytes": 41966,
+      "sha256": "1eeb88b80d933e053fe42e9958af2b323ce2b568cde914092cc6c7f22143f93e"
     },
     {
       "path": "task-drag.js",

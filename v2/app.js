@@ -701,7 +701,7 @@ function applyFlowCustomAccent(value){
  const hex=value.toLowerCase(),rgb=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)),lum=rgb.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
  const values=[hex,rgb.join(','),hex,`rgba(${rgb.join(',')},.12)`,lum>.179?'#101317':'#ffffff',rgb.join(',')];props.forEach((key,index)=>{if(root.style.getPropertyValue(key)!==values[index])root.style.setProperty(key,values[index]);});root.dataset.customAccent='true';
 }
-document.addEventListener('change',event=>{const field=event.target.closest?.('[data-custom-accent]');if(!field)return;const value=field.value.trim();if(!/^#[0-9a-f]{6}$/i.test(value)){field.setCustomValidity('Цвет в формате #RRGGBB');field.reportValidity();return;}field.setCustomValidity('');data.settings.accent=value.toLowerCase();save();render();});
+document.addEventListener('change',event=>{const field=event.target.closest?.('input[data-custom-accent]');if(!field)return;const value=field.value.trim();if(!/^#[0-9a-f]{6}$/i.test(value)){field.setCustomValidity('Цвет в формате #RRGGBB');field.reportValidity();return;}field.setCustomValidity('');data.settings.accent=value.toLowerCase();save();render();});
 function render() {
   const retainRouteFocus = !ui.sheet && document.activeElement?.dataset.flowRouteFocus === ui.page;
   const navigationFocus = !ui.sheet && document.activeElement?.dataset.flowNavFocus === ui.page

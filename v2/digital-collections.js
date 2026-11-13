@@ -90,7 +90,7 @@
     return t.innerHTML;
   }
   replace('renderSavedViewSheet',(original,item,category)=>rebuildWindow(category==='movies'?filmComposition(original(item,category)):original(item,category),category));
-  replace('renderMovieSeries',(original,item)=>{const html=original(item),state=movieSeriesCache.get(movieSeriesKey(item));return state?.parts?.length>1?html:'';});
+  replace('renderMovieSeries',(original,item)=>original(item));
   replace('renderSavedSheet',original=>rebuildWindow(original(),ui.sheet.category,ui.sheet.mode==='edit'||!ui.sheet.id));
   replace('renderSavedAddMenuSheet',original=>rebuildWindow(original(),ui.savedCategory==='overview'?'materials':ui.savedCategory));
   replace('renderSavedSectionsSheet',original=>rebuildWindow(original(),ui.sheet.category));
