@@ -88,3 +88,21 @@
 .en-lyrics[data-keyboard=true] [data-lyrics-status]{margin-top:6px;font-size:11px}
 .en-lyrics[data-keyboard=true] [data-lyrics-status]:empty{display:none}
 @media(max-height:620px){.en-lyrics .en-lyrics-video{aspect-ratio:16/9;max-height:none}.en-lyrics .en-lyrics-line{min-height:0;line-height:1.45}.en-lyrics .en-lyrics-task{padding-top:8px}.en-lyrics [data-lyrics-status]:empty{display:none}}
+
+/* Optional word cards follow completion; they never change the lesson grade. */
+.en-lyrics[data-review=true] :is(.en-lyrics-video,.en-lyrics-toolbar,.en-lyrics-task,.en-lyrics-history){display:none}
+.en-lyrics-vocab{width:100%;max-width:440px;margin:24px auto 0}
+.en-lyrics-vocab-label{margin:0 0 16px;color:var(--lyrics-muted);font-size:12px;line-height:1.5}
+.en-lyrics-result-note{margin:-8px 0 16px;color:var(--lyrics-muted);font-size:11px;line-height:1.5}
+.en-lyrics-word-card{display:grid;gap:16px;padding:24px;border:1px solid var(--lyrics-line);border-radius:24px;background:var(--surface);min-width:0}
+.en-lyrics-word-card h3{margin:8px 0 0;color:var(--lyrics-text);font:600 clamp(30px,9vw,40px)/1.2 Manrope,sans-serif;overflow-wrap:anywhere;text-align:center}
+.en-lyrics-word-ru{margin:0;color:var(--lyrics-text);font-size:18px;line-height:1.5;text-align:center;overflow-wrap:anywhere}
+.en-lyrics-word-state{min-height:20px;margin:0;color:var(--lyrics-muted);font-size:12px;line-height:1.6;text-align:center;overflow-wrap:anywhere}
+.en-lyrics-word-card>.primary-button{width:100%;min-height:48px;margin:8px 0 0;border-radius:16px;font-size:14px}
+.en-lyrics-word-context{border-top:1px solid var(--lyrics-line);font-size:13px;line-height:1.6;color:var(--lyrics-muted)}
+.en-lyrics-word-context>summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:10px 0;gap:12px;font-size:12px}
+.en-lyrics-word-context>summary:after{content:'+';font-size:18px}
+.en-lyrics-word-context[open]>summary:after{content:'−'}
+.en-lyrics-word-context p{margin:0 0 8px;overflow-wrap:anywhere}
+.en-lyrics-word-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--lyrics-muted)}
+.en-lyrics[data-review=true] [data-lyrics-finish]{display:block;width:100%;max-width:440px;min-height:48px;margin:16px auto 0;background:transparent;color:var(--lyrics-muted);border:1px solid var(--lyrics-line);font-size:13px}

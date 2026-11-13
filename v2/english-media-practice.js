@@ -22,26 +22,11 @@ function parseSubtitles(text){
 }
 function timedLines(track){return(track.lines||[]).map((line,index,all)=>({...line,end:Number.isFinite(line.end)?line.end:Number.isFinite(all[index+1]?.time)?all[index+1].time:track.duration})).filter(line=>Number.isFinite(line.time)&&Number.isFinite(line.end)&&line.end>line.time&&typeof line.en==='string'&&line.en.trim());}
 function attachPlayback(ex,track){
- if(ex.sourceMeta?.type!=='song'||!Array.isArray(track?.lines))return;
- const tokens=text=>String(text||'').normalize('NFKC').toLowerCase().replace(/’/g,"'").match(/[\p{L}\p{N}]+(?:'[\p{L}\p{N}]+)*/gu)||[];
- const offset=ex.sourceMeta.lyricOffset||0,all=timedLines(track);
+ if(ex.sourceMeta?.type!=='song'||!Array.isArray(track?.lines)||!window.FlowSongMedia?.phraseBounds)return;
+ const offset=ex.sourceMeta.lyricOffset||0,all=track.lines,bounds=window.FlowSongMedia.phraseBounds(track);
  for(const q of ex.items||[]){
-  const line=ex.sourceMeta.lines[q.sourceLine],index=all.findIndex(row=>row.en===line?.en&&row.time===line.time),row=all[index],clip=q.clips?.[0];if(!row||!clip)continue;
-  let start=clip.start,end=clip.end;
-  if(row.words?.length){
-   const expected=tokens(row.en);let cursor=0,first=-1,last=-1,valid=true;
-   for(const word of row.words){const parts=tokens(word.text);let at=cursor;while(at<expected.length&&!parts.every((part,i)=>expected[at+i]===part))at++;
-    if(!parts.length||at===expected.length||!Number.isFinite(word.start)||!Number.isFinite(word.end)||word.end<=word.start){valid=false;break;}
-    if(first<0)first=at;last=at+parts.length;cursor=last;
-   }
-   if(valid){
-    const previous=all[index-1]?.end,next=all[index+1]?.time;
-    // These are playback bounds, never fabricated timestamps for missing words.
-    if(first>0){const boundary=index===0?0:previous;if(Number.isFinite(boundary)&&boundary+offset<=start)start=Math.max(0,boundary+offset);}
-    if(last<expected.length){const boundary=next??track.duration;if(Number.isFinite(boundary)&&boundary+offset>=end)end=boundary+offset;}
-    else end=Math.min(end+.15,Number.isFinite(next)?Math.max(clip.end,next+offset):Number.isFinite(track.duration)?Math.max(clip.end,track.duration):end+.15);
-   }
-  }
+  const line=ex.sourceMeta.lines[q.sourceLine],index=all.findIndex(row=>row.en===line?.en&&row.time===line.time),range=bounds[index],clip=q.clips?.[0];if(!range||!clip)continue;
+  const start=Math.max(0,range.start+offset),end=range.end+offset;
   if(Number.isFinite(start)&&Number.isFinite(end)&&start>=0&&end>start&&end-start<=120)q.playbackClip={...clip,start,end};
  }
 }

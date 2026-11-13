@@ -7,6 +7,7 @@
  const state={items:null,track:null,follow:true,translation:true,active:0,loop:false,rate:1,filter:'all',sheet:null,request:0};
  const unsavedAnalysis=new WeakSet(),analysisRefreshAt=new WeakMap();
  let islandPlayback=null;
+ let phraseTrack=null,phraseLines=null,phraseDuration=null,phraseRows=[];
  let host,main,overlay,media,quiz,controller,frame=0,lastFrame=0,lastFocus,toastTimer,saveTimer,drag,dbPromise,libraryLoading=false,serverWrites=Promise.resolve(),timedRows=[],activeWords=[],activeWordRow=-1,sungWord=null,analysisTimer=0,analysisRun=null,analysisGeneration=0;
  const q=(s,base=host)=>base?.querySelector(s);
  const qa=(s,base=host)=>[...(base?.querySelectorAll(s)||[])];
@@ -179,7 +180,9 @@
  }
  function closePlayer(persist=true){++state.request;state.add=null;cancelImport();cancelAnalysis();quiz?.cancel();if(!host)return;const closing=state.track;if(persist)persistProgress();else state.track=null;media.pause();media.dispose();musicActivity('closed');playbackState();cancelAnimationFrame(frame);frame=0;if(closing?.local&&closing.source?.startsWith('blob:'))URL.revokeObjectURL(closing.source);state.track=null;overlay.innerHTML='';state.sheet=null;host.hidden=true;document.getElementById('app').inert=false;host.classList.remove('enm-listening','enm-modal-only');if(typeof enTgBack==='function')enTgBack(false);drawLibrary();}
  const hasTiming=track=>!!track?.lines?.length&&track.lines.every(line=>Number.isFinite(line.time));
- const lineTime=line=>Math.max(0,(line?.time||0)+(state.track?.lyricOffset||0));
+ function phraseRange(index){const t=state.track;if(!t)return null;const duration=t.duration||media?.duration;if(phraseTrack!==t||phraseLines!==t.lines||phraseDuration!==duration){phraseTrack=t;phraseLines=t.lines;phraseDuration=duration;phraseRows=global.FlowSongMedia.phraseBounds?.({...t,duration})||[];}return phraseRows[index];}
+ const lineTime=(line,index=state.track?.lines?.indexOf(line))=>Math.max(0,(phraseRange(index)?.start??line?.time??0)+(state.track?.lyricOffset||0));
+ const lineEnd=(line,index)=>Math.max(0,(phraseRange(index)?.end??line?.end??state.track?.duration??media.duration)+(state.track?.lyricOffset||0));
  function wordMarkup(line,index){
   const plain=text=>text.split(/(\s+)/).filter(Boolean).map(w=>/^\s+$/.test(w)?w:`<button class="enm-word" data-enm="word" data-word="${h(w)}" data-line="${index}">${h(w)}</button>`).join('');let cursor=0,out='';
   let ambiguous=false;const letter=char=>!!char&&/[\p{L}\p{N}'’]/u.test(char);
@@ -195,7 +198,7 @@
   }return out+plain(line.en.slice(cursor));
  }
  function lyricRows(t){const timed=hasTiming(t);return t.lines.map((l,i)=>`<div class="enm-lyric-row ${timed?'':'enm-unsynced'}" data-line="${i}" ${timed?'tabindex="0" role="button"':''} aria-label="${timed?'Слушать строку':'Строка'} ${i+1}"><p class="enm-en-line" lang="en">${wordMarkup(l,i)}</p><p class="enm-ru-line" lang="ru">${h(l.ru)}</p></div>`).join('');}
- function refreshLyrics(){const box=q('#enm-lyrics');if(!box)return;const scroll=box.scrollTop;box.innerHTML=lyricRows(state.track);timedRows=qa('.enm-lyric-row',box);activeWords=[];activeWordRow=-1;sungWord=null;
+ function refreshLyrics(){const box=q('#enm-lyrics');if(!box)return;phraseLines=null;const scroll=box.scrollTop;box.innerHTML=lyricRows(state.track);timedRows=qa('.enm-lyric-row',box);activeWords=[];activeWordRow=-1;sungWord=null;
   for(const action of ['previous','next','loop']){const b=q('[data-enm='+action+']');if(b)b.disabled=!hasTiming(state.track);}tick(state.follow,true);if(!state.follow)box.scrollTop=scroll;
  }
  function paintPlayer(){const t=state.track;if(!t)return;const timed=hasTiming(t),scroll=q('#enm-lyrics')?.scrollTop||0;
@@ -233,9 +236,9 @@
  }
  function followCurrent(){state.follow=true;const b=q('[data-enm=follow]');if(b)b.hidden=true;tick(true);}
  function stopFollow(){if(!hasTiming(state.track))return;state.follow=false;const b=q('[data-enm=follow]');if(b)b.hidden=false;}
- function tick(forceFollow=false,preservePosition=false){if(!state.track)return;const lines=state.track.lines||[],clock=media.currentTime;let at=0;for(let i=0;i<lines.length;i++)if(Number.isFinite(lines[i].time)&&clock>=lineTime(lines[i]))at=i;
-  if(!preservePosition&&state.loop&&!media.paused&&hasTiming(state.track)){const i=state.loopLine??at,end=lines[i+1]?lineTime(lines[i+1]):Math.min(state.track.duration||media.duration,(lines[i].end??media.duration)+(state.track.lyricOffset||0));if(clock>=end-.06)media.currentTime=lineTime(lines[i]);}
-  const changed=at!==state.active;state.active=at;timedRows.forEach((r,i)=>r.classList.toggle('enm-active',hasTiming(state.track)&&i===at&&clock>=lineTime(lines[i])&&(lines[i].end==null||clock<lines[i].end+(state.track.lyricOffset||0))));
+ function tick(forceFollow=false,preservePosition=false){if(!state.track)return;const lines=state.track.lines||[],clock=media.currentTime;let at=0;for(let i=0;i<lines.length;i++)if(Number.isFinite(lines[i].time)&&clock>=lineTime(lines[i],i))at=i;
+  if(!preservePosition&&state.loop&&!media.paused&&hasTiming(state.track)){const i=state.loopLine??at,end=lines[i+1]?Math.max(lineEnd(lines[i],i),lineTime(lines[i+1],i+1)):lineEnd(lines[i],i);if(clock>=end)media.currentTime=lineTime(lines[i],i);}
+  const changed=at!==state.active;state.active=at;timedRows.forEach((r,i)=>r.classList.toggle('enm-active',hasTiming(state.track)&&i===at&&clock>=lineTime(lines[i],i)&&clock<lineEnd(lines[i],i)));
   if(activeWordRow!==at){activeWords=qa('.enm-timed-word',timedRows[at]);activeWordRow=at;}
   if((changed||forceFollow)&&state.follow&&hasTiming(state.track)){const row=q('.enm-lyric-row.enm-active',main),box=q('#enm-lyrics');if(row&&box)box.scrollTo({top:Math.max(0,row.offsetTop-box.clientHeight*.35),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});}
   const slider=q('#enm-seek');if(slider){slider.value=clock;slider.style.setProperty('--progress',`${clock/(state.track.duration||media.duration||1)*100}%`);q('#enm-elapsed').textContent=fmt(clock);}paintWord();

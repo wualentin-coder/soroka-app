@@ -95,5 +95,29 @@ class SongMedia extends EventTarget {
  dispose(){this.native.pause();clearInterval(this.timer);this.generation++;this.resolveReady?.(false);this.readyPromise=null;this.player?.destroy();this.player=null;this.ready=false;this.loading=false;this.status=-1;}
 }
 
-SongMedia.parseLink=parseYouTubeLink;global.FlowSongMedia=SongMedia;
+// Whole-phrase playback bounds shared by the library player and lyrics practice.
+// Unrecognized words stay untimed; neighboring phrase bounds only protect audio.
+function phraseBounds(track){
+ const all=Array.isArray(track?.lines)?track.lines:[],tokens=text=>String(text||'').normalize('NFKC').toLowerCase().replace(/’/g,"'").match(/[\p{L}\p{N}]+(?:'[\p{L}\p{N}]+)*/gu)||[];
+ const ends=all.map((line,i)=>Number.isFinite(line?.end)?line.end:Number.isFinite(all[i+1]?.time)?all[i+1].time:track.duration);
+ return all.map((line,i)=>{
+  if(!Number.isFinite(line?.time)||!Number.isFinite(ends[i])||ends[i]<=line.time)return null;
+  let start=line.time,end=ends[i];
+  if(line.words?.length){
+   const expected=tokens(line.en);let cursor=0,first=-1,last=-1,valid=true;
+   for(const word of line.words){const parts=tokens(word.text);let at=cursor;while(at<expected.length&&!parts.every((part,k)=>expected[at+k]===part))at++;
+    if(!parts.length||at===expected.length||!Number.isFinite(word.start)||!Number.isFinite(word.end)||word.end<=word.start){valid=false;break;}
+    if(first<0)first=at;last=at+parts.length;cursor=last;
+   }
+   if(valid){
+    if(first>0){const before=i===0?0:ends[i-1];if(Number.isFinite(before)&&before<=start)start=Math.max(0,before);}
+    const next=all[i+1]?.time;
+    if(last<expected.length){const after=Number.isFinite(next)?next:track.duration;if(Number.isFinite(after)&&after>=end)end=after;}
+    else end=Math.min(end+.15,Number.isFinite(next)?Math.max(ends[i],next):Number.isFinite(track.duration)?Math.max(ends[i],track.duration):end+.15);
+   }
+  }
+  return start>=0&&end>start&&end-start<=120?{start,end}:{start:line.time,end:ends[i]};
+ });
+}
+SongMedia.phraseBounds=phraseBounds;SongMedia.parseLink=parseYouTubeLink;global.FlowSongMedia=SongMedia;
 })(globalThis);
