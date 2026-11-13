@@ -2,10 +2,17 @@
 (()=>{'use strict';
 const h=value=>esc(String(value??''));
 let picker=null,request=0,player=null,playing=null,localFile=null,localURL=null;
+const difficultyCache=new Map();
+function difficulty(){
+ const scope=owner().lease.scope;
+ if(!difficultyCache.has(scope)){let value=40;try{const saved=Number(localStorage.getItem('flow.english.lyrics.percent:'+scope));if(Number.isInteger(saved)&&saved>=10&&saved<=100&&saved%10===0)value=saved;}catch{}difficultyCache.set(scope,value);}
+ return difficultyCache.get(scope);
+}
+function difficultyControl(){const value=difficulty();return `<label class="en-lyrics-difficulty"><span>Пропущено слов <output>${value}%</output></span><input type="range" min="10" max="100" step="10" value="${value}" data-lyrics-gap-percent aria-label="Процент пропущенных слов" aria-valuetext="${value}%"></label>`;}
 const action=(label,name,attrs='',primary=false)=>`<button type="button" class="${primary?'primary-button':'ghost-button'}" data-action="en-training-media-${name}" ${attrs}>${label}</button>`;
 const owner=()=>{const host=window.sorokaEnglishSession,lease=host?.captureOwner();if(!lease?.authorized||!host.isCurrent(lease))throw Error('english_owner_not_ready');return{host,lease};};
 const current=c=>window.sorokaEnglishSession===c.host&&c.host.isCurrent(c.lease);
-const failText=error=>({media_not_enough_words:'Выбери отрывок, в котором есть хотя бы три разных английских слова.',media_bad_lines:'Проверь английские строки и таймкоды.',english_owner_not_ready:'Дождись подключения аккаунта.',practice_contract:'Сохранение практики пока недоступно.'}[error?.message]||error?.message||'Не удалось подготовить упражнение. Попробуй ещё раз.');
+const failText=error=>({media_not_enough_words:'Выбери отрывок, в котором есть хотя бы три разных английских слова.',media_bad_lines:'Проверь английские строки и таймкоды.',lyrics_too_many_gaps:'В одной строке больше 100 пропусков. Раздели длинную строку субтитров.',lyrics_difficulty_unavailable:'На сервере ещё не доступна настройка сложности. Попробуй после обновления.',english_owner_not_ready:'Дождись подключения аккаунта.',practice_contract:'Сохранение практики пока недоступно.'}[error?.message]||error?.message||'Не удалось подготовить упражнение. Попробуй ещё раз.');
 function stamp(value){const parts=value.replace(',','.').split(':').map(Number);return parts.reduce((sum,n)=>sum*60+n,0);}
 function parseSubtitles(text){
  if(typeof text!=='string'||text.length>256000)throw Error('Слишком большой файл субтитров.');
@@ -56,7 +63,7 @@ function preview(p){try{return selectLines(p.lines,p.index,p.count).map(line=>`<
 window.enMediaPracticeScreen=function(){
  const p=picker;if(!p||!current(p.owner))return`<p>Выберите источник упражнения.</p>${action('Музыка и видео','catalog')}`;
  if(p.direct)return `<section class="en-structured en-media-source"><button type="button" class="en-back" data-action="en-training-media-catalog">${icon('left','icon-sm')}Выбрать другое</button><h2 class="en-catalog-title">${h(p.track.title)}</h2>${p.error?`<p role="alert">${h(p.error)}</p>${action('Повторить','song-retry')}`:'<p role="status">Открываем упражнение…</p>'}</section>`;
- if(p.type==='songs'&&window.FlowEnglishMusic?.screen)return `<section class="en-structured en-media-source lv-music"><button type="button" class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button>${window.FlowEnglishMusic.screen()}</section>`;
+ if(p.type==='songs'&&window.FlowEnglishMusic?.screen)return `<section class="en-structured en-media-source lv-music"><button type="button" class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button>${difficultyControl()}${window.FlowEnglishMusic.screen()}</section>`;
  const tabs=`<div class="en-structured-actions" role="group" aria-label="Источник">${[['songs','Музыка'],['youtube','YouTube'],['file','Файл']].map(([type,label])=>action(label,'type',`data-type="${type}" aria-pressed="${p.type===type||type==='songs'&&p.type==='song'}"`)).join('')}</div>`;
  let body='';
  if(p.type==='songs')body=p.busy?'<p role="status">Загружаем музыку…</p>':`<div class="en-steps">${(p.songs||[]).map(song=>action(`<b>${h(song.title)}</b><small>${h(song.artist)}</small>`,'song',`data-id="${h(song.id)}"`)).join('')||'<p>Сначала добавь песню в медиатеку.</p>'}</div>`;
@@ -65,7 +72,7 @@ window.enMediaPracticeScreen=function(){
   const selection=p.lines.length?`<div class="en-media-range"><label class="field"><span>С первой строки</span><select name="from">${p.lines.map((line,i)=>`<option value="${i}" ${p.index===i?'selected':''}>${Math.floor(line.time/60)}:${String(Math.floor(line.time%60)).padStart(2,'0')} · ${h(line.en.slice(0,70))}</option>`).join('')}</select></label><label class="field"><span>Строк</span><select name="count">${(window.FlowEnglishLyricsPracticeCore?[1,2,3,4,5,6,7,8,9,10,11,12]:[1,2,3,4,5,6]).map(n=>`<option ${p.count===n?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="en-card" data-en-media-preview>${preview(p)}</div>${window.FlowEnglishLyricsPracticeCore?action(p.busy?'Готовим…':'По строкам песни','lyrics-prepare',p.busy?'disabled':'',true):''}${action(p.busy?'Готовим…':window.FlowEnglishLyricsPracticeCore?'Упражнение по фрагменту':'Начать упражнение','prepare',p.busy?'disabled':'',!window.FlowEnglishLyricsPracticeCore)}`:p.type==='song'?'<p>У этой песни пока нет таймкодов строк. Обнови текст в медиатеке или выбери другую песню.</p>':'';
   body=`<form data-en-media-source-form>${importFields}${selection}</form>`;
  }
- return `<section class="en-structured en-media-source"><button class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button><h2 class="en-catalog-title">Музыка и видео</h2>${tabs}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
+ return `<section class="en-structured en-media-source"><button class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button><h2 class="en-catalog-title">Музыка и видео</h2>${tabs}${difficultyControl()}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
 };
 function sourceForm(){return document.querySelector('[data-en-media-source-form]');}
 function captureForm(p){if(p.direct)return;const form=sourceForm();if(!form)return;if(form.elements.url)p.url=form.elements.url.value;if(form.elements.subtitlesText)p.text=form.elements.subtitlesText.value;if(form.elements.from)p.index=Number(form.elements.from.value);if(form.elements.count)p.count=Number(form.elements.count.value);}
@@ -79,8 +86,9 @@ async function prepare(p,style){
   let source;if(p.type==='song')source={type:'song',songId:p.track.id,start,end};
   else if(p.type==='youtube'){const link=FlowSongMedia.parseLink(p.url||'');source={type:'youtube',youtubeId:link.id,title:'Фрагмент видео',start,end,lines};}
   else{if(!p.file)throw Error('Сначала выбери видео.');source={type:'file',file:p.file,title:p.file.name,start,end,lines};}
-  const result=await enCall('practicesource',{source,seed:crypto.getRandomValues(new Uint32Array(1))[0],...(style==='lyrics'?{style}:{})});
+  const gapPercent=difficulty(),result=await enCall('practicesource',{source,seed:crypto.getRandomValues(new Uint32Array(1))[0],...(style==='lyrics'?{style,gapPercent}:{})});
   if(serial!==request||!isPicker(p)||typing&&!window.FlowEnglishLyricsPractice.inputPrepared(typing))return;
+  if(style==='lyrics'&&(result.exercise?.gapPercent!==gapPercent||result.exercise?.contentRevision!==window.FlowEnglishLyricsPracticeCore?.revisions[gapPercent]))throw Error('lyrics_difficulty_unavailable');
   const accepted=englishAction('en-training-media-ready',{dataset:{},exercise:result.exercise,owner:p.owner,serial});
   if(accepted===false)throw Error('Не удалось сохранить упражнение на устройстве. Освободи память и попробуй ещё раз.');
  }catch(error){if(serial===request)paintError(p,error);}
@@ -92,8 +100,8 @@ function actionHandler(name,control){
  if(name==='ready'){
   if(!picker||control.serial!==request||!current(control.owner)||!isPicker(picker))return true;
   if(control.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
-  const ex=control.exercise;if(ex?.practiceKind!=='media'||![window.FlowEnglishMediaPracticeCore?.revision,window.FlowEnglishLyricsPracticeCore?.revision].filter(Boolean).includes(ex.contentRevision))throw Error('practice_content_changed');
-  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=ex.contentRevision===window.FlowEnglishLyricsPracticeCore?.revision;if(s.ex.autoPlay)attachPlayback(s.ex,picker.track);s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{if(s.ex.autoPlay&&window.FlowEnglishLyricsPractice?.keepPreparedDuring)window.FlowEnglishLyricsPractice.keepPreparedDuring(enStopPcm);else enStopPcm();picker=null;});render();return true;
+  const ex=control.exercise,isLyrics=!!window.FlowEnglishLyricsPracticeCore?.forRevision(ex?.contentRevision);if(ex?.practiceKind!=='media'||ex.contentRevision!==window.FlowEnglishMediaPracticeCore?.revision&&!isLyrics)throw Error('practice_content_changed');
+  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=isLyrics;if(s.ex.autoPlay)attachPlayback(s.ex,picker.track);s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{if(s.ex.autoPlay&&window.FlowEnglishLyricsPractice?.keepPreparedDuring)window.FlowEnglishLyricsPractice.keepPreparedDuring(enStopPcm);else enStopPcm();picker=null;});render();return true;
  }
  const p=picker;if(!p||!current(p.owner))return true;
  if(name==='type'){captureForm(p);p.error='';p.busy=false;p.type=d.type;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs')loadSongs(p);else render();return true;}
@@ -142,7 +150,13 @@ document.addEventListener('change',async event=>{
  if(field.name==='subtitles'){try{const serial=++request,file=field.files?.[0];if(!file||file.size>256000)throw Error('Выбери субтитры до 256 КБ.');const text=await file.text();if(serial!==request||!isPicker(p))return;p.text=text;p.lines=parseSubtitles(text);p.index=0;p.count=Math.min(3,p.lines.length);p.error='';render();}catch(error){paintError(p,error);}}
 });
 document.addEventListener('submit',event=>{if(event.target.matches?.('[data-en-media-source-form]')){event.preventDefault();if(picker)prepare(picker);}});
+document.addEventListener('input',event=>{
+ const field=event.target;if(!field.matches?.('[data-lyrics-gap-percent]'))return;
+ const value=Number(field.value);if(!Number.isInteger(value)||value<10||value>100||value%10)return;
+ const c=owner();difficultyCache.set(c.lease.scope,value);try{localStorage.setItem('flow.english.lyrics.percent:'+c.lease.scope,String(value));}catch{}
+ field.setAttribute('aria-valuetext',value+'%');field.closest('.en-lyrics-difficulty').querySelector('output').textContent=value+'%';
+});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)closePlayback();});window.addEventListener('pagehide',leave);
 window.sorokaEnglishSession?.subscribeInvalidation(()=>{leave();});
-window.FlowEnglishMediaPractice={action:actionHandler,openSong(track){openPicker(track);},play,stop,tools:{parseSubtitles,selectLines,coverage,timedLines,attachPlayback,fileIdentity,fileSource(source){return source?.type==='file'&&localFile?.sha256===source.file?.sha256&&localFile?.size===source.file?.size?localURL:null;}}};
+window.FlowEnglishMediaPractice={action:actionHandler,openSong(track){openPicker(track);},play,stop,difficultyControl,tools:{parseSubtitles,selectLines,coverage,timedLines,attachPlayback,fileIdentity,fileSource(source){return source?.type==='file'&&localFile?.sha256===source.file?.sha256&&localFile?.size===source.file?.size?localURL:null;}}};
 })();

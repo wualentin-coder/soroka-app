@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const core=window.FlowEnglishPracticeCore;if(!core)return;
 const names={mission:'Ситуации',sounds:'Звуки',story:'Истории',radio:'Аудирование',media:'Музыка и видео'};
-const engine=ex=>window.FlowEnglishLyricsPractice?.owns(ex)?window.FlowEnglishLyricsPracticeCore:ex.practiceKind==='media'?window.FlowEnglishMediaPracticeCore:core;
+const engine=ex=>window.FlowEnglishLyricsPractice?.owns(ex)?window.FlowEnglishLyricsPracticeCore.forRevision(ex.contentRevision):ex.practiceKind==='media'?window.FlowEnglishMediaPracticeCore:core;
 const h=value=>esc(String(value??'')),button=(label,action,attrs='',primary=false)=>`<button type="button" class="${primary?'primary-button':'ghost-button'}" data-action="en-training-${action}" ${attrs}>${label}</button>`;
 let sound=null,generation=0;
 function stop(){generation++;window.FlowEnglishMediaPractice?.stop();window.FlowEnglishLyricsPractice?.stop();if(sound){sound.pause();sound.onended=null;sound.onerror=null;sound.ontimeupdate=null;sound=null;}}

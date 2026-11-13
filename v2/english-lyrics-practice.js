@@ -1,7 +1,7 @@
 /* Sequential lyrics typing. The native English journal owns answers and receipts. */
 (()=>{'use strict';
-const core=()=>window.FlowEnglishLyricsPracticeCore;
-const owns=ex=>ex?.practiceKind==='media'&&ex.contentRevision===core()?.revision;
+const core=()=>window.FlowEnglishLyricsPracticeCore?.forRevision(enState().ex?.contentRevision)||window.FlowEnglishLyricsPracticeCore;
+const owns=ex=>ex?.practiceKind==='media'&&!!window.FlowEnglishLyricsPracticeCore?.forRevision(ex.contentRevision);
 const terms=q=>q?.target?[q.target]:[];
 const translation=(ex,q)=>q?ex.sourceMeta.lines[q.sourceLine]?.ru||'':'';
 const h=value=>esc(String(value??''));

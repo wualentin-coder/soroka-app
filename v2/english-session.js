@@ -19,7 +19,7 @@ function checkpoint(state){
  const ex=state.ex;
  if(!EXERCISES.includes(ex?.mode)||ex.loading||!Array.isArray(ex.items)||ex.items.length>500)return null;
  if(!Number.isInteger(ex.index)||ex.index<0||ex.index>ex.items.length)fail('bad_position');
- const task=copy(fields(ex,['mode','unit','rule','back','items','index','ok','done','practiceDone','picked','answer','draft','sessionId','sent','result','practiceKind','contentId','contentRevision','seed','branch','title','level','blockedReason','sourceMeta']));
+ const task=copy(fields(ex,['mode','unit','rule','back','items','index','ok','done','practiceDone','picked','answer','draft','sessionId','sent','result','practiceKind','contentId','contentRevision','gapPercent','seed','branch','title','level','blockedReason','sourceMeta']));
  if(ex.deck)task.deck=deck(ex.deck);
  return {kind:'lesson',task};
 }
