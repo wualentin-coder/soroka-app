@@ -84,23 +84,32 @@ function schedule(r){
  clearTimeout(r.next);const ex=exNow(),q=active(ex);if(!valid(r)||!r.started||!r.atEnd||r.nextBlocked||document.hidden||!q||!answered(q)||!heard(q))return;
  const index=ex.index;r.next=setTimeout(()=>{if(valid(r)&&!document.hidden&&exNow().index===index&&dispatch('next')===false)r.nextBlocked=true;},380);
 }
+function seek(r,time){r.anchor=null;r.lastTime=null;r.seeking={target:time,at:performance.now()};r.media.currentTime=time;}
 function selectLine(r){
  const ex=exNow(),q=active(ex);if(!q){r.media.pause();paint(r);return;}
  if(r.index===ex.index){paint(r);return;}
  if(r.index>=0){cancelAnimationFrame(r.compositionFrame);r.composing=false;r.compositionPending=false;r.compositionValue='';r.compositionConsumed='';}
  r.index=ex.index;r.lineStarted=false;r.ranges=[];r.anchor=null;r.lastTime=null;r.atEnd=false;r.counted=false;
  if(q.showTranslation===undefined){const previous=ex.items.slice(0,ex.index).reverse().find(row=>typeof row.showTranslation==='boolean');dispatch('translation-init',{value:previous?.showTranslation??true});}
- const clip=q.clips[0];r.clip=clip;if(r.initialized)r.media.currentTime=clip.start;paint(r);
+ const clip=q.playbackClip||q.clips[0];r.clip=clip;if(r.initialized)seek(r,clip.start);paint(r);
 }
 function covered(r){return window.FlowEnglishMediaPractice.tools.coverage(r.ranges,r.clip.start,r.clip.end)>=.9*(r.clip.end-r.clip.start);}
 function tick(r){
  if(!valid(r)){if(run===r)stop();return;}if(document.hidden)return;
- const t=r.media.currentTime,now=performance.now(),last=r.anchor;
+ const t=r.media.currentTime,now=performance.now();
+ if(r.seeking){
+  const arrived=t>=r.seeking.target-.05&&t<=r.seeking.target+1;
+  if(!arrived&&now-r.seeking.at<6000){r.anchor=null;return;}
+  r.seeking=null;r.anchor=null;r.lastTime=null;
+ }
+ const last=r.anchor;
  if(r.lastTime!==null&&t<r.lastTime-.25)dispatch('support');r.lastTime=t;
- if(last&&!r.media.paused){const elapsed=(now-last.at)/1000,delta=t-last.time;if(elapsed>0&&elapsed<=3&&delta>0&&delta<=elapsed*r.media.playbackRate*1.35+.15)r.ranges.push([last.time,t]);}
- r.anchor={time:t,at:now};
+ // The clock may report PAUSED/ENDED before its final timeupdate. An anchor
+ // exists only for an interval which began playing; consume its real tail once.
+ if(last){const elapsed=(now-last.at)/1000,delta=t-last.time;if(elapsed>0&&elapsed<=3&&delta>0&&delta<=elapsed*r.media.playbackRate*1.35+.15)r.ranges.push([last.time,t]);}
+ r.anchor=r.media.paused?null:{time:t,at:now};
  if(covered(r)&&!r.counted)r.counted=dispatch('heard')!==false;
- if(t>=r.clip.end){r.atEnd=true;r.media.pause();paint(r);}else if(t<r.clip.start-.3){r.anchor=null;r.media.pause();r.media.currentTime=r.clip.start;}
+ if(t>=r.clip.end){r.atEnd=true;if(!r.media.paused)r.media.pause();paint(r);}else if(t<r.clip.start-.3){seek(r,r.clip.start);r.media.pause();}
 }
 function mount(ex){
  if(!owns(ex)||ex.blockedReason||ui.page!=='english')return;
@@ -120,12 +129,12 @@ function mount(ex){
   if(e.key==='Tab'){const nodes=[...node.querySelectorAll('button:not([disabled]),input:not([disabled]),summary,video,iframe')].filter(x=>x.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
  });
  node.addEventListener('click',e=>{if(!valid(r))return;const word=e.target.closest('[data-lyrics-word]');if(word){dispatch('word',{index:Number(word.dataset.lyricsWord),term:Number(word.dataset.term)});paint(r);return;}const b=e.target.closest('[data-lyrics]');if(!b){if(e.target.closest('.en-lyrics-task')&&!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}dispatch(b.dataset.lyrics==='back'?'close':b.dataset.lyrics);if(valid(r)){paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
- r.media.addEventListener('loadedmetadata',()=>{if(!valid(r))return;if(!r.media.error)r.mediaProblem='';if(!r.initialized){r.initialized=true;r.media.currentTime=r.clip.start;if(exNow().autoPlay)dispatch('start');}paint(r);});
+ r.media.addEventListener('loadedmetadata',()=>{if(!valid(r))return;if(!r.media.error)r.mediaProblem='';if(!r.initialized){r.initialized=true;seek(r,r.clip.start);if(exNow().autoPlay)dispatch('start');}paint(r);});
  r.media.addEventListener('autoplayblocked',()=>{if(valid(r)){r.mediaProblem='Нажми ▶ в упражнении, чтобы включить звук.';paint(r);}});
  r.media.addEventListener('timeupdate',()=>tick(r));
- r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.mediaProblem='';r.anchor={time:r.media.currentTime,at:performance.now()};paint(r);});
+ r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.mediaProblem='';const time=r.media.currentTime;if(r.seeking&&time>=r.seeking.target-.05&&time<=r.seeking.target+1)r.seeking=null;r.anchor=r.seeking?null:{time,at:performance.now()};paint(r);});
  r.media.addEventListener('ratechange',()=>{if(valid(r)&&r.media.playbackRate<1)dispatch('support');});
- r.media.addEventListener('pause',()=>{r.anchor=null;if(valid(r))paint(r);});
+ r.media.addEventListener('pause',()=>{if(valid(r)){tick(r);paint(r);}else r.anchor=null;});
  r.media.addEventListener('ended',()=>tick(r));
  r.media.addEventListener('error',()=>{if(valid(r)){r.mediaProblem='Видео не загрузилось. Повтори воспроизведение или выбери другой источник.';paint(r);}});
  const source=ex.sourceMeta,local=window.FlowEnglishLyricsSource?.(source)||window.FlowEnglishMediaPractice.tools.fileSource?.(source),track=local?{source:local,start:r.clip.start}:source.youtubeId?{youtubeId:source.youtubeId,start:r.clip.start,watchUrl:'https://www.youtube.com/watch?v='+source.youtubeId}:{source:source.source,start:r.clip.start};
@@ -167,7 +176,7 @@ function action(name,control){
   if(name==='play'&&!r.media.paused){effect(()=>r.media.pause());return true;}
   const restart=name==='replay'||r.media.currentTime>=r.clip.end||r.media.currentTime<r.clip.start;
   if(restart||!q.listens||!r.lineStarted){q.listens=(q.listens||0)+1;q.assistance.replays=q.listens;if(q.listens>1){q.assistance.hint=true;run?.supported?.add(ex.index);}}
-  effect(()=>{if(!valid(r)||document.hidden)return;if(restart){r.anchor=null;r.atEnd=false;r.media.currentTime=r.clip.start;}r.preparedPlay=true;r.lineStarted=true;r.media.play().catch(()=>{r.preparedPlay=false;if(valid(r))r.node.querySelector('[data-lyrics-status]').textContent='Нажми ▶ в упражнении, чтобы включить звук.';});});return true;
+  effect(()=>{if(!valid(r)||document.hidden)return;if(restart){r.atEnd=false;seek(r,r.clip.start);}r.preparedPlay=true;r.lineStarted=true;r.media.play().catch(()=>{r.preparedPlay=false;if(valid(r))r.node.querySelector('[data-lyrics-status]').textContent='Нажми ▶ в упражнении, чтобы включить звук.';});});return true;
  }
  if(name==='next'||name==='skip'){
   if(run?.supported?.has(ex.index))q.assistance.hint=true;if(run?.media.playbackRate<1)q.assistance.slow=true;

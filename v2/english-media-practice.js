@@ -21,6 +21,30 @@ function parseSubtitles(text){
  return result.sort((a,b)=>a.time-b.time);
 }
 function timedLines(track){return(track.lines||[]).map((line,index,all)=>({...line,end:Number.isFinite(line.end)?line.end:Number.isFinite(all[index+1]?.time)?all[index+1].time:track.duration})).filter(line=>Number.isFinite(line.time)&&Number.isFinite(line.end)&&line.end>line.time&&typeof line.en==='string'&&line.en.trim());}
+function attachPlayback(ex,track){
+ if(ex.sourceMeta?.type!=='song'||!Array.isArray(track?.lines))return;
+ const tokens=text=>String(text||'').normalize('NFKC').toLowerCase().replace(/’/g,"'").match(/[\p{L}\p{N}]+(?:'[\p{L}\p{N}]+)*/gu)||[];
+ const offset=ex.sourceMeta.lyricOffset||0,all=timedLines(track);
+ for(const q of ex.items||[]){
+  const line=ex.sourceMeta.lines[q.sourceLine],index=all.findIndex(row=>row.en===line?.en&&row.time===line.time),row=all[index],clip=q.clips?.[0];if(!row||!clip)continue;
+  let start=clip.start,end=clip.end;
+  if(row.words?.length){
+   const expected=tokens(row.en);let cursor=0,first=-1,last=-1,valid=true;
+   for(const word of row.words){const parts=tokens(word.text);let at=cursor;while(at<expected.length&&!parts.every((part,i)=>expected[at+i]===part))at++;
+    if(!parts.length||at===expected.length||!Number.isFinite(word.start)||!Number.isFinite(word.end)||word.end<=word.start){valid=false;break;}
+    if(first<0)first=at;last=at+parts.length;cursor=last;
+   }
+   if(valid){
+    const previous=all[index-1]?.end,next=all[index+1]?.time;
+    // These are playback bounds, never fabricated timestamps for missing words.
+    if(first>0){const boundary=index===0?0:previous;if(Number.isFinite(boundary)&&boundary+offset<=start)start=Math.max(0,boundary+offset);}
+    if(last<expected.length){const boundary=next??track.duration;if(Number.isFinite(boundary)&&boundary+offset>=end)end=boundary+offset;}
+    else end=Math.min(end+.15,Number.isFinite(next)?Math.max(clip.end,next+offset):Number.isFinite(track.duration)?Math.max(clip.end,track.duration):end+.15);
+   }
+  }
+  if(Number.isFinite(start)&&Number.isFinite(end)&&start>=0&&end>start&&end-start<=120)q.playbackClip={...clip,start,end};
+ }
+}
 function selectLines(lines,index,count){const chosen=lines.slice(index,index+count);if(!chosen.length||chosen.length!==count||chosen.at(-1).end-chosen[0].time>120)throw Error('Выбери отрывок не длиннее двух минут.');return chosen;}
 function coverage(ranges,start,end){let total=0,last=start;for(const[from,to]of [...ranges].sort((a,b)=>a[0]-b[0])){const right=Math.min(end,to);total+=Math.max(0,right-Math.max(start,from,last));last=Math.max(last,right);}return total;}
 async function fileIdentity(file){if(!file||file.size>128*1024*1024)throw Error('Выбери короткое видео до 128 МБ.');const bytes=await file.arrayBuffer(),digest=await crypto.subtle.digest('SHA-256',bytes);return{name:file.name,size:file.size,sha256:[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')};}
@@ -84,7 +108,7 @@ function actionHandler(name,control){
   if(!picker||control.serial!==request||!current(control.owner)||!isPicker(picker))return true;
   if(control.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
   const ex=control.exercise;if(ex?.practiceKind!=='media'||![window.FlowEnglishMediaPracticeCore?.revision,window.FlowEnglishLyricsPracticeCore?.revision].filter(Boolean).includes(ex.contentRevision))throw Error('practice_content_changed');
-  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=ex.contentRevision===window.FlowEnglishLyricsPracticeCore?.revision;s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{if(s.ex.autoPlay&&window.FlowEnglishLyricsPractice?.keepPreparedDuring)window.FlowEnglishLyricsPractice.keepPreparedDuring(enStopPcm);else enStopPcm();picker=null;});render();return true;
+  ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=ex.contentRevision===window.FlowEnglishLyricsPracticeCore?.revision;if(s.ex.autoPlay)attachPlayback(s.ex,picker.track);s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{if(s.ex.autoPlay&&window.FlowEnglishLyricsPractice?.keepPreparedDuring)window.FlowEnglishLyricsPractice.keepPreparedDuring(enStopPcm);else enStopPcm();picker=null;});render();return true;
  }
  const p=picker;if(!p||!current(p.owner))return true;
  if(name==='type'){captureForm(p);p.error='';p.busy=false;p.type=d.type;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs')loadSongs(p);else render();return true;}
@@ -135,5 +159,5 @@ document.addEventListener('change',async event=>{
 document.addEventListener('submit',event=>{if(event.target.matches?.('[data-en-media-source-form]')){event.preventDefault();if(picker)prepare(picker);}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)closePlayback();});window.addEventListener('pagehide',leave);
 window.sorokaEnglishSession?.subscribeInvalidation(()=>{leave();});
-window.FlowEnglishMediaPractice={action:actionHandler,openSong(track){openPicker(track);},play,stop,tools:{parseSubtitles,selectLines,coverage,timedLines,fileIdentity,fileSource(source){return source?.type==='file'&&localFile?.sha256===source.file?.sha256&&localFile?.size===source.file?.size?localURL:null;}}};
+window.FlowEnglishMediaPractice={action:actionHandler,openSong(track){openPicker(track);},play,stop,tools:{parseSubtitles,selectLines,coverage,timedLines,attachPlayback,fileIdentity,fileSource(source){return source?.type==='file'&&localFile?.sha256===source.file?.sha256&&localFile?.size===source.file?.size?localURL:null;}}};
 })();
