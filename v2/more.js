@@ -24,6 +24,16 @@ function inboxEntries() {
   overdueTasks().forEach(t => items.push({ key: "task", id: t.id, title: t.title, subtitle: `Просрочено · ${dateLabel(t.due)}`, group: "overdue", icon: "today" }));
   return items;
 }
+function inboxMaterial(source) {
+  const record = JSON.parse(JSON.stringify(source));
+  const category = source.type === "Файл" || source.fileId || source.filePath || source.fileData ? "files"
+    : source.type === "Ссылка" || source.url ? "links" : "posts";
+  return { category, record: { ...record, id: `inbox-material-${source.id}`, sourceInboxId: source.id,
+    description: source.description ?? source.body ?? source.rawText ?? source.detail ?? "",
+    body: source.body ?? source.rawText ?? source.description ?? source.detail ?? "",
+    topic: source.topic || "Входящие", tags: source.tags || [], source: source.source || "Telegram",
+    created: source.created || todayIso(), viewed: false, pinned: Boolean(source.pinned) } };
+}
 function renderInboxPage() {
   const filters = [["all", "Все"], ["unclear", "Уточнить"], ["payments", "Платежи"], ["overdue", "Просрочено"], ["uncategorized", "Без раздела"], ["duplicates", "Дубли"]];
   const list = inboxEntries().filter(x => ui.inboxFilter === "all" || x.group === ui.inboxFilter);
@@ -81,7 +91,7 @@ function renderProjectsPage() {
 }
 function renderProjectSheet() {
   const project = ui.sheet.id ? data.projects.find(p => p.id === ui.sheet.id) : null;
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet cw-core-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${project ? "Проект" : "Новый проект"}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><form id="project-form"><p class="cw-form-context">Задачи, материалы и расходы будут связаны названием проекта.</p><label class="field">Название<input name="name" type="text" value="${esc(project?.name || "")}" required autofocus></label><label class="field">Описание<textarea name="description">${esc(project?.description || "")}</textarea></label><div class="field-row"><label class="field">Статус<select name="status"><option ${project?.status === "Активен" ? "selected" : ""}>Активен</option><option ${project?.status === "На паузе" ? "selected" : ""}>На паузе</option><option ${project?.status === "Завершён" ? "selected" : ""}>Завершён</option></select></label><label class="field">Цвет<input name="color" type="color" value="${esc(project?.color || "#58d0cf")}"></label></div><div class="sheet-actions">${project ? `<button class="ghost-button danger-button" type="button" data-action="project-delete">Удалить</button>` : ""}<button class="primary-button" type="submit">Сохранить</button></div></form></section></div>`;
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet cw-core-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${project ? "Проект" : "Новый проект"}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><form id="project-form"><p class="form-error" role="alert"></p><p class="cw-form-context">Задачи, материалы и расходы будут связаны названием проекта.</p><label class="field">Название<input name="name" type="text" value="${esc(project?.name || "")}" required autofocus></label><label class="field">Описание<textarea name="description">${esc(project?.description || "")}</textarea></label><div class="field-row"><label class="field">Статус<select name="status"><option ${project?.status === "Активен" ? "selected" : ""}>Активен</option><option ${project?.status === "На паузе" ? "selected" : ""}>На паузе</option><option ${project?.status === "Завершён" ? "selected" : ""}>Завершён</option></select></label><label class="field">Цвет<input name="color" type="color" value="${esc(project?.color || "#58d0cf")}"></label></div><div class="sheet-actions">${project ? `<button class="ghost-button danger-button" type="button" data-action="project-delete">Удалить</button>` : ""}<button class="primary-button" type="submit">Сохранить</button></div></form></section></div>`;
 }
 
 let vaultTimer = null;
@@ -321,7 +331,7 @@ function renderCompareSheet() {
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet compare-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Две темы рядом</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div><div class="theme-comparison"><div class="theme-phone dark"><small>ТЁМНАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div><div class="theme-phone light"><small>СВЕТЛАЯ</small><h3>Сегодня</h3><p>3 дела на сегодня</p><div class="theme-sample">○ Подготовить смету проекта</div><div class="theme-sample">○ Позвонить стоматологу</div></div></div></section></div>`;
 }
 function renderMorePage() {
-  const items = [["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["sport", "Спорт", "Тренировки, привычки, цели", "heart"], ["english", "Английский", "Фразы, повторения, разговор", "study"], ["piano", "Пианино", "Уроки, песни и практика", "piano"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["docs", "Документы", "Паспорт, ИНН, СНИЛС, полис", "file"], ["vpn", "VPN", "Ключи и трафик", "locate"], ["server", "Сервер", "Нагрузка, службы и копии", "server"], ["pc", "Компьютер", "Включить, скриншот, процессы", "today"], ["render", "Рендер", "Очередь Karma и After Effects", "film"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
+  const items = [["inbox", "Разобрать", `Ждут решения: ${inboxEntries().length}`, "inbox"], ["tasks", "Все дела", "Включая без даты", "check"], ["projects", "Проекты", "Связанные записи", "project"], ["sport", "Спорт", "Тренировки, привычки, цели", "heart"], ["english", "Английский", "Фразы, повторения, разговор", "study"], ["piano", "Пианино", "Уроки, песни и практика", "piano"], ["vault", "Пароли", "Отдельное хранилище", "key"], ["docs", "Документы", "Паспорт, ИНН, СНИЛС, полис", "file"], ["vpn", "VPN", "Ключи и трафик", "locate"], ["server", "Сервер", "Нагрузка, службы и копии", "server"], ["pc", "Компьютер", "Включить, скриншот, процессы", "today"], ["render", "Рендер", "Очередь Karma и After Effects", "film"], ["archive", "Архив и корзина", "История записей", "archive"], ["settings", "Настройки", "Вид и уведомления", "settings"]];
   return `${header("Ещё", "Разделы и действия", "Пространство")}<div class="more-grid">${items.map(([page, label, detail, symbol]) => `<button class="more-tile" type="button" data-action="${page === "search" ? "search" : page === "add" ? "universal-add" : "navigate"}" ${page === "search" || page === "add" ? "" : `data-page="${page}"`}>${icon(symbol)}<span><strong>${label}</strong><small>${detail}</small></span></button>`).join("")}</div><section class="section"><div class="overview-intro"><span class="mini-heading">Связь с ботом</span><p>Текст, голосовые, фото, файлы, видео и пересланные посты бот разложит по разделам сам.</p><div class="inline-actions"><button type="button" data-action="return-chat">${icon("arrow")}Вернуться в чат</button><button type="button" data-action="demo-refresh">${icon("reset")}Обновить</button></div></div></section>`;
 }
 
@@ -521,7 +531,21 @@ function moreAction(action, control) {
   if (action === "inbox-open-task") { openEntry("task", todayIso(), itemId); return true; }
   if (action === "inbox-save") {
     const source = data.inbox.find(x => x.id === itemId);
-    if (source) { const category = source.type === "Ссылка" ? "links" : "posts"; data.saved[category].unshift({ id: id(), title: source.title, description: source.detail || "", topic: "Входящие", tags: [], source: "Telegram", created: todayIso(), viewed: false, pinned: false }); data.inbox = data.inbox.filter(x => x.id !== itemId); save(); toast("Сохранено в библиотеке"); }
+    if (source) {
+      const { category, record } = inboxMaterial(source);
+      const list = data.saved[category];
+      // The stable ID also makes a retry after a lost server response idempotent.
+      const added = !list.some(x => x.id === record.id || x.sourceInboxId === itemId);
+      if (added) list.unshift(record);
+      const inbox = data.inbox;
+      data.inbox = data.inbox.filter(x => x.id !== itemId);
+      if (save() === false) {
+        data.inbox = inbox;
+        if (added) list.splice(list.indexOf(record), 1);
+        toast("Не удалось сохранить. Запись осталась во входящих."); return true;
+      }
+      toast(window.SOROKA_LIVE ? "Сохраняю в библиотеку" : "Сохранено в библиотеке");
+    }
     return true;
   }
   if (action === "overview-capture") { const input = document.getElementById("overview-quick"); if (input) quickCapture(input.value); return true; }
@@ -578,10 +602,24 @@ function moreSubmit(event) {
     const oldName = existing?.name;
     const name = String(form.get("name") || "").trim();
     if (!name) return true;
+    const normalized = value => String(value || "").trim().toLocaleLowerCase("ru-RU");
+    if (data.projects.some(p => p !== existing && (normalized(p.name) === normalized(name) || oldName !== name && normalized(p.name) === normalized(oldName)))) {
+      const error = event.target.querySelector(".form-error");
+      if (error) error.textContent = "Название совпадает с другим проектом. Выберите уникальное название.";
+      else toast("Название совпадает с другим проектом");
+      return true;
+    }
     const project = existing || { id: id() };
     Object.assign(project, { name, description: String(form.get("description") || "").trim(), status: String(form.get("status") || "Активен"), color: String(form.get("color") || "#58d0cf") });
     if (!existing) data.projects.push(project);
-    if (oldName && oldName !== name) { data.tasks.filter(x => x.project === oldName).forEach(x => x.project = name); data.events.filter(x => x.project === oldName).forEach(x => x.project = name); data.notes.filter(x => x.project === oldName).forEach(x => x.project = name); data.finance.transactions.filter(x => x.project === oldName).forEach(x => x.project = name); }
+    if (oldName && oldName !== name) {
+      for (const item of [...data.tasks, ...data.events, ...data.notes, ...data.finance.transactions, ...Object.values(data.saved).flat()]) {
+        if (item.project === oldName) item.project = name;
+        if (item.topic === oldName) item.topic = name;
+      }
+      // sectionOf() sends the folder name instead of topic during live sync.
+      for (const section of Object.values(data.savedSections || {}).flat()) if (section.name === oldName) section.name = name;
+    }
     ui.projectId = project.id; ui.sheet = null; save(); toast("Проект сохранён"); return true;
   }
   if (formId === "vault-unlock-form" || formId === "vault-setup-form" || formId === "vault-master-form") {

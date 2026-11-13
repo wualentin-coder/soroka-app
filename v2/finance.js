@@ -596,8 +596,8 @@ function financeField(label, name, value, type = "text", extra = "") { return `<
 function financeWorkingFields(html, entity, item, isCredit) {
   const node=document.createElement('template');node.innerHTML=html;
   const fragment=node.content,primary=document.createElement('div');primary.className='dm-finance-form-primary';
-  const order={transaction:['amount','title','kind','accountId','category'],account:['name','currency','balance'],transfer:['fromId','toId','amount','toAmount'],budget:['category','limit'],goal:['title','target'],payment:['title','amount','repeat','day','month'],debt:isCredit?['person','amount','monthly']:['person','direction','amount']}[entity]||[];
-  order.forEach(name=>{const field=fragment.querySelector(`[name="${name}"]`)?.closest('.field');if(field)primary.append(field);});
+  const order={transaction:['amount','title','kind','accountId','newAccountName','category'],account:['name','currency','balance'],transfer:['fromId','toId','amount','toAmount'],budget:['category','limit'],goal:['title','target'],payment:['title','amount','repeat','day','month'],debt:isCredit?['person','amount','monthly']:['person','direction','amount']}[entity]||[];
+  order.forEach(name=>{const field=fragment.querySelector(`[name="${name}"]`)?.closest(name==='newAccountName'?'fieldset':'.field');if(field)primary.append(field);});
   fragment.querySelectorAll('input[type="hidden"]').forEach(input=>primary.append(input));
   fragment.querySelectorAll('.field-row').forEach(row=>{if(!row.querySelector('input,select,textarea'))row.remove();});
   const rate=fragment.querySelector('.transfer-rate');if(rate)primary.append(rate);
@@ -610,7 +610,7 @@ function financeWorkingFields(html, entity, item, isCredit) {
   return result.outerHTML;
 }
 function financeCurrencyLabel(root, entity) {
-  const currency=entity==='transaction'?data.finance.accounts.find(a=>a.id===root.querySelector('[name="accountId"]')?.value)?.currency:root.querySelector('[name="currency"]')?.value;
+  const currency=entity==='transaction'?data.finance.accounts.find(a=>a.id===root.querySelector('[name="accountId"]')?.value)?.currency||root.querySelector('[name="newAccountCurrency"]')?.value:root.querySelector('[name="currency"]')?.value;
   const label=root.querySelector(`label[for="finance-amount-${entity==='account'?'balance':'amount'}"]`);
   if(label&&currency)label.textContent=`${entity==='account'?'Остаток сейчас':'Сумма'}, ${currency}`;
 }
@@ -622,7 +622,7 @@ document.addEventListener('change',event=>{
     const title=form.closest('.sheet').querySelector('#sheet-title');if(title)title.textContent=`${form.dataset.financeEditing==='true'?'Изменить':'Добавить'} ${name}`;
     form.querySelector('[type="submit"]').textContent=`${form.dataset.financeEditing==='true'?'Сохранить':'Записать'} ${name}`;
   }
-  if(['accountId','currency'].includes(event.target.name))financeCurrencyLabel(form,entity);
+  if(['accountId','currency','newAccountCurrency'].includes(event.target.name))financeCurrencyLabel(form,entity);
 });
 function renderFinanceSheet() {
   const { entity, id: recordId } = ui.sheet;
@@ -632,7 +632,7 @@ function renderFinanceSheet() {
   const v = name => item?.[name] ?? "";
   let fields = "";
   const txKind = item?.kind || ui.sheet.txKind;
-  if (entity === "transaction") fields = `${financeField("Название", "title", v("title"), "text", 'required autofocus')}${amountSlider("Сумма", "amount", v("amount"), typicalTop(data.finance.transactions.filter(t => t.kind === txKind).map(t => t.amount).concat(v("amount")), txKind === "income" ? 50000 : 5000), 'required')}<div class="field-row"><label class="field">Тип<select name="kind"><option value="expense" ${txKind === "expense" ? "selected" : ""}>Расход</option><option value="income" ${txKind === "income" ? "selected" : ""}>Доход</option></select></label></div><div class="field-row">${financeField("Дата", "date", v("date") || todayIso(), "date", "required")}<label class="field">Счёт<select name="accountId">${spendAccounts().map(a => `<option value="${esc(a.id)}" ${v("accountId") === a.id ? "selected" : ""}>${esc(a.name)} · ${esc(a.currency)}</option>`).join("")}</select></label></div><div class="field-row"><label class="field">Категория<select name="category">${FINANCE_CATEGORIES.map(c => `<option ${v("category") === c ? "selected" : ""}>${c}</option>`).join("")}</select></label><label class="field">Проект<select name="project"><option value="">Без проекта</option>${(data.projects || []).map(p => `<option ${v("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>`;
+  if (entity === "transaction") fields = `${financeField("Название", "title", v("title"), "text", 'required autofocus')}${amountSlider("Сумма", "amount", v("amount"), typicalTop(data.finance.transactions.filter(t => t.kind === txKind).map(t => t.amount).concat(v("amount")), txKind === "income" ? 50000 : 5000), 'required')}<div class="field-row"><label class="field">Тип<select name="kind"><option value="expense" ${txKind === "expense" ? "selected" : ""}>Расход</option><option value="income" ${txKind === "income" ? "selected" : ""}>Доход</option></select></label></div><div class="field-row">${financeField("Дата", "date", v("date") || todayIso(), "date", "required")}${spendAccounts().length ? `<label class="field">Счёт<select name="accountId" required>${v("accountId") && !spendAccounts().some(a => a.id === v("accountId")) ? '<option value="" selected>Выберите счёт</option>' : ''}${spendAccounts().map(a => `<option value="${esc(a.id)}" ${v("accountId") === a.id ? "selected" : ""}>${esc(a.name)} · ${esc(a.currency)}</option>`).join("")}</select></label>` : `<fieldset class="finance-new-account"><legend>Создать счёт для операции</legend>${financeField("Название счёта", "newAccountName", "", "text", 'required placeholder="Например, Карта"')}<label class="field">Валюта<select name="newAccountCurrency">${["RUB","USD","EUR"].map(c => `<option>${c}</option>`).join("")}</select></label></fieldset>`}</div><div class="field-row"><label class="field">Категория<select name="category">${FINANCE_CATEGORIES.map(c => `<option ${v("category") === c ? "selected" : ""}>${c}</option>`).join("")}</select></label><label class="field">Проект<select name="project"><option value="">Без проекта</option>${(data.projects || []).map(p => `<option ${v("project") === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>`;
   if (entity === "account") fields = `${financeField("Название счёта", "name", v("name"), "text", 'required autofocus')}<div class="field-row"><label class="field">Валюта<select name="currency">${["RUB", "USD", "EUR"].map(c => `<option ${v("currency") === c ? "selected" : ""}>${c}</option>`).join("")}</select></label></div>${item ? amountSlider("Остаток сейчас, ₽", "balance", Math.round(accountBalance(item) * 100) / 100, Math.max(100000, Math.abs(accountBalance(item)) * 1.5), 'min="-100000000" required') + `<p class="section-note">Не сходится с банком — впишите настоящую сумму: в истории появится строка «Сверка счёта».</p>` : amountSlider("Остаток сейчас, ₽", "balance", 0, 100000, 'min="-100000000" required')}`;
   if (entity === "transfer") fields = `<div class="field-row"><label class="field">Со счёта<select name="fromId">${spendAccounts().map(a => `<option value="${esc(a.id)}">${esc(a.name)} · ${esc(a.currency)}</option>`).join("")}</select></label><label class="field">На счёт<select name="toId">${spendAccounts().map((a, i) => `<option value="${esc(a.id)}" ${i === 1 ? "selected" : ""}>${esc(a.name)} · ${esc(a.currency)}</option>`).join("")}</select></label></div>${amountSlider("Списать", "amount", "", Math.max(1000, ...data.finance.accounts.filter(a => a.currency === "RUB").map(a => accountBalance(a))), 'required')}${amountSlider("Зачислить", "toAmount", "", Math.max(1000, ...data.finance.accounts.filter(a => a.currency === "RUB").map(a => accountBalance(a))), 'required')}<div class="field-row">${financeField("Дата", "date", todayIso(), "date", "required")}${financeField("Комментарий", "note", "")}</div><p class="section-note transfer-rate">Валюты разные — «Зачислить» посчитается по курсу ЦБ, его можно поправить.</p>`;
   if (entity === "budget") fields = `<label class="field">Категория<select name="category">${FINANCE_CATEGORIES.map(c => `<option ${v("category") === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>${amountSlider("Лимит в месяц, ₽", "limit", v("limit"), Math.max(30000, (Number(v("limit")) || 0) * 2), 'required')}`;
@@ -749,7 +749,7 @@ function financeSubmit(event) {
     save(); toast(data.settings.rulesIncome || data.settings.rulesExpense ? "Сохранил ваши цифры" : "Считаю по записям");
     return true;
   }
-  if (event.target.id === "receipt-form") { event.preventDefault(); const form = new FormData(event.target); const accountId = data.finance.accounts.find(a => a.currency === "RUB")?.id || "main"; for (let i = 0; i < 3; i++) { const title = String(form.get(`title-${i}`) || "").trim(); const amount = Number(form.get(`amount-${i}`) || 0); if (title && amount > 0) data.finance.transactions.push({ id: id(), title, kind: "expense", amount, currency: "RUB", category: String(form.get(`category-${i}`) || "Другое"), accountId, date: todayIso(), project: "", manual: true }); } ui.sheet = null; ui.financeTab = "transactions"; save(); toast("Строки чека записаны"); return true; }
+  if (event.target.id === "receipt-form") { event.preventDefault(); const form = new FormData(event.target); const accountId = data.finance.accounts.find(a => a.currency === "RUB")?.id; if (!accountId) { toast("Сначала создайте рублёвый счёт. Чек остаётся в форме."); return true; } for (let i = 0; i < 3; i++) { const title = String(form.get(`title-${i}`) || "").trim(); const amount = Number(form.get(`amount-${i}`) || 0); if (title && amount > 0) data.finance.transactions.push({ id: id(), title, kind: "expense", amount, currency: "RUB", category: String(form.get(`category-${i}`) || "Другое"), accountId, date: todayIso(), project: "", manual: true }); } ui.sheet = null; ui.financeTab = "transactions"; save(); toast("Строки чека записаны"); return true; }
   if (event.target.id !== "finance-form" || ui.sheet?.kind !== "finance") return false;
   event.preventDefault();
   const form = new FormData(event.target);
@@ -766,7 +766,23 @@ function financeSubmit(event) {
     if (from.currency === to.currency && amount !== toAmount) { error.textContent = "Для счетов в одной валюте суммы должны совпадать."; return true; }
     Object.assign(item, { fromId, toId, amount, toAmount, date: String(form.get("date") || todayIso()), note: String(form.get("note") || "").trim() });
   }
-  if (entity === "transaction") { item.title = String(form.get("title") || "").trim(); item.kind = String(form.get("kind") || "expense"); item.amount = Number(form.get("amount") || 0); item.date = String(form.get("date") || todayIso()); item.accountId = String(form.get("accountId") || "main"); item.currency = data.finance.accounts.find(a => a.id === item.accountId)?.currency || "RUB"; item.category = String(form.get("category") || "Другое"); item.project = String(form.get("project") || ""); item.manual = true; }
+  if (entity === "transaction") {
+    const title = String(form.get("title") || "").trim();
+    const amount = Number(form.get("amount"));
+    if (!title || !Number.isFinite(amount) || amount <= 0) { error.textContent = "Введите название и положительную сумму."; return true; }
+    let account = data.finance.accounts.find(a => a.id === String(form.get("accountId") || ""));
+    if (!account && !spendAccounts().length) {
+      const name = String(form.get("newAccountName") || "").trim();
+      const currency = String(form.get("newAccountCurrency") || "RUB");
+      if (!name || !["RUB", "USD", "EUR"].includes(currency)) { error.textContent = "Создайте счёт для этой операции. Введённые данные сохранены в форме."; return true; }
+      account = { id: id(), name, currency, kind: "card", opening: 0 };
+      data.finance.accounts.push(account);
+    }
+    if (!account) { error.textContent = "Счёт больше не существует. Выберите действующий счёт."; return true; }
+    Object.assign(item, { title, amount, kind: form.get("kind") === "income" ? "income" : "expense",
+      date: String(form.get("date") || todayIso()), accountId: account.id, currency: account.currency,
+      category: String(form.get("category") || "Другое"), project: String(form.get("project") || ""), manual: true });
+  }
   if (entity === "account") { const currency = String(form.get("currency") || "RUB"); if (existing && existing.currency !== currency && (data.finance.transactions.some(t => t.accountId === recordId) || data.finance.transfers.some(t => t.fromId === recordId || t.toId === recordId))) { error.textContent = "Валюту счёта со связанными операциями менять нельзя."; return true; } item.name = String(form.get("name") || "").trim(); item.currency = currency; item.kind = existing?.kind || "card"; const typed = Math.round(Number(form.get("balance") || 0) * 100) / 100; if (existing) { if (Math.abs(typed - accountBalance(existing)) >= 0.01) item.balanceNow = typed; } else item.opening = typed; }
   if (entity === "budget") { item.category = String(form.get("category") || "Другое"); item.limit = Number(form.get("limit") || 0); }
   if (entity === "goal") { item.accountId = existing?.accountId || ""; item.title = String(form.get("title") || "").trim(); item.target = Number(form.get("target") || 0); item.saved = window.SOROKA_LIVE ? Number(existing?.saved || 0) : Number(form.get("saved") || 0); item.note = String(form.get("note") || "").trim();

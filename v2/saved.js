@@ -476,6 +476,17 @@ function ticketCodeBlock(item) {
   const value = String(item.codeValue || "").trim();
   return `<section class="ticket-code-block"><div class="ticket-code-heading"><strong>Код билета</strong><span>${kind === "qr" ? "QR-код" : "Штрихкод"}</span></div>${value ? `<div class="ticket-code-preview ${kind}"><span class="ticket-code-art" aria-hidden="true"></span><code>${esc(value)}</code></div><p class="section-note">Код распознан из билета.</p>` : `<div class="ticket-code-placeholder">${icon("ticket")}<span>QR-код или штрихкод появится здесь после разбора билета</span></div><p class="section-note">При необходимости значение можно добавить вручную через «Изменить».</p>`}</section>`;
 }
+function savedEmptyResults() {
+  const category = ui.savedCategory;
+  const filtered = Boolean(ui.savedQuery?.trim() || ui.savedSection || category === "materials" && ui.materialKind || category === "movies" && ui.movieType || ui.savedFilter && ui.savedFilter !== "all");
+  const add = label => `<button class="primary-button" type="button" data-action="saved-new">${icon("plus", "icon-sm")}${label}</button>`;
+  if (filtered) return emptyCard("Ничего не найдено", "Попробуйте другой запрос или сбросьте фильтры.") + `<button class="ghost-button" type="button" data-action="saved-reset-filters">Сбросить поиск и фильтры</button>`;
+  if (category === "tickets" && savedItems().length) return emptyCard("Предстоящих билетов нет", "Прошедшие билеты остаются в архиве раздела.") + `<button class="ghost-button" type="button" data-action="saved-filter" data-filter="expired">Прошедшие билеты</button>`;
+  if (category === "movies" && savedItems().length) return emptyCard("В планах пока нет фильмов", "Добавьте фильм или откройте просмотренные.") + add("Добавить фильм") + `<button class="ghost-button" type="button" data-action="saved-filter" data-filter="viewed">Просмотренные</button>`;
+  const labels = { materials: ["Материалов пока нет", "Добавить материал"], files: ["Файлов пока нет", "Добавить файл"], posts: ["Постов пока нет", "Добавить пост"], links: ["Ссылок пока нет", "Добавить ссылку"], recipes: ["Рецептов пока нет", "Добавить рецепт"], movies: ["Фильмов пока нет", "Добавить фильм"], lists: ["Списков пока нет", "Создать список"], products: ["Товаров пока нет", "Добавить товар"], tickets: ["Билетов пока нет", "Добавить билет"] };
+  const [title, action] = labels[category] || ["Здесь пока пусто", "Добавить запись"];
+  return emptyCard(title, "") + add(action);
+}
 function renderSavedResults() {
   let all = savedVisibleItems();
   if(typeof movieMarathonEntries==='function'){movieMarathonEnsure();all=movieMarathonEntries(all);}
@@ -487,7 +498,7 @@ function renderSavedResults() {
   const items = all.slice(0, limit);
   const more = all.length > items.length ? `<button type="button" class="ghost-button saved-more" data-action="saved-more">Показать ещё · ${all.length - items.length}</button>` : "";
   if (ui.savedCategory === "products" && ui.productTab === "wishes") return `<div class="product-wishes-list">${items.map(productWishRow).join("") || emptyCard("Хотелок пока нет", "Запишите, что хотите купить. Ссылку или конкретный товар можно выбрать позже.")}</div>${more}<button class="ghost-button" type="button" data-action="product-wish-new">${icon("plus", "icon-sm")}Добавить хотелку</button>`;
-  return marathonStatus+(items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : emptyCard(ui.savedFilter === "skipped" ? "Ничего не отмечено" : "Ничего не найдено", ui.savedFilter === "skipped" ? "Смахните фильм влево и нажмите «Не интересно»." : "Измените фильтр или добавьте новую запись."));
+  return marathonStatus+(items.length ? `<div class="${ui.savedView === "grid" ? "record-grid" : "record-list"}">${savedCardsGrouped(items, ui.savedCategory)}</div>${more}` : savedEmptyResults());
 }
 function noteDateLabel(item) {
   if (item.updated) return shortDate(localIso(new Date(item.updated)));
@@ -581,7 +592,7 @@ function renderSavedPage() {
       : [["newest", "Новые сначала"], ["rating", "По моей оценке"], ["title", "По названию"], ["pinned", "Закреплённые"], ["skipped", "Не интересно"]]
     : [["newest", "Новые сначала"], ["title", "По названию"], ["time", "По времени"], ["unread", "Не просмотрено"], ["viewed", "Просмотренные"], ["pinned", "Закреплённые"]];
   // Поиск — в «+» (он ищет и добавляет), а «Показать» стоит в одном ряду с папками.
-  const sortSelect = `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
+  const sortSelect = !savedItems(category).length ? "" : `<select id="saved-show" class="filter-input saved-sort-pill" aria-label="Показать">${showOptions.map(([value, label]) => `<option value="${value}" ${show === value ? "selected" : ""}>${label}</option>`).join("")}</select>`;
   const toolbar = "";
   const movieTools = "";
   const heading = category === "movies" ? moviePrototypeHeader() : `<div class="notes-topline"><button type="button" class="notes-back" data-action="saved-home">${icon("left", "icon-sm")}Сохранённое</button><span class="notes-topline-actions"><button type="button" class="icon-button saved-search-button" data-action="saved-search" aria-label="Искать в разделе">${icon("search", "icon-sm")}</button>${category === "addresses" || category === "materials" || category === "movies" && ui.savedFilter === "viewed" ? "" : `<button type="button" class="notes-folders-manage" data-action="saved-sections-manage">${savedFolderIcon("icon-sm")}Разделы</button>`}</span></div><header class="notes-heading saved-section-heading"><div><h1>${SAVED_NAMES[category]}</h1></div><span>${savedItems(category).length}</span><button class="icon-button saved-section-add" type="button" data-action="saved-new" aria-label="Добавить: ${esc(SAVED_NAMES[category])}">${icon("plus")}</button></header>`;
@@ -1071,6 +1082,7 @@ function savedAction(action, control) {
     return true;
   }
   if (productWishAction(action, control)) return true;
+  if (action === "saved-reset-filters") { ui.savedQuery = ""; ui.savedSection = ""; ui.savedFilter = "all"; ui.materialKind = ""; ui.movieType = ""; ui.savedLimit = 60; render(); return true; }
   if (action === "saved-home") { ui.savedCategory = "overview"; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }
   if (action === "material-kind") { ui.materialKind = control.dataset.kind || ""; ui.savedSection = ""; ui.savedLimit = 60; render(); return true; }
   if (action === "saved-section") { ui.savedCategory = control.dataset.category; ui.savedSection = ""; ui.savedQuery = ""; ui.savedFilter = "all"; ui.mapPlacing = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); return true; }

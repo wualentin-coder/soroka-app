@@ -8,6 +8,7 @@
   const parse=html=>{const t=document.createElement('template');t.innerHTML=html;return t;};
   function replace(name,renderer){if(typeof window[name]!=='function')return;const original=window[name];window[name]=function(...args){return active()?renderer.call(this,original,...args):original.apply(this,args);};}
   const modules = [
+    ['inbox', 'Разобрать', 'Входящие, платежи и просроченные дела', 'inbox'],
     ['piano', 'Пианино', 'От первой ноты к своей мелодии', 'piano'], ['english', 'Английский', 'Слова, разговоры и чтение', 'study'],
     ['sport', 'Спорт', 'Тренировки, привычки и цели', 'heart'],
     ['tasks', 'Все дела', 'С датой и без срока', 'check'], ['projects', 'Проекты', 'Связанные задачи и материалы', 'project'],
@@ -19,11 +20,12 @@
   const byPage = new Map(modules.map(item=>[item[0],item]));
   const groups = [
     ['practice','Занятия',['piano','english','sport']],
-    ['personal','Дела и личное',['tasks','projects','docs','vault','archive']],
+    ['personal','Дела и личное',['inbox','tasks','projects','docs','vault','archive']],
     ['devices','Устройства и работа',['pc','render','server','vpn']],
     ['preferences','Предпочтения',['settings']]
   ];
   function moduleCard([page,title,description,name],practice=false,status=''){
+    if(page==='inbox')description=`Ждут решения: ${inboxEntries().length}`;
     const art=window.flowMagicObject?window.flowMagicObject(page):symbol(name);
     const cue={pending:'Занятие ожидает выполнения',done:'Занятие выполнено',rest:'День отдыха'}[status];
     return `<button class="dc-module-card ${practice?'dc-practice-card':'dc-route-row'} dc-module-${page}" type="button" data-action="navigate" data-page="${page}"${status?` data-practice-state="${status}"`:''}${cue?` aria-label="${escape(title)}. ${cue}" title="${cue}"`:''}><span class="module-symbol" aria-hidden="true">${art}</span><span class="dc-route-copy"><h3>${escape(title)}</h3><p>${escape(description)}</p></span><span class="dc-route-arrow" aria-hidden="true">${symbol('right')}</span></button>`;
