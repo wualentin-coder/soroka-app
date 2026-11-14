@@ -301,7 +301,7 @@ function enSectionTitle(s) {
   if (s.tab === "words") return "Слова";
   if (s.tab === "course") {
     if (s.practiceView === "course") return "Мой курс";
-    if (s.practiceView === "media") return "Музыка и видео";
+    if (s.practiceView === "media") return "По записи";
     if (s.practiceView?.startsWith("structured:")) return ({ mission: "Ситуации", sounds: "Звуки", story: "Истории", radio: "Аудирование" })[s.practiceView.slice(11)] || "Практика";
     return "Практика";
   }
@@ -610,7 +610,7 @@ function enPracticeScreen() {
     ? [['mission', 'Ситуации', 'Диалоги и ролевые задачи', 'flag'], ['sounds', 'Звуки', 'Слушать и различать', 'mic'], ['story', 'Истории', 'Читать и пересказывать', 'book'], ['radio', 'Аудирование', 'Понимать на слух', 'play']]
       .map(([kind, title, sub, glyph]) => row('en-training-catalog', title, sub, glyph, `data-kind="${kind}"`)).join("")
     : "";
-  const media = typeof enMediaPracticeScreen === 'function' ? row('en-training-media-catalog', 'Песня или видео', 'Упражнения по фрагменту', 'film') : "";
+  const media = typeof enMediaPracticeScreen === 'function' ? row('en-training-media-catalog-songs', 'Песни из музыки', 'Выбрать из медиатеки', 'music') + row('en-training-media-catalog-video', 'Видео с YouTube', 'Урок по английским субтитрам', 'film') : "";
   const training = EN_MODES.map(([key, title, sub, glyph]) => row("en-ex", key === "cards" ? "Карточки фраз" : title, sub, glyph, `data-mode="${key}"`)).join("");
   return `<div class="en-practice">
     ${group("Курс", course, false)}

@@ -37,7 +37,7 @@
     await wait(Math.min(config.durationPollMs,until-Date.now()),signal);
    }
   }
-  async function run(videoId,options={},translationOnly=false){
+  async function run(videoId,options={},translationOnly=false,captions=false){
    if(!videoIdPattern.test(videoId))throw new Error('Некорректная ссылка YouTube.');
    const life=new AbortController(), abort=()=>life.abort(options.signal.reason);
    options.signal?.addEventListener('abort',abort,{once:true});
@@ -48,11 +48,11 @@
    try{
     stopped(signal);
     let seconds;
-    if(!translationOnly){
+    if(!translationOnly&&!captions){
      options.onProgress?.({stage:'metadata',status:'running',label:'Подключаю видео'});
      seconds=await duration(options,signal);
     }
-    const started=await request(call,translationOnly?'songimportretry':'songimport',
+    const started=await request(call,captions?'videocaptions':translationOnly?'songimportretry':'songimport',
      translationOnly?{videoId}:{videoId,...(seconds?{videoDuration:seconds}:{}),force:options.force===true},signal,config.requestMs);
     stopped(signal);
     if(!started?.jobId)throw new Error('Сервер не подтвердил загрузку песни.');
@@ -66,7 +66,7 @@
      stopped(signal);
      if(job.result){
       const result=job.result;
-      if(result.videoId!==videoId||!Array.isArray(result.lines)||!result.lines.length||result.lines.length>500)throw new Error('Получен текст другой песни. Повтори поиск.');
+      if(result.videoId!==videoId||!Array.isArray(result.lines)||!result.lines.length||result.lines.length>(captions?2000:500))throw new Error('Получен текст другого видео. Повтори загрузку.');
       const key=JSON.stringify([result.title,result.artist]);
       if(key!==metadataKey){metadataKey=key;await options.onMetadata?.({title:result.title,artist:result.artist});stopped(signal);}
       const next=JSON.stringify(result);
@@ -81,7 +81,7 @@
     }
    }finally{clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
   }
-  return {prepare:(videoId,options)=>run(videoId,options),retryTranslate:(videoId,options)=>run(videoId,options,true)};
+  return {prepare:(videoId,options)=>run(videoId,options),prepareVideo:(videoId,options)=>run(videoId,options,false,true),retryTranslate:(videoId,options)=>run(videoId,options,true)};
  }
  global.FlowSongRemote={version,create,shouldRefresh:track=>!!track?.youtubeId&&!!track.lyricResult&&track.lyricResult.importerVersion!==version};
 })(globalThis);

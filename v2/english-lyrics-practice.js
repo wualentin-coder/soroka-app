@@ -18,7 +18,7 @@ function keepPreparedDuring(callback){const ticket=primed;primed=null;try{return
 function prepareInput(){
  if(inputPrepared(primed))return primed;
  cancelPrepared();const host=window.sorokaEnglishSession,owner=host?.captureOwner();if(!owner?.authorized||!host.isCurrent(owner))return null;
- const node=document.createElement('section');node.className='en-lyrics en-page';node.setAttribute('role','dialog');node.setAttribute('aria-modal','true');node.setAttribute('aria-label','Практика по песне');
+ const node=document.createElement('section');node.className='en-lyrics en-page';node.setAttribute('role','dialog');node.setAttribute('aria-modal','true');node.setAttribute('aria-label','Практика по записи');
  node.innerHTML=`<div data-lyrics-wait class="en-lyrics-wait"><button type="button" class="icon-button" aria-label="Отменить подготовку">${icon('left','icon-sm')}</button><p role="status">Готовим упражнение…</p></div><label class="field en-lyrics-input"><span class="en-lyrics-sr">Впиши пропущенное слово</span><input type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" aria-label="Пропущенное слово" maxlength="200"></label>`;
  const ticket={node,host,owner,focus:document.activeElement,viewportHeight:Math.max(innerHeight,window.visualViewport?.height||0)};primed=ticket;document.body.append(node);
  node.addEventListener('compositionstart',()=>{if(primed===ticket)ticket.composing=true;});

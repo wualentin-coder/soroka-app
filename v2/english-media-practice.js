@@ -42,7 +42,7 @@ function coverage(ranges,start,end){let total=0,last=start;for(const[from,to]of 
 async function fileIdentity(file){if(!file||file.size>128*1024*1024)throw Error('Выбери короткое видео до 128 МБ.');const bytes=await file.arrayBuffer(),digest=await crypto.subtle.digest('SHA-256',bytes);return{name:file.name,size:file.size,sha256:[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')};}
 function releaseFile(){if(localURL)URL.revokeObjectURL(localURL);localURL=null;localFile=null;}
 function closePlayback(){const run=playing;if(!run)return;playing=null;const previous=run.focus;run.cancelled=true;run.media.pause();run.media.dispose();run.host.remove();document.getElementById('app').inert=false;player=null;if(previous?.isConnected)previous.focus();}
-function stop(){request++;closePlayback();}
+function stop(){request++;picker?.captionAbort?.abort();closePlayback();}
 function leave(){stop();picker=null;releaseFile();}
 function isPicker(p){return picker===p&&current(p.owner)&&ui.page==='english'&&enState().practiceView==='media';}
 function paintError(p,error){if(!isPicker(p))return;window.FlowEnglishLyricsPractice?.cancelPrepared(undefined,false);p.error=failText(error);p.busy=false;render();}
@@ -53,26 +53,30 @@ function startSong(p){
  if(!p.count){paintError(p,Error('Для этого материала пока не готов текст. Выбери другой или обнови его в медиатеке.'));return;}
  prepare(p,'lyrics');
 }
-function openPicker(track){
- stop();const c=owner();picker={owner:c,type:track?'song':'songs',track:track||null,lines:track?timedLines(track):[],index:0,count:1,error:'',busy:false};
- const s=enState();s.ex=null;s.deck=null;s.tab='course';s.practiceView='media';render();if(!track&&!window.FlowEnglishMusic?.screen)loadSongs(picker);else if(track&&window.FlowEnglishLyricsPracticeCore)startSong(picker);
+function openPicker(track,type='choice'){
+ stop();const c=owner();picker={owner:c,type:track?'song':type,track:track||null,lines:track?timedLines(track):[],index:0,count:1,error:'',busy:false};
+ const s=enState();s.ex=null;s.deck=null;s.tab='course';s.practiceView='media';render();if(track&&window.FlowEnglishLyricsPracticeCore)startSong(picker);else if(type==='songs'&&!window.FlowEnglishMusic?.screen)loadSongs(picker);
 }
 async function loadSongs(p){const serial=++request;p.busy=true;render();try{const result=await enCall('songs');if(serial!==request||!isPicker(p))return;p.songs=result.items||result.songs||result||[];if(!Array.isArray(p.songs))p.songs=[];p.busy=false;render();}catch(error){if(serial===request)paintError(p,error);}}
 async function loadSong(p,id){const serial=++request;p.busy=true;p.error='';render();try{const result=await enCall('song',{id});if(serial!==request||!isPicker(p))return;p.track=result.item||result.track||result;p.lines=timedLines(p.track);p.type='song';p.index=0;p.count=Math.min(3,p.lines.length)||1;p.busy=false;if(window.FlowEnglishLyricsPracticeCore)startSong(p);else render();}catch(error){if(serial===request)paintError(p,error);}}
 function preview(p){try{return selectLines(p.lines,p.index,p.count).map(line=>`<p lang="en">${h(line.en)}</p>`).join('');}catch{return'<p class="section-note">Выбери более короткий отрывок.</p>';}}
 window.enMediaPracticeScreen=function(){
  const p=picker;if(!p||!current(p.owner))return`<p>Выберите источник упражнения.</p>${action('Музыка и видео','catalog')}`;
+ if(p.type==='choice'){
+  const row=(type,title,sub,glyph)=>`<button type="button" class="en-dest" data-action="en-training-media-type" data-type="${type}"><span class="en-dest-icon" aria-hidden="true">${icon(glyph,'icon-sm')}</span><span class="en-dest-copy"><b>${title}</b><small>${sub}</small></span><span class="en-dest-arrow" aria-hidden="true">${icon('right','icon-sm')}</span></button>`;
+  return `<section class="en-structured en-media-source"><button type="button" class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button><h2 class="en-catalog-title">По записи</h2><div class="en-dest-list">${row('songs','Песни из музыки','Выбрать из медиатеки','music')}${row('youtube','Видео с YouTube','Урок по английским субтитрам','film')}${row('file','Свой файл','Видео и субтитры','file')}</div></section>`;
+ }
  if(p.direct)return `<section class="en-structured en-media-source"><button type="button" class="en-back" data-action="en-training-media-catalog">${icon('left','icon-sm')}Выбрать другое</button><h2 class="en-catalog-title">${h(p.track.title)}</h2>${p.error?`<p role="alert">${h(p.error)}</p>${action('Повторить','song-retry')}`:'<p role="status">Открываем упражнение…</p>'}</section>`;
- if(p.type==='songs'&&window.FlowEnglishMusic?.screen)return `<section class="en-structured en-media-source lv-music"><button type="button" class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button>${difficultyControl()}${window.FlowEnglishMusic.screen()}</section>`;
- const tabs=`<div class="en-structured-actions" role="group" aria-label="Источник">${[['songs','Музыка'],['youtube','YouTube'],['file','Файл']].map(([type,label])=>action(label,'type',`data-type="${type}" aria-pressed="${p.type===type||type==='songs'&&p.type==='song'}"`)).join('')}</div>`;
+ if(p.type==='songs'&&window.FlowEnglishMusic?.screen)return `<section class="en-structured en-media-source lv-music"><button type="button" class="en-back" data-action="en-training-media-type" data-type="choice">${icon('left','icon-sm')}Выбор источника</button>${difficultyControl()}${window.FlowEnglishMusic.screen()}</section>`;
+ const tabs='';
  let body='';
  if(p.type==='songs')body=p.busy?'<p role="status">Загружаем музыку…</p>':`<div class="en-steps">${(p.songs||[]).map(song=>action(`<b>${h(song.title)}</b><small>${h(song.artist)}</small>`,'song',`data-id="${h(song.id)}"`)).join('')||'<p>Сначала добавь песню в медиатеку.</p>'}</div>`;
  else{
-  const importFields=p.type==='song'?`<h3>${h(p.track.title)}</h3><p class="section-note">${h(p.track.artist)}</p>`:`${p.type==='youtube'?`<label class="field"><span>Ссылка на YouTube</span><input name="url" type="url" value="${h(p.url||'')}" autocomplete="off"></label>`:`<label class="field"><span>Видео</span><input name="video" type="file" accept="video/mp4,video/webm,video/*"></label>${p.file?`<p class="section-note">${h(p.file.name)}</p>`:''}`}<label class="field"><span>Субтитры SRT / VTT</span><input name="subtitles" type="file" accept=".srt,.vtt,text/vtt,text/plain"></label><label class="field"><span>Или вставь субтитры</span><textarea name="subtitlesText" rows="3" maxlength="256000" placeholder="00:00:01.000 --&gt; 00:00:04.000&#10;English line | Перевод">${h(p.text||'')}</textarea></label>${action('Прочитать субтитры','parse')}<p class="section-note">Перевод необязателен. Текст берётся из твоих субтитров, без автоматического распознавания.</p>`;
-  const selection=p.lines.length?`<div class="en-media-range"><label class="field"><span>С первой строки</span><select name="from">${p.lines.map((line,i)=>`<option value="${i}" ${p.index===i?'selected':''}>${Math.floor(line.time/60)}:${String(Math.floor(line.time%60)).padStart(2,'0')} · ${h(line.en.slice(0,70))}</option>`).join('')}</select></label><label class="field"><span>Строк</span><select name="count">${(window.FlowEnglishLyricsPracticeCore?[1,2,3,4,5,6,7,8,9,10,11,12]:[1,2,3,4,5,6]).map(n=>`<option ${p.count===n?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="en-card" data-en-media-preview>${preview(p)}</div>${window.FlowEnglishLyricsPracticeCore?action(p.busy?'Готовим…':'По строкам песни','lyrics-prepare',p.busy?'disabled':'',true):''}${action(p.busy?'Готовим…':window.FlowEnglishLyricsPracticeCore?'Упражнение по фрагменту':'Начать упражнение','prepare',p.busy?'disabled':'',!window.FlowEnglishLyricsPracticeCore)}`:p.type==='song'?'<p>У этой песни пока нет таймкодов строк. Обнови текст в медиатеке или выбери другую песню.</p>':'';
+  const importFields=p.type==='song'?`<h3>${h(p.track.title)}</h3><p class="section-note">${h(p.track.artist)}</p>`:`${p.type==='youtube'?`<label class="field"><span>Ссылка на YouTube</span><input name="url" type="url" value="${h(p.url||'')}" autocomplete="off" placeholder="https://youtu.be/…" ${p.busy?'disabled':''}></label>`:`<label class="field"><span>Видео</span><input name="video" type="file" accept="video/mp4,video/webm,video/*"></label>${p.file?`<p class="section-note">${h(p.file.name)}</p>`:''}`}${p.type==='youtube'?`<button type="button" class="primary-button" data-action="en-training-media-captions" ${p.busy?'disabled':''}>${p.busy?'Получаю субтитры…':'Начать упражнение'}</button><details class="en-media-manual"><summary class="ghost-button">Добавить субтитры вручную</summary>`:''}<label class="field"><span>Субтитры SRT / VTT</span><input name="subtitles" type="file" accept=".srt,.vtt,text/vtt,text/plain"></label><label class="field"><span>Или вставь субтитры</span><textarea name="subtitlesText" rows="3" maxlength="256000" placeholder="00:00:01.000 --&gt; 00:00:04.000&#10;English line | Перевод">${h(p.text||'')}</textarea></label>${action('Прочитать субтитры','parse')}<p class="section-note">Перевод необязателен. Текст берётся из твоих субтитров, без автоматического распознавания.</p>${p.type==='youtube'?'</details>':''}`;
+  const selection=p.lines.length?`<div class="en-media-range"><label class="field"><span>С первой строки</span><select name="from">${p.lines.map((line,i)=>`<option value="${i}" ${p.index===i?'selected':''}>${Math.floor(line.time/60)}:${String(Math.floor(line.time%60)).padStart(2,'0')} · ${h(line.en.slice(0,70))}</option>`).join('')}</select></label><label class="field"><span>Строк</span><select name="count">${(window.FlowEnglishLyricsPracticeCore?[1,2,3,4,5,6,7,8,9,10,11,12]:[1,2,3,4,5,6]).map(n=>`<option ${p.count===n?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="en-card" data-en-media-preview>${preview(p)}</div>${window.FlowEnglishLyricsPracticeCore?action(p.busy?'Готовим…':p.type==='song'?'По строкам песни':'По строкам видео','lyrics-prepare',p.busy?'disabled':'',true):''}${action(p.busy?'Готовим…':window.FlowEnglishLyricsPracticeCore?'Упражнение по фрагменту':'Начать упражнение','prepare',p.busy?'disabled':'',!window.FlowEnglishLyricsPracticeCore)}`:p.type==='song'?'<p>У этой песни пока нет таймкодов строк. Обнови текст в медиатеке или выбери другую песню.</p>':'';
   body=`<form data-en-media-source-form>${importFields}${selection}</form>`;
  }
- return `<section class="en-structured en-media-source"><button class="en-back" data-action="en-practice-back">${icon('left','icon-sm')}Вся практика</button><h2 class="en-catalog-title">Музыка и видео</h2>${tabs}${difficultyControl()}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
+ return `<section class="en-structured en-media-source"><button type="button" class="en-back" data-action="en-training-media-type" data-type="choice">${icon('left','icon-sm')}Выбор источника</button><h2 class="en-catalog-title">${p.type==='youtube'?'Видео с YouTube':p.type==='file'?'Свой файл':'Песни из музыки'}</h2>${tabs}${difficultyControl()}${p.error?`<p class="section-note" role="alert">${h(p.error)}</p>`:''}${body}</section>`;
 };
 function sourceForm(){return document.querySelector('[data-en-media-source-form]');}
 function captureForm(p){if(p.direct)return;const form=sourceForm();if(!form)return;if(form.elements.url)p.url=form.elements.url.value;if(form.elements.subtitlesText)p.text=form.elements.subtitlesText.value;if(form.elements.from)p.index=Number(form.elements.from.value);if(form.elements.count)p.count=Number(form.elements.count.value);}
@@ -84,7 +88,7 @@ async function prepare(p,style){
   if(p.owner.host.capabilities?.practiceEvents!==true)throw Error('practice_contract');
   const lines=selectLines(p.lines,p.index,p.count),offset=p.type==='song'?(p.track.lyricOffset||0):0,start=Math.max(0,lines[0].time+offset),end=lines.at(-1).end+offset;
   let source;if(p.type==='song')source={type:'song',songId:p.track.id,start,end};
-  else if(p.type==='youtube'){const link=FlowSongMedia.parseLink(p.url||'');source={type:'youtube',youtubeId:link.id,title:'Фрагмент видео',start,end,lines};}
+  else if(p.type==='youtube'){const link=FlowSongMedia.parseLink(p.url||'');if(p.video&&p.video.videoId!==link.id)throw Error('Ссылка изменилась. Получи субтитры нового видео.');source={type:'youtube',youtubeId:link.id,title:(p.video?.title||'Фрагмент видео').slice(0,300),start,end,lines};}
   else{if(!p.file)throw Error('Сначала выбери видео.');source={type:'file',file:p.file,title:p.file.name,start,end,lines};}
   const gapPercent=difficulty(),result=await enCall('practicesource',{source,seed:crypto.getRandomValues(new Uint32Array(1))[0],...(style==='lyrics'?{style,gapPercent}:{})});
   if(serial!==request||!isPicker(p)||typing&&!window.FlowEnglishLyricsPractice.inputPrepared(typing))return;
@@ -93,9 +97,28 @@ async function prepare(p,style){
   if(accepted===false)throw Error('Не удалось сохранить упражнение на устройстве. Освободи память и попробуй ещё раз.');
  }catch(error){if(serial===request)paintError(p,error);}
 }
+async function loadVideoCaptions(p){
+ if(p.busy||p.type!=='youtube')return;captureForm(p);p.error='';
+ let link;try{link=FlowSongMedia.parseLink(p.url||'');}catch(error){paintError(p,error);return;}
+ const serial=++request,controller=new AbortController();p.captionAbort=controller;p.video=null;p.lines=[];p.index=0;p.count=1;p.busy=true;render();
+ const typing=window.FlowEnglishLyricsPractice?.prepareInput();
+ if(typing)typing.onCancel=()=>{if(serial!==request||!isPicker(p))return;request++;controller.abort();p.busy=false;render();};
+ try{
+  const remote=window.FlowSongRemote?.create((op,args)=>p.owner.host.send(op,args,p.owner.lease));if(!remote?.prepareVideo)throw Error('Обнови приложение для загрузки субтитров.');
+  const video=await remote.prepareVideo(link.id,{signal:controller.signal,onProgress:stage=>{const label=typing?.node.querySelector('[data-lyrics-wait] p');if(label)label.textContent=stage.label||'Получаю субтитры…';}});
+  if(serial!==request||!isPicker(p)||typing&&!window.FlowEnglishLyricsPractice.inputPrepared(typing))return;
+  p.video=video;p.lines=timedLines({lines:video.lines,duration:video.videoDuration});p.index=p.lines.findIndex(line=>line.end>link.start);if(p.index<0)throw Error('После выбранной позиции нет английских субтитров.');
+  p.count=0;for(const line of p.lines.slice(p.index)){if(p.count===12||line.end-p.lines[p.index].time>120)break;p.count++;}
+  if(!p.count)throw Error('Не найден подходящий фрагмент субтитров.');p.busy=false;render();
+  await prepare(p,'lyrics');
+ }catch(error){if(serial===request&&isPicker(p)&&!controller.signal.aborted)paintError(p,error);}
+ finally{if(p.captionAbort===controller)p.captionAbort=null;}
+}
 function actionHandler(name,control){
  const d=control.dataset||{};
  if(name==='catalog'){openPicker();return true;}
+ if(name==='catalog-songs'){openPicker(undefined,'songs');return true;}
+ if(name==='catalog-video'){openPicker(undefined,'youtube');return true;}
  if(name==='return'){const s=enState(),id=s.ex?.sourceMeta?.songId;if(!id)return true;stop();s.ex=null;s.tab='read';s.mediaTab='music';render();window.flowEnglishSession.effect(()=>window.FlowEnglishMusic?.openSaved(id));return true;}
  if(name==='ready'){
   if(!picker||control.serial!==request||!current(control.owner)||!isPicker(picker))return true;
@@ -104,7 +127,8 @@ function actionHandler(name,control){
   ex.sessionId=crypto.randomUUID();const s=enState();s.ex=structuredClone(ex);s.ex.autoPlay=isLyrics;if(s.ex.autoPlay)attachPlayback(s.ex,picker.track);s.deck=null;s.tab='course';window.flowEnglishSession.effect(()=>{if(s.ex.autoPlay&&window.FlowEnglishLyricsPractice?.keepPreparedDuring)window.FlowEnglishLyricsPractice.keepPreparedDuring(enStopPcm);else enStopPcm();picker=null;});render();return true;
  }
  const p=picker;if(!p||!current(p.owner))return true;
- if(name==='type'){captureForm(p);p.error='';p.busy=false;p.type=d.type;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs')loadSongs(p);else render();return true;}
+ if(name==='captions'){loadVideoCaptions(p);return true;}
+ if(name==='type'){p.captionAbort?.abort();captureForm(p);p.error='';p.busy=false;p.type=d.type;p.video=null;p.lines=[];p.index=0;p.count=1;request++;if(p.type==='songs'&&!window.FlowEnglishMusic?.screen)loadSongs(p);else render();return true;}
  if(name==='song'){loadSong(p,d.id);return true;}
  if(name==='song-retry'){startSong(p);return true;}
  if(name==='parse'){captureForm(p);try{p.lines=parseSubtitles(p.text||'');p.index=0;p.count=Math.min(3,p.lines.length);p.error='';}catch(error){p.error=failText(error);}render();return true;}
@@ -149,7 +173,7 @@ document.addEventListener('change',async event=>{
  if(field.name==='video'){p.busy=true;const serial=++request;try{const identity=await attachFile(field.files?.[0],null,()=>serial===request&&isPicker(p));if(serial!==request||!isPicker(p))return;captureForm(p);p.file=identity;p.busy=false;p.error='';render();}catch(error){if(serial===request){captureForm(p);paintError(p,error);}}}
  if(field.name==='subtitles'){try{const serial=++request,file=field.files?.[0];if(!file||file.size>256000)throw Error('Выбери субтитры до 256 КБ.');const text=await file.text();if(serial!==request||!isPicker(p))return;p.text=text;p.lines=parseSubtitles(text);p.index=0;p.count=Math.min(3,p.lines.length);p.error='';render();}catch(error){paintError(p,error);}}
 });
-document.addEventListener('submit',event=>{if(event.target.matches?.('[data-en-media-source-form]')){event.preventDefault();if(picker)prepare(picker);}});
+document.addEventListener('submit',event=>{if(event.target.matches?.('[data-en-media-source-form]')){event.preventDefault();if(picker){if(picker.type==='youtube'&&!picker.lines.length)loadVideoCaptions(picker);else prepare(picker,window.FlowEnglishLyricsPracticeCore?'lyrics':undefined);}}});
 document.addEventListener('input',event=>{
  const field=event.target;if(!field.matches?.('[data-lyrics-gap-percent]'))return;
  const value=Number(field.value);if(!Number.isInteger(value)||value<10||value>100||value%10)return;
