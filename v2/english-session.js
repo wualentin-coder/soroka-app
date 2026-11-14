@@ -19,7 +19,7 @@ function checkpoint(state){
  const ex=state.ex;
  if(!EXERCISES.includes(ex?.mode)||ex.loading||!Array.isArray(ex.items)||ex.items.length>500)return null;
  if(!Number.isInteger(ex.index)||ex.index<0||ex.index>ex.items.length)fail('bad_position');
- const task=copy(fields(ex,['mode','unit','rule','back','items','index','ok','done','practiceDone','picked','answer','draft','sessionId','sent','result','practiceKind','contentId','contentRevision','gapPercent','seed','branch','title','level','blockedReason','sourceMeta']));
+ const task=copy(fields(ex,['mode','unit','rule','back','items','index','ok','done','practiceDone','picked','answer','draft','sessionId','sent','result','practiceKind','contentId','contentRevision','gapPercent','seed','branch','title','level','blockedReason','sourceMeta','videoLibraryId']));
  if(ex.deck)task.deck=deck(ex.deck);
  return {kind:'lesson',task};
 }
@@ -129,7 +129,7 @@ if(host?.version!==2||window.flowEnglishSession)return;
 if(typeof window.render!=='function')throw Error('english_session_load_after_app');
 const required=['captureOwner','isCurrent','send','subscribeInvalidation'];
 if(required.some(name=>typeof host[name]!=='function'))throw Error('english_session_bridge_contract');
-const originals={};for(const name of ['enState','enCall','enQueue','enFlush','enSyncBanner','enDeckAnswer','enDeckNext','enDeckFlip','enExAnswer','enExNext','enLessonEnter','enTranslate','englishAction','render','enSpeak'])originals[name]=window[name];
+const originals={};for(const name of ['enState','enCall','enLoad','enQueue','enFlush','enSyncBanner','enDeckAnswer','enDeckNext','enDeckFlip','enExAnswer','enExNext','enLessonEnter','enTranslate','englishAction','render','enSpeak'])originals[name]=window[name];
 let binding=null,preparing=null,transaction=null,release=null,hydrated=null,stopped=false,retry=null,notice='',serial=0,blockedLease=null,sending=null,legacyView=null,legacyPending=null,legacySerial=0;
 const waiters=new Map();
 const paint=()=>window.render();
@@ -262,6 +262,8 @@ async function flush(){
 }
 window.enState=function(){prepare();const s=originals.enState();hydrate(s);if(!binding&&notice){s.error=notice;for(const failure of Object.values(s.failedLoads||{}))failure.error=notice;}return s;};
 window.enCall=function(op,args={},options){try{const b=ready();return host.send(op,args,b.lease,op==='speech'?options:undefined);}catch(error){return Promise.reject(error);}};
+// Automatic reads wait for verified ownership and the writer lock; render retries after prepare.
+window.enLoad=function(...args){if(!prepare())return false;return originals.enLoad(...args);};
 window.enQueue=queue;window.enFlush=flush;
 window.render=function(...args){if(transaction){transaction.render=true;return;}return originals.render(...args);};
 window.enSpeak=function(...args){if(transaction){transaction.effects.push(()=>originals.enSpeak(...args));return Promise.resolve();}return originals.enSpeak(...args);};

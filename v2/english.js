@@ -256,7 +256,7 @@ function enScheduleSpeak(text, delay) {
 }
 async function enSpeak(text, button) {
   if (!text || document.hidden || ui.page !== "english") return;
-  enStopPcm();
+  enStopAudio();
   const generation = enSpeechGeneration, view = enViewGuard();
   const current = () => generation === enSpeechGeneration && view() && !document.hidden;
   const request=window.sorokaEnglishSession?.capabilities?.speechAbort===true?new AbortController():null;
@@ -725,7 +725,8 @@ function enPlayPcm(b64) {
   src.start(at); enNextAt = at + buffer.duration; enSources.push(src);
 }
 let enTimers = [];
-function enStopPcm() { enStopSpeech(); enSources.forEach(x => { try { x.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enTimers.forEach(clearTimeout); enTimers = []; }
+function enStopAudio() { enStopSpeech(); enSources.forEach(x => { try { x.stop(); } catch (_) {} }); enSources = []; enNextAt = 0; enTimers.forEach(clearTimeout); enTimers = []; }
+function enStopPcm() { enStopAudio(); }
 /** Когда отзвучит всё, что поставлено в очередь (и файл озвучки), — cb. */
 function enWhenQuiet(cb) {
   const check = () => {
