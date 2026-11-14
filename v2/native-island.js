@@ -102,6 +102,7 @@
   function consume(){
     if(working||!pending||document.hidden||suspended)return;
     const request=pending;
+    if(popup&&document.querySelector?.('.live-splash')){setTimeout(consume,80);return;}
     if(done.has(request.id)){pending=null;ack(request.id);return;}
     working=true;
     try{
