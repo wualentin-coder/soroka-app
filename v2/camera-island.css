@@ -98,6 +98,10 @@ html[data-camera-layer=true] #app .dm-topbar .island-orb-progress:not([hidden]),
 .island-panel-ring .camera-progress{display:block;position:absolute;inset:-1px;width:32px;height:32px;transform:rotate(-90deg);overflow:visible}
 .island-panel-ring .camera-progress[hidden]{display:none}
 .island-panel-ring{left:calc(var(--island-panel-camera-x,50%) - 9px);top:calc(var(--island-panel-camera-y,22px) - 1px)}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-ring-mode=card] .island-orb{border:1px solid var(--line)!important}
+html[data-camera-layer=true] #app .activity-island[data-activity=card] .island-orb-progress circle{animation:camera-arrival .65s ease-out 2}
+@keyframes camera-arrival{50%{filter:drop-shadow(0 0 4px var(--accent))}}
+@media(prefers-reduced-motion:reduce){html[data-camera-layer=true] #app .island-orb-progress circle{animation:none!important}}html[data-motion=off] #app .island-orb-progress circle{animation:none!important}
 .island-panel-ring[data-ring-mode=working]{border-top:2px solid var(--accent);animation:camera-orbit 2s linear infinite}
 html[data-camera-layer=true] .activity-island-card .island-eyeline{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px;margin:0 0 11px}
 html[data-camera-layer=true] .activity-island-card .island-render{padding:11px 10px 9px;margin:0;border:0;border-radius:15px;background:color-mix(in srgb,var(--text) 4%,transparent)}

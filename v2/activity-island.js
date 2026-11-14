@@ -122,7 +122,7 @@
     if(process)return head+`<section class="island-process-detail"><b>${escape(process.label)}</b>${meter(process.progress)}<button type="button" data-island-process="0">Открыть <span aria-hidden="true">→</span></button></section>`;
     if(state.kind==='task')return head+`<section>${state.tasks.map((task,i)=>`<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due||'Без срока')}</small></button>`).join('')}</section>`;
     if(event){const index=state.events.indexOf(event);return head+`<section class="island-event-detail"><b>${escape(event.title)}</b><p>${escape(event.due||'')} · ${escape(event.allDay?'Весь день':event.time||'')}${state.minutes?` · через ${state.minutes} мин`:''}</p>${event.location?`<p>${escape(event.location)}</p>`:''}${event.description||event.notes?`<p class="island-event-description">${escape(event.description||event.notes)}</p>`:''}<button type="button" data-island-event="${index}">Открыть событие <span aria-hidden="true">→</span></button></section>`;}
-    return head+'<p class="island-empty">Сейчас всё спокойно</p><button type="button" data-island-assistant>Спросить Flow</button>';
+    return head+'<p class="island-empty">Сейчас всё спокойно</p>';
   }
   function queueProgress(job){
     if(typeof window.rmProgress==='function')return percent(window.rmProgress(job));
@@ -295,7 +295,7 @@
         pill.setAttribute('aria-expanded',String(Boolean(layer)||Boolean(window.flowCardIsland?.getState?.().open)));
         if(pill.dataset.activity!==state.kind)pill.dataset.activity = state.kind;
         pill.dataset.progressKnown = String(state.progress !== null);
-        const ring=pill.querySelector('.island-orb-progress');if(ring){ring.hidden=state.progress===null;ring.querySelector('circle')?.setAttribute('stroke-dasharray',`${state.progress??0} 100`);}
+        const ring=pill.querySelector('.island-orb-progress');if(ring){ring.hidden=state.progress===null&&state.kind!=='card';ring.querySelector('circle')?.setAttribute('stroke-dasharray',state.kind==='card'?'8 42 8 42':`${state.progress??0} 100`);}
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);
         pill.setAttribute("aria-label", ['idle','return'].includes(state.kind)&&window.FlowCameraIsland?'Открыть ассистента Flow':`${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — открыть подробности. Удерживай, чтобы спросить Flow`);
         window.FlowIslandSurface?.sync(pill.closest('.dm-topbar'),pill);
