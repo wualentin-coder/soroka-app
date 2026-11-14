@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const bridge=()=>window.SorokaAndroid;
-  let pending=null,working=false,timer=0,lastState='',lastSignalState='',appearancePending=false,activity={kind:'idle',label:'Flow',progress:null},observedAt=Date.now();
+  let pending=null,working=false,timer=0,lastState='',lastSignalState='',lastSentAt=0,appearancePending=false,activity={kind:'idle',label:'Flow',progress:null},observedAt=Date.now();
   const done=new Set(),allowed=new Set(['assistant','render','sport','today']);
   const root=document.documentElement;
   let popup=false,popupOpened=false,closing=false,expanding=false,suspended=false,entrySheet=null,entryComposer=null,closeFrame=0,classicDraft=null;
@@ -88,8 +88,11 @@
     const state={kind,label:String(activity.label||'Flow').slice(0,120),progress:fresh&&typeof activity.progress==='number'&&Number.isFinite(activity.progress)?Math.max(0,Math.min(100,activity.progress)):null,fresh,accent,...(()=>{const appearance=presentation();return appearance?{appearance}:{};})()};
     const key=JSON.stringify(state),signalKey=JSON.stringify([state.kind,state.label,state.progress,state.fresh]);
     const appearanceOnly=appearancePending&&signalKey===lastSignalState;appearancePending=false;
-    if(key===lastState)return;
-    try{api.islandUpdate(JSON.stringify({...state,...(appearanceOnly?{appearanceOnly:true}:{}),at:observedAt}));lastState=key;lastSignalState=signalKey;}catch{}
+    // A long frame can hold the same percentage. Renew only from a fresh owner
+    // observation, never from a theme change or an old resume snapshot.
+    const heartbeat=!appearanceOnly&&fresh&&kind!=='idle'&&observedAt-lastSentAt>=5000;
+    if(key===lastState&&!heartbeat)return;
+    try{api.islandUpdate(JSON.stringify({...state,...(appearanceOnly?{appearanceOnly:true}:{}),at:observedAt}));lastState=key;lastSignalState=signalKey;if(!appearanceOnly)lastSentAt=observedAt;}catch{}
   }
   function ack(id){try{bridge()?.islandAck?.(id);}catch{}done.add(id);if(done.size>64)done.delete(done.values().next().value);}
   function consume(){

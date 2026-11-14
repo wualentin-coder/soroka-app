@@ -73,3 +73,48 @@ html[data-camera-layer=true] .activity-island-card .island-event-description{whi
 @keyframes camera-orbit{to{rotate:360deg}}
 @media(prefers-reduced-motion:reduce){html[data-camera-layer=true] #app .dm-topbar .activity-island,html[data-camera-layer=true] #app .dm-topbar .activity-island .island-orb,html[data-camera-layer=true] #app .dm-topbar .activity-island .island-orb:after{transition:none!important;animation:none!important}}
 html[data-motion=off][data-camera-layer=true] #app .dm-topbar .activity-island,html[data-motion=off][data-camera-layer=true] #app .dm-topbar .activity-island .island-orb,html[data-motion=off][data-camera-layer=true] #app .dm-topbar .activity-island .island-orb:after{transition:none!important;animation:none!important}
+/* Approved 58927 prototype: one optical anchor, content-sized peek and opening skin. */
+html[data-camera-layer=true] #app .dm-topbar .activity-island:before{height:36px!important;top:calc(var(--camera-ring-y) - 18px)!important;background:color-mix(in srgb,var(--page) 96%,var(--text) 4%)!important;border-color:var(--line)!important;transition:left .42s,right .42s}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-camera-collapsed=true]:before{left:4px!important;right:4px!important}
+html[data-camera-layer=true] #app .dm-topbar .island-section-symbol{left:8px!important;top:calc(var(--camera-ring-y) - 10px)!important;width:20px!important;height:20px!important}
+html[data-camera-layer=true] #app .dm-topbar .island-section-symbol :is(svg,.magic-object){width:20px!important;height:20px!important}
+html[data-camera-layer=true] #app .dm-topbar .island-label{left:68px!important}
+html[data-camera-layer=true] #app .dm-topbar .island-orb{border-color:var(--line)!important}
+html[data-camera-layer=true] #app .dm-topbar .island-orb-progress circle{stroke-width:2;filter:drop-shadow(0 0 2px var(--accent));transition:stroke-dasharray .42s cubic-bezier(.2,.82,.25,1)}
+html[data-island-panel=true] #app .activity-island{visibility:hidden!important}
+html[data-camera-layer=true] .activity-island-layer .activity-island-card{padding:51px 14px 16px!important;border-radius:27px!important;border:1px solid var(--line);max-height:var(--island-available-height,85dvh)!important;background:color-mix(in srgb,var(--page) 96%,var(--text) 4%)!important;box-shadow:0 8px 30px #0003}
+html[data-camera-layer=true] .activity-island-card .island-panel-top{position:absolute;left:8px;right:8px;top:0;height:44px;min-height:44px;margin:0;padding:0;border:0;display:flex;justify-content:space-between}
+html[data-camera-layer=true] .activity-island-card .island-panel-top button{display:grid!important;place-items:center;width:44px;height:44px;min-height:44px;flex:none;padding:12px!important;border:0;background:none!important;color:var(--muted);font-size:22px}
+html[data-camera-layer=true] .activity-island-card .island-panel-top button svg{width:20px;height:20px}
+html[data-camera-layer=true] .activity-island-card .island-panel-bank{display:flex}
+html[data-camera-layer=true] .activity-island-card .island-panel-top [data-island-picker]{color:var(--accent)}
+.island-panel-ring{position:absolute;left:calc(var(--island-panel-camera-x,50%) - 8px);top:var(--island-panel-camera-y,22px);width:32px;height:32px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;pointer-events:none}
+.island-panel-ring .island-orb{display:block!important;position:absolute!important;inset:0!important;width:32px!important;height:32px!important;border:0!important;background:none!important;transform:none!important}
+.island-panel-ring .island-orb-progress{width:32px;height:32px;position:absolute;inset:-1px;transform:rotate(-90deg);overflow:visible}
+.island-panel-ring circle{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;filter:drop-shadow(0 0 2px var(--accent))}
+.island-panel-ring [hidden]{display:none}
+html[data-camera-layer=true] #app .dm-topbar .island-orb-progress:not([hidden]),html[data-camera-layer=true] .island-panel-ring .island-orb-progress:not([hidden]){display:block!important}
+.activity-island-layer>.activity-island-scrim{position:fixed!important;inset:44px 0 0!important;background:color-mix(in srgb,var(--page) 40%,transparent)!important;pointer-events:none;z-index:-1}
+.island-panel-ring .camera-progress{display:block;position:absolute;inset:-1px;width:32px;height:32px;transform:rotate(-90deg);overflow:visible}
+.island-panel-ring .camera-progress[hidden]{display:none}
+.island-panel-ring{left:calc(var(--island-panel-camera-x,50%) - 9px);top:calc(var(--island-panel-camera-y,22px) - 1px)}
+.island-panel-ring[data-ring-mode=working]{border-top:2px solid var(--accent);animation:camera-orbit 2s linear infinite}
+html[data-camera-layer=true] .activity-island-card .island-eyeline{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px;margin:0 0 11px}
+html[data-camera-layer=true] .activity-island-card .island-render{padding:11px 10px 9px;margin:0;border:0;border-radius:15px;background:color-mix(in srgb,var(--text) 4%,transparent)}
+html[data-camera-layer=true] .activity-island-card .island-render-heading{gap:6px;align-items:center;margin:0}
+html[data-camera-layer=true] .activity-island-card .island-job-copy{flex:1;min-width:0}
+html[data-camera-layer=true] .activity-island-card .island-job-copy b{display:block;font-size:13px;font-weight:500;line-height:1.5}
+html[data-camera-layer=true] .activity-island-card .island-job-copy small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+html[data-camera-layer=true] .activity-island-card .island-job-pause{width:44px;height:44px;padding:12px;flex:none;border:0;border-radius:12px;background:none;color:var(--accent)}
+.island-job-pause svg{width:18px;height:18px}
+html[data-camera-layer=true] .activity-island-card .island-meter{height:3px;margin:8px 0 0}
+html[data-camera-layer=true] .activity-island-card .island-queue{border:0;padding-top:0;margin-top:13px}
+html[data-camera-layer=true] .activity-island-card .island-queue-row{min-height:39px;border-bottom:1px solid var(--line);gap:8px}
+.island-queue-row>b{flex:1;min-width:0}.island-queue-row>small{white-space:nowrap;color:var(--muted)}
+html[data-camera-layer=true] .activity-island-card .island-pins{display:flex!important;justify-content:space-between;font-size:12px;border:0!important;padding:0 10px;margin-top:10px}
+html[data-camera-layer=true] .activity-island-card .island-picker{display:grid;gap:5px}
+.island-picker button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:7px 10px;border:1px solid var(--line);border-radius:13px;background:transparent;min-height:52px;color:var(--text)}
+.island-picker b,.island-picker small{display:block;font-weight:500;font-size:13px}.island-picker small{font-size:11px;color:var(--muted);margin-top:3px}
+html[data-camera-layer=true] .activity-island-card .island-picker-title{font-size:15px;color:var(--text);margin:0 0 10px}
+@media(prefers-reduced-motion:reduce){.island-panel-ring{animation:none!important}}
+html[data-motion=off] .island-panel-ring{animation:none!important}

@@ -2,6 +2,7 @@
 (()=>{
  'use strict';
  const root=document.documentElement;let active=null,hold=0,held=false,start=null;
+ function anchor(){const css=getComputedStyle(root),native=root.dataset.nativeCamera==='true'&&root.dataset.nativeCameraEdge==='top',r=document.querySelector('.dm-topbar')?.getBoundingClientRect();return{x:native?parseFloat(css.getPropertyValue('--native-camera-x')):innerWidth/2,y:native?parseFloat(css.getPropertyValue('--native-camera-center-y')):(r?.y||0)+22};}
  function sync(bar,pill){
   if(!bar?.isConnected||!pill?.isConnected||root.dataset.flowDesign!=='magic')return;
   root.dataset.cameraLayer='true';bar.dataset.cameraLayer='true';
@@ -13,7 +14,7 @@
   const compact=assistantOnly||pill.dataset.islandOrb==='true'||root.dataset.cameraCalibration==='true';
   const label=pill.querySelector('.island-label'),value=pill.dataset.compactValue||'';
   if(label&&label.textContent!==value)label.textContent=value;
-  const textWidth=value&&label?Math.ceil(label.scrollWidth):0,left=compact?22:42,width=compact?44:value?Math.max(82,70+Math.min(65,textWidth)):64;
+  const textWidth=value&&label?Math.ceil(label.scrollWidth):0,left=compact?22:48,width=compact?44:76+Math.max(12,Math.min(65,textWidth));
   pill.dataset.ringMode=pill.dataset.progressKnown==='true'?'progress':({render:'working',think:'working',music:'media',practice:'media',speak:'media',listen:'voice',event:'event',task:'event',card:'card',error:'error',success:'success'}[pill.dataset.activity]||'idle');
   const top=Math.max(0,y-22);
   for(const[k,v]of Object.entries({'--camera-button-x':`${x-left}px`,'--camera-button-y':`${top}px`,'--camera-width':`${width}px`,'--camera-ring-x':`${left}px`,'--camera-ring-y':`${y-top}px`}))if(pill.style.getPropertyValue(k)!==v)pill.style.setProperty(k,v);
@@ -32,7 +33,7 @@
   }
   let search=bar.querySelector('.camera-search');if(!search){search=document.createElement('button');search.type='button';search.className='dm-icon-button camera-search';search.dataset.action='search';search.setAttribute('aria-label','Поиск по Flow');search.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>';bar.prepend(search);}
  }
- window.FlowCameraIsland={sync};
+ window.FlowCameraIsland={sync,anchor};
  const refresh=()=>{const bar=document.querySelector('.dm-topbar');sync(bar,bar?.querySelector('.activity-island'));};
  window.addEventListener('resize',refresh);window.addEventListener('flow:windowgeometry',refresh);
  document.fonts?.ready.then(refresh);

@@ -81,6 +81,7 @@
       else { kind = "render"; progress = percent(r.percent); const app = r.app === "Karma" ? "Karma" : "AE"; label = progress === null ? `${app} · рендер` : `${app} · ${progress}%`; }
     } else if (imminent) {
       kind = "event"; label = `Через ${Math.max(1, Math.ceil((imminent.at - now) / 60000))} мин`;
+      progress=percent((imminent.at-now)/900000*100);
     } else if (tasks.length) {
       kind = "task"; label = `Важные дела · ${tasks.length}`;
     }
@@ -89,9 +90,13 @@
   }
   function compactValue(state){
     if(state.kind==='card'&&state.card)return String(state.card.count||1);
+    if(state.kind==='event')return state.minutes+' мин';
+    if(state.kind==='pause')return 'Ⅱ';
     if(state.progress!==null&&state.progress!==undefined)return state.progress+'%';
-    if(state.kind==='event')return state.minutes+'м';
     if(state.kind==='task')return String(state.tasks?.length||1);
+    if(state.kind==='disconnected'||state.kind==='error')return '!';
+    if(state.kind==='success')return '✓';
+    if(state.kind==='pause')return 'Ⅱ';
     return '';
   }
   function operationSignal(value={},route='today'){
@@ -105,12 +110,14 @@
     const render=state.render,process=state.process,event=state.events?.find(e=>e.id===state.imminentId)||state.events?.[0];
     const renderActive=render&&!process;
     const title=renderActive?'Рендер':process?'Сейчас':state.kind==='task'?'Важные дела':event?'Событие':'Сейчас';
-    const head=`<header><strong>${title}</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>`;
+    const paths={pause:'<path d="M8 5v14M16 5v14"/>',play:'<path d="m8 5 11 7-11 7Z"/>',spark:'<path d="M12 2c1 6 4 9 10 10-6 1-9 4-10 10-1-6-4-9-10-10 6-1 9-4 10-10Z"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>'};
+    const glyph=name=>paths[name]?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`:typeof icon==='function'?icon(name):'⋯';
+    const head=`<header class="island-panel-top"><button type="button" data-island-picker aria-label="Выбрать активность" title="${title}">${glyph(renderActive?'film':event?'calendar':'overview')}</button><span class="island-panel-ring" aria-hidden="true"></span><span class="island-panel-bank"><button type="button" data-island-assistant aria-label="Открыть ассистента Flow">${glyph('spark')}</button><button type="button" data-island-close aria-label="Закрыть">${glyph('close')}</button></span></header>`;
     const meter=value=>value==null?'':`<div class="island-meter" role="progressbar" aria-label="Прогресс" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent(value)}"><i style="width:${percent(value)}%"></i></div>`;
     if(renderActive){
       const facts=[render.fresh&&render.frame!==null&&render.frames!==null?`${render.frame} / ${render.frames} кадров`:'',render.eta!==null?`≈ ${Math.max(1,Math.ceil(render.eta/60))} мин`:''].filter(Boolean).join(' · ');
-      const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls">${state.job.status==='delivering'?'':`<button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button>`}<button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
-      return head+`<section class="island-render"><small>${render.fresh?escape(render.app):'Нет связи с ПК'}</small><div class="island-render-heading"><b>${escape(render.title)}</b>${state.renderProgress==null?'':`<span>${state.renderProgress}%</span>`}</div>${meter(state.renderProgress)}<p>${escape(facts||state.label)}</p></section>${state.queue?.length?`<section class="island-queue"><h3>Следом</h3>${state.queue.map((job,i)=>`<div class="island-queue-row"><small>${i+1}</small><b>${escape(job.name||'Рендер')}</b></div>`).join('')}</section>`:''}${controls}<button type="button" class="island-pins" data-island-pins>Вся очередь <span aria-hidden="true">→</span></button>`;
+      const controls=state.job?.fresh&&typeof window.rmAction==='function'&&state.job.status!=='delivering'?`<button type="button" class="island-job-pause" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}" aria-label="${state.job.status==='paused'?'Продолжить рендер':'Приостановить рендер'}">${glyph(state.job.status==='paused'?'play':'pause')}</button>`:'';
+      return head+`<div class="island-eyeline"><span>${render.fresh?escape(render.app):'Нет связи с ПК'}</span><span>${state.queue?.length?`${state.queue.length+1} задания`:''}</span></div><section class="island-render"><div class="island-render-heading"><div class="island-job-copy"><b>${escape(render.title)}</b><small>${escape(state.job?.status==='paused'?'На паузе':facts||state.label)}</small></div>${state.renderProgress==null?'':`<span>${state.renderProgress}%</span>`}${controls}</div>${render.fresh?meter(state.renderProgress):'<p>Нет свежих данных. Обновлю автоматически.</p>'}</section>${state.queue?.length?`<section class="island-queue"><h3>Далее</h3>${state.queue.map((job,i)=>`<div class="island-queue-row"><small>${String(i+2).padStart(2,'0')}</small><b>${escape(job.name||'Рендер')}</b>${finite(job.total)!==null?`<small>${finite(job.total)} кадров</small>`:''}</div>`).join('')}</section>`:''}<button type="button" class="island-pins" data-island-pins>Вся очередь <span aria-hidden="true">→</span></button>`;
     }
     if(process)return head+`<section class="island-process-detail"><b>${escape(process.label)}</b>${meter(process.progress)}<button type="button" data-island-process="0">Открыть <span aria-hidden="true">→</span></button></section>`;
     if(state.kind==='task')return head+`<section>${state.tasks.map((task,i)=>`<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due||'Без срока')}</small></button>`).join('')}</section>`;
@@ -187,7 +194,7 @@
   }
   function createController(options) {
     const leavingLayers=new Set();let assistantWasOpen=false;
-    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0,suspended=false,knownRender='';
+    let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0,suspended=false,knownRender='',panelRoute='activity';
     const magic=()=>document.documentElement?.dataset.flowDesign==='magic';
     const hidden=()=>document.hidden||suspended;
     const presentation=createPresentation({hidden,changed:orb=>{
@@ -223,6 +230,7 @@
       }
       if (!layer) return;
       const leaving=layer;layer=null;shown=null;lastPanelHTML="";
+      if(document.documentElement)delete document.documentElement.dataset.islandPanel;
       leaving.style.pointerEvents='none';leaving.inert=true;leaving.setAttribute('aria-hidden','true');
       const card=leaving.querySelector('.activity-island-card');
       if(!immediate&&magic()&&!hidden()&&!window.flowDigital?.reducedMotion?.()&&card?.animate){
@@ -240,7 +248,18 @@
     }
     const duration = value => value === null ? "" : `${Math.round(value / 60)} мин`;
     function panel(state) {
-      if(magic())return panelContent(state);
+      if(magic()){
+        const selected=panelRoute==='render'&&state.render?{...state,process:null}:panelRoute==='event'?{...state,render:null,process:null,kind:'event'}:panelRoute==='tasks'?{...state,render:null,process:null,kind:'task'}:state;
+        const html=panelContent(selected);
+        if(panelRoute!=='picker')return html;
+        const header=html.slice(0,html.indexOf('</header>')+9);
+        const rows=[];
+        if(state.render)rows.push(['render','Рендер',state.render.title]);
+        if(window.flowCardIsland?.getCurrent?.())rows.push(['cards','Карты рядом','Показать карты']);
+        if(state.events?.length)rows.push(['event','Событие',state.events[0].title]);
+        if(state.tasks?.length)rows.push(['tasks','Важные дела',String(state.tasks.length)]);
+        return header+'<h3 class="island-picker-title">Сейчас в Flow</h3><div class="island-picker">'+rows.map(([id,title,detail])=>`<button type="button" data-island-select="${id}"><span><b>${escape(title)}</b><small>${escape(detail)}</small></span><span aria-hidden="true">›</span></button>`).join('')+(state.processes||[]).map((p,i)=>`<button type="button" data-island-process="${i}"><span><b>${escape(p.label)}</b><small>Открыть</small></span><span aria-hidden="true">›</span></button>`).join('')+(rows.length?'':'<p>Сейчас всё спокойно.</p>')+'</div>';
+      }
       const render = state.render;
       const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls">${state.job.status==='delivering'?'':`<button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button>`}<button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
       const facts = render ? [render.fresh && render.frame !== null && render.frames !== null ? `${render.queue?'Готово':'Кадр'} ${render.frame} из ${render.frames}` : "", render.elapsed !== null ? `Идёт ${duration(render.elapsed)}` : "", render.eta !== null ? `Осталось ~${duration(render.eta)}` : ""].filter(Boolean).join(" · ") : "";
@@ -269,7 +288,7 @@
         let text=pill.querySelector('.island-label');if(!text){text=document.createElement('span');text.className='island-label';pill.replaceChildren(text);}
         if(!mark.isConnected)pill.prepend(mark);
         if(text.textContent!==label)text.textContent=label;
-        if(!pill.querySelector('.island-orb')){const orb=document.createElement('span');orb.className='island-orb';orb.setAttribute('aria-hidden','true');orb.innerHTML='<svg class="island-orb-progress" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" pathLength="100"/></svg>';pill.append(orb);}
+        if(!pill.querySelector('.island-orb')){const orb=document.createElement('span');orb.className='island-orb';orb.setAttribute('aria-hidden','true');orb.innerHTML='<svg class="island-orb-progress" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" pathLength="100"/></svg>';pill.append(orb);}
         const context=[state.kind,state.card?.id||'',state.card?.count||'',state.process?.id||'',state.process?.token||'',!feedback&&!state.process&&!state.card?state.job?.id||'':'',!feedback&&!state.process&&!state.card?state.job?.status||'':'',feedback?.kind==='think'?captureId||'':'',state.kind==='event'?state.imminentId||'':''].join('|');
         presentation.update(context,{quiet,open:Boolean(layer)||Boolean(window.flowCardIsland?.getState?.().open),active:Boolean(feedback)||state.attention});
         }
@@ -293,6 +312,8 @@
           card.innerHTML = html; card.scrollTop = top;
           if (inside) card.querySelector(selector)?.focus({ preventScroll: true });
         }
+        const ring=card.querySelector('.island-panel-ring');
+        if(ring&&pill?.querySelector('.island-orb')){ring.innerHTML=pill.querySelector('.island-orb').innerHTML.replace('island-orb-progress','camera-progress');ring.dataset.activity=state.kind;ring.dataset.ringMode=pill.dataset.ringMode;}
       }
       if (typeof CustomEvent === "function") document.dispatchEvent(new CustomEvent("flow:activity", { detail: { kind:state.kind, progress:state.progress, label:state.label, fresh:feedback||state.process?true:state.render?.fresh??true, ...(state.kind==='card'?{baseActivity:state.cardBase}:{}) } }));
       return state.interval;
@@ -328,13 +349,15 @@
       if (layer) { close(); return; }
       if(showActivity!==true&&pill?.dataset.activity==='card'&&window.flowCardIsland?.getCurrent?.()){window.flowCardIsland.open(pill);return;}
       layer = document.createElement("div"); layer.className = "activity-island-layer";
-      layer.innerHTML = '<section class="activity-island-card" role="region" aria-label="Текущая активность" tabindex="-1"></section>';
+      panelRoute='activity';if(document.documentElement)document.documentElement.dataset.islandPanel='true';
+      layer.innerHTML = '<div class="activity-island-scrim" aria-hidden="true"></div><section class="activity-island-card" role="region" aria-label="Текущая активность" tabindex="-1"></section>';
       document.body.appendChild(layer);
       pill?.setAttribute("aria-expanded", "true");
       paint();position();
       const card=layer.querySelector('.activity-island-card');
       if(magic()&&!hidden()&&!window.flowDigital?.reducedMotion?.()){
-        const entrance=card.animate?.([{opacity:0,translate:'0 -12px',scale:'.97'},{opacity:1,translate:'0 0',scale:'1'}],{duration:520,easing:'cubic-bezier(.22,1,.36,1)'});
+        const r=card.getBoundingClientRect(),anchor=window.FlowCameraIsland?.anchor?.()||{x:innerWidth/2,y:22};
+        const entrance=card.animate?.([{clipPath:`inset(0px ${Math.max(0,r.right-anchor.x-22)}px ${Math.max(0,r.height-44)}px ${Math.max(0,anchor.x-r.left-22)}px round 22px)`},{clipPath:'inset(0px 0px 0px 0px round 27px)'}],{duration:420,easing:'cubic-bezier(.2,.82,.25,1)'});
         if(entrance)entrance.id='flow-island-open';
       }
       card.focus({ preventScroll: true });
@@ -343,7 +366,9 @@
         const target = event.target.closest("button, .activity-island-scrim");
         if (!target) return;
         if (target.matches("[data-island-close], .activity-island-scrim")) { close(); return; }
-        if(target.hasAttribute('data-island-assistant')){close(false);window.flowAssistant?.open(pill);return;}
+        if(target.hasAttribute('data-island-picker')){panelRoute=panelRoute==='picker'?'activity':'picker';paint({quiet:true});position();return;}
+        if(target.hasAttribute('data-island-select')){const selected=target.dataset.islandSelect;if(selected==='cards'){close(false,false,true);window.flowCardIsland?.open(pill);return;}panelRoute=selected;paint({quiet:true});position();return;}
+        if(target.hasAttribute('data-island-assistant')){close(false,false,true);window.flowAssistant?.open(pill,{surface:'camera'});return;}
         if(target.hasAttribute('data-island-command')){const job=shown.job;if(job?.fresh&&typeof window.rmAction==='function')window.rmAction(target.dataset.islandCommand,{dataset:{id:String(job.id),name:job.name||'Рендер'}});return;}
         if (target.hasAttribute("data-island-pins")) { const render=!!shown?.render;window.flowAssistantPopup?.expand();close(false);if(render&&typeof navigate==="function")navigate("render");else options.pinned();return; }
         if(target.hasAttribute('data-island-process')){const process=shown.processes?.[Number(target.dataset.islandProcess)];if(process&&typeof navigate==='function'){window.flowAssistantPopup?.expand();close(false);navigate(process.route);if(typeof ui!=='undefined'&&ui.page==='sport'&&process.route==='sport')window.sorokaOpenSport?.();}return;}
@@ -359,7 +384,7 @@
       if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); close(); }
 
     }, true);
-    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),width=Math.min(360,innerWidth-24),popup=document.documentElement?.dataset.assistantPopup==='true',top=popup?(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--native-camera-center-y'))||22)+25:magic()?r.bottom+6:r.top,center=popup?innerWidth/2:r.left+r.width/2;layer.style.setProperty('--island-left',`${Math.max(12,Math.min(innerWidth-width-12,center-width/2))}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);}
+    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),anchor=window.FlowCameraIsland?.anchor?.()||{x:innerWidth/2,y:22},width=Math.min(400,innerWidth-20),top=magic()?Math.max(0,anchor.y-22):r.top,left=Math.max(10,Math.min(innerWidth-width-10,anchor.x-width/2));layer.style.setProperty('--island-left',`${left}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-panel-camera-x',`${anchor.x-left}px`);layer.style.setProperty('--island-panel-camera-y',`${anchor.y-top}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);}
     document.addEventListener('pointerdown',event=>{if(layer&&!layer.contains(event.target)&&!pill?.contains(event.target))close(false);},true);
     window.addEventListener?.('resize',position);window.addEventListener?.('scroll',position,{passive:true});
     window.addEventListener?.('flow:windowgeometry',position);
