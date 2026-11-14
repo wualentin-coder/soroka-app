@@ -463,7 +463,8 @@ html[data-flow-design=magic] body .lv-warmup.sp-details{padding:0;margin:0;borde
 html[data-flow-design=magic] body .lv-warmup>summary{padding:0;min-height:52px;font-size:13px}
 html[data-flow-design=magic] body .lv-workout .sp-ex-list{display:grid;gap:0}
 html[data-flow-design=magic] body .lv-workout .sp-ex{padding:16px 0;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
-html[data-flow-design=magic] body .lv-workout .sp-ex.active{background:linear-gradient(90deg,var(--lv-glow),transparent 90%)}
+html[data-flow-design=magic] body .lv-workout .sp-ex.active{background:radial-gradient(ellipse at 15% 50%,var(--lv-glow),transparent 72%)}
+html[data-flow-design=magic] body .lv-workout .sp-ex.active::before{content:none}
 html[data-flow-design=magic] body .lv-workout .sp-ex-num{font-size:12px;color:var(--muted)}
 html[data-flow-design=magic] body .lv-workout .sp-ex-main strong{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
 html[data-flow-design=magic] body .lv-workout .sp-ex-meta{min-height:44px;font-size:12px}
@@ -763,3 +764,10 @@ html[data-flow-design=magic] body .lv-chat-compact .en-compose{padding:6px 10px}
 @media(max-width:359px){html[data-flow-design=magic] body .lv-rhythm>.lv-rhythm-object{padding:14px 12px;gap:7px}html[data-flow-design=magic] body .lv-assessment-copy>b{font-size:23px}html[data-flow-design=magic] body .lv-conversation .en-chat-head{gap:8px;padding-inline:12px}}
 @media(prefers-reduced-motion:reduce){html[data-flow-design=magic] body .lv-voice-sign:after{animation:none!important}}
 html[data-flow-design=magic][data-motion=off] body .lv-voice-sign:after{animation:none!important}
+/* Audit: B01 shape for add controls; preserve English media ownership. */
+html[data-flow-design=magic] body .dm-main :is(.en-upload-fab,.enm-add-fab){border-radius:14px!important}
+html[data-flow-design=magic] body .dm-main .en-page .en-wrow>small{width:46px;min-width:46px;white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums}
+html[data-flow-controls=on] .en-search input:focus-visible{box-shadow:none}
+html[data-flow-controls=on] .en-search:focus-within{border-color:var(--accent)}
+html[data-flow-design=magic] .enm-filters .enm-chip{min-height:44px;padding:8px 12px;border:0;border-bottom:1px solid transparent;border-radius:0;background:none;box-shadow:none;color:var(--muted);font-weight:500}
+html[data-flow-design=magic] .enm-filters .enm-chip.enm-active{border-bottom-color:var(--accent);background:none;color:var(--accent)}

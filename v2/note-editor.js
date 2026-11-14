@@ -239,7 +239,9 @@ document.addEventListener("click", event => {
 document.addEventListener("click", event => {
   const li = event.target.closest?.(".note-rich ul.checks > li");
   if (!li) return;
-  if (event.clientX - li.getBoundingClientRect().left > 30) return;
+  const hitWidth = parseFloat(getComputedStyle(li).paddingLeft) || 30;
+  const hitX = event.clientX - li.getBoundingClientRect().left;
+  if (hitX < 0 || hitX > hitWidth) return;
   event.preventDefault();
   if (li.dataset.done === "1") delete li.dataset.done; else li.dataset.done = "1";
   syncRichNote();

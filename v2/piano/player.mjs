@@ -1,45 +1,45 @@
-import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=1458d8543105';
-import { LESSONS, PracticeSession } from './session.mjs?v=1458d8543105';
-import { PianoInputGate } from './piano-input-gate.mjs?v=1458d8543105';
-import {createMicStream} from './mic-stream.mjs?v=1458d8543105';
-import { ALL_COURSE as COURSE, ACTIVE_COURSE, RECOMMENDED_COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, courseLessonStatus } from './course.mjs?v=1458d8543105';
-import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=1458d8543105';
-import { createTeacher } from './teacher.mjs?v=1458d8543105';
-import { createScoreTimeline } from './score.mjs?v=1458d8543105';
-import { FollowTransport } from './transport.mjs?v=1458d8543105';
-import { ChordSession } from './chord-session.mjs?v=1458d8543105';
-import { createArrangement } from './arrangement.mjs?v=1458d8543105';
-import { createAccompanimentPlayer } from './accompaniment.mjs?v=1458d8543105';
-import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=1458d8543105';
-import { createMidiInput } from './midi-input.mjs?v=1458d8543105';
-import { EarlyInputBuffer } from './early-input.mjs?v=1458d8543105';
-import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=1458d8543105';
-import { createKeyboardRange, keyboardViewportOptions } from './keyboard-range.mjs?v=1458d8543105';
-import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=1458d8543105';
-import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=1458d8543105';
-import { createLessonPresenter } from './lesson-presenter.mjs?v=1458d8543105';
-import { drawNotation, describeStaffPosition } from './notation.mjs?v=1458d8543105';
-import { createMicroLesson, chooseMicroRepair, chooseMicroNext } from './microlearning.mjs?v=1458d8543105';
-import {normalizeLearningProgress} from './learning-path.mjs?v=1458d8543105';
-import { isCompactFoundationLesson } from './microlearning-data.mjs?v=1458d8543105';
-import { selectedPracticeDisplay } from './practice-display.mjs?v=1458d8543105';
-import {practiceOutcome} from './practice-outcome.mjs?v=1458d8543105';
-import {recordPracticeActivity,readPracticeActivity} from './practice-journal.mjs?v=1458d8543105';
-import { createSongMicroLesson } from './song-microlearning.mjs?v=1458d8543105';
-import { normalizeMicroProgress, getMicroRun, updateMicroRun } from './microlearning-progress.mjs?v=1458d8543105';
-import { createMicrostepView } from './microstep-ui.mjs?v=1458d8543105';
-import { supportLevel, resolveSupport, nextHelpLevel, supportLabel } from './support-policy.mjs?v=1458d8543105';
-import { chooseNativeRoute } from './native-route.mjs?v=1458d8543105';
-import { createPracticeFingering, selectPracticeFingerCue } from './fingering-cues.mjs?v=1458d8543105';
-import { chooseLearningTempo, adaptLearningTempo, createPerformancePlan, advancePerformanceTempo } from './learning-tempo.mjs?v=1458d8543105';
-import { TimedSession } from './timed-session.mjs?v=1458d8543105';
-import { chooseFlowOutcome } from './flow-progression.mjs?v=1458d8543105';
-import { chooseTimingAdvice } from './timing-feedback.mjs?v=1458d8543105';
-import { practicePolicy } from './practice-policy.mjs?v=1458d8543105';
-import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=1458d8543105';
-import { createCoachFeedback } from './coach-feedback.mjs?v=1458d8543105';
-import { createPostplayCoach } from './postplay-coach.mjs?v=1458d8543105';
-import { createPracticeScene } from './practice-scene.mjs?v=1458d8543105';
+import { detectPitch, noteInfo, frequencyForMidi } from './pitch.mjs?v=bc0d6f000e4b';
+import { LESSONS, PracticeSession } from './session.mjs?v=bc0d6f000e4b';
+import { PianoInputGate } from './piano-input-gate.mjs?v=bc0d6f000e4b';
+import {createMicStream} from './mic-stream.mjs?v=bc0d6f000e4b';
+import { ALL_COURSE as COURSE, ACTIVE_COURSE, RECOMMENDED_COURSE, MasterySession, normalizeCourseProgress, recordCourseAttempt, courseLessonStatus } from './course.mjs?v=bc0d6f000e4b';
+import { COMPOSITIONS, parseMidiComposition, buildFragments, toPracticeNotes } from './compositions.mjs?v=bc0d6f000e4b';
+import { createTeacher } from './teacher.mjs?v=bc0d6f000e4b';
+import { createScoreTimeline } from './score.mjs?v=bc0d6f000e4b';
+import { FollowTransport } from './transport.mjs?v=bc0d6f000e4b';
+import { ChordSession } from './chord-session.mjs?v=bc0d6f000e4b';
+import { createArrangement } from './arrangement.mjs?v=bc0d6f000e4b';
+import { createAccompanimentPlayer } from './accompaniment.mjs?v=bc0d6f000e4b';
+import { PolyphonicInputGate, requiredFrameSize } from './polyphonic.mjs?v=bc0d6f000e4b';
+import { createMidiInput } from './midi-input.mjs?v=bc0d6f000e4b';
+import { EarlyInputBuffer } from './early-input.mjs?v=bc0d6f000e4b';
+import { chooseProblemSection, sectionBacking } from './practice-section.mjs?v=bc0d6f000e4b';
+import { createKeyboardRange, keyboardViewportOptions } from './keyboard-range.mjs?v=bc0d6f000e4b';
+import { createCompositionStudy, normalizeStudyProgress, recordStudyAttempt, isStudyStageComplete, recommendSongRepair } from './composition-study.mjs?v=bc0d6f000e4b';
+import { createLessonIntro, createNotationGuide } from './lesson-intro.mjs?v=bc0d6f000e4b';
+import { createLessonPresenter } from './lesson-presenter.mjs?v=bc0d6f000e4b';
+import { drawNotation, describeStaffPosition } from './notation.mjs?v=bc0d6f000e4b';
+import { createMicroLesson, chooseMicroRepair, chooseMicroNext } from './microlearning.mjs?v=bc0d6f000e4b';
+import {normalizeLearningProgress} from './learning-path.mjs?v=bc0d6f000e4b';
+import { isCompactFoundationLesson } from './microlearning-data.mjs?v=bc0d6f000e4b';
+import { selectedPracticeDisplay } from './practice-display.mjs?v=bc0d6f000e4b';
+import {practiceOutcome} from './practice-outcome.mjs?v=bc0d6f000e4b';
+import {recordPracticeActivity,readPracticeActivity} from './practice-journal.mjs?v=bc0d6f000e4b';
+import { createSongMicroLesson } from './song-microlearning.mjs?v=bc0d6f000e4b';
+import { normalizeMicroProgress, getMicroRun, updateMicroRun } from './microlearning-progress.mjs?v=bc0d6f000e4b';
+import { createMicrostepView } from './microstep-ui.mjs?v=bc0d6f000e4b';
+import { supportLevel, resolveSupport, nextHelpLevel, supportLabel } from './support-policy.mjs?v=bc0d6f000e4b';
+import { chooseNativeRoute } from './native-route.mjs?v=bc0d6f000e4b';
+import { createPracticeFingering, selectPracticeFingerCue } from './fingering-cues.mjs?v=bc0d6f000e4b';
+import { chooseLearningTempo, adaptLearningTempo, createPerformancePlan, advancePerformanceTempo } from './learning-tempo.mjs?v=bc0d6f000e4b';
+import { TimedSession } from './timed-session.mjs?v=bc0d6f000e4b';
+import { chooseFlowOutcome } from './flow-progression.mjs?v=bc0d6f000e4b';
+import { chooseTimingAdvice } from './timing-feedback.mjs?v=bc0d6f000e4b';
+import { practicePolicy } from './practice-policy.mjs?v=bc0d6f000e4b';
+import { practiceVisualGeometry, noteBarBounds, buildPracticeRoute, noteBarMaterial } from './practice-visuals.mjs?v=bc0d6f000e4b';
+import { createCoachFeedback } from './coach-feedback.mjs?v=bc0d6f000e4b';
+import { createPostplayCoach } from './postplay-coach.mjs?v=bc0d6f000e4b';
+import { createPracticeScene } from './practice-scene.mjs?v=bc0d6f000e4b';
 
 export function mountPianoPlayer(root, options = {}) {
 const mountAbort=new AbortController();let embeddedActive=false,taskHelpSticky=false,homeSettings=false;
@@ -769,7 +769,7 @@ function updateSignal(pitch,rms,time) {
 
 function failMic(error) {
   const name=error?.name||'';
-  const message=['NotAllowedError','SecurityError'].includes(name) ? 'Микрофон недоступен. Открой сайт напрямую в Chrome или Safari и разреши микрофон в настройках сайта.' :
+  const message=['NotAllowedError','SecurityError'].includes(name) ? 'Микрофон недоступен. Разреши доступ к микрофону в настройках приложения или сайта и попробуй снова.' :
     name==='InputProtectionError' ? 'Не удалось включить защиту от речи. Попробуй снова в Chrome. Можно пропустить упражнение без оценки.' :
     name==='NotFoundError' ? 'Микрофон не найден. Проверь, подключён ли он, и попробуй снова.' :
     name==='NotReadableError' ? 'Микрофон занят или недоступен. Закрой другое приложение со звуком и попробуй снова.' :

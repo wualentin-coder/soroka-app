@@ -1,5 +1,5 @@
-import {songOnsetGroups,songFingerprint,musicalNoteKey} from './song-learning.mjs?v=1458d8543105';
-import {getFingeringPlan} from './fingering.mjs?v=1458d8543105';
+import {songOnsetGroups,songFingerprint,musicalNoteKey} from './song-learning.mjs?v=bc0d6f000e4b';
+import {getFingeringPlan} from './fingering.mjs?v=bc0d6f000e4b';
 
 const MAX_NOTES=5000,MAX_PARENT_STAGES=2048,WINDOW=.035,EPSILON=1e-9;
 // These flags keep notation formats available; practice-display selects the

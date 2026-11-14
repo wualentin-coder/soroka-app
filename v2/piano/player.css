@@ -872,7 +872,7 @@ body:has(#practice-view:not([hidden])) .toast{bottom:calc(20px + env(safe-area-i
 #practice-view .practice-panel,#practice-view .practice-panel:has(>#microstep-panel:not([hidden])){grid-template-rows:minmax(0,1fr) clamp(104px,27dvh,180px)!important;gap:0;background:var(--page)}
 #practice-view .practice-toolbar{position:absolute;inset:0 0 auto;height:0;padding:0;background:none;z-index:12;pointer-events:none;display:block}
 #practice-view .practice-toolbar>*{display:none!important}
-#practice-view .practice-toolbar>#start-button,#practice-view .practice-toolbar>#exit-practice,#practice-view .practice-toolbar>[data-open="settings"]{display:grid!important;place-items:center;position:absolute;top:calc(10px + env(safe-area-inset-top));width:44px;height:44px;min-height:44px;pointer-events:auto;border-radius:50%;background:color-mix(in srgb,var(--surface) 82%,transparent);box-shadow:none}
+#practice-view .practice-toolbar>#start-button,#practice-view .practice-toolbar>#exit-practice,#practice-view .practice-toolbar>[data-open="settings"]{display:grid!important;place-items:center;position:absolute;top:calc(10px + env(safe-area-inset-top));width:44px;height:44px;min-height:44px;pointer-events:auto;border-radius:14px;background:color-mix(in srgb,var(--surface) 82%,transparent);box-shadow:none}
 #practice-view #start-button{left:12px}#practice-view #exit-practice{right:64px}#practice-view .practice-toolbar>[data-open="settings"]{right:12px}
 #practice-view #microstep-panel,#practice-view #practice-route{display:none!important}
 #practice-view .progress-track{position:absolute;z-index:10;left:76px;right:122px;top:calc(24px + env(safe-area-inset-top));width:auto;height:12px!important;border:1px solid color-mix(in srgb,var(--text) 14%,var(--line));border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,transparent 0 15px,color-mix(in srgb,var(--text) 42%,transparent) 15px 16px,transparent 16px 18px),color-mix(in srgb,var(--surface) 88%,transparent)}
@@ -1023,7 +1023,7 @@ body:has(#practice-view:not([hidden])) .toast{bottom:calc(20px + env(safe-area-i
 #practice-view .strike-caption{left:14px;right:auto;bottom:calc(var(--strike-inset) + 8px);padding:0;border:0;background:none;font-size:9px;color:var(--muted)}
 #practice-view .scene-teacher{max-width:min(76%,640px)}
 #practice-view .scene-teacher span{white-space:normal;line-height:1.35}
-#practice-view #scene-skip{position:absolute;top:10px;right:68px;width:44px;height:44px;min-width:44px;padding:11px;z-index:10;border-radius:50%;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+#practice-view #scene-skip{position:absolute;top:10px;right:68px;width:44px;height:44px;min-width:44px;padding:11px;z-index:10;border-radius:14px;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
 #practice-view #scene-skip svg{width:22px;height:22px}
 #practice-view .scene-caption,#practice-view .progress-track{right:128px}
 #practice-view .scene-heard{position:absolute;left:14px;bottom:7px;z-index:7;display:flex;gap:14px;align-items:center;color:var(--muted);font-size:10px;pointer-events:none;font-variant-numeric:tabular-nums}

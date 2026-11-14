@@ -116,13 +116,13 @@ function pcMeters(st, animate) {
 
 function pcHero(d) {
   const on = d.on === true, off = d.on === false;
+  const stale = d.statusAt && Date.now() - Date.parse(d.statusAt) > 120000;
   const mode = on ? "on" : off ? "off" : "unknown";
-  const title = on ? (d.agent ? "Компьютер на связи" : "Компьютер включён") : off ? "Компьютер выключен" : "Нет данных о компьютере";
+  const title = stale || ui.pc.error ? "Последнее состояние компьютера" : on ? (d.agent ? "Компьютер на связи" : "Компьютер включён") : off ? "Компьютер выключен" : "Нет данных о компьютере";
   const st = d.status;
   const line = on ? [st?.uptime_seconds ? `работает ${pcUptime(st.uptime_seconds)}` : "", st?.active_user || ""].filter(Boolean).join(" · ") || (d.agent ? "агент на связи" : "агент Flow не запущен")
     : off ? "можно включить по сети" : "ESP32 давно не выходила на связь";
   // ESP32 и свежесть данных — только когда что-то не так: «на связи · только что» читать незачем.
-  const stale = d.statusAt && Date.now() - Date.parse(d.statusAt) > 120000;
   const hub = d.hub ? (stale ? "" : null) : "ESP32 не на связи — включить по сети не выйдет";
   const fresh = ui.pc.last?.cmd === "status" && ui.pc.last.status === "done";
   const magic = document.documentElement.dataset.flowDesign === "magic";

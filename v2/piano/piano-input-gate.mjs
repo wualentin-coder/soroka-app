@@ -1,4 +1,4 @@
-import {harmonicProfile, profileSimilarity} from './harmonic-profile.mjs?v=1458d8543105';
+import {harmonicProfile, profileSimilarity} from './harmonic-profile.mjs?v=bc0d6f000e4b';
 
 /** Target-independent periodic-attack gate. Not a speech classifier or source
  * separator. MIDI bypasses this gate. No lesson target is accepted as input.

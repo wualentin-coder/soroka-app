@@ -1,7 +1,7 @@
-import {normalizeCourseProgress} from './course.mjs?v=1458d8543105';
-import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=1458d8543105';
-import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=1458d8543105';
-import {normalizePerformanceProgress} from './learning-tempo.mjs?v=1458d8543105';
+import {normalizeCourseProgress} from './course.mjs?v=bc0d6f000e4b';
+import {normalizeLearningProgress,mergeLearningProgress} from './learning-path.mjs?v=bc0d6f000e4b';
+import {normalizeMicroProgress,mergeMicroProgress} from './microlearning-progress.mjs?v=bc0d6f000e4b';
+import {normalizePerformanceProgress} from './learning-tempo.mjs?v=bc0d6f000e4b';
 
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const finite=v=>Number.isFinite(v)&&v>=0?v:0;

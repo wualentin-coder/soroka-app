@@ -10,7 +10,7 @@
     if (pending) return pending;
     pending = (async () => {
       const r = await fetch('./sport-library/catalog.json', {cache:'no-cache'});
-      if (!r.ok) throw Error('catalogue_unavailable');
+      if (!r.ok) throw Error(r.status === 404 ? 'catalogue_missing' : 'catalogue_unavailable');
       const data = await r.json();
       if (data.schema !== 1 || !Array.isArray(data.exercises)) throw Error('catalogue_invalid');
       catalogue = data.exercises.filter(e => /^[a-zA-Z0-9_-]{1,40}$/.test(e.id) && typeof e.name === 'string' && Array.isArray(e.instructions))
@@ -37,8 +37,12 @@
         const exact = rows.filter(e=>e.search===normalize(this.name));
         this.selected = rows.find(e=>e.id===mapped) || (exact.length===1 ? exact[0] : null);
         this.draw();
-      }).catch(() => {
+      }).catch(error => {
         if (!this.isConnected || generation !== this.generation) return;
+        if (error.message === 'catalogue_missing') {
+          this.innerHTML='<p class="ss-quiet" role="status">Анимации пока не подключены. Описание упражнения доступно во вкладке «Техника».</p>';
+          return;
+        }
         this.innerHTML='<p class="ss-quiet" role="status">Каталог недоступен</p><button type="button" class="ss-text" data-library-retry>Повторить</button>';
         this.querySelector('button').onclick=()=>{this.disconnectedCallback();this.connectedCallback();};
       });

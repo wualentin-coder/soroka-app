@@ -1,0 +1,5 @@
+/* Runtime aliases keep library components on the user's current Flow accent. */
+.flow-native-picker,.flow-bound-picker{--fu-bg:var(--page);--fu-surface:var(--surface);--fu-text:var(--text);--fu-muted:var(--muted);--fu-line:var(--line);--fu-accent:var(--accent);--fu-on:var(--accent-ink);--fu-danger:var(--danger);--fu-font:Manrope,system-ui,sans-serif;--fu-radius:24px;--fu-pad:20px;--fu-time:440ms;--fu-ease:cubic-bezier(.4,0,.2,1);--fu-glow:.14}
+.flow-native-picker{position:fixed;top:1px;left:1px;width:2px;height:2px;z-index:100}
+.flow-bound-picker{display:block;width:100%;min-width:0}
+html[data-flow-design=magic] #app input.flow-picker-source{position:absolute;width:1px;height:1px;min-width:0;min-height:0;padding:0;margin:-1px;clip-path:inset(50%);opacity:0;pointer-events:none}

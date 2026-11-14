@@ -319,9 +319,9 @@ html[data-flow-design=magic] .dc2-compose-sub>button{display:grid;place-items:ce
 html[data-flow-design=magic] .dc2-compose-sub>button:hover{color:var(--warn);background:var(--warn-soft)}
 html[data-flow-design=magic] .check-subs{display:grid;gap:0;margin:0 0 4px 14px;padding-left:0}
 html[data-flow-design=magic] .check-sub{position:relative;display:flex;align-items:center;gap:8px;min-height:58px;padding:6px 0;color:var(--text);font-size:15px;line-height:1.4}
-html[data-flow-design=magic] .check-sub:before{content:'';position:absolute;left:-12px;top:0;width:12px;height:50%;border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-bottom-left-radius:6px}
-html[data-flow-design=magic] .check-sub:after{content:'';position:absolute;left:-12px;right:0;top:0;height:1px;background:var(--line)}
-html[data-flow-design=magic] .check-sub .sub-check{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;min-width:28px;min-height:28px;border:1px solid var(--muted);border-radius:9px;background:transparent;color:var(--accent-ink);padding:0}
+html[data-flow-design=magic] .check-sub:before{content:none}
+html[data-flow-design=magic] .check-sub:after{content:none}
+html[data-flow-design=magic] .check-sub .sub-check{position:relative;z-index:1;display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;border:0;border-radius:7px;background:transparent;color:var(--accent-ink);padding:0}
 html[data-flow-design=magic] .check-sub .sub-check.checked{background:var(--accent);border-color:var(--accent)}
 html[data-flow-design=magic] .check-sub .sub-check .icon{width:15px;height:15px;opacity:0}
 html[data-flow-design=magic] .check-sub .sub-check.checked .icon{opacity:1}
@@ -549,3 +549,29 @@ html[data-flow-design=magic] .movie-toolbar-actions .icon-button{width:44px;heig
 html[data-flow-design=magic] #movie-deck-count{display:none!important}
 html[data-flow-design=magic] .modal-backdrop:has(>.note-sheet,>.saved-view-lists){padding:0!important;inset:0!important;align-items:stretch!important}
 html[data-flow-design=magic] :is(.note-sheet,.saved-view-lists){width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important;margin:0!important}
+
+/* Preserve readable text after applying the Digital surface to light brand cards. */
+html[data-flow-design=magic] .dc-category-cards .wallet .loyalty-card.is-light .lw{color:var(--text)}
+html[data-flow-design=magic] .dc-category-cards .wallet .loyalty-card.is-light .loyalty-program{color:var(--muted)}
+html[data-flow-design=magic] .dc-category-cards .wallet .loyalty-card.is-light .loyalty-tail{color:var(--accent)}
+/* Shared action rows do not add a second rectangular surface inside the window. */
+html[data-flow-design=magic] .dc2-window .dc2-window-actions{background:transparent;padding-inline:0}
+html[data-flow-design=magic] .dc2-window .dc2-window-actions>button:only-child{grid-column:1/-1}
+html[data-flow-design=magic] .dc2-window-head h2 small{display:block;margin-top:6px;font:400 12px/1.5 Manrope,system-ui,sans-serif;color:var(--muted);letter-spacing:normal}
+html[data-flow-design=magic] .saved-add-options>button>span{display:grid;gap:4px;min-width:0}
+html[data-flow-design=magic] .saved-add-options>button>span>small{display:block;color:var(--muted);font-size:12px;line-height:1.5;font-weight:400}
+html[data-flow-design=magic] .saved-add-list-item>button[type=submit]{width:100%;min-height:44px;border-radius:14px}
+@media(max-width:480px){html[data-flow-design=magic] .sheet form:not(.note-plain) .field-row.address-parts{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* Audit: checklist geometry matches C01 in both editing and reading. */
+html[data-flow-design=magic] .note-rich ul.checks>li{padding-left:44px;min-height:44px}
+html[data-flow-design=magic] .note-rich ul.checks>li::before{box-sizing:border-box;left:11px;top:11px;width:22px;height:22px;border:1px solid var(--muted);border-radius:7px;transition:background-color .15s,border-color .15s}
+html[data-flow-design=magic] .note-rich ul.checks>li[data-done="1"]::before{background:var(--accent);border-color:var(--accent)}
+html[data-flow-design=magic] .note-rich ul.checks>li[data-done="1"]::after{content:"";position:absolute;left:19px;top:15px;width:5px;height:10px;border:solid var(--accent-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
+html[data-flow-design=magic] .note-rendered .note-check i{width:22px;height:22px;border-radius:7px;border-width:1px}
+/* Cooking progress uses the shared filled control, without a circular dial. */
+html[data-flow-design=magic] .cook-timer{border:1px solid var(--line);border-radius:14px;background:linear-gradient(to top,color-mix(in srgb,var(--accent) 28%,var(--surface)) calc(var(--p,0)*100%),var(--surface) 0);font-family:Manrope,system-ui,sans-serif}
+html[data-flow-design=magic] .cook-timer::before{display:none}
+html[data-flow-design=magic] .cook-timer.done{background:var(--accent-soft)}
+html[data-flow-design=magic] .cook-timer:is(.running,.done) small{color:var(--accent)}
+@media(prefers-reduced-motion:reduce){html[data-flow-design=magic] .note-rich ul.checks>li::before{transition:none}}

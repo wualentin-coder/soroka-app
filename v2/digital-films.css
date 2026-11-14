@@ -165,3 +165,13 @@ html[data-flow-design=magic] .df-film-sheet>.movie-run-actions>[data-action=movi
 html[data-motion=off] .df-movies .reco-load.busy .dc2-assistant-sign{animation:none}
 @media(prefers-reduced-motion:reduce){html:not([data-motion=on]) .df-movies .reco-load.busy .dc2-assistant-sign{animation:none}html:not([data-motion=on]) .df-movies .mu-tick{transition:none}}
 html[data-motion=off] .df-movies .mu-tick{transition:none}
+
+/* Audit V05/V06: flat review divider; poster stack stays inside its column. */
+html[data-flow-design=magic] .df-film-sheet .movie-review{box-shadow:none}
+html[data-flow-design=magic] .df-movies .mu-card-art{position:relative;flex:0 0 96px;width:96px;min-width:0;height:100px;padding:0}
+html[data-flow-design=magic] .df-movies .mu-card-art .mu-poster{position:absolute;top:5px;left:0;width:52px;height:90px;margin:0;transform:none}
+html[data-flow-design=magic] .df-movies .mu-card-art .mu-poster:nth-child(2){left:22px;top:3px}
+html[data-flow-design=magic] .df-movies .mu-card-art .mu-poster:nth-child(n+3){left:44px;top:0}
+html[data-flow-design=magic] .df-movies .mu-card-copy{min-width:0;overflow-wrap:anywhere}
+html[data-flow-design=magic] .df-movies .map-categories>button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;box-shadow:none}
+html[data-flow-design=magic] .df-movies .map-categories>button.active{border-bottom-color:var(--accent);color:var(--accent);background:none}

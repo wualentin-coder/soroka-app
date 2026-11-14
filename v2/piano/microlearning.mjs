@@ -1,11 +1,11 @@
-import {ALL_COURSE as COURSE} from './course.mjs?v=1458d8543105';
-import {CURRICULUM_V2_GUIDES} from './curriculum-v2.mjs?v=1458d8543105';
-import {createScoreTimeline} from './score.mjs?v=1458d8543105';
-import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=1458d8543105';
-import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS,isCompactFoundationLesson} from './microlearning-data.mjs?v=1458d8543105';
-import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=1458d8543105';
-import {createMixedPracticeStages} from './mixed-practice.mjs?v=1458d8543105';
-import {supportLevel} from './support-policy.mjs?v=1458d8543105';
+import {ALL_COURSE as COURSE} from './course.mjs?v=bc0d6f000e4b';
+import {CURRICULUM_V2_GUIDES} from './curriculum-v2.mjs?v=bc0d6f000e4b';
+import {createScoreTimeline} from './score.mjs?v=bc0d6f000e4b';
+import {songOnsetGroups,songFingerprint} from './song-learning.mjs?v=bc0d6f000e4b';
+import {MICROLESSONS,MICRO_CUES,MICRO_HAND_BLOCKS,isCompactFoundationLesson} from './microlearning-data.mjs?v=bc0d6f000e4b';
+import {LESSON_GUIDES,FOUNDATION_TRANSITIONS} from './lesson-guides.mjs?v=bc0d6f000e4b';
+import {createMixedPracticeStages} from './mixed-practice.mjs?v=bc0d6f000e4b';
+import {supportLevel} from './support-policy.mjs?v=bc0d6f000e4b';
 
 const MAX_NOTES=5000,MAX_STAGES=48;
 const canonical=new Map(COURSE.map(lesson=>[lesson.id,lesson]));

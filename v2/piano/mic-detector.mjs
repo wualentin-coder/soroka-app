@@ -1,5 +1,5 @@
-import {detectPitch} from './pitch.mjs?v=1458d8543105';
-import {PianoInputGate} from './piano-input-gate.mjs?v=1458d8543105';
+import {detectPitch} from './pitch.mjs?v=bc0d6f000e4b';
+import {PianoInputGate} from './piano-input-gate.mjs?v=bc0d6f000e4b';
 /** A source check controls admission, never the expected exercise key. The
  * medium-confidence path retains the previous longer pitch confirmation. */
 export class MicDetector{

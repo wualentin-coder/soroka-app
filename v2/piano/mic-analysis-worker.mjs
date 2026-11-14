@@ -1,5 +1,5 @@
-import {MicResampler} from './mic-resampler.mjs?v=1458d8543105';
-import {MicDetector} from './mic-detector.mjs?v=1458d8543105';
+import {MicResampler} from './mic-resampler.mjs?v=bc0d6f000e4b';
+import {MicDetector} from './mic-detector.mjs?v=bc0d6f000e4b';
 let ort,session,port,queue=Promise.resolve(),pending=0,failed=false,settings={minRms:.001,polyphonic:false};
 let rate,detector,resampler,ring,total=0,nextPitch=0,lastPolyAt=-Infinity,origin=null,expectedEnd=null,modelInput=new Float32Array(512),modelLength=0,context=new Float32Array(64),modelState;
 const fail=error=>{if(!failed){failed=true;port?.close();self.postMessage({type:'error',message:String(error?.message||error)});}};

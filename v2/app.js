@@ -1,4 +1,4 @@
-﻿/* Дизайн-прототип: все записи хранятся только в этом браузере. */
+/* Дизайн-прототип: все записи хранятся только в этом браузере. */
 const STORAGE_KEY = "soroka-planner-prototype-v1";
 function classicDesign() { return document.documentElement.dataset.flowDesign === "classic"; }
 /** The classic shell retains its original theme choices; Magic has three dark surfaces. */
@@ -536,6 +536,7 @@ function taskSubtaskRows(checklist) {
   return checklist.split("\n").map(text => text.trim()).filter(Boolean).map(text => `<div class="dm-quick-sub"><span class="dm-quick-sub-dot" aria-hidden="true"></span><input type="text" value="${esc(text)}" placeholder="Введите подзадачу" aria-label="Подзадача" maxlength="120" data-task-sub><button type="button" data-action="task-subtask-remove" aria-label="Удалить подзадачу">${icon("close", "icon-sm")}</button></div>`).join("");
 }
 function taskAddSheet(sheet, item, field) {
+  registerTaskDraft(sheet, taskEntryValues(sheet, item, field));
   if (sheet.taskMode === "when") return taskWhenView(sheet, taskEntryValues(sheet, item, field));
   const draft = sheet.draft || {};
   const has = key => Object.prototype.hasOwnProperty.call(draft, key);
@@ -950,6 +951,20 @@ function monthStep(direction) {
   render();
 }
 
+function renderHeaderMenu() {
+  if (window.flowMagicSyncMenu?.()) { renderedShellChrome = window.flowMagicShellStamp(); return; }
+  render();
+}
+
+// Dismissing the header menu consumes the tap, including actions in other modules.
+document.addEventListener("click", event => {
+  if (!ui.menu || event.target.closest(".header-menu-wrap")) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  ui.menu = false;
+  renderHeaderMenu();
+}, true);
+
 document.addEventListener("click", event => {
   const control = event.target.closest("[data-action]");
   if (!control) {
@@ -970,7 +985,7 @@ document.addEventListener("click", event => {
   }
   if (action === "search") { if (!ui.sheet) { ui.searchQuery = ""; ui.searchPage = 1; ui.searchType = "all"; } ui.sheet = { kind: "search", justRendered: false }; ui.menu = false; render(); return; }
   if (action === "today-cards") { ui.menu = false; ui.sheet = { kind: "today-cards" }; render(); return; }
-  if (action === "menu") { ui.menu = !ui.menu; render(); return; }
+  if (action === "menu") { ui.menu = !ui.menu; renderHeaderMenu(); return; }
   if (action === "theme") {
     ui.theme = themeTone() === "dark" ? "light" : "dark";
     try { localStorage.setItem(THEME_KEY, ui.theme); } catch (_) {}
@@ -1370,7 +1385,7 @@ document.addEventListener("change", event => {
   const time = event.target.closest?.("[data-task-time]");
   if (time && ui.sheet?.kind === "entry") ui.sheet.draft = { ...(ui.sheet.draft || {}), time: time.value };
 });
-window.addEventListener("hashchange", () => { if (location.hash === "#sleep") history.replaceState(null, "", "#today"); const page = currentPage(); if (page !== ui.page) { if (!confirmSheetDiscard()) { history.replaceState(null, "", `#${ui.page}`); return; } ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
+window.addEventListener("hashchange", () => { if (location.hash === "#sleep") history.replaceState(null, "", "#today"); const page = currentPage(); if (page !== ui.page) { if (!ui.sheet && window.flowCompose?.back?.()) { history.replaceState(history.state, "", `#${ui.page}`); return; } if (!confirmSheetDiscard()) { history.replaceState(null, "", `#${ui.page}`); return; } ui.page = page; ui.sheet = null; ui.menu = false; render(); } });
 let calendarPointerStart = null;
 let suppressCalendarClick = false;
 document.addEventListener("pointerdown", event => {

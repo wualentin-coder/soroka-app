@@ -2,6 +2,20 @@
 let sheetViewState = null;
 let sheetReturnTarget = null;
 const sheetDiscardApproved = new WeakSet();
+// A new DOM defaultValue after visiting details is not a saved task.
+const taskDraftBaselines = new WeakMap();
+function registerTaskDraft(owner, values) {
+  const previous = taskDraftBaselines.get(owner);
+  taskDraftBaselines.set(owner, { initial: previous?.initial || { ...values }, current: { ...values } });
+}
+function taskDraftHasChanges(owner = ui.sheet) {
+  const snapshot = owner && taskDraftBaselines.get(owner);
+  if (!snapshot) return false;
+  const current = { ...snapshot.current, ...owner.draft };
+  const form = document.getElementById('entry-form');
+  if (form) Object.assign(current, Object.fromEntries(new FormData(form).entries()));
+  return Object.keys(snapshot.initial).some(key => String(current[key] ?? '') !== String(snapshot.initial[key] ?? ''));
+}
 function activeSheet() {
   return [...document.querySelectorAll('.sheet[aria-modal="true"]')].filter(n => n.getClientRects().length).at(-1) || null;
 }
@@ -22,6 +36,7 @@ function sheetFieldRows(node) {
 }
 function sheetHasChanges(node = activeSheet()) {
   if (!node) return false;
+  if (taskDraftHasChanges(sheetOwner(node))) return true;
   if (typeof universeSheetDirty === "function" && universeSheetDirty()) return true;
   if (typeof packingSheetDirty === "function" && packingSheetDirty()) return true;
   return sheetFieldRows(node).some(row => {
@@ -105,6 +120,13 @@ function closeActiveSheet(node = activeSheet()) {
 document.addEventListener('keydown', event => {
   // The shared star can work with a note without dismissing its underlying sheet.
   if (window.flowAssistant?.getState?.().open) return;
+  if (window.flowPickers?.isOpen()) {
+    if (event.key === 'Escape') {
+      event.preventDefault(); event.stopImmediatePropagation();
+      window.flowPickers.cancel();
+    }
+    return;
+  }
   const node = activeSheet();
   if (!node) return;
   if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); closeActiveSheet(node); return; }

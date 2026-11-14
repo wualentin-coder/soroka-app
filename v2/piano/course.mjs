@@ -1,6 +1,6 @@
-import {CURRICULUM_V2,CURRICULUM_V2_RECOMMENDED} from './curriculum-v2.mjs?v=1458d8543105';
-import { PracticeSession } from './session.mjs?v=1458d8543105';
-import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=1458d8543105';
+import {CURRICULUM_V2,CURRICULUM_V2_RECOMMENDED} from './curriculum-v2.mjs?v=bc0d6f000e4b';
+import { PracticeSession } from './session.mjs?v=bc0d6f000e4b';
+import { INTRODUCTORY_LESSONS, MUSICAL_LESSONS, MUSICAL_MODULE, PRACTICAL_LESSONS, PRACTICAL_MODULES, CURRICULUM_SKILLS, CURRICULUM_MODULE_SKILLS } from './curriculum-data.mjs?v=bc0d6f000e4b';
 
 export const MASTERY_METRIC = 'first-attempt-v1';
 export const COURSE_PROGRESS_VERSION = 1;

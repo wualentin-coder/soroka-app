@@ -31,7 +31,7 @@ html[data-flow-controls=on] input.flow-check-changed:checked::after{animation:fl
 @keyframes flow-check-draw{from{opacity:0;transform:scale(.65)}to{opacity:1;transform:scale(1)}}
 html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select){border-radius:12px}
 html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]),textarea,select):focus{outline:none!important}
-html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not(.search-box input),textarea,select):focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 38%,transparent)}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not(.search-box input),textarea,select):focus-visible{border-color:var(--accent);box-shadow:none}
 html[data-flow-controls=on][data-motion=off] input::after{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){html[data-flow-controls=on]:not([data-motion=on]) input::after{animation:none!important;transition:none!important}}
 
@@ -82,3 +82,19 @@ html[data-flow-controls=on] .mu-part-row.is-series::before{content:none}
 html[data-flow-controls=on] .mu-episode-panel{position:relative;margin:8px 0 2px;padding:8px 0 0;border:0;border-top:1px solid var(--line)}
 html[data-flow-controls=on] .mu-season{margin:0;padding:0;border:0;border-radius:0;background:none}
 html[data-flow-controls=on] .mu-season-head{min-height:52px;padding:0 0 8px;gap:4px}
+
+/* The shared moving indicator is a dark material, so its label uses light ink. */
+html[data-flow-controls=on] .flow-motion-bar>:is(button,a,[role=tab]):is(.active,[aria-selected=true],[aria-pressed=true]){color:var(--text)!important}
+html[data-flow-controls=on] .cook-ingredients i{display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--muted);border-radius:7px;transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)}
+html[data-flow-controls=on] .cook-ingredients button.done i{background:var(--accent);border-color:var(--accent);box-shadow:none}
+html[data-flow-controls=on] .cook-ingredients button.done i::after{content:'';width:12px;height:9px;clip-path:polygon(0 42%,15% 26%,39% 66%,86% 0,100% 15%,39% 100%);background:var(--accent-ink)}
+html[data-flow-controls=on] .gift-editor-row{grid-template-columns:44px minmax(0,1fr) 44px;gap:8px}
+html[data-flow-controls=on] .gift-check{display:grid;place-items:center;width:44px;height:44px;margin:0}
+html[data-flow-controls=on] .gift-check .task-check{display:grid;place-items:center;width:22px;height:22px;min-width:22px;margin:0;padding:0;border:1px solid var(--muted);border-radius:7px;background:none}
+html[data-flow-controls=on] .gift-check input{inset:11px}
+html[data-flow-controls=on] .gift-check .task-check .icon{width:16px;height:16px;opacity:0}
+html[data-flow-controls=on] .gift-check:has(input:checked) .task-check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+html[data-flow-controls=on] .gift-check:has(input:checked) .task-check .icon{opacity:1}
+html[data-flow-controls=on] .gift-editor-row>.icon-button{width:44px;height:44px}
+html[data-flow-design=magic] .search-sheet .search-filters>button{min-height:44px;padding:8px 12px;border:0;border-bottom:1px solid transparent;border-radius:0;background:none;box-shadow:none;color:var(--muted)}
+html[data-flow-design=magic] .search-sheet .search-filters>button.active{border-bottom-color:var(--accent);background:none;color:var(--accent)}
