@@ -1,9 +1,10 @@
-/* One Flow assistant, hosted by the existing app. The same compact assistant also serves the native camera popup. */
+/* One Flow assistant owner: the original floating-star scene in the app,
+   and a compact presentation in the external camera popup. */
 (()=>{
  'use strict';
  const popup=()=>window.SorokaAndroid?.assistantPopup?.()===true;
  const base=new URL('.',document.currentScript.src);let instance=null,pending=null,error=null;
- const load=import(new URL("assistant/324321fdb5/prototypes/soroka-planner/assistant-app.mjs",base).href).then(module=>{instance=module.createAppAssistant();if(pending){const request=pending;pending=null;void instance.open(...request);}window.dispatchEvent(new Event('flow:assistantready'));return instance;}).catch(problem=>{error=problem;pending=null;console.error('Flow assistant failed to load');if(typeof toast==='function')toast('Ассистент не загрузился. Обнови приложение.');});
+ const load=import(new URL("assistant/11913ce604/prototypes/soroka-planner/assistant-app.mjs",base).href).then(module=>{instance=module.createAppAssistant();if(pending){const request=pending;pending=null;void instance.open(...request);}window.dispatchEvent(new Event('flow:assistantready'));return instance;}).catch(problem=>{error=problem;pending=null;console.error('Flow assistant failed to load');if(typeof toast==='function')toast('Ассистент не загрузился. Обнови приложение.');});
  const open=(...args)=>{if(error)return false;if(instance){void instance.open(...args);return true;}pending=args;return true;};
  window.flowAssistant={open,openNote:session=>{if(instance)return instance.openNote(session);if(typeof toast==='function')toast('Дождись загрузки ассистента.');return false;},close:()=>{pending=null;return instance?.close();},dismiss:()=>{pending=null;return instance?.dismiss();},stop:()=>{pending=null;instance?.stop();},getState:()=>instance?.getState()||{open:!!pending,disabled:popup(),state:error?'error':'loading',microphone:false},ready:()=>load};
  document.documentElement.dataset.flowAssistant='app';
