@@ -18,17 +18,11 @@ html[data-camera-layer=true] #app .dm-topbar .island-section-symbol{position:abs
 html[data-camera-layer=true] #app .dm-topbar .island-section-symbol :is(svg,.magic-object){width:16px!important;height:16px!important}
 html[data-camera-layer=true] #app .dm-topbar .island-label{position:absolute!important;left:64px!important;right:auto!important;top:calc(var(--camera-ring-y) - 9px)!important;width:max-content!important;max-width:65px!important;height:18px!important;line-height:18px!important;font-size:11px!important;font-variant-numeric:tabular-nums;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden!important;transform:none!important;opacity:1!important;transition:none!important}
 html[data-camera-layer=true] #app .dm-topbar [data-camera-collapsed=true] :is(.island-label,.island-section-symbol){visibility:hidden!important}
-html[data-camera-layer=true] #app .assistant-fab{display:none!important}
-/* The assistant remains a visible, one-tap action even while an activity owns the camera. */
-html[data-camera-layer=true] #app .dm-topbar .camera-assistant{position:absolute;left:54px;top:0;width:44px;height:44px;min-width:44px;min-height:44px;padding:10px;border:0;background:none;color:var(--accent);z-index:10;touch-action:manipulation}
-.camera-assistant svg{width:24px;height:24px;overflow:visible}
-.camera-assistant path{fill:currentColor}
-.camera-assistant ellipse{fill:none;stroke:currentColor;stroke-width:.7;opacity:.55}
+/* Preserve the existing floating assistant star, including its bottom-right placement and motion. */
 html[data-camera-layer=true] #app .activity-island[data-camera-assistant-only=true]:before{display:none!important}
 html[data-camera-layer=true] #app .activity-island[data-camera-assistant-only=true] .island-orb{border-color:transparent!important}
 html[data-camera-layer=true] #app .activity-island[data-camera-assistant-only=true] .island-section-symbol{visibility:hidden!important}
 html[data-camera-layer=true]:not([data-native-camera=true]) #app .activity-island[data-camera-assistant-only=true]{visibility:hidden!important}
-html[data-camera-layer=true] #app .camera-assistant:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-radius:50%}
 html[data-camera-layer=true] .activity-island-card{border-radius:24px!important;background:var(--page)!important;padding:16px!important}
 html[data-camera-layer=true] .activity-island-card header{min-height:44px;gap:8px}
 html[data-camera-layer=true] .activity-island-card header strong{font-size:14px;line-height:1.4}
