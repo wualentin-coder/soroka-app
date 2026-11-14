@@ -154,7 +154,7 @@
     return controller;
   }
   function createController(options) {
-    const leavingLayers=new Set();
+    const leavingLayers=new Set();let assistantWasOpen=false;
     let pill = null, section = "Flow", layer = null, shown = null, pc = null, unavailable = false, page = options.page(), lastPanelHTML="", feedback=null, feedbackTimer=0, captureId=null, lastVoicePaint=0,suspended=false,knownRender='';
     const magic=()=>document.documentElement?.dataset.flowDesign==='magic';
     const hidden=()=>document.hidden||suspended;
@@ -245,7 +245,7 @@
         pill.dataset.progressKnown = String(state.progress !== null);
         const ring=pill.querySelector('.island-orb-progress');if(ring){ring.hidden=state.progress===null;ring.querySelector('circle')?.setAttribute('stroke-dasharray',`${state.progress??0} 100`);}
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);
-        pill.setAttribute("aria-label", state.kind==='idle'&&window.FlowCameraIsland?'Открыть ассистента Flow':`${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — открыть подробности. Удерживай, чтобы спросить Flow`);
+        pill.setAttribute("aria-label", ['idle','return'].includes(state.kind)&&window.FlowCameraIsland?'Открыть ассистента Flow':`${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — открыть подробности. Удерживай, чтобы спросить Flow`);
         window.FlowIslandSurface?.sync(pill.closest('.dm-topbar'),pill);
       }
       if (layer) {
@@ -274,7 +274,8 @@
       if(timeout)feedbackTimer=setTimeout(()=>{feedback=null;paint({quiet:true});},timeout);
     }
     document.addEventListener('flow:assistantphase',event=>{
-      const value=event.detail||{};if(value.open)close(false,false,true);if(value.open===false){pulse('return','Я рядом',1800);return;}
+      const value=event.detail||{},wasOpen=assistantWasOpen;if(typeof value.open==='boolean')assistantWasOpen=value.open;
+      if(value.open)close(false,false,true);if(value.open===false){if(wasOpen)pulse('return','Я рядом',1800);return;}
       if(value.open&&value.opened){pulse('return','Ассистент Flow',1800);return;}
       const phase={listening:['listen','Слушаю'],thinking:['think','Обрабатываю'],speaking:['speak','Отвечаю'],success:['success','Готово'],error:['error','Нужна проверка']}[value.state];
       if(phase)pulse(...phase,value.state==='success'?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}
