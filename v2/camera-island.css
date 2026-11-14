@@ -1,0 +1,34 @@
+/* Compact header and island share the native optical anchor; no canopy or duplicate brand. */
+html[data-camera-layer=true] #app .dm-topbar{height:52px!important;min-height:52px!important;background:transparent!important;border:0!important;backdrop-filter:none!important;overflow:visible!important}
+html[data-camera-layer=true] #app .dm-topbar :is(.dm-mobile-brand,.dm-breadcrumb,.island-canopy){display:none!important}
+html[data-camera-layer=true] #app .dm-topbar .camera-search{position:absolute!important;left:10px;top:0!important;width:44px;height:44px;padding:12px;z-index:5;background:none;border:0;color:var(--ink)}
+.camera-search svg{width:20px;height:20px}
+html[data-camera-layer=true] #app .dm-topbar .dm-toolbar{margin-left:auto}
+html[data-camera-layer=true] #app .dm-topbar .head-pill.activity-island{position:fixed!important;left:var(--camera-button-x)!important;top:var(--camera-button-y)!important;width:var(--camera-width)!important;min-width:44px!important;max-width:none!important;height:44px!important;min-height:44px!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;transform:none!important;overflow:visible!important;z-index:9;touch-action:manipulation}
+html[data-camera-layer=true] #app .dm-topbar .activity-island:before{content:''!important;position:absolute!important;left:0!important;right:0!important;top:calc(var(--camera-ring-y) - 16px)!important;bottom:auto!important;height:32px!important;width:auto!important;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent)!important;border-radius:30px!important;background:var(--page)!important;opacity:1!important;transform:none!important;box-shadow:none!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-camera-collapsed=true]:before{left:6px!important;right:6px!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island:after{display:none!important}
+html[data-camera-layer=true] #app .dm-topbar .island-orb{position:absolute!important;left:var(--camera-ring-x)!important;top:var(--camera-ring-y)!important;width:32px!important;height:32px!important;border:1px solid color-mix(in srgb,var(--accent) 25%,transparent)!important;border-radius:50%;box-sizing:border-box;background:none!important;filter:none!important;box-shadow:none!important;transform:translate(-50%,-50%)!important;opacity:1!important;animation:none!important}
+html[data-camera-layer=true] #app .dm-topbar .island-orb:before,html[data-camera-layer=true] #app .dm-topbar .island-orb:after{display:none!important}
+html[data-camera-layer=true] #app .dm-topbar .island-orb-progress{position:absolute;inset:-1px;width:32px;height:32px;transform:rotate(-90deg);overflow:visible}
+html[data-camera-layer=true] #app .dm-topbar .island-orb-progress[hidden]{display:none}
+html[data-camera-layer=true] #app .dm-topbar .island-orb-progress circle{fill:none;stroke:var(--accent);stroke-width:1.7;stroke-linecap:round;transition:stroke-dasharray 250ms linear}
+html[data-camera-layer=true] #app .dm-topbar .island-section-symbol{position:absolute!important;left:9px!important;top:calc(var(--camera-ring-y) - 8px)!important;width:16px!important;height:16px!important;transform:none!important;opacity:1!important;transition:none!important}
+html[data-camera-layer=true] #app .dm-topbar .island-section-symbol :is(svg,.magic-object){width:16px!important;height:16px!important}
+html[data-camera-layer=true] #app .dm-topbar .island-label{position:absolute!important;left:64px!important;right:auto!important;top:calc(var(--camera-ring-y) - 9px)!important;width:max-content!important;max-width:65px!important;height:18px!important;line-height:18px!important;font-size:11px!important;font-variant-numeric:tabular-nums;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden!important;transform:none!important;opacity:1!important;transition:none!important}
+html[data-camera-layer=true] #app .dm-topbar [data-camera-collapsed=true] :is(.island-label,.island-section-symbol){visibility:hidden!important}
+html[data-camera-layer=true] #app .assistant-fab{display:none!important}
+html[data-camera-layer=true] .activity-island-card{border-radius:24px!important;background:var(--page)!important;padding:16px!important}
+html[data-camera-layer=true] .activity-island-card:has(.island-render) .island-now{display:none}
+html[data-camera-layer=true] .activity-island-card .island-render{padding:10px 0;margin:0;border:0;background:none}
+html[data-camera-layer=true] .activity-island-card .island-render p{margin:6px 0;font-size:12px;line-height:1.5}
+html[data-camera-layer=true] .activity-island-card .island-pins{min-height:44px;margin-top:4px;padding:8px 0;border:0;border-top:1px solid var(--line);border-radius:0;background:none}
+html[data-camera-layer=true] .activity-island-card [data-island-assistant]{display:flex;align-items:center;min-height:44px;width:100%;border:0;background:none;color:var(--accent);font:inherit;text-align:left}
+html[data-camera-layer=true] #app [data-activity=disconnected] .island-orb{border-style:dashed!important;opacity:.55!important}
+html[data-camera-layer=true] #app [data-activity=pause] .island-orb{opacity:.5!important}
+html[data-camera-layer=true] #app :is([data-activity=listen],[data-activity=think],[data-activity=speak]) .island-orb{border-color:var(--accent)!important;animation:camera-breathe 1.3s ease-in-out infinite alternate!important}
+html[data-camera-layer=true] #app [data-activity=success] .island-orb{border-color:var(--accent)!important;animation:camera-breathe .6s ease-out 2 alternate!important}
+@keyframes camera-breathe{to{opacity:.45}}
+@media(prefers-reduced-motion:reduce){html[data-camera-layer=true] #app .island-orb{animation:none!important}.island-orb-progress circle{transition:none!important}}
+html[data-motion=off][data-camera-layer=true] #app .island-orb{animation:none!important}
+html[data-camera-layer=true] #app .activity-island:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:24px}

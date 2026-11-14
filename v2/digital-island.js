@@ -16,6 +16,7 @@
   }
   function release(){if(!active)return;cancelAnimationFrame(active.frame);active.observer.disconnect();delete active.bar.dataset.islandSurface;active=null;}
   function sync(bar,pill){
+    if(window.FlowCameraIsland){release();window.FlowCameraIsland.sync(bar,pill);return;}
     if(!bar?.isConnected||!pill?.isConnected)return;
     if(root.dataset.flowDesign!=='magic'||!(root.dataset.flowCompact==='true'||root.dataset.nativeCamera==='true')){release();return;}
     const canopy=bar.querySelector('.island-canopy');if(!canopy)return;

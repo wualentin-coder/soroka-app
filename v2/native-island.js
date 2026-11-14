@@ -6,7 +6,7 @@
   const done=new Set(),allowed=new Set(['assistant','render','sport','today']);
   const root=document.documentElement;
   let popup=false,popupOpened=false,closing=false,expanding=false,suspended=false,entrySheet=null,entryComposer=null,closeFrame=0,classicDraft=null;
-  let entryCaptures=new Set();
+  let entryCaptures=new Set(),popupAction='assistant';
   const sheet=()=>typeof ui==='undefined'?null:ui.sheet;
   function syncPopup(fresh=false){
     let value=false;try{value=bridge()?.assistantPopup?.()===true;}catch{}
@@ -26,6 +26,7 @@
     closeFrame=0;
     if(!popup||!popupOpened||closing||expanding||suspended||document.hidden||pending)return;
     if(window.flowAssistant?.getState().open)return;
+    if(window.FlowActivity?.getState?.()?.panelOpen)return;
     const composer=window.flowCompose?.getState();
     if(composer?.open&&(!window.flowAssistant||composer.layer!==entryComposer))return;
     if(sheet()&&sheet()!==entrySheet)return;
@@ -44,7 +45,8 @@
   });
   window.addEventListener('flow:assistantpopupchange',()=>syncPopup(true));
   window.addEventListener('flow:suspend',()=>{rememberClassic();suspended=true;});
-  document.addEventListener('flow:assistantphase',scheduleClose);
+  document.addEventListener('flow:assistantphase',event=>{if(event.detail?.open)popupAction='assistant';scheduleClose();});
+  document.addEventListener('flow:islandpanel',scheduleClose);
   document.addEventListener('flow:composer',event=>{if(event.detail?.reason==='submitted')classicDraft=null;scheduleClose();});
   for(const name of ['input','change','pointerdown','keydown'])document.addEventListener(name,rememberClassic,true);
   const app=document.body||document.getElementById?.('app');
@@ -93,11 +95,10 @@
   function consume(){
     if(working||!pending||document.hidden||suspended)return;
     const request=pending;
-    if(request.action==='assistant'&&popup){pending=null;ack(request.id);bridge()?.assistantPopupClose?.();return;}
     if(done.has(request.id)){pending=null;ack(request.id);return;}
     working=true;
     try{
-      let opened=false;
+      let opened=false;popupAction=request.action;
       if(request.action==='assistant'){
         if(window.flowAssistant){
           window.flowAssistant.open(document.querySelector('.activity-island'),{fresh:true});
@@ -106,6 +107,9 @@
           if(!window.flowCompose.getState().open)window.flowCompose.open({context:'any',...classicDraft,focus:false});
           opened=window.flowCompose.getState().open;
         }
+      }else if(window.FlowCameraIsland&&['render','today'].includes(request.action)&&window.FlowActivity?.open){
+        opened=window.FlowActivity.open();
+        if(opened&&popup)popupOpened=true;
       }else if(typeof navigate==='function'&&typeof ui!=='undefined'){
         if(ui.page!==request.action)navigate(request.action);
         // Declining the owner's unsaved-form prompt consumes this tap too.
@@ -118,7 +122,10 @@
   function ready(){
     suspended=false;syncPopup();
     const manual=sheet()&&sheet()!==entrySheet;
-    if(popup&&popupOpened&&!closing&&!document.hidden&&!manual&&window.flowAssistant&&!window.flowAssistant.getState().open)window.flowAssistant.open(null,{resume:true});
+    if(popup&&popupOpened&&!closing&&!document.hidden&&!manual){
+      if(popupAction==='assistant'&&window.flowAssistant&&!window.flowAssistant.getState().open)window.flowAssistant.open(null,{resume:true});
+      else if(['render','today'].includes(popupAction)&&!window.FlowActivity?.getState?.()?.panelOpen)window.FlowActivity?.open?.();
+    }
     appearancePending=false;lastState='';publish();consume();try{bridge()?.islandReady?.();}catch{}
   }
   window.addEventListener('flow:nativeisland',event=>{
@@ -126,7 +133,7 @@
     if(!/^[\w:-]{1,96}$/.test(id)||!allowed.has(value?.action))return;
     syncPopup();pending={id,action:value.action};consume();
   });
-  document.addEventListener('flow:activity',event=>{const value=event.detail?.kind==='card'?(event.detail.baseActivity||{kind:'idle',label:'Flow',progress:null,fresh:true}):event.detail;activity=value||activity;observedAt=Date.now();if(!timer)timer=setTimeout(publish,120);});
+  document.addEventListener('flow:activity',event=>{const value=event.detail?.kind==='card'?(event.detail.baseActivity||{kind:'idle',label:'Flow',progress:null,fresh:true}):event.detail;activity=value||activity;observedAt=Date.now();if(!timer)timer=setTimeout(publish,120);if(pending)consume();});
   document.addEventListener('flow:effectschange',()=>{lastState='';publish();});
   window.addEventListener('flow:assistantready',consume);
   window.addEventListener('flow:resume',ready);
@@ -135,4 +142,3 @@
   window.addEventListener('pagehide',()=>{clearTimeout(timer);timer=0;});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();
-

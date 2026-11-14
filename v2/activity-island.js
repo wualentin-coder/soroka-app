@@ -204,18 +204,20 @@
       if(magic()){if(peek&&current().attention)presentation.peek(1200);else presentation.collapse();}
       if (restoreFocus) pill?.focus({ preventScroll: true });
       if(!hidden())paint({quiet:true});
+      if(typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('flow:islandpanel',{detail:{open:false}}));
     }
     const duration = value => value === null ? "" : `${Math.round(value / 60)} мин`;
     function panel(state) {
       const render = state.render;
       const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls">${state.job.status==='delivering'?'':`<button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button>`}<button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
       const facts = render ? [render.fresh && render.frame !== null && render.frames !== null ? `${render.queue?'Готово':'Кадр'} ${render.frame} из ${render.frames}` : "", render.elapsed !== null ? `Идёт ${duration(render.elapsed)}` : "", render.eta !== null ? `Осталось ~${duration(render.eta)}` : ""].filter(Boolean).join(" · ") : "";
-      return `<header><strong>Сейчас в Flow</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>${magic()?`<p class="island-now">${escape(state.label)}</p>`:''}${render ? `<section class="island-render"><small>${render.fresh ? escape(render.app) : "Связь с ПК потеряна"}</small><b>${escape(render.title)}</b>${state.renderProgress===null?"":`<span>${state.renderProgress}%</span>`}${facts ? `<p>${escape(facts)}</p>` : ""}</section>` : ""}${state.processes?.length?`<section><h3>Процессы</h3>${state.processes.map((item,i)=>`<button type="button" data-island-process="${i}"><b>${escape(item.label)}</b><small>${item.progress===null?'Открыть':item.progress+'% · открыть'}</small></button>`).join('')}</section>`:''}${state.events.length ? `<section><h3>Ближайшее</h3>${state.events.map((event, i) => `<button type="button" data-island-event="${i}"><b>${escape(event.title)}</b><small>${escape(event.due || "")} ${escape(event.allDay ? "Весь день" : event.time || "")}</small></button>`).join("")}</section>` : ""}${state.tasks.length ? `<section><h3>Важные дела</h3>${state.tasks.map((task, i) => `<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due || "Без срока")}</small></button>`).join("")}</section>` : ""}${controls}${!render && !state.processes?.length && !state.events.length && !state.tasks.length ? "<p class=\"island-empty\">Сейчас всё спокойно.</p>" : ""}<button type="button" class="island-pins" data-island-pins>Закреплённое <span>→</span></button>`;
+      return `<header><strong>Сейчас в Flow</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>${magic()?`<p class="island-now">${escape(state.label)}</p>`:''}${render ? `<section class="island-render"><small>${render.fresh ? escape(render.app) : "Связь с ПК потеряна"}</small><b>${escape(render.title)}</b>${state.renderProgress===null?"":`<span>${state.renderProgress}%</span>`}${facts ? `<p>${escape(facts)}</p>` : ""}</section>` : ""}${state.processes?.length?`<section><h3>Процессы</h3>${state.processes.map((item,i)=>`<button type="button" data-island-process="${i}"><b>${escape(item.label)}</b><small>${item.progress===null?'Открыть':item.progress+'% · открыть'}</small></button>`).join('')}</section>`:''}${state.events.length ? `<section><h3>Ближайшее</h3>${state.events.map((event, i) => `<button type="button" data-island-event="${i}"><b>${escape(event.title)}</b><small>${escape(event.due || "")} ${escape(event.allDay ? "Весь день" : event.time || "")}</small></button>`).join("")}</section>` : ""}${state.tasks.length ? `<section><h3>Важные дела</h3>${state.tasks.map((task, i) => `<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due || "Без срока")}</small></button>`).join("")}</section>` : ""}${controls}${!render && !state.processes?.length && !state.events.length && !state.tasks.length ? "<p class=\"island-empty\">Сейчас всё спокойно.</p>" : ""}<button type="button" data-island-assistant>Спросить Flow <span aria-hidden="true">↗</span></button><button type="button" class="island-pins" data-island-pins>${render?'Очередь рендера':'Закреплённое'} <span>→</span></button>`;
     }
     function paint({quiet=false}={}) {
       const state = current();
       if(feedback){state.kind=feedback.kind;state.label=feedback.label;state.progress=null;}
       if (pill?.isConnected) {
+        pill.dataset.compactValue=state.card?String(state.card.count||1):state.progress!==null?state.progress+'%':state.kind==='event'?String(state.events.length||1):state.kind==='task'?String(state.tasks.length||1):'';
         let currentLabel=state.label;
         if(!magic()){
           const label=state.kind==='idle'&&section==='Flow'?'Flow рядом':state.label;if(pill.textContent!==label)pill.textContent=label;
@@ -243,7 +245,7 @@
         pill.dataset.progressKnown = String(state.progress !== null);
         const ring=pill.querySelector('.island-orb-progress');if(ring){ring.hidden=state.progress===null;ring.querySelector('circle')?.setAttribute('stroke-dasharray',`${state.progress??0} 100`);}
         pill.style.setProperty("--island-progress", `${state.progress ?? 0}%`);
-        pill.setAttribute("aria-label", `${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — текущая активность. Открыть подробности`);
+        pill.setAttribute("aria-label", state.kind==='idle'&&window.FlowCameraIsland?'Открыть ассистента Flow':`${currentLabel}${state.kind==='pause'&&state.progress!==null?' · '+state.progress+'%':''} — открыть подробности. Удерживай, чтобы спросить Flow`);
         window.FlowIslandSurface?.sync(pill.closest('.dm-topbar'),pill);
       }
       if (layer) {
@@ -288,9 +290,9 @@
       else if(v.phase==='closed'&&!v.retain){const pending=captureId!==null;captureId=null;if(pending&&feedback?.kind==='think'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}}
     });
     document.addEventListener('visibilitychange',()=>{if(document.hidden){close(false,false,true);clearTimeout(feedbackTimer);feedback=null;presentation.suspend();pill?.style.setProperty('--island-level','0');}});
-    function toggle() {
+    function toggle(showActivity=false) {
       if (layer) { close(); return; }
-      if(pill?.dataset.activity==='card'&&window.flowCardIsland?.getCurrent?.()){window.flowCardIsland.open(pill);return;}
+      if(showActivity!==true&&pill?.dataset.activity==='card'&&window.flowCardIsland?.getCurrent?.()){window.flowCardIsland.open(pill);return;}
       layer = document.createElement("div"); layer.className = "activity-island-layer";
       layer.innerHTML = '<section class="activity-island-card" role="region" aria-label="Текущая активность" tabindex="-1"></section>';
       document.body.appendChild(layer);
@@ -302,18 +304,20 @@
         if(entrance)entrance.id='flow-island-open';
       }
       card.focus({ preventScroll: true });
+      if(typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('flow:islandpanel',{detail:{open:true}}));
       layer.addEventListener("click", event => {
         const target = event.target.closest("button, .activity-island-scrim");
         if (!target) return;
         if (target.matches("[data-island-close], .activity-island-scrim")) { close(); return; }
+        if(target.hasAttribute('data-island-assistant')){close(false);window.flowAssistant?.open(pill);return;}
         if(target.hasAttribute('data-island-command')){const job=shown.job;if(job?.fresh&&typeof window.rmAction==='function')window.rmAction(target.dataset.islandCommand,{dataset:{id:String(job.id),name:job.name||'Рендер'}});return;}
-        if (target.hasAttribute("data-island-pins")) { close(false); options.pinned(); return; }
+        if (target.hasAttribute("data-island-pins")) { const render=!!shown?.render;window.flowAssistantPopup?.expand();close(false);if(render&&typeof navigate==="function")navigate("render");else options.pinned();return; }
         if(target.hasAttribute('data-island-process')){const process=shown.processes?.[Number(target.dataset.islandProcess)];if(process&&typeof navigate==='function'){close(false);navigate(process.route);if(typeof ui!=='undefined'&&ui.page==='sport'&&process.route==='sport')window.sorokaOpenSport?.();}return;}
         const state = shown;
         const task = target.hasAttribute("data-island-task");
         const index = Number(task ? target.dataset.islandTask : target.dataset.islandEvent);
         const record = (task ? state.tasks : state.events)[index];
-        if (record) { close(false); options.open(task ? "task" : "event", record.id); }
+        if (record) { window.flowAssistantPopup?.expand();close(false); options.open(task ? "task" : "event", record.id); }
       });
     }
     document.addEventListener("keydown", event => {
@@ -321,7 +325,7 @@
       if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); close(); }
 
     }, true);
-    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),width=Math.min(360,innerWidth-24),top=magic()?r.bottom+6:r.top;layer.style.setProperty('--island-left',`${Math.max(12,Math.min(innerWidth-width-12,r.left+r.width/2-width/2))}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);}
+    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),width=Math.min(360,innerWidth-24),popup=document.documentElement?.dataset.assistantPopup==='true',top=popup?(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--native-camera-center-y'))||22)+25:magic()?r.bottom+6:r.top,center=popup?innerWidth/2:r.left+r.width/2;layer.style.setProperty('--island-left',`${Math.max(12,Math.min(innerWidth-width-12,center-width/2))}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);}
     document.addEventListener('pointerdown',event=>{if(layer&&!layer.contains(event.target)&&!pill?.contains(event.target))close(false);},true);
     window.addEventListener?.('resize',position);window.addEventListener?.('scroll',position,{passive:true});
     window.addEventListener?.('flow:windowgeometry',position);
@@ -352,7 +356,7 @@
       pill.classList.add("activity-island"); pill.setAttribute("aria-haspopup", "false"); pill.setAttribute("aria-expanded", String(Boolean(layer)));
       if (!pill.dataset.islandBound) { pill.dataset.islandBound = "true"; pill.addEventListener("click", toggle); }
       position();paint();
-    }, close,refresh:(quiet=false)=>paint({quiet}),getState:()=>({...presentation.getState(),activity:current().kind,panelOpen:Boolean(layer)}) };
+    }, close,open:()=>{if(!layer)toggle(true);return Boolean(layer);},refresh:(quiet=false)=>paint({quiet}),getState:()=>({...presentation.getState(),activity:current().kind,panelOpen:Boolean(layer)}) };
   }
   function processSignal(name,value={}){
     const token=String(value.token||'').slice(0,96),active=value.active!==false;
@@ -393,6 +397,6 @@
     window.addEventListener?.('flow:resume',()=>{suspended=false;processes.all();controller?.refresh(true);schedule();});
     window.addEventListener?.('pagehide',()=>{clearTimeout(expiry);processes.clear();});
   }
-  window.FlowActivity = { model, eventStart, percent, createPresentation,createProcesses,processSignal,createStateSource, createPoller, mount };
+  window.FlowActivity = { model, eventStart, percent, createPresentation,createProcesses,processSignal,createStateSource, createPoller, mount,open:()=>controller?.open()||false,getState:()=>controller?.getState() };
   if(typeof document!=='undefined'&&document.addEventListener)connectProcesses();
 })();
