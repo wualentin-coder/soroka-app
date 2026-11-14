@@ -314,6 +314,7 @@
         }
         const ring=card.querySelector('.island-panel-ring');
         if(ring&&pill?.querySelector('.island-orb')){ring.innerHTML=pill.querySelector('.island-orb').innerHTML.replace('island-orb-progress','camera-progress');ring.dataset.activity=state.kind;ring.dataset.ringMode=pill.dataset.ringMode;}
+        window.FlowCameraIsland?.placeRing?.(ring);
       }
       if (typeof CustomEvent === "function") document.dispatchEvent(new CustomEvent("flow:activity", { detail: { kind:state.kind, progress:state.progress, label:state.label, fresh:feedback||state.process?true:state.render?.fresh??true, ...(state.kind==='card'?{baseActivity:state.cardBase}:{}) } }));
       return state.interval;
@@ -352,6 +353,7 @@
       panelRoute='activity';if(document.documentElement)document.documentElement.dataset.islandPanel='true';
       layer.innerHTML = '<div class="activity-island-scrim" aria-hidden="true"></div><section class="activity-island-card" role="region" aria-label="Текущая активность" tabindex="-1"></section>';
       document.body.appendChild(layer);
+      layer.addEventListener('scroll',()=>window.FlowCameraIsland?.placeRing?.(layer?.querySelector('.island-panel-ring')),true);
       pill?.setAttribute("aria-expanded", "true");
       paint();position();
       const card=layer.querySelector('.activity-island-card');
@@ -384,10 +386,11 @@
       if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); close(); }
 
     }, true);
-    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),anchor=window.FlowCameraIsland?.anchor?.()||{x:innerWidth/2,y:22},width=Math.min(400,innerWidth-20),top=magic()?Math.max(0,anchor.y-22):r.top,left=Math.max(10,Math.min(innerWidth-width-10,anchor.x-width/2));layer.style.setProperty('--island-left',`${left}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-panel-camera-x',`${anchor.x-left}px`);layer.style.setProperty('--island-panel-camera-y',`${anchor.y-top}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);}
+    function position(){if(!layer||!pill?.getBoundingClientRect)return;const r=pill.getBoundingClientRect(),anchor=window.FlowCameraIsland?.anchor?.()||{x:innerWidth/2,y:22},width=Math.min(400,innerWidth-20),top=magic()?Math.max(0,anchor.y-22):r.top,left=Math.max(10,Math.min(innerWidth-width-10,anchor.x-width/2));layer.style.setProperty('--island-left',`${left}px`);layer.style.setProperty('--island-top',`${top}px`);layer.style.setProperty('--island-width',`${width}px`);layer.style.setProperty('--island-panel-camera-x',`${anchor.x-left}px`);layer.style.setProperty('--island-panel-camera-y',`${anchor.y-top}px`);layer.style.setProperty('--island-available-height',`${Math.max(80,(window.visualViewport?.height||innerHeight)-top-12)}px`);window.FlowCameraIsland?.placeRing?.(layer.querySelector('.island-panel-ring'));}
     document.addEventListener('pointerdown',event=>{if(layer&&!layer.contains(event.target)&&!pill?.contains(event.target))close(false);},true);
     window.addEventListener?.('resize',position);window.addEventListener?.('scroll',position,{passive:true});
     window.addEventListener?.('flow:windowgeometry',position);
+    window.visualViewport?.addEventListener?.('resize',position);
     window.visualViewport?.addEventListener('resize',position);
     const poller = createPoller({ hidden, paint, read: async () => {
       if (typeof window.sorokaPc !== "function") return;

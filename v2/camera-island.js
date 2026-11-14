@@ -33,7 +33,15 @@
   }
   let search=bar.querySelector('.camera-search');if(!search){search=document.createElement('button');search.type='button';search.className='dm-icon-button camera-search';search.dataset.action='search';search.setAttribute('aria-label','Поиск по Flow');search.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>';bar.prepend(search);}
  }
- window.FlowCameraIsland={sync,anchor};
+ // Absolute coordinates are relative to the padding box, not the border edge.
+ // Use the actual containing block for both expanded skins, including scrolling.
+ function placeRing(ring){
+  const parent=ring?.offsetParent;if(!parent)return;
+  const point=anchor(),box=parent.getBoundingClientRect();
+  ring.style.left=(point.x-box.left-parent.clientLeft+parent.scrollLeft)+'px';
+  ring.style.top=(point.y-box.top-parent.clientTop+parent.scrollTop)+'px';
+ }
+ window.FlowCameraIsland={sync,anchor,placeRing};
  const refresh=()=>{const bar=document.querySelector('.dm-topbar');sync(bar,bar?.querySelector('.activity-island'));};
  window.addEventListener('resize',refresh);window.addEventListener('flow:windowgeometry',refresh);
  document.fonts?.ready.then(refresh);
