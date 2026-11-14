@@ -13,7 +13,8 @@
   const compact=assistantOnly||pill.dataset.islandOrb==='true'||root.dataset.cameraCalibration==='true';
   const label=pill.querySelector('.island-label'),value=pill.dataset.compactValue||'';
   if(label&&label.textContent!==value)label.textContent=value;
-  const textWidth=label?Math.ceil(label.scrollWidth):0,left=compact?22:42,width=compact?44:Math.max(82,42+16+Math.min(65,textWidth)+12);
+  const textWidth=value&&label?Math.ceil(label.scrollWidth):0,left=compact?22:42,width=compact?44:value?Math.max(82,70+Math.min(65,textWidth)):64;
+  pill.dataset.ringMode=pill.dataset.progressKnown==='true'?'progress':({render:'working',think:'working',music:'media',practice:'media',speak:'media',listen:'voice',event:'event',task:'event',card:'card',error:'error',success:'success'}[pill.dataset.activity]||'idle');
   const top=Math.max(0,y-22);
   for(const[k,v]of Object.entries({'--camera-button-x':`${x-left}px`,'--camera-button-y':`${top}px`,'--camera-width':`${width}px`,'--camera-ring-x':`${left}px`,'--camera-ring-y':`${y-top}px`}))if(pill.style.getPropertyValue(k)!==v)pill.style.setProperty(k,v);
   pill.dataset.cameraCollapsed=String(compact);
@@ -26,7 +27,7 @@
     for(const type of ['pointerup','pointercancel','lostpointercapture'])pill.addEventListener(type,cancel);
     pill.addEventListener('pointerleave',cancel);
     pill.addEventListener('contextmenu',event=>event.preventDefault());
-    pill.addEventListener('click',event=>{cancel();if(held||['idle','return'].includes(pill.dataset.activity)){event.preventDefault();event.stopImmediatePropagation();if(!held)window.flowAssistant?.open(pill);held=false;}},true);
+    pill.addEventListener('click',event=>{cancel();if(held||['idle','return','navigation'].includes(pill.dataset.activity)){event.preventDefault();event.stopImmediatePropagation();if(!held)window.flowAssistant?.open(pill);held=false;}},true);
    }
   }
   let search=bar.querySelector('.camera-search');if(!search){search=document.createElement('button');search.type='button';search.className='dm-icon-button camera-search';search.dataset.action='search';search.setAttribute('aria-label','Поиск по Flow');search.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>';bar.prepend(search);}

@@ -23,7 +23,7 @@
     clearTimeout(record.decay); for (const effect of record.effects) effect.cancel();
     record.effects = []; record.layer?.remove(); record.layer = null;
     delete surface.dataset.windowPhase;
-    if (forget) { clearTimeout(record.expiry); operations.delete(surface); }
+    if (forget) { clearTimeout(record.expiry); operations.delete(surface); if(['queued','processing','accepted','pending'].includes(record.phase))document.dispatchEvent(new CustomEvent('flow:surfaceoperation',{detail:{id:record.id,phase:'cancelled'}})); }
   }
   function operationSurface(record) {
     const previous=record.surface;
@@ -40,13 +40,15 @@
   }
   function operationPhase(surface, record, phase) {
     if(!record.surface.isConnected){scan(document.body);surface=operationSurface(record)||surface;}else surface=record.surface;
-    if (operations.get(surface) !== record || !foreground(surface) || !moving() || performance.now() > record.expires) {
+    if (operations.get(surface) !== record || !foreground(surface) || !available() || performance.now() > record.expires) {
       if (operations.get(surface) === record) clearResponse(surface); return false;
     }
     if (!['queued','processing','accepted','confirmed','rejected','pending','cancelled'].includes(phase)) return false;
     clearResponse(surface, false);
     if (phase === 'cancelled') { clearResponse(surface); return true; }
     record.phase = phase; surface.dataset.windowPhase = phase;
+    document.dispatchEvent(new CustomEvent('flow:surfaceoperation',{detail:{id:record.id,phase}}));
+    if(!moving())return true;
     const layer = document.createElement('i'); layer.className = 'flow-surface-response'; layer.setAttribute('aria-hidden','true');
     layer.innerHTML = '<i class="flow-response-contour"></i><i class="flow-response-echo"></i>'; surface.append(layer); record.layer = layer;
     const config = {
@@ -61,16 +63,15 @@
       {opacity:0,transform:index?'scale(1.012)':'scale(1)'}
     ],{duration:config[0],easing:'cubic-bezier(.2,.6,.25,1)'}));
     record.decay = setTimeout(() => { if (operations.get(record.surface) === record) clearResponse(record.surface,false); },config[0]+40);
-    document.dispatchEvent(new CustomEvent('flow:surfaceoperation',{detail:{id:record.id,phase}}));
     return true;
   }
   function beginOperation(origin, phase = 'queued') {
     const surface = origin instanceof Element ? surfaceOf(origin) : null;
-    if (!foreground(surface) || !moving()) return null;
+    if (!foreground(surface) || !available()) return null;
     clearResponse(surface);
     const record = {id:++operationSequence,surface,identity:surfaceOwners.get(surface),phase:'',effects:[],layer:null,expires:performance.now()+65000};
     operations.set(surface,record); record.expiry=setTimeout(()=>{if(operations.get(record.surface)===record)clearResponse(record.surface);},65000);
-    const handle = Object.freeze({current:()=>operations.get(record.surface)===record&&foreground(record.surface)&&moving()&&performance.now()<=record.expires,sameOwner:node=>{const identity=surfaceOwners.get(node);return node===record.surface||!!(identity&&record.identity&&identity.owner===record.identity.owner&&identity.stamp===record.identity.stamp);}, update:value=>operationPhase(record.surface,record,value), cancel:()=>{if(operations.get(record.surface)===record)clearResponse(record.surface);}});
+    const handle = Object.freeze({current:()=>operations.get(record.surface)===record&&foreground(record.surface)&&available()&&performance.now()<=record.expires,sameOwner:node=>{const identity=surfaceOwners.get(node);return node===record.surface||!!(identity&&record.identity&&identity.owner===record.identity.owner&&identity.stamp===record.identity.stamp);}, update:value=>operationPhase(record.surface,record,value), cancel:()=>{if(operations.get(record.surface)===record)clearResponse(record.surface);}});
     operationPhase(surface,record,phase); return handle;
   }
   function clearInteractions() { clearTimeout(interactionCleanup);interactionCleanup=0;interactionEvents=[]; }
@@ -97,7 +98,8 @@
   for (const name of ['pointerdown','click','input','change','submit']) document.addEventListener(name,rememberInteraction,{capture:true,signal});
   document.addEventListener('invalid',event=>{const surface=surfaceOf(event.target);if(foreground(surface)){focus(event);beginOperation(surface,'rejected');}},{capture:true,signal});
   const reduced = () => window.flowDigital?.reducedMotion?.() ?? matchMedia('(prefers-reduced-motion:reduce)').matches;
-  const moving = () => !disposed && !suspended && pageActive && !document.hidden && root.dataset.motion !== 'off' && !reduced();
+  const available = () => !disposed && !suspended && pageActive && !document.hidden;
+  const moving = () => available() && root.dataset.motion !== 'off' && !reduced();
   const resize = new ResizeObserver(() => schedule());
   function visible(node) { return node.isConnected && !node.hidden && node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'; }
   function clearInput(surface) { const owned = inputs.get(surface); if (!owned) return; for (const effect of owned.effects) effect.cancel(); owned.node.remove(); inputs.delete(surface); }
@@ -147,7 +149,10 @@
     }
     if (active) root.dataset.flowSurface = 'window'; else delete root.dataset.flowSurface;
     for (const [surface] of inputs) if (!moving() || !visible(surface) || surface !== active) clearInput(surface);
-    for (const [surface] of operations) if (!moving() || !foreground(surface)) clearResponse(surface);
+    for (const [surface] of operations) {
+      if (!available() || !foreground(surface)) clearResponse(surface);
+      else if (!moving()) clearResponse(surface,false);
+    }
     avoidAssistant();syncProcess();
     const pill = document.querySelector('.dm-topbar .head-pill');
     if (pill && !window.flowCompose && window.FlowActivity && typeof ui !== 'undefined' && typeof data !== 'undefined') window.FlowActivity.mount(pill, { section: 'Flow', page: () => ui.page, data: () => data, pinned: () => window.flowCompose?.open?.(), open: (kind, id) => { if (typeof openEntry === 'function') openEntry(kind, '', id); } });

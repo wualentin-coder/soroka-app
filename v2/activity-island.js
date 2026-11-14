@@ -25,7 +25,7 @@
     if (cached && cached.timezone === timezone && cached.due === event.due && cached.time === event.time && cached.startsAt === event.startsAt&&cached.repeat===repeat&&cached.day===day&&!(yearly&&!cached.value?.allDay&&cached.value?.at<now)) return cached.value;
     let value=null;
     const explicit=event.startsAt?Date.parse(event.startsAt):null;
-    if(event.startsAt&&!yearly){if(Number.isFinite(explicit))value={at:explicit,due:validDay(event.due)?event.due:localDay(explicit,timezone),time:event.time||'',allDay:false};}
+    if(event.startsAt&&!yearly){if(Number.isFinite(explicit)){const parts=zonedParts(explicit,timezone);value={at:explicit,due:validDay(event.due)?event.due:localDay(explicit,timezone),time:event.time||(parts?`${parts.hour}:${parts.minute}`:''),allDay:false};}}
     else{
       const parts=event.startsAt&&Number.isFinite(explicit)?zonedParts(explicit,timezone):null;
       let due=event.due||(parts?`${parts.year}-${parts.month}-${parts.day}`:''),time=event.time||(parts?`${parts.hour}:${parts.minute}`:''),allDay=!time;
@@ -81,9 +81,41 @@
       else { kind = "render"; progress = percent(r.percent); const app = r.app === "Karma" ? "Karma" : "AE"; label = progress === null ? `${app} · рендер` : `${app} · ${progress}%`; }
     } else if (imminent) {
       kind = "event"; label = `Через ${Math.max(1, Math.ceil((imminent.at - now) / 60000))} мин`;
+    } else if (tasks.length) {
+      kind = "task"; label = `Важные дела · ${tasks.length}`;
     }
     const render = job?{fresh:queueFresh,app:job.app==='karma'?'Karma':job.app==='ae'?'After Effects':'Рендер',queue:true,title:job.name||'Рендер',frame:finite(job.done),frames:finite(job.total),eta:queueFresh&&job.status!=='paused'?finite(job.eta):null,elapsed:null}:active ? { fresh, app:r.app||'After Effects',title: r.comp || r.app || "After Effects", frame: finite(r.frame), frames: finite(r.frames), eta: fresh ? finite(r.eta) : null, elapsed: fresh && finite(r.since) !== null ? Math.max(0, Math.round(now / 1000 - Number(r.since))) : null } : null;
-    return { kind, label, progress, render,queueFresh,imminentId:imminent?.id, job:job?{id:job.id,name:job.name,status:job.status,fresh:queueFresh}:null, events, tasks, interval: active || (pc?.rmQueue?.jobs || []).some(j => ["queued","paused","rendering","delivering"].includes(j.status)) ? 3000 : 15000 };
+    return { kind, label, progress, render,queueFresh,queue:queueFresh?jobs.filter(item=>item.status==='queued').slice(0,3):[],minutes:imminent?Math.max(1,Math.ceil((imminent.at-now)/60000)):null,imminentId:imminent?.id, job:job?{id:job.id,name:job.name,status:job.status,fresh:queueFresh}:null, events, tasks, interval: active || (pc?.rmQueue?.jobs || []).some(j => ["queued","paused","rendering","delivering"].includes(j.status)) ? 3000 : 15000 };
+  }
+  function compactValue(state){
+    if(state.kind==='card'&&state.card)return String(state.card.count||1);
+    if(state.progress!==null&&state.progress!==undefined)return state.progress+'%';
+    if(state.kind==='event')return state.minutes+'м';
+    if(state.kind==='task')return String(state.tasks?.length||1);
+    return '';
+  }
+  function operationSignal(value={},route='today'){
+    if(!['string','number'].includes(typeof value.id)||!String(value.id))return null;
+    const id='surface-'+String(value.id).slice(0,80);
+    if(value.phase==='cancelled')return{id,active:false};
+    const phase={queued:['think','Передаю изменения',15000],processing:['think','Сохраняю',15000],accepted:['think','Принято · обрабатываю',15000],confirmed:['success','Сохранено',2400],rejected:['error','Не удалось сохранить',4500],pending:['pause','Ожидает подтверждения',6000]}[value.phase];
+    return phase?{id,kind:phase[0],label:phase[1],ttl:phase[2],priority:200,progress:null,route}:null;
+  }
+  function panelContent(state){
+    const render=state.render,process=state.process,event=state.events?.find(e=>e.id===state.imminentId)||state.events?.[0];
+    const renderActive=render&&(!process||['render','pause','disconnected'].includes(state.kind));
+    const title=renderActive?'Рендер':process?'Сейчас':state.kind==='task'?'Важные дела':event?'Событие':'Сейчас';
+    const head=`<header><strong>${title}</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>`;
+    const meter=value=>value==null?'':`<div class="island-meter" role="progressbar" aria-label="Прогресс" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent(value)}"><i style="width:${percent(value)}%"></i></div>`;
+    if(renderActive){
+      const facts=[render.fresh&&render.frame!==null&&render.frames!==null?`${render.frame} / ${render.frames} кадров`:'',render.eta!==null?`≈ ${Math.max(1,Math.ceil(render.eta/60))} мин`:''].filter(Boolean).join(' · ');
+      const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls">${state.job.status==='delivering'?'':`<button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button>`}<button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
+      return head+`<section class="island-render"><small>${render.fresh?escape(render.app):'Нет связи с ПК'}</small><div class="island-render-heading"><b>${escape(render.title)}</b>${state.renderProgress==null?'':`<span>${state.renderProgress}%</span>`}</div>${meter(state.renderProgress)}<p>${escape(facts||state.label)}</p></section>${state.queue?.length?`<section class="island-queue"><h3>Следом</h3>${state.queue.map((job,i)=>`<div class="island-queue-row"><small>${i+1}</small><b>${escape(job.name||'Рендер')}</b></div>`).join('')}</section>`:''}${controls}<button type="button" class="island-pins" data-island-pins>Вся очередь <span aria-hidden="true">→</span></button>`;
+    }
+    if(process)return head+`<section class="island-process-detail"><b>${escape(process.label)}</b>${meter(process.progress)}<button type="button" data-island-process="0">Открыть <span aria-hidden="true">→</span></button></section>`;
+    if(state.kind==='task')return head+`<section>${state.tasks.map((task,i)=>`<button type="button" data-island-task="${i}"><b>${escape(task.title)}</b><small>${escape(task.due||'Без срока')}</small></button>`).join('')}</section>`;
+    if(event){const index=state.events.indexOf(event);return head+`<section class="island-event-detail"><b>${escape(event.title)}</b><p>${escape(event.due||'')} · ${escape(event.allDay?'Весь день':event.time||'')}${state.minutes?` · через ${state.minutes} мин`:''}</p>${event.location?`<p>${escape(event.location)}</p>`:''}${event.description||event.notes?`<p class="island-event-description">${escape(event.description||event.notes)}</p>`:''}<button type="button" data-island-event="${index}">Открыть событие <span aria-hidden="true">→</span></button></section>`;}
+    return head+'<p class="island-empty">Сейчас всё спокойно</p><button type="button" data-island-assistant>Спросить Flow</button>';
   }
   function queueProgress(job){
     if(typeof window.rmProgress==='function')return percent(window.rmProgress(job));
@@ -208,6 +240,7 @@
     }
     const duration = value => value === null ? "" : `${Math.round(value / 60)} мин`;
     function panel(state) {
+      if(magic())return panelContent(state);
       const render = state.render;
       const controls=state.job?.fresh&&typeof window.rmAction==='function'?`<div class="island-render-controls">${state.job.status==='delivering'?'':`<button type="button" data-island-command="${state.job.status==='paused'?'rm-resume':'rm-pause'}">${state.job.status==='paused'?'Продолжить':'Пауза'}</button>`}<button type="button" data-island-command="rm-cancel">Остановить</button></div>`:'';
       const facts = render ? [render.fresh && render.frame !== null && render.frames !== null ? `${render.queue?'Готово':'Кадр'} ${render.frame} из ${render.frames}` : "", render.elapsed !== null ? `Идёт ${duration(render.elapsed)}` : "", render.eta !== null ? `Осталось ~${duration(render.eta)}` : ""].filter(Boolean).join(" · ") : "";
@@ -217,7 +250,7 @@
       const state = current();
       if(feedback){state.kind=feedback.kind;state.label=feedback.label;state.progress=null;}
       if (pill?.isConnected) {
-        pill.dataset.compactValue=state.card?String(state.card.count||1):state.progress!==null?state.progress+'%':state.kind==='event'?String(state.events.length||1):state.kind==='task'?String(state.tasks.length||1):'';
+        pill.dataset.compactValue=compactValue(state);
         let currentLabel=state.label;
         if(!magic()){
           const label=state.kind==='idle'&&section==='Flow'?'Flow рядом':state.label;if(pill.textContent!==label)pill.textContent=label;
@@ -230,7 +263,7 @@
         currentLabel=label;
         let mark=pill.querySelector('.island-section-symbol');const shape=category&&typeof savedIcon==='function'?savedIcon(category):({today:'calendar',tasks:'check',saved:'bookmark',finance:'wallet',more:'overview',settings:'settings',piano:'piano',english:'study',sport:'weight',pc:'desktop',render:'film',vpn:'key',server:'server',projects:'project',metrics:'chart',docs:'file',vault:'key',archive:'archive',inbox:'inbox'}[route]||'spark');
         if(!mark){mark=document.createElement('span');mark.className='island-section-symbol';mark.setAttribute('aria-hidden','true');pill.prepend(mark);}
-        const processShape={card:'loyalty',render:'film',pause:'pause',event:'calendar',timer:'clock',music:'music',practice:'piano',listen:'mic',think:'spark',speak:'music',success:'check',error:'bell',return:'spark'}[state.kind];
+        const processShape={card:'loyalty',render:'film',pause:'pause',event:'calendar',task:'check',timer:'clock',music:'music',practice:'piano',listen:'mic',think:'spark',speak:'music',success:'check',error:'bell',return:'spark'}[state.kind];
         const markKey=processShape?'process:'+state.kind:route+category+':section';
         if(mark.dataset.route!==markKey){mark.dataset.route=markKey;mark.innerHTML=processShape==='loyalty'?'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h8l10 10-7 7L3 10V4Z"/><circle cx="7" cy="8" r="1"/><path d="m11 12 5 5m-1-5h.01M12 17h.01"/></svg>':processShape==='spark'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1C13 9 15 11 23 12C15 13 13 15 12 23C11 15 9 13 1 12C9 11 11 9 12 1Z"/></svg>':processShape?(typeof icon==='function'?icon(processShape):''):!category&&typeof window.flowMagicObject==='function'?window.flowMagicObject(route):(typeof icon==='function'?icon(shape):'');}
         let text=pill.querySelector('.island-label');if(!text){text=document.createElement('span');text.className='island-label';pill.replaceChildren(text);}
@@ -357,6 +390,10 @@
       pill.classList.add("activity-island"); pill.setAttribute("aria-haspopup", "false"); pill.setAttribute("aria-expanded", String(Boolean(layer)));
       if (!pill.dataset.islandBound) { pill.dataset.islandBound = "true"; pill.addEventListener("click", toggle); }
       position();paint();
+      if(changed&&!feedback&&!hidden()){
+        if(current().kind==='idle')pulse('navigation',section,1100,'navigation');
+        else presentation.peek(1100);
+      }
     }, close,open:()=>{if(!layer)toggle(true);return Boolean(layer);},refresh:(quiet=false)=>paint({quiet}),getState:()=>({...presentation.getState(),activity:current().kind,panelOpen:Boolean(layer)}) };
   }
   function processSignal(name,value={}){
@@ -387,6 +424,7 @@
     function schedule(){clearTimeout(expiry);expiry=0;if(document.hidden||suspended)return;const at=processes.nextExpiry();if(Number.isFinite(at))expiry=setTimeout(()=>{expiry=0;processes.all();controller?.refresh(true);schedule();},Math.max(1,at-Date.now()+1));}
     function update(value){if(!value)return;const changed=processes.update(value);schedule();if(changed&&!document.hidden&&!suspended)controller?.refresh();}
     for(const [name,event]of [['sport','flow:sport-clock'],['music','flow:media'],['import','flow:import']])document.addEventListener(event,e=>update(processSignal(name,e.detail)));
+    document.addEventListener('flow:surfaceoperation',event=>update(operationSignal(event.detail,typeof ui!=='undefined'?ui.page:'today')));
     document.addEventListener('flow:audiofocus',event=>{if(event.detail?.owner==='piano-practice')update({id:'piano-practice',kind:'practice',label:'Практика пианино',route:'piano',priority:5,active:event.detail.active===true});});
     for(const event of ['play','pause','ended','emptied','error'])document.addEventListener(event,e=>{
       const media=e.target;if(typeof HTMLMediaElement==='undefined'||!(media instanceof HTMLMediaElement)||media.id==='enm-audio')return;
@@ -398,6 +436,6 @@
     window.addEventListener?.('flow:resume',()=>{suspended=false;processes.all();controller?.refresh(true);schedule();});
     window.addEventListener?.('pagehide',()=>{clearTimeout(expiry);processes.clear();});
   }
-  window.FlowActivity = { model, eventStart, percent, createPresentation,createProcesses,processSignal,createStateSource, createPoller, mount,open:()=>controller?.open()||false,getState:()=>controller?.getState() };
+  window.FlowActivity = { model, eventStart, percent, compactValue,operationSignal,panelContent,createPresentation,createProcesses,processSignal,createStateSource, createPoller, mount,open:()=>controller?.open()||false,getState:()=>controller?.getState() };
   if(typeof document!=='undefined'&&document.addEventListener)connectProcesses();
 })();

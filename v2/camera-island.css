@@ -49,3 +49,27 @@ html[data-camera-layer=true] #app [data-activity=success] .island-orb{border-col
 @media(prefers-reduced-motion:reduce){html[data-camera-layer=true] #app .island-orb{animation:none!important}.island-orb-progress circle{transition:none!important}}
 html[data-motion=off][data-camera-layer=true] #app .island-orb{animation:none!important}
 html[data-camera-layer=true] #app .activity-island:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:24px}
+/* The camera stays fixed while the content-sized capsule opens around it. */
+html[data-camera-layer=true] #app .dm-topbar .head-pill.activity-island{transition:width .42s cubic-bezier(.22,1,.36,1),left .42s cubic-bezier(.22,1,.36,1)!important}
+html[data-camera-layer=true] #app .dm-topbar .island-orb{transition:left .42s cubic-bezier(.22,1,.36,1)!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-ring-mode] .island-orb:after{content:'';position:absolute;inset:-1px;border-radius:50%;box-sizing:border-box;pointer-events:none}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-ring-mode=working] .island-orb:after{display:block!important;border:2px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);animation:camera-orbit 1.8s linear infinite!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-ring-mode=media] .island-orb:after{display:block!important;border:2px dotted var(--accent);animation:camera-orbit 6s linear infinite!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island:is([data-ring-mode=event],[data-ring-mode=card]) .island-orb{border:2px dashed var(--accent)!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-ring-mode=voice] .island-orb{border-width:calc(1px + 2px * var(--island-level,0))!important;box-shadow:0 0 calc(3px + 10px * var(--island-level,0)) color-mix(in srgb,var(--accent) 45%,transparent)!important}
+html[data-camera-layer=true] #app .dm-topbar .activity-island[data-ring-mode=error] .island-orb{border-color:var(--warn,var(--accent))!important;border-style:dashed!important}
+html[data-camera-layer=true] .activity-island-card .island-render-heading{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin:6px 0}
+html[data-camera-layer=true] .activity-island-card .island-render-heading b{font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+html[data-camera-layer=true] .activity-island-card .island-render-heading span{font-size:20px;line-height:1.2;color:var(--accent);flex:none;font-variant-numeric:tabular-nums}
+html[data-camera-layer=true] .activity-island-card .island-meter{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin:12px 0}
+html[data-camera-layer=true] .activity-island-card .island-meter i{display:block;height:100%;background:var(--accent);transition:width .25s linear}
+html[data-camera-layer=true] .activity-island-card .island-queue-row{display:flex;align-items:center;gap:12px;min-height:36px;font-size:12px}
+html[data-camera-layer=true] .activity-island-card .island-queue-row b{font-weight:500;overflow-wrap:anywhere}
+html[data-camera-layer=true] .activity-island-card .island-render-controls{display:flex;gap:8px;margin-top:12px}
+html[data-camera-layer=true] .activity-island-card .island-render-controls button{flex:1;min-height:44px;padding:8px 12px;font-size:13px;border-radius:14px}
+html[data-camera-layer=true] .activity-island-card :is(.island-event-detail,.island-process-detail)>b{display:block;font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+html[data-camera-layer=true] .activity-island-card :is(.island-event-detail,.island-process-detail)>p{font-size:13px;line-height:1.5;color:var(--muted);margin:8px 0}
+html[data-camera-layer=true] .activity-island-card .island-event-description{white-space:pre-wrap;max-height:160px;overflow:auto;overflow-wrap:anywhere}
+@keyframes camera-orbit{to{rotate:360deg}}
+@media(prefers-reduced-motion:reduce){html[data-camera-layer=true] #app .dm-topbar .activity-island,html[data-camera-layer=true] #app .dm-topbar .activity-island .island-orb,html[data-camera-layer=true] #app .dm-topbar .activity-island .island-orb:after{transition:none!important;animation:none!important}}
+html[data-motion=off][data-camera-layer=true] #app .dm-topbar .activity-island,html[data-motion=off][data-camera-layer=true] #app .dm-topbar .activity-island .island-orb,html[data-motion=off][data-camera-layer=true] #app .dm-topbar .activity-island .island-orb:after{transition:none!important;animation:none!important}
