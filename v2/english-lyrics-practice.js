@@ -36,10 +36,11 @@ function viewport(r){
  r.viewportCleanup=()=>{cancelAnimationFrame(frame);v?.removeEventListener('resize',schedule);v?.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);};
 }
 function dispatch(name,extra={}){return englishAction('en-training-lyrics-'+name,{dataset:{},...extra});}
-function payload(ex,index,event,extra={}){const q=ex.items[index];return{sessionId:ex.sessionId,kind:'media',contentId:ex.contentId,revision:ex.contentRevision,seed:ex.seed,index,event,answer:q?.answers||[],assistance:q?.assistance||{},heard:q?.heard||[],skipped:!!q?.skipped,...extra};}
+function payload(ex,index,event,extra={}){const q=ex.items[index];return{sessionId:ex.sessionId,kind:'media',contentId:ex.contentId,revision:ex.contentRevision,seed:ex.seed,index,event,...(q?.gapPercent!==undefined?{gapPercent:q.gapPercent}:{}),answer:q?.answers||[],assistance:q?.assistance||{},heard:q?.heard||[],skipped:!!q?.skipped,...extra};}
 function active(ex){return ex?.items[ex.index];}
 function answered(q){return q?.kind==='info'||q?.answers?.length===q?.gaps?.length;}
 function heard(q){return q?.heard?.includes('clip:0');}
+function keepCurrentLine(r,q){return !!(q?.answers?.length||q?.typed||r?.composing||r?.compositionPending||r&&answerInput(r.node)?.value);}
 const effect=fn=>window.flowEnglishSession.effect(fn);
 function lineMarkup(q){
  if(!q)return'';let at=0,out='';const cursor=q.answers?.length||0;
@@ -110,6 +111,7 @@ function paint(r){
  r.node.querySelector('[data-lyrics-finish]').hidden=!done;
  const jump=r.node.querySelector('[data-lyrics=jump]');jump.hidden=done||!(r.clip?.start>1)||r.started&&r.media.currentTime>=r.clip.start-.3;jump.textContent='К началу строки · '+Math.floor((r.clip?.start||0)/60)+':'+String(Math.floor((r.clip?.start||0)%60)).padStart(2,'0');
  const picture=r.node.querySelector('[data-lyrics=picture]');picture.setAttribute('aria-pressed',String(!!r.pictureHidden));picture.setAttribute('aria-label',r.pictureHidden?'Показать видео':'Скрыть видео с подсказками');r.node.querySelector('.en-lyrics-video').classList.toggle('is-picture-hidden',!!r.pictureHidden);r.node.querySelector('[data-lyrics-picture-cover]').hidden=!r.pictureHidden;
+ const settings=r.node.querySelector('[data-lyrics=settings]'),percent=ex.gapPercent||40;settings.hidden=done;picture.hidden=done;settings.textContent=percent+'%';settings.disabled=done||r.host.capabilities?.lyricsDifficulty!==true;settings.setAttribute('aria-expanded',String(!!r.settingsOpen));r.node.querySelector('[data-lyrics-settings]').hidden=!r.settingsOpen||done;r.node.querySelector('[data-lyrics-percent]').value=String(percent);r.node.querySelector('[data-lyrics-percent-value]').textContent=percent+'%';r.node.querySelector('[data-lyrics-percent-scope]').textContent=keepCurrentLine(r,q)?'Со следующей строки':'С текущей строки';
  paintWords(r,ex);
  schedule(r);
 }
@@ -122,11 +124,11 @@ function selectLine(r){
  const ex=exNow(),q=active(ex);if(!q){r.media.pause();paint(r);return;}
  if(r.index===ex.index){paint(r);return;}
  if(r.index>=0){cancelAnimationFrame(r.compositionFrame);r.composing=false;r.compositionPending=false;r.compositionValue='';r.compositionConsumed='';}
- r.index=ex.index;r.lineStarted=false;r.ranges=[];r.anchor=null;r.lastTime=null;r.atEnd=false;r.counted=false;
+ r.index=ex.index;r.lineStarted=false;r.ranges=[];r.anchor=null;r.lastTime=null;r.listenStart=null;r.atEnd=false;r.counted=false;
  if(q.showTranslation===undefined){const previous=ex.items.slice(0,ex.index).reverse().find(row=>typeof row.showTranslation==='boolean');dispatch('translation-init',{value:previous?.showTranslation??true});}
  const clip=q.playbackClip||q.clips[0];r.clip=clip;if(r.initialized)seek(r,clip.start);paint(r);
 }
-function covered(r){return window.FlowEnglishMediaPractice.tools.coverage(r.ranges,r.clip.start,r.clip.end)>=.9*(r.clip.end-r.clip.start);}
+function covered(r){const start=r.listenStart??r.clip.start;return window.FlowEnglishMediaPractice.tools.coverage(r.ranges,start,r.clip.end)>=.9*(r.clip.end-start);}
 function tick(r){
  if(!valid(r)){if(run===r)stop();return;}if(document.hidden)return;
  const t=r.media.currentTime,now=performance.now();
@@ -134,6 +136,7 @@ function tick(r){
   const arrived=t>=r.seeking.target-.05&&t<=r.seeking.target+1;
   if(!arrived&&now-r.seeking.at<6000){r.anchor=null;return;}
   r.seeking=null;r.anchor=null;r.lastTime=null;
+  if(!r.media.paused&&r.listenStart==null&&t>=r.clip.start-.05&&t<=r.clip.start+Math.min(.35,(r.clip.end-r.clip.start)*.25))r.listenStart=Math.max(r.clip.start,t);
  }
  const last=r.anchor;
  if(r.lastTime!==null&&t<r.lastTime-.25)dispatch('support');r.lastTime=t;
@@ -149,7 +152,7 @@ function mount(ex){
  if(run?.sid===ex.sessionId){selectLine(run);return;}
  const ticket=inputPrepared(primed)?primed:null;if(!ticket)cancelPrepared(undefined,false);primed=null;stop();const host=window.sorokaEnglishSession,owner=host?.captureOwner();if(!owner?.authorized||!host.isCurrent(owner)){ticket?.node.remove();return;}
  const prepared=ticket||prepareInput(),node=prepared?.node;if(!node)return;primed=null;node.querySelector('[data-lyrics-wait]')?.remove();
- node.insertAdjacentHTML('beforeend',`<div class="en-lyrics-wrap"><header>${label('back','Вся практика')}<div><h2>${h(ex.title)}</h2><small>${h(ex.sourceMeta.artist||'')}</small></div><button type="button" class="icon-button ef-icon-control" data-lyrics="picture" aria-label="Скрыть видео с подсказками" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/></svg></button><button type="button" class="icon-button ef-icon-control" data-lyrics="translation" aria-label="Перевод" aria-pressed="false">EN/RU</button></header><div class="en-lyrics-video"><video playsinline preload="metadata" disablepictureinpicture></video><div data-lyrics-youtube></div><div class="en-lyrics-picture-cover" data-lyrics-picture-cover hidden>Только звук</div><button type="button" class="en-lyrics-jump" data-lyrics="jump" hidden>К началу строки</button></div><div class="en-lyrics-toolbar"><div class="en-lyrics-progress"><span data-lyrics-count></span><progress value="0" max="1" aria-label="Строки"></progress></div><nav aria-label="Управление строкой">${label('replay','Повторить строку')}${label('play','Слушать строку')}${label('hint','Раскрыть слово')}${label('skip','Пропустить слово')}</nav></div><div class="en-lyrics-task"><p data-lyrics-line lang="en" class="en-lyrics-line"></p><p data-lyrics-translation class="en-lyrics-translation" lang="ru"></p><p data-lyrics-status role="status" aria-live="polite"></p></div><details data-lyrics-history-wrap hidden class="en-lyrics-history"><summary>Пройденные строки</summary><div data-lyrics-history></div></details><button type="button" class="primary-button" data-lyrics-finish hidden data-lyrics="back">К практике</button></div>`);
+ node.insertAdjacentHTML('beforeend',`<div class="en-lyrics-wrap"><header>${label('back',ex.videoLibraryId?'Библиотека видео':'Вся практика')}<div class="en-lyrics-title"><h2 title="${h(ex.title)}">${h(ex.title)}</h2><small>${h(ex.sourceMeta.artist||'')}</small></div><div class="en-lyrics-head-tools"><button type="button" class="icon-button ef-icon-control" data-lyrics="picture" aria-label="Скрыть видео с подсказками" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/></svg></button><button type="button" class="icon-button ef-icon-control" data-lyrics="translation" aria-label="Перевод" aria-pressed="false">EN/RU</button><button type="button" class="icon-button" data-lyrics="settings" aria-label="Пропущенные слова" aria-expanded="false">40%</button></div></header><section class="en-lyrics-settings" data-lyrics-settings hidden aria-label="Сложность упражнения"><label><span>Пропущено слов <output data-lyrics-percent-value>40%</output></span><input type="range" min="10" max="100" step="10" data-lyrics-percent aria-label="Процент пропущенных слов"></label><small data-lyrics-percent-scope></small></section><div class="en-lyrics-video"><video playsinline preload="metadata" disablepictureinpicture></video><div data-lyrics-youtube></div><div class="en-lyrics-picture-cover" data-lyrics-picture-cover hidden>Только звук</div><button type="button" class="en-lyrics-jump" data-lyrics="jump" hidden>К началу строки</button></div><div class="en-lyrics-toolbar"><div class="en-lyrics-progress"><span data-lyrics-count></span><progress value="0" max="1" aria-label="Строки"></progress></div><nav aria-label="Управление строкой">${label('replay','Повторить строку')}${label('play','Слушать строку')}${label('hint','Раскрыть слово')}${label('skip','Пропустить слово')}</nav></div><div class="en-lyrics-task"><p data-lyrics-line lang="en" class="en-lyrics-line"></p><p data-lyrics-translation class="en-lyrics-translation" lang="ru"></p><p data-lyrics-status role="status" aria-live="polite"></p></div><details data-lyrics-history-wrap hidden class="en-lyrics-history"><summary>Пройденные строки</summary><div data-lyrics-history></div></details><button type="button" class="primary-button" data-lyrics-finish hidden data-lyrics="back">${ex.videoLibraryId?'К библиотеке':'К практике'}</button></div>`);
  node.querySelector('[data-lyrics-finish]').insertAdjacentHTML('beforebegin','<section class="en-lyrics-vocab" data-lyrics-vocab hidden aria-label="Слова из упражнения"></section>');
  const app=document.getElementById('app'),buffer=answerInput(node).value,r={node,host,owner,sid:ex.sessionId,focus:prepared.focus,initialViewport:prepared.viewportHeight,previousInert:app.inert,media:new FlowSongMedia(node.querySelector('video'),{controls:false,autoplay:ex.autoPlay===true,captions:false}),clip:ex.items.at(-1)?.playbackClip||ex.items.at(-1)?.clips?.[0],index:-1,initialized:false,ranges:[],anchor:null,atEnd:false,counted:false,supported:new Set(),composing:!!prepared.composing,compositionValue:buffer,compositionIndex:ex.index};run=r;app.inert=true;viewport(r);if(!active(ex))dispatch('vocab-reset');selectLine(r);if(buffer){if(r.composing)composingInput(r,buffer);else dispatch('input',{value:buffer});paint(r);}
  node.addEventListener('input',e=>{if(!valid(r)||!e.target.matches(answerSelector))return;if(e.isComposing||r.composing||r.compositionPending){if(e.isComposing&&!r.composing){r.composing=true;r.compositionIndex=exNow().index;}composingInput(r,e.target.value);paint(r);return;}dispatch('input',{value:e.target.value});paint(r);});
@@ -162,11 +165,13 @@ function mount(ex){
   if(e.target.matches(answerSelector)&&e.key==='Enter'&&!e.isComposing&&!r.composing&&!r.compositionPending){e.preventDefault();dispatch('input',{value:e.target.value});paint(r);}
   if(e.key==='Tab'){const nodes=[...node.querySelectorAll('button:not([disabled]),input:not([disabled]),summary,video,iframe')].filter(x=>x.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
  });
- node.addEventListener('click',e=>{if(!valid(r))return;const word=e.target.closest('[data-lyrics-word]');if(word){dispatch('word',{index:Number(word.dataset.lyricsWord),term:Number(word.dataset.term)});paint(r);return;}const b=e.target.closest('[data-lyrics]');if(b?.dataset.lyrics==='picture'){r.pictureHidden=!r.pictureHidden;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}if(!b){if(e.target.closest('.en-lyrics-task')&&!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}dispatch(b.dataset.lyrics==='back'?'close':b.dataset.lyrics);if(valid(r)){paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
+ node.addEventListener('click',e=>{if(!valid(r))return;const word=e.target.closest('[data-lyrics-word]');if(word){dispatch('word',{index:Number(word.dataset.lyricsWord),term:Number(word.dataset.term)});paint(r);return;}const b=e.target.closest('[data-lyrics]');if(b?.dataset.lyrics==='settings'){r.settingsOpen=!r.settingsOpen;paint(r);return;}if(b?.dataset.lyrics==='picture'){r.pictureHidden=!r.pictureHidden;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}if(!b){if(e.target.closest('.en-lyrics-task')&&!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}dispatch(b.dataset.lyrics==='back'?'close':b.dataset.lyrics);if(valid(r)){paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
+ node.addEventListener('input',e=>{if(e.target.matches('[data-lyrics-percent]'))node.querySelector('[data-lyrics-percent-value]').textContent=e.target.value+'%';});
+ node.addEventListener('change',e=>{if(e.target.matches('[data-lyrics-percent]')){if(dispatch('difficulty',{value:Number(e.target.value)})!==false)r.settingsOpen=false;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
  r.media.addEventListener('loadedmetadata',()=>{if(!valid(r))return;if(!r.media.error)r.mediaProblem='';if(!r.initialized){r.initialized=true;seek(r,r.clip.start);if(exNow().autoPlay)dispatch('start');}paint(r);});
  r.media.addEventListener('autoplayblocked',()=>{if(valid(r)){r.mediaProblem='Нажми ▶ в упражнении, чтобы включить звук.';paint(r);}});
  r.media.addEventListener('timeupdate',()=>tick(r));
- r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.mediaProblem='';const time=r.media.currentTime;if(r.seeking&&time>=r.seeking.target-.05&&time<=r.seeking.target+1)r.seeking=null;r.anchor=r.seeking?null:{time,at:performance.now()};paint(r);});
+ r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.mediaProblem='';const time=r.media.currentTime;if(r.seeking&&time>=r.seeking.target-.05&&time<=r.seeking.target+1)r.seeking=null;if(r.listenStart==null&&!r.seeking&&time>=r.clip.start-.05&&time<=r.clip.start+Math.min(.35,(r.clip.end-r.clip.start)*.25))r.listenStart=Math.max(r.clip.start,time);r.anchor=r.seeking?null:{time,at:performance.now()};paint(r);});
  r.media.addEventListener('ratechange',()=>{if(valid(r)&&r.media.playbackRate<1)dispatch('support');});
  r.media.addEventListener('pause',()=>{if(valid(r)){tick(r);paint(r);}else r.anchor=null;});
  r.media.addEventListener('ended',()=>tick(r));
@@ -189,10 +194,16 @@ function mount(ex){
 function screen(ex){queueMicrotask(()=>{if(exNow()?.sessionId===ex.sessionId)mount(exNow());});return'<div class="en-lyrics-placeholder" aria-hidden="true"></div>';}
 function action(name,control){
  const ex=exNow();if(!ex)return true;const q=active(ex);
- if(name==='close'){const s=enState();s.ex=null;s.tab='course';s.practiceView='hub';effect(stop);render();return true;}
+ if(name==='close'){const s=enState();s.ex=null;s.tab='course';s.practiceView='hub';effect(stop);if(ex.videoLibraryId)effect(()=>window.FlowEnglishMediaPractice?.action('catalog-video',{}));else render();return true;}
  if(ex.blockedReason)return true;
  if(name.startsWith('vocab-'))return vocabAction(name,control,ex);
  if(name==='word'){const index=control.index,term=control.term,row=ex.items[index];if(!row?.result||!terms(row)[term])return true;row.wordSaves||={};if(row.wordSaves[term])return true;if(!enRecord('practiceword',payload(ex,index,'word',{term})))throw Error('practice_word_save');row.wordSaves[term]='pending';return true;}
+ if(name==='difficulty'){
+  const percent=Number(control.value);if(run?.host.capabilities?.lyricsDifficulty!==true||!Number.isInteger(percent)||percent<10||percent>100||percent%10||percent===(ex.gapPercent||40))return true;
+  const from=ex.index+(keepCurrentLine(run,q)?1:0),variant=window.FlowEnglishLyricsPracticeCore.create(ex.sourceMeta,ex.seed,ex.contentId,percent);
+  for(let i=from;i<ex.items.length;i++){const row=ex.items[i],next=variant.items[i];Object.assign(row,{kind:next.kind,gaps:next.gaps,expected:next.expected,gapPercent:percent,answers:[],typed:''});if(i===ex.index&&run?.started){row.assistance||={};row.assistance.hint=true;run.supported.add(i);}}
+  ex.gapPercent=percent;window.FlowEnglishMediaPractice?.setDifficulty?.(percent);return true;
+ }
  if(!q)return true;q.answers||=[];q.assistance||={};
  if(name==='input'){
   if(answered(q))return true;const value=String(control.value||'').slice(0,200).replace(/^\s+/,'');q.typed=value;
@@ -222,7 +233,7 @@ function action(name,control){
   q.typed='';if(!enRecord('practiceevent',payload(ex,ex.index,'answer')))throw Error('practice_save');ex.index++;
   if(ex.index===ex.items.length){if(!enRecord('practiceevent',payload(ex,ex.index,'complete')))throw Error('practice_complete');ex.sent=true;}
   enState().practiceProgress=null;
-  effect(()=>{const r=run;if(!r||!valid(r))return;selectLine(r);const next=active(exNow());if(next){dispatch('continue');if(!answerInput(r.node).disabled)answerInput(r.node).focus({preventScroll:true});}});render();return true;
+  effect(()=>{const r=run;if(!r||!valid(r))return;window.FlowEnglishMediaPractice?.saveVideoProgress?.(ex,q.clips[0].end,r.host,r.owner);selectLine(r);const next=active(exNow());if(next){dispatch('continue');if(!answerInput(r.node).disabled)answerInput(r.node).focus({preventScroll:true});}});render();return true;
  }
  return true;
 }
