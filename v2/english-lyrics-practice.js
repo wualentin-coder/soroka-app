@@ -70,9 +70,9 @@ function paintSpeaking(r){
 }
 function wordRange(ex,q){
  const gap=q?.gaps?.[q.answers?.length||0],line=ex.sourceMeta.lines[q?.sourceLine];if(!gap||!line)return null;
- const word=timedWords(q.en,q.clips[0].start,q.clips[0].end,q.playbackWords||line.words||[],ex.sourceMeta.lyricOffset||0).find(w=>w.at===gap.start);if(!word)return null;
- const clip=q.playbackClip||q.clips[0],padding=word.estimated?.16:.06,start=Math.max(clip.start,word.start-padding),end=Math.min(clip.end,Math.max(word.end,start+.12)+padding);
- return end>start&&end-start<=8?{start,end,estimated:word.estimated}:null;
+ const words=timedWords(q.en,q.clips[0].start,q.clips[0].end,q.playbackWords||line.words||[],ex.sourceMeta.lyricOffset||0),at=words.findIndex(w=>w.at===gap.start);if(at<0)return null;
+ const context=words.slice(Math.max(0,at-1),at+2),estimated=context.some(w=>w.estimated),clip=q.playbackClip||q.clips[0],padding=estimated?.16:.06,start=Math.max(clip.start,Math.min(...context.map(w=>w.start))-padding),end=Math.min(clip.end,Math.max(...context.map(w=>w.end),start+.12)+padding);
+ return end>start&&end-start<=8?{start,end,estimated}:null;
 }
 function endWordPreview(r,restore=true){
  const p=r.preview;if(!p)return;r.preview=null;clearTimeout(p.timeout);p.controller.abort();r.speechCursor=null;r.anchor=null;r.pauseAfterPreview=true;r.restoringPreview=true;r.media.pause();

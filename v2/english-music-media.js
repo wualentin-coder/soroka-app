@@ -96,7 +96,8 @@ class SongMedia extends EventTarget {
   if(this.kind==='audio')return this.native.play();
   const generation=this.generation;
   if(!this.ready){if(!this.readyPromise)throw new Error('Плеер ещё загружается');let timer;const ready=await Promise.race([this.readyPromise,new Promise(resolve=>{timer=setTimeout(()=>resolve(false),13000);})]);clearTimeout(timer);if(generation!==this.generation){const error=Error('Воспроизведение отменено');error.name='AbortError';throw error;}if(!ready){this.fail(this.message||'YouTube не ответил. Попробуй подключиться ещё раз.');throw new Error(this.message);}}
-  this.message=null;this.suppressCaptions();if(!this.options.controls&&!this._muted)this.player.unMute();this.player.playVideo();
+  this.message=null;this.suppressCaptions();if(!this.options.controls&&!this._muted)this.player.unMute();
+  if(this.rangeLoaded){this.rangeLoaded=false;this.player.loadVideoById({videoId:this.track.youtubeId,startSeconds:this.currentTime});}else this.player.playVideo();
  }
  async playRange(start,end,{signal}={}){
   if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start||end-start>8)throw Error('Неверный фрагмент слова');
@@ -106,11 +107,12 @@ class SongMedia extends EventTarget {
   if(!this.ready){if(!this.readyPromise)throw Error('Плеер ещё загружается');let timer;const ready=await Promise.race([this.readyPromise,new Promise(resolve=>{timer=setTimeout(()=>resolve(false),13000);})]);clearTimeout(timer);if(generation!==this.generation){const error=Error('Воспроизведение отменено');error.name='AbortError';throw error;}if(!ready)throw Error(this.message||'YouTube не ответил');}
   if(signal?.aborted){const error=Error('Воспроизведение отменено');error.name='AbortError';throw error;}
   this.message=null;this.suppressCaptions();if(!this.options.controls&&!this._muted)this.player.unMute();
-  // A following seekTo removes endSeconds; the lesson restores its own paused position.
+  // Restore the paused clock separately; ordinary Play must also clear this end bound.
+  this.rangeLoaded=true;
   this.player.loadVideoById({videoId:this.track.youtubeId,startSeconds:start,endSeconds:end});
  }
  pause(){this.native.pause();if(this.ready&&this.player)this.player.pauseVideo();}
- dispose(){this.native.pause();clearInterval(this.timer);this.generation++;this.resolveReady?.(false);this.readyPromise=null;this.player?.destroy();this.player=null;this.ready=false;this.loading=false;this.status=-1;}
+ dispose(){this.native.pause();clearInterval(this.timer);this.generation++;this.resolveReady?.(false);this.readyPromise=null;this.player?.destroy();this.player=null;this.ready=false;this.loading=false;this.rangeLoaded=false;this.status=-1;}
 }
 
 // Whole-phrase playback bounds shared by the library player and lyrics practice.
