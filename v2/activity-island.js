@@ -103,7 +103,7 @@
   }
   function panelContent(state){
     const render=state.render,process=state.process,event=state.events?.find(e=>e.id===state.imminentId)||state.events?.[0];
-    const renderActive=render&&(!process||['render','pause','disconnected'].includes(state.kind));
+    const renderActive=render&&!process;
     const title=renderActive?'Рендер':process?'Сейчас':state.kind==='task'?'Важные дела':event?'Событие':'Сейчас';
     const head=`<header><strong>${title}</strong><button type="button" data-island-close aria-label="Закрыть">×</button></header>`;
     const meter=value=>value==null?'':`<div class="island-meter" role="progressbar" aria-label="Прогресс" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent(value)}"><i style="width:${percent(value)}%"></i></div>`;
@@ -346,7 +346,7 @@
         if(target.hasAttribute('data-island-assistant')){close(false);window.flowAssistant?.open(pill);return;}
         if(target.hasAttribute('data-island-command')){const job=shown.job;if(job?.fresh&&typeof window.rmAction==='function')window.rmAction(target.dataset.islandCommand,{dataset:{id:String(job.id),name:job.name||'Рендер'}});return;}
         if (target.hasAttribute("data-island-pins")) { const render=!!shown?.render;window.flowAssistantPopup?.expand();close(false);if(render&&typeof navigate==="function")navigate("render");else options.pinned();return; }
-        if(target.hasAttribute('data-island-process')){const process=shown.processes?.[Number(target.dataset.islandProcess)];if(process&&typeof navigate==='function'){close(false);navigate(process.route);if(typeof ui!=='undefined'&&ui.page==='sport'&&process.route==='sport')window.sorokaOpenSport?.();}return;}
+        if(target.hasAttribute('data-island-process')){const process=shown.processes?.[Number(target.dataset.islandProcess)];if(process&&typeof navigate==='function'){window.flowAssistantPopup?.expand();close(false);navigate(process.route);if(typeof ui!=='undefined'&&ui.page==='sport'&&process.route==='sport')window.sorokaOpenSport?.();}return;}
         const state = shown;
         const task = target.hasAttribute("data-island-task");
         const index = Number(task ? target.dataset.islandTask : target.dataset.islandEvent);
