@@ -31,6 +31,10 @@
     if(composer?.open&&(!window.flowAssistant||composer.layer!==entryComposer))return;
     if(sheet()&&sheet()!==entrySheet)return;
     if([...document.querySelectorAll?.('.live-capture-backdrop')||[]].some(node=>!entryCaptures.has(node)))return;
+    // The popup can finish before the 120ms presentation debounce. Never leave
+    // its last microphone/thinking signal alive in the native overlay.
+    if(['listen','think','speak','return'].includes(activity.kind))activity={kind:'idle',label:'Flow',progress:null,fresh:true};
+    observedAt=Date.now();publish();
     closing=true;try{bridge()?.assistantPopupClose?.();}catch{closing=false;}
   }
   function scheduleClose(){if(popup&&!closeFrame)closeFrame=requestAnimationFrame(settlePopup);}

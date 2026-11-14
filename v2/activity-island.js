@@ -331,8 +331,8 @@
       const value=event.detail||{},wasOpen=assistantWasOpen;if(typeof value.open==='boolean')assistantWasOpen=value.open;
       if(value.open)close(false,false,true);if(value.open===false){if(wasOpen)pulse('return','Я рядом',1800);return;}
       if(value.open&&value.opened){pulse('return','Ассистент Flow',1800);return;}
-      const phase={listening:['listen','Слушаю'],thinking:['think','Обрабатываю'],speaking:['speak','Отвечаю'],success:['success','Готово'],error:['error','Нужна проверка']}[value.state];
-      if(phase)pulse(...phase,value.state==='success'?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}
+      const phase={requesting:['listen','Включаю микрофон'],listening:['listen','Слушаю'],transcribing:['think','Распознаю'],thinking:['think','Обрабатываю'],speaking:['speak','Отвечаю'],response:['success','Ответ готов'],success:['success','Готово'],error:['error','Нужна проверка']}[value.state];
+      if(phase)pulse(...phase,['success','response'].includes(value.state)?1800:0);else if(value.open&&value.state==='idle'){clearTimeout(feedbackTimer);feedback=null;paint({quiet:true});}
     });
     document.addEventListener('flow:voice',event=>{const value=event.detail||{};if(value.state==='listening'){
       // Actual microphone level only; at most ten light updates per second.
