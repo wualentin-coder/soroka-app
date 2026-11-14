@@ -33,6 +33,7 @@ function attachPlayback(ex,track){
  const offset=ex.sourceMeta.lyricOffset||0,all=track.lines,bounds=window.FlowSongMedia.phraseBounds(track);
  for(const q of ex.items||[]){
   const line=ex.sourceMeta.lines[q.sourceLine],index=all.findIndex(row=>row.en===line?.en&&row.time===line.time),range=bounds[index],clip=q.clips?.[0];if(!range||!clip)continue;
+  q.playbackWords=(all[index].words||[]).filter(word=>typeof word.text==='string'&&Number.isFinite(word.start)&&Number.isFinite(word.end)&&word.end>word.start).slice(0,200).map(({text,start,end})=>({text,start,end}));
   const start=Math.max(0,range.start+offset),end=range.end+offset;
   if(Number.isFinite(start)&&Number.isFinite(end)&&start>=0&&end>start&&end-start<=120)q.playbackClip={...clip,start,end};
  }

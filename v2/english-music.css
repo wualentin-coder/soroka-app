@@ -1,4 +1,14 @@
 /* Flow English music. Scoped player/library styles; theme and fonts are inherited. */
+#enm-library .enm-library-head>h2{font-size:18px;font-weight:600;letter-spacing:-.02em}
+#enm-library .enm-library-head .icon-button{display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:10px;border:0;border-radius:13px;background:transparent;color:var(--muted)}
+#enm-library .enm-library-head [data-enm=add]::after{content:none;display:none}
+#enm-library .enm-song-card{display:flex;align-items:center;gap:12px;width:100%;min-height:80px;padding:14px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;color:var(--text);text-align:left;box-shadow:none}
+#enm-library .enm-song-thumb{display:grid;place-items:center;flex:none;width:80px;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:var(--surface);color:var(--muted)}
+#enm-library .enm-song-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+#enm-library .enm-song-thumb svg{width:24px;height:24px}
+#enm-library .enm-song-info{display:grid;gap:3px;min-width:0}
+#enm-library .enm-song-info b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0;font-size:14px;line-height:1.45;font-weight:600;overflow-wrap:anywhere}
+#enm-library .enm-song-info p,#enm-library .enm-song-info small{margin:0;font-size:11px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
 .en-media-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:var(--surface-soft)}
 .en-media-tabs button{height:36px;border:0;border-radius:10px;padding:0 12px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .en-media-tabs button.active,.en-media-tabs button.enm-active,.en-media-tabs button[aria-selected=true]{background:var(--surface);color:var(--text);box-shadow:0 1px 0 var(--line)}

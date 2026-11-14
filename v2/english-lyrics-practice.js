@@ -10,7 +10,8 @@ const exNow=()=>{const ex=enState().ex;return owns(ex)?ex:null;};
 const answerSelector='.en-lyrics-input input[type="text"]';
 const answerInput=node=>node.querySelector(answerSelector);
 const pauseIcon='<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg>';
-const label=(name,title)=>`<button type="button" class="icon-button ef-icon-control" data-lyrics="${name}" aria-label="${title}" title="${title}">${icon(name==='back'?'left':name==='play'?'play':name==='replay'?'reset':name==='hint'?'eye':name==='skip'?'arrow':'book','icon-sm')}</button>`;
+const soundIcon='<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 5-6 4H2v6h3l6 4Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg>';
+const label=(name,title)=>`<button type="button" class="icon-button ef-icon-control" data-lyrics="${name}" aria-label="${title}" title="${title}">${name==='speak'?soundIcon:icon(name==='back'?'left':name==='play'?'play':name==='replay'?'reset':name==='hint'?'eye':name==='skip'?'arrow':'book','icon-sm')}</button>`;
 const valid=r=>run===r&&ui.page==='english'&&exNow()?.sessionId===r.sid&&!exNow()?.blockedReason&&window.sorokaEnglishSession===r.host&&r.host.isCurrent(r.owner);
 function cancelPrepared(ticket=primed,notify=true){if(!ticket||ticket!==primed)return;primed=null;ticket.node.remove();if(notify)ticket.onCancel?.();if(ticket.focus?.isConnected)ticket.focus.focus({preventScroll:true});}
 function inputPrepared(ticket){return !!ticket&&primed===ticket&&ticket.node.isConnected&&window.sorokaEnglishSession===ticket.host&&ticket.host.isCurrent(ticket.owner);}
@@ -28,10 +29,18 @@ function prepareInput(){
  // This focus runs in the song-selection gesture, before any network await.
  answerInput(node).focus({preventScroll:true});return ticket;
 }
-function stop(){epoch++;cancelPrepared();if(!run)return;const r=run;run=null;clearTimeout(r.next);cancelAnimationFrame(r.compositionFrame);r.viewportCleanup?.();r.media.pause();r.media.dispose();if(r.url)URL.revokeObjectURL(r.url);r.observer?.disconnect();r.node.remove();const app=document.getElementById('app');if(app)app.inert=r.previousInert;if(r.focus?.isConnected)r.focus.focus({preventScroll:true});}
+function stop(){epoch++;cancelPrepared();if(!run)return;const r=run;run=null;clearTimeout(r.next);cancelAnimationFrame(r.compositionFrame);cancelAnimationFrame(r.layoutFrame);cancelAnimationFrame(r.wordFrame);window.enStopSpeech?.();r.layoutObserver?.disconnect();r.viewportCleanup?.();r.media.pause();r.media.dispose();if(r.url)URL.revokeObjectURL(r.url);r.observer?.disconnect();r.node.remove();const app=document.getElementById('app');if(app)app.inert=r.previousInert;if(r.focus?.isConnected)r.focus.focus({preventScroll:true});}
+function fitViewport(r){
+ cancelAnimationFrame(r.layoutFrame);r.layoutFrame=requestAnimationFrame(()=>{if(!valid(r))return;const node=r.node,wrap=node.querySelector('.en-lyrics-wrap');if(!wrap)return;
+  if(node.dataset.keyboard!=='true'){node.style.removeProperty('--lyrics-video-width');return;}
+  const spacing=e=>{const s=getComputedStyle(e);return e.getBoundingClientRect().height+parseFloat(s.marginTop)+parseFloat(s.marginBottom);},style=getComputedStyle(node);
+  const used=['header','.en-lyrics-settings','.en-lyrics-toolbar','.en-lyrics-task'].map(q=>node.querySelector(q)).filter(e=>e&&!e.hidden).reduce((n,e)=>n+spacing(e),0)+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);
+  const room=Math.max(112,node.clientHeight-used-8),width=Math.min(wrap.clientWidth,room*16/9);node.style.setProperty('--lyrics-video-width',width+'px');
+ });
+}
 function viewport(r){
  const v=window.visualViewport;let frame=0;r.maxViewport=Math.max(r.initialViewport||0,innerHeight,v?.height||0);
- const update=()=>{frame=0;if(!valid(r))return;const height=Math.min(innerHeight,v?.height||innerHeight);r.maxViewport=Math.max(r.maxViewport,height);r.node.style.setProperty('--lyrics-height',height+'px');r.node.style.setProperty('--lyrics-top',(v?.offsetTop||0)+'px');r.node.dataset.keyboard=String(r.maxViewport-height>120);};
+ const update=()=>{frame=0;if(!valid(r))return;const height=Math.min(innerHeight,v?.height||innerHeight);r.maxViewport=Math.max(r.maxViewport,height);r.node.style.setProperty('--lyrics-height',height+'px');r.node.style.setProperty('--lyrics-top',(v?.offsetTop||0)+'px');r.node.dataset.keyboard=String(r.maxViewport-height>120);fitViewport(r);};
  const schedule=()=>{if(!frame)frame=requestAnimationFrame(update);};v?.addEventListener('resize',schedule);v?.addEventListener('scroll',schedule);window.addEventListener('resize',schedule);update();
  r.viewportCleanup=()=>{cancelAnimationFrame(frame);v?.removeEventListener('resize',schedule);v?.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);};
 }
@@ -42,13 +51,31 @@ function answered(q){return q?.kind==='info'||q?.answers?.length===q?.gaps?.leng
 function heard(q){return q?.heard?.includes('clip:0');}
 function keepCurrentLine(r,q){return !!(q?.answers?.length||q?.typed||r?.composing||r?.compositionPending||r&&answerInput(r.node)?.value);}
 const effect=fn=>window.flowEnglishSession.effect(fn);
+const tokens=text=>[...String(text).matchAll(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)].map(m=>({text:m[0],at:m.index}));
+function timedWords(text,start,end,words=[],offset=0){
+ const list=tokens(text),total=list.reduce((n,w)=>n+Math.sqrt(w.text.length),0);let weight=0,cursor=0,ambiguous=false;
+ const result=list.map(w=>{const a=start+(end-start)*weight/total;weight+=Math.sqrt(w.text.length);return{...w,start:a,end:start+(end-start)*weight/total,estimated:true};});
+ for(const word of words){const parts=tokens(word.text||'');if(!parts.length||!Number.isFinite(word.start)||!Number.isFinite(word.end)||word.end<=word.start){ambiguous=true;continue;}const matches=[];
+  for(let i=cursor;i<=list.length-parts.length;i++)if(parts.every((part,k)=>norm(part.text)===norm(list[i+k].text)))matches.push(i);
+  if(!matches.length){ambiguous=true;continue;}if(ambiguous&&matches.length!==1)continue;const at=matches[0];ambiguous=false;cursor=at+parts.length;
+  for(let k=0;k<parts.length;k++)Object.assign(result[at+k],{start:word.start+offset+(word.end-word.start)*k/parts.length,end:word.start+offset+(word.end-word.start)*(k+1)/parts.length,estimated:false});
+ }return result;
+}
+function wordMarkup(text,offset){let at=0,out='';for(const word of tokens(text)){out+=h(text.slice(at,word.at))+`<span data-lyrics-token="${offset+word.at}">${h(word.text)}</span>`;at=word.at+word.text.length;}return out+h(text.slice(at));}
+function paintSpeaking(r){
+ const ex=exNow(),q=active(ex);if(!valid(r)||!q)return;const line=ex.sourceMeta.lines[q.sourceLine],stamp=`${ex.index}:${q.en}`;
+ if(r.wordStamp!==stamp){r.wordStamp=stamp;r.wordTimes=timedWords(q.en,q.clips[0].start,q.clips[0].end,q.playbackWords||line.words||[],ex.sourceMeta.lyricOffset||0);}
+ const contains=w=>r.media.currentTime>=w.start&&r.media.currentTime<w.end,spoken=r.speechCursor?q.gaps?.[q.answers?.length||0]:r.wordTimes.find(w=>!w.estimated&&contains(w))||r.wordTimes.find(contains);
+ for(const node of r.node.querySelectorAll('[data-lyrics-token]'))node.classList.toggle('en-lyrics-speaking',!!spoken&&Number(node.dataset.lyricsToken)===(spoken.at??spoken.start));
+}
+function wordFrame(r){if(!valid(r)||r.media.paused||document.hidden){r.wordFrame=0;return;}paintSpeaking(r);r.wordFrame=requestAnimationFrame(()=>wordFrame(r));}
 function lineMarkup(q){
  if(!q)return'';let at=0,out='';const cursor=q.answers?.length||0;
  for(let i=0;i<(q.gaps||[]).length;i++){
-  const gap=q.gaps[i];out+=h(q.en.slice(at,gap.start));const solved=i<cursor,typing=i===cursor,typed=typing?q.typed||'':'';
-  out+=`<span class="en-lyrics-gap ${solved?'is-correct':typing?'is-active':''} ${typing&&typed&&!norm(gap.text).startsWith(norm(typed))?'is-error':''}" ${typing?'aria-current="true"':''}>${solved?h(q.answers[i]):h(typed)+`<span class="en-lyrics-dots">${'·'.repeat(Math.max(0,gap.text.length-typed.length))}</span>`}</span>`;at=gap.end;
+  const gap=q.gaps[i];out+=wordMarkup(q.en.slice(at,gap.start),at);const solved=i<cursor,typing=i===cursor,typed=typing?q.typed||'':'';
+  out+=`<span data-lyrics-token="${gap.start}" class="en-lyrics-gap ${solved?'is-correct':typing?'is-active':''} ${typing&&typed&&!norm(gap.text).startsWith(norm(typed))?'is-error':''}" ${typing?'aria-current="true"':''}>${solved?h(q.answers[i]):h(typed)+`<span class="en-lyrics-dots">${'·'.repeat(Math.max(0,gap.text.length-typed.length))}</span>`}</span>`;at=gap.end;
  }
- return out+h(q.en.slice(at));
+ return out+wordMarkup(q.en.slice(at),at);
 }
 function norm(text){return String(text||'').normalize('NFKC').replace(/[’‘]/g,"'").trim().toLowerCase();}
 function reviewWords(ex){
@@ -94,6 +121,7 @@ function composingInput(r,full){
 }
 function paint(r){
  if(!valid(r)){if(run===r)stop();return;}const ex=exNow(),q=active(ex),done=!q;
+ if(r.speechCursor&&r.speechCursor!==`${ex.index}:${q?.answers?.length||0}`){window.enStopSpeech?.();r.speechCursor=null;}
  r.node.querySelector('[data-lyrics-count]').textContent=`${Math.min(ex.index+1,ex.items.length)} / ${ex.items.length}`;
  r.node.querySelector('progress').value=ex.index;r.node.querySelector('progress').max=ex.items.length;
  const line=r.node.querySelector('[data-lyrics-line]');line.innerHTML=done?'Готово':lineMarkup(r.composing||r.compositionPending?{...q,typed:r.compositionValue}:q);
@@ -101,10 +129,11 @@ function paint(r){
  const input=answerInput(r.node);input.disabled=done;if(!r.composing&&!r.compositionPending&&input.value!==(q?.typed||''))input.value=q?.typed||'';
  input.setAttribute('aria-label',done?'Упражнение завершено':answered(q)?'Строка заполнена':`Пропущенное слово ${(q?.answers?.length||0)+1} из ${q?.gaps?.length||0}`);
  const status=r.node.querySelector('[data-lyrics-status]');
- status.textContent=r.mediaProblem||(done?(ex.result?.completed?'Сохранено · самостоятельно '+(ex.result.summary?.independent||0)+' · с поддержкой '+(ex.result.summary?.aided||0):'Ответы сохранены на устройстве'):(q.typed&&!norm(q.gaps?.[q.answers?.length||0]?.text).startsWith(norm(q.typed))?'Исправь слово':answered(q)&&!heard(q)?'Дослушай строку':r.atEnd?'Впиши оставшиеся слова':''));
+ status.textContent=r.mediaProblem||(done?(ex.result?.completed?'Сохранено · самостоятельно '+(ex.result.summary?.independent||0)+' · с поддержкой '+(ex.result.summary?.aided||0):'Ответы сохранены на устройстве'):(q.typed&&!norm(q.gaps?.[q.answers?.length||0]?.text).startsWith(norm(q.typed))?'Исправь слово':answered(q)?(heard(q)?'':'Дослушай строку'):r.atEnd?'Впиши оставшиеся слова':''));
  const play=r.node.querySelector('[data-lyrics="play"]');play.innerHTML=r.media.paused?icon('play','icon-sm'):pauseIcon;play.setAttribute('aria-label',r.media.paused?'Слушать строку':'Пауза');
  r.node.querySelector('[data-lyrics="translation"]').setAttribute('aria-pressed',String(!!q?.showTranslation));
- for(const name of ['play','replay','hint','skip','translation'])r.node.querySelector(`[data-lyrics="${name}"]`).disabled=done||(['hint','skip'].includes(name)&&answered(q));
+ for(const name of ['play','replay','speak','translation'])r.node.querySelector(`[data-lyrics="${name}"]`).disabled=done||(name==='speak'&&answered(q));
+ const hint=r.node.querySelector('[data-lyrics=hint]'),next=!!q?.awaitNext&&answered(q);hint.innerHTML=icon(next?'arrow':'eye','icon-sm');hint.setAttribute('aria-label',next?'Следующая строка':'Раскрыть слово');hint.title=next?'Следующая строка':'Раскрыть слово';hint.disabled=done||(answered(q)&&(!next||!heard(q)));
  const history=r.node.querySelector('[data-lyrics-history]'),past=ex.items.slice(0,ex.index),historyStamp=JSON.stringify(past.map(row=>[row.id,row.skipped,row.assistance,row.wordSaves]));
  if(r.historyStamp!==historyStamp){const open=[...history.querySelectorAll('details')].map(n=>n.open);history.innerHTML=past.map((row,index)=>`<details ${open[index]?'open':''}><summary><span lang="en">${h(row.en)}</span><small>${row.skipped?'Пропущено':row.assistance?.hint||row.assistance?.shown||row.assistance?.transcript||row.assistance?.slow||row.assistance?.replays>1?'С поддержкой':'Самостоятельно'}</small></summary><p>${h(translation(ex,row))}</p>${terms(row).map((word,term)=>`<button type="button" class="ghost-button" data-lyrics-word="${index}" data-term="${term}" ${row.wordSaves?.[term]?'disabled':''}>${row.wordSaves?.[term]?.ok?'В словаре':row.wordSaves?.[term]?'Сохраняется…':'В мои слова'}</button>`).join('')}</details>`).join('');r.historyStamp=historyStamp;}
  r.node.querySelector('[data-lyrics-history-wrap]').hidden=!ex.index;
@@ -113,10 +142,12 @@ function paint(r){
  const picture=r.node.querySelector('[data-lyrics=picture]');picture.setAttribute('aria-pressed',String(!!r.pictureHidden));picture.setAttribute('aria-label',r.pictureHidden?'Показать видео':'Скрыть видео с подсказками');r.node.querySelector('.en-lyrics-video').classList.toggle('is-picture-hidden',!!r.pictureHidden);r.node.querySelector('[data-lyrics-picture-cover]').hidden=!r.pictureHidden;
  const settings=r.node.querySelector('[data-lyrics=settings]'),percent=ex.gapPercent||40;settings.hidden=done;picture.hidden=done;settings.textContent=percent+'%';settings.disabled=done||r.host.capabilities?.lyricsDifficulty!==true;settings.setAttribute('aria-expanded',String(!!r.settingsOpen));r.node.querySelector('[data-lyrics-settings]').hidden=!r.settingsOpen||done;r.node.querySelector('[data-lyrics-percent]').value=String(percent);r.node.querySelector('[data-lyrics-percent-value]').textContent=percent+'%';r.node.querySelector('[data-lyrics-percent-scope]').textContent=keepCurrentLine(r,q)?'Со следующей строки':'С текущей строки';
  paintWords(r,ex);
+ paintSpeaking(r);
+ fitViewport(r);
  schedule(r);
 }
 function schedule(r){
- clearTimeout(r.next);const ex=exNow(),q=active(ex);if(!valid(r)||!r.started||!r.atEnd||r.nextBlocked||document.hidden||!q||!answered(q)||!heard(q))return;
+ clearTimeout(r.next);const ex=exNow(),q=active(ex);if(!valid(r)||!r.started||!r.atEnd||r.nextBlocked||document.hidden||!q||q.awaitNext||!answered(q)||!heard(q))return;
  const index=ex.index;r.next=setTimeout(()=>{if(valid(r)&&!document.hidden&&exNow().index===index&&dispatch('next')===false)r.nextBlocked=true;},380);
 }
 function seek(r,time){r.anchor=null;r.lastTime=null;r.seeking={target:time,at:performance.now()};r.media.currentTime=time;}
@@ -132,11 +163,12 @@ function covered(r){const start=r.listenStart??r.clip.start;return window.FlowEn
 function tick(r){
  if(!valid(r)){if(run===r)stop();return;}if(document.hidden)return;
  const t=r.media.currentTime,now=performance.now();
+ paintSpeaking(r);
  if(r.seeking){
   const arrived=t>=r.seeking.target-.05&&t<=r.seeking.target+1;
   if(!arrived&&now-r.seeking.at<6000){r.anchor=null;return;}
   r.seeking=null;r.anchor=null;r.lastTime=null;
-  if(!r.media.paused&&r.listenStart==null&&t>=r.clip.start-.05&&t<=r.clip.start+Math.min(.35,(r.clip.end-r.clip.start)*.25))r.listenStart=Math.max(r.clip.start,t);
+  if(!r.media.paused&&r.listenStart==null&&t>=r.clip.start-.05&&t<=r.clip.start+Math.min(.75,(r.clip.end-r.clip.start)*.25))r.listenStart=Math.max(r.clip.start,t);
  }
  const last=r.anchor;
  if(r.lastTime!==null&&t<r.lastTime-.25)dispatch('support');r.lastTime=t;
@@ -152,7 +184,7 @@ function mount(ex){
  if(run?.sid===ex.sessionId){selectLine(run);return;}
  const ticket=inputPrepared(primed)?primed:null;if(!ticket)cancelPrepared(undefined,false);primed=null;stop();const host=window.sorokaEnglishSession,owner=host?.captureOwner();if(!owner?.authorized||!host.isCurrent(owner)){ticket?.node.remove();return;}
  const prepared=ticket||prepareInput(),node=prepared?.node;if(!node)return;primed=null;node.querySelector('[data-lyrics-wait]')?.remove();
- node.insertAdjacentHTML('beforeend',`<div class="en-lyrics-wrap"><header>${label('back',ex.videoLibraryId?'Библиотека видео':'Вся практика')}<div class="en-lyrics-title"><h2 title="${h(ex.title)}">${h(ex.title)}</h2><small>${h(ex.sourceMeta.artist||'')}</small></div><div class="en-lyrics-head-tools"><button type="button" class="icon-button ef-icon-control" data-lyrics="picture" aria-label="Скрыть видео с подсказками" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/></svg></button><button type="button" class="icon-button ef-icon-control" data-lyrics="translation" aria-label="Перевод" aria-pressed="false">EN/RU</button><button type="button" class="icon-button" data-lyrics="settings" aria-label="Пропущенные слова" aria-expanded="false">40%</button></div></header><section class="en-lyrics-settings" data-lyrics-settings hidden aria-label="Сложность упражнения"><label><span>Пропущено слов <output data-lyrics-percent-value>40%</output></span><input type="range" min="10" max="100" step="10" data-lyrics-percent aria-label="Процент пропущенных слов"></label><small data-lyrics-percent-scope></small></section><div class="en-lyrics-video"><video playsinline preload="metadata" disablepictureinpicture></video><div data-lyrics-youtube></div><div class="en-lyrics-picture-cover" data-lyrics-picture-cover hidden>Только звук</div><button type="button" class="en-lyrics-jump" data-lyrics="jump" hidden>К началу строки</button></div><div class="en-lyrics-toolbar"><div class="en-lyrics-progress"><span data-lyrics-count></span><progress value="0" max="1" aria-label="Строки"></progress></div><nav aria-label="Управление строкой">${label('replay','Повторить строку')}${label('play','Слушать строку')}${label('hint','Раскрыть слово')}${label('skip','Пропустить слово')}</nav></div><div class="en-lyrics-task"><p data-lyrics-line lang="en" class="en-lyrics-line"></p><p data-lyrics-translation class="en-lyrics-translation" lang="ru"></p><p data-lyrics-status role="status" aria-live="polite"></p></div><details data-lyrics-history-wrap hidden class="en-lyrics-history"><summary>Пройденные строки</summary><div data-lyrics-history></div></details><button type="button" class="primary-button" data-lyrics-finish hidden data-lyrics="back">${ex.videoLibraryId?'К библиотеке':'К практике'}</button></div>`);
+ node.insertAdjacentHTML('beforeend',`<div class="en-lyrics-wrap"><header>${label('back',ex.videoLibraryId?'Библиотека видео':'Вся практика')}<div class="en-lyrics-title"><h2 title="${h(ex.title)}">${h(ex.title)}</h2><small>${h(ex.sourceMeta.artist||'')}</small></div><div class="en-lyrics-head-tools"><button type="button" class="icon-button ef-icon-control" data-lyrics="picture" aria-label="Скрыть видео с подсказками" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/></svg></button><button type="button" class="icon-button ef-icon-control" data-lyrics="translation" aria-label="Перевод" aria-pressed="false">EN/RU</button><button type="button" class="icon-button" data-lyrics="settings" aria-label="Пропущенные слова" aria-expanded="false">40%</button></div></header><section class="en-lyrics-settings" data-lyrics-settings hidden aria-label="Сложность упражнения"><label><span>Пропущено слов <output data-lyrics-percent-value>40%</output></span><input type="range" min="10" max="100" step="10" data-lyrics-percent aria-label="Процент пропущенных слов"></label><small data-lyrics-percent-scope></small></section><div class="en-lyrics-video"><video playsinline preload="metadata" disablepictureinpicture></video><div data-lyrics-youtube></div><div class="en-lyrics-picture-cover" data-lyrics-picture-cover hidden>Только звук</div><button type="button" class="en-lyrics-jump" data-lyrics="jump" hidden>К началу строки</button></div><div class="en-lyrics-toolbar"><div class="en-lyrics-progress"><span data-lyrics-count></span><progress value="0" max="1" aria-label="Строки"></progress></div><nav aria-label="Управление строкой">${label('replay','Повторить строку')}${label('play','Слушать строку')}${label('hint','Раскрыть слово')}${label('speak','Озвучить текущее слово')}</nav></div><div class="en-lyrics-task"><p data-lyrics-line lang="en" class="en-lyrics-line"></p><p data-lyrics-translation class="en-lyrics-translation" lang="ru"></p><p data-lyrics-status role="status" aria-live="polite"></p></div><details data-lyrics-history-wrap hidden class="en-lyrics-history"><summary>Пройденные строки</summary><div data-lyrics-history></div></details><button type="button" class="primary-button" data-lyrics-finish hidden data-lyrics="back">${ex.videoLibraryId?'К библиотеке':'К практике'}</button></div>`);
  node.querySelector('[data-lyrics-finish]').insertAdjacentHTML('beforebegin','<section class="en-lyrics-vocab" data-lyrics-vocab hidden aria-label="Слова из упражнения"></section>');
  const app=document.getElementById('app'),buffer=answerInput(node).value,r={node,host,owner,sid:ex.sessionId,focus:prepared.focus,initialViewport:prepared.viewportHeight,previousInert:app.inert,media:new FlowSongMedia(node.querySelector('video'),{controls:false,autoplay:ex.autoPlay===true,captions:false}),clip:ex.items.at(-1)?.playbackClip||ex.items.at(-1)?.clips?.[0],index:-1,initialized:false,ranges:[],anchor:null,atEnd:false,counted:false,supported:new Set(),composing:!!prepared.composing,compositionValue:buffer,compositionIndex:ex.index};run=r;app.inert=true;viewport(r);if(!active(ex))dispatch('vocab-reset');selectLine(r);if(buffer){if(r.composing)composingInput(r,buffer);else dispatch('input',{value:buffer});paint(r);}
  node.addEventListener('input',e=>{if(!valid(r)||!e.target.matches(answerSelector))return;if(e.isComposing||r.composing||r.compositionPending){if(e.isComposing&&!r.composing){r.composing=true;r.compositionIndex=exNow().index;}composingInput(r,e.target.value);paint(r);return;}dispatch('input',{value:e.target.value});paint(r);});
@@ -165,15 +197,15 @@ function mount(ex){
   if(e.target.matches(answerSelector)&&e.key==='Enter'&&!e.isComposing&&!r.composing&&!r.compositionPending){e.preventDefault();dispatch('input',{value:e.target.value});paint(r);}
   if(e.key==='Tab'){const nodes=[...node.querySelectorAll('button:not([disabled]),input:not([disabled]),summary,video,iframe')].filter(x=>x.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
  });
- node.addEventListener('click',e=>{if(!valid(r))return;const word=e.target.closest('[data-lyrics-word]');if(word){dispatch('word',{index:Number(word.dataset.lyricsWord),term:Number(word.dataset.term)});paint(r);return;}const b=e.target.closest('[data-lyrics]');if(b?.dataset.lyrics==='settings'){r.settingsOpen=!r.settingsOpen;paint(r);return;}if(b?.dataset.lyrics==='picture'){r.pictureHidden=!r.pictureHidden;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}if(!b){if(e.target.closest('.en-lyrics-task')&&!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}dispatch(b.dataset.lyrics==='back'?'close':b.dataset.lyrics);if(valid(r)){paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
+ node.addEventListener('click',e=>{if(!valid(r))return;const word=e.target.closest('[data-lyrics-word]');if(word){dispatch('word',{index:Number(word.dataset.lyricsWord),term:Number(word.dataset.term)});paint(r);return;}const b=e.target.closest('[data-lyrics]');if(b?.dataset.lyrics==='settings'){r.settingsOpen=!r.settingsOpen;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}if(b?.dataset.lyrics==='picture'){r.pictureHidden=!r.pictureHidden;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}if(!b){if(e.target.closest('.en-lyrics-task')&&!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});return;}dispatch(b.dataset.lyrics==='back'?'close':b.dataset.lyrics);if(valid(r)){paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
  node.addEventListener('input',e=>{if(e.target.matches('[data-lyrics-percent]'))node.querySelector('[data-lyrics-percent-value]').textContent=e.target.value+'%';});
  node.addEventListener('change',e=>{if(e.target.matches('[data-lyrics-percent]')){if(dispatch('difficulty',{value:Number(e.target.value)})!==false)r.settingsOpen=false;paint(r);if(!answerInput(node).disabled)answerInput(node).focus({preventScroll:true});}});
  r.media.addEventListener('loadedmetadata',()=>{if(!valid(r))return;if(!r.media.error)r.mediaProblem='';if(!r.initialized){r.initialized=true;seek(r,r.clip.start);if(exNow().autoPlay)dispatch('start');}paint(r);});
  r.media.addEventListener('autoplayblocked',()=>{if(valid(r)){r.mediaProblem='Нажми ▶ в упражнении, чтобы включить звук.';paint(r);}});
  r.media.addEventListener('timeupdate',()=>tick(r));
- r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.mediaProblem='';const time=r.media.currentTime;if(r.seeking&&time>=r.seeking.target-.05&&time<=r.seeking.target+1)r.seeking=null;if(r.listenStart==null&&!r.seeking&&time>=r.clip.start-.05&&time<=r.clip.start+Math.min(.35,(r.clip.end-r.clip.start)*.25))r.listenStart=Math.max(r.clip.start,time);r.anchor=r.seeking?null:{time,at:performance.now()};paint(r);});
+ r.media.addEventListener('play',()=>{if(!valid(r)||document.hidden){r.media.pause();return;}if(!r.preparedPlay)dispatch('native-play');r.preparedPlay=false;r.lineStarted=true;r.started=true;r.mediaProblem='';const time=r.media.currentTime;if(r.seeking&&time>=r.seeking.target-.05&&time<=r.seeking.target+1)r.seeking=null;if(r.listenStart==null&&!r.seeking&&time>=r.clip.start-.05&&time<=r.clip.start+Math.min(.75,(r.clip.end-r.clip.start)*.25))r.listenStart=Math.max(r.clip.start,time);r.anchor=r.seeking?null:{time,at:performance.now()};cancelAnimationFrame(r.wordFrame);wordFrame(r);paint(r);});
  r.media.addEventListener('ratechange',()=>{if(valid(r)&&r.media.playbackRate<1)dispatch('support');});
- r.media.addEventListener('pause',()=>{if(valid(r)){tick(r);paint(r);}else r.anchor=null;});
+ r.media.addEventListener('pause',()=>{cancelAnimationFrame(r.wordFrame);if(valid(r)){tick(r);paint(r);}else r.anchor=null;});
  r.media.addEventListener('ended',()=>tick(r));
  r.media.addEventListener('error',()=>{if(valid(r)){r.mediaProblem='Видео не загрузилось. Повтори воспроизведение или выбери другой источник.';paint(r);}});
  if(active(ex)){
@@ -188,7 +220,7 @@ function mount(ex){
  }
  else{node.querySelector('video').hidden=!!track.youtubeId;r.media.setTrack(track);r.media.mount(node.querySelector('[data-lyrics-youtube]'));}
  }
- r.observer=new MutationObserver(()=>{if(run===r&&(!node.isConnected||!valid(r)))stop();});r.observer.observe(app,{childList:true,subtree:true});
+ r.observer=new MutationObserver(()=>{if(run===r&&(!node.isConnected||!valid(r)))stop();});r.observer.observe(app,{childList:true,subtree:true});if(window.ResizeObserver){r.layoutObserver=new ResizeObserver(()=>fitViewport(r));for(const selector of ['header','.en-lyrics-task'])r.layoutObserver.observe(node.querySelector(selector));}
  if(active(ex))answerInput(node).focus({preventScroll:true});
 }
 function screen(ex){queueMicrotask(()=>{if(exNow()?.sessionId===ex.sessionId)mount(exNow());});return'<div class="en-lyrics-placeholder" aria-hidden="true"></div>';}
@@ -205,6 +237,10 @@ function action(name,control){
   ex.gapPercent=percent;window.FlowEnglishMediaPractice?.setDifficulty?.(percent);return true;
  }
  if(!q)return true;q.answers||=[];q.assistance||={};
+ if(name==='speak'){
+  const r=run,word=q.gaps?.[q.answers.length]?.text;if(!word||!r||!valid(r))return true;q.assistance.hint=true;r.supported.add(ex.index);
+  effect(()=>{if(!valid(r))return;clearTimeout(r.next);r.speechCursor=`${ex.index}:${q.answers.length}`;r.media.pause();window.enSpeak?.(word,r.node.querySelector('[data-lyrics=speak]'));});return true;
+ }
  if(name==='input'){
   if(answered(q))return true;const value=String(control.value||'').slice(0,200).replace(/^\s+/,'');q.typed=value;
   const expected=q.gaps[q.answers.length].text;if(value&&!norm(expected).startsWith(norm(value))){q.assistance.hint=true;run?.supported?.add(ex.index);q.mistakes=(q.mistakes||0)+1;}
@@ -213,7 +249,7 @@ function action(name,control){
  }
  if(name==='translation'){q.showTranslation=!q.showTranslation;if(q.showTranslation){q.assistance.transcript=true;run?.supported?.add(ex.index);}return true;}
  if(name==='translation-init'){q.showTranslation=!!control.value&&!!translation(ex,q);if(q.showTranslation)q.assistance.transcript=true;return true;}
- if(name==='hint'||name==='skip'){if(!answered(q)){const gap=q.gaps[q.answers.length];q.assistance.shown=true;run?.supported?.add(ex.index);if(name==='skip'){q.skippedWords||=[];q.skippedWords.push(gap.id);}q.answers.push(gap.text);q.typed='';effect(()=>{const r=run;if(!r||!valid(r))return;cancelAnimationFrame(r.compositionFrame);r.composing=false;r.compositionPending=false;r.compositionConsumed='';r.compositionValue='';answerInput(r.node).value='';});}return true;}
+ if(name==='hint'||name==='skip'){if(name==='hint'&&answered(q)&&q.awaitNext)return action('next',control);if(!answered(q)){const gap=q.gaps[q.answers.length];q.assistance.shown=true;run?.supported?.add(ex.index);if(name==='skip'){q.skippedWords||=[];q.skippedWords.push(gap.id);}q.answers.push(gap.text);if(answered(q))q.awaitNext=true;q.typed='';effect(()=>{const r=run;if(!r||!valid(r))return;cancelAnimationFrame(r.compositionFrame);r.composing=false;r.compositionPending=false;r.compositionConsumed='';r.compositionValue='';answerInput(r.node).value='';});}return true;}
  if(name==='heard'){q.heard=['clip:0'];return true;}
  if(name==='support'){q.assistance.hint=true;run?.supported?.add(ex.index);return true;}
  if(name==='native-play'){if(!q.listens||!run?.lineStarted||run?.atEnd){q.listens=(q.listens||0)+1;q.assistance.replays=q.listens;if(q.listens>1){q.assistance.hint=true;run?.supported?.add(ex.index);}}return true;}
@@ -225,7 +261,7 @@ function action(name,control){
   const restart=name==='replay'||name==='jump'||r.media.currentTime>=r.clip.end||r.media.currentTime<r.clip.start;
   const introJump=name==='jump'&&r.media.currentTime<r.clip.start;
   if(restart&&!introJump||!q.listens||!r.lineStarted){q.listens=(q.listens||0)+1;q.assistance.replays=q.listens;if(q.listens>1){q.assistance.hint=true;run?.supported?.add(ex.index);}}
-  effect(()=>{if(!valid(r)||document.hidden)return;if(restart){r.atEnd=false;seek(r,r.clip.start);}r.preparedPlay=true;r.lineStarted=true;r.media.play().catch(()=>{r.preparedPlay=false;if(valid(r))r.node.querySelector('[data-lyrics-status]').textContent='Нажми ▶ в упражнении, чтобы включить звук.';});});return true;
+  effect(()=>{if(!valid(r)||document.hidden)return;window.enStopSpeech?.();r.speechCursor=null;if(restart){r.atEnd=false;seek(r,r.clip.start);}r.preparedPlay=true;r.lineStarted=true;r.media.play().catch(()=>{r.preparedPlay=false;if(valid(r))r.node.querySelector('[data-lyrics-status]').textContent='Нажми ▶ в упражнении, чтобы включить звук.';});});return true;
  }
  if(name==='next'){
   if(run?.supported?.has(ex.index))q.assistance.hint=true;if(run?.media.playbackRate<1)q.assistance.slow=true;
@@ -239,5 +275,5 @@ function action(name,control){
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&run){clearTimeout(run.next);run.media.pause();}});
 window.addEventListener('pagehide',stop);window.sorokaEnglishSession?.subscribeInvalidation(stop);
-window.FlowEnglishLyricsPractice={owns,screen,action,stop,prepareInput,inputPrepared,cancelPrepared,keepPreparedDuring,tools:{norm,lineMarkup,reviewWords}};
+window.FlowEnglishLyricsPractice={owns,screen,action,stop,prepareInput,inputPrepared,cancelPrepared,keepPreparedDuring,tools:{norm,lineMarkup,reviewWords,timedWords}};
 })();
