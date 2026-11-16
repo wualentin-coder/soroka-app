@@ -4,7 +4,7 @@
  'use strict';
  const popup=()=>window.SorokaAndroid?.assistantPopup?.()===true;
  const base=new URL('.',document.currentScript.src);let instance=null,pending=null,error=null;
- const load=import(new URL("assistant/f3a5d68ec3/prototypes/soroka-planner/assistant-app.mjs",base).href).then(module=>{instance=module.createAppAssistant();if(pending){const request=pending;pending=null;void instance.open(...request);}window.dispatchEvent(new Event('flow:assistantready'));return instance;}).catch(problem=>{error=problem;pending=null;console.error('Flow assistant failed to load');if(typeof toast==='function')toast('Ассистент не загрузился. Обнови приложение.');});
+ const load=import(new URL("assistant/c1ee0b612d/prototypes/soroka-planner/assistant-app.mjs",base).href).then(module=>{instance=module.createAppAssistant();if(pending){const request=pending;pending=null;void instance.open(...request);}window.dispatchEvent(new Event('flow:assistantready'));return instance;}).catch(problem=>{error=problem;pending=null;console.error('Flow assistant failed to load');if(typeof toast==='function')toast('Ассистент не загрузился. Обнови приложение.');});
  const open=(...args)=>{if(error)return false;if(instance){void instance.open(...args);return true;}pending=args;return true;};
  // A request spoken to the camera island arrives as ready text: open the assistant and send it as a voice turn.
  const ask=(text,opener=null)=>{const value=String(text??'').trim().slice(0,1200);if(!value||error)return false;
