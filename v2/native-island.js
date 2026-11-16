@@ -108,7 +108,9 @@
     try{
       let opened=false;popupAction=request.action;
       if(request.action==='assistant'){
-        if(window.flowAssistant){
+        if(window.flowAssistant&&typeof request.text==='string'&&request.text.trim()&&window.flowAssistant.ask){
+          opened=window.flowAssistant.ask(request.text,document.querySelector('.activity-island'));
+        }else if(window.flowAssistant){
           window.flowAssistant.open(document.querySelector('.activity-island'),{fresh:true});
           opened=window.flowAssistant.getState().open;
         }else if(document.documentElement.dataset.flowDesign==='classic'&&window.flowCompose){
@@ -139,7 +141,8 @@
   window.addEventListener('flow:nativeisland',event=>{
     const value=event.detail,id=String(value?.id||'');
     if(!/^[\w:-]{1,96}$/.test(id)||!allowed.has(value?.action))return;
-    syncPopup();pending={id,action:value.action};consume();
+    const text=value.action==='assistant'&&typeof value.text==='string'?value.text.trim().slice(0,1200):'';
+    syncPopup();pending=text?{id,action:value.action,text}:{id,action:value.action};consume();
   });
   document.addEventListener('flow:activity',event=>{const value=event.detail?.kind==='card'?(event.detail.baseActivity||{kind:'idle',label:'Flow',progress:null,fresh:true}):event.detail;activity=value||activity;observedAt=Date.now();if(!timer)timer=setTimeout(publish,120);if(pending)consume();});
   document.addEventListener('flow:effectschange',()=>{lastState='';publish();});

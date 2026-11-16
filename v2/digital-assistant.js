@@ -6,7 +6,11 @@
  const base=new URL('.',document.currentScript.src);let instance=null,pending=null,error=null;
  const load=import(new URL("assistant/f3a5d68ec3/prototypes/soroka-planner/assistant-app.mjs",base).href).then(module=>{instance=module.createAppAssistant();if(pending){const request=pending;pending=null;void instance.open(...request);}window.dispatchEvent(new Event('flow:assistantready'));return instance;}).catch(problem=>{error=problem;pending=null;console.error('Flow assistant failed to load');if(typeof toast==='function')toast('Ассистент не загрузился. Обнови приложение.');});
  const open=(...args)=>{if(error)return false;if(instance){void instance.open(...args);return true;}pending=args;return true;};
- window.flowAssistant={open,openNote:session=>{if(instance)return instance.openNote(session);if(typeof toast==='function')toast('Дождись загрузки ассистента.');return false;},close:()=>{pending=null;return instance?.close();},dismiss:()=>{pending=null;return instance?.dismiss();},stop:()=>{pending=null;instance?.stop();},getState:()=>instance?.getState()||{open:!!pending,disabled:popup(),state:error?'error':'loading',microphone:false},ready:()=>load};
+ // A request spoken to the camera island arrives as ready text: open the assistant and send it as a voice turn.
+ const ask=(text,opener=null)=>{const value=String(text??'').trim().slice(0,1200);if(!value||error)return false;
+  const send=async target=>{await target.open(opener,{fresh:true});target.element?.request?.('flow-assistant-submit',{text:value,voice:true});};
+  if(instance){void send(instance);return true;}void load.then(target=>target&&send(target));return true;};
+ window.flowAssistant={open,ask,openNote:session=>{if(instance)return instance.openNote(session);if(typeof toast==='function')toast('Дождись загрузки ассистента.');return false;},close:()=>{pending=null;return instance?.close();},dismiss:()=>{pending=null;return instance?.dismiss();},stop:()=>{pending=null;instance?.stop();},getState:()=>instance?.getState()||{open:!!pending,disabled:popup(),state:error?'error':'loading',microphone:false},ready:()=>load};
  document.documentElement.dataset.flowAssistant='app';
  let launcherSerial=0;
  function bindLaunchers(){
