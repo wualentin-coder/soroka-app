@@ -88,6 +88,15 @@
     const render = job?{fresh:queueFresh,app:job.app==='karma'?'Karma':job.app==='ae'?'After Effects':'Рендер',queue:true,title:job.name||'Рендер',frame:finite(job.done),frames:finite(job.total),eta:queueFresh&&job.status!=='paused'?finite(job.eta):null,elapsed:null}:active ? { fresh, app:r.app||'After Effects',title: r.comp || r.app || "After Effects", frame: finite(r.frame), frames: finite(r.frames), eta: fresh ? finite(r.eta) : null, elapsed: fresh && finite(r.since) !== null ? Math.max(0, Math.round(now / 1000 - Number(r.since))) : null } : null;
     return { kind, label, progress, render,queueFresh,queue:queueFresh?jobs.filter(item=>item.status==='queued').slice(0,3):[],minutes:imminent?Math.max(1,Math.ceil((imminent.at-now)/60000)):null,imminentId:imminent?.id, job:job?{id:job.id,name:job.name,status:job.status,fresh:queueFresh}:null, events, tasks, interval: active || (pc?.rmQueue?.jobs || []).some(j => ["queued","paused","rendering","delivering"].includes(j.status)) ? 3000 : 15000 };
   }
+  /* Camera island tongue: the event itself and the next ones, or today's important tasks. Plain text only. */
+  function islandDetail(state){
+    const clip=(value,n)=>String(value||'').replace(/\s+/g,' ').trim().slice(0,n);
+    if(state.kind==='event'&&state.events?.length){const e=state.events[0];
+      return {title:clip(e.title,120),facts:clip([e.allDay?'Весь день':e.time,state.minutes?`через ${state.minutes} мин`:'',e.location].filter(Boolean).join(' · '),160),
+        rows:state.events.slice(1,4).map(x=>clip(`${x.allDay?'Весь день':x.time||''} · ${x.title}`,80))};}
+    if(state.kind==='task'&&state.tasks?.length)return {title:'Важные дела',facts:'',rows:state.tasks.slice(0,3).map(t=>clip(t.due?`${t.title} · ${t.due}`:t.title,80))};
+    return {};
+  }
   function compactValue(state){
     if(state.kind==='card'&&state.card)return String(state.card.count||1);
     if(state.kind==='event')return state.minutes+' мин';
@@ -316,7 +325,7 @@
         if(ring&&pill?.querySelector('.island-orb')){ring.innerHTML=pill.querySelector('.island-orb').innerHTML.replace('island-orb-progress','camera-progress');ring.dataset.activity=state.kind;ring.dataset.ringMode=pill.dataset.ringMode;}
         window.FlowCameraIsland?.placeRing?.(ring);
       }
-      if (typeof CustomEvent === "function") document.dispatchEvent(new CustomEvent("flow:activity", { detail: { kind:state.kind, progress:state.progress, label:state.label, fresh:feedback||state.process?true:state.render?.fresh??true, ...(state.kind==='card'?{baseActivity:state.cardBase}:{}) } }));
+      if (typeof CustomEvent === "function") document.dispatchEvent(new CustomEvent("flow:activity", { detail: { kind:state.kind, progress:state.progress, label:state.label, fresh:feedback||state.process?true:state.render?.fresh??true, ...(state.kind==='card'?{baseActivity:state.cardBase}:{}), ...islandDetail(state) } }));
       return state.interval;
     }
     function pulse(kind,label,timeout=0,source=null){

@@ -89,7 +89,8 @@
     const accent=/^(#[\da-f]{3,8}|rgba?\([\d.,%\s]+\))$/i.test(raw)?raw:'#75a7ff';
     const kind=String(activity.kind==='navigation'?'idle':activity.kind||'idle').slice(0,24),ttl=['event','task'].includes(kind)?60000:15000;
     const fresh=activity.fresh!==false&&(kind==='idle'||Date.now()-observedAt<=ttl);
-    const state={kind,label:String(activity.label||'Flow').slice(0,120),progress:fresh&&typeof activity.progress==='number'&&Number.isFinite(activity.progress)?Math.max(0,Math.min(100,activity.progress)):null,fresh,accent,...(()=>{const appearance=presentation();return appearance?{appearance}:{};})()};
+    const detail=['event','task'].includes(kind)?{title:String(activity.title||'').slice(0,120),facts:String(activity.facts||'').slice(0,160),rows:Array.isArray(activity.rows)?activity.rows.slice(0,3).map(row=>String(row).slice(0,80)):[]}:{};
+    const state={kind,label:String(activity.label||'Flow').slice(0,120),...detail,progress:fresh&&typeof activity.progress==='number'&&Number.isFinite(activity.progress)?Math.max(0,Math.min(100,activity.progress)):null,fresh,accent,...(()=>{const appearance=presentation();return appearance?{appearance}:{};})()};
     const key=JSON.stringify(state),signalKey=JSON.stringify([state.kind,state.label,state.progress,state.fresh]);
     const appearanceOnly=appearancePending&&signalKey===lastSignalState;appearancePending=false;
     // A long frame can hold the same percentage. Renew only from a fresh owner
