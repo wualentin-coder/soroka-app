@@ -946,3 +946,17 @@ html[data-flow-design="magic"] .rmd :is(.rmd-action,.rmd-icon) svg{width:16px;he
 html[data-flow-design="magic"] .rmd .rmd-archive{display:block;margin:4px auto 0;color:var(--muted);font:600 13px/1 Manrope,sans-serif}
 html[data-flow-design="magic"] .rm-patch .rm-patch-markers{display:grid;gap:3px;width:100%;margin-top:8px;min-height:52px;padding:8px 14px;border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:14px;background:none;color:var(--accent);font:600 14px/1.2 Manrope,sans-serif;text-align:center}
 .rm-patch-markers small{font:500 11.5px/1.35 Manrope,sans-serif;color:var(--muted)}
+/* ===== Листы раздела «Рендер» во всю ширину телефона (18.11) =====
+   Лист выезжает снизу от края до края; скругление только сверху; отступы внутри — 16 px. */
+@media (max-width:640px){
+  html[data-flow-design="magic"] .modal-backdrop:has(> .sheet.dsr-sheet:not(.note-sheet)){padding:0!important;align-items:flex-end!important;justify-content:stretch!important}
+  html[data-flow-design="magic"] .modal-backdrop > .sheet.dsr-sheet{width:100%!important;max-width:none!important;margin:0!important;border-radius:24px 24px 0 0!important;border-bottom-width:0!important;
+    padding:16px 16px max(16px,env(safe-area-inset-bottom))!important;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)))!important;overflow:auto}
+  html[data-flow-design="magic"] .sheet.dsr-sheet .sheet-head{margin-bottom:10px}
+  html[data-flow-design="magic"] .sheet.dsr-sheet .sheet-head h2{font-size:22px;line-height:1.2;letter-spacing:-.02em}
+  html[data-flow-design="magic"] .sheet.dsr-sheet .rm-foot{margin:14px -16px calc(-1 * max(16px,env(safe-area-inset-bottom)));padding:14px 16px max(16px,env(safe-area-inset-bottom))}
+}
+/* Карточка задачи: длинное имя не должно занимать пол-экрана */
+html[data-flow-design="magic"] .rmd .sheet-head h2{font-size:22px;line-height:1.2;overflow-wrap:anywhere}
+/* Без полоски-ручки сверху листов раздела «Рендер» (просьба 18.11) */
+html[data-flow-design="magic"] .dsr-sheet .sheet-handle{display:none!important}

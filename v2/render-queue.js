@@ -1068,7 +1068,9 @@ function rmSpan(text) {
   return m ? [Number(m[1]), Number(m[2] ?? m[1])] : null;
 }
 function rmPatchable(j) {
-  return !!j && j.app==='ae' && j.status==='done' && !!rmSpan(j.frames);
+  // Видео, собранное своим Output Module одним AE, служба не правит участком (rm/patch.py) — кнопку не показываем.
+  const native=/Output Module сохраняется/.test(String(j?.warning||''));
+  return !!j && j.app==='ae' && j.status==='done' && !!rmSpan(j.frames) && !native;
 }
 function rmTimecode(frame, first, fps) {
   if(!(fps>0))return '';
