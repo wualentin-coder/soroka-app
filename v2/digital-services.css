@@ -960,3 +960,20 @@ html[data-flow-design="magic"] .rm-patch .rm-patch-markers{display:grid;gap:3px;
 html[data-flow-design="magic"] .rmd .sheet-head h2{font-size:22px;line-height:1.2;overflow-wrap:anywhere}
 /* Без полоски-ручки сверху листов раздела «Рендер» (просьба 18.11) */
 html[data-flow-design="magic"] .dsr-sheet .sheet-handle{display:none!important}
+/* ===== Рендер · правки по тесту 18.11 ===== */
+.rmd-state-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-2px 0 12px}
+.rmd-state-row .rmd-state{margin:0}
+html[data-flow-design="magic"] .rmd .rmd-alert{flex:none;display:grid;place-items:center;width:30px;height:30px;min-width:30px!important;min-height:30px!important;padding:0;border:1px solid color-mix(in srgb,var(--warn) 55%,transparent);border-radius:50%;background:var(--warn-soft);color:var(--warn);font:800 15px/1 Manrope,sans-serif}
+html[data-flow-design="magic"] .rmd .rmd-alert.is-open{background:var(--warn);color:var(--page)}
+ul.rmd-problem{list-style:none;display:grid;gap:4px;margin:0 0 12px;padding:10px 12px}
+ul.rmd-problem li{font:500 13px/1.4 Manrope,sans-serif}
+ul.rmd-problem li::before{content:"• ";opacity:.7}
+.rmd-where.is-open .rmd-where-text b{font:600 12.5px/1.4 Manrope,sans-serif}
+.dsv-version-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.dsv-version-row:last-child{border-bottom:0}
+html[data-flow-design="magic"] .dsv-versions .dsv-version-row .dsv-version{flex:1;border-bottom:0!important}
+html[data-flow-design="magic"] .dsv-versions .dsv-version-folder{flex:none;display:grid;place-items:center;width:38px;height:38px;min-width:38px!important;min-height:38px!important;padding:0;border:1px solid var(--line);border-radius:11px;background:var(--surface-raised);color:var(--muted)}
+.dsv-version-folder svg{width:16px;height:16px}
+.rm-patch-markline{margin:-6px 0 12px;font:600 12.5px/1.35 Manrope,sans-serif;color:var(--muted)}
+.rm-patch-markline.is-found{color:var(--accent)}
+html[data-flow-design="magic"] .rm-patch .rm-patch-markers{margin:0 0 12px}

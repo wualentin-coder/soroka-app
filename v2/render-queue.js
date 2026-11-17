@@ -170,9 +170,13 @@ function renderRmDetailSheet() {
     ['Программа',RM_APP[j.app]||j.app],
     took?['Рендер шёл',took]:null,
   ].filter(Boolean).map(([k,v])=>`<div class="rmd-fact"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
-  const open=Boolean(ui.sheet?.destOpen);
-  const place=where?`<button type="button" class="rmd-where${open?' is-open':''}" data-action="rm-dest-toggle" aria-expanded="${open}" aria-label="${open?'Свернуть путь':'Показать полный путь'}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder','icon-sm')}</span><span class="rmd-where-text"><small>${delivered?'В Облаке':'На диске'}</small><b>${open?esc(where).replace(/\\/g,'\\<wbr>'):esc(where.split(/[\\/]/).filter(Boolean).slice(-2).join('\\'))}</b></span></button>`:'';
-  const problem=j.error||j.warning||(deliveryFailed?j.delivery?.error:'');
+  // Нажатие по месту — открыть эту папку на ПК; путь виден целиком, переносится по папкам.
+  const place=where?`<button type="button" class="rmd-where is-open" data-action="${j.status==='done'?'rm-reveal':'rm-dest-toggle'}" data-id="${j.id}" aria-label="Открыть папку на ПК: ${esc(where)}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder','icon-sm')}</span><span class="rmd-where-text"><small>${delivered?'В Облаке':'На диске'} · открыть на ПК</small><b>${esc(where).replace(/\\/g,'\\<wbr>')}</b></span></button>`:'';
+  // Ошибки и предупреждения — под «!»: коротко, без длинных путей; у упавшей задачи открыто сразу.
+  const problems=rmShortProblems([j.error,j.warning,deliveryFailed?j.delivery?.error:''].filter(Boolean).join('; '));
+  const problemOpen=ui.sheet?.problemOpen??(j.status==='failed');
+  const problemBtn=problems.length?`<button type="button" class="rmd-alert${problemOpen?' is-open':''}" data-action="rm-problem-toggle" aria-expanded="${problemOpen}" aria-label="${problemOpen?'Скрыть замечания':`Замечания: ${problems.length}`}">!</button>`:'';
+  const problem=problems.length&&problemOpen?`<ul class="rmd-problem">${problems.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
   const actions=[
     rmPatchable(j)?`<button type="button" class="rmd-action is-main" data-action="rm-patch-open" data-id="${j.id}">Перерендерить участок</button>`:'',
     rmRecentAction(j).replace('class="dsv-action','class="rmd-action'),
@@ -181,8 +185,8 @@ function renderRmDetailSheet() {
   ].filter(Boolean);
   const chart=(j.frame_stats?.points||[]).length?rmFrameChart(j.frame_stats):'';
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rm-detail rmd" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(rmBaseName(j.name))}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div>`
-    +`<p class="rmd-state ${tone}"><i aria-hidden="true"></i>${esc(state)}</p>`
-    +(problem?`<p class="rmd-problem">${esc(problem)}</p>`:'')
+    +`<div class="rmd-state-row"><p class="rmd-state ${tone}"><i aria-hidden="true"></i>${esc(state)}</p>${problemBtn}</div>`
+    +problem
     +`<div class="rmd-facts">${facts}${place}</div>`
     +rmPatchSummary(j)
     +(actions.length?`<div class="rmd-actions">${actions.join('')}</div>`:'')
@@ -846,6 +850,7 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function rmAction(action, control) {
+  if(action==='rm-problem-toggle'){const j=rmJobs().find(x=>Number(x.id)===Number(ui.sheet?.id))||ui.sheet?.job;ui.sheet.problemOpen=!(ui.sheet.problemOpen??(j?.status==='failed'));render();return true;}
   if(action==='rm-dest-toggle'){ui.sheet.destOpen=!ui.sheet.destOpen;render();return true;}
   if(action==='rm-name-toggle'){ui.sheet.renameOpen=!ui.sheet.renameOpen;render();const n=document.querySelector?.('[data-rsx-name]');if(n){n.focus();n.select();}return true;}
   if(action==='rm-format-toggle'){ui.sheet.formatOpen=!ui.sheet.formatOpen;render();return true;}
@@ -931,7 +936,7 @@ function rmAction(action, control) {
   if (action === 'rm-tools-toggle') { ui.pc.rmToolsOpen=!ui.pc.rmToolsOpen; return true; }
   if (action === 'rm-history-toggle') { ui.pc.rmHistoryOpen=!ui.pc.rmHistoryOpen; return true; }
   if (action === 'rm-project') { ui.pc.rmProject = control.dataset.project || ''; render(); return true; }
-  if (action === 'rm-patch-open') { const job=rmJobs().find(j=>Number(j.id)===id);if(!rmPatchable(job))return true;ui.sheet={kind:'rm-patch',id,job};render();return true; }
+  if (action === 'rm-patch-open') { const job=rmJobs().find(j=>Number(j.id)===id);if(!rmPatchable(job))return true;ui.sheet={kind:'rm-patch',id,job};render();rmPatchMarkers(job);return true; }
   if (action === 'rm-patch-send') {
     const s=ui.sheet;if(s?.kind!=='rm-patch'||s.start==null)return true;
     const frames=s.start===s.end?String(s.start):`${s.start}-${s.end}`;
@@ -940,7 +945,7 @@ function rmAction(action, control) {
     return true;
   }
   if (action === 'rm-reveal') { rmTask('rm_reveal',{id},{done:r=>({title:r?.message||'Папка открыта на ПК'})}); return true; }
-  if (action === 'rm-patch-markers') { ui.sheet=null;render();rmTask('rm_patch',{id,frames:'markers'},{done:r=>{reload();return {title:r?.message||'Перерендер по маркерам RR в очереди'};}}); return true; }
+  if (action === 'rm-patch-markers') { const s=ui.sheet,job=rmPatchJob();if(s?.kind!=='rm-patch'||!job)return true;s.markersRead=false;s.markersFailed=false;render();rmPatchMarkers(job,true);return true; }
   if (action === 'rm-compare') { rmTask('rm_compare',{id},{done:r=>{reload();return {title:r?.message||'Сравниваю'};}}); return true; }
   if (action === 'rm-detail') { ui.sheet={kind:'rm-detail',id,job:rmJobs().find(j=>Number(j.id)===id)};render();return true; }
   if (action === 'rm-archive') { if(ui.sheet?.kind==='rm-detail')ui.sheet=null;rmArchive([id]); return true; }
@@ -1102,20 +1107,23 @@ function renderRmPatchSheet() {
   const j=rmPatchJob();
   if(!rmPatchable(j))return '';
   const s=ui.sheet,[first,last]=rmSpan(j.frames);
-  if(s.start==null){s.start=first+Math.round((last-first)*.4);s.end=Math.min(last,s.start+Math.max(1,Math.round((last-first)*.1)));}
+  if(s.start==null){const mem=ui.pc.rmPatchRange?.[rmPatchKey(j)];
+    if(mem&&mem.start>=first&&mem.end<=last){s.start=mem.start;s.end=mem.end;}
+    else{s.start=first+Math.round((last-first)*.4);s.end=Math.min(last,s.start+Math.max(1,Math.round((last-first)*.1)));}}
   const f=rmPatchFacts(j,s.start,s.end),busy=rmBusyCls(`rm-patch-${j.id}`);
   const source=j.kept_frames?'Остальные кадры возьмутся из сохранённых — без потерь.':'Остальные кадры возьмутся из готового видео.';
   return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rm-patch" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div>`
     + `<div class="sheet-head"><h2 id="sheet-title">Перерендер участка</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div>`
     + `<p class="rm-patch-job">${esc(rmBaseName(j.name))}${j.patch_of ? ` · поверх правки ${esc(j.patch_frames || '')}` : ''}</p>`
     + `<div class="rm-patch-readout" aria-live="polite"><b data-patch-out="range">${s.start}–${s.end}</b><span data-patch-out="count">${esc(f.count)}</span>${f.time?`<span class="rm-patch-time" data-patch-out="time">${esc(f.time)}</span>`:''}</div>`
+    + (()=>{const m=s.markers||[],busy=!s.markersRead;const t=busy?'Ищу маркеры RR в проекте AE…':m.length?`Маркеры RR: ${m.map(x=>x[0]===x[1]?x[0]:`${x[0]}–${x[1]}`).join(', ')}`:s.markersFailed?'Маркеры RR прочитать не удалось':'В композиции нет маркеров RR';return `<p class="rm-patch-markline${m.length?' is-found':''}">${esc(t)}</p>`;})()
     + rmPatchStrip(j,s.start,s.end)
     + `<div class="rm-patch-fields"><label><span>С кадра</span><input class="rm-input" type="number" inputmode="numeric" step="1" min="${first}" max="${last}" data-patch-edge="start" value="${s.start}"></label>`
     + `<label><span>По кадр</span><input class="rm-input" type="number" inputmode="numeric" step="1" min="${first}" max="${last}" data-patch-edge="end" value="${s.end}"></label>`
     + `${f.fps?`<p class="rm-patch-tc" data-patch-out="tc">${rmTimecode(s.start,first,f.fps)} — ${rmTimecode(s.end,first,f.fps)}</p>`:''}</div>`
+    + `<button type="button" class="rm-patch-markers ${!s.markersRead?'is-busy':''}" data-action="rm-patch-markers" data-id="${j.id}" ${!s.markersRead?'disabled':''}>${!s.markersRead?'Читаю маркеры RR…':'Взять участок из маркеров RR'}<small>обновит участок по маркерам в сохранённом проекте AE</small></button>`
     + `<p class="section-note">${source} Проект берётся с диска — сохраните правки в AE.</p>`
     + `<button type="button" class="primary-button rm-patch-go ${busy}" data-action="rm-patch-send" data-id="${j.id}">Перерендерить <span data-patch-out="label">${s.start}–${s.end}</span></button>`
-    + `<button type="button" class="rm-patch-markers" data-action="rm-patch-markers" data-id="${j.id}">По маркерам RR в AE<small>два маркера с подписью RR в композиции — начало и конец</small></button>`
     + `</section></div>`;
 }
 /** Перерисовка без render(): поля не теряют фокус, ручка не прыгает под пальцем. */
@@ -1136,7 +1144,20 @@ function rmPatchSet(edge, frame) {
   const s=ui.sheet,j=rmPatchJob();if(!j)return;
   const [first,last]=rmSpan(j.frames);frame=Math.round(Math.min(last,Math.max(first,frame)));
   if(edge==='start')s.start=Math.min(frame,s.end);else s.end=Math.max(frame,s.start);
+  s.touched=true;rmPatchRemember(j,s.start,s.end);
   rmPatchPaint();
+}
+/** Один ролик — один ключ (все его версии): выбранный участок не сбрасывается при повторном открытии. */
+function rmPatchKey(j){return `${j.scene||''}|${j.target||rmBaseName(j.name)}`;}
+function rmPatchRemember(j,a,b){ui.pc.rmPatchRange||={};ui.pc.rmPatchRange[rmPatchKey(j)]={start:a,end:b};}
+/** Маркеры RR в текущем проекте AE (служба читает его фоновым AE, ~15 с): один участок — сразу в ручки. */
+function rmPatchMarkers(j, force=false){
+  pcQuick('rm_markers',{id:j.id},`rm-markers-${j.id}`,r=>{
+    const s=ui.sheet;if(s?.kind!=='rm-patch'||Number(s.id)!==Number(j.id))return;
+    s.markers=(r?.ranges||[]).map(x=>[Number(x[0]),Number(x[1])]);s.markersRead=true;
+    if(s.markers.length&&(force||!s.touched)){s.start=Math.min(...s.markers.map(x=>x[0]));s.end=Math.max(...s.markers.map(x=>x[1]));rmPatchRemember(j,s.start,s.end);}
+    render();
+  },()=>{const s=ui.sheet;if(s?.kind==='rm-patch'){s.markersRead=true;s.markersFailed=true;render();}});
 }
 // Ручки: перетаскивание пальцем/мышью; касание шкалы переносит ближайшую ручку.
 let rmPatchDrag=null;
@@ -1174,7 +1195,7 @@ function rmPatchSummary(j) {
   if(c?.status==='running')rows.push(`<p class="rm-compare-state">Сравниваю с прошлой версией…</p>`);
   else if(c?.status==='failed')rows.push(`<p class="rm-compare-state warn">Сравнение не удалось: ${esc(c.error||'ошибка')}</p><button type="button" class="text-action ${rmBusyCls(`rm-compare-${j.id}`)}" data-action="rm-compare" data-id="${j.id}">Сравнить ещё раз</button>`);
   else if(c?.status==='done'){
-    const bad=Number(c.outside)>0||Number(c.seams_bad)>0;
+    const bad=Number(c.outside)>0;  // резкий стык при настоящей правке ожидаем — это подсказка, не ошибка
     rows.push(`<div class="rm-compare ${bad?'warn':'ok'}"><span class="rm-compare-dot" aria-hidden="true"></span><p>${esc(c.verdict||rmCompareShort(c)?.text||'')}</p></div>`);
   }
   return rows.length?`<div class="rm-patch-summary">${rows.join('')}</div>`:'';
@@ -1227,7 +1248,7 @@ function rmCompareShort(c) {
   if (c.status === 'failed') return { text: 'сравнение не удалось', tone: 'warn' };
   if (c.status !== 'done') return null;
   if (Number(c.outside) > 0) return { text: `изменения вне участка: ${c.outside}`, tone: 'warn' };
-  if (Number(c.seams_bad) > 0) return { text: 'скачок на стыке', tone: 'warn' };
+  if (Number(c.seams_bad) > 0) return { text: 'посмотрите стык', tone: '' };
   if (!Number(c.changed)) return { text: 'изменений нет', tone: 'warn' };
   return { text: 'стыки ровные', tone: 'ok' };
 }
@@ -1243,9 +1264,12 @@ function rmRecentAction(j) {
 }
 function rmVersionRow(v, n) {
   const what = v.patch_of ? `правка ${esc(rmPatchLabel(v.patch_frames))}` : 'весь ролик';
-  const state = v.status === 'done' ? rmElapsed(v) : v.status === 'failed' ? 'ошибка' : v.status === 'cancelled' ? 'отменено' : '';
+  const took = /не записано/.test(rmElapsed(v)) ? '' : rmElapsed(v);
+  const state = v.status === 'done' ? took : v.status === 'failed' ? 'ошибка' : v.status === 'cancelled' ? 'отменено' : '';
   const cmp = rmCompareShort(v.compare);
-  return `<button type="button" class="dsv-version" data-action="rm-detail" data-id="${v.id}"><span class="dsv-v">v${n}</span><span class="dsv-what">${what}</span><span class="dsv-meta">${esc(state)}${cmp ? ` · <em class="${cmp.tone}">${esc(cmp.text)}</em>` : ''}</span></button>`;
+  const meta = [esc(state), cmp ? `<em class="${cmp.tone}">${esc(cmp.text)}</em>` : ''].filter(Boolean).join(' · ');
+  return `<div class="dsv-version-row"><button type="button" class="dsv-version" data-action="rm-detail" data-id="${v.id}"><span class="dsv-v">v${n}</span><span class="dsv-what">${what}</span><span class="dsv-meta">${meta}</span></button>`
+    + (v.status === 'done' ? `<button type="button" class="dsv-icon dsv-version-folder" data-action="rm-reveal" data-id="${v.id}" aria-label="Открыть папку версии v${n} на ПК">${icon('folder', 'icon-sm')}</button>` : '') + `</div>`;
 }
 function rmVideoCard(g, project) {
   const base = g.current || g.versions[0], span = rmSpan(base.frames);
@@ -1453,4 +1477,18 @@ function rsxDestination(s, t, f, chosen) {
     ? chosen.map(x => String(rmWhere(s, x, rmFormFor(x, f)) || '').replace(/[\\/]+/g, '\\'))
     : [full];
   return `<button type="button" class="rsx-dest${open ? ' is-open' : ''}" data-action="rm-dest-toggle" aria-expanded="${open}" aria-label="${open ? 'Свернуть путь' : 'Показать полный путь'}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder', 'icon-sm')}</span><span class="rsx-dest-text"><b>${esc(folder || 'путь задан в сцене')}</b><small>${esc([what, after].filter(Boolean).join(' · '))}</small>${open ? `<span class="rsx-dest-full">${paths.map(p => `<code>${esc(p).replace(/\\/g, '\\<wbr>')}</code>`).join('')}</span>` : ''}</span></button>`;
+}
+
+/** Замечания задачи коротко: «не найдены исходники (2): C:\…; C:\…» → «Не найдены исходники (2)». */
+function rmShortProblems(text) {
+  const out = [];
+  for (const part of String(text || '').split(/;\s+/)) {
+    let t = part.trim();
+    if (!t || /^[a-z]:[\\/]/i.test(t)) continue;                 // хвост списка путей
+    t = t.replace(/:\s*[a-z]:[\\/].*$/i, '').replace(/\s*\(([^)]*[\\/][^)]*)\)\s*$/, '').trim();
+    if (t.length > 110) t = t.slice(0, 107).replace(/\s+\S*$/, '') + '…';
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+    if (t && !out.includes(t)) out.push(t);
+  }
+  return out.slice(0, 4);
 }
