@@ -55,6 +55,9 @@ function rmProgress(j) {
   return Math.max(0, Math.min(100, Number(j.percent)));
 }
 function rmCustomerButton(j){return Number.isSafeInteger(Number(j.id))&&Number(j.id)>0&&Number(j.started_at)>0?`<button type="button" class="small-button" data-action="rm-customer-share" data-id="${Number(j.id)}">${icon('share','icon-sm')}Для заказчика</button>`:'';}
+/** Текст для системного «Поделиться» — без путей, ID попытки и служебных данных. */
+function rmShareCopy(j){const percent=rmProgress(j),facts=[RM_APP[j.app]||j.app];if(j.status==='rendering')facts.push(percent===null?'рендер идёт':`${Math.round(percent)}%`);else if(j.status==='paused')facts.push('на паузе');else if(j.status==='delivering')facts.push('доставка');else if(j.status==='done')facts.push('готово');else if(j.status==='failed')facts.push('ошибка');if(j.eta&&j.status==='rendering')facts.push(`ещё ~${rmMinutes(j.eta)}`);return `Рендер «${String(j.name||'Рендер').trim().slice(0,120)}» — ${facts.filter(Boolean).join(' · ')}`;}
+async function rmCopyText(text){try{await navigator.clipboard.writeText(text);return true;}catch{}try{const area=document.createElement('textarea');area.value=text;area.readOnly=true;area.style.position='fixed';area.style.left='-9999px';document.body.append(area);area.select();const ok=document.execCommand('copy');area.remove();return ok;}catch{return false;}}
 function rmActiveRow(j, fresh = true) {
   const pct = fresh ? rmProgress(j) : null;
   const facts = !fresh ? "Нет свежих данных с ПК" : j.status === "delivering" ? `переношу в облачную папку${j.delivery?.total ? ` · ${j.delivery.files || 0} из ${j.delivery.total} файлов` : ""}`
@@ -131,8 +134,19 @@ function rmElapsed(j) {
   if(!j.started_at || !j.finished_at || !Number.isFinite(seconds) || seconds<0)return 'Время не записано';
   return seconds<60?`${Math.round(seconds)} с`:rmMinutes(seconds);
 }
+function rmRecentStatus(j) {
+  if (j.status === "done") return j.delivery?.status === "failed" ? "Готово · доставка не удалась" : "Готово";
+  if (j.status === "failed") return "Ошибка";
+  if (j.status === "cancelled") return "Отменено";
+  return j.status || "Завершено";
+}
+function rmRecentLine(j) {
+  const total=Number(j.total),done=Number(j.done);
+  const frames=["failed","cancelled"].includes(j.status)&&Number.isFinite(total)&&total>0&&Number.isFinite(done)?`${Math.max(0,Math.min(total,done))} из ${total} кадров`:"";
+  return [rmRecentStatus(j),frames,rmElapsed(j)].filter(Boolean).join(" · ");
+}
 function rmRecentRow(j) {
-  return `<button type="button" class="rm-history-open" data-action="rm-detail" data-id="${j.id}"><b>${esc(j.name)}</b><small>${esc(rmElapsed(j))}</small></button>${rmCustomerButton(j)}`;
+  return `<button type="button" class="rm-history-open" data-action="rm-detail" data-id="${j.id}"><b>${esc(j.name)}</b><small>${esc(rmRecentLine(j))}</small></button>${rmCustomerButton(j)}`;
 }
 function rmFrameChart(stats) {
   const points=(stats?.points||[]).filter(p=>Number.isFinite(p.frame)&&Number.isFinite(p.seconds)&&p.seconds>=0);
@@ -144,7 +158,36 @@ function rmFrameChart(stats) {
 function renderRmDetailSheet() {
   const j=rmJobs().find(j=>Number(j.id)===Number(ui.sheet.id))||ui.sheet.job;
   if(!j)return '';
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rm-detail" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(j.name)}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div><p class="section-note">${esc(RM_APP[j.app]||j.app)} · ${esc(rmElapsed(j))} · от запуска до завершения</p>${rmRecentDetails(j)}${rmFrameChart(j.frame_stats)}<details class="rm-resource"><summary>Параметры и результат</summary><p class="section-note">Кадры: ${esc(j.frames||'—')}<br>${esc(j.output||'')}</p></details><button type="button" class="text-action" data-action="rm-archive" data-id="${j.id}">Убрать из истории</button></section></div>`;
+  // Карточка задачи (18.11): статус одной строкой, факты, действия; пустые сноски не показываем.
+  const took=/не записано/.test(rmElapsed(j))?'':rmElapsed(j);
+  const delivered=j.delivery?.status==='done',deliveryFailed=j.delivery?.status==='failed';
+  const state=j.status==='done'?(deliveryFailed?'Готово · в облако не ушло':delivered?'Готово · в облаке':'Готово'):j.status==='failed'?'Ошибка':j.status==='cancelled'?'Отменено':j.status;
+  const tone=j.status==='done'&&!deliveryFailed?'ok':'warn';
+  const where=String((delivered&&j.delivery?.path)||j.output||'');
+  const span=rmSpan(j.frames);
+  const facts=[
+    span?['Кадры',`${span[0]}–${span[1]}${j.fps?` · ${((span[1]-span[0]+1)/Number(j.fps)).toFixed(1).replace('.',',')} с`:''}`]:null,
+    ['Программа',RM_APP[j.app]||j.app],
+    took?['Рендер шёл',took]:null,
+  ].filter(Boolean).map(([k,v])=>`<div class="rmd-fact"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+  const open=Boolean(ui.sheet?.destOpen);
+  const place=where?`<button type="button" class="rmd-where${open?' is-open':''}" data-action="rm-dest-toggle" aria-expanded="${open}" aria-label="${open?'Свернуть путь':'Показать полный путь'}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder','icon-sm')}</span><span class="rmd-where-text"><small>${delivered?'В Облаке':'На диске'}</small><b>${open?esc(where).replace(/\\/g,'\\<wbr>'):esc(where.split(/[\\/]/).filter(Boolean).slice(-2).join('\\'))}</b></span></button>`:'';
+  const problem=j.error||j.warning||(deliveryFailed?j.delivery?.error:'');
+  const actions=[
+    rmPatchable(j)?`<button type="button" class="rmd-action is-main" data-action="rm-patch-open" data-id="${j.id}">Перерендерить участок</button>`:'',
+    rmRecentAction(j).replace('class="dsv-action','class="rmd-action'),
+    j.status==='done'?`<button type="button" class="rmd-action" data-action="rm-reveal" data-id="${j.id}">${icon('folder','icon-sm')}Открыть папку на ПК</button>`:'',
+    Number(j.started_at)>0?`<button type="button" class="rmd-icon" data-action="rm-customer-share" data-id="${Number(j.id)}" aria-label="Ссылка для заказчика">${icon('share','icon-sm')}</button>`:'',
+  ].filter(Boolean);
+  const chart=(j.frame_stats?.points||[]).length?rmFrameChart(j.frame_stats):'';
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rm-detail rmd" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">${esc(rmBaseName(j.name))}</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div>`
+    +`<p class="rmd-state ${tone}"><i aria-hidden="true"></i>${esc(state)}</p>`
+    +(problem?`<p class="rmd-problem">${esc(problem)}</p>`:'')
+    +`<div class="rmd-facts">${facts}${place}</div>`
+    +rmPatchSummary(j)
+    +(actions.length?`<div class="rmd-actions">${actions.join('')}</div>`:'')
+    +rmVersionsBlock(j)+chart
+    +`<button type="button" class="text-action rmd-archive" data-action="rm-archive" data-id="${j.id}">Убрать из истории</button></section></div>`;
 }
 
 function rmBlock(d) {
@@ -202,9 +245,9 @@ function rmHealthCard(d) {
 
 // ------------------------------------------------------------ параметры задачи и настройки
 
-const RM_OUTPUT = [["root", "Папка рендера"], ["scene", "Как в сцене"], ["custom", "Своя папка"]];
-const RM_DELIVER = [["move", "В облако"], ["copy", "Копию в облако"], ["none", "Не отправлять"]];
-const RM_BACKEND = [["background", "В фоне"], ["cep", "В открытом AE"], ["auto", "Авто"]];
+const RM_OUTPUT = [["root", "Общая папка"], ["scene", "Из сцены"], ["custom", "Своя папка"]];
+const RM_DELIVER = [["move", "Перенести"], ["copy", "Копировать"], ["none", "Оставить"]];
+const RM_BACKEND = [["background", "В фоне"], ["cep", "В окне AE"], ["auto", "Авто"]];
 // Фон частями (rm/runners/ae_split.py): несколько AE на своих кусках кадров; видео — кадрами, склейка ffmpeg
 const RM_PARTS = [["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]];
 const RM_MFR_PARTS_WARN = "Тест: MFR в каждой части. 21.10 три части с MFR заняли 15,5 из 16 ГБ видеопамяти и встали — если рендер замрёт, Render Manager дорендерит кусок одной частью.";
@@ -214,7 +257,7 @@ function rmSettings() {
   const s = rmQueue().settings || {};
   return { render_root: s.render_root || "D:\\Render", deliver_root: s.deliver_root || "D:\\RenderCloud", default_output: s.default_output || "root",
     default_deliver: s.default_deliver || "move", ae_backend: s.ae_backend || "background", ae_parallel: "auto",
-    background_off: Boolean(s.background_off), known: Boolean(rmQueue().settings) };
+    background_off: Boolean(s.background_off), open_folder: s.open_folder !== false, known: Boolean(rmQueue().settings) };
 }
 
 /** Ряд кнопок-вариантов: выбранный подсвечен, нажатие меняет поле формы листа. */
@@ -320,13 +363,15 @@ function rmSettingsCard(d) {
 function renderRmSettingsSheet() {
   const f = ui.sheet.form;
   const body = [
-    rmField("Папка рендера", `<input class="rm-input" data-form="render_root" value="${esc(f.render_root)}" autocomplete="off" spellcheck="false">`, "Сюда рендерится всё с «Папка рендера»: проект\\имя файла."),
-    rmField("Папка Облака", `<input class="rm-input" data-form="deliver_root" value="${esc(f.deliver_root)}" autocomplete="off" spellcheck="false">`, "Её резервирует Облако Mail.ru — готовый рендер переносится или копируется сюда."),
-    rmField("Куда по умолчанию", rmSegments("default_output", RM_OUTPUT.filter(([k]) => k !== "custom"), f.default_output)),
-    rmField("Облако по умолчанию", rmSegments("default_deliver", RM_DELIVER, f.default_deliver)),
-    rmField("After Effects по умолчанию", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), rmBackendNote(rmSettings())),
+    rmField("Общая папка рендеров", `<input class="rm-input" data-form="render_root" value="${esc(f.render_root)}" autocomplete="off" spellcheck="false">`),
+    rmField("Папка Облака", `<input class="rm-input" data-form="deliver_root" value="${esc(f.deliver_root)}" autocomplete="off" spellcheck="false">`, "Облако Mail.ru забирает отсюда готовые рендеры."),
+    rmField("Куда сохранять", rmSegments("default_output", RM_OUTPUT.filter(([k]) => k !== "custom"), f.default_output)),
+    rmField("В облако после рендера", rmSegments("default_deliver", RM_DELIVER, f.default_deliver)),
+    rmField("After Effects", rmSegments("ae_backend", RM_BACKEND, f.ae_backend)),
+    rmField("Открывать папку после рендера", rmSegments("open_folder", [["1", "Да"], ["0", "Нет"]], f.open_folder)),
   ].join("");
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head"><h2 id="sheet-title">Настройки рендера</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${body}<button type="button" class="primary-button rm-submit ${rmBusyCls("rm-settings-save")}" data-action="rm-settings-save">Сохранить</button></section></div>`;
+  const back = ui.sheet.from === "rm-scenes" ? `<button class="icon-button" type="button" data-action="rm-scenes" aria-label="Назад">${icon("left")}</button>` : "";
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rsx rsx-step-form rsx-settings" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-head">${back}<h2 id="sheet-title">Настройки рендера</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>${body}<div class="rm-foot"><button type="button" class="primary-button ${rmBusyCls("rm-settings-save")}" data-action="rm-settings-save">Сохранить</button></div></section></div>`;
 }
 
 function rmFrameSummary(text) {
@@ -397,18 +442,23 @@ const rmPlural = (n, one, few, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ?
 /** Что рендерим — одной карточкой: кадры, длительность, размер, формат; ниже — предупреждения. */
 function rmSummary(s, chosen, f) {
   if (chosen.length > 1) {
+    let total = 0;
     const rows = chosen.map(t => {
-      const form=rmFormFor(t,f),audit=rmAudit(s,t,form),media=rmEffectiveMedia(t,form,s.app);
-      const facts=[form.frames,media.width?`${media.width}×${media.height}`:'',rmFps(audit.a.fps),media.format].filter(Boolean).join(' · ');
-      return `<div class="rm-sum-row"><span>${esc(t.target)}</span><b>${esc(facts)}</b></div>${audit.warnings.map(w=>`<p class="rm-warn">${esc(w)}</p>`).join('')}`;
-    }).join("");
-    return `<div class="rm-summary"><b class="rm-sum-title">${rmPlural(chosen.length, "композиция", "композиции", "композиций")}</b><details open><summary>Параметры и предупреждения всех композиций</summary>${rows}</details></div>`;
+      const form = rmFormFor(t, f), audit = rmAudit(s, t, form), media = rmEffectiveMedia(t, form, s.app);
+      total += audit.frames?.count || 0;
+      const name = String(t.target || '').split(/[\/]/).filter(Boolean).pop() || t.target;
+      const fmt = [media.width ? `${media.width}×${media.height}` : '', media.format && !/из проекта/i.test(media.format) ? media.format : ''].filter(Boolean).join(' · ');
+      return `<div class="rsx-batch-row" title="${esc(t.target)}"><b>${esc(name)}</b><span>${esc(String(form.frames || '').replace('-', '–'))}</span>${fmt ? `<em>${esc(fmt)}</em>` : ''}</div>`
+        + audit.warnings.map(w => `<p class="rm-warn">${esc(w)}</p>`).join('');
+    }).join('');
+    return `<div class="rm-summary rsx-batch"><div class="rsx-batch-head"><b>${rmPlural(chosen.length, "композиция", "композиции", "композиций")}</b>${total ? `<span>${rmPlural(total, "кадр", "кадра", "кадров")}</span>` : ''}</div><div class="rsx-batch-list">${rows}</div></div>`;
   }
+
   const t = chosen[0], audit = rmAudit(s, t, rmFormFor(t, f)), a = audit.a, n = audit.frames?.count,media=rmEffectiveMedia(t,f,s.app);
   const line1 = [n ? rmPlural(n, "кадр", "кадра", "кадров") : "", rmDuration(n, a.fps)].filter(Boolean).join(" · ");
   const line2 = [media.width && media.height ? `${media.width}×${media.height}` : "", rmFps(a.fps), media.format].filter(Boolean).join(" · ");
   const warn = audit.warnings.slice(0, 3).map(w => `<p class="rm-warn">${esc(w)}</p>`).join("") + (audit.warnings.length > 3 ? `<p class="rm-warn">и ещё ${audit.warnings.length - 3}</p>` : "");
-  return `<div class="rm-summary"><div class="rm-summary-name"><b class="rm-sum-title">${esc(f.output_name || t.target)}</b>${!ui.sheet?.benchmark?`<button type="button" class="icon-button" data-action="rm-name-toggle" aria-label="Изменить имя файла"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button>`:''}</div>${ui.sheet?.renameOpen?`<input class="rm-input" data-form="output_name" maxlength="120" value="${esc(f.output_name || '')}" placeholder="Имя файла без расширения" aria-label="Имя итогового файла">`:''}${line1 ? `<p class="rm-sum-facts">${esc(line1)}</p>` : ""}${line2 ? `<p class="rm-sum-facts">${esc(line2)}</p>` : ""}${warn}</div>`;
+  return `<div class="rm-summary"><div class="rm-summary-name">${ui.sheet?.benchmark ? `<b class="rm-sum-title">${esc(f.output_name || t.target)}</b>` : ui.sheet?.renameOpen ? `<input class="rm-input rsx-name-input" data-form="output_name" data-rsx-name maxlength="120" value="${esc(f.output_name || t.target || '')}" placeholder="${esc(t.target)}" aria-label="Имя итогового файла, без расширения" autocomplete="off" spellcheck="false">` : `<button type="button" class="rsx-name" data-action="rm-name-toggle" aria-label="Имя файла: ${esc(f.output_name || t.target)}. Нажмите, чтобы изменить">${esc(f.output_name || t.target)}</button>`}</div>${line1 ? `<p class="rm-sum-facts">${esc(line1)}</p>` : ""}${line2 ? `<p class="rm-sum-facts">${esc(line2)}</p>` : ""}${warn}</div>`;
 }
 
 /** Куда ляжет рендер — одной строкой под переключателем. */
@@ -440,25 +490,22 @@ function rmJobForm(s, t) {
     !ui.sheet.calibration ? rmField('Что сравнить',rmSegments('benchmark_mode',[['mfr','MFR'],['parts','1–4 части']],f.benchmark_mode || 'mfr')) : '',
     rmField("Кадры для теста", `<input class="rm-input" data-form="sample_frames" value="${esc(f.sample_frames)}" inputmode="numeric" autocomplete="off">`, `2–120 кадров подряд внутри ${esc(f.frames)}.`),
   ] : [
-    !many ? rmField("Кадры", rmFrameFields(f.frames)) : "",
-    ae ? rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : "") : "",
-    rmField("Сохранение и облако", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\\Render" autocomplete="off" spellcheck="false">` : "") + `<span class="rm-field-caption">После рендера</span>` + rmSegments("deliver",RM_DELIVER,f.deliver) + `<p class="rm-path">${esc(rmWhere(s,t,f))}</p>`, 'Облако сохраняет папку проекта. Занятое имя получит суффикс _002.'),
-    ae ? rmField('Формат вывода',rmFormatSelect(chosen,f),'MOV + альфа сохраняет прозрачность. MP4 — без прозрачности. HAP требует больше места.') : '',
+    !many ? rmField("Кадры", rsxFrameStrip(t, f.frames) + rmFrameFields(f.frames)) : "",
+    rmField("Сохранение и облако", rmSegments("output_mode", RM_OUTPUT, f.output_mode) + (f.output_mode === "custom" ? `<input class="rm-input" data-form="output_dir" value="${esc(f.output_dir)}" placeholder="E:\Render" autocomplete="off" spellcheck="false" aria-label="Своя папка">` : "") + `<span class="rm-field-caption">В облако после рендера</span>` + rmSegments("deliver",RM_DELIVER,f.deliver) + rsxDestination(s, t, f, chosen)),
   ];
+  // «Дополнительно» (решение 18.11): способ AE, формат, части и разрешение; пресеты и «Срочно» убраны.
   const more = ui.sheet.more;
-  const extra = !more ? "" : [
-    !bench ? rmPresetChips(s, f) : "",
-    !bench && ae && f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || 'auto')), 'Авто учитывает замеры и свободную RAM/VRAM.') : "",
-    !bench ? `<button type="button" class="rm-toggle" data-action="rm-opt" data-key="urgent" data-value="${f.urgent === "1" ? "" : "1"}" aria-pressed="${f.urgent === "1"}"><span>Срочно — поставить первой</span><i class="rm-switch"></i></button>` : '',
-    many && !bench ? rmField("Один диапазон для всех", `<input class="rm-input" data-form="frames" value="${esc(f.frames)}" inputmode="numeric" autocomplete="off" placeholder="у каждой свой">`) : "",
-    ae ? rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit"), "Только для этой задачи; композиция в проекте не меняется.") : "",
-    !bench ? rmPresetSave(f) : "",
-  ].join("");
+  const moreBtn = `<button type="button" class="rm-more" data-action="rm-more" aria-expanded="${Boolean(more)}">Дополнительно<span aria-hidden="true">${more ? "▴" : "▾"}</span></button>`;
+  const extra = bench ? "" : !ae ? moreBtn + (more ? `<p class="rsx-more-note">У Houdini (Karma) формат, разрешение и способ рендера задаются в ROP сцены.</p>` : "") : moreBtn + (!more ? "" : [
+    rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : ""),
+    rmField('Формат вывода', rmFormatSelect(chosen, f)),
+    f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || '4'))) : "",
+    rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit")),
+  ].join(""));
   const label = bench ? "Запустить тест" : many ? `Поставить ${rmPlural(chosen.length, "задачу", "задачи", "задач")}` : "Поставить в очередь";
   return [
     rmSummary(s, chosen, f),
     ...main,
-    `<button type="button" class="rm-more" data-action="rm-more" aria-expanded="${Boolean(more)}">Дополнительно<span>${more ? "▴" : "▾"}</span></button>`,
     extra,
     `<div class="rm-foot"><p class="rm-err" ${errors.length ? "" : "hidden"}>${esc(errors[0] || "")}</p>${!t.audited_at ? `<button type="button" class="ghost-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : ""}<button type="button" class="primary-button rm-wide ${rmBusyCls("rm-submit")}" data-action="rm-submit">${label}</button></div>`,
   ].join("");
@@ -522,33 +569,18 @@ function renderRmScenesSheet() {
   const s = ui.sheet.scene ? scenes.find(x => x.id === ui.sheet.scene) : null;
   const t = s ? rmChosenTargets(s)[0] : null;
   const back = t ? `data-action="rm-scene" data-id="${esc(s.id)}"` : `data-action="rm-scenes"`;
-  const head = title => `<div class="sheet-handle"></div><div class="sheet-head">${s ? `<button class="icon-button" type="button" ${back} aria-label="Назад">${icon("left")}</button>` : ""}<h2 id="sheet-title">${title}</h2><button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>`;
+  const sub = t ? rsxName(s) : '';
+  const head = title => `<div class="sheet-handle"></div><div class="sheet-head">${s ? `<button class="icon-button" type="button" ${back} aria-label="Назад">${icon("left")}</button>` : ""}<h2 id="sheet-title">${title}${sub ? `<small class="rsx-sub">${esc(sub)}</small>` : ''}</h2>${!s ? `<button class="icon-button" type="button" data-action="rm-settings" aria-label="Настройки рендера: папки и способ по умолчанию">${icon("settings")}</button>` : ''}<button class="icon-button" type="button" data-action="close-sheet" aria-label="Закрыть">${icon("close")}</button></div>`;
   let body;
   if (t) {
     body = rmJobForm(s, t);
   } else if (!s) {
-    body = scenes.length
-      ? `<div class="rm-scenes">${scenes.map(x => `<button type="button" class="pc-find-row" data-action="rm-scene" data-id="${esc(x.id)}"><span class="pc-find-ico file"><svg viewBox="0 0 24 24" aria-hidden="true">${PC_FIND_ICON.file}</svg></span><span class="pc-find-text"><b>${esc(x.name)}${x.cloud ? " ☁" : ""}</b><small>${esc([x.primary ? 'Основной проект' : '', x.app === "karma" ? "Houdini" : "After Effects", x.targets?.length ? `целей: ${x.targets.length}` : "ещё не прочитана", x.cloud ? "в Облаке" : ""].filter(Boolean).join(" · "))}</small></span></button>`).join("")}</div><p class="section-note">Основные проекты, недавние сцены Houdini и AE, прошлые рендеры и проекты в Облаке (O:). Служебные снимки скрыты.</p>`
-      : `<p class="section-note">Список сцен с компьютера ещё не пришёл — он приходит в течение 10 минут после запуска агента Flow.</p>`;
+    body = rsxScenePicker(scenes) + (ui.sheet.calibration ? '' : `<div class="rsx-tools"><button type="button" class="rsx-link" data-action="rm-calibrate">Тест скорости ПК</button></div>`);
   } else {
-    const reading = ui.pc.rmReading?.[s.id];
-    const requested = rmFilter(s), loaded = s.target_filter || {mode:"queue",prefix:"[R]",label_id:1};
-    const matches = s.app !== "ae" || (requested.mode === loaded.mode && (requested.mode !== "prefix" || requested.prefix === loaded.prefix) && (requested.mode !== "label" || Number(requested.label_id) === Number(loaded.label_id)));
-    const available=matches ? s.targets || [] : [];
-    const selected=new Set(ui.sheet.selected || []), n=available.filter(t=>selected.has(rmTargetKey(t))).length;
-    const kind=s.app === "ae" ? "Композиции" : "ROP";
-    // строка целиком — переключатель; дальше — одна кнопка внизу
-    const rows=available.map((t,i)=>{const on=selected.has(rmTargetKey(t));return `<button type="button" class="rm-pick ${on ? "on" : ""}" data-action="rm-select" data-i="${i}" aria-pressed="${on}"><span class="rm-check">${on ? pcIcon("check") : ""}</span><span class="rm-wait-text"><b>${esc(t.target)}</b><small>${esc(rmTargetFacts(t))}</small></span></button>`;}).join("");
-    const readBtn=cls=>`<button type="button" class="${cls} rm-read ${reading ? "is-busy" : ""}" data-action="rm-read" data-id="${esc(s.id)}" ${reading ? "disabled" : ""}>${reading ? "Читаю сцену…" : rows ? "Обновить" : "Прочитать сцену"}</button>`;
-    const empty=reading ? "Houdini или After Effects открывают сцену без окна — 20–60 секунд."
-      : !matches ? "Фильтр изменён — прочитайте сцену, чтобы увидеть композиции."
-      : `${s.cloud ? "Сцена в Облаке. " : ""}Прочитайте сцену — компьютер откроет её без окна и пришлёт, что в ней можно рендерить.`;
-    body = `<p class="rm-path">${esc(s.path)}</p>${rmTargetFilter(s)}${rows
-      ? `<div class="rm-list-head"><span>${kind} · ${available.length}</span><span class="rm-list-acts"><button type="button" class="text-action" data-action="rm-select-all">${n === available.length ? "Снять все" : "Выбрать все"}</button>${readBtn("text-action")}</span></div><div class="rm-picks">${rows}</div>
-         <div class="rm-foot"><button type="button" class="primary-button rm-wide" data-action="rm-batch-config" ${n ? "" : "disabled"}>${n ? `Дальше · ${n}` : `Отметьте ${s.app === "ae" ? "композиции" : "ROP"}`}</button></div>`
-      : `<p class="section-note">${empty}</p><div class="rm-foot">${readBtn("primary-button rm-wide")}</div>`}`;
+    body = rsxTargetPicker(s);
   }
-  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">${head(s ? s.name : "Поставить на рендер")}${body}</section></div>`;
+  const title = t ? (ui.sheet.benchmark ? 'Тест скорости' : 'Параметры') : s ? rsxName(s) : (ui.sheet.calibration ? 'Тест скорости ПК' : 'Новый рендер');
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rsx ${t ? 'rsx-step-form' : s ? 'rsx-step-targets' : 'rsx-step-scenes'}" role="dialog" aria-modal="true" aria-labelledby="sheet-title">${head(title)}${body}</section></div>`;
 }
 
 /** Прочитать цели сцены: ПК открывает её без окна, ответ кладёт в rmQueue.scenes. Ход — в панели внизу. */
@@ -591,6 +623,9 @@ const RM_FLOWS = {
   rm_cancel: { title: "Отменяю рендер", typical: 10, steps: ["Отправил на компьютер", "Останавливаю рендер"] },
   rm_retry: { title: "Ставлю заново", typical: 8, steps: ["Отправил на компьютер", "Готовлю копию проекта", "Возвращаю в очередь"] },
   rm_deliver: { title: "Отправляю в облако", typical: 6, steps: ["Отправил на компьютер", "Запускаю перенос"] },
+  rm_patch: { title: "Перерендер участка", typical: 12, steps: ["Отправил на компьютер", "Снимаю копию проекта", "Нахожу прошлую версию", "Ставлю участок в очередь"] },
+  rm_reveal: { title: "Открываю папку на ПК", typical: 4, steps: ["Отправил на компьютер", "Открываю Проводник"] },
+  rm_compare: { title: "Сравниваю версии", typical: 5, steps: ["Отправил на компьютер", "Запускаю сравнение"] },
 };
 const RM_WAKE_STEP = "Включаю компьютер через ESP32";
 
@@ -811,7 +846,8 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function rmAction(action, control) {
-  if(action==='rm-name-toggle'){ui.sheet.renameOpen=!ui.sheet.renameOpen;render();return true;}
+  if(action==='rm-dest-toggle'){ui.sheet.destOpen=!ui.sheet.destOpen;render();return true;}
+  if(action==='rm-name-toggle'){ui.sheet.renameOpen=!ui.sheet.renameOpen;render();const n=document.querySelector?.('[data-rsx-name]');if(n){n.focus();n.select();}return true;}
   if(action==='rm-format-toggle'){ui.sheet.formatOpen=!ui.sheet.formatOpen;render();return true;}
   if(action==='rm-format-templates'){ui.sheet.formatTemplatesOpen=!ui.sheet.formatTemplatesOpen;render();return true;}
   if(action==='rm-format-pick'){
@@ -835,7 +871,7 @@ function rmAction(action, control) {
       if (!selected.size || selected.size>50) {toast('Выберите от 1 до 50 целей');return true;}
       // одна цель — сразу её кадры в поле; несколько — у каждой свой диапазон
       const one=selected.size===1 ? (scene.targets || []).find(t=>selected.has(rmTargetKey(t))) : null;
-      const s=rmSettings();ui.sheet.batch=true;ui.sheet.more=false;ui.sheet.form={frames:one?.frames || '',output_mode:s.default_output,output_dir:'',deliver:s.default_deliver,ae_backend:s.ae_backend,parallel:"auto",ae_mfr:'inherit',ae_resolution:'inherit',ae_template:'',urgent:''};
+      const s=rmSettings();ui.sheet.batch=true;ui.sheet.more=false;ui.sheet.form={frames:one?.frames || '',output_mode:s.default_output,output_dir:'',deliver:s.default_deliver,ae_backend:s.ae_backend,parallel:"4",ae_mfr:'inherit',ae_resolution:'inherit',ae_template:'',urgent:''};
       if(ui.sheet.calibration) return rmAction('rm-benchmark',{dataset:{}});
     }
     render();return true;
@@ -894,6 +930,18 @@ function rmAction(action, control) {
   }
   if (action === 'rm-tools-toggle') { ui.pc.rmToolsOpen=!ui.pc.rmToolsOpen; return true; }
   if (action === 'rm-history-toggle') { ui.pc.rmHistoryOpen=!ui.pc.rmHistoryOpen; return true; }
+  if (action === 'rm-project') { ui.pc.rmProject = control.dataset.project || ''; render(); return true; }
+  if (action === 'rm-patch-open') { const job=rmJobs().find(j=>Number(j.id)===id);if(!rmPatchable(job))return true;ui.sheet={kind:'rm-patch',id,job};render();return true; }
+  if (action === 'rm-patch-send') {
+    const s=ui.sheet;if(s?.kind!=='rm-patch'||s.start==null)return true;
+    const frames=s.start===s.end?String(s.start):`${s.start}-${s.end}`;
+    ui.sheet=null;render();
+    rmTask('rm_patch',{id,frames},{done:r=>{reload();return {title:r?.message||`Перерендер ${frames} в очереди`};}});
+    return true;
+  }
+  if (action === 'rm-reveal') { rmTask('rm_reveal',{id},{done:r=>({title:r?.message||'Папка открыта на ПК'})}); return true; }
+  if (action === 'rm-patch-markers') { ui.sheet=null;render();rmTask('rm_patch',{id,frames:'markers'},{done:r=>{reload();return {title:r?.message||'Перерендер по маркерам RR в очереди'};}}); return true; }
+  if (action === 'rm-compare') { rmTask('rm_compare',{id},{done:r=>{reload();return {title:r?.message||'Сравниваю'};}}); return true; }
   if (action === 'rm-detail') { ui.sheet={kind:'rm-detail',id,job:rmJobs().find(j=>Number(j.id)===id)};render();return true; }
   if (action === 'rm-archive') { if(ui.sheet?.kind==='rm-detail')ui.sheet=null;rmArchive([id]); return true; }
   if (action === "rm-clear") {
@@ -915,20 +963,24 @@ function rmAction(action, control) {
     if (!t) return true;
     const s = rmSettings();
     ui.sheet = { kind: "rm-scenes", scene: scene.id, calibration:Boolean(ui.sheet?.calibration), target: i, justRendered: false,
-      targetKey: rmTargetKey(t), form: { frames: t.frames || "", output_mode: s.default_output, output_dir: "", deliver: s.default_deliver, ae_backend: s.ae_backend, parallel: "auto", ae_mfr: "inherit", ae_resolution:"inherit", ae_template:"", urgent: "" } };
+      targetKey: rmTargetKey(t), form: { frames: t.frames || "", output_mode: s.default_output, output_dir: "", deliver: s.default_deliver, ae_backend: s.ae_backend, parallel: "4", ae_mfr: "inherit", ae_resolution:"inherit", ae_template:"", urgent: "" } };
     if(ui.sheet.calibration) return rmAction('rm-benchmark',{dataset:{}});
     render();
     return true;
   }
   if (action === "rm-opt") {
-    if (ui.sheet?.form) { ui.sheet.form[control.dataset.key] = control.dataset.value; delete ui.sheet.submissionId; ui.sheet.justRendered = false; render(); }
+    if (ui.sheet?.form) {
+      const key=String(control.dataset.key||''),value=String(control.dataset.value||'');
+      ui.sheet.form[key]=value;delete ui.sheet.submissionId;ui.sheet.justRendered=false;render();
+      requestAnimationFrame(()=>{const esc=v=>window.CSS?.escape?CSS.escape(v):v.replace(/["\\]/g,'\\$&');const next=document.querySelector(`.sheet [data-action="rm-opt"][data-key="${esc(key)}"][data-value="${esc(value)}"]`);next?.focus({preventScroll:true});});
+    }
     return true;
   }
   if (action === "rm-confirm-back") { ui.sheet.confirm = false; render(); return true; }
   if (action === "rm-submit") {if (ui.pc.quick?.['rm-submit'] !== 'is-busy') rmSubmitSheet();return true;}
   if (action === "rm-settings") {
     const s = rmSettings();
-    ui.sheet = { kind: "rm-settings", justRendered: false, form: { render_root: s.render_root, deliver_root: s.deliver_root, default_output: s.default_output, default_deliver: s.default_deliver, ae_backend: s.ae_backend, ae_parallel: "auto" } };
+    ui.sheet = { kind: "rm-settings", from: ui.sheet?.kind === "rm-scenes" ? "rm-scenes" : "", justRendered: false, form: { render_root: s.render_root, deliver_root: s.deliver_root, default_output: s.default_output, default_deliver: s.default_deliver, ae_backend: s.ae_backend, ae_parallel: "auto", open_folder: s.open_folder ? "1" : "0" } };
     render();
     return true;
   }
@@ -936,11 +988,12 @@ function rmAction(action, control) {
     const f = ui.sheet?.form;
     if (!f) return true;
     if (![f.render_root, f.deliver_root].every(p => /^[a-z]:\\/i.test(String(p).trim()))) { toast("Папки — полный путь, например D:\\Render"); return true; }
-    const args = { ...f, render_root: f.render_root.trim(), deliver_root: f.deliver_root.trim(), ae_parallel: "auto" };
+    const args = { ...f, render_root: f.render_root.trim(), deliver_root: f.deliver_root.trim(), ae_parallel: "auto", open_folder: f.open_folder !== "0" };
+    const from = ui.sheet.from;
     pcQuick("rm_settings", args, "rm-settings-save", r => {
       if (r?.settings) ui.pc.data.rmQueue = { ...rmQueue(), settings: r.settings };
       toast("Настройки сохранены");
-      ui.sheet = null;
+      ui.sheet = from === "rm-scenes" ? { kind: "rm-scenes", justRendered: false } : null;
       render();
     });
     return true;
@@ -953,7 +1006,7 @@ function rmAction(action, control) {
  document.addEventListener('pointerdown',e=>{
   const box=e.target.closest?.('.rm-history-swipe');
   if(!box || e.button!==0)return;
-  drag={box,row:box.querySelector('.rm-history-row'),id:Number(box.dataset.historyId),x:e.clientX,y:e.clientY,on:false};
+  drag={box,row:box.querySelector('.rm-history-row'),ids:String(box.dataset.historyIds||box.dataset.historyId||'').split(',').map(Number).filter(Boolean),x:e.clientX,y:e.clientY,on:false};
  });
  document.addEventListener('pointermove',e=>{
   if(!drag)return;
@@ -966,7 +1019,7 @@ function rmAction(action, control) {
   if(!drag)return;
   const d=drag;drag=null;
   d.row.style.transform='';
-  if(d.on){blockUntil=performance.now()+400;if(!cancelled && e.clientX-d.x < -65)rmArchive([d.id]);}
+  if(d.on){blockUntil=performance.now()+400;if(!cancelled && e.clientX-d.x < -65)rmArchive(d.ids);}
  };
  document.addEventListener('pointerup',end);
  document.addEventListener('pointercancel',e=>end(e,true));
@@ -985,3 +1038,417 @@ document.addEventListener('click',async event=>{
   const sent=await window.sorokaRenderShare({op:'send_owner',shareId:intent.shareId,requestId:intent.requestId});if(sent?.sent!==true)throw Error('send_unconfirmed');toast('Карточка в чате Flow — её можно переслать заказчику');
  }catch{toast('Отправка не подтверждена. Нажми ещё раз, чтобы проверить её.');}finally{intent.busy=false;if(button.isConnected)button.disabled=false;}
 },true);
+
+// «Поделиться рендером»: живая публичная ссылка на статус, без токена в DOM/логах.
+const rmShareIntents=new Map();
+document.addEventListener('click',event=>{
+ const button=event.target.closest?.('[data-action="rm-share"]');if(!button)return;event.preventDefault();event.stopPropagation();
+ const job=rmJobs().find(row=>String(row.id)===String(button.dataset.id));if(!job)return;
+ if(typeof window.sorokaRenderShare!=='function'){toast('Поделиться можно в приложении Flow');return;}
+ const key=String(job.id)+':'+String(job.started_at),prior=rmShareIntents.get(key);if(prior?.busy)return;
+ const intent=prior||{requestId:`app-share:${String(job.id)}:${String(job.started_at||'')}`.slice(0,100),statusUrl:'',busy:false};rmShareIntents.set(key,intent);intent.busy=true;button.disabled=true;
+ void(async()=>{try{
+  if(!intent.statusUrl){const answer=await window.sorokaRenderShare({op:'create',jobId:String(job.id),requestId:intent.requestId,label:String(job.name||'Рендер').trim().slice(0,120)});if(typeof answer?.statusUrl!=='string'||!/^https:\/\//i.test(answer.statusUrl))throw Error('share_unavailable');intent.statusUrl=answer.statusUrl;}
+  const text=rmShareCopy(job);
+  if(typeof navigator.share==='function'){try{await navigator.share({title:'Рендер',text,url:intent.statusUrl});toast('Ссылка на живой статус отправлена');return;}catch(error){if(error?.name==='AbortError')return;}}
+  if(await rmCopyText(text+'\n'+intent.statusUrl)){toast('Ссылка на живой статус скопирована');return;}
+  throw Error('copy_failed');
+ }catch{toast('Не удалось поделиться. Повтори ещё раз.');}finally{intent.busy=false;if(button.isConnected)button.disabled=false;}})();
+},true);
+
+
+/* ========== Перерендер участка готового видео ==========
+ * Лист «Перерендер участка»: шкала всего ролика, светящийся участок с двумя ручками, точные поля и оценка времени.
+ * Команда rm_patch → агент ПК → Render Manager: пересчитываются только эти кадры, остальное берётся из готовой версии.
+ * После рендера служба сама сравнивает версии; итог (rm_notice и поле compare) показан в карточке задачи. */
+/** «markers» — участок по маркерам RR в AE: служба узнает кадры перед рендером. */
+const rmPatchLabel = v => String(v || '').toLowerCase() === 'markers' ? 'по маркерам RR' : String(v || '');
+function rmSpan(text) {
+  const m=String(text||'').match(/^(\d+)(?:-(\d+))?/);
+  return m ? [Number(m[1]), Number(m[2] ?? m[1])] : null;
+}
+function rmPatchable(j) {
+  return !!j && j.app==='ae' && j.status==='done' && !!rmSpan(j.frames);
+}
+function rmTimecode(frame, first, fps) {
+  if(!(fps>0))return '';
+  const t=Math.max(0,(frame-first)/fps),m=Math.floor(t/60),s=t-m*60;
+  return `${m}:${s.toFixed(1).padStart(4,'0').replace('.',',')}`;
+}
+function rmPatchFacts(j, a, b) {
+  const [first,last]=rmSpan(j.frames),total=last-first+1,n=b-a+1,fps=Number(j.fps)||0;
+  const length=fps>0?`${(n/fps).toFixed(1).replace('.',',')} с`:'';
+  const spent=Number(j.finished_at)-Number(j.started_at);
+  // Оценка — по фактическому времени прошлого рендера, плюс минута на открытие проекта и склейку.
+  const guess=spent>0&&total>0?Math.round(spent*n/total+60):0;
+  return {count:`${rmPlural(n,'кадр','кадра','кадров')}${length?` · ${length}`:''}`,
+    time:guess?`≈ ${rmMinutes(guess)} вместо ${rmMinutes(spent)}`:'', total, first, last, fps};
+}
+function rmPatchJob() {
+  const s=ui.sheet;
+  return rmJobs().find(x=>Number(x.id)===Number(s?.id))||s?.job;
+}
+function rmPatchStrip(j, a, b) {
+  const {first,last,total}=rmPatchFacts(j,a,b),pos=f=>((f-first)/Math.max(1,total-1)*100).toFixed(3);
+  return `<div class="rm-patch-strip" data-patch-strip style="--a:${pos(a)}%;--b:${pos(b)}%">`
+    + `<div class="rm-patch-film" aria-hidden="true"></div><div class="rm-patch-range" aria-hidden="true"></div>`
+    + `<button type="button" class="rm-patch-handle" data-patch-handle="start" role="slider" aria-label="Первый кадр участка" aria-valuemin="${first}" aria-valuemax="${last}" aria-valuenow="${a}"></button>`
+    + `<button type="button" class="rm-patch-handle" data-patch-handle="end" role="slider" aria-label="Последний кадр участка" aria-valuemin="${first}" aria-valuemax="${last}" aria-valuenow="${b}"></button>`
+    + `</div><div class="rm-patch-scale" aria-hidden="true"><span>${first}</span><span>${last}</span></div>`;
+}
+function renderRmPatchSheet() {
+  const j=rmPatchJob();
+  if(!rmPatchable(j))return '';
+  const s=ui.sheet,[first,last]=rmSpan(j.frames);
+  if(s.start==null){s.start=first+Math.round((last-first)*.4);s.end=Math.min(last,s.start+Math.max(1,Math.round((last-first)*.1)));}
+  const f=rmPatchFacts(j,s.start,s.end),busy=rmBusyCls(`rm-patch-${j.id}`);
+  const source=j.kept_frames?'Остальные кадры возьмутся из сохранённых — без потерь.':'Остальные кадры возьмутся из готового видео.';
+  return `<div class="modal-backdrop" data-action="backdrop"><section class="sheet rm-sheet rm-patch" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-handle"></div>`
+    + `<div class="sheet-head"><h2 id="sheet-title">Перерендер участка</h2><button type="button" class="icon-button" data-action="close-sheet" aria-label="Закрыть">${icon('close')}</button></div>`
+    + `<p class="rm-patch-job">${esc(rmBaseName(j.name))}${j.patch_of ? ` · поверх правки ${esc(j.patch_frames || '')}` : ''}</p>`
+    + `<div class="rm-patch-readout" aria-live="polite"><b data-patch-out="range">${s.start}–${s.end}</b><span data-patch-out="count">${esc(f.count)}</span>${f.time?`<span class="rm-patch-time" data-patch-out="time">${esc(f.time)}</span>`:''}</div>`
+    + rmPatchStrip(j,s.start,s.end)
+    + `<div class="rm-patch-fields"><label><span>С кадра</span><input class="rm-input" type="number" inputmode="numeric" step="1" min="${first}" max="${last}" data-patch-edge="start" value="${s.start}"></label>`
+    + `<label><span>По кадр</span><input class="rm-input" type="number" inputmode="numeric" step="1" min="${first}" max="${last}" data-patch-edge="end" value="${s.end}"></label>`
+    + `${f.fps?`<p class="rm-patch-tc" data-patch-out="tc">${rmTimecode(s.start,first,f.fps)} — ${rmTimecode(s.end,first,f.fps)}</p>`:''}</div>`
+    + `<p class="section-note">${source} Проект берётся с диска — сохраните правки в AE.</p>`
+    + `<button type="button" class="primary-button rm-patch-go ${busy}" data-action="rm-patch-send" data-id="${j.id}">Перерендерить <span data-patch-out="label">${s.start}–${s.end}</span></button>`
+    + `<button type="button" class="rm-patch-markers" data-action="rm-patch-markers" data-id="${j.id}">По маркерам RR в AE<small>два маркера с подписью RR в композиции — начало и конец</small></button>`
+    + `</section></div>`;
+}
+/** Перерисовка без render(): поля не теряют фокус, ручка не прыгает под пальцем. */
+function rmPatchPaint() {
+  const s=ui.sheet,j=rmPatchJob(),root=document.querySelector('.rm-patch');
+  if(!root||!j)return;
+  const f=rmPatchFacts(j,s.start,s.end),pos=x=>((x-f.first)/Math.max(1,f.total-1)*100).toFixed(3)+'%';
+  const strip=root.querySelector('[data-patch-strip]');
+  strip.style.setProperty('--a',pos(s.start));strip.style.setProperty('--b',pos(s.end));
+  root.querySelector('[data-patch-handle=start]').setAttribute('aria-valuenow',s.start);
+  root.querySelector('[data-patch-handle=end]').setAttribute('aria-valuenow',s.end);
+  const out=(k,v)=>{const n=root.querySelector(`[data-patch-out=${k}]`);if(n)n.textContent=v;};
+  out('range',`${s.start}–${s.end}`);out('label',`${s.start}–${s.end}`);out('count',f.count);out('time',f.time);
+  if(f.fps)out('tc',`${rmTimecode(s.start,f.first,f.fps)} — ${rmTimecode(s.end,f.first,f.fps)}`);
+  for(const edge of ['start','end']){const input=root.querySelector(`[data-patch-edge=${edge}]`);if(input&&document.activeElement!==input)input.value=s[edge];}
+}
+function rmPatchSet(edge, frame) {
+  const s=ui.sheet,j=rmPatchJob();if(!j)return;
+  const [first,last]=rmSpan(j.frames);frame=Math.round(Math.min(last,Math.max(first,frame)));
+  if(edge==='start')s.start=Math.min(frame,s.end);else s.end=Math.max(frame,s.start);
+  rmPatchPaint();
+}
+// Ручки: перетаскивание пальцем/мышью; касание шкалы переносит ближайшую ручку.
+let rmPatchDrag=null;
+document.addEventListener('pointerdown',event=>{
+  const strip=event.target.closest?.('[data-patch-strip]');if(!strip||ui.sheet?.kind!=='rm-patch')return;
+  const j=rmPatchJob();if(!j)return;
+  const [first,last]=rmSpan(j.frames);
+  const at=x=>{const r=strip.getBoundingClientRect();return first+(Math.min(r.right,Math.max(r.left,x))-r.left)/Math.max(1,r.width)*(last-first);};
+  const frame=at(event.clientX);
+  const handle=event.target.dataset?.patchHandle||(Math.abs(frame-ui.sheet.start)<=Math.abs(frame-ui.sheet.end)?'start':'end');
+  rmPatchDrag={handle,at};strip.setPointerCapture?.(event.pointerId);strip.classList.add('dragging');
+  event.target.closest('[data-patch-handle]')?.focus({preventScroll:true});
+  rmPatchSet(handle,frame);event.preventDefault();
+});
+document.addEventListener('pointermove',event=>{if(rmPatchDrag)rmPatchSet(rmPatchDrag.handle,rmPatchDrag.at(event.clientX));});
+document.addEventListener('pointerup',()=>{if(!rmPatchDrag)return;rmPatchDrag=null;document.querySelector('[data-patch-strip]')?.classList.remove('dragging');});
+document.addEventListener('pointercancel',()=>{rmPatchDrag=null;document.querySelector('[data-patch-strip]')?.classList.remove('dragging');});
+document.addEventListener('keydown',event=>{
+  const edge=event.target?.dataset?.patchHandle;if(!edge||ui.sheet?.kind!=='rm-patch')return;
+  const step={ArrowLeft:-1,ArrowDown:-1,ArrowRight:1,ArrowUp:1,PageDown:-10,PageUp:10}[event.key];
+  if(!step)return;event.preventDefault();rmPatchSet(edge,ui.sheet[edge]+step*(event.shiftKey?10:1));
+});
+document.addEventListener('input',event=>{
+  const edge=event.target?.dataset?.patchEdge;if(!edge||ui.sheet?.kind!=='rm-patch')return;
+  const v=Number(event.target.value);if(event.target.value!==''&&Number.isFinite(v))rmPatchSet(edge,v);
+});
+document.addEventListener('change',event=>{
+  const edge=event.target?.dataset?.patchEdge;if(edge&&ui.sheet?.kind==='rm-patch')event.target.value=ui.sheet[edge];
+});
+
+/** Карточка задачи: правка участка и итог сравнения версий. */
+function rmPatchSummary(j) {
+  const c=j.compare,rows=[];
+  if(j.patch_of)rows.push(`<p class="rm-patch-of">Правка участка <b>${esc(rmPatchLabel(j.patch_frames))}</b></p>`);
+  if(c?.status==='running')rows.push(`<p class="rm-compare-state">Сравниваю с прошлой версией…</p>`);
+  else if(c?.status==='failed')rows.push(`<p class="rm-compare-state warn">Сравнение не удалось: ${esc(c.error||'ошибка')}</p><button type="button" class="text-action ${rmBusyCls(`rm-compare-${j.id}`)}" data-action="rm-compare" data-id="${j.id}">Сравнить ещё раз</button>`);
+  else if(c?.status==='done'){
+    const bad=Number(c.outside)>0||Number(c.seams_bad)>0;
+    rows.push(`<div class="rm-compare ${bad?'warn':'ok'}"><span class="rm-compare-dot" aria-hidden="true"></span><p>${esc(c.verdict||rmCompareShort(c)?.text||'')}</p></div>`);
+  }
+  return rows.length?`<div class="rm-patch-summary">${rows.join('')}</div>`:'';
+}
+
+
+/* ========== Раздел «Рендер»: ролик как плёнка ==========
+ * Одна шкала-плёнка во всём разделе: в «Сейчас» она заполняется по ходу рендера (у правки — только участок),
+ * в «Готовых роликах» на ней отмечены правленые участки, в листе «Перерендер участка» её выделяют ручками.
+ * Версии одного ролика (исходник и его правки, связанные patch_of) собраны в одну карточку. */
+const rmPct = (f, first, last) => `${Math.max(0, Math.min(100, (f - first) / Math.max(1, last - first) * 100)).toFixed(3)}%`;
+function rmFilm({ first, last, marks = [], fill = null, live = false, label = '' }) {
+  const items = marks.map(m => `<i class="rmf-mark ${m.kind || ''}" style="--a:${rmPct(m.a, first, last)};--b:${rmPct(m.b + 1 > last ? last : m.b + 1, first, last)}${m.p != null ? `;--p:${m.p}%` : ''}"></i>`).join('');
+  return `<div class="rmf${live ? ' is-live' : ''}"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${fill != null ? `<i class="rmf-fill" style="--p:${fill}%"></i>` : ''}${items}</div>`;
+}
+function rmFilmScale(first, last, fps) {
+  const tc = f => fps > 0 ? rmTimecode(f, first, fps).replace(/,\d$/, '') : String(f);
+  return `<div class="rmf-scale" aria-hidden="true"><span>${tc(first)}</span><span>${tc(last + 1)}</span></div>`;
+}
+/** Плёнка текущего рендера: у правки участка закрашено всё готовое, а участок заполняется по ходу. */
+function rmNowFilm(j, percent) {
+  const span = rmSpan(j.frames);
+  if (!span) return '';
+  const [first, last] = span, patch = rmSpan(j.patch_frames);
+  if (patch) {
+    const count = patch[1] - patch[0] + 1, total = last - first + 1, done = Number(j.done) || 0;
+    const inPatch = j.total ? Math.max(0, Math.min(100, (done - (total - count)) / count * 100)) : (percent ?? 0);
+    return rmFilm({ first, last, fill: 100, marks: [{ a: patch[0], b: patch[1], kind: 'is-work', p: inPatch.toFixed(1) }], live: true,
+      label: `Пересчитываю кадры ${j.patch_frames}` });
+  }
+  return rmFilm({ first, last, fill: percent ?? 0, live: percent == null, label: percent == null ? 'Рендер идёт' : `Готово ${Math.round(percent)}%` });
+}
+
+/** Готовые и неудачные задачи → ролики: исходная версия и все её правки вместе, свежие сверху. */
+function rmVideoGroups(jobs) {
+  const byId = new Map(jobs.map(j => [Number(j.id), j]));
+  const root = j => { let r = j, guard = 0; while (r.patch_of && byId.has(Number(r.patch_of)) && guard++ < 50) r = byId.get(Number(r.patch_of)); return r.patch_of && !byId.has(Number(r.patch_of)) ? Number(r.patch_of) : Number(r.id); };
+  const groups = new Map();
+  for (const j of jobs) { const key = root(j); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(j); }
+  return [...groups.values()].map(list => {
+    const versions = list.slice().sort((a, b) => Number(a.id) - Number(b.id));
+    const latest = versions.at(-1), done = versions.filter(v => v.status === 'done'), current = done.at(-1) || null;
+    return { versions, latest, current, at: Math.max(...versions.map(v => Number(v.finished_at) || 0)) };
+  }).sort((a, b) => b.at - a.at);
+}
+const rmBaseName = name => String(name || 'Рендер').replace(/\s*·\s*правка\s+[\d,\-\s]+$/i, '');
+function rmCompareShort(c) {
+  if (!c) return null;
+  if (c.status === 'running') return { text: 'сравниваю…', tone: '' };
+  if (c.status === 'failed') return { text: 'сравнение не удалось', tone: 'warn' };
+  if (c.status !== 'done') return null;
+  if (Number(c.outside) > 0) return { text: `изменения вне участка: ${c.outside}`, tone: 'warn' };
+  if (Number(c.seams_bad) > 0) return { text: 'скачок на стыке', tone: 'warn' };
+  if (!Number(c.changed)) return { text: 'изменений нет', tone: 'warn' };
+  return { text: 'стыки ровные', tone: 'ok' };
+}
+/** Действие для неудачной или прерванной попытки — то же, что в карточке задачи. */
+function rmRecentAction(j) {
+  const deliveryFailed = j.status === 'done' && j.delivery?.status === 'failed';
+  const act = (op, label) => `<button type="button" class="dsv-action ${rmBusyCls(`rm-${op}-${j.id}`)}" data-action="rm-${op}" data-id="${j.id}">${label}</button>`;
+  const resumable = (j.app === 'karma' || (j.app === 'ae' && j.ae_backend === 'background')) && Number(j.done) > 0 && Number(j.total) > Number(j.done);
+  return deliveryFailed ? act('deliver', 'Отправить в облако')
+    : j.status === 'failed' && j.missing > 0 ? act('missing', `Дорендерить ${j.missing}`)
+      : (j.status === 'failed' || j.status === 'cancelled') && resumable ? act('retry', `Продолжить · ${j.done}/${j.total}`)
+        : j.status === 'failed' || j.status === 'cancelled' ? act('retry', 'Повторить') : '';
+}
+function rmVersionRow(v, n) {
+  const what = v.patch_of ? `правка ${esc(rmPatchLabel(v.patch_frames))}` : 'весь ролик';
+  const state = v.status === 'done' ? rmElapsed(v) : v.status === 'failed' ? 'ошибка' : v.status === 'cancelled' ? 'отменено' : '';
+  const cmp = rmCompareShort(v.compare);
+  return `<button type="button" class="dsv-version" data-action="rm-detail" data-id="${v.id}"><span class="dsv-v">v${n}</span><span class="dsv-what">${what}</span><span class="dsv-meta">${esc(state)}${cmp ? ` · <em class="${cmp.tone}">${esc(cmp.text)}</em>` : ''}</span></button>`;
+}
+function rmVideoCard(g, project) {
+  const base = g.current || g.versions[0], span = rmSpan(base.frames);
+  const title = rmShortTitle(rmBaseName(g.versions[0].name), project), latest = g.latest;
+  const failedLatest = latest.status !== 'done' || latest.delivery?.status === 'failed';
+  const patches = g.versions.filter(v => v.patch_of && v.status === 'done' && rmSpan(v.patch_frames));
+  const marks = patches.map((v, i) => { const [a, b] = rmSpan(v.patch_frames); return { a, b, kind: i === patches.length - 1 ? 'is-new' : 'is-old' }; });
+  // У ещё не готового ролика плёнки нет: показывать нечего.
+  const film = span && g.current ? rmFilm({ first: span[0], last: span[1], fill: 100, marks,
+    label: marks.length ? `Ролик, правленые участки: ${patches.map(v => v.patch_frames).join(', ')}` : 'Ролик целиком' }) : '';
+  const took = v => { const t = rmElapsed(v); return /не записано/.test(t) ? '' : t; };
+  // Одна строка о последней версии; все версии — в карточке задачи по нажатию.
+  const n = g.versions.length, cmp = rmCompareShort(latest.compare);
+  const what = failedLatest
+    ? `<em class="warn">${esc(latest.status === 'done' ? `в облако не ушло: ${latest.delivery?.error || 'ошибка'}` : latest.error || (latest.status === 'cancelled' ? 'отменено' : 'ошибка рендера'))}</em>`
+    : [latest.patch_of ? `правка ${esc(rmPatchLabel(latest.patch_frames))}` : 'весь ролик', esc(took(latest)), cmp ? `<em class="${cmp.tone}">${esc(cmp.text)}</em>` : ''].filter(Boolean).join(' · ');
+  const tools = [
+    failedLatest ? rmRecentAction(latest) : '',
+    !failedLatest && g.current && rmPatchable(g.current) ? `<button type="button" class="dsv-action is-main" data-action="rm-patch-open" data-id="${g.current.id}" aria-label="Перерендерить участок «${esc(title)}»">Участок</button>` : '',
+    g.current ? `<button type="button" class="dsv-icon" data-action="rm-reveal" data-id="${Number(g.current.id)}" aria-label="Открыть папку на компьютере" title="Открыть папку на ПК">${icon('folder', 'icon-sm')}</button>` : '',
+    g.current ? `<button type="button" class="dsv-icon" data-action="rm-customer-share" data-id="${Number(g.current.id)}" aria-label="Ссылка для заказчика">${icon('share', 'icon-sm')}</button>` : '',
+  ].join('');
+  const ids = g.versions.filter(v => ['done', 'failed', 'cancelled'].includes(v.status)).map(v => v.id).join(',');
+  const state = !g.current ? 'is-failed' : failedLatest ? 'is-warn' : '';
+  return `<div class="rm-history-swipe" data-history-ids="${ids}"><span class="rm-history-remove" aria-hidden="true">Убрать</span><article class="rm-history-row dsv-card ${state}">`
+    + `<div class="dsv-top"><button type="button" class="dsv-open" data-action="rm-detail" data-id="${latest.id}"><b>${failedLatest ? `<i class="dsv-dot" aria-hidden="true"></i>` : ''}${esc(title)}${n > 1 ? `<span class="dsv-n">v${n}</span>` : ''}</b><small>${what}</small></button>`
+    + `${tools ? `<div class="dsv-tools">${tools}</div>` : ''}</div>${film}</article></div>`;
+}
+/** Все версии ролика — для карточки задачи. */
+function rmVersionsBlock(j) {
+  const recent = rmJobs().filter(x => ['done', 'failed', 'cancelled'].includes(x.status));
+  const g = rmVideoGroups(recent).find(x => x.versions.some(v => Number(v.id) === Number(j.id)));
+  if (!g || g.versions.length < 2) return '';
+  return `<div class="dsv-versions"><p class="pc-find-label">Версии</p>${g.versions.slice().reverse().map(v => rmVersionRow(v, g.versions.indexOf(v) + 1)).join('')}</div>`;
+}
+
+
+/* Готовые ролики по проектам: проект — файл сцены (MAP.aep → «MAP»); без сцены — начало имени до « · ». */
+function rmProjectOf(j) {
+  const file = String(j?.scene || '').split(/[\\/]/).pop().replace(/\.(aep|aepx|hip|hiplc|hipnc)$/i, '').trim();
+  return file || String(j?.name || 'Без проекта').split(' · ')[0].trim() || 'Без проекта';
+}
+function rmShortTitle(title, project) {
+  const t = String(title || ''), p = String(project || '');
+  return p && t.toLowerCase().startsWith(p.toLowerCase() + ' · ') ? t.slice(p.length + 3) : t;
+}
+function rmProjectGroups(videos) {
+  const map = new Map();
+  for (const g of videos) { const key = rmProjectOf(g.versions[0]); if (!map.has(key)) map.set(key, []); map.get(key).push(g); }
+  return [...map.entries()].map(([name, list]) => ({ name, videos: list, at: Math.max(...list.map(g => g.at)) })).sort((a, b) => b.at - a.at);
+}
+/** Секция «Готовые ролики»: чипы проектов (если их больше двух) и карточки, сгруппированные по проектам. */
+function rmVideosSection(recent) {
+  const projects = rmProjectGroups(rmVideoGroups(recent));
+  if (!projects.length) return '';
+  const chosen = projects.some(p => p.name === ui.pc.rmProject) ? ui.pc.rmProject : '';
+  const chips = projects.length > 2 ? `<div class="dsv-chips" role="tablist" aria-label="Проекты">${[['', 'Все'], ...projects.map(p => [p.name, p.name])].map(([v, l]) =>
+    `<button type="button" role="tab" class="dsv-chip" data-action="rm-project" data-project="${esc(v)}" aria-selected="${v === chosen}">${esc(l)}</button>`).join('')}</div>` : '';
+  const shown = chosen ? projects.filter(p => p.name === chosen) : projects;
+  const body = shown.map(p => `<section class="dsv-project" aria-label="Проект ${esc(p.name)}"><header class="dsv-project-head"><h3>${esc(p.name)}</h3><span>${rmPlural(p.videos.length, 'ролик', 'ролика', 'роликов')}</span></header><div class="rm-recents dsv-list">${p.videos.map(g => rmVideoCard(g, p.name)).join('')}</div></section>`).join('');
+  return `<section class="dsr-videos" aria-labelledby="dsr-videos-title"><header class="dsr-videos-head"><h2 id="dsr-videos-title">Готовые ролики</h2><button type="button" class="dsr-link ${rmBusyCls('rm-clear')}" data-action="rm-clear">Очистить</button></header>${chips}${body}</section>`;
+}
+
+
+/* ========== «Новый рендер»: выбор сцены, композиций и параметров ==========
+ * Тот же язык, что у раздела: компактные строки, одна главная кнопка внизу, кадры — на плёнке с ручками.
+ * Логика постановки прежняя (rmJobForm, rmSubmitSheet, rmAction): здесь только вид шагов 1–2 и плёнка кадров. */
+const rsxApp = s => s.app === 'karma' ? 'Hou' : 'AE';
+const rsxName = s => String(s.name || '').replace(/\.(aep|aepx|hip|hiplc|hipnc)$/i, '');
+function rsxSceneRow(x) {
+  const folder = String(x.path || '').split(/[\\/]/).slice(-3, -1).join('\\');
+  const n = x.targets?.length || 0;
+  const facts = [n ? rmPlural(n, x.app === 'ae' ? 'композиция' : 'цель', x.app === 'ae' ? 'композиции' : 'цели', x.app === 'ae' ? 'композиций' : 'целей') : 'не прочитана', folder].filter(Boolean).join(' · ');
+  return `<button type="button" class="rsx-scene" data-action="rm-scene" data-id="${esc(x.id)}" data-q="${esc((x.name + ' ' + x.path).toLowerCase())}"><span class="rsx-app ${x.app === 'ae' ? 'is-ae' : 'is-hou'}">${rsxApp(x)}</span><span class="rsx-text"><b>${esc(rsxName(x))}</b><small>${esc(facts)}</small></span><span class="rsx-chev" aria-hidden="true">›</span></button>`;
+}
+function rsxScenePicker(scenes) {
+  if (!scenes.length) return `<p class="rsx-empty">Список сцен ещё не пришёл с компьютера. Он появится в течение 10 минут после запуска агента Flow.</p>`;
+  const groups = [['Основные проекты', scenes.filter(s => s.primary && !s.cloud)], ['Недавние', scenes.filter(s => !s.primary && !s.cloud)], ['В Облаке', scenes.filter(s => s.cloud)]].filter(([, list]) => list.length);
+  const search = scenes.length > 6 ? `<label class="rsx-search"><span class="sr-only">Найти сцену</span><input type="search" data-rsx-q placeholder="Найти сцену" autocomplete="off" spellcheck="false"></label>` : '';
+  return search + groups.map(([title, list]) => `<section class="rsx-group"><h3>${title}</h3>${list.map(rsxSceneRow).join('')}</section>`).join('')
+    + `<p class="rsx-none" hidden>Ничего не нашлось</p>`;
+}
+document.addEventListener('input', event => {
+  if (!event.target?.matches?.('[data-rsx-q]')) return;
+  const q = event.target.value.trim().toLowerCase(), root = event.target.closest('.sheet');
+  let shown = 0;
+  for (const row of root.querySelectorAll('.rsx-scene')) { const on = !q || row.dataset.q.includes(q); row.hidden = !on; shown += on; }
+  for (const g of root.querySelectorAll('.rsx-group')) g.hidden = ![...g.querySelectorAll('.rsx-scene')].some(r => !r.hidden);
+  root.querySelector('.rsx-none').hidden = shown > 0;
+});
+function rsxTargetFilter(scene) {
+  if (scene.app !== 'ae') return '';
+  const filter = rmFilter(scene);
+  const seg = (mode, label) => `<button type="button" class="segment ${filter.mode === mode ? 'active' : ''}" data-action="rm-filter" data-mode="${mode}" aria-pressed="${filter.mode === mode}">${label}</button>`;
+  return `<div class="segmented rm-seg rsx-filter" style="--n:3" role="group" aria-label="Какие композиции показать">${seg('queue', 'Очередь AE')}${seg('prefix', 'По префиксу')}${seg('label', 'По метке')}</div>`
+    + (filter.mode === 'prefix' ? `<input class="rm-input rsx-filter-input" data-rm-filter="prefix" value="${esc(filter.prefix)}" maxlength="24" placeholder="Начало имени, например [R]" aria-label="Префикс имени">` : '')
+    + (filter.mode === 'label' ? `<select class="rm-input rsx-filter-input" data-rm-filter="label_id" aria-label="Цвет метки">${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}" ${Number(filter.label_id) === i + 1 ? 'selected' : ''}>${scene.ae_labels?.[String(i + 1)] ? esc(scene.ae_labels[String(i + 1)]) : `Цвет ${i + 1}`}</option>`).join('')}</select>` : '');
+}
+function rsxTargetPicker(s) {
+  const reading = ui.pc.rmReading?.[s.id];
+  const requested = rmFilter(s), loaded = s.target_filter || { mode: 'queue', prefix: '[R]', label_id: 1 };
+  const matches = s.app !== 'ae' || (requested.mode === loaded.mode && (requested.mode !== 'prefix' || requested.prefix === loaded.prefix) && (requested.mode !== 'label' || Number(requested.label_id) === Number(loaded.label_id)));
+  const available = matches ? s.targets || [] : [];
+  const selected = new Set(ui.sheet.selected || []), n = available.filter(t => selected.has(rmTargetKey(t))).length;
+  const rows = available.map((t, i) => {
+    const on = selected.has(rmTargetKey(t));
+    const facts = [t.frames ? `кадры ${t.frames}` : '', t.audit?.width ? `${t.audit.width}×${t.audit.height}` : ''].filter(Boolean).join(' · ');
+    return `<button type="button" class="rsx-target ${on ? 'on' : ''}" data-action="rm-select" data-i="${i}" aria-pressed="${on}"><span class="rsx-box" aria-hidden="true">${on ? pcIcon('check') : ''}</span><span class="rsx-text"><b>${esc(t.target)}</b><small>${esc(facts)}</small></span></button>`;
+  }).join('');
+  const read = `<button type="button" class="rsx-link ${reading ? 'is-busy' : ''}" data-action="rm-read" data-id="${esc(s.id)}" ${reading ? 'disabled' : ''}>${reading ? 'Читаю сцену…' : rows ? 'Перечитать' : 'Прочитать сцену'}</button>`;
+  const empty = reading ? 'Компьютер открывает сцену без окна — 20–60 секунд.'
+    : !matches ? 'Фильтр изменён — прочитайте сцену заново.'
+      : `${s.cloud ? 'Сцена в Облаке. ' : ''}Компьютер откроет сцену без окна и покажет, что в ней можно рендерить.`;
+  const kind = s.app === 'ae' ? 'Композиции' : 'Цели';
+  return `<p class="rsx-path">${esc(s.path)}</p>${rsxTargetFilter(s)}`
+    + (rows ? `<div class="rsx-list-head"><span>${kind} · ${available.length}</span>${read}</div><div class="rsx-targets">${rows}</div>`
+      + `<div class="rm-foot rsx-foot"><button type="button" class="rsx-link" data-action="rm-select-all">${n === available.length ? 'Снять все' : 'Выбрать все'}</button><button type="button" class="primary-button" data-action="rm-batch-config" ${n ? '' : 'disabled'}>${n ? `Дальше · ${n}` : 'Отметьте'}</button></div>`
+      : `<p class="rsx-empty">${empty}</p><div class="rm-foot rsx-foot">${reading ? '' : `<button type="button" class="primary-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>`}</div>`);
+}
+
+/* Кадры новой задачи на плёнке: те же ручки, что в перерендере участка; значения — в поля data-frame-edge,
+ * а они уже обновляют форму (обработчик input выше). Шкала — диапазон композиции из Render Queue. */
+function rsxFrameStrip(t, frames) {
+  const span = rmSpan(t.frames), cur = rmSpan(frames);
+  if (!span || !cur) return '';
+  const [first, last] = span, a = Math.max(first, Math.min(last, cur[0])), b = Math.max(a, Math.min(last, cur[1]));
+  const pos = f => ((f - first) / Math.max(1, last - first) * 100).toFixed(3);
+  return `<div class="rm-patch-strip rsx-strip" data-patch-strip data-first="${first}" data-last="${last}" style="--a:${pos(a)}%;--b:${pos(b)}%"><div class="rm-patch-film" aria-hidden="true"></div><div class="rm-patch-range" aria-hidden="true"></div>`
+    + `<button type="button" class="rm-patch-handle" data-patch-handle="start" role="slider" aria-label="Первый кадр" aria-valuemin="${first}" aria-valuemax="${last}" aria-valuenow="${a}"></button>`
+    + `<button type="button" class="rm-patch-handle" data-patch-handle="end" role="slider" aria-label="Последний кадр" aria-valuemin="${first}" aria-valuemax="${last}" aria-valuenow="${b}"></button></div>`;
+}
+function rsxStripSet(strip, edge, frame) {
+  const first = Number(strip.dataset.first), last = Number(strip.dataset.last), group = strip.closest('.rm-field')?.querySelector('.rm-frame-range');
+  if (!group) return;
+  const sIn = group.querySelector('[data-frame-edge=start]'), eIn = group.querySelector('[data-frame-edge=end]');
+  let a = Number(sIn.value), b = Number(eIn.value);
+  frame = Math.round(Math.min(last, Math.max(first, frame)));
+  if (edge === 'start') a = Math.min(frame, b); else b = Math.max(frame, a);
+  sIn.value = a; eIn.value = b;
+  const pos = f => ((f - first) / Math.max(1, last - first) * 100).toFixed(3) + '%';
+  strip.style.setProperty('--a', pos(a)); strip.style.setProperty('--b', pos(b));
+  strip.querySelector('[data-patch-handle=start]').setAttribute('aria-valuenow', a);
+  strip.querySelector('[data-patch-handle=end]').setAttribute('aria-valuenow', b);
+  sIn.dispatchEvent(new Event('input', { bubbles: true }));
+}
+let rsxDrag = null;
+document.addEventListener('pointerdown', event => {
+  const strip = event.target.closest?.('.rsx-strip'); if (!strip) return;
+  const first = Number(strip.dataset.first), last = Number(strip.dataset.last);
+  const at = x => { const r = strip.getBoundingClientRect(); return first + (Math.min(r.right, Math.max(r.left, x)) - r.left) / Math.max(1, r.width) * (last - first); };
+  const group = strip.closest('.rm-field')?.querySelector('.rm-frame-range');
+  const a = Number(group?.querySelector('[data-frame-edge=start]')?.value), b = Number(group?.querySelector('[data-frame-edge=end]')?.value), f = at(event.clientX);
+  const edge = event.target.dataset?.patchHandle || (Math.abs(f - a) <= Math.abs(f - b) ? 'start' : 'end');
+  rsxDrag = { strip, edge, at }; strip.setPointerCapture?.(event.pointerId); strip.classList.add('dragging');
+  rsxStripSet(strip, edge, f); event.preventDefault();
+});
+document.addEventListener('pointermove', event => { if (rsxDrag) rsxStripSet(rsxDrag.strip, rsxDrag.edge, rsxDrag.at(event.clientX)); });
+const rsxEnd = () => { if (!rsxDrag) return; rsxDrag.strip.classList.remove('dragging'); rsxDrag = null; };
+document.addEventListener('pointerup', rsxEnd); document.addEventListener('pointercancel', rsxEnd);
+document.addEventListener('keydown', event => {
+  const strip = event.target?.closest?.('.rsx-strip'), edge = event.target?.dataset?.patchHandle; if (!strip || !edge) return;
+  const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -10, PageUp: 10 }[event.key]; if (!step) return;
+  event.preventDefault();
+  const v = Number(event.target.getAttribute('aria-valuenow')); rsxStripSet(strip, edge, v + step * (event.shiftKey ? 10 : 1));
+});
+// Ввод в поля двигает ручки (поля — источник правды для формы).
+document.addEventListener('input', event => {
+  if (!event.target?.dataset?.frameEdge) return;
+  const field = event.target.closest('.rm-field'), strip = field?.querySelector('.rsx-strip'); if (!strip) return;
+  const first = Number(strip.dataset.first), last = Number(strip.dataset.last), pos = f => ((Math.min(last, Math.max(first, f)) - first) / Math.max(1, last - first) * 100).toFixed(3) + '%';
+  const a = Number(field.querySelector('[data-frame-edge=start]').value), b = Number(field.querySelector('[data-frame-edge=end]').value);
+  if (Number.isFinite(a)) strip.style.setProperty('--a', pos(a)); if (Number.isFinite(b)) strip.style.setProperty('--b', pos(b));
+});
+
+// Имя файла: Enter или уход из поля — сохранить и снова показать названием.
+function rsxNameDone(input) {
+  if (!ui.sheet?.renameOpen) return;
+  const v = input.value.trim();
+  if (ui.sheet.form) ui.sheet.form.output_name = v;
+  ui.sheet.renameOpen = false;
+  render();
+}
+document.addEventListener('keydown', event => {
+  if (!event.target?.matches?.('[data-rsx-name]')) return;
+  if (event.key === 'Enter') { event.preventDefault(); rsxNameDone(event.target); }
+  if (event.key === 'Escape') { event.preventDefault(); ui.sheet.renameOpen = false; render(); }
+});
+document.addEventListener('focusout', event => { if (event.target?.matches?.('[data-rsx-name]')) setTimeout(() => rsxNameDone(event.target), 0); });
+
+/** Куда ляжет рендер: папка крупно, файл и судьба после рендера — одной строкой. */
+function rsxDestination(s, t, f, chosen) {
+  // «D:\Render\proj\/stage/rop.[####].exr» (имя цели Karma с путём) → обычный путь Windows
+  const full = String(rmWhere(s, t, f) || '').replace(/[\\/]+/g, '\\');
+  const cut = full.lastIndexOf('\\');
+  const file = cut > 0 ? full.slice(cut + 1) : '';
+  // Пакет: файлы лягут по именам целей — показываем папку проекта, а не папку первой цели.
+  const project = String(s.path || s.name).split(/[\\/]/).pop().replace(/\.[^.]+$/, '').replace(/[<>:"/\\|?*]/g, '_');
+  const base = f.output_mode === 'custom' ? String(f.output_dir || '').replace(/[\\/]+$/, '') : f.output_mode === 'root' ? `${rmSettings().render_root}\\${project}` : '';
+  const folder = chosen.length > 1 && base ? base : cut > 0 ? full.slice(0, cut) : full;
+  const what = chosen.length > 1 ? `${rmPlural(chosen.length, 'файл', 'файла', 'файлов')} по именам композиций` : file;
+  const after = { move: 'потом переедет в Облако', copy: 'копия уйдёт в Облако', none: 'останется здесь' }[f.deliver] || '';
+  // По нажатию — полные пути (у пакета — каждого файла); ещё нажатие — свернуть.
+  const open = Boolean(ui.sheet?.destOpen);
+  const paths = chosen.length > 1
+    ? chosen.map(x => String(rmWhere(s, x, rmFormFor(x, f)) || '').replace(/[\\/]+/g, '\\'))
+    : [full];
+  return `<button type="button" class="rsx-dest${open ? ' is-open' : ''}" data-action="rm-dest-toggle" aria-expanded="${open}" aria-label="${open ? 'Свернуть путь' : 'Показать полный путь'}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder', 'icon-sm')}</span><span class="rsx-dest-text"><b>${esc(folder || 'путь задан в сцене')}</b><small>${esc([what, after].filter(Boolean).join(' · '))}</small>${open ? `<span class="rsx-dest-full">${paths.map(p => `<code>${esc(p).replace(/\\/g, '\\<wbr>')}</code>`).join('')}</span>` : ''}</span></button>`;
+}

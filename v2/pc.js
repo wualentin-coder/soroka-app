@@ -25,7 +25,7 @@ const pcDemo = { last: null, audio: { level: 76, muted: false }, rm: {
   held: false,
   settings: { render_root: "D:\\Render", deliver_root: "D:\\RenderCloud", default_output: "root", default_deliver: "move", ae_backend: "auto", background_off: true },
   jobs: [
-    { id: 7, name: "book_COLLECTED · usdrender_rop2", app: "karma", status: "rendering", frames: "60-130", done: 17, total: 71, percent: 24, eta: 1260, stage: "рендер", after: "notify" },
+    { id: 7, name: "book_COLLECTED · usdrender_rop2", app: "karma", status: "rendering", frames: "60-130", done: 17, total: 71, percent: 24, eta: 1260, stage: "рендер", after: "notify", started_at: 1794510000 },
     { id: 8, name: "BOOK_EVANGILE · БЛОК 2", app: "ae", status: "queued", frames: "0-489", after: "notify" },
     { id: 9, name: "main_map_v3 · intro", app: "ae", status: "queued", frames: "0-240", after: "notify" },
     { id: 6, name: "BOOK_EVANGILE · БЛОК 1", app: "ae", status: "cancelled", done: 27, total: 594 },
@@ -443,7 +443,7 @@ function pcWait(id, cmd, tries = 0) {
   }).catch(() => setTimeout(() => pcWait(id, cmd, tries + 1), 2500));
 }
 
-const PC_ERRORS = { esp_offline: "ESP32 не на связи — включить по сети не получится", agent_offline: "Компьютер не на связи", pc_off: "Компьютер выключен", already_on: "Компьютер и так включён", nothing_to_cancel: "Отменять нечего", bad_url: "Нужна полная ссылка, с http" };
+const PC_ERRORS = { esp_offline: "ESP32 не на связи — включить по сети не получится", agent_offline: "Компьютер не на связи", pc_off: "Компьютер выключен", already_on: "Компьютер и так включён", nothing_to_cancel: "Отменять нечего", bad_url: "Нужна полная ссылка, с http", bad_frames: "Не понял кадры участка — нужен диапазон вроде 1200-1450", bad_job: "Задача не найдена" };
 
 function pcSend(cmd, args = {}) {
   ui.pc.pending = { cmd, started: Date.now() };
