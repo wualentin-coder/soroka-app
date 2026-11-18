@@ -683,6 +683,92 @@ function syncModalScrollLock() {
 new MutationObserver(syncModalScrollLock).observe(document.body, { childList: true, subtree: true });
 let renderedShell = "";
 let renderedShellChrome = "";
+let renderedSheetOwner = null;
+// «Рендер» и «Компьютер»: фоновое обновление состояния меняет страницу на месте.
+// Оболочка (боковая панель, шапка с островком, кнопка ассистента, нижняя
+// навигация) не заменяется, поэтому её анимации не перезапускаются, а полоса
+// прогресса едет через transition. Остальные разделы идут прежним путём.
+const flowPatchPages = new Set(["render", "pc"]);
+const flowPatchStats = { patched: 0, replaced: 0, inserted: 0, removed: 0, text: 0, attrs: 0 };
+window.flowRenderPatchStats = flowPatchStats;
+const flowGlyphId = /light-glyph-\d+/g;
+const flowRuntimeNode = node => node.nodeType === 1 && node.matches(".flow-surface-contour,.flow-surface-response,.flow-input-light,.flow-input-source,.flow-input-spread,.flow-motion-indicator,.flow-control-response");
+// Эти атрибуты дописывают скрипты оформления — их не снимаем, даже если в разметке их нет.
+const flowKeepAttr = name => /^(data-flow|data-magic|data-light|data-motion|tabindex$|inert$)/.test(name);
+const flowAttrValue = value => String(value).replace(flowGlyphId, "#");
+let flowRenderTimer = 0;
+/** Схлопывает пачку перерисовок одного тика (ответ ПК + toast + финиш кнопки) в одну. */
+function scheduleRender() {
+  if (flowRenderTimer) return;
+  flowRenderTimer = setTimeout(() => { flowRenderTimer = 0; render(); }, 0);
+}
+function flowSyncClass(from, to) {
+  const next = new Set(to.classList);
+  for (const token of [...from.classList]) if (!next.has(token) && !token.startsWith("flow-")) from.classList.remove(token);
+  for (const token of next) if (!from.classList.contains(token)) from.classList.add(token);
+}
+function flowSyncAttrs(from, to) {
+  const range = from.tagName === "INPUT" && from.type === "range";
+  for (const name of to.getAttributeNames()) {
+    const value = to.getAttribute(name), old = from.getAttribute(name);
+    if (name === "class") { if (flowAttrValue(old ?? "") !== flowAttrValue(value)) flowSyncClass(from, to); continue; }
+    if (from.tagName === "DETAILS" && name === "open") continue;
+    // У значка свой градиент: id и ссылка на него остаются прежними, пока значок тот же.
+    if (old !== null && flowAttrValue(old) === flowAttrValue(value)) continue;
+    from.setAttribute(name, value);
+    flowPatchStats.attrs++;
+    if (range && name === "value") from.value = value;
+  }
+  for (const name of from.getAttributeNames()) {
+    if (to.hasAttribute(name) || name === "class" || name === "style" || flowKeepAttr(name)) continue;
+    if (from.tagName === "DETAILS" && name === "open") continue;
+    from.removeAttribute(name);
+    flowPatchStats.attrs++;
+  }
+  if (!to.hasAttribute("class") && from.hasAttribute("class")) flowSyncClass(from, to);
+}
+function flowPatchNode(from, to) {
+  if (from.nodeType !== to.nodeType) { from.replaceWith(to); flowPatchStats.replaced++; return; }
+  if (from.nodeType !== 1) {
+    if (from.nodeValue !== to.nodeValue) { from.nodeValue = to.nodeValue; flowPatchStats.text++; }
+    return;
+  }
+  // Поле, в котором сейчас печатают, не трогаем вовсе.
+  if (from === document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(from.tagName)) return;
+  const key = node => node.getAttribute("data-id") ?? node.getAttribute("id");
+  const keyFrom = key(from), keyTo = key(to);
+  if (from.tagName !== to.tagName || (keyFrom !== null && keyTo !== null && flowAttrValue(keyFrom) !== flowAttrValue(keyTo))
+    || (from.tagName === "INPUT" && from.type !== to.type)) { from.replaceWith(to); flowPatchStats.replaced++; return; }
+  flowSyncAttrs(from, to);
+  flowPatchList(from, [...from.childNodes].filter(node => !flowRuntimeNode(node)), [...to.childNodes], null);
+}
+function flowPatchList(parent, current, next, anchor) {
+  next.forEach((node, index) => {
+    if (current[index]) flowPatchNode(current[index], node);
+    else { parent.insertBefore(node, anchor); flowPatchStats.inserted++; }
+  });
+  for (let index = next.length; index < current.length; index++) { current[index].remove(); flowPatchStats.removed++; }
+}
+/** Обновляет страницу (и окно поверх неё) по месту. false — оболочку нужно собирать прежним путём. */
+function flowPatchRender(nav, page, overlay) {
+  const main = nav.parentElement.querySelector(":scope .main");
+  if (!main || main.querySelector(".swipe-row")) return false;
+  const pageNodes = document.createElement("template");
+  pageNodes.innerHTML = page;
+  flowPatchList(main, [...main.childNodes].filter(node => !flowRuntimeNode(node)), [...pageNodes.content.childNodes], null);
+  const tail = [];
+  for (let node = nav.nextSibling; node; node = node.nextSibling) if (!flowRuntimeNode(node)) tail.push(node);
+  if (ui.sheet === renderedSheetOwner) {
+    const overlayNodes = document.createElement("template");
+    overlayNodes.innerHTML = overlay;
+    flowPatchList(nav.parentElement, tail, [...overlayNodes.content.childNodes], null);
+  } else {
+    tail.forEach(node => node.remove());
+    nav.insertAdjacentHTML("afterend", overlay);
+  }
+  flowPatchStats.patched++;
+  return true;
+}
 function focusRouteHeading() {
   const heading = app.querySelector(".main h1");
   if (!heading || ui.sheet) return;
@@ -706,6 +792,7 @@ document.addEventListener('change',event=>{const field=event.target.closest?.('i
 function render() {
   // The live bridge installs page owners before committing the first complete shell.
   if (window.FLOW_SHELL_BOOTING === true) return;
+  if (flowRenderTimer) { clearTimeout(flowRenderTimer); flowRenderTimer = 0; }
   const retainRouteFocus = !ui.sheet && document.activeElement?.dataset.flowRouteFocus === ui.page;
   const navigationFocus = !ui.sheet && document.activeElement?.dataset.flowNavFocus === ui.page
     ? document.activeElement.closest('.mobile-nav') ? '.mobile-nav' : '.sidebar' : null;
@@ -728,6 +815,14 @@ function render() {
   // 120–200 мс задержки на каждое открытие.
   const nav = app.querySelector(":scope > .app-shell > .mobile-nav");
   const hasMap = html => /id="(loyalty-map|mini-map|address-map)"/.test(html);
+  // «Рендер»/«Компьютер» в новом оформлении: меняем только то, что изменилось, на месте.
+  // shellChrome содержит страницу, поэтому при смене раздела оболочка собирается заново.
+  if (nav && flowPatchPages.has(ui.page) && !classicDesign() && shellChrome && shellChrome === renderedShellChrome && !hasMap(sheet)
+    && !nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container") && flowPatchRender(nav, page, overlay)) {
+    renderedShell = page;
+    afterRender(scroll);
+    return;
+  }
   if (nav && page === renderedShell && shellChrome === renderedShellChrome && !hasMap(sheet) && !(nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container"))) {
     while (nav.nextSibling) nav.nextSibling.remove();
     nav.insertAdjacentHTML("afterend", overlay);
@@ -774,6 +869,7 @@ function render() {
   afterRender(scroll);
 }
 function afterRender(scroll) {
+  renderedSheetOwner = ui.sheet;
   if (window.FlowPiano) FlowPiano.mount();
   syncModalScrollLock();
   if (window.FlowEnglishMusic) FlowEnglishMusic.sync();
@@ -807,7 +903,7 @@ function afterRender(scroll) {
 function toast(message) {
   ui.toast = message;
   clearTimeout(toastTimer);
-  render();
+  if (flowPatchPages.has(ui.page)) scheduleRender(); else render();
   toastTimer = setTimeout(() => { ui.toast = ""; app.querySelector(".toast")?.remove(); }, 2800);
 }
 function flowDictateInto(field, label = "Говорите…") {

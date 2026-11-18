@@ -37,7 +37,7 @@ function rmFlushArchive() {
   if(rmArchiveSending || !rmArchiveBatch.size)return;
   const ids=[...rmArchiveBatch];rmArchiveBatch.clear();rmArchiveSending=true;
   const finish=()=>{rmArchiveSending=false;if(rmArchiveBatch.size)rmFlushArchive();};
-  pcQuick('rm_clear',{ids},'rm-clear',()=>{pcLoad(true);finish();},()=>{ids.forEach(id=>rmPendingArchive.delete(id));render();finish();});
+  pcQuick('rm_clear',{ids},'rm-clear',()=>{pcLoad(true);finish();},()=>{ids.forEach(id=>rmPendingArchive.delete(id));(typeof scheduleRender==='function'?scheduleRender:render)();finish();});
 }
 /** Есть ли в очереди что-то идущее или ждущее — тогда «Когда закончится» управляет очередью. */
 const rmBusy = () => rmJobs().some(j => RM_ACTIVE.includes(j.status) || RM_WAITING.includes(j.status));
@@ -910,7 +910,7 @@ function rmAction(action, control) {
     if (action==='rm-preset-save' && !name) {toast('Введите название пресета');return true;}
     const args=action==='rm-preset-delete' ? {action:'delete',id:control.dataset.id} : {action:'save',...(f.preset_id ? {id:f.preset_id} : {}),name,app:scene.app,form:Object.fromEntries(RM_PRESET_KEYS.map(k=>[k,f[k] || '']))};
     if (args.form) {args.form.parallel=f.parallel==='auto'?'auto':Number(f.parallel)||1;args.form.mfr_in_parts=false;if(f.ae_backend==='background')args.form.ae_mfr='off';}
-    pcQuick('rm_presets',args,'rm-preset-save',r=>{ui.pc.data.rmQueue={...rmQueue(),presets:r?.presets || []};f.preset_id='';toast(action==='rm-preset-delete' ? 'Пресет удалён' : 'Пресет сохранён');render();});return true;
+    pcQuick('rm_presets',args,'rm-preset-save',r=>{ui.pc.data.rmQueue={...rmQueue(),presets:r?.presets || []};f.preset_id='';toast(action==='rm-preset-delete' ? 'Пресет удалён' : 'Пресет сохранён');(typeof scheduleRender==='function'?scheduleRender:render)();});return true;
   }
   if (action === "rm-pause" || action === "rm-resume") {
     const cmd = action === "rm-pause" ? "rm_pause" : "rm_resume";

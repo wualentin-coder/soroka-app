@@ -58,14 +58,22 @@ function pcLoad(force = false) {
       const hero = document.querySelector(".pc-hero");
       if (document.activeElement?.id === "pc-find" && hero && ui.pc.data) hero.outerHTML = pcHero(ui.pc.data);
         else if(ui.sheet?.kind==='rm-scenes' && document.activeElement?.matches('[data-form], [data-frame-edge]')) rmRefreshError();
-        else render();
+        else if (pcInteracting()) return; // данные уже в ui.pc; окно обновится со следующим ответом
+        else scheduleRender();
     });
+}
+
+/** Человек печатает в окне или тянет ручку/строку: фоновое обновление экрана не вмешивается. */
+function pcInteracting() {
+  const active = document.activeElement;
+  if (ui.sheet && active?.closest?.(".sheet") && active.matches("input,textarea,select,[contenteditable]")) return true;
+  return Boolean(document.querySelector(".rm-dragging, .sheet .dragging, [data-patch-strip].dragging"));
 }
 
 window.addEventListener("flow:pc-state", event => {
   if (!event.detail || event.detail.error) return;
   ui.pc = { ...(ui.pc || {}), data: event.detail, at: Date.now(), error: "" };
-  if (pcOnPage() && !pcVolumeDragging && !document.hidden && !ui.sheet && !document.activeElement?.matches("input,textarea,select")) render();
+  if (pcOnPage() && !pcVolumeDragging && !document.hidden && !pcInteracting() && !(!ui.sheet && document.activeElement?.matches("input,textarea,select"))) scheduleRender();
 });
 
 // Пока экран «Компьютер» открыт — состояние раз в 15 с (агент шлёт загрузку раз в 30 с).
@@ -467,12 +475,12 @@ function pcQuick(cmd, args, key, done, failed) {
   const deadline = Date.now() + (cmd === "rm_batch" ? 15 * 60000 : 45000);
   ui.pc.quick ||= {};
   const quiet = key === "audio";
-  if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage() && !pcVolumeDragging) render(); }
+  if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage() && !pcVolumeDragging) scheduleRender(); }
   const finish = (state, result) => {
     if (result?.audio && (audioRevision === null || audioRevision === pcVolumeRevision) && !pcVolumeDragging) { ui.pc.audio = result.audio; ui.pc.audioAt = Date.now(); }
     if (!quiet) {
       ui.pc.quick[key] = state;
-      setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (pcOnPage() && !pcVolumeDragging) render(); } }, 1200);
+      setTimeout(() => { if (ui.pc.quick[key] === state) { delete ui.pc.quick[key]; if (pcOnPage() && !pcVolumeDragging) scheduleRender(); } }, 1200);
     }
     if (state === "is-done") done?.(result);
     if (state === "is-fail") failed?.();
@@ -480,7 +488,7 @@ function pcQuick(cmd, args, key, done, failed) {
       if (quiet && document.activeElement?.id === "pc-find") {
         const media = document.querySelector(".pc-media");
         if (media) media.outerHTML = pcMedia();
-      } else render();
+      } else scheduleRender();
     }
   };
   pcCall({ op: "send", cmd, args }).then(made => {
