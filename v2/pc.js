@@ -472,7 +472,7 @@ function pcSend(cmd, args = {}) {
 /** Быстрое действие: отклик на кнопке (крутится → галочка), без карточки результата. */
 function pcQuick(cmd, args, key, done, failed) {
   const audioRevision = cmd === "volume" ? pcVolumeRevision : null;
-  const deadline = Date.now() + (cmd === "rm_batch" ? 15 * 60000 : 45000);
+  const deadline = Date.now() + (cmd === "rm_batch" ? 15 * 60000 : cmd === "rm_markers" ? 120000 : 45000);
   ui.pc.quick ||= {};
   const quiet = key === "audio";
   if (!quiet) { ui.pc.quick[key] = "is-busy"; if (pcOnPage() && !pcVolumeDragging) scheduleRender(); }
@@ -498,7 +498,7 @@ function pcQuick(cmd, args, key, done, failed) {
       if (Date.now() > deadline) return finish("is-fail");
       return pcCall({ op: "result", id: made.id }).then(r => {
       if (r?.status === "done") return finish("is-done", r.result);
-      if (r?.status === "failed" || r?.status === "expired" || tries > (cmd === 'rm_batch' ? 900 : 20)) { if (!quiet) toast(r?.result?.message || "Компьютер не ответил"); return finish("is-fail"); }
+      if (r?.status === "failed" || r?.status === "expired" || tries > (cmd === 'rm_batch' ? 900 : cmd === 'rm_markers' ? 180 : 20)) { if (!quiet) toast(r?.result?.message || "Компьютер не ответил"); return finish("is-fail"); }
       setTimeout(() => poll(tries + 1), cmd === 'rm_batch' ? 1000 : 600);
     }).catch(() => setTimeout(() => poll(tries + 1), 1500));
     };
