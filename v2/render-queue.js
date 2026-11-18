@@ -463,6 +463,7 @@ function renderRmDetailSheet() {
   const facts=[
     span?['Кадры',`${span[0]}–${span[1]}${j.fps?` · ${((span[1]-span[0]+1)/Number(j.fps)).toFixed(1).replace('.',',')} с`:''}`]:null,
     ['Программа',RM_APP[j.app]||j.app],
+    Number(j.video_bitrate)>0?['Битрейт',`${String(Number(j.video_bitrate)).replace('.',',')} Мбит/с`]:null,
     took?['Рендер шёл',took]:null,
   ].filter(Boolean).map(([k,v])=>`<div class="rmd-fact"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
   // Нажатие по месту — открыть эту папку на ПК; путь виден целиком, переносится по папкам.
@@ -568,7 +569,7 @@ const rmField = (label, html, note = "") => {
   const controls = html.replace(/<(input|select|textarea)\b([^>]*)>/g, (tag, name, attrs) => /aria-label(?:ledby)?=/.test(attrs) ? tag : `<${name} aria-labelledby="${id}"${attrs}>`);
   return `<div class="rm-field" role="group" aria-labelledby="${id}"><p id="${id}" class="pc-after-label">${label}</p>${controls}${note ? `<p class="section-note">${note}</p>` : ""}</div>`;
 };
-const RM_PRESET_KEYS = ['output_mode','output_dir','deliver','ae_backend','parallel','mfr_in_parts','ae_mfr','ae_resolution','ae_template'];
+const RM_PRESET_KEYS = ['output_mode','output_dir','deliver','ae_backend','parallel','mfr_in_parts','ae_mfr','ae_resolution','ae_template','video_bitrate'];
 const RM_RESOLUTION = [['inherit','Как в AE'],['full','Полное'],['half','½'],['quarter','¼']];
 function rmPresets(app) {
   const base = {output_mode:'root',output_dir:'',deliver:'none',ae_backend:'background',ae_mfr:'inherit'};
@@ -610,7 +611,37 @@ function rmIsVideoOutput(t) {
 /** Шаблон, который служба знает по имени (media.encode_profile): такое видео она режет на части сама. */
 function rmKnownProfile(name,output) {
   const ext=(String(output || '').match(/\.[^.\\/]+$/)?.[0] || '').toLowerCase(), n=String(name || '').trim();
-  return (['.mp4','.m4v'].includes(ext) && /^H\.?264$/i.test(n)) || (ext==='.mov' && /^(?:Apple\s+)?ProRes\s*(?:4444(?:\s*\+?\s*Alpha)?|422\s*HQ)$/i.test(n));
+  return (['.mp4','.m4v'].includes(ext) && (/^H\.?264$/i.test(n) || rmTemplateBitrate(n)>0)) || (ext==='.mov' && /^(?:Apple\s+)?ProRes\s*(?:4444(?:\s*\+?\s*Alpha)?|422\s*HQ)$/i.test(n));
+}
+/** N из имени шаблона «H.264 - Match Render Settings - 40 Mbps» (как media.template_bitrate службы): Мбит/с, 1–400; иначе 0. */
+function rmTemplateBitrate(name) {
+  const m=String(name || '').trim().match(/^H\.?264(?:\W.*?)?[\s_-](\d+(?:[.,]\d+)?)\s*M(?:bps|bits?(?:\/s|ps)?)$/i), n=m ? Number(m[1].replace(',','.')) : 0;
+  return n>=1 && n<=400 ? n : 0;
+}
+const RM_BITRATES=[['','По качеству'],['20','20'],['40','40'],['60','60'],['80','80']];
+/** Видео, которое служба режет на части и кодирует сама как H.264 (битрейт применим только к нему и только в фоне): «@flow:mp4», «H.264», «H.264 … N Mbps». */
+function rmH264Parts(t,form,app) {
+  if (app!=='ae' || ui.sheet?.benchmark || form?.ae_backend!=='background') return false;
+  const name=String(form?.ae_template || '').trim();
+  if (name==='@flow:mp4') return true;
+  return !!t?.audited_at && rmIsVideoOutput(t) && rmKnownProfile(name,t.output) && (/^H\.?264$/i.test(name) || rmTemplateBitrate(name)>0);
+}
+/** «Битрейт»: сегменты для MP4/H.264 по частям; у шаблона с N Mbps число уже в имени — там только отметка у кнопки (rmBitrateNote). */
+function rmBitrateField(chosen,f,app) {
+  const manual=chosen.map(t=>[t,rmFormFor(t,f,app)]).filter(([t,form])=>rmH264Parts(t,form,app) && !rmTemplateBitrate(form.ae_template));
+  if (!manual.length) return '';
+  const note=manual.length<chosen.length ? 'Только для MP4 · H.264; у остальных композиций не применится.' : '«По качеству» — как раньше; число — целевой битрейт итогового видео.';
+  // «По качеству» длиннее чисел: ему две доли ширины, иначе на телефоне подпись обрезается («По каче…»)
+  const seg=rmSegments('video_bitrate',RM_BITRATES,String(f.video_bitrate || '')).replace('style="--n:5"','style="--n:5;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr))"');
+  return rmField('Битрейт, Мбит/с',seg,note);
+}
+/** У кнопки: шаблон AE «H.264 … N Mbps» — не «одним процессом», а частями с этим битрейтом. */
+function rmBitrateNote(s,chosen,f) {
+  const rates=chosen.map(t=>{const form=rmFormFor(t,f,s.app);return rmH264Parts(t,form,s.app) ? rmTemplateBitrate(form.ae_template) : 0;}).filter(Boolean);
+  if (!rates.length) return '';
+  const same=[...new Set(rates)];
+  const text=chosen.length===1 ? `Рендер частями, ${same[0]} Мбит/с — по шаблону AE.` : `По шаблону AE частями — ${rates.length} из ${chosen.length} композиций${same.length===1 ? `, ${same[0]} Мбит/с` : ''}.`;
+  return `<p class="section-note rm-bitrate-note">${esc(text)}</p>`;
 }
 /** «@flow:mp4», если безопасно: видео H.264 в .mp4, AE в фоне, чётные размеры; иначе '' («Как в проекте»). */
 function rmIsH264Mp4(t) {
@@ -683,7 +714,9 @@ function rmJobArgs(scene,t,f) {
     ...(Number(t.audit?.fps)>0 ? {fps:Number(t.audit.fps)} : {}),...(media.width && media.height ? {width:media.width,height:media.height} : {}),format:f.ae_template ? '' : t.audit?.format || '',audit:t.audit || {},
     ...(t.comp_id ? {comp_id:t.comp_id} : {}),...(t.rq_index ? {rq_index:t.rq_index} : {}),urgent:f.urgent==='1',
     output_mode:f.output_mode,deliver:f.deliver,...(f.output_mode==='custom' ? {output_dir:String(f.output_dir || '').trim()} : {}),
-    ...(scene.app==='ae' && f.ae_backend==='background' ? {parallel:f.parallel==='auto'?'auto':Number(f.parallel) || 1} : {}),...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_backend==='background'?'off':f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {}),
+    ...(scene.app==='ae' && f.ae_backend==='background' ? {parallel:f.parallel==='auto'?'auto':Number(f.parallel) || 1} : {}),
+    // битрейт H.264, Мбит/с: только у MP4/H.264 по частям; у шаблона «… N Mbps» число берёт сама служба; нет — по качеству, поле не уходит
+    ...(Number(f.video_bitrate)>0 && !rmTemplateBitrate(f.ae_template) && rmH264Parts(t,f,scene.app) ? {video_bitrate:Number(f.video_bitrate)} : {}),...(scene.app==='ae' ? {ae_backend:f.ae_backend,ae_mfr:f.ae_backend==='background'?'off':f.ae_mfr || 'inherit',ae_resolution:f.ae_resolution || 'inherit',ae_template:f.ae_template || ''} : {}),
     // тест: MFR в каждой части принудительно (по умолчанию у частей выключен)
     ...(scene.app==='ae' && f.ae_backend==='background' ? {mfr_in_parts:false} : {})};
 }
@@ -774,6 +807,8 @@ function rmAudit(scene,target,form) {
   const media = rmEffectiveMedia(target,form,scene.app);
   warnings.push(...media.warnings);
   if(form.ae_template==='@flow:mp4' && media.width && (media.width%2 || media.height%2)) errors.push('MP4 H.264 требует чётные ширину и высоту. Выберите MOV + альфа или измените размер композиции.');
+  // Шаблон «H.264 … N Mbps» служба режет на части сама — как «@flow:mp4», с теми же условиями (чётный размер, шаблоны PNG и звука в AE)
+  if(rmTemplateBitrate(form.ae_template) && rmH264Parts(target,form,scene.app)) {const block=rmMp4Block(target,form,scene.app);if(block)errors.push(`Шаблон «${form.ae_template}» рендерится частями. ${block} Выберите другой формат или «Как в проекте».`);}
   if(/^@flow:hap/.test(form.ae_template || '') && media.width && (media.width%4 || media.height%4)) errors.push('HAP требует ширину и высоту, кратные четырём. Выберите другой формат.');
   if (scene.app==='ae' && form.ae_backend==='background' && Number(form.parallel)>4) warnings.push('5–8 частей — экспериментальный режим: каждая часть занимает отдельную RAM и VRAM.');
   if (scene.app==='ae' && form.ae_backend==='background' && Number(form.parallel)>1 && form.mfr_in_parts==='1') warnings.push(RM_MFR_PARTS_WARN);
@@ -794,7 +829,7 @@ function rmEffectiveMedia(target,form,app='ae') {
   const explicit=template.startsWith('@flow:');
   const known=divisor && (explicit || !transformed && !template) && Number(a.width)>0 && Number(a.height)>0;
   if (!known && a.width && a.height) warnings.push(`Композиция ${a.width}×${a.height}; итоговый размер подтвердит AE${transformed?' (resize/crop в Output Module)':''}.`);
-  if (template && !explicit) warnings.push('Параметры выбранного Output Module подтвердит AE. Нестандартное видео рендерится одним процессом, чтобы сохранить кодек и прозрачность.');
+  if (template && !explicit && !(rmTemplateBitrate(template) && form.ae_backend==='background')) warnings.push('Параметры выбранного Output Module подтвердит AE. Нестандартное видео рендерится одним процессом, чтобы сохранить кодек и прозрачность.');
   const formats={'@flow:mp4':'MP4 · H.264','@flow:mov-alpha':'MOV · ProRes 4444 + альфа','@flow:png':'PNG · секвенция + альфа','@flow:exr':'EXR · секвенция + альфа','@flow:hap':'MOV · HAP','@flow:hap-alpha':'MOV · HAP + альфа'};
   const format=template ? formats[template] || `Шаблон: ${template}` : a.format || 'Формат из проекта';
   return {width:known?Math.floor(Number(a.width)/divisor):null,height:known?Math.floor(Number(a.height)/divisor):null,format,warnings};
@@ -868,6 +903,7 @@ function rmJobForm(s, t) {
   const extra = bench ? "" : !ae ? moreBtn + (more ? `<p class="rsx-more-note">У Houdini (Karma) формат, разрешение и способ рендера задаются в ROP сцены.</p>` : "") : moreBtn + (!more ? "" : [
     rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : ""),
     rmField('Формат вывода', rmFormatSelect(chosen, f, s.app)),
+    rmBitrateField(chosen, f, s.app),
     f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || '4'), chosen.every(x => rmNativeVideo(x, rmFormFor(x, f, s.app), s.app)))) : "",
     rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit")),
   ].join(""));
@@ -876,7 +912,7 @@ function rmJobForm(s, t) {
     rmSummary(s, chosen, f),
     ...main,
     extra,
-    `<div class="rm-foot">${rmNativeNote(s, chosen, f)}<p class="rm-err" ${errors.length ? "" : "hidden"}>${esc(errors[0] || "")}</p>${!t.audited_at ? `<button type="button" class="ghost-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : ""}<button type="button" class="primary-button rm-wide ${rmBusyCls("rm-submit")}" data-action="rm-submit">${label}</button></div>`,
+    `<div class="rm-foot">${rmNativeNote(s, chosen, f)}${rmBitrateNote(s, chosen, f)}<p class="rm-err" ${errors.length ? "" : "hidden"}>${esc(errors[0] || "")}</p>${!t.audited_at ? `<button type="button" class="ghost-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : ""}<button type="button" class="primary-button rm-wide ${rmBusyCls("rm-submit")}" data-action="rm-submit">${label}</button></div>`,
   ].join("");
 }
 
@@ -1267,7 +1303,7 @@ function rmAction(action, control) {
   if (action==='rm-preset') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
     const preset=scene && rmPresets(scene.app).find(p=>p.id===control.dataset.id);
-    if (f && preset) {for (const key of RM_PRESET_KEYS) if (key in preset.form && !(key==='ae_template' && !preset.form[key])) f[key]=key==='mfr_in_parts' ? (preset.form[key]?'1':'') : key==='parallel'?String(preset.form[key]):preset.form[key];if(Number(f.parallel)>4)f.parallel='auto';f.mfr_in_parts='';if(f.ae_backend==='background')f.ae_mfr='off';if(preset.form.ae_template)f.format_pick='1';f.preset_id=(rmQueue().presets || []).some(p=>p.id===preset.id) ? preset.id : '';f.preset_name=preset.name;delete ui.sheet.submissionId;ui.sheet.confirm=false;render();}return true;
+    if (f && preset) {for (const key of RM_PRESET_KEYS) if (key in preset.form && !(key==='ae_template' && !preset.form[key])) f[key]=key==='mfr_in_parts' ? (preset.form[key]?'1':'') : key==='parallel' || key==='video_bitrate'?String(preset.form[key] ?? ''):preset.form[key];if(Number(f.parallel)>4)f.parallel='auto';f.mfr_in_parts='';if(f.ae_backend==='background')f.ae_mfr='off';if(preset.form.ae_template)f.format_pick='1';f.preset_id=(rmQueue().presets || []).some(p=>p.id===preset.id) ? preset.id : '';f.preset_name=preset.name;delete ui.sheet.submissionId;ui.sheet.confirm=false;render();}return true;
   }
   if (action==='rm-preset-save' || action==='rm-preset-delete') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
@@ -1275,7 +1311,7 @@ function rmAction(action, control) {
     const name=String(f.preset_name || '').trim();
     if (action==='rm-preset-save' && !name) {toast('Введите название пресета');return true;}
     const args=action==='rm-preset-delete' ? {action:'delete',id:control.dataset.id} : {action:'save',...(f.preset_id ? {id:f.preset_id} : {}),name,app:scene.app,form:Object.fromEntries(RM_PRESET_KEYS.map(k=>[k,f[k] || '']))};
-    if (args.form) {args.form.parallel=f.parallel==='auto'?'auto':Number(f.parallel)||1;args.form.mfr_in_parts=false;if(f.ae_backend==='background')args.form.ae_mfr='off';}
+    if (args.form) {args.form.parallel=f.parallel==='auto'?'auto':Number(f.parallel)||1;args.form.mfr_in_parts=false;if(f.ae_backend==='background')args.form.ae_mfr='off';if(Number(f.video_bitrate)>0)args.form.video_bitrate=Number(f.video_bitrate);else delete args.form.video_bitrate;}
     pcQuick('rm_presets',args,'rm-preset-save',r=>{ui.pc.data.rmQueue={...rmQueue(),presets:r?.presets || []};f.preset_id='';toast(action==='rm-preset-delete' ? 'Пресет удалён' : 'Пресет сохранён');(typeof scheduleRender==='function'?scheduleRender:render)();});return true;
   }
   if (action === "rm-pause" || action === "rm-resume") {
