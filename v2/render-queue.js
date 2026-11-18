@@ -65,7 +65,7 @@ function rmActiveRow(j, fresh = true) {
     : [j.total ? `готово ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
   const bar = pct === null
     ? `<div class="pc-render-bar ${fresh ? "indeterminate" : "is-stale"}"><b></b></div>` : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
-  return `<div class="pc-render-live rm-live ${fresh ? "" : "is-stale"}" data-render-fresh="${fresh}"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p><p class="section-note rm-memory">${esc(rmMemoryText(j.resources,fresh))}</p>${j.resource_decision ? `<details class="rm-resource"><summary>${j.resource_decision.mode==='auto'?'Авто':'Вручную'} · частей: ${j.resource_decision.parallel}</summary><p class="section-note">${esc(rmResourceText(j.resource_decision))}</p></details>` : ''}${j.warning ? `<p class="rm-warn">${esc(j.warning)}</p>` : ""}<div class="rm-acts">${rmCustomerButton(j)}${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
+  return `<div class="pc-render-live rm-live ${fresh ? "" : "is-stale"}" data-render-fresh="${fresh}"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p><p class="section-note rm-memory">${esc(rmMemoryText(j.resources,fresh))}</p>${j.resource_decision ? `<details class="rm-resource"><summary>${j.resource_decision.mode==='auto'?'Авто':'Вручную'} · частей: ${j.resource_decision.parallel}</summary><p class="section-note">${esc(rmResourceText(j.resource_decision))}</p></details>` : ''}${j.warning ? `<p class="rm-warn">${esc(rmServiceText(j.warning))}</p>` : ""}<div class="rm-acts">${rmCustomerButton(j)}${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
 }
 function rmResourceText(r) { return [`${r.mode==='auto'?'Авто':'Вручную'} · частей: ${r.parallel}`,r.reason,r.warning].filter(Boolean).join(' · '); }
 function rmMemoryText(r, fresh=true) {
@@ -116,7 +116,7 @@ function rmRecentDetails(j) {
   const deliveryFailed = j.status === "done" && j.delivery?.status === "failed";
   const mark = j.status === "done" && !deliveryFailed ? `<span class="rm-mark ok">${pcIcon("check")}</span>`
     : j.status === "cancelled" ? `<span class="rm-mark off">${pcIcon("x")}</span>` : `<span class="rm-mark bad">${pcIcon("x")}</span>`;
-  const note = j.status === "done" && j.benchmark ? (j.benchmark_result ? rmBenchmarkText(j.benchmark_result) : `Тест завершён без достоверной оценки${j.warning ? `: ${j.warning}` : ''}`) : j.status === "done" ? (deliveryFailed ? `в облако не ушло: ${j.delivery.error || "ошибка"}` : j.warning ? `готово с предупреждением: ${j.warning}` : j.delivery?.status === "done" ? "готово, в облаке" : "готово")
+  const note = j.status === "done" && j.benchmark ? (j.benchmark_result ? rmBenchmarkText(j.benchmark_result) : `Тест завершён без достоверной оценки${j.warning ? `: ${j.warning}` : ''}`) : j.status === "done" ? (deliveryFailed ? `в облако не ушло: ${j.delivery.error || "ошибка"}` : j.warning ? `готово с предупреждением: ${rmServiceText(j.warning)}` : j.delivery?.status === "done" ? "готово, в облаке" : "готово")
     : j.status === "failed" ? (j.error || "ошибка") : `отменено${j.total ? ` на кадре ${j.done || 0} из ${j.total}` : ""}`;
   const act = (op, label) => `<button type="button" class="text-action ${rmBusyCls(`rm-${op}-${j.id}`)}" data-action="rm-${op}" data-id="${j.id}">${label}</button>`;
   // Karma и фон частями дорендеривают с готовых кадров в ту же папку — это «Продолжить», и ролик склеится целиком
@@ -148,13 +148,308 @@ function rmRecentLine(j) {
 function rmRecentRow(j) {
   return `<button type="button" class="rm-history-open" data-action="rm-detail" data-id="${j.id}"><b>${esc(j.name)}</b><small>${esc(rmRecentLine(j))}</small></button>${rmCustomerButton(j)}`;
 }
-function rmFrameChart(stats) {
-  const points=(stats?.points||[]).filter(p=>Number.isFinite(p.frame)&&Number.isFinite(p.seconds)&&p.seconds>=0);
-  if(!points.length)return '<p class="section-note">Замеры кадров не сохранились. График появится у рендеров с покадровым журналом AE.</p>';
-  const max=Math.max(1,...points.map(p=>p.seconds)),first=points[0].frame,last=points.at(-1).frame;
-  const xy=points.map(p=>`${12+296*(p.frame-first)/Math.max(1,last-first)},${132-112*p.seconds/max}`).join(' ');
-  return `<div class="rm-frame-chart"><p class="section-note">Время кадра · секунды · максимум ${max.toFixed(1)}</p><svg viewBox="0 0 320 150" role="img" aria-label="Время рендера кадров в секундах"><path d="M12 16V132H308" class="rm-chart-axis"/><polyline points="${xy}" class="rm-chart-line"/></svg><div class="rm-chart-labels"><span>Кадр ${first}</span><span>${last}</span></div><p class="section-note">${Number(stats.count)||points.length} замеров. Точность журнала AE — до секунды; 0 означает менее секунды. Для длинного рендера график показывает пики групп кадров.</p></div><h3>Самые долгие кадры</h3><div class="rm-slow-frames">${(stats.slowest||[]).slice(0,5).map(p=>`<div><span>Кадр ${Number(p.frame)}</span><b>${Number(p.seconds).toFixed(1)} с</b></div>`).join('')}</div>`;
+// ------------------------------------------------------------ график «Время кадра»
+// Интерактивный график в карточке задачи: тап/наведение выбирают кадр, колесо/щипок —
+// зум по оси кадров с центром в точке жеста, перетаскивание — сдвиг, двойной тап или
+// кнопка — вся шкала. Вид ({a,b} — видимые кадры, sel — выбранный кадр) живёт в
+// ui.sheet.chart: фоновые обновления экрана рисуют тот же вид, а во время жеста на
+// блоке стоит класс rm-dragging, который узнаёт pcInteracting() и не трогает окно.
+const RM_CHART = { x0: 12, x1: 308, y0: 16, y1: 132, width: 320, height: 150, minSpan: 8 };
+let rmChartGest = null; // активный жест (см. ниже)
+let rmChartHover = { sheet: null, frame: null }; // кадр под курсором мыши; не часть ui.sheet — не переживает закрытие окна
+const rmChartNum = (n, digits = 1) => { const v = Number(n); return Number.isFinite(v) ? v.toFixed(digits).replace(".", ",") : "—"; };
+/** Точки журнала AE: только валидные, по возрастанию кадра. */
+function rmChartPoints(stats) {
+  const raw = (stats?.points || []).filter(p => Number.isFinite(Number(p.frame)) && Number.isFinite(Number(p.seconds)) && Number(p.seconds) >= 0);
+  return raw.map(p => ({ frame: Number(p.frame), seconds: Number(p.seconds) })).sort((a, b) => a.frame - b.frame);
 }
+/** Вся шкала: первый–последний кадр, ничего не выбрано. */
+function rmChartDefault(pts) { return pts.length ? { a: pts[0].frame, b: pts.at(-1).frame, sel: null } : { a: 0, b: 0, sel: null }; }
+/** Индекс ближайшей точки к кадру f (двоичный поиск по возрастающим кадрам). */
+function rmChartNearestFrame(pts, frame) {
+  if (!pts.length) return -1;
+  const f = Number(frame);
+  let lo = 0, hi = pts.length - 1;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (pts[mid].frame < f) lo = mid + 1; else hi = mid; }
+  if (lo > 0 && f - pts[lo - 1].frame <= pts[lo].frame - f) lo--;
+  return lo;
+}
+/** Приводит вид к допустимому: диапазон не уже RM_CHART.minSpan кадров и не выходит за ролик. */
+function rmChartClamp(pts, view) {
+  const full = rmChartDefault(pts);
+  if (!pts.length) return full;
+  const total = full.b - full.a + 1;
+  const span = Math.min(total, Math.max(RM_CHART.minSpan, Math.round(Number(view?.b ?? full.b)) - Math.round(Number(view?.a ?? full.a)) + 1));
+  const a = Math.min(Math.max(Math.round(Number(view?.a ?? full.a)), full.a), full.b - span + 1);
+  return { a, b: a + span - 1, sel: view?.sel != null ? Number(view.sel) : null };
+}
+/** Зум в factor раз вокруг кадра center: кадр под пальцем/курсором остаётся на месте. */
+function rmChartZoom(pts, view, center, factor) {
+  const cur = rmChartClamp(pts, view), full = rmChartDefault(pts);
+  if (!pts.length) return cur;
+  const f = Number(factor);
+  if (!(f > 0) || f === 1) return cur;
+  const next = Math.min(full.b - full.a + 1, Math.max(RM_CHART.minSpan, Math.round((cur.b - cur.a + 1) / f)));
+  if (next === cur.b - cur.a + 1) return cur;
+  const c = Math.min(Math.max(Number(center), cur.a), cur.b);
+  const frac = cur.b > cur.a ? (c - cur.a) / (cur.b - cur.a) : 0.5;
+  const a = Math.min(Math.max(Math.round(c - frac * (next - 1)), full.a), full.b - next + 1);
+  return { a, b: a + next - 1, sel: cur.sel };
+}
+/** Сдвиг на delta кадров, с ограничениями по краям. */
+function rmChartPan(pts, view, delta) {
+  const cur = rmChartClamp(pts, view), full = rmChartDefault(pts);
+  if (!pts.length) return cur;
+  const span = cur.b - cur.a + 1;
+  const a = Math.min(Math.max(cur.a + Math.round(Number(delta) || 0), full.a), full.b - span + 1);
+  return { a, b: a + span - 1, sel: cur.sel };
+}
+/** Кадр ближайшей точки к доле x (0–1) видимой шкалы. */
+function rmChartFrameAt(pts, view, x) {
+  if (!pts.length) return null;
+  const cur = rmChartClamp(pts, view);
+  const t = Math.min(1, Math.max(0, Number(x) || 0));
+  return pts[rmChartNearestFrame(pts, cur.a + (cur.b - cur.a) * t)].frame;
+}
+/** Максимум секунд видимого участка — по нему масштаб оси Y при зуме. */
+function rmChartVisibleMax(pts, view) {
+  const cur = rmChartClamp(pts, view);
+  if (!pts.length) return 0;
+  let i0 = rmChartNearestFrame(pts, cur.a);
+  while (i0 > 0 && pts[i0 - 1].frame >= cur.a) i0--;
+  let m = 0;
+  for (let i = i0; i < pts.length && pts[i].frame <= cur.b; i++) if (pts[i].seconds > m) m = pts[i].seconds;
+  return m;
+}
+/** Точки для линии одним path: при общем виде — пик каждой пиксельной колонки, при приближении — все. */
+function rmChartDecimate(pts, view, widthPx) {
+  const cur = rmChartClamp(pts, view);
+  if (!pts.length) return [];
+  let i0 = rmChartNearestFrame(pts, cur.a);
+  while (i0 > 0 && pts[i0 - 1].frame >= cur.a) i0--;
+  let i1 = rmChartNearestFrame(pts, cur.b);
+  while (i1 + 1 < pts.length && pts[i1 + 1].frame <= cur.b) i1++;
+  const count = i1 - i0 + 1, cols = Math.max(1, Math.round(Number(widthPx) || RM_CHART.x1 - RM_CHART.x0));
+  if (count <= cols) return pts.slice(i0, i1 + 1);
+  const span = Math.max(1, cur.b - cur.a), out = [];
+  let col = -1;
+  for (let i = i0; i <= i1; i++) {
+    const c = Math.min(cols - 1, Math.round((pts[i].frame - cur.a) / span * (cols - 1)));
+    if (c !== col) { out.push(pts[i]); col = c; }
+    else if (pts[i].seconds > out.at(-1).seconds) out[out.length - 1] = pts[i];
+  }
+  return out;
+}
+function rmChartX(frame, a, b) { return RM_CHART.x0 + (RM_CHART.x1 - RM_CHART.x0) * (Number(frame) - a) / Math.max(1, b - a); }
+function rmChartY(seconds, max) { return RM_CHART.y1 - (RM_CHART.y1 - RM_CHART.y0) * Math.min(1, Number(seconds) / Math.max(0.001, Number(max))); }
+function rmChartPointText(p) { return p ? `Кадр ${p.frame} · ${rmChartNum(p.seconds)} с` : ""; }
+/** Плашка не выходит за край графика: у краёв смещается вбок, у верха показывается под точкой. */
+function rmChartTipShift(x, y) {
+  const hx = x < RM_CHART.width * 0.3 ? "0%" : x > RM_CHART.width * 0.7 ? "-100%" : "-50%";
+  const vy = y < RM_CHART.height * 0.34 ? "calc(100% + 12px)" : "calc(-100% - 12px)";
+  return { hx, vy };
+}
+/** Все изменяемые значения графика для текущего вида — один источник для разметки и обновления по месту. */
+function rmChartFragments(stats) {
+  const pts = rmChartPoints(stats);
+  if (!pts.length) return null;
+  const view = rmChartClamp(pts, ui.sheet?.chart), full = rmChartDefault(pts);
+  const zoomed = view.b - view.a < full.b - full.a;
+  const max = Math.max(1, rmChartVisibleMax(pts, view));
+  const dec = rmChartDecimate(pts, view, RM_CHART.x1 - RM_CHART.x0);
+  const d = dec.length ? "M" + dec.map(p => `${rmChartX(p.frame, view.a, view.b).toFixed(1)},${rmChartY(p.seconds, max).toFixed(1)}`).join("L") : "";
+  const inView = f => f != null && f >= view.a && f <= view.b;
+  const sel = inView(view.sel) ? pts[rmChartNearestFrame(pts, view.sel)] : null;
+  // Наведение мыши (ПК) временно показывается вместо выбранной точки; живёт в разметке, поэтому фоновая синхронизация его не гасит.
+  const hover = rmChartHover.sheet === ui.sheet && inView(rmChartHover.frame) ? pts[rmChartNearestFrame(pts, rmChartHover.frame)] : null;
+  const shown = hover || sel;
+  let cursor = "", tip = "";
+  if (shown) {
+    const x = rmChartX(shown.frame, view.a, view.b).toFixed(1), y = rmChartY(shown.seconds, max).toFixed(1);
+    const s = rmChartTipShift(Number(x), Number(y));
+    cursor = `<g class="rm-chart-cursor" data-rm-chart-cursor aria-hidden="true"><line class="rm-chart-cursor-line" x1="${x}" y1="${RM_CHART.y1}" x2="${x}" y2="${y}"/><circle class="rm-chart-cursor-dot" cx="${x}" cy="${y}" r="3.5"/></g>`;
+    tip = `<div class="rm-chart-tip" data-rm-chart-tip style="left:${(Number(x) / RM_CHART.width * 100).toFixed(2)}%;top:${(Number(y) / RM_CHART.height * 100).toFixed(2)}%;--tip-hx:${s.hx};--tip-vy:${s.vy}" aria-hidden="true">${rmChartPointText(shown)}</div>`;
+  }
+  return {
+    title: zoomed ? `Кадры ${view.a}–${view.b} · секунды · максимум ${rmChartNum(max)}` : `Время кадра · секунды · максимум ${rmChartNum(max)}`,
+    aria: `Время рендера кадров в секундах${sel ? `. Выбран кадр ${sel.frame} — ${rmChartNum(sel.seconds)} секунды` : ". Нажатие выбирает кадр, стрелки влево-вправо — выбор, двойное нажатие — вся шкала"}`,
+    d, cursor, tip, labels: [view.a, view.b], live: sel ? rmChartPointText(sel) : "", toolsHidden: !zoomed,
+    count: Number(stats.count) || pts.length,
+  };
+}
+/** Содержимое блока графика. Рисуется из ui.sheet.chart — после фонового обновления вид тот же. */
+function rmChartInner(stats) {
+  const f = rmChartFragments(stats);
+  if (!f) return "";
+  return `<p class="section-note" data-rm-chart-title>${f.title}</p>`
+    + `<div class="rm-chart-plot" data-rm-chart-plot><svg viewBox="0 0 320 150" tabindex="0" role="img" aria-label="${esc(f.aria)}" data-rm-chart-svg><path d="M12 16V132H308" class="rm-chart-axis"/><path d="${f.d}" class="rm-chart-line" data-rm-chart-path/>${f.cursor}</svg>${f.tip}</div>`
+    + `<div class="rm-chart-labels" data-rm-chart-labels><span>Кадр ${f.labels[0]}</span><span>${f.labels[1]}</span></div>`
+    + `<p class="rm-chart-live" aria-live="polite" data-rm-chart-live>${f.live}</p>`
+    + `<div class="rm-chart-tools" data-rm-chart-tools${f.toolsHidden ? " hidden" : ""}><button type="button" class="text-action rm-chart-reset" data-action="rm-chart-reset">Вся шкала</button></div>`
+    + `<p class="section-note">${f.count} замеров. Точность журнала AE — до секунды; 0 означает менее секунды. Для длинного рендера график показывает пики групп кадров.</p>`;
+}
+function rmFrameChart(stats) {
+  const pts = rmChartPoints(stats);
+  if (!pts.length) return '<p class="section-note">Замеры кадров не сохранились. График появится у рендеров с покадровым журналом AE.</p>';
+  // rm-dragging пишется в разметку: фоновая синхронизация не снимает его посреди жеста, и pcInteracting() его видит
+  return `<div class="rm-frame-chart${rmChartGest && rmChartGest.mode !== "tap" && rmChartGest.mode !== "scroll" ? " rm-dragging" : ""}" data-rm-chart>${rmChartInner(stats)}</div><h3>Самые долгие кадры</h3><div class="rm-slow-frames">${(stats.slowest||[]).slice(0,5).map(p=>`<div><span>Кадр ${Number(p.frame)}</span><b>${rmChartNum(p.seconds)} с</b></div>`).join('')}</div>`;
+}
+function rmChartJob() { return ui.sheet?.kind === "rm-detail" ? (rmJobs().find(j => Number(j.id) === Number(ui.sheet.id)) || ui.sheet.job) : null; }
+/** Обновляет график по месту из ui.sheet.chart: узлы не заменяются, поэтому фокус
+ *  и захват указателя (перетаскивание/щипок) не рвутся. */
+function rmChartPaint() {
+  const box = document.querySelector("[data-rm-chart]");
+  if (!box) return;
+  const f = rmChartFragments(rmChartJob()?.frame_stats);
+  if (!f) return;
+  const svg = box.querySelector("[data-rm-chart-svg]"), plot = box.querySelector("[data-rm-chart-plot]");
+  box.querySelector("[data-rm-chart-title]").textContent = f.title;
+  svg.setAttribute("aria-label", f.aria);
+  svg.querySelector("[data-rm-chart-path]").setAttribute("d", f.d);
+  const cursor = svg.querySelector("[data-rm-chart-cursor]");
+  if (f.cursor) { if (cursor) cursor.outerHTML = f.cursor; else svg.insertAdjacentHTML("beforeend", f.cursor); }
+  else cursor?.remove();
+  const tip = plot.querySelector("[data-rm-chart-tip]");
+  if (f.tip) { if (tip) tip.outerHTML = f.tip; else plot.insertAdjacentHTML("beforeend", f.tip); }
+  else tip?.remove();
+  const spans = box.querySelectorAll("[data-rm-chart-labels] span");
+  if (spans[0]) spans[0].textContent = `Кадр ${f.labels[0]}`;
+  if (spans[1]) spans[1].textContent = String(f.labels[1]);
+  const live = box.querySelector("[data-rm-chart-live]");
+  if (live) live.textContent = f.live;
+  const tools = box.querySelector("[data-rm-chart-tools]");
+  if (tools) tools.hidden = f.toolsHidden;
+}
+// Жесты: один палец/мышь — выбор и сдвиг, два пальца — зум, колесо — зум, двойное
+// нажатие — вся шкала. Вертикальный жест одним пальцем отдаём прокрутке листа
+// (touch-action: pan-y на графике), при щипке касания забираем себе целиком.
+let rmChartLastTap = { t: 0, x: 0, y: 0 };
+function rmChartGestureStart(event) {
+  const plot = event.target.closest?.("[data-rm-chart-plot]");
+  if (!plot || ui.sheet?.kind !== "rm-detail" || event.button) return;
+  const chart = plot.closest("[data-rm-chart]"), pts = rmChartPoints(rmChartJob()?.frame_stats);
+  if (!chart || !pts.length) return;
+  rmChartHoverClear();
+  if (!rmChartGest) rmChartGest = { chart, plot, pts, pointers: new Map(), mode: "tap", startX: event.clientX, startY: event.clientY, lastX: event.clientX, moved: false, mid: null, dist: 0 };
+  rmChartGest.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  plot.setPointerCapture?.(event.pointerId);
+}
+function rmChartGestureMove(event) {
+  const g = rmChartGest;
+  if (!g || !g.pointers.has(event.pointerId)) return;
+  g.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  const fingers = [...g.pointers.values()];
+  const rect = g.plot.getBoundingClientRect();
+  if (fingers.length >= 2) {
+    // щипок: изменение расстояния — масштаб вокруг прежней середины, сдвиг середины — перенос
+    const mid = { x: (fingers[0].x + fingers[1].x) / 2, y: (fingers[0].y + fingers[1].y) / 2 };
+    const dist = Math.hypot(fingers[0].x - fingers[1].x, fingers[0].y - fingers[1].y) || 1;
+    if (g.mode !== "pinch") { g.mode = "pinch"; g.moved = true; g.chart.classList.add("rm-dragging"); g.plot.style.touchAction = "none"; g.mid = mid; g.dist = dist; return; }
+    const center = rmChartFrameAt(g.pts, ui.sheet.chart, (g.mid.x - rect.left) / Math.max(1, rect.width));
+    let view = rmChartZoom(g.pts, ui.sheet.chart, center, dist / g.dist);
+    view = rmChartPan(g.pts, view, -(mid.x - g.mid.x) / Math.max(1, rect.width) * (view.b - view.a + 1));
+    ui.sheet.chart = view; rmChartPaint();
+    g.mid = mid; g.dist = dist;
+    return;
+  }
+  const dx = event.clientX - g.startX, dy = event.clientY - g.startY;
+  if (g.mode === "tap" && Math.hypot(dx, dy) > 9) {
+    if (Math.abs(dx) > Math.abs(dy) * 1.15) { g.mode = "pan"; g.moved = true; g.chart.classList.add("rm-dragging"); }
+    else { g.mode = "scroll"; return; } // вертикаль: лист прокрутит браузер, pointercancel завершит жест
+  }
+  if (g.mode !== "pan") return;
+  g.moved = true;
+  const delta = (event.clientX - g.lastX) / Math.max(1, rect.width) * (ui.sheet.chart.b - ui.sheet.chart.a + 1);
+  ui.sheet.chart = rmChartPan(g.pts, ui.sheet.chart, -delta);
+  g.lastX = event.clientX;
+  rmChartPaint();
+}
+function rmChartGestureEnd(event, cancelled) {
+  const g = rmChartGest;
+  if (!g) return;
+  g.pointers.delete(event.pointerId);
+  if (g.pointers.size) return;
+  rmChartGest = null;
+  g.chart.classList.remove("rm-dragging");
+  g.plot.style.touchAction = "";
+  if (cancelled || g.moved || g.mode === "scroll") return;
+  const rect = g.plot.getBoundingClientRect();
+  const frame = rmChartFrameAt(g.pts, ui.sheet.chart, (event.clientX - rect.left) / Math.max(1, rect.width));
+  const now = Date.now();
+  const double = now - rmChartLastTap.t < 320 && Math.hypot(event.clientX - rmChartLastTap.x, event.clientY - rmChartLastTap.y) < 40;
+  if (double) ui.sheet.chart = { ...rmChartDefault(g.pts), sel: ui.sheet.chart?.sel ?? null };
+  else if (frame != null) { const cur = rmChartClamp(g.pts, ui.sheet.chart); ui.sheet.chart = { ...cur, sel: cur.sel === frame ? null : frame }; } // повторное нажатие на выбранную точку снимает выбор
+  rmChartLastTap = { t: now, x: event.clientX, y: event.clientY };
+  rmChartPaint();
+}
+function rmChartHoverShow(plot, event) {
+  const pts = rmChartPoints(rmChartJob()?.frame_stats);
+  if (!pts.length) { rmChartHoverClear(); return; }
+  const rect = plot.getBoundingClientRect();
+  const frame = rmChartFrameAt(pts, ui.sheet.chart, (event.clientX - rect.left) / Math.max(1, rect.width));
+  if (frame == null || (rmChartHover.sheet === ui.sheet && rmChartHover.frame === frame)) return;
+  rmChartHover = { sheet: ui.sheet, frame };
+  rmChartPaint();
+}
+function rmChartHoverClear() {
+  if (rmChartHover.frame == null) return;
+  rmChartHover = { sheet: null, frame: null };
+  rmChartPaint();
+}
+document.addEventListener("pointerdown", event => {
+  rmChartGestureStart(event);
+  // нажатие вне графика снимает выбор (остальные нажатия работают как обычно)
+  if (!rmChartGest && ui.sheet?.kind === "rm-detail" && ui.sheet.chart?.sel != null && !event.target.closest?.("[data-rm-chart]")) {
+    ui.sheet.chart.sel = null;
+    rmChartPaint();
+  }
+});
+document.addEventListener("pointermove", event => {
+  if (rmChartGest) { rmChartGestureMove(event); return; }
+  if (event.pointerType === "mouse" && event.buttons === 0) {
+    const plot = event.target.closest?.("[data-rm-chart-plot]");
+    if (!plot || ui.sheet?.kind !== "rm-detail") { rmChartHoverClear(); return; }
+    rmChartHoverShow(plot, event);
+  }
+});
+document.addEventListener("pointerup", event => rmChartGestureEnd(event, false));
+document.addEventListener("pointercancel", event => rmChartGestureEnd(event, true));
+document.addEventListener("wheel", event => {
+  const plot = event.target.closest?.("[data-rm-chart-plot]");
+  if (!plot || ui.sheet?.kind !== "rm-detail") return;
+  const pts = rmChartPoints(rmChartJob()?.frame_stats);
+  if (!pts.length) return;
+  const rect = plot.getBoundingClientRect();
+  const center = rmChartFrameAt(pts, ui.sheet.chart, (event.clientX - rect.left) / Math.max(1, rect.width));
+  const dy = event.deltaMode === 1 ? event.deltaY * 33 : event.deltaMode === 2 ? event.deltaY * 400 : event.deltaY;
+  const next = rmChartZoom(pts, ui.sheet.chart, center, Math.exp(-dy * (event.ctrlKey ? 0.01 : 0.0024)));
+  if (next.a === ui.sheet.chart?.a && next.b === ui.sheet.chart?.b) return; // на пределе — колесо прокручивает лист
+  event.preventDefault();
+  ui.sheet.chart = next;
+  rmChartHover = { sheet: ui.sheet, frame: center };
+  rmChartPaint();
+}, { passive: false });
+document.addEventListener("keydown", event => {
+  const svg = event.target.closest?.("[data-rm-chart-svg]");
+  if (!svg || ui.sheet?.kind !== "rm-detail") return;
+  const pts = rmChartPoints(rmChartJob()?.frame_stats);
+  if (!pts.length) return;
+  const key = { ArrowLeft: -1, ArrowRight: 1, Home: -1e9, End: 1e9 }[event.key];
+  if (!key) return;
+  event.preventDefault();
+  const view = rmChartClamp(pts, ui.sheet.chart);
+  let idx = view.sel != null ? rmChartNearestFrame(pts, view.sel) : rmChartNearestFrame(pts, Math.round((view.a + view.b) / 2));
+  idx = key === -1e9 ? 0 : key === 1e9 ? pts.length - 1 : Math.min(pts.length - 1, Math.max(0, idx + key));
+  const sel = pts[idx].frame;
+  let next = view;
+  if (sel < view.a || sel > view.b) { // держим выбранный кадр видимым
+    const span = view.b - view.a + 1;
+    const a = Math.min(Math.max(sel - Math.floor(span / 2), pts[0].frame), pts.at(-1).frame - span + 1);
+    next = { a, b: a + span - 1, sel };
+  } else next = { ...view, sel };
+  ui.sheet.chart = next;
+  rmChartPaint();
+});
 function renderRmDetailSheet() {
   const j=rmJobs().find(j=>Number(j.id)===Number(ui.sheet.id))||ui.sheet.job;
   if(!j)return '';
@@ -173,7 +468,7 @@ function renderRmDetailSheet() {
   // Нажатие по месту — открыть эту папку на ПК; путь виден целиком, переносится по папкам.
   const place=where?`<button type="button" class="rmd-where is-open" data-action="${j.status==='done'?'rm-reveal':'rm-dest-toggle'}" data-id="${j.id}" aria-label="Открыть папку на ПК: ${esc(where)}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder','icon-sm')}</span><span class="rmd-where-text"><small>${delivered?'В Облаке':'На диске'} · открыть на ПК</small><b>${esc(where).replace(/\\/g,'\\<wbr>')}</b></span></button>`:'';
   // Ошибки и предупреждения — под «!»: коротко, без длинных путей; у упавшей задачи открыто сразу.
-  const problems=rmShortProblems([j.error,j.warning,deliveryFailed?j.delivery?.error:''].filter(Boolean).join('; '));
+  const problems=rmShortProblems([j.error,rmServiceText(j.warning),deliveryFailed?j.delivery?.error:''].filter(Boolean).join('; '));
   const problemOpen=ui.sheet?.problemOpen??(j.status==='failed');
   const problemBtn=problems.length?`<button type="button" class="rmd-alert${problemOpen?' is-open':''}" data-action="rm-problem-toggle" aria-expanded="${problemOpen}" aria-label="${problemOpen?'Скрыть замечания':`Замечания: ${problems.length}`}">!</button>`:'';
   const problem=problems.length&&problemOpen?`<ul class="rmd-problem">${problems.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
@@ -265,8 +560,8 @@ function rmSettings() {
 }
 
 /** Ряд кнопок-вариантов: выбранный подсвечен, нажатие меняет поле формы листа. */
-function rmSegments(key, list, value) {
-  return `<div class="segmented rm-seg" style="--n:${list.length}">${list.map(([v, label]) => `<button type="button" class="segment ${value === v ? "active" : ""}" data-action="rm-opt" data-key="${key}" data-value="${v}" aria-pressed="${value === v}">${label}</button>`).join("")}</div>`;
+function rmSegments(key, list, value, disabled = false) {
+  return `<div class="segmented rm-seg" style="--n:${list.length}">${list.map(([v, label]) => `<button type="button" class="segment ${value === v ? "active" : ""}" data-action="rm-opt" data-key="${key}" data-value="${v}" aria-pressed="${value === v}"${disabled ? " disabled" : ""}>${label}</button>`).join("")}</div>`;
 }
 const rmField = (label, html, note = "") => {
   const id = `rm-label-${encodeURIComponent(label)}`;
@@ -276,7 +571,7 @@ const rmField = (label, html, note = "") => {
 const RM_PRESET_KEYS = ['output_mode','output_dir','deliver','ae_backend','parallel','mfr_in_parts','ae_mfr','ae_resolution','ae_template'];
 const RM_RESOLUTION = [['inherit','Как в AE'],['full','Полное'],['half','½'],['quarter','¼']];
 function rmPresets(app) {
-  const base = {output_mode:'root',output_dir:'',deliver:'none',ae_backend:'background',ae_mfr:'inherit',ae_template:''};
+  const base = {output_mode:'root',output_dir:'',deliver:'none',ae_backend:'background',ae_mfr:'inherit'};
   return [...(app === 'ae' ? [
     {id:'draft',name:'Черновик · ½',form:{...base,ae_resolution:'half'}},
     {id:'check',name:'Проверка · полное',form:{...base,ae_resolution:'full'}},
@@ -299,19 +594,88 @@ function rmChosenTargets(scene) {
   return ui.sheet?.batch ? (scene.targets || []).filter(t=>(ui.sheet.selected || []).includes(rmTargetKey(t))) :
     [ui.sheet?.targetKey ? scene.targets?.find(t=>rmTargetKey(t)===ui.sheet.targetKey) : scene.targets?.[ui.sheet?.target]].filter(Boolean);
 }
-function rmFormFor(t,f) { return {...f,frames:ui.sheet?.batch && !String(f.frames || '').trim() ? t.frames : f.frames,...(ui.sheet?.benchmark ? {output_mode:'root',deliver:'none',ae_backend:'background'} : {})}; }
+// Формат по умолчанию (решение 18.11): видео H.264/MP4 без явного выбора идёт как «@flow:mp4» — частями и с кадрами,
+// чтобы участок можно было перерендерить. Решает правило службы: видео = в пути Output Module нет токена кадра.
+const RM_FRAME_TOKEN=/\$\{F\d*\}|\$F\d*(?![A-Za-z0-9_])|\[#+\]|#+/;
+const RM_IMAGE_EXT=/\.(png|exr|jpe?g|tiff?|dpx|tga|psd|bmp)$/i;
+const RM_FORMATS=[['@flow:mp4','MP4 · H.264'],['@flow:mov-alpha','MOV · ProRes 4444 + альфа'],['@flow:png','PNG · секвенция + альфа'],['@flow:exr','EXR · секвенция + альфа'],['@flow:hap','MOV · HAP'],['@flow:hap-alpha','MOV · HAP + альфа']];
+const RM_NATIVE_TEXT='Видео соберёт сам After Effects одним процессом: без деления на части и без кадров — перерендерить участок потом не получится.';
+const RM_NATIVE_SERVICE=/Выбранный Output Module сохраняется: видео рендерится одним AE без разделения на части\.?/;
+/** Служба шлёт старую фразу — показываем её понятнее; сам текст у задачи не меняется (его ждёт rmPatchable). */
+function rmServiceText(text) { return String(text||'').replace(RM_NATIVE_SERVICE,'Видео собрал сам After Effects одним процессом: без частей и кадров, участок не перерендерить.'); }
+function rmIsVideoOutput(t) {
+  const out=String(t?.output || '').trim();
+  return !!out && !RM_FRAME_TOKEN.test(out) && !RM_IMAGE_EXT.test(out);
+}
+/** Шаблон, который служба знает по имени (media.encode_profile): такое видео она режет на части сама. */
+function rmKnownProfile(name,output) {
+  const ext=(String(output || '').match(/\.[^.\\/]+$/)?.[0] || '').toLowerCase(), n=String(name || '').trim();
+  return (['.mp4','.m4v'].includes(ext) && /^H\.?264$/i.test(n)) || (ext==='.mov' && /^(?:Apple\s+)?ProRes\s*(?:4444(?:\s*\+?\s*Alpha)?|422\s*HQ)$/i.test(n));
+}
+/** «@flow:mp4», если безопасно: видео H.264 в .mp4, AE в фоне, чётные размеры; иначе '' («Как в проекте»). */
+function rmIsH264Mp4(t) {
+  const a=t?.audit || {};
+  return rmIsVideoOutput(t) && /\.(mp4|m4v)$/i.test(String(t.output || '')) && (!a.format || /h\.?264/i.test(String(a.format)));
+}
+/** Почему MP4 по частям не получится ('' — получится). Шаблоны частей служба берёт как rm.jsx::rmPartTemplate: кадры — PNG, звук — AIFF/WAV. */
+function rmMp4Block(t,f,app) {
+  const a=t?.audit || {};
+  if (f?.ae_backend==='cep') return 'В открытом AE форматы Flow недоступны — выберите рендер в фоне.';
+  const media=rmEffectiveMedia(t,{...f,ae_template:'@flow:mp4'},app);
+  // размер после масштаба AE известен не всегда — тогда смотрим на размер самой композиции
+  const w=media.width || Number(a.width) || 0, h=media.height || Number(a.height) || 0;
+  if (w && (w%2 || h%2)) return 'Размер композиции нечётный — MP4 по частям недоступен.';
+  const names=(Array.isArray(a.templates) ? a.templates : []).map(String).filter(n=>!n.startsWith('_HIDDEN'));
+  if (!names.some(n=>/PNG/i.test(n))) return 'В After Effects нет шаблона PNG для частей.';
+  if (a.has_audio!==false && !names.some(n=>/AIFF|WAV/i.test(n))) return 'В After Effects нет шаблона звука AIFF/WAV.';
+  return '';
+}
+function rmAutoTemplate(t,f,app) {
+  if (app!=='ae' || ui.sheet?.benchmark || !t?.audited_at || !rmIsH264Mp4(t)) return '';
+  return rmMp4Block(t,f,app) ? '' : '@flow:mp4';
+}
+/** Формат цели: выбранный пользователем (в том числе «Как в проекте») или умолчание по её выходу. */
+function rmTemplateFor(t,f,app) { return f?.format_pick || f?.ae_template ? String(f.ae_template || '') : rmAutoTemplate(t,f,app); }
+/** Видео, которое служба отрендерит одним AE без частей и кадров (ни @flow:*, ни шаблон с известным профилем). */
+function rmNativeVideo(t,form,app) { return app==='ae' && !ui.sheet?.benchmark && !!t?.audited_at && rmIsVideoOutput(t) && !/^@flow:/.test(form?.ae_template || '') && !rmKnownProfile(form?.ae_template,t.output); }
+function rmFormFor(t,f,app) { return {...f,ae_template:rmTemplateFor(t,f,app),frames:ui.sheet?.batch && !String(f.frames || '').trim() ? t.frames : f.frames,...(ui.sheet?.benchmark ? {output_mode:'root',deliver:'none',ae_backend:'background'} : {})}; }
+/** Предупреждение у кнопки: что будет с видео, если оставить как есть, и переключатель, когда он безопасен. */
+function rmNativeNote(s,chosen,f) {
+  if (ui.sheet?.benchmark) return '';
+  const native=chosen.filter(t=>rmNativeVideo(t,rmFormFor(t,f,s.app),s.app));
+  if (!native.length) return '';
+  const canSplit=native.length===chosen.length && native.every(t=>rmIsH264Mp4(t) && !rmMp4Block(t,f,s.app));
+  // единственная композиция — MP4-видео, но частями не выйдет: говорим почему (иначе причина — сам выбор формата)
+  const one=chosen.length===1 && rmIsH264Mp4(native[0]) ? native[0] : null, blocked=one ? rmMp4Block(one,f,s.app) : '';
+  const text=chosen.length>1 ? `У ${native.length} из ${chosen.length} композиций видео соберёт сам After Effects одним процессом: без частей и без кадров — перерендерить участок потом не получится.` : RM_NATIVE_TEXT+(blocked ? ' '+blocked : '');
+  return `<div class="rm-banner rm-native"><span>${esc(text)}</span>${canSplit?`<button type="button" class="text-action" data-action="rm-format-pick" data-value="@flow:mp4">Рендерить частями (MP4)</button>`:''}</div>`;
+}
+/** Частота явных выборов формата — только на этом устройстве; агент ПК формат в приложение не отдаёт. */
+const RM_FORMAT_USE_KEY='flow.render.formatUse';
+function rmFormatUse() {
+  try {const v=JSON.parse(globalThis.localStorage?.getItem(RM_FORMAT_USE_KEY) || '{}');return v && typeof v==='object' && !Array.isArray(v) ? v : {};} catch {return {};}
+}
+function rmFormatUsed(value) {
+  if (!value) return;
+  try {const use=rmFormatUse();use[value]=(Number(use[value]) || 0)+1;globalThis.localStorage?.setItem(RM_FORMAT_USE_KEY,JSON.stringify(use));} catch {}
+}
 function rmOutputName(t,f) {
   if(!String(f.output_name || '').trim())return t.output || '';
   const source=t.output || 'render.mp4',folder=source.replace(/[^\\/]*$/,''),extension=source.match(/\.[^.\\/]+$/)?.[0] || '.mp4';
   return folder+String(f.output_name).trim()+(/\[#+\]/.test(source)?'.[####]':'')+extension;
 }
-function rmFormatSelect(chosen,f) {
+function rmFormatSelect(chosen,f,app='ae') {
   const templates=[...new Set(chosen.flatMap(x=>x.audit?.templates || []))];
-  const standard=[['','Как в проекте'],['@flow:mp4','MP4 · H.264'],['@flow:mov-alpha','MOV · ProRes 4444 + альфа'],['@flow:png','PNG · секвенция + альфа'],['@flow:exr','EXR · секвенция + альфа'],['@flow:hap','MOV · HAP'],['@flow:hap-alpha','MOV · HAP + альфа']];
-  const selected=standard.find(([v])=>v===(f.ae_template || ''))?.[1] || f.ae_template;
-  const row=(value,label)=>`<button type="button" class="rm-format-option ${value===(f.ae_template || '')?'selected':''}" data-action="rm-format-pick" data-value="${esc(value)}" role="radio" aria-checked="${value===(f.ae_template || '')}"><span>${esc(label)}</span><i aria-hidden="true"></i></button>`;
+  const values=[...new Set(chosen.map(t=>rmTemplateFor(t,f,app)))], current=values.length===1 ? values[0] : null;
+  const labels=new Map([['','Как в проекте'],...RM_FORMATS]);
+  const selected=current===null ? 'MP4 для видео, остальное как в проекте' : labels.get(current) || current;
+  const row=(value,label)=>`<button type="button" class="rm-format-option ${value===current?'selected':''}" data-action="rm-format-pick" data-value="${esc(value)}" role="radio" aria-checked="${value===current}"><span>${esc(label)}</span><i aria-hidden="true"></i></button>`;
+  // сверху — то, что пользователь выбирал чаще всего (по убыванию, при равенстве прежний порядок), затем остальное; «Как в проекте» — в самом конце
+  const use=rmFormatUse(), all=[...RM_FORMATS.map(([v])=>v),...templates], count=v=>Number(use[v]) || 0;
+  const top=all.filter(v=>count(v)>0).sort((x,y)=>count(y)-count(x)), rest=all.filter(v=>!count(v));
+  const restTemplates=rest.filter(v=>templates.includes(v));
   if(ui.sheet?.formatOpen && typeof queueMicrotask==='function')queueMicrotask(()=>{const list=document.getElementById('rm-format-list');if(list)list.scrollTop=ui.sheet?.formatScroll || 0;});
-  return `<div class="rm-format-picker"><button type="button" class="rm-format-current" data-action="rm-format-toggle" aria-expanded="${Boolean(ui.sheet?.formatOpen)}" aria-controls="rm-format-list"><span>${esc(selected)}</span><span aria-hidden="true">${ui.sheet?.formatOpen?'⌃':'⌄'}</span></button>${ui.sheet?.formatOpen?`<div class="rm-format-list" id="rm-format-list" role="radiogroup" aria-label="Формат вывода">${standard.map(([v,n])=>row(v,n)).join('')}${templates.length?`<button type="button" class="rm-format-templates" data-action="rm-format-templates" aria-expanded="${Boolean(ui.sheet.formatTemplatesOpen)}">Шаблоны AE <span>${templates.length}</span></button>${ui.sheet.formatTemplatesOpen?templates.map(n=>row(n,n)).join(''):''}`:''}${templates.some(n=>/DXV/i.test(n))?'':'<p class="section-note">DXV появится после установки шаблона DXV в AE.</p>'}</div>`:''}</div>`;
+  return `<div class="rm-format-picker"><button type="button" class="rm-format-current" data-action="rm-format-toggle" aria-expanded="${Boolean(ui.sheet?.formatOpen)}" aria-controls="rm-format-list"><span>${esc(selected)}</span><span aria-hidden="true">${ui.sheet?.formatOpen?'⌃':'⌄'}</span></button>${ui.sheet?.formatOpen?`<div class="rm-format-list" id="rm-format-list" role="radiogroup" aria-label="Формат вывода">${[...top,...rest.filter(v=>!templates.includes(v))].map(v=>row(v,labels.get(v) || v)).join('')}${restTemplates.length?`<button type="button" class="rm-format-templates" data-action="rm-format-templates" aria-expanded="${Boolean(ui.sheet.formatTemplatesOpen)}">Шаблоны AE <span>${restTemplates.length}</span></button>${ui.sheet.formatTemplatesOpen?restTemplates.map(n=>row(n,n)).join(''):''}`:''}${row('','Как в проекте')}${templates.some(n=>/DXV/i.test(n))?'':'<p class="section-note">DXV появится после установки шаблона DXV в AE.</p>'}</div>`:''}</div>`;
 }
 function rmJobArgs(scene,t,f) {
   const media=rmEffectiveMedia(t,f,scene.app);
@@ -330,7 +694,7 @@ function rmSubmitSheet() {
   if (!targets.length) return;
   const items=[];
   for (const t of targets) {
-    const form=rmFormFor(t,f), audit=rmAudit(scene,t,form);
+    const form=rmFormFor(t,f,scene.app), audit=rmAudit(scene,t,form);
     if (audit.errors.length) {toast(audit.errors[0]);rmRefreshError();return;}
     const args=rmJobArgs(scene,t,form);
     if (ui.sheet.benchmark) {
@@ -345,6 +709,7 @@ function rmSubmitSheet() {
       } else for (const mfr of ['off','on']) items.push({...args,frames:f.sample_frames,benchmark:{full_frames:args.frames},ae_backend:'background',parallel:1,mfr_in_parts:false,ae_mfr:mfr,deliver:'none'});
     } else items.push(args);
   }
+  if (f.format_pick && !ui.sheet.benchmark) rmFormatUsed(f.ae_template);
   const batch=items.length>1 || ui.sheet.benchmark;
   ui.sheet.submissionId ||= window.crypto?.randomUUID?.() || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
   const args={path:scene.path,request_id:ui.sheet.submissionId,items:items.map(({path,...item})=>item)};
@@ -448,7 +813,7 @@ function rmSummary(s, chosen, f) {
   if (chosen.length > 1) {
     let total = 0;
     const rows = chosen.map(t => {
-      const form = rmFormFor(t, f), audit = rmAudit(s, t, form), media = rmEffectiveMedia(t, form, s.app);
+      const form = rmFormFor(t, f, s.app), audit = rmAudit(s, t, form), media = rmEffectiveMedia(t, form, s.app);
       total += audit.frames?.count || 0;
       const name = String(t.target || '').split(/[\/]/).filter(Boolean).pop() || t.target;
       const fmt = [media.width ? `${media.width}×${media.height}` : '', media.format && !/из проекта/i.test(media.format) ? media.format : ''].filter(Boolean).join(' · ');
@@ -458,7 +823,7 @@ function rmSummary(s, chosen, f) {
     return `<div class="rm-summary rsx-batch"><div class="rsx-batch-head"><b>${rmPlural(chosen.length, "композиция", "композиции", "композиций")}</b>${total ? `<span>${rmPlural(total, "кадр", "кадра", "кадров")}</span>` : ''}</div><div class="rsx-batch-list">${rows}</div></div>`;
   }
 
-  const t = chosen[0], audit = rmAudit(s, t, rmFormFor(t, f)), a = audit.a, n = audit.frames?.count,media=rmEffectiveMedia(t,f,s.app);
+  const t = chosen[0], form = rmFormFor(t, f, s.app), audit = rmAudit(s, t, form), a = audit.a, n = audit.frames?.count,media=rmEffectiveMedia(t,form,s.app);
   const line1 = [n ? rmPlural(n, "кадр", "кадра", "кадров") : "", rmDuration(n, a.fps)].filter(Boolean).join(" · ");
   const line2 = [media.width && media.height ? `${media.width}×${media.height}` : "", rmFps(a.fps), media.format].filter(Boolean).join(" · ");
   const warn = audit.warnings.slice(0, 3).map(w => `<p class="rm-warn">${esc(w)}</p>`).join("") + (audit.warnings.length > 3 ? `<p class="rm-warn">и ещё ${audit.warnings.length - 3}</p>` : "");
@@ -487,7 +852,7 @@ function rmFrameFields(frames) {
 /** Параметры задачи: главное сверху, редкое — в «Дополнительно», кнопка — внизу листа. */
 function rmJobForm(s, t) {
   const f = ui.sheet.form, set = rmSettings(), chosen = rmChosenTargets(s), many = chosen.length > 1, bench = ui.sheet.benchmark;
-  const errors = [...new Set(chosen.flatMap(x => rmAudit(s, x, rmFormFor(x, f)).errors))];
+  const errors = [...new Set(chosen.flatMap(x => rmAudit(s, x, rmFormFor(x, f, s.app)).errors))];
   const ae = s.app === "ae";
   const main = bench ? [
     `<div class="rm-banner"><b>Тест скорости</b><span>${f.benchmark_mode==='parts'?'1–4 части, по две пробы в обратном порядке. Сравниваем время кадров; копирование проекта и сборка видео в замер не входят.':'Два коротких прогона — без MFR и с MFR.'} Тест пишет отдельную секвенцию без доставки и выключения ПК. Оценка полного рендера приблизительная.</span><button type="button" class="text-action" data-action="rm-benchmark-exit">Отменить тест</button></div>`,
@@ -502,8 +867,8 @@ function rmJobForm(s, t) {
   const moreBtn = `<button type="button" class="rm-more" data-action="rm-more" aria-expanded="${Boolean(more)}">Дополнительно<span aria-hidden="true">${more ? "▴" : "▾"}</span></button>`;
   const extra = bench ? "" : !ae ? moreBtn + (more ? `<p class="rsx-more-note">У Houdini (Karma) формат, разрешение и способ рендера задаются в ROP сцены.</p>` : "") : moreBtn + (!more ? "" : [
     rmField("Как рендерить", rmSegments("ae_backend", RM_BACKEND, f.ae_backend), set.background_off && f.ae_backend === "auto" ? "Фон после сбоя отключён на сутки — «Авто» сейчас рендерит в открытом AE." : ""),
-    rmField('Формат вывода', rmFormatSelect(chosen, f)),
-    f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || '4'))) : "",
+    rmField('Формат вывода', rmFormatSelect(chosen, f, s.app)),
+    f.ae_backend === "background" ? rmField("Частей одновременно", rmSegments("parallel", [['auto','Авто'],...RM_PARTS], String(f.parallel || '4'), chosen.every(x => rmNativeVideo(x, rmFormFor(x, f, s.app), s.app)))) : "",
     rmField("Разрешение", rmSegments("ae_resolution", RM_RESOLUTION, f.ae_resolution || "inherit")),
   ].join(""));
   const label = bench ? "Запустить тест" : many ? `Поставить ${rmPlural(chosen.length, "задачу", "задачи", "задач")}` : "Поставить в очередь";
@@ -511,7 +876,7 @@ function rmJobForm(s, t) {
     rmSummary(s, chosen, f),
     ...main,
     extra,
-    `<div class="rm-foot"><p class="rm-err" ${errors.length ? "" : "hidden"}>${esc(errors[0] || "")}</p>${!t.audited_at ? `<button type="button" class="ghost-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : ""}<button type="button" class="primary-button rm-wide ${rmBusyCls("rm-submit")}" data-action="rm-submit">${label}</button></div>`,
+    `<div class="rm-foot">${rmNativeNote(s, chosen, f)}<p class="rm-err" ${errors.length ? "" : "hidden"}>${esc(errors[0] || "")}</p>${!t.audited_at ? `<button type="button" class="ghost-button rm-wide" data-action="rm-read" data-id="${esc(s.id)}">Прочитать сцену</button>` : ""}<button type="button" class="primary-button rm-wide ${rmBusyCls("rm-submit")}" data-action="rm-submit">${label}</button></div>`,
   ].join("");
 }
 
@@ -520,7 +885,7 @@ function rmRefreshError() {
   const box = document.querySelector(".rm-sheet .rm-err");
   const s = (rmQueue().scenes || []).find(x => x.id === ui.sheet?.scene), f = ui.sheet?.form;
   if (!box || !s || !f) return;
-  const first = rmChosenTargets(s).flatMap(x => rmAudit(s, x, rmFormFor(x, f)).errors)[0] || "";
+  const first = rmChosenTargets(s).flatMap(x => rmAudit(s, x, rmFormFor(x, f, s.app)).errors)[0] || "";
   box.textContent = first;
   box.hidden = !first;
 }
@@ -850,13 +1215,14 @@ document.addEventListener("click", event => {
 // ------------------------------------------------------------ действия
 
 function rmAction(action, control) {
+  if(action==='rm-chart-reset'){const pts=rmChartPoints(rmChartJob()?.frame_stats);ui.sheet.chart={...rmChartDefault(pts),sel:ui.sheet.chart?.sel??null};rmChartPaint();return true;}
   if(action==='rm-problem-toggle'){const j=rmJobs().find(x=>Number(x.id)===Number(ui.sheet?.id))||ui.sheet?.job;ui.sheet.problemOpen=!(ui.sheet.problemOpen??(j?.status==='failed'));render();return true;}
   if(action==='rm-dest-toggle'){ui.sheet.destOpen=!ui.sheet.destOpen;render();return true;}
   if(action==='rm-name-toggle'){ui.sheet.renameOpen=!ui.sheet.renameOpen;render();const n=document.querySelector?.('[data-rsx-name]');if(n){n.focus();n.select();}return true;}
   if(action==='rm-format-toggle'){ui.sheet.formatOpen=!ui.sheet.formatOpen;render();return true;}
   if(action==='rm-format-templates'){ui.sheet.formatTemplatesOpen=!ui.sheet.formatTemplatesOpen;render();return true;}
   if(action==='rm-format-pick'){
-    ui.sheet.form.ae_template=control.dataset.value;ui.sheet.formatOpen=false;ui.sheet.formatScroll=0;
+    ui.sheet.form.ae_template=control.dataset.value;ui.sheet.form.format_pick='1';ui.sheet.formatOpen=false;ui.sheet.formatScroll=0;
     delete ui.sheet.submissionId;ui.sheet.confirm=false;render();return true;
   }
   if (!action.startsWith("rm-")) return false;
@@ -901,7 +1267,7 @@ function rmAction(action, control) {
   if (action==='rm-preset') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
     const preset=scene && rmPresets(scene.app).find(p=>p.id===control.dataset.id);
-    if (f && preset) {for (const key of RM_PRESET_KEYS) if (key in preset.form) f[key]=key==='mfr_in_parts' ? (preset.form[key]?'1':'') : key==='parallel'?String(preset.form[key]):preset.form[key];if(Number(f.parallel)>4)f.parallel='auto';f.mfr_in_parts='';if(f.ae_backend==='background')f.ae_mfr='off';f.preset_id=(rmQueue().presets || []).some(p=>p.id===preset.id) ? preset.id : '';f.preset_name=preset.name;delete ui.sheet.submissionId;ui.sheet.confirm=false;render();}return true;
+    if (f && preset) {for (const key of RM_PRESET_KEYS) if (key in preset.form && !(key==='ae_template' && !preset.form[key])) f[key]=key==='mfr_in_parts' ? (preset.form[key]?'1':'') : key==='parallel'?String(preset.form[key]):preset.form[key];if(Number(f.parallel)>4)f.parallel='auto';f.mfr_in_parts='';if(f.ae_backend==='background')f.ae_mfr='off';if(preset.form.ae_template)f.format_pick='1';f.preset_id=(rmQueue().presets || []).some(p=>p.id===preset.id) ? preset.id : '';f.preset_name=preset.name;delete ui.sheet.submissionId;ui.sheet.confirm=false;render();}return true;
   }
   if (action==='rm-preset-save' || action==='rm-preset-delete') {
     const scene=(rmQueue().scenes || []).find(s=>s.id===ui.sheet?.scene),f=ui.sheet?.form;
@@ -974,7 +1340,7 @@ function rmAction(action, control) {
     return true;
   }
   if (action === "rm-opt") {
-    if (ui.sheet?.form) {
+    if (ui.sheet?.form && !control.disabled) {
       const key=String(control.dataset.key||''),value=String(control.dataset.value||'');
       ui.sheet.form[key]=value;delete ui.sheet.submissionId;ui.sheet.justRendered=false;render();
       requestAnimationFrame(()=>{const esc=v=>window.CSS?.escape?CSS.escape(v):v.replace(/["\\]/g,'\\$&');const next=document.querySelector(`.sheet [data-action="rm-opt"][data-key="${esc(key)}"][data-value="${esc(value)}"]`);next?.focus({preventScroll:true});});
@@ -1462,7 +1828,7 @@ document.addEventListener('focusout', event => { if (event.target?.matches?.('[d
 /** Куда ляжет рендер: папка крупно, файл и судьба после рендера — одной строкой. */
 function rsxDestination(s, t, f, chosen) {
   // «D:\Render\proj\/stage/rop.[####].exr» (имя цели Karma с путём) → обычный путь Windows
-  const full = String(rmWhere(s, t, f) || '').replace(/[\\/]+/g, '\\');
+  const full = String(rmWhere(s, t, rmFormFor(t, f, s.app)) || '').replace(/[\\/]+/g, '\\');
   const cut = full.lastIndexOf('\\');
   const file = cut > 0 ? full.slice(cut + 1) : '';
   // Пакет: файлы лягут по именам целей — показываем папку проекта, а не папку первой цели.
@@ -1474,7 +1840,7 @@ function rsxDestination(s, t, f, chosen) {
   // По нажатию — полные пути (у пакета — каждого файла); ещё нажатие — свернуть.
   const open = Boolean(ui.sheet?.destOpen);
   const paths = chosen.length > 1
-    ? chosen.map(x => String(rmWhere(s, x, rmFormFor(x, f)) || '').replace(/[\\/]+/g, '\\'))
+    ? chosen.map(x => String(rmWhere(s, x, rmFormFor(x, f, s.app)) || '').replace(/[\\/]+/g, '\\'))
     : [full];
   return `<button type="button" class="rsx-dest${open ? ' is-open' : ''}" data-action="rm-dest-toggle" aria-expanded="${open}" aria-label="${open ? 'Свернуть путь' : 'Показать полный путь'}"><span class="rsx-dest-ico" aria-hidden="true">${icon('folder', 'icon-sm')}</span><span class="rsx-dest-text"><b>${esc(folder || 'путь задан в сцене')}</b><small>${esc([what, after].filter(Boolean).join(' · '))}</small>${open ? `<span class="rsx-dest-full">${paths.map(p => `<code>${esc(p).replace(/\\/g, '\\<wbr>')}</code>`).join('')}</span>` : ''}</span></button>`;
 }
