@@ -48,6 +48,10 @@ const rmBusyCls = key => ui.pc.quick?.[key] || "";
 /** Идущая задача: название, процент, полоса, кадры и сколько осталось. */
 function rmProgress(j) {
   if (j.status === "delivering") return Number(j.delivery?.total) > 0 ? Math.max(0, Math.min(100, Number(j.delivery.files || 0) / Number(j.delivery.total) * 100)) : null;
+  // Правка участка у службы без счётчика по участку: процент там — по всем кадрам ролика («98 %» при 21 новом кадре) — не показываем
+  if (rmIsPatch(j) && (j.span_total === null || j.span_total === undefined)) return null;
+  // процент участка — только пока AE рисует его кадры; на раскладке, проверке, звуке и склейке полоса «бегущая» (не «100 %»)
+  if (rmIsPatch(j) && rmPatchInfo(j).code !== 'render') return null;
   // Счётчик кадров — не процент готового ролика: после него ещё сборка и проверка.
   if (j.stage && /склей|кодир|сборк|провер|подготов|открыва|копир|исходник/i.test(j.stage)) return null;
   if (j.percent === null || j.percent === undefined || j.percent === "" || !Number.isFinite(Number(j.percent))) return null;
@@ -58,14 +62,61 @@ function rmCustomerButton(j){return Number.isSafeInteger(Number(j.id))&&Number(j
 /** Текст для системного «Поделиться» — без путей, ID попытки и служебных данных. */
 function rmShareCopy(j){const percent=rmProgress(j),facts=[RM_APP[j.app]||j.app];if(j.status==='rendering')facts.push(percent===null?'рендер идёт':`${Math.round(percent)}%`);else if(j.status==='paused')facts.push('на паузе');else if(j.status==='delivering')facts.push('доставка');else if(j.status==='done')facts.push('готово');else if(j.status==='failed')facts.push('ошибка');if(j.eta&&j.status==='rendering')facts.push(`ещё ~${rmMinutes(j.eta)}`);return `Рендер «${String(j.name||'Рендер').trim().slice(0,120)}» — ${facts.filter(Boolean).join(' · ')}`;}
 async function rmCopyText(text){try{await navigator.clipboard.writeText(text);return true;}catch{}try{const area=document.createElement('textarea');area.value=text;area.readOnly=true;area.style.position='fixed';area.style.left='-9999px';document.body.append(area);area.select();const ok=document.execCommand('copy');area.remove();return ok;}catch{return false;}}
+/* ---- Перерендер участка: задача-правка показывает участок и шаг, а не «готово 397 из 406» по всему ролику ----
+ * Поля даёт служба (ae_split.progress_extra → agent compact): stage_code, stage_label, stage_at, span, span_done, span_total.
+ * Служба до обновления их не шлёт — тогда шаг берём из прежней подписи stage, а процент и «осталось» (по всем кадрам) не показываем. */
+const RM_PATCH_STEPS = {prepare:'Готовлю перерендер участка',markers:'Читаю маркеры RR',seed:'Беру кадры прошлой версии',check:'Проверяю кадры',render:'After Effects рендерит участок',audio:'Пишу звук',encode:'Собираю видео',verify:'Проверяю результат'};
+const RM_PATCH_LEGACY = [[/маркер/i,'markers'],[/беру готов/i,'seed'],[/проверка кадров/i,'check'],[/рендер в фоне|дорендер/i,'render'],[/^звук/i,'audio'],[/склейка/i,'encode'],[/проверка видео/i,'verify']];
+const rmIsPatch = j => !!(j?.patch_of || j?.patch_frames);
+const rmSpanText = s => String(s || '').replace(/\s*,\s*/g, ', ').replace(/-/g, '–');
+function rmSpanCount(s) { let n = 0; for (const m of String(s || '').matchAll(/(\d+)(?:-(\d+))?/g)) { const a = Number(m[1]); n += Number(m[2] ?? a) - a + 1; } return n; }
+function rmShortEta(s) { s = Math.round(Number(s) || 0); return s < 90 ? `${Math.max(5, Math.round(s / 5) * 5)} с` : rmMinutes(s); }
+/** «уже 2 мин» — как долго идёт этап без оценки конца (раскладка видео, проверка, сборка). Не показываем первые 30 с. */
+function rmSinceText(j) {
+  // длительность этапа присылает ПК (stage_for): часы телефона и ПК могут расходиться. Без неё (служба до обновления) — по отметке stage_at
+  const at = Number(j.stage_at); let s = Number(j.stage_for);
+  if (!Number.isFinite(s)) { if (!at) return ''; s = Math.round(Date.now() / 1000 - at); }
+  return s < 30 ? '' : s < 90 ? `уже ${s} с` : `уже ${Math.round(s / 60)} мин`;
+}
+/** Разбор состояния задачи-правки: код этапа, участок, счётчик, части. Общий для строки «Сейчас» и карточки раздела «Рендер». */
+function rmPatchInfo(j) {
+  const stage = String(j.stage || '');
+  const code = j.stage_code || (RM_PATCH_LEGACY.find(([rx]) => rx.test(stage)) || [])[1] || '';
+  const span = j.span || (String(j.patch_frames || '').toLowerCase() === 'markers' ? '' : j.patch_frames || '');
+  const known = j.span_total !== null && j.span_total !== undefined;
+  const total = Number(j.span_total) || (span ? rmSpanCount(span) : 0);
+  const parts = Number((stage.match(/частей: (\d+)/) || [])[1]) || 0;
+  return {code, sp: rmSpanText(span), total, known, done: Number(j.span_done) || 0, parts, step: j.stage_label || RM_PATCH_STEPS[code] || stage};
+}
+/** Строка карточки правки: [шаг со счётчиком по участку, оставшееся время на кадры, части/сколько идёт этап]. */
+function rmPatchLiveFacts(j) {
+  const i = rmPatchInfo(j);
+  if (i.code === 'render') {
+    return [`After Effects рендерит участок${i.sp ? ` ${i.sp}` : ''}${i.known && i.total ? `: ${i.done} из ${i.total}` : ''}`, i.known && j.eta ? `кадры: ещё ~${rmShortEta(j.eta)}` : '', i.parts > 1 ? `${i.parts} части` : ''];
+  }
+  return [i.step, i.sp && ['audio', 'encode', 'verify'].includes(i.code) ? `участок ${i.sp}` : '', rmSinceText(j)];
+}
+/** Карточка раздела «Рендер» (digital-services.js · dsrJob): надпись, подписи под полосой и строка фактов для задачи-правки. */
+function rmPatchCard(j) {
+  const i = rmPatchInfo(j), render = i.code === 'render';
+  return {
+    label: `Перерендер участка${i.sp ? ` ${i.sp}` : ''}`,
+    left: render && i.known && i.total ? `участок: ${i.done} из ${i.total}` : '',
+    right: render ? (i.known && j.eta ? `кадры: ещё ~${rmShortEta(j.eta)}` : '') : rmSinceText(j),
+    facts: render ? ['After Effects рендерит участок', i.parts > 1 ? `${i.parts} части` : ''].filter(Boolean)
+      : [RM_APP[j.app] || j.app, i.step, i.sp && ['audio', 'encode', 'verify'].includes(i.code) ? `участок ${i.sp}` : ''].filter(Boolean),
+  };
+}
 function rmActiveRow(j, fresh = true) {
   const pct = fresh ? rmProgress(j) : null;
   const facts = !fresh ? "Нет свежих данных с ПК" : j.status === "delivering" ? `переношу в облачную папку${j.delivery?.total ? ` · ${j.delivery.files || 0} из ${j.delivery.total} файлов` : ""}`
+    : rmIsPatch(j) ? rmPatchLiveFacts(j).filter(Boolean).join(" · ")
     // «готово», а не «кадр»: части рендерят с разных мест, номер кадра в папке обгоняет счёт готовых
     : [j.total ? `готово ${j.done || 0} из ${j.total}` : "", j.eta ? `осталось ~${rmMinutes(j.eta)}` : "", j.stage && j.stage !== "рендер" ? j.stage : ""].filter(Boolean).join(" · ");
+  const patchLive = fresh && j.status !== "delivering" && rmIsPatch(j);
   const bar = pct === null
     ? `<div class="pc-render-bar ${fresh ? "indeterminate" : "is-stale"}"><b></b></div>` : `<div class="pc-render-bar"><b style="--v:${pct}%"></b></div>`;
-  return `<div class="pc-render-live rm-live ${fresh ? "" : "is-stale"}" data-render-fresh="${fresh}"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${esc(RM_APP[j.app] || j.app)}${facts ? ` · ${esc(facts)}` : ""}</p><p class="section-note rm-memory">${esc(rmMemoryText(j.resources,fresh))}</p>${j.resource_decision ? `<details class="rm-resource"><summary>${j.resource_decision.mode==='auto'?'Авто':'Вручную'} · частей: ${j.resource_decision.parallel}</summary><p class="section-note">${esc(rmResourceText(j.resource_decision))}</p></details>` : ''}${j.warning ? `<p class="rm-warn">${esc(rmServiceText(j.warning))}</p>` : ""}<div class="rm-acts">${rmCustomerButton(j)}${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
+  return `<div class="pc-render-live rm-live ${fresh ? "" : "is-stale"}" data-render-fresh="${fresh}"><div class="pc-render-title"><span class="pc-render-dot"></span><strong>${esc(j.name)}</strong>${pct === null ? "" : `<b class="pc-render-pct">${Math.round(pct)}%</b>`}</div>${bar}<p class="pc-render-facts">${patchLive ? "" : esc(RM_APP[j.app] || j.app)}${facts ? `${patchLive ? "" : " · "}${esc(facts)}` : ""}</p><p class="section-note rm-memory">${esc(rmMemoryText(j.resources,fresh))}</p>${j.resource_decision ? `<details class="rm-resource"><summary>${j.resource_decision.mode==='auto'?'Авто':'Вручную'} · частей: ${j.resource_decision.parallel}</summary><p class="section-note">${esc(rmResourceText(j.resource_decision))}</p></details>` : ''}${j.warning ? `<p class="rm-warn">${esc(rmServiceText(j.warning))}</p>` : ""}<div class="rm-acts">${rmCustomerButton(j)}${j.status === "rendering" ? `<button type="button" class="small-button ${rmBusyCls(`rm-pause-${j.id}`)}" data-action="rm-pause" data-id="${j.id}">Пауза</button>` : ""}<button type="button" class="small-button ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}">Отменить</button></div></div>`;
 }
 function rmResourceText(r) { return [`${r.mode==='auto'?'Авто':'Вручную'} · частей: ${r.parallel}`,r.reason,r.warning].filter(Boolean).join(' · '); }
 function rmMemoryText(r, fresh=true) {
@@ -107,7 +158,10 @@ function rmBenchmarkSummary(tests) {
 function rmWaitingRow(j, i) {
   const paused = j.status === "paused";
   // на паузе: сколько уже готово — «Продолжить» дорендерит остальное
-  const facts = [RM_APP[j.app] || j.app, paused && j.total ? `готово ${j.done || 0} из ${j.total}` : j.frames ? `кадры ${j.frames}` : "", paused ? "на паузе" : ""];
+  // правка участка: «участок 150–170», а не «кадры 0-405» (весь ролик) — и счёт на паузе по участку
+  const patchSpan = rmIsPatch(j) ? rmSpanText(j.span || (String(j.patch_frames || '').toLowerCase() === 'markers' ? 'по маркерам RR' : j.patch_frames)) : '';
+  const facts = [RM_APP[j.app] || j.app, rmIsPatch(j) ? (paused && j.span_total ? `участок ${patchSpan}: ${j.span_done || 0} из ${j.span_total}` : `участок ${patchSpan}`)
+    : paused && j.total ? `готово ${j.done || 0} из ${j.total}` : j.frames ? `кадры ${j.frames}` : "", paused ? "на паузе" : ""];
   return `<div class="rm-wait ${paused ? "rm-paused" : ""}" data-id="${j.id}" style="--i:${i}"><span class="rm-grip" aria-label="Перетащить">${"<i></i>".repeat(6)}</span><span class="rm-wait-text"><b>${esc(j.name)}</b><small>${esc(facts.filter(Boolean).join(" · "))}</small></span>${paused ? `<button type="button" class="text-action ${rmBusyCls(`rm-resume-${j.id}`)}" data-action="rm-resume" data-id="${j.id}">Продолжить</button>` : ""}<button type="button" class="icon-button rm-x ${rmBusyCls(`rm-cancel-${j.id}`)}" data-action="rm-cancel" data-id="${j.id}" data-name="${esc(j.name)}" aria-label="Убрать из очереди">${pcIcon("x")}</button></div>`;
 }
 
@@ -461,7 +515,8 @@ function renderRmDetailSheet() {
   const where=String((delivered&&j.delivery?.path)||j.output||'');
   const span=rmSpan(j.frames);
   const facts=[
-    span?['Кадры',`${span[0]}–${span[1]}${j.fps?` · ${((span[1]-span[0]+1)/Number(j.fps)).toFixed(1).replace('.',',')} с`:''}`]:null,
+    rmIsPatch(j)&&rmSpanCount(j.patch_frames)?['Участок правки',`${rmSpanText(j.patch_frames)} · ${rmPlural(rmSpanCount(j.patch_frames),'кадр','кадра','кадров')}${j.fps?` · ${(rmSpanCount(j.patch_frames)/Number(j.fps)).toFixed(1).replace('.',',')} с`:''}`]:null,
+    span?[rmIsPatch(j)?'Весь ролик':'Кадры',`${span[0]}–${span[1]}${j.fps?` · ${((span[1]-span[0]+1)/Number(j.fps)).toFixed(1).replace('.',',')} с`:''}`]:null,
     ['Программа',RM_APP[j.app]||j.app],
     Number(j.video_bitrate)>0?['Битрейт',`${String(Number(j.video_bitrate)).replace('.',',')} Мбит/с`]:null,
     took?['Рендер шёл',took]:null,
