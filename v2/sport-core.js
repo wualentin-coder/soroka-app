@@ -51,6 +51,7 @@ var SportCore = (() => {
     REQUIRED_LABELS: () => REQUIRED_LABELS,
     SIZE_SOURCES: () => SIZE_SOURCES,
     SIZING_MEASURES: () => SIZING_MEASURES,
+    SKIP_UNDO_MS: () => SKIP_UNDO_MS,
     STRETCHING_RULES: () => STRETCHING_RULES,
     TRAINING_PLACES: () => TRAINING_PLACES,
     TRAINING_RULES: () => TRAINING_RULES,
@@ -128,6 +129,7 @@ var SportCore = (() => {
     isMorningEvening: () => isMorningEvening,
     isMuscleId: () => isMuscleId,
     isRequiredField: () => isRequiredField,
+    isSport2Enabled: () => isSport2Enabled,
     knownMuscles: () => knownMuscles,
     latestCustomValue: () => latestCustomValue,
     latestWeight: () => latestWeight,
@@ -170,6 +172,7 @@ var SportCore = (() => {
     programRank: () => scheduledProgramRank,
     programSummaries: () => programSummaries,
     raiseProgram: () => raiseProgram,
+    readSportRun: () => readSportRun,
     recentTrainingWeek: () => recentTrainingWeek,
     recordSets: () => recordSets,
     recordWorkingWeight: () => recordWorkingWeight,
@@ -180,6 +183,8 @@ var SportCore = (() => {
     rescheduleMissedWorkouts: () => rescheduleMissedWorkouts,
     restBetweenExercisesFor: () => restBetweenExercisesFor,
     restSecondsFor: () => restSecondsFor,
+    resumeSportRun: () => resumeSportRun,
+    runMetricLimits: () => runMetricLimits,
     saveFingerProfile: () => saveFingerProfile,
     saveTimer: () => saveTimer,
     scheduledProgramRank: () => scheduledProgramRank,
@@ -195,6 +200,12 @@ var SportCore = (() => {
     shoeSizeRu: () => shoeSizeRu,
     shouldAskWakeTime: () => shouldAskWakeTime,
     sizingMeasurements: () => sizingMeasurements,
+    sportRunDraftResult: () => sportRunDraftResult,
+    sportRunEvents: () => sportRunEvents,
+    sportRunInterruption: () => sportRunInterruption,
+    sportRunOutbox: () => sportRunOutbox,
+    sportRunSuggestions: () => sportRunSuggestions,
+    stampSportRunEvents: () => stampSportRunEvents,
     startOfWeekKey: () => startOfWeekKey,
     startOption: () => startOption,
     stateChanges: () => stateChanges,
@@ -215,6 +226,8 @@ var SportCore = (() => {
     validVideo: () => validVideo,
     validatePlan: () => validatePlan,
     validateSets: () => validateSets,
+    validateSportRunEvent: () => event,
+    validateSportRunSnapshot: () => manualSnapshot,
     validateWorkingWeight: () => validateWorkingWeight,
     videoSearchUrl: () => videoSearchUrl,
     videoUrl: () => videoUrl,
@@ -400,8 +413,8 @@ var SportCore = (() => {
     });
     return total;
   }
-  function formatDuration(seconds) {
-    const minutes = Math.max(1, Math.round(seconds / 60));
+  function formatDuration(seconds2) {
+    const minutes = Math.max(1, Math.round(seconds2 / 60));
     if (minutes < 60) return `${minutes} мин`;
     const hours = Math.floor(minutes / 60);
     const rest = minutes % 60;
@@ -473,19 +486,19 @@ var SportCore = (() => {
   function dateFromKey(key) {
     return /* @__PURE__ */ new Date(`${key}T12:00:00Z`);
   }
-  function programDaySince(startedOn, date = todayKey()) {
-    return Math.max(1, Math.round((dateFromKey(date).getTime() - dateFromKey(startedOn).getTime()) / 864e5) + 1);
+  function programDaySince(startedOn, date2 = todayKey()) {
+    return Math.max(1, Math.round((dateFromKey(date2).getTime() - dateFromKey(startedOn).getTime()) / 864e5) + 1);
   }
   function offsetDateKey(key, offset) {
-    const date = dateFromKey(key);
-    date.setUTCDate(date.getUTCDate() + offset);
-    return date.toISOString().slice(0, 10);
+    const date2 = dateFromKey(key);
+    date2.setUTCDate(date2.getUTCDate() + offset);
+    return date2.toISOString().slice(0, 10);
   }
   function startOfWeekKey(key) {
-    const date = dateFromKey(key);
-    const mondayOffset = (date.getUTCDay() + 6) % 7;
-    date.setUTCDate(date.getUTCDate() - mondayOffset);
-    return date.toISOString().slice(0, 10);
+    const date2 = dateFromKey(key);
+    const mondayOffset = (date2.getUTCDay() + 6) % 7;
+    date2.setUTCDate(date2.getUTCDate() - mondayOffset);
+    return date2.toISOString().slice(0, 10);
   }
   function programDayForDate(key, currentDay) {
     const millisecondsPerDay = 864e5;
@@ -494,8 +507,8 @@ var SportCore = (() => {
   function dateKeyForDay(day, currentDay) {
     return offsetDateKey(todayKey(), day - currentDay);
   }
-  function checksKey(date, routineType) {
-    return `${date}|${routineType}`;
+  function checksKey(date2, routineType) {
+    return `${date2}|${routineType}`;
   }
   function setsInExercise(setsReps) {
     const match = setsReps.match(/^\s*(\d+)\s*[×x]/i);
@@ -563,11 +576,11 @@ var SportCore = (() => {
   function habitDays(marks = {}, days, endDate, total = 1, since) {
     const began = habitStart(marks, since);
     return Array.from({ length: days }, (_, index) => {
-      const date = offsetDay(endDate, index - (days - 1));
-      if (!began || date < began) return { date, state: "outside" };
-      const done = habitDone(marks[date], total);
-      const state = done >= total ? "done" : date === endDate ? "pending" : done > 0 ? "partial" : "missed";
-      return { date, state, done, total };
+      const date2 = offsetDay(endDate, index - (days - 1));
+      if (!began || date2 < began) return { date: date2, state: "outside" };
+      const done = habitDone(marks[date2], total);
+      const state = done >= total ? "done" : date2 === endDate ? "pending" : done > 0 ? "partial" : "missed";
+      return { date: date2, state, done, total };
     });
   }
   function habitStreak(marks = {}, anchorDate, total = 1) {
@@ -580,12 +593,12 @@ var SportCore = (() => {
     return streak;
   }
   function habitStats(marks = {}, endDate, total = 1) {
-    const dates = Object.keys(marks).filter((date) => date <= endDate && habitDone(marks[date], total) >= total).sort();
+    const dates = Object.keys(marks).filter((date2) => date2 <= endDate && habitDone(marks[date2], total) >= total).sort();
     let longest = 0, run = 0, previous = "";
-    for (const date of dates) {
-      run = previous && offsetDay(previous, 1) === date ? run + 1 : 1;
+    for (const date2 of dates) {
+      run = previous && offsetDay(previous, 1) === date2 ? run + 1 : 1;
       longest = Math.max(longest, run);
-      previous = date;
+      previous = date2;
     }
     const today = habitDone(marks[endDate], total) >= total;
     return {
@@ -611,12 +624,12 @@ var SportCore = (() => {
   }
   function elapsedTime(startedAt, now = Date.now()) {
     const start = Date.parse(startedAt);
-    const seconds = Number.isFinite(start) ? Math.max(0, Math.floor((now - start) / 1e3)) : 0;
+    const seconds2 = Number.isFinite(start) ? Math.max(0, Math.floor((now - start) / 1e3)) : 0;
     return {
-      days: Math.floor(seconds / 86400),
-      hours: Math.floor(seconds / 3600) % 24,
-      minutes: Math.floor(seconds / 60) % 60,
-      seconds: seconds % 60
+      days: Math.floor(seconds2 / 86400),
+      hours: Math.floor(seconds2 / 3600) % 24,
+      minutes: Math.floor(seconds2 / 60) % 60,
+      seconds: seconds2 % 60
     };
   }
   function activeCounters(counters = {}, now = Date.now()) {
@@ -629,10 +642,10 @@ var SportCore = (() => {
     const relapses = counter.relapses ?? {};
     const began = counterStart(counter);
     return Array.from({ length: days }, (_, index) => {
-      const date = offsetDay(endDate, index - (days - 1));
-      const slips = relapses[date] ?? 0;
-      const state = slips > 0 ? "relapse" : date < began ? "outside" : "clean";
-      return { date, state, relapses: slips };
+      const date2 = offsetDay(endDate, index - (days - 1));
+      const slips = relapses[date2] ?? 0;
+      const state = slips > 0 ? "relapse" : date2 < began ? "outside" : "clean";
+      return { date: date2, state, relapses: slips };
     });
   }
   var MAX_STRIP_DAYS = 365;
@@ -641,9 +654,9 @@ var SportCore = (() => {
     return Math.min(max, daysBetween(began, endDate) + 1);
   }
   function offsetDay(key, offset) {
-    const date = /* @__PURE__ */ new Date(`${key}T12:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + offset);
-    return date.toISOString().slice(0, 10);
+    const date2 = /* @__PURE__ */ new Date(`${key}T12:00:00Z`);
+    date2.setUTCDate(date2.getUTCDate() + offset);
+    return date2.toISOString().slice(0, 10);
   }
   function daysBetween(from, to) {
     const ms = Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`);
@@ -651,7 +664,7 @@ var SportCore = (() => {
   }
   function counterStats(counter, now = Date.now()) {
     const began = (counter.since ?? counter.startedAt).slice(0, 10);
-    const slipDates = Object.keys(counter.relapses ?? {}).filter((date) => date >= began).sort();
+    const slipDates = Object.keys(counter.relapses ?? {}).filter((date2) => date2 >= began).sort();
     const runs = [];
     let runStart = began;
     for (const slip of slipDates) {
@@ -677,12 +690,12 @@ var SportCore = (() => {
     const { currentDays } = counterStats(counter, now);
     return currentDays > 0 && currentDays % every === 0 ? currentDays : null;
   }
-  function withRelapse(counter, date, at = /* @__PURE__ */ new Date()) {
+  function withRelapse(counter, date2, at = /* @__PURE__ */ new Date()) {
     return {
       ...counter,
       startedAt: at.toISOString(),
       since: counter.since ?? counter.startedAt,
-      relapses: { ...counter.relapses, [date]: (counter.relapses?.[date] ?? 0) + 1 }
+      relapses: { ...counter.relapses, [date2]: (counter.relapses?.[date2] ?? 0) + 1 }
     };
   }
   function pluralTimes(n) {
@@ -694,8 +707,8 @@ var SportCore = (() => {
     return mod10 === 1 && mod100 !== 11 ? "день" : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? "дня" : "дней";
   }
   function localDateTimeValue(iso = (/* @__PURE__ */ new Date()).toISOString()) {
-    const date = new Date(iso);
-    return new Date(date.getTime() - date.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+    const date2 = new Date(iso);
+    return new Date(date2.getTime() - date2.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
   }
 
   // supabase/functions/_shared/sport-schedule.ts
@@ -777,12 +790,12 @@ var SportCore = (() => {
       );
       for (const row of items) {
         if (row.done || row.date < first.date) continue;
-        const date = new Date(
+        const date2 = new Date(
           Date.parse(row.date + "T12:00:00Z") + delay * 864e5
         ).toISOString().slice(0, 10);
         dates ?? (dates = {});
         if (dates === state.workoutDates) dates = { ...dates };
-        dates[row.key] = date;
+        dates[row.key] = date2;
         const oldSlot = `${row.date}|${row.w.kind}`;
         if (state.workoutSelections?.[oldSlot] === row.key) {
           selections ?? (selections = {});
@@ -791,7 +804,7 @@ var SportCore = (() => {
               ...selections
             };
           }
-          selections[`${date}|${row.w.kind}`] = row.key;
+          selections[`${date2}|${row.w.kind}`] = row.key;
         }
       }
     }
@@ -827,12 +840,12 @@ var SportCore = (() => {
     const options = [];
     for (const day of [...new Set(planDays.map((p) => p.day_number))]) {
       const rows = planDays.filter((p) => p.day_number === day);
-      const date = startedOn ? offsetDateKey(startedOn, day - 1) : dateKeyForDay(day, currentDay);
+      const date2 = startedOn ? offsetDateKey(startedOn, day - 1) : dateKeyForDay(day, currentDay);
       for (const kind of ["main", "splits", "test"]) {
         const plan = kind === "main" ? mergeMainAndPosture(rows) : rows.find((p) => p.routine_type === kind);
         if (plan) options.push({
-          key: checksKey(date, kind),
-          date,
+          key: checksKey(date2, kind),
+          date: date2,
           kind,
           legacy: true,
           programTitle: "Исходная программа",
@@ -885,8 +898,8 @@ var SportCore = (() => {
     const done = option.plan.exercises.reduce((sum, e, i) => sum + completedSets(checks[i], exerciseSets(e)), 0);
     return total && done === total ? 100 : total ? Math.min(99, Math.round(done / total * 100)) : 0;
   }
-  function optionPriority(option, state, date, today) {
-    return scheduledProgramRank(optionProgramKey(option), option.addedAt, state, date >= today);
+  function optionPriority(option, state, date2, today) {
+    return scheduledProgramRank(optionProgramKey(option), option.addedAt, state, date2 >= today);
   }
   function programSummaries(catalog, options, state) {
     const legacy = options.filter((o) => o.legacy);
@@ -902,16 +915,16 @@ var SportCore = (() => {
     ];
     return items.sort((a, b) => scheduledProgramRank(a.key, a.addedAt, state) - scheduledProgramRank(b.key, b.addedAt, state));
   }
-  function selectedOption(options, date, kind, state, today = todayKey()) {
-    const variants = options.filter((o) => o.date === date && o.kind === kind);
+  function selectedOption(options, date2, kind, state, today = todayKey()) {
+    const variants = options.filter((o) => o.date === date2 && o.kind === kind);
     if (!variants.length) return void 0;
-    const selected = variants.find((o) => o.key === state.workoutSelections?.[checksKey(date, kind)]);
+    const selected = variants.find((o) => o.key === state.workoutSelections?.[checksKey(date2, kind)]);
     if (selected) return selected;
     if (variants.length === 1) return variants[0];
     const started = variants.filter((o) => Boolean(state.workouts?.[o.key]) || optionChecks(o, state).some(Boolean));
     if (started.length === 1) return started[0];
     if (started.length > 1) return void 0;
-    return [...variants].sort((a, b) => optionPriority(a, state, date, today) - optionPriority(b, state, date, today))[0];
+    return [...variants].sort((a, b) => optionPriority(a, state, date2, today) - optionPriority(b, state, date2, today))[0];
   }
   function raiseProgram(state, keys, key) {
     const order = keys.slice();
@@ -945,23 +958,23 @@ var SportCore = (() => {
     const started = state.workoutTimes?.[option.key]?.startedAt;
     if (!started) return base;
     if (!finished) return { ...base, workoutTimes: { ...state.workoutTimes, [option.key]: { startedAt: started } } };
-    const seconds = Math.round((now.getTime() - Date.parse(started)) / 1e3);
-    const usable = Number.isFinite(seconds) && seconds > 0 && seconds <= MAX_WORKOUT_SECONDS;
+    const seconds2 = Math.round((now.getTime() - Date.parse(started)) / 1e3);
+    const usable = Number.isFinite(seconds2) && seconds2 > 0 && seconds2 <= MAX_WORKOUT_SECONDS;
     return { ...base, workoutTimes: {
       ...state.workoutTimes,
-      [option.key]: { startedAt: started, finishedAt: now.toISOString(), ...usable ? { seconds } : {} }
+      [option.key]: { startedAt: started, finishedAt: now.toISOString(), ...usable ? { seconds: seconds2 } : {} }
     } };
   }
   function workoutSeconds(state, option) {
     return state.workoutTimes?.[option.key]?.seconds ?? null;
   }
-  function withinProgram(options, date) {
+  function withinProgram(options, date2) {
     let from = "", to = "";
     for (const option of options) {
       if (!from || option.date < from) from = option.date;
       if (!to || option.date > to) to = option.date;
     }
-    return Boolean(from) && date >= from && date <= to;
+    return Boolean(from) && date2 >= from && date2 <= to;
   }
   function optionProgramKey(option) {
     return option.legacy ? "legacy" : option.key.split("|").slice(0, 2).join("|");
@@ -997,14 +1010,14 @@ var SportCore = (() => {
     return [{ path, value: next }];
   }
   function applyStateChanges(state, changes) {
-    let result = JSON.parse(JSON.stringify(state));
+    let result2 = JSON.parse(JSON.stringify(state));
     for (const change of changes) {
       if (change.path.some((key2) => unsafeKeys.has(key2))) throw new Error("Invalid state path");
       if (!change.path.length) {
-        result = change.value;
+        result2 = change.value;
         continue;
       }
-      let cursor = result;
+      let cursor = result2;
       for (const key2 of change.path.slice(0, -1)) {
         if (!isRecord(cursor[key2])) cursor[key2] = {};
         cursor = cursor[key2];
@@ -1013,7 +1026,7 @@ var SportCore = (() => {
       if (change.remove) delete cursor[key];
       else cursor[key] = change.value;
     }
-    return result;
+    return result2;
   }
 
   // sport/core/src/calendarProgress.ts
@@ -1027,8 +1040,8 @@ var SportCore = (() => {
     }
     return plans;
   }
-  function completionForDate(date, state, exercises, routine) {
-    const key = checksKey(date, routine);
+  function completionForDate(date2, state, exercises, routine) {
+    const key = checksKey(date2, routine);
     if (state.workouts?.[key]) return 100;
     if (!exercises.length) return 0;
     const marks = state.checks[key] ?? [];
@@ -1058,11 +1071,11 @@ var SportCore = (() => {
 
   // sport/core/src/countdown.ts
   var Countdown = class _Countdown {
-    constructor(seconds, now = Date.now()) {
+    constructor(seconds2, now = Date.now()) {
       __publicField(this, "deadline");
       __publicField(this, "pausedMs", null);
       __publicField(this, "consumed", false);
-      this.deadline = now + seconds * 1e3;
+      this.deadline = now + seconds2 * 1e3;
     }
     // Свернуть приложение — не то же самое, что закрыть его: во втором случае
     // страница перезагружается, и таймер начинался заново. Снимок переживает
@@ -1091,10 +1104,10 @@ var SportCore = (() => {
         this.pausedMs = null;
       }
     }
-    adjust(seconds, now = Date.now()) {
+    adjust(seconds2, now = Date.now()) {
       if (this.consumed) return;
-      if (this.pausedMs !== null) this.pausedMs = Math.max(0, this.pausedMs + seconds * 1e3);
-      else this.deadline = Math.max(now, this.deadline + seconds * 1e3);
+      if (this.pausedMs !== null) this.pausedMs = Math.max(0, this.pausedMs + seconds2 * 1e3);
+      else this.deadline = Math.max(now, this.deadline + seconds2 * 1e3);
     }
     finish() {
       if (this.consumed) return false;
@@ -1320,7 +1333,7 @@ var SportCore = (() => {
     }));
   }
   function measurementHistory(state, fieldId) {
-    const legacy = Object.entries(state.measurements ?? {}).flatMap(([date, entry]) => entry[fieldId] ? [{ id: `legacy:${date}:${fieldId}`, fieldId, value: entry[fieldId], recordedAt: `${date}T00:00:00Z`, legacyDate: date }] : []);
+    const legacy = Object.entries(state.measurements ?? {}).flatMap(([date2, entry]) => entry[fieldId] ? [{ id: `legacy:${date2}:${fieldId}`, fieldId, value: entry[fieldId], recordedAt: `${date2}T00:00:00Z`, legacyDate: date2 }] : []);
     const added = Object.entries(state.measurementEntries ?? {}).filter(([, entry]) => entry.fieldId === fieldId).map(([id2, entry]) => ({ id: id2, ...entry }));
     return [...legacy, ...added].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt) || b.id.localeCompare(a.id));
   }
@@ -1578,7 +1591,7 @@ var SportCore = (() => {
   }
   function buildTrainingContext(state, options, currentDay, periodDays, includeHealth, includeProfile = true) {
     const today = todayKey(), from = periodDays ? offsetDateKey(today, 1 - periodDays) : "0001-01-01";
-    const inPeriod = (date) => date >= from && date <= today;
+    const inPeriod = (date2) => date2 >= from && date2 <= today;
     const answer = (f) => {
       const raw = state.trainingProfile?.[f.key]?.trim();
       if (!raw) return "не указано";
@@ -1652,10 +1665,10 @@ var SportCore = (() => {
   function validGoalResult(value, key) {
     const text = value.trim().replace(",", ".");
     if (!/^\d+(?:\.\d+)?$/.test(text)) return null;
-    const result = Number(text);
-    if (!Number.isFinite(result) || result > (key === "splits" ? 180 : MAX_GOAL_TARGET)) return null;
-    if ((key === "pullups" || key === "pushups") && !Number.isInteger(result)) return null;
-    return result;
+    const result2 = Number(text);
+    if (!Number.isFinite(result2) || result2 > (key === "splits" ? 180 : MAX_GOAL_TARGET)) return null;
+    if ((key === "pullups" || key === "pushups") && !Number.isInteger(result2)) return null;
+    return result2;
   }
   function logBuiltInGoal(state, day, key, value) {
     return { ...state, tests: { ...state.tests, [String(day)]: { ...state.tests[String(day)], [key]: value } } };
@@ -1675,16 +1688,16 @@ var SportCore = (() => {
     return Object.entries(state.customGoals ?? {}).filter(([, goal]) => !goal.archived);
   }
   function customGoalHistory(state, id2) {
-    return Object.entries(state.goalEntries?.[id2] ?? {}).map(([date, value]) => ({ date, value })).sort((a, b) => a.date.localeCompare(b.date));
+    return Object.entries(state.goalEntries?.[id2] ?? {}).map(([date2, value]) => ({ date: date2, value })).sort((a, b) => a.date.localeCompare(b.date));
   }
   function latestCustomValue(state, id2) {
     const history = customGoalHistory(state, id2);
     return history.length ? history[history.length - 1].value : null;
   }
-  function logCustomGoal(state, id2, value, date = todayKey()) {
+  function logCustomGoal(state, id2, value, date2 = todayKey()) {
     return {
       ...state,
-      goalEntries: { ...state.goalEntries, [id2]: { ...state.goalEntries?.[id2], [date]: value } }
+      goalEntries: { ...state.goalEntries, [id2]: { ...state.goalEntries?.[id2], [date2]: value } }
     };
   }
 
@@ -1778,8 +1791,8 @@ var SportCore = (() => {
     const suffix = unit.trim();
     if (suffix && text.toLocaleLowerCase().endsWith(suffix.toLocaleLowerCase())) text = text.slice(0, -suffix.length).trim();
     if (!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(text)) return null;
-    const number = Number(text.replace(",", "."));
-    return Number.isFinite(number) ? number : null;
+    const number2 = Number(text.replace(",", "."));
+    return Number.isFinite(number2) ? number2 : null;
   }
   function measurementSeries(rows, unit) {
     return rows.flatMap((row) => {
@@ -1828,9 +1841,9 @@ var SportCore = (() => {
   function wakeSeries(state, days = 14, endDate = todayKey()) {
     const log = wakeLog(state);
     return Array.from({ length: days }, (_, index) => {
-      const date = offsetDateKey(endDate, index - (days - 1));
-      const time = log[date] ?? null;
-      return { date, time, minutes: time ? minutesOf(time) : null };
+      const date2 = offsetDateKey(endDate, index - (days - 1));
+      const time = log[date2] ?? null;
+      return { date: date2, time, minutes: time ? minutesOf(time) : null };
     });
   }
   function wakeAverage(points) {
@@ -1838,8 +1851,8 @@ var SportCore = (() => {
     if (!values.length) return null;
     return values.reduce((sum, value) => sum + value, 0) / values.length;
   }
-  function weekdayLabel(date) {
-    return new Intl.DateTimeFormat("ru-RU", { weekday: "short", timeZone: "UTC" }).format(dateFromKey(date)).slice(0, 2);
+  function weekdayLabel(date2) {
+    return new Intl.DateTimeFormat("ru-RU", { weekday: "short", timeZone: "UTC" }).format(dateFromKey(date2)).slice(0, 2);
   }
 
   // sport/core/src/gymBasics.ts
@@ -2192,7 +2205,7 @@ ${JSON.stringify(context, null, 2)}
     const space = () => {
       while (/[\t\n\r ]/.test(text[i] ?? "x")) i++;
     };
-    function string() {
+    function string2() {
       const start = i++;
       while (i < text.length) {
         if (text[i] === "\\") {
@@ -2207,32 +2220,32 @@ ${JSON.stringify(context, null, 2)}
       if (depth > 24) fail(path, "слишком глубокая вложенность");
       space();
       const char = text[i];
-      if (char === '"') return string();
+      if (char === '"') return string2();
       if (char === "{" || char === "[") {
-        const object2 = char === "{";
-        const result = object2 ? /* @__PURE__ */ Object.create(null) : [];
+        const object3 = char === "{";
+        const result2 = object3 ? /* @__PURE__ */ Object.create(null) : [];
         const keys = /* @__PURE__ */ new Set();
         i++;
         space();
-        const end = object2 ? "}" : "]";
+        const end = object3 ? "}" : "]";
         if (text[i] === end) {
           i++;
-          return result;
+          return result2;
         }
         for (; ; ) {
           space();
-          if (object2) {
+          if (object3) {
             if (text[i] !== '"') fail(path, "ожидалось имя поля в кавычках");
-            const key = string();
+            const key = string2();
             if (keys.has(key)) fail(`${path}.${key}`, "повтор поля JSON");
             keys.add(key);
             space();
             if (text[i++] !== ":") fail(path, "ожидалось двоеточие");
-            result[key] = value(`${path}.${key}`, depth + 1);
-          } else result.push(value(`${path}[${result.length}]`, depth + 1));
+            result2[key] = value(`${path}.${key}`, depth + 1);
+          } else result2.push(value(`${path}[${result2.length}]`, depth + 1));
           space();
           const separator = text[i++];
-          if (separator === end) return result;
+          if (separator === end) return result2;
           if (separator !== ",") fail(path, "ожидалась запятая или конец блока");
         }
       }
@@ -2242,10 +2255,10 @@ ${JSON.stringify(context, null, 2)}
       return JSON.parse(token);
     }
     try {
-      const result = value("JSON", 0);
+      const result2 = value("JSON", 0);
       space();
       if (i !== text.length) fail("JSON", "лишний текст после документа");
-      return result;
+      return result2;
     } catch (error) {
       if (error instanceof SyntaxError) fail("JSON", "неверный синтаксис строки или числа");
       throw error;
@@ -2490,6 +2503,687 @@ ${JSON.stringify(context, null, 2)}
       next = selectWorkoutLoad(next, option, index, { kilograms: entry.kilograms, ...basis ? { basis } : {}, actualReps: top.reps });
     }
     return next;
+  }
+
+  // sport/core/src/session/contract.ts
+  var bases = ["per_dumbbell", "total", "machine", "additional"];
+  var ContractError = class extends Error {
+    constructor(code, field) {
+      super(code);
+      __publicField(this, "code");
+      __publicField(this, "field");
+      this.code = code;
+      this.field = field;
+    }
+  };
+  function invalid(field, code = "invalid_event") {
+    throw new ContractError(code, field);
+  }
+  function object2(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  function integer2(value, min = 0, max = 2147483647) {
+    return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max;
+  }
+  var number = (value, min, max) => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+  var string = (value, max, min = 1) => typeof value === "string" && !value.includes("\0") && [...value].length >= min && [...value].length <= max;
+  function uuid(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value) ? value.toLowerCase() : null;
+  }
+  function date(value) {
+    return typeof value === "string" && /^(?!0000)\d{4}-\d\d-\d\d$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  }
+  function timestamp(value) {
+    if (typeof value !== "string") return null;
+    const match = /^(\d{4}-\d\d-\d\d)T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/i.exec(value);
+    if (!match || !date(match[1]) || !Number.isFinite(Date.parse(value))) return null;
+    const normalized = new Date(value).toISOString();
+    return date(normalized.slice(0, 10)) ? normalized : null;
+  }
+  function setKey(exercise2, index) {
+    return JSON.stringify([exercise2, index]);
+  }
+  function emptyResult(status = "unconfirmed") {
+    return {
+      status,
+      actual_kg: null,
+      actual_weight_basis: null,
+      actual_units: null,
+      actual_reps: null,
+      actual_seconds: null,
+      rir: null,
+      note: null
+    };
+  }
+  function weightBasis(value) {
+    return bases.some((basis) => basis === value);
+  }
+  var resultFields = Object.keys(emptyResult());
+  function result(input, extraKeys = []) {
+    const status = input.status;
+    if (status !== "confirmed" && status !== "unconfirmed" && status !== "skipped") invalid("status", "invalid_result");
+    if (Object.keys(input).some((key) => !resultFields.includes(key) && !extraKeys.includes(key))) invalid("result", "invalid_result");
+    const actual_kg = input.actual_kg ?? null;
+    const actual_weight_basis = input.actual_weight_basis ?? null;
+    const actual_units = input.actual_units ?? null;
+    const actual_reps = input.actual_reps ?? null;
+    const actual_seconds = input.actual_seconds ?? null;
+    const rir = input.rir ?? null;
+    const note = input.note ?? null;
+    if (actual_kg !== null && !number(actual_kg, 0, 2e3)) invalid("actual_kg", "invalid_result");
+    if (actual_weight_basis !== null && !weightBasis(actual_weight_basis)) invalid("actual_weight_basis", "invalid_result");
+    if (actual_units !== null && (!integer2(actual_units, 1, 2) || actual_weight_basis !== "per_dumbbell")) invalid("actual_units", "invalid_result");
+    if (actual_reps !== null && !integer2(actual_reps, 1, 1e3)) invalid("actual_reps", "invalid_result");
+    if (actual_seconds !== null && !integer2(actual_seconds, 1, 86400)) invalid("actual_seconds", "invalid_result");
+    if (rir !== null && !integer2(rir, 0, 3)) invalid("rir", "invalid_result");
+    if (note !== null && !string(note, 1e3, 0)) invalid("note", "invalid_result");
+    const measured = actual_kg !== null || actual_reps !== null || actual_seconds !== null;
+    if (status === "confirmed" !== measured || status !== "confirmed" && rir !== null || actual_kg === null && actual_weight_basis !== null) invalid("result", "invalid_result");
+    return { status, actual_kg, actual_weight_basis, actual_units, actual_reps, actual_seconds, rir, note };
+  }
+  var setTypes = /* @__PURE__ */ new Set([
+    "set_started",
+    "set_ended",
+    "set_skipped",
+    "set_confirmed",
+    "set_unconfirmed",
+    "rest_started",
+    "rest_ended",
+    "rest_adjusted",
+    "load_changed"
+  ]);
+  var exerciseTypes = /* @__PURE__ */ new Set(["exercise_started", "exercise_skipped"]);
+  var optionalTarget = /* @__PURE__ */ new Set(["paused", "resumed", "interrupted_detected", "note_added"]);
+  function event(value, allowed) {
+    if (!object2(value)) invalid("event");
+    const { type, seq, payload } = value;
+    const id2 = uuid(value.id);
+    const device = uuid(value.device_id);
+    const occurred = timestamp(value.occurred_at);
+    if (!id2 || !device || !occurred || !integer2(seq, 1) || !object2(payload)) invalid("event");
+    if (!allowed.includes(type)) invalid("type");
+    const eventType = type;
+    const exercise2 = value.plan_exercise_id ?? null;
+    const index = value.set_index ?? null;
+    if (exercise2 !== null && !string(exercise2, 200)) invalid("plan_exercise_id");
+    if (index !== null && (!integer2(index, 1, 100) || exercise2 === null)) invalid("set_index");
+    if (setTypes.has(eventType) && index === null) invalid("set_index");
+    if (exerciseTypes.has(eventType) && (exercise2 === null || index !== null)) invalid("plan_exercise_id");
+    if (!setTypes.has(eventType) && !exerciseTypes.has(eventType) && !optionalTarget.has(eventType) && exercise2 !== null) invalid("plan_exercise_id");
+    const allowedFields = ["id", "type", "device_id", "seq", "occurred_at", "plan_exercise_id", "set_index", "payload"];
+    if (Object.keys(value).some((key) => !allowedFields.includes(key))) invalid("event");
+    let clean = {};
+    switch (eventType) {
+      case "set_confirmed":
+        clean = result(payload);
+        if (clean.status !== "confirmed") invalid("status", "invalid_result");
+        break;
+      case "result_edited": {
+        const changes = payload.changes;
+        if (Object.keys(payload).length !== 1 || !Array.isArray(changes) || !integer2(changes.length, 1, 100)) invalid("changes", "invalid_result");
+        const seen = /* @__PURE__ */ new Set();
+        clean = { changes: changes.map((change) => {
+          if (!object2(change) || !string(change.plan_exercise_id, 200) || !integer2(change.set_index, 1, 100)) invalid("changes", "invalid_result");
+          const key = setKey(change.plan_exercise_id, change.set_index);
+          if (seen.has(key)) invalid("changes", "invalid_result");
+          seen.add(key);
+          return {
+            plan_exercise_id: change.plan_exercise_id,
+            set_index: change.set_index,
+            ...result(change, ["plan_exercise_id", "set_index"])
+          };
+        }) };
+        break;
+      }
+      case "load_changed": {
+        const parsed = readLoad(payload);
+        if (!parsed) invalid("load");
+        clean = parsed;
+        break;
+      }
+      case "note_added":
+        if (Object.keys(payload).length !== 1 || !string(payload.note, 1e3, 0)) invalid("note");
+        clean = { note: payload.note };
+        break;
+      case "rest_adjusted":
+        if (Object.keys(payload).length !== 1 || payload.delta_seconds !== 15 && payload.delta_seconds !== -15) invalid("delta_seconds");
+        clean = { delta_seconds: payload.delta_seconds };
+        break;
+      default:
+        if (Object.keys(payload).length) invalid("payload");
+    }
+    return {
+      id: id2,
+      type: eventType,
+      device_id: device,
+      seq,
+      occurred_at: occurred,
+      plan_exercise_id: exercise2,
+      set_index: index,
+      payload: clean
+    };
+  }
+  function readLoad(value) {
+    if (!object2(value) || Object.keys(value).some((key) => !["kg", "basis", "units"].includes(key)) || !number(value.kg, 0, 2e3) || !weightBasis(value.basis)) return null;
+    const units = value.units ?? null;
+    if (units !== null && (!integer2(units, 1, 2) || value.basis !== "per_dumbbell")) return null;
+    return { kg: value.kg, basis: value.basis, units };
+  }
+  function manualSnapshot(value, sessionId) {
+    const fail2 = (field) => invalid(field, "invalid_args");
+    if (!object2(value) || value.schema_version !== 3 || value.snapshot_reconstructed !== false || Object.keys(value).some((key) => !["schema_version", "snapshot_reconstructed", "workout"].includes(key))) return fail2("manual_workout");
+    const input = value.workout;
+    if (!object2(input) || input.date != null && !date(input.date) || !string(input.kind, 50) || !string(input.title, 160) || !string(input.focus, 2e3, 0) || !Array.isArray(input.blocks) || !integer2(input.blocks.length, 1, 100)) return fail2("workout");
+    const ids = /* @__PURE__ */ new Set();
+    const blocks = input.blocks.map((block) => {
+      if (!object2(block) || !string(block.type, 50) || !string(block.title, 160, 0) || block.order_policy !== "fixed" && block.order_policy !== "reorderable" || !Array.isArray(block.exercises) || !integer2(block.exercises.length, 1, 100)) return fail2("blocks");
+      const exercises = block.exercises.map((exercise2) => {
+        if (!object2(exercise2) || !string(exercise2.plan_exercise_id, 200) || ids.has(exercise2.plan_exercise_id) || !string(exercise2.name, 160) || !integer2(exercise2.sets, 1, 100) || exercise2.exercise_id != null && !string(exercise2.exercise_id, 200) || exercise2.mode !== "reps" && exercise2.mode !== "timed" && exercise2.mode !== "manual" || exercise2.priority != null && !integer2(exercise2.priority, -2147483648)) return fail2("exercises");
+        const load = readLoad(exercise2.load);
+        if (exercise2.load != null && !load) return fail2("load");
+        const clean = {
+          plan_exercise_id: exercise2.plan_exercise_id,
+          exercise_id: exercise2.exercise_id ?? null,
+          name: exercise2.name,
+          sets: exercise2.sets,
+          mode: exercise2.mode,
+          priority: exercise2.priority ?? null,
+          load
+        };
+        for (const field of ["reps", "target", "technique"]) {
+          if (exercise2[field] == null) continue;
+          if (!string(exercise2[field], field === "technique" ? 5e3 : 160, 0)) return fail2(field);
+          clean[field] = exercise2[field];
+        }
+        for (const field of ["work_seconds", "execution_seconds", "rest_seconds"]) {
+          if (exercise2[field] == null) continue;
+          if (!integer2(exercise2[field], 0, 86400)) return fail2(field);
+          clean[field] = exercise2[field];
+        }
+        if (exercise2.bodyweight != null) {
+          if (typeof exercise2.bodyweight !== "boolean") return fail2("bodyweight");
+          clean.bodyweight = exercise2.bodyweight;
+        }
+        if (exercise2.muscles != null) {
+          if (!object2(exercise2.muscles)) return fail2("muscles");
+          const muscles2 = {};
+          for (const field of ["primary", "secondary"]) {
+            const values = exercise2.muscles[field];
+            if (values == null) continue;
+            if (!Array.isArray(values) || values.length > 100 || !values.every((id2) => string(id2, 100))) return fail2("muscles");
+            muscles2[field] = values;
+          }
+          clean.muscles = muscles2;
+        }
+        ids.add(clean.plan_exercise_id);
+        return clean;
+      });
+      return { type: block.type, title: block.title, order_policy: block.order_policy, exercises };
+    });
+    return { schema_version: 3, snapshot_reconstructed: false, workout: {
+      workout_key: `manual|${sessionId}`,
+      date: input.date ?? null,
+      kind: input.kind,
+      title: input.title,
+      focus: input.focus,
+      blocks
+    } };
+  }
+  function exerciseIndex(snapshot) {
+    return new Map(snapshot.workout.blocks.flatMap((block) => block.exercises.map((exercise2) => [exercise2.plan_exercise_id, { exercise: exercise2, isWarmup: block.type === "warmup" }])));
+  }
+  function plannedSet(exercise2) {
+    const reps = /^([0-9]{1,4})(?:\s*[-–—]\s*([0-9]{1,4}))?$/.exec(exercise2.reps?.trim() ?? "");
+    return {
+      kg: exercise2.load?.kg ?? null,
+      basis: exercise2.load?.basis ?? null,
+      units: exercise2.load?.units ?? null,
+      reps_min: reps ? Number(reps[1]) : null,
+      reps_max: reps ? Number(reps[2] ?? reps[1]) : null,
+      seconds: (exercise2.mode === "timed" ? exercise2.work_seconds : exercise2.mode === "reps" ? exercise2.execution_seconds : null) ?? null,
+      rest_seconds: exercise2.rest_seconds ?? null
+    };
+  }
+  function plannedResult(exercise2, isWarmup, index) {
+    return {
+      plan_exercise_id: exercise2.plan_exercise_id,
+      set_index: index,
+      exercise_id: exercise2.exercise_id,
+      performed_name: exercise2.name,
+      is_warmup: isWarmup,
+      planned: plannedSet(exercise2),
+      ...emptyResult(),
+      work_started_at: null,
+      work_ended_at: null,
+      rest_seconds_actual: null,
+      performed_on: null,
+      recorded_at: null
+    };
+  }
+  function compareText(a, b) {
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+  function orderSets(a, b) {
+    return compareText(a.plan_exercise_id, b.plan_exercise_id) || a.set_index - b.set_index;
+  }
+
+  // sport/core/src/session/reduce.ts
+  function compareEvents(a, b) {
+    return Date.parse(a.occurred_at) - Date.parse(b.occurred_at) || Date.parse(a.received_at) - Date.parse(b.received_at) || compareText(a.device_id, b.device_id) || a.seq - b.seq || compareText(a.id, b.id);
+  }
+  function validTarget(index, event2) {
+    if (event2.plan_exercise_id == null) return event2.set_index == null;
+    const slot = index.get(event2.plan_exercise_id);
+    return !!slot && (event2.set_index == null || event2.set_index >= 1 && event2.set_index <= slot.exercise.sets);
+  }
+  var seconds = (ms) => Math.floor(ms / 1e3);
+  function replaySession(snapshot, journal, base) {
+    const ordered = [...journal].sort(compareEvents);
+    const start = ordered.find((e) => e.type === "session_started");
+    const startedAt = base?.startedAt ?? start?.occurred_at;
+    if (!startedAt) throw new Error("missing_session_started");
+    const index = exerciseIndex(snapshot);
+    const sets = new Map((base?.projection.sets ?? []).map((row) => [setKey(row.plan_exercise_id, row.set_index), row]));
+    const notes = /* @__PURE__ */ new Map();
+    const pending = /* @__PURE__ */ new Map();
+    let phase = base?.projection.phase ?? "preparing";
+    let phaseStarted = base?.projection.phase_started_at ?? startedAt;
+    const returning = base?.projection.review_return_phase;
+    let reviewReturn = returning === "work" || returning === "rest" ? returning : null;
+    let pause = base?.pause ?? null;
+    let open = base?.open ? { ...base.open } : null;
+    let rest = base?.rest ? { ...base.rest } : null;
+    let preparing = base ? base.preparing && { ...base.preparing } : { key: { plan_exercise_id: "", set_index: 0 }, id: "", started: startedAt, paused: 0 };
+    let everStarted = !!open || [...sets.values()].some((row) => row.work_started_at !== null);
+    let activeMs = base?.activeMs ?? 0;
+    let pausedMs = base?.pausedMs ?? 0;
+    let elapsed = base?.projection.elapsed_seconds ?? null;
+    let restAdjustment = base?.projection.rest_adjustment_seconds ?? 0;
+    const inheritedPending = base?.projection.pending_event_ids ?? [];
+    function phaseAt(next, at) {
+      phase = next;
+      phaseStarted = at;
+    }
+    function blank(key) {
+      const slot = index.get(key.plan_exercise_id);
+      return plannedResult(slot.exercise, slot.isWarmup, key.set_index);
+    }
+    function freezeIntervals(duration) {
+      if (preparing) preparing.paused += duration;
+      if (open) open.paused += duration;
+      if (rest) rest.paused += duration;
+    }
+    function recordRest(at) {
+      if (!rest) return;
+      const prior = sets.get(rest.id);
+      sets.set(rest.id, { ...prior, rest_seconds_actual: seconds(Math.max(0, Date.parse(at) - Date.parse(rest.started) - rest.paused)) });
+    }
+    function apply(e) {
+      if (!validTarget(index, e) || phase === "completed" || phase === "abandoned" || Date.parse(e.occurred_at) < Date.parse(startedAt)) return false;
+      const at = e.occurred_at;
+      const exercise2 = e.plan_exercise_id;
+      const key = exercise2 !== null && e.set_index !== null ? { plan_exercise_id: exercise2, set_index: e.set_index } : null;
+      const id2 = key ? setKey(key.plan_exercise_id, key.set_index) : "";
+      const row = sets.get(id2);
+      const running = phase === "preparing" || phase === "work" || phase === "rest";
+      switch (e.type) {
+        case "exercise_started":
+          if (!running || open) return false;
+          if (phase === "preparing") {
+            preparing = null;
+            phaseAt("work", at);
+          }
+          return true;
+        case "set_started":
+          if (!key || !running || open || row) return false;
+          if (rest) {
+            recordRest(at);
+            rest = null;
+            restAdjustment = 0;
+          }
+          open = { key, id: id2, started: at, paused: 0 };
+          preparing = null;
+          everStarted = true;
+          phaseAt("work", at);
+          return true;
+        case "set_ended":
+        case "set_skipped": {
+          if (!key || row || !(running || phase === "review") || open && open.id !== id2 || e.type === "set_ended" && !open) return false;
+          const skipped = e.type === "set_skipped";
+          const result2 = {
+            ...blank(key),
+            ...emptyResult(skipped ? "skipped" : "unconfirmed"),
+            note: notes.get(id2) ?? null,
+            work_started_at: open?.started ?? null,
+            work_ended_at: open ? at : null
+          };
+          sets.set(id2, result2);
+          const workMs = open ? Math.max(0, Date.parse(at) - Date.parse(open.started) - open.paused) : 0;
+          const approximate = open?.approximate;
+          activeMs += workMs;
+          open = null;
+          if (!skipped) {
+            rest = { key, id: id2, started: at, paused: 0, workMs: approximate ? void 0 : workMs };
+            if (phase === "review") reviewReturn = "rest";
+            else phaseAt("rest", at);
+          }
+          return true;
+        }
+        case "exercise_skipped": {
+          if (!running && phase !== "review") return false;
+          if (open?.key.plan_exercise_id === exercise2) return false;
+          const slot = index.get(exercise2);
+          for (let i = 1; i <= slot.exercise.sets; i++) {
+            const skipKey = setKey(exercise2, i);
+            if (!sets.has(skipKey)) sets.set(skipKey, {
+              ...blank({ plan_exercise_id: exercise2, set_index: i }),
+              ...emptyResult("skipped"),
+              note: notes.get(skipKey) ?? null
+            });
+          }
+          return true;
+        }
+        case "set_confirmed":
+        case "set_unconfirmed": {
+          if (!key || open?.id === id2 || phase !== "review" && (!row?.work_ended_at || row.status === "skipped")) return false;
+          const base2 = row ?? blank(key);
+          const result2 = e.type === "set_confirmed" ? e.payload : { ...emptyResult(), note: base2.note ?? notes.get(id2) ?? null };
+          sets.set(id2, { ...base2, ...result2, recorded_at: e.type === "set_confirmed" ? at : null });
+          if (phase === "review") {
+            for (const previous of pending.values()) {
+              if (previous.type === "set_confirmed" && previous.plan_exercise_id === exercise2 && previous.set_index === e.set_index) pending.delete(previous.id);
+            }
+          }
+          return true;
+        }
+        case "rest_started":
+          return !!rest && rest.id === id2 && (phase === "rest" || phase === "paused" && pause?.phase === "rest");
+        case "rest_ended":
+          if (!rest || rest.id !== id2 || phase !== "rest" && !(phase === "paused" && pause?.phase === "rest")) return false;
+          recordRest(pause?.at ?? at);
+          return true;
+        case "rest_adjusted":
+          if (!rest || rest.id !== id2 || phase !== "rest" && !(phase === "paused" && pause?.phase === "rest")) return false;
+          restAdjustment += e.payload.delta_seconds;
+          rest.adjustedAt = at;
+          return true;
+        case "load_changed":
+          return running || phase === "review" || phase === "paused";
+        case "note_added":
+          if (key) {
+            const note = e.payload.note;
+            notes.set(id2, note);
+            if (row) sets.set(id2, { ...row, note });
+          }
+          return true;
+        case "paused":
+          if (!running) return false;
+          pause = { phase, at };
+          phaseAt("paused", at);
+          return true;
+        case "resumed": {
+          if (!pause) return false;
+          const duration = Math.max(0, Date.parse(at) - Date.parse(pause.at));
+          pausedMs += duration;
+          freezeIntervals(duration);
+          phaseAt(pause.phase, at);
+          pause = null;
+          return true;
+        }
+        case "interrupted_detected":
+          return true;
+        case "review_entered":
+          if (phase !== "work" && phase !== "rest") return false;
+          reviewReturn = phase;
+          phaseAt("review", at);
+          return true;
+        case "review_returned":
+          if (phase !== "review" || !reviewReturn) return false;
+          phaseAt(reviewReturn, at);
+          reviewReturn = null;
+          return true;
+        case "session_completed":
+          if (phase !== "review" || open || pause || Date.parse(at) < Date.parse(phaseStarted)) return false;
+          phaseAt("completed", at);
+          elapsed = seconds(Date.parse(at) - Date.parse(startedAt));
+          reviewReturn = null;
+          return true;
+        case "session_abandoned":
+          if (phase !== "preparing" || everStarted) return false;
+          phaseAt("abandoned", at);
+          elapsed = seconds(Date.parse(at) - Date.parse(startedAt));
+          return true;
+        default:
+          return false;
+      }
+    }
+    for (const e of ordered) {
+      if (e.type === "session_started" || e.type === "session_completed") continue;
+      if (!apply(e)) pending.set(e.id, e);
+    }
+    for (const e of ordered) {
+      if (e.type === "session_completed" && !apply(e)) pending.set(e.id, e);
+    }
+    const finalPhase = phase;
+    const projection = {
+      status: finalPhase === "completed" || finalPhase === "abandoned" || finalPhase === "review" ? finalPhase : "active",
+      phase: finalPhase,
+      phase_started_at: phaseStarted,
+      review_return_phase: reviewReturn,
+      open_set: open?.key ?? null,
+      pending_event_ids: [.../* @__PURE__ */ new Set([...inheritedPending, ...pending.keys()])],
+      active_seconds: seconds(activeMs),
+      paused_seconds: seconds(pausedMs),
+      elapsed_seconds: elapsed,
+      rest_adjustment_seconds: restAdjustment,
+      sets: [...sets.values()].sort(orderSets)
+    };
+    return { projection, open, rest, pause, preparing, startedAt, activeMs, pausedMs };
+  }
+
+  // sport/core/src/session/run.ts
+  var PREPARATION_MS = 5e3;
+  var SKIP_UNDO_MS = 5e3;
+  var keyOf = (key) => setKey(key.plan_exercise_id, key.set_index);
+  var eventFor = (type, key, payload) => ({ type, key, payload });
+  var addressed = (key) => ({ plan_exercise_id: key.plan_exercise_id, set_index: key.set_index });
+  var interval = (key, started, approximate = false) => ({ key: addressed(key), id: keyOf(key), started, paused: 0, approximate });
+  var workLimit = (exercise2) => exercise2.mode === "timed" ? exercise2.work_seconds ?? 0 : exercise2.execution_seconds ?? 0;
+  function resumeSportRun(projection, startedAt, activeSeconds, pausedSeconds) {
+    const recent = projection.sets.filter((row) => row.work_ended_at && row.status !== "skipped").sort((a, b) => Date.parse(b.work_ended_at) - Date.parse(a.work_ended_at))[0];
+    const { phase, phase_started_at: since, open_set: open } = projection;
+    const pausedPhase = open ? "work" : recent ? "rest" : "preparing";
+    const current = phase === "review" ? projection.review_return_phase : phase === "paused" ? pausedPhase : phase;
+    return {
+      projection,
+      startedAt,
+      activeMs: activeSeconds * 1e3,
+      pausedMs: pausedSeconds * 1e3,
+      pause: phase === "paused" ? { phase: pausedPhase, at: since } : null,
+      open: open ? interval(open, since, true) : null,
+      rest: current === "rest" && recent ? interval(recent, recent.work_ended_at, true) : null,
+      preparing: current === "preparing" ? interval({ plan_exercise_id: "", set_index: 0 }, startedAt) : null
+    };
+  }
+  function readSportRun(snapshot, events, now, base) {
+    const journal = events.map((event2) => ({ ...event2, received_at: event2.occurred_at }));
+    const replay = replaySession(snapshot, journal, base);
+    const { projection, open, rest, pause, preparing } = replay;
+    const phase = pause?.phase ?? projection.phase;
+    const slots = exerciseIndex(snapshot);
+    const slot = (key) => {
+      const exercise2 = key && slots.get(key.plan_exercise_id)?.exercise;
+      return exercise2 && key ? { ...addressed(key), exercise: exercise2 } : null;
+    };
+    const rows = new Map(projection.sets.map((row) => [keyOf(row), row]));
+    let next = null;
+    let nextExercise = null;
+    for (const { exercise: exercise2 } of slots.values()) {
+      for (let set_index = 1; set_index <= exercise2.sets; set_index++) {
+        const key = { plan_exercise_id: exercise2.plan_exercise_id, set_index };
+        const id2 = keyOf(key);
+        if (rows.has(id2) || id2 === open?.id) continue;
+        next ?? (next = { ...key, exercise: exercise2 });
+        if (open && key.plan_exercise_id !== open.key.plan_exercise_id) nextExercise ?? (nextExercise = { ...key, exercise: exercise2 });
+        if (next && (!open || nextExercise)) break;
+      }
+      if (next && (!open || nextExercise)) break;
+    }
+    const current = slot(open?.key ?? rest?.key) ?? next;
+    const prior = rest ? rows.get(rest.id) ?? null : null;
+    const clockInterval = phase === "work" ? open : phase === "rest" ? rest : phase === "preparing" ? preparing : null;
+    const elapsedMs = clockInterval ? Math.max(0, (pause ? Date.parse(pause.at) : now) - Date.parse(clockInterval.started) - clockInterval.paused) : 0;
+    const limit = phase === "preparing" ? PREPARATION_MS : phase === "work" && current ? workLimit(current.exercise) * 1e3 : phase === "rest" && current ? Math.max(0, (current.exercise.rest_seconds ?? 90) * 1e3 + projection.rest_adjustment_seconds * 1e3) : 0;
+    const remainingMs = limit - elapsedMs;
+    const timedWork = phase === "work" && !!open && current?.exercise.mode === "timed" && limit > 0;
+    const deadline = clockInterval && (phase === "preparing" || phase === "rest" || timedWork) ? Math.max(
+      Date.parse(clockInterval.started) + clockInterval.paused + limit,
+      Date.parse(projection.phase_started_at),
+      Date.parse(clockInterval.adjustedAt ?? clockInterval.started)
+    ) : null;
+    return {
+      replay,
+      projection,
+      phase,
+      paused: !!pause,
+      current,
+      prior,
+      next,
+      nextExercise,
+      elapsedMs,
+      remainingMs,
+      limit,
+      deadline,
+      timedWork,
+      approximate: !!clockInterval?.approximate,
+      overtime: phase === "work" && !timedWork && limit > 0 && remainingMs <= 0
+    };
+  }
+  function sportRunInterruption(view) {
+    return view.projection.phase === "work" && !view.timedWork && !!view.replay.open && (view.limit ? view.elapsedMs > 2 * view.limit : view.elapsedMs > 12e4);
+  }
+  var runMetricLimits = { weight: [0, 2e3, 0.5], reps: [1, 1e3, 1], seconds: [1, 86400, 5] };
+  function sportRunSuggestions(view) {
+    const { prior } = view;
+    const previous = prior && view.projection.sets.filter((row) => row.plan_exercise_id === prior.plan_exercise_id && row.set_index < prior.set_index && row.status === "confirmed").at(-1);
+    const planned = prior?.planned;
+    const timed = view.current?.exercise.mode === "timed";
+    const workMs = view.replay.rest?.workMs;
+    const basis = planned?.basis ?? previous?.actual_weight_basis ?? null;
+    return {
+      basis,
+      weight: previous?.actual_weight_basis === basis ? previous?.actual_kg ?? planned?.kg : planned?.kg,
+      reps: previous?.actual_reps ?? planned?.reps_min,
+      seconds: timed && workMs != null ? Math.min(86400, Math.floor(workMs / 1e3)) || null : prior?.actual_seconds ?? planned?.seconds,
+      units: (previous?.actual_weight_basis === basis ? previous?.actual_units : null) ?? planned?.units,
+      rir: null
+    };
+  }
+  function sportRunDraftResult(view, draft, explicit = false) {
+    if (!view.prior || !view.current || !explicit && !Object.keys(draft).length) return null;
+    const idea = sportRunSuggestions(view);
+    const timed = view.current.exercise.mode === "timed";
+    const weighted = !timed && view.current.exercise.bodyweight !== true;
+    function metric(name, min, max) {
+      const raw = Object.prototype.hasOwnProperty.call(draft, name) ? draft[name] : idea[name];
+      if (raw == null || raw === "") return null;
+      const value = Number(raw);
+      if (!(value >= min && value <= max) || name !== "weight" && !Number.isInteger(value)) throw Error("invalid_measurement");
+      return value;
+    }
+    const weight = weighted ? metric("weight", 0, 2e3) : null;
+    const reps = timed ? null : metric("reps", 1, 1e3);
+    const seconds2 = timed ? metric("seconds", 1, 86400) : null;
+    if (weight == null && reps == null && seconds2 == null) throw Error("measurement_required");
+    return {
+      ...emptyResult(),
+      status: "confirmed",
+      actual_kg: weight,
+      actual_weight_basis: weight == null ? null : idea.basis,
+      actual_units: weight != null && idea.basis === "per_dumbbell" ? metric("units", 1, 2) : null,
+      actual_reps: reps,
+      actual_seconds: seconds2,
+      rir: timed ? null : metric("rir", 0, 3),
+      note: view.prior.note
+    };
+  }
+  function sportRunEvents(view, command) {
+    const { phase, paused, current, next, nextExercise, prior } = view;
+    const resume = paused ? [eventFor("resumed")] : [];
+    const start = (candidate) => candidate ? [eventFor("set_started", addressed(candidate))] : [eventFor("review_entered")];
+    const end = () => view.replay.open && current ? [eventFor("set_ended", addressed(current))] : [];
+    function recordRest(result2 = null) {
+      if (!prior) return [];
+      const key = addressed(prior);
+      const changedLoad = result2?.actual_kg != null && result2.actual_weight_basis && (prior.planned?.kg !== result2.actual_kg || prior.planned?.basis !== result2.actual_weight_basis || prior.planned?.units !== result2.actual_units) ? [eventFor("load_changed", key, { kg: result2.actual_kg, basis: result2.actual_weight_basis, units: result2.actual_units })] : [];
+      return [...resume, ...changedLoad, ...result2 ? [eventFor("set_confirmed", key, result2)] : [], eventFor("rest_ended", key)];
+    }
+    const advance = (result2) => prior ? [...recordRest(result2), ...start(next)] : [];
+    switch (command.type) {
+      case "start":
+        return phase === "preparing" && next ? [...resume, ...start(next)] : [];
+      case "tick":
+        if (paused || view.remainingMs > 0) return [];
+        if (phase === "preparing" && next) return start(next);
+        if (phase === "rest") return advance(command.result);
+        if (view.timedWork) return end();
+        return [];
+      case "pause":
+        return paused ? resume : ["preparing", "work", "rest"].includes(phase) ? [eventFor("paused")] : [];
+      case "done":
+        return phase === "work" && view.replay.open ? [...resume, ...end()] : [];
+      case "adjust":
+        return phase === "rest" && prior ? [eventFor("rest_adjusted", addressed(prior), { delta_seconds: command.seconds })] : [];
+      case "advance":
+        return phase === "rest" ? advance(command.result) : [];
+      case "skip":
+        if (phase === "rest") return advance(command.result);
+        if (phase === "work" && view.replay.open && current) return [
+          ...resume,
+          eventFor("set_skipped", addressed(current)),
+          eventFor("exercise_skipped", { plan_exercise_id: current.plan_exercise_id, set_index: null }),
+          ...start(nextExercise)
+        ];
+        return [];
+      case "review":
+        if (phase === "preparing") return [...resume, eventFor("session_abandoned")];
+        if (phase === "rest") return [...recordRest(command.result), eventFor("review_entered")];
+        if (phase === "work") return [...resume, eventFor("review_entered")];
+        return [];
+      case "return":
+        if (phase !== "review") return [];
+        return view.projection.review_return_phase === "rest" && !next ? [eventFor("review_returned"), eventFor("paused")] : [eventFor("review_returned")];
+      case "seal":
+        return phase === "review" ? end() : [];
+      case "interrupt":
+        return view.replay.open || view.replay.rest ? [eventFor("interrupted_detected")] : [];
+      case "recover":
+        if (phase !== "work" || paused || !current || !view.replay.open || command.choice === "continue") return [];
+        return end();
+    }
+  }
+  function stampSportRunEvents(steps, deviceId, firstSeq, at, id2) {
+    return steps.map((step, index) => ({
+      id: id2(),
+      device_id: deviceId,
+      seq: firstSeq + index,
+      occurred_at: new Date(at).toISOString(),
+      type: step.type,
+      plan_exercise_id: step.key?.plan_exercise_id ?? null,
+      set_index: step.key?.set_index ?? null,
+      payload: step.payload ?? {}
+    }));
+  }
+  function sportRunOutbox(events, receipts) {
+    const acknowledged = new Set(receipts);
+    return events.filter((event2) => !acknowledged.has(event2.id));
+  }
+
+  // sport/core/src/sport2.ts
+  function isSport2Enabled(state) {
+    if (!state || typeof state !== "object" || Array.isArray(state)) return false;
+    const sport2 = state.sport2;
+    return !!sport2 && typeof sport2 === "object" && !Array.isArray(sport2) && sport2.enabled === true;
   }
   return __toCommonJS(core_exports);
 })();
