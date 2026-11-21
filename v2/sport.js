@@ -327,8 +327,12 @@ function spDayWorkoutCard(options, date) {
     const future = date > today;
     const action = finished ? `<span class="sp-pill done">${icon("check", "icon-sm")}Готово${seconds ? ` · ${C.formatDuration(seconds)}` : ""}</span>`
       : future ? `<span class="sp-pill">${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}</span>`
-      : option.historyOnly ? "" : `<button class="primary-button" type="button" data-action="sp-start-day" data-key="${spEsc(option.key)}">${pct > 0 ? "Продолжить" : "Начать"}</button>`;
-    return `<section class="sp-card sp-today-workout"><div class="sp-card-head"><p class="sp-kicker">${option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</p><span>${spEsc(option.programTitle)}</span></div><button type="button" class="sp-today-title" data-action="sp-tab" data-tab="training"><h2>${spEsc(option.plan.title)}</h2>${option.plan.focus ? `<small>${spEsc(option.plan.focus)}</small>` : ""}</button>
+      : option.historyOnly ? "" : `<button class="${sport2 && option !== lead ? "ghost-button" : "primary-button"}" type="button" data-action="sp-start-day" data-key="${spEsc(option.key)}">${pct > 0 ? "Продолжить" : "Начать"}</button>`;
+    const muscles = sport2 && option === lead ? C.knownMuscles(option.plan.exercises.flatMap(e => e.muscles?.primary || [])) : [];
+    if (muscles.length && !window.SportFigures) spFiguresNeeded();
+    const figure = muscles.length && window.SportFigures
+      ? `<span class="sp2-day-figure">${spFigureSvg(spShapes(muscles), new Set(), window.SportFigures.FIGURE_VIEWBOX, false)}</span>` : "";
+    return `<section class="sp-card sp-today-workout ${sport2 ? "sp2-day" : ""}"><div class="sp-card-head"><p class="sp-kicker">${option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</p><span>${spEsc(option.programTitle)}</span></div><button type="button" class="sp-today-title" data-action="sp-tab" data-tab="training">${figure}<h2>${spEsc(option.plan.title)}</h2>${option.plan.focus ? `<small>${spEsc(option.plan.focus)}</small>` : ""}</button>
       <span class="sp-progress"><i style="width:${pct}%"></i></span><div class="sp-card-head"><span class="section-note">${sport2 && option === lead ? `≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))} · ${total} упр.` : `${done} из ${total} упражнений · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}`}</span>${action}</div></section>`;
   }).join("");
 }

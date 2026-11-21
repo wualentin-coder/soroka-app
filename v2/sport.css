@@ -651,3 +651,15 @@ html[data-flow-design="magic"] body .sp-page:has(.sh-tabs) .lv-profile-row { min
 .sp-sheet.sp2-equipment .sp-equip-kg { min-height: 44px; }
 .sp-sheet.sp2-reminders .sp-notify { min-height: 52px; }
 
+
+/* Sport 2.0: day, profile and available inventory. */
+:is(.sp-screen,.sp-page) .sp2-day { overflow: hidden; }
+:is(.sp-screen,.sp-page) .sp2-day :is(.sp-focus-title,.sp-today-title) { width: 100%; }
+:is(.sp-screen,.sp-page) .sp2-day-figure { display: grid; place-items: center; width: 100%; height: 190px; margin-bottom: 8px; overflow: hidden; border-radius: var(--magic-control-radius, 13px); background: var(--surface-soft); }
+:is(.sp-screen,.sp-page) .sp2-day-figure .sp-figure { width: auto; height: 100%; max-width: 100%; }
+:is(.sp-screen,.sp-page) .sp2-day :is(.sp-focus-title,.sp-today-title):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+:is(.sp-screen,.sp-page):has(.sh-tabs) .sp-links { gap: 0; }
+.sp-page:has(.sh-tabs) .lv-profile-row { padding-inline: 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.sp-page:has(.sh-tabs) .lv-profile-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sp-sheet.sp2-equipment .sp-place button { min-height: 52px; }
+.sp-sheet.sp2-equipment .sp-group { margin-top: 12px; }

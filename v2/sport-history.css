@@ -115,3 +115,20 @@
 @media (max-width: 360px) {
   html[data-flow-design="magic"] #app .sp-screen .sh-tabs button { font-size: 11px; }
 }
+
+/* Compact result cards; status text remains available by name and title. */
+.sport-run .sh-content { gap: 10px; }
+.sport-run .sh-group { border-radius: var(--magic-control-radius, 13px); }
+.sport-run .sh-group header { padding: 10px 12px 6px; }
+.sport-run .sh-group ol { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.sport-run .sh-group li { display: inline-flex; gap: 4px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); font-size: 12px; }
+.sport-run .sh-group li + li { border-top: 1px solid var(--line); }
+.sport-run .sh-group li > span { flex: none; }
+.sport-run .sh-group li small { font-size: 11px; }
+.sport-run .sh-note { flex-basis: 100%; }
+.sport-run .sh-set summary:focus-visible, .sport-run .sh-fields input:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sport-run .sh-fields { gap: 8px; }
+.sport-run .sh-weight { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); }
+.sport-run .sh-weight .sh-basis { grid-column: auto; }
+.sport-run .sh-fields textarea { min-height: 48px; }
+.sh-history-feed .sh-history-row { min-height: 56px; }

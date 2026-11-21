@@ -92,7 +92,7 @@
         const { slot, stored } = entry;
         const status = statusOf(entry);
         const row = result(stored);
-        return `<li data-sh-status="${status}" aria-label="Подход ${slot.set_index}. ${statuses[status]}">
+        return `<li data-sh-status="${status}" title="${statuses[status]}" aria-label="Подход ${slot.set_index}. ${statuses[status]}${status === "confirmed" ? ". " + esc(factLabel(row)) : ""}${row.note ? ". " + esc(row.note) : ""}">
           <small>${slot.set_index}</small><span aria-hidden="true">${signs[status]}</span>
           ${status === "confirmed" ? esc(factLabel(row)) : ""}${row.note ? `<small class="sh-note">${esc(row.note)}</small>` : ""}</li>`;
       }).join("")}</ol></section>`).join("");
