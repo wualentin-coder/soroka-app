@@ -314,6 +314,49 @@ function spMuscleGlyph(muscles) {
 
 // «Тренировка» — программа: где вы в ней, занятие выбранного дня целиком и что
 // дальше по плану. Дата — из той же полосы недели, что на «Сегодня».
+// Programme overview: only existing schedule and already confirmed legacy facts.
+function sp2ProgramOverview(options) {
+  const s = spState(), C = SP(), today = C.todayKey();
+  if (!C.isSport2Enabled(s.state)) return '';
+  const programs = spProgramProgress(options, s.state, true);
+  if (!programs.length) return '';
+  const done = option => Boolean(s.state.workouts?.[option.key]) || C.optionCompletion(option, s.state) === 100;
+  const list = programs.map(program => {
+    const programOptions = program.options.filter(o => o.kind !== 'test').sort((a, b) => (a.originalDate || a.date).localeCompare(b.originalDate || b.date));
+    if (!programOptions.length) return '';
+    const start = programOptions[0].originalDate || programOptions[0].date;
+    const weekOf = date => 1 + Math.floor((C.dateFromKey(date) - C.dateFromKey(start)) / 604800000);
+    const weeks = new Map();
+    for (const option of programOptions) {
+      const number = weekOf(option.originalDate || option.date);
+      if (!weeks.has(number)) weeks.set(number, []);
+      weeks.get(number).push(option);
+    }
+    const currentWeek = weekOf(today);
+    const totalWeeks = Math.max(...weeks.keys());
+    const progress = currentWeek >= 1 && currentWeek <= totalWeeks ? `Нед. ${currentWeek}/${totalWeeks} · ` : '';
+    const groups = [...weeks].map(([number, items]) => {
+      const weekStart = C.offsetDateKey(start, (number - 1) * 7);
+      const selected = items.some(option => option.date === s.date);
+      return `<details class="sp2-week" ${selected ? 'open' : ''}><summary><span><b>Неделя ${number}</b><small>${spDateShort(weekStart)} – ${spDateShort(C.offsetDateKey(weekStart, 6))}</small></span><span>${items.length} ${spPlural(items.length, 'занятие', 'занятия', 'занятий')}</span></summary>${items.map(option => {
+        const ambiguous = options.filter(o => o.date === option.date && !o.historyOnly).length > 1;
+        const status = ambiguous ? 'Выбрать' : done(option) ? 'Выполнено' : option.date === today ? 'Сегодня' : option.date < today ? 'Нет подтверждения' : 'Запланировано';
+        const title = ambiguous ? 'Занятия на эту дату' : option.plan.title;
+        const moved = option.originalDate && option.originalDate !== option.date ? ' · перенесено' : '';
+        return `<button type="button" class="sp2-program-row" data-action="sp-program2-date" data-date="${spEsc(option.date)}"><span><b>${spDateShort(option.date)}${moved}</b><strong>${spEsc(title)}</strong></span><small>${status}</small></button>`;
+      }).join('')}</details>`;
+    }).join('');
+    return `<section class="sp2-program" aria-label="${spEsc(program.title)}"><div class="sp2-program-head"><h2>${spEsc(program.title)}</h2></div><p class="sp2-program-meta">${progress}${programOptions.length} ${spPlural(programOptions.length, 'занятие', 'занятия', 'занятий')}</p><div class="sp2-program-line" aria-hidden="true">${[...weeks.keys()].map(number => `<i class="${number === currentWeek ? 'current' : ''}"></i>`).join('')}</div>${groups}</section>`;
+  }).join('');
+  return `<div class="sp2-programs">${list}</div>`;
+}
+SP_ACTIONS['sp-program2-date'] = control => {
+  SP_ACTIONS['sp-date'](control);
+  const picker = document.querySelector('.sp-variant')?.closest('section');
+  (picker || document.querySelector('.sp-kind-switch, .lv-training-kind, .sp-day-workout, .sp-workout'))?.scrollIntoView({block: 'start'});
+};
+
+
 function spTrainingScreen() {
   const s = spState(), C = SP();
   const { visible } = spOptions();
@@ -321,8 +364,8 @@ function spTrainingScreen() {
   s.kind = spAutoKind(visible, s.date);
   const upcoming = spUpcoming(visible, s.state, s.date);
   const next = upcoming.length ? `<section class="sp-card"><p class="sp-kicker">Дальше по плану</p>${upcoming.map(o => `<button type="button" class="sp-list-row" data-action="sp-date" data-date="${o.date}"><span><b>${spDateShort(o.date)}</b><small>${spEsc(o.plan.title)}${o.kind === "splits" ? " · растяжка" : o.kind === "test" ? " · тест" : ""}</small></span><small>${o.kind === "test" ? "" : C.formatDuration(C.estimateWorkoutSeconds(o.plan))}</small></button>`).join("")}</section>` : "";
-  return `${spWeekStrip(visible)}${hasSplits ? `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>` : ""}
-    ${spDayWorkout(visible, s.date, s.kind)}${next}
+  return `${C.isSport2Enabled(s.state) ? sp2ProgramOverview(visible) : ""}${spWeekStrip(visible)}${hasSplits ? `<div class="sp-segment" role="group"><button type="button" class="${s.kind === "main" ? "active" : ""}" data-action="sp-kind" data-kind="main">Сила</button><button type="button" class="${s.kind === "splits" ? "active" : ""}" data-action="sp-kind" data-kind="splits">Растяжка</button></div>` : ""}
+    ${spDayWorkout(visible, s.date, s.kind)}${C.isSport2Enabled(s.state) ? "" : next}
     <div class="sp-row-actions sp-center"><button class="text-action" type="button" data-action="sp-free-new">+ Свободная тренировка</button><button class="text-action" type="button" data-action="sp-rules">Правила ${s.kind === "splits" ? "растяжки" : "тренировки"}</button></div>`;
 }
 /**

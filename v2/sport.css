@@ -618,3 +618,36 @@ html[data-flow-design="magic"] .sp-runner-body h2{font-family:var(--display,Geor
 html[data-flow-design="magic"] .sp-runner-zone{background:var(--surface)}
 html[data-flow-design="magic"] .sp-goal-head{min-height:52px;padding:14px 0}
 html[data-flow-design="magic"] .sp-goal-head small{font-size:12px;line-height:1.5}
+
+/* Sport 2.0 programme overview, scoped to the opt-in view. */
+:is(.sp-screen, .sp-page) .sp2-programs { display: grid; gap: 12px; }
+:is(.sp-screen, .sp-page) .sp2-program { display: grid; gap: 8px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--magic-card-radius, 22px); background: var(--surface); }
+:is(.sp-screen, .sp-page) .sp2-program-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+:is(.sp-screen, .sp-page) .sp2-program-head h2 { min-width: 0; margin: 0; font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
+:is(.sp-screen, .sp-page) .sp2-program-head > span { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+:is(.sp-screen, .sp-page) .sp2-program-line { display: flex; gap: 4px; }
+:is(.sp-screen, .sp-page) .sp2-program-line i { flex: 1; min-width: 3px; height: 4px; border-radius: 4px; background: var(--line); }
+:is(.sp-screen, .sp-page) .sp2-program-line i.current { background: var(--accent); }
+:is(.sp-screen, .sp-page) .sp2-program-meta { margin: 0; color: var(--muted); font-size: 12px; }
+:is(.sp-screen, .sp-page) .sp2-week { min-width: 0; border: 1px solid var(--line); border-radius: 13px; }
+:is(.sp-screen, .sp-page) .sp2-week summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 7px 10px; cursor: pointer; list-style: none; }
+:is(.sp-screen, .sp-page) .sp2-week summary::-webkit-details-marker { display: none; }
+:is(.sp-screen, .sp-page) .sp2-week summary > span:first-child { display: grid; gap: 2px; }
+:is(.sp-screen, .sp-page) .sp2-week summary b { font-size: 13px; }
+:is(.sp-screen, .sp-page) .sp2-week summary small, :is(.sp-screen, .sp-page) .sp2-week summary > span:last-child { color: var(--muted); font-size: 11px; }
+:is(.sp-screen, .sp-page) .sp2-program-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 48px; padding: 8px 10px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+:is(.sp-screen, .sp-page) .sp2-program-row > span { display: grid; gap: 2px; min-width: 0; }
+:is(.sp-screen, .sp-page) .sp2-program-row b, :is(.sp-screen, .sp-page) .sp2-program-row small { color: var(--muted); font-size: 11px; }
+:is(.sp-screen, .sp-page) .sp2-program-row strong { font-size: 13px; overflow-wrap: anywhere; }
+:is(.sp-screen, .sp-page) .sp2-program-row small { flex: none; }
+:is(.sp-screen, .sp-page) .sp2-program-row:focus-visible, :is(.sp-screen, .sp-page) .sp2-week summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sp-page.lv-sp-v10[data-lv-view="training"]:has(> .sp2-programs) > .lv-module-nav { order: -3; }
+.sp-page.lv-sp-v10[data-lv-view="training"]:has(> .sp2-programs) > .sp-error { order: -2; }
+.sp-page.lv-sp-v10[data-lv-view="training"] > .sp2-programs { order: -1; }
+html[data-flow-design="magic"] body .sp-page:has(.sh-tabs) .lv-profile-row { min-height: 56px; padding: 8px 0; }
+.sp-screen:has(.sh-tabs) .sp-links > button { min-height: 56px; }
+.sp-sheet.sp2-equipment .sp-equip { padding: 5px 0; }
+.sp-sheet.sp2-equipment .sp-equip-check { min-height: 44px; }
+.sp-sheet.sp2-equipment .sp-equip-kg { min-height: 44px; }
+.sp-sheet.sp2-reminders .sp-notify { min-height: 52px; }
+

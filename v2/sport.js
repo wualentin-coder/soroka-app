@@ -253,7 +253,7 @@ function renderSportPage() {
   const sport2 = C.isSport2Enabled(s.state) && window.SportHistory;
   const tabItems = sport2 ? [...SP_TABS.slice(0, 2), ["history", "История"], ...SP_TABS.slice(2)] : SP_TABS;
   if (!sport2 && s.tab === "history") s.tab = "goals";
-  const tabs = `<div class="sp-tabs${sport2 ? " sh-tabs" : ""}" role="tablist">${tabItems.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}${key === "profile" && C.profileGaps(s.state).any ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
+  const tabs = `<div class="sp-tabs${sport2 ? " sh-tabs" : ""}" role="tablist">${tabItems.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${key === "training" && sport2 ? "Программа" : label}${key === "profile" && C.profileGaps(s.state).any ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
   const body = s.tab === "history" ? spHistoryScreen() : s.tab === "training" ? spTrainingScreen() : s.tab === "goals" ? spGoalsScreen() : s.tab === "profile" ? spProfileScreen() : spTodayScreen();
   const banner = s.demo ? `<p class="sp-demo">Демо WooSport · данные не сохраняются</p>` : "";
   const failed = (s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "") + (s.error ? `<div class="sp-error" role="status">${spEsc(s.error)} <button type="button" class="text-action" data-action="sp-load-retry">Попробовать снова</button></div>` : "");
@@ -268,7 +268,7 @@ function spSheetHtml() {
   if (!s.sheet || !SP_SHEETS[s.sheet.kind]) return "";
   const view = SP_SHEETS[s.sheet.kind](s.sheet);
   if (!view) return "";
-  return `<div class="modal-backdrop sp-backdrop" data-action="sp-backdrop"><section class="sheet sp-sheet ${view.wide ? "is-wide" : ""}" role="dialog" aria-modal="true" aria-label="${spEsc(view.title)}"><div class="sheet-handle"></div><div class="sheet-head"><h2>${spEsc(view.title)}</h2><button class="icon-button" type="button" data-action="sp-close" aria-label="Закрыть">${icon("close")}</button></div>${view.body}${s.sheetError ? `<p class="sp-error" role="alert">${spEsc(s.sheetError)}</p>` : ""}</section></div>`;
+  return `<div class="modal-backdrop sp-backdrop" data-action="sp-backdrop"><section class="sheet sp-sheet ${view.wide ? "is-wide" : ""}${SP().isSport2Enabled(s.state) && s.sheet.kind === "section" && s.sheet.section === "equipment" ? " sp2-equipment" : ""}${SP().isSport2Enabled(s.state) && s.sheet.kind === "reminders" ? " sp2-reminders" : ""}" role="dialog" aria-modal="true" aria-label="${spEsc(view.title)}"><div class="sheet-handle"></div><div class="sheet-head"><h2>${spEsc(view.title)}</h2><button class="icon-button" type="button" data-action="sp-close" aria-label="Закрыть">${icon("close")}</button></div>${view.body}${s.sheetError ? `<p class="sp-error" role="alert">${spEsc(s.sheetError)}</p>` : ""}</section></div>`;
 }
 function spSheetError(message) { spState().sheetError = message; render(); }
 
