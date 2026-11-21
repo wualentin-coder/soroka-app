@@ -208,6 +208,8 @@
 }
 .sport-run .sr-panel header { display: flex; justify-content: space-between; align-items: center; }
 .sport-run .sr-panel h2 { margin: 0; }
+.sport-run .sr-panel .sr-muted { margin: 0; }
+.sport-run .sr-review-head { justify-content: space-between; }
 .sport-run .sr-panel-figure { max-width: 240px; width: 100%; justify-self: center; }
 .sport-run .sr-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sport-run .sr-pause-tag svg, .sport-run .sr-title small svg { width: 15px; height: 15px; vertical-align: middle; }

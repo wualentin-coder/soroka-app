@@ -2794,7 +2794,7 @@ ${JSON.stringify(context, null, 2)}
     let open = base?.open ? { ...base.open } : null;
     let rest = base?.rest ? { ...base.rest } : null;
     let preparing = base ? base.preparing && { ...base.preparing } : { key: { plan_exercise_id: "", set_index: 0 }, id: "", started: startedAt, paused: 0 };
-    let everStarted = !!open || [...sets.values()].some((row) => row.work_started_at !== null);
+    let appliedAt = Date.parse(phaseStarted);
     let activeMs = base?.activeMs ?? 0;
     let pausedMs = base?.pausedMs ?? 0;
     let elapsed = base?.projection.elapsed_seconds ?? null;
@@ -2843,7 +2843,6 @@ ${JSON.stringify(context, null, 2)}
           }
           open = { key, id: id2, started: at, paused: 0 };
           preparing = null;
-          everStarted = true;
           phaseAt("work", at);
           return true;
         case "set_ended":
@@ -2960,21 +2959,31 @@ ${JSON.stringify(context, null, 2)}
           elapsed = seconds(Date.parse(at) - Date.parse(startedAt));
           reviewReturn = null;
           return true;
-        case "session_abandoned":
-          if (phase !== "preparing" || everStarted) return false;
-          phaseAt("abandoned", at);
-          elapsed = seconds(Date.parse(at) - Date.parse(startedAt));
+        case "session_abandoned": {
+          if (key || exercise2 !== null) return false;
+          const finished = Math.max(Date.parse(at), appliedAt);
+          const cutoff = pause ? Date.parse(pause.at) : phase === "review" ? Date.parse(phaseStarted) : finished;
+          if (open) activeMs += Math.max(0, cutoff - Date.parse(open.started) - open.paused);
+          if (pause) pausedMs += Math.max(0, finished - Date.parse(pause.at));
+          open = rest = preparing = null;
+          pause = reviewReturn = null;
+          restAdjustment = 0;
+          phaseAt("abandoned", new Date(finished).toISOString());
+          elapsed = seconds(finished - Date.parse(startedAt));
           return true;
+        }
         default:
           return false;
       }
     }
+    const closes = (e) => e.type === "session_completed" || e.type === "session_abandoned";
     for (const e of ordered) {
-      if (e.type === "session_started" || e.type === "session_completed") continue;
-      if (!apply(e)) pending.set(e.id, e);
+      if (e.type === "session_started" || closes(e)) continue;
+      if (apply(e)) appliedAt = Math.max(appliedAt, Date.parse(e.occurred_at));
+      else pending.set(e.id, e);
     }
     for (const e of ordered) {
-      if (e.type === "session_completed" && !apply(e)) pending.set(e.id, e);
+      if (closes(e) && !apply(e)) pending.set(e.id, e);
     }
     const finalPhase = phase;
     const projection = {
@@ -3159,8 +3168,9 @@ ${JSON.stringify(context, null, 2)}
           ...start(nextExercise)
         ];
         return [];
+      case "abandon":
+        return ["preparing", "work", "rest", "paused", "review"].includes(view.projection.phase) ? [eventFor("session_abandoned")] : [];
       case "review":
-        if (phase === "preparing") return [...resume, eventFor("session_abandoned")];
         if (phase === "rest") return [...recordRest(command.result), eventFor("review_entered")];
         if (phase === "work") return [...resume, eventFor("review_entered")];
         return [];
