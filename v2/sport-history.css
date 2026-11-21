@@ -132,3 +132,33 @@
 .sport-run .sh-weight .sh-basis { grid-column: auto; }
 .sport-run .sh-fields textarea { min-height: 48px; }
 .sh-history-feed .sh-history-row { min-height: 56px; }
+
+/* Follow the approved review and edit composition with persisted result fields. */
+.sport-run .sh-summary { display: grid; gap: 10px; }
+.sport-run .sh-f-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sport-run .sh-f-metric {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 21px;
+  color: var(--text);
+}
+.sport-run .sh-f-metric b { font-size: 30px; line-height: 1.05; }
+.sport-run .sh-f-metric b small { font-size: .63em; }
+.sport-run .sh-f-metric small { color: var(--muted); font-size: 12px; line-height: 1.25; }
+.sport-run .sh-f-status-counts { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--muted); font-size: 13px; }
+.sport-run .sh-f-status-counts:empty { display: none; }
+.sport-run .sh-preview-list { border: 1px solid var(--line); border-radius: 22px; background: var(--surface); padding: 0 14px; }
+.sport-run .sh-preview-list .sh-group { border: 0; border-radius: 0; }
+.sport-run .sh-preview-list .sh-group + .sh-group { border-top: 1px solid var(--line); }
+.sport-run .sh-preview-list .sh-group header { padding: 12px 0 8px; }
+.sport-run .sh-preview-list .sh-group ol { padding: 0 0 12px; }
+.sport-run .sh-preview-list li[data-sh-status="unconfirmed"] { border-style: dashed; border-color: color-mix(in srgb, var(--sr-warn) 56%, var(--line)); }
+.sport-run .sh-group:has(.sh-set) { border-radius: 22px; overflow: clip; }
+.sport-run .sh-group:has(.sh-set) header { padding: 14px; }
+.sport-run .sh-set summary { min-height: 52px; padding-inline: 14px; }
+.sport-run .sh-set[open] { background: var(--surface-soft); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.sport-run .sh-set[open] .sh-fields { padding: 4px 14px 14px; }
+.sport-run .sh-set[open] .sh-fields :is(input, select, textarea) { background: var(--surface); }

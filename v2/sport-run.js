@@ -1039,7 +1039,7 @@
       const label = clock.querySelector("small");
       const digits = model.overtime ? "+" + format(overtime) : format(model.limit || model.phase === "rest" ? remaining : elapsed);
       const caption = !model.paused && !model.overtime && model.phase === "work" && model.limit
-        ? `/ ${format(model.limit / 1000)}` : "";
+        ? `ориентир ${format(model.limit / 1000)}` : !model.paused && model.phase === "rest" ? "отдых" : "";
       if (number.textContent !== digits) number.textContent = digits;
       if (label.textContent !== caption) label.textContent = caption;
       timer.dataset.overtime = String(model.overtime);
@@ -1087,7 +1087,7 @@
         return `<i class="${name}"></i>`;
       }).join("") : "";
       return `<header class="sr-head">${iconButton("close-menu", "close", "Завершить или свернуть", "sr-bare")}
-        <div class="sr-title"><span>${model.phase === "rest" ? `<small aria-label="Отдых">${glyph("clock")}</small> ` : ""}${esc(title)}</span>
+        <div class="sr-title"><span>${model.phase === "rest" ? `<small>Отдых · </small>` : ""}${esc(title)}</span>
           ${sets ? `<span class="sr-segments" aria-hidden="true">${sets}</span>` : ""}</div>
         ${iconButton("menu", "more", "Действия тренировки", "sr-bare", `aria-expanded="${this.panel === "menu"}"`)}</header>`;
     }
@@ -1102,13 +1102,13 @@
       const primary = e.mode === "timed" ? format(e.work_seconds ?? 0)
         : load ? `${load.units ? load.units + " × " : ""}${kg(load.kg)}<small>кг</small>`
           : esc(e.reps || e.target || "");
-      const goal = e.mode === "timed" ? `<b aria-label="На время">${glyph("clock")}</b>` : load && e.reps ? `<b>× ${esc(e.reps)}</b>`
+      const goal = e.mode === "timed" ? `<b aria-label="На время">${glyph("clock")}</b>` : load && e.reps ? `<b>${esc(e.reps)}</b><small>повторов</small>`
         : e.bodyweight ? "<b>свой вес</b>" : "";
       return `${this.head(model)}<div class="sr-body">
         <div class="sr-media" data-sr-swipe><div class="sr-no-media">${technique(e, true)}<div data-sr-figure="current"></div></div>
           ${control("tech", "", "sr-media-tap", 'aria-label="Техника и мышцы"')}
           <span class="sr-flash" aria-hidden="true"><i>${glyph("check")}</i></span>${this.swipeHint("Пропустить упражнение")}</div>
-        <div class="sr-target" data-sr-swipe><div><span aria-label="Подход ${current.set_index} из ${e.sets}">${current.set_index}/${e.sets}</span><strong>${primary}</strong></div>
+        <div class="sr-target" data-sr-swipe><div><span aria-label="Подход ${current.set_index} из ${e.sets}">Подход ${current.set_index} / ${e.sets}</span><strong>${primary}</strong></div>
           <div class="sr-goal">${goal}</div></div>${this.timer(model)}</div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("done", e.mode === "timed" ? "Закончить раньше" : "Подход выполнен", e.mode === "timed" ? "ghost-button" : "primary-button")}</footer>`;
     }
@@ -1119,7 +1119,7 @@
         ${resultCard(model, record.drafts[keyOf(prior)] ?? {})}
         <section class="sr-card sr-next" data-sr-swipe>
         <div class="sr-thumb">${next ? '<div data-sr-figure="next"></div>' : glyph("check")}</div>
-        <div><small>${next ? `Далее · ${next.set_index}/${next.exercise.sets}` : "Последний подход"}</small>
+        <div><small>${next ? `Далее · подход ${next.set_index} / ${next.exercise.sets}` : "Последний подход"}</small>
         ${next ? `<strong>${esc([next.exercise.name !== model.current.exercise.name ? next.exercise.name : "", target(next.exercise)].filter(Boolean).join(" · "))}</strong>` : ""}</div></section></div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("advance", next ? "Записать и начать подход" : "Записать и завершить", "primary-button")}</footer>`;
     }
@@ -1154,7 +1154,7 @@
           : !record.complete ? control("edit-review", info.first ? "Дополнить" : "Изменить", "ghost-button") : "";
         const menu = completed || record.complete ? "" : iconButton("menu", "more", "Действия тренировки", "sr-bare");
         return `<header class="sh-head sr-review-head"><h2>${title}</h2>${menu}</header><div class="sr-body sh-content">
-          <h3>${esc(record.snapshot.workout.title)}</h3>${info.summary}${edit}
+          <h3>${saved ? esc(record.snapshot.workout.title) : "Проверьте перед сохранением"}</h3>${info.summary}${edit}
           ${info.list}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
           <footer class="sr-foot sh-foot">${completed ? control("dismiss", "Закрыть", "primary-button")
             : (record.complete ? "" : control("return", "Вернуться")) +
@@ -1541,6 +1541,8 @@
     const training = spTrainingScreen, today = spDayWorkoutCard;
     spTrainingScreen = function () { const active = activeRun(); return active ? activeCard(active) : training.apply(this, arguments); };
     spDayWorkoutCard = function () { const active = activeRun(); return active ? activeCard(active) : today.apply(this, arguments); };
+    const hero = sp2DayHero;
+    sp2DayHero = function () { const active = activeRun(); return active ? activeCard(active) : hero.apply(this, arguments); };
   }
   if (typeof spOverlay === "function" && typeof spTimerRegister === "function") {
     const overlay = spOverlay, register = spTimerRegister;

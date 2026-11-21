@@ -82,10 +82,11 @@
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     const count = (status, label) => counts[status]
       ? `<span data-sh-status="${status}"><span aria-hidden="true">${signs[status]}</span> ${counts[status]} ${label}</span>` : "";
-    const summary = `<div class="sh-summary">${seconds == null ? "" : `<span aria-label="Длительность ${clock(seconds)}">${svg("clock")} ${clock(seconds)}</span>`}
-      <span aria-label="Записано ${counts.confirmed} из ${total}"><span aria-hidden="true">✓</span> ${counts.confirmed}/${total}</span>
-      ${count("inProgress", "в процессе")}${count("unconfirmed", "не подтверждено")}${count("future", "не начато")}
-      ${count("missing", "без записи")}${count("skipped", "пропущено")}</div>`;
+const summary = `<div class="sh-summary"><div class="sh-f-metrics">
+      ${seconds == null ? "" : `<div class="sh-f-metric" aria-label="Длительность ${clock(seconds)}"><b>${clock(seconds)}</b><small>Время</small></div>`}
+      <div class="sh-f-metric" aria-label="Записано ${counts.confirmed} из ${total}"><b>${counts.confirmed}<small>/${total}</small></b><small>Подходов записано</small></div></div>
+      <div class="sh-f-status-counts">${count("inProgress", "в процессе")}${count("unconfirmed", "не подтверждено")}${count("future", "не начато")}
+      ${count("missing", "без записи")}${count("skipped", "пропущено")}</div></div>`;
     const list = items.map(({ exercise, rows }) => `<section class="sh-group">
       <header><strong>${esc(exercise.name)}</strong>${planLabel(exercise) ? `<small>План · ${esc(planLabel(exercise))}</small>` : ""}</header>
       <ol>${rows.map(entry => {
@@ -96,7 +97,7 @@
           <small>${slot.set_index}</small><span aria-hidden="true">${signs[status]}</span>
           ${status === "confirmed" ? esc(factLabel(row)) : ""}${row.note ? `<small class="sh-note">${esc(row.note)}</small>` : ""}</li>`;
       }).join("")}</ol></section>`).join("");
-    return { first, summary, list };
+    return { first, summary, list: list ? `<div class="sh-preview-list">${list}</div>` : "" };
   }
 
   function dialog(label, trigger) {
@@ -371,10 +372,10 @@
     const mount = document.querySelector("[data-sh-feed]");
     if (!mount || !surface?.owner.current()) return;
     const { sessions, error, cursor, busy } = surface;
-    mount.innerHTML = `<h2>Тренировки</h2>${sessions.map(session => `<button type="button" class="sh-history-row"
+    mount.innerHTML = `<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => `<button type="button" class="sh-history-row"
       data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
       <small>${esc(dateLabel(session))}</small></span><span>${clock(session.elapsed_seconds)}
-      ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`).join("")}
+      ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`).join("")}</div>` : ""}
       ${error ? `<p role="alert">${esc(error)}</p><button type="button" class="ghost-button" data-action="sp-session-more">Повторить</button>`
         : busy ? '<p role="status">Загрузка…</p>' : !sessions.length ? '<p>Тренировок нет</p>' : ""}
       ${cursor && !busy && !error ? '<button type="button" class="ghost-button" data-action="sp-session-more">Ещё</button>' : ""}`;

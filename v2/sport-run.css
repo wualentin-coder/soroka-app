@@ -254,3 +254,8 @@
   .sport-run *, .sport-run *::before { animation: none !important; transition: none !important; }
 }
 html[data-motion="off"] .sport-run * { animation: none !important; transition: none !important; }
+
+.sport-run .sr-title > span:first-child { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; column-gap: 4px; }
+.sport-run .sr-title > span:first-child small { color: var(--muted); font-size: inherit; }
+.sport-run .sr-goal small { color: var(--muted); font-size: 12px; font-weight: 650; }
+.sport-run .sr-target > div:first-child > span { color: var(--muted); font-size: 12px; }

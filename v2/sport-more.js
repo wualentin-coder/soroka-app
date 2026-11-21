@@ -167,6 +167,24 @@ Object.assign(SP_ACTIONS, {
 
 const SP_SECTIONS = { profile: "Анкета", body: "Замеры", equipment: "Инвентарь", favorites: "Любимые упражнения", history: "История" };
 // «Профиль» — всё про вас и все настройки раздела в одном месте.
+function sp2SettingsScreen() {
+  const C = SP(), state = spState().state;
+  const reminder = C.notificationSettings(state.notificationSettings).workout;
+  const owned = C.EQUIPMENT.filter(item => item.id !== "gym" && C.hasEquipment(state, item.id));
+  const equipment = owned.length ? `${owned.length} ${spPlural(owned.length, "позиция", "позиции", "позиций")}` : "";
+  const row = (glyph, title, action, value = "", tab = "") => `<button class="sp2-f-setting" type="button" data-action="${action}"${tab ? ` data-tab="${tab}"` : ""}>
+    <span class="sp2-f-setting-icon">${glyph}</span><strong>${title}</strong>${value ? `<small>${spEsc(value)}</small>` : ""}${icon("right")}</button>`;
+  return `<h2 class="sp2-f-section-title">Тренировки</h2><section class="sp2-f-card sp2-f-settings">
+    ${row(icon("check"), "Цели", "sp-tab", "", "goals")}
+    ${row(icon("calendar"), "Расписание и напоминания", "sp-reminders", reminder.enabled ? reminder.time : "Выкл.")}
+    ${row(SP_ICON.dumbbell, "Инвентарь", "sp-tab", equipment, "inventory")}
+    ${row(icon("archive"), "Программы", "sp-programs")}
+  </section>
+  <h2 class="sp2-f-section-title">Профиль</h2><section class="sp2-f-card sp2-f-settings">
+    ${row(icon("health"), "Мой профиль", "sp-tab", state.trainingProfile?.name || "", "profile")}
+  </section>`;
+}
+
 function spProfileScreen() {
   const s = spState(), C = SP(), state = s.state;
   const profile = state.trainingProfile || {};
