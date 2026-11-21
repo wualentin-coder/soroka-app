@@ -7,6 +7,12 @@
 // ------------------------------------------------------------ цели
 
 // «Цели» — весь прогресс: неделя, цели, тело, рекорды.
+function spHistoryScreen() {
+  const s = spState(), C = SP();
+  if (C.isSport2Enabled(s.state) && window.SportHistory) return window.SportHistory.list();
+  return spGoalsScreen();
+}
+
 function spGoalsScreen() {
   const s = spState(), C = SP();
   const { visible } = spOptions();
@@ -456,6 +462,7 @@ SP_ACTIONS["sp-unlike"] = control => spUpdate(prev => SP().removeFavorite(prev, 
 
 // История
 function spHistory(sheet) {
+  if (SP().isSport2Enabled(spState().state) && window.SportHistory) return window.SportHistory.list();
   const C = SP(), state = spState().state, options = spOptions().visible;
   const view = sheet.view || "sessions";
   const tabs = `<div class="sp-segment small"><button type="button" class="${view === "sessions" ? "active" : ""}" data-action="sp-history-view" data-view="sessions">Занятия</button><button type="button" class="${view === "exercises" ? "active" : ""}" data-action="sp-history-view" data-view="exercises">По упражнениям</button></div>`;

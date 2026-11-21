@@ -2848,22 +2848,32 @@ ${JSON.stringify(context, null, 2)}
           return true;
         case "set_ended":
         case "set_skipped": {
+          if (e.type === "set_skipped" && key && phase === "review" && open?.id !== id2) {
+            sets.set(id2, {
+              ...row ?? blank(key),
+              ...emptyResult("skipped"),
+              note: row ? row.note : notes.get(id2) ?? null,
+              recorded_at: null
+            });
+            return true;
+          }
           if (!key || row || !(running || phase === "review") || open && open.id !== id2 || e.type === "set_ended" && !open) return false;
           const skipped = e.type === "set_skipped";
+          const workEndedAt = phase === "review" ? phaseStarted : at;
           const result2 = {
             ...blank(key),
             ...emptyResult(skipped ? "skipped" : "unconfirmed"),
             note: notes.get(id2) ?? null,
             work_started_at: open?.started ?? null,
-            work_ended_at: open ? at : null
+            work_ended_at: open ? workEndedAt : null
           };
           sets.set(id2, result2);
-          const workMs = open ? Math.max(0, Date.parse(at) - Date.parse(open.started) - open.paused) : 0;
+          const workMs = open ? Math.max(0, Date.parse(workEndedAt) - Date.parse(open.started) - open.paused) : 0;
           const approximate = open?.approximate;
           activeMs += workMs;
           open = null;
           if (!skipped) {
-            rest = { key, id: id2, started: at, paused: 0, workMs: approximate ? void 0 : workMs };
+            rest = { key, id: id2, started: workEndedAt, paused: 0, workMs: approximate ? void 0 : workMs };
             if (phase === "review") reviewReturn = "rest";
             else phaseAt("rest", at);
           }
@@ -2887,7 +2897,7 @@ ${JSON.stringify(context, null, 2)}
         case "set_unconfirmed": {
           if (!key || open?.id === id2 || phase !== "review" && (!row?.work_ended_at || row.status === "skipped")) return false;
           const base2 = row ?? blank(key);
-          const result2 = e.type === "set_confirmed" ? e.payload : { ...emptyResult(), note: base2.note ?? notes.get(id2) ?? null };
+          const result2 = e.type === "set_confirmed" ? e.payload : { ...emptyResult(), note: row ? row.note : notes.get(id2) ?? null };
           sets.set(id2, { ...base2, ...result2, recorded_at: e.type === "set_confirmed" ? at : null });
           if (phase === "review") {
             for (const previous of pending.values()) {
@@ -2911,8 +2921,9 @@ ${JSON.stringify(context, null, 2)}
           return running || phase === "review" || phase === "paused";
         case "note_added":
           if (key) {
-            const note = e.payload.note;
-            notes.set(id2, note);
+            const note = e.payload.note || null;
+            if (note === null) notes.delete(id2);
+            else notes.set(id2, note);
             if (row) sets.set(id2, { ...row, note });
           }
           return true;
@@ -2939,6 +2950,7 @@ ${JSON.stringify(context, null, 2)}
           return true;
         case "review_returned":
           if (phase !== "review" || !reviewReturn) return false;
+          freezeIntervals(Math.max(0, Date.parse(at) - Date.parse(phaseStarted)));
           phaseAt(reviewReturn, at);
           reviewReturn = null;
           return true;
@@ -2990,7 +3002,7 @@ ${JSON.stringify(context, null, 2)}
   var interval = (key, started, approximate = false) => ({ key: addressed(key), id: keyOf(key), started, paused: 0, approximate });
   var workLimit = (exercise2) => exercise2.mode === "timed" ? exercise2.work_seconds ?? 0 : exercise2.execution_seconds ?? 0;
   function resumeSportRun(projection, startedAt, activeSeconds, pausedSeconds) {
-    const recent = projection.sets.filter((row) => row.work_ended_at && row.status !== "skipped").sort((a, b) => Date.parse(b.work_ended_at) - Date.parse(a.work_ended_at))[0];
+    const recent = projection.sets.filter((row) => row.work_ended_at && (row.status !== "skipped" || row.rest_seconds_actual !== null)).sort((a, b) => Date.parse(b.work_ended_at) - Date.parse(a.work_ended_at))[0];
     const { phase, phase_started_at: since, open_set: open } = projection;
     const pausedPhase = open ? "work" : recent ? "rest" : "preparing";
     const current = phase === "review" ? projection.review_return_phase : phase === "paused" ? pausedPhase : phase;
@@ -3136,6 +3148,8 @@ ${JSON.stringify(context, null, 2)}
         return phase === "rest" && prior ? [eventFor("rest_adjusted", addressed(prior), { delta_seconds: command.seconds })] : [];
       case "advance":
         return phase === "rest" ? advance(command.result) : [];
+      case "skip-set":
+        return phase === "work" && view.replay.open && current ? [...resume, eventFor("set_skipped", addressed(current)), ...start(next)] : [];
       case "skip":
         if (phase === "rest") return advance(command.result);
         if (phase === "work" && view.replay.open && current) return [

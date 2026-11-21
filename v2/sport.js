@@ -250,8 +250,11 @@ function renderSportPage() {
     return `${header("Спорт", "", "")}<div class="sp-page">${s.error ? `<section class="en-wait en-load-error" role="status"><strong>Не удалось загрузить спорт</strong><p class="section-note">${spEsc(s.error)}</p><button type="button" class="ghost-button" data-action="sp-load-retry">Попробовать снова</button></section>` : `<div class="en-wait" role="status" aria-busy="true"><span class="live-spin" aria-hidden="true"></span><p class="section-note">Загружаем тренировки…</p></div>`}</div>`;
   }
   const C = SP();
-  const tabs = `<div class="sp-tabs" role="tablist">${SP_TABS.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}${key === "profile" && C.profileGaps(s.state).any ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
-  const body = s.tab === "training" ? spTrainingScreen() : s.tab === "goals" ? spGoalsScreen() : s.tab === "profile" ? spProfileScreen() : spTodayScreen();
+  const sport2 = C.isSport2Enabled(s.state) && window.SportHistory;
+  const tabItems = sport2 ? [...SP_TABS.slice(0, 2), ["history", "История"], ...SP_TABS.slice(2)] : SP_TABS;
+  if (!sport2 && s.tab === "history") s.tab = "goals";
+  const tabs = `<div class="sp-tabs${sport2 ? " sh-tabs" : ""}" role="tablist">${tabItems.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}${key === "profile" && C.profileGaps(s.state).any ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
+  const body = s.tab === "history" ? spHistoryScreen() : s.tab === "training" ? spTrainingScreen() : s.tab === "goals" ? spGoalsScreen() : s.tab === "profile" ? spProfileScreen() : spTodayScreen();
   const banner = s.demo ? `<p class="sp-demo">Демо WooSport · данные не сохраняются</p>` : "";
   const failed = (s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "") + (s.error ? `<div class="sp-error" role="status">${spEsc(s.error)} <button type="button" class="text-action" data-action="sp-load-retry">Попробовать снова</button></div>` : "");
   return `${header("Спорт", "", "")}<div class="sp-page">${banner}${failed}${tabs}${body}</div>${spSheetHtml()}`;
@@ -306,12 +309,14 @@ function spWeekStrip(options) {
 /** Тренировка выбранного дня одной карточкой: начать или продолжить в один шаг. */
 function spDayWorkoutCard(options, date) {
   const s = spState(), C = SP(), today = C.todayKey();
+  const sport2 = C.isSport2Enabled(s.state);
   const kinds = ["main", "splits"].map(kind => C.selectedOption(options, date, kind, s.state)).filter(Boolean);
   if (!kinds.length) {
-    if (C.withinProgram(options, date)) return `<section class="sp-card sp-today-workout rest"><p class="sp-kicker">Тренировка дня</p><h2>День отдыха</h2><p class="section-note">Мышцы растут между тренировками. Лёгкое движение, сон и вода — лучшее, что можно сделать сегодня.</p><button class="text-action" type="button" data-action="sp-free-new">+ Всё-таки потренироваться</button></section>`;
+    if (C.withinProgram(options, date)) return `<section class="sp-card sp-today-workout rest">${sport2 ? "" : '<p class="sp-kicker">Тренировка дня</p>'}<h2>День отдыха</h2>${sport2 ? "" : '<p class="section-note">Мышцы растут между тренировками. Лёгкое движение, сон и вода — лучшее, что можно сделать сегодня.</p>'}<button class="text-action" type="button" data-action="sp-free-new">${sport2 ? "Свободная тренировка" : "+ Всё-таки потренироваться"}</button></section>`;
     const programs = spProgramProgress(options, s.state).length;
     return `<section class="sp-card sp-today-workout empty"><p class="sp-kicker">Тренировка дня</p><h2>${programs ? "На этот день ничего нет" : "Программы ещё нет"}</h2><p class="section-note">${programs ? "Можно записать свободную тренировку." : "Составьте её с ИИ: анкета и инвентарь в профиле уйдут ему вместе с инструкцией. Или запишите тренировку сами."}</p><div class="sp-row-actions">${programs ? "" : `<button class="primary-button" type="button" data-action="sp-import-open">Новая программа с ИИ</button>`}<button class="ghost-button" type="button" data-action="sp-free-new">Свободная тренировка</button></div></section>`;
   }
+  const lead = sport2 ? kinds.find(option => date <= today && !s.state.workouts?.[option.key] && C.optionCompletion(option, s.state) !== 100) || kinds[0] : null;
   return kinds.map(option => {
     const checks = C.optionChecks(option, s.state);
     const total = option.plan.exercises.length;
@@ -324,7 +329,7 @@ function spDayWorkoutCard(options, date) {
       : future ? `<span class="sp-pill">${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}</span>`
       : option.historyOnly ? "" : `<button class="primary-button" type="button" data-action="sp-start-day" data-key="${spEsc(option.key)}">${pct > 0 ? "Продолжить" : "Начать"}</button>`;
     return `<section class="sp-card sp-today-workout"><div class="sp-card-head"><p class="sp-kicker">${option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</p><span>${spEsc(option.programTitle)}</span></div><button type="button" class="sp-today-title" data-action="sp-tab" data-tab="training"><h2>${spEsc(option.plan.title)}</h2>${option.plan.focus ? `<small>${spEsc(option.plan.focus)}</small>` : ""}</button>
-      <span class="sp-progress"><i style="width:${pct}%"></i></span><div class="sp-card-head"><span class="section-note">${done} из ${total} упражнений · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}</span>${action}</div></section>`;
+      <span class="sp-progress"><i style="width:${pct}%"></i></span><div class="sp-card-head"><span class="section-note">${sport2 && option === lead ? `≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))} · ${total} упр.` : `${done} из ${total} упражнений · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}`}</span>${action}</div></section>`;
   }).join("");
 }
 
@@ -591,7 +596,7 @@ function spHomeTile() {
 // ------------------------------------------------------------ действия
 
 Object.assign(SP_ACTIONS, {
-  "sp-tab": control => { const s = spState(); s.tab = control.dataset.tab; s.sheet = null; render(); window.scrollTo({ top: 0 }); },
+  "sp-tab": control => { const s = spState(); s.tab = control.dataset.tab; s.sheet = null; if (s.tab === "history") window.SportHistory?.invalidate(); render(); window.scrollTo({ top: 0 }); },
   "sp-home": () => { spState().tab = "today"; navigate("sport"); render(); },
   "sp-close": () => spClose(),
   "sp-date": control => { if (spTimerGuard()) return; const s = spState(); s.date = control.dataset.date; render(); },

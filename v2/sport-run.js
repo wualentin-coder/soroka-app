@@ -3,6 +3,7 @@
   "use strict";
 
   const C = () => window.SportCore;
+  const H = () => window.SportHistory;
   const id = () => crypto.randomUUID();
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -126,6 +127,7 @@
     close: '<path d="M6 6l12 12M18 6L6 18"/>', more: '<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3"/>',
     pause: '<path d="M9 6v12M15 6v12"/>', play: '<path d="M8 5.5v13l10-6.5z"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
   };
   const glyph = name => `<svg class="sr-icon" viewBox="0 0 24 24" aria-hidden="true">${glyphs[name]}</svg>`;
   const control = (action, label, cls = "ghost-button", extra = "") =>
@@ -136,7 +138,7 @@
   const technique = (exercise, preview = false) => {
     const lines = techniques(exercise);
     if (!lines.length) return '<p class="sr-muted">Техника для этого упражнения не добавлена.</p>';
-    return `<ol>${(preview ? lines.slice(0, 3) : lines).map(line => `<li>${esc(line)}</li>`).join("")}</ol>`;
+    return preview ? `<p>${esc(lines[0])}</p>` : `<ol>${lines.map(line => `<li>${esc(line)}</li>`).join("")}</ol>`;
   };
   const muscleFigure = exercise => {
     const figures = window.SportFigures;
@@ -156,7 +158,7 @@
   const fieldLimits = () => C().runMetricLimits;
   const suggestions = model => C().sportRunSuggestions(model);
   const owns = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
-  const weightLabels = { per_dumbbell: "Вес на гантель", total: "Общий вес", machine: "Вес тренажёра", additional: "Дополнительный вес" };
+  const weightLabels = { per_dumbbell: "Вес", total: "Общий", machine: "Тренажёр", additional: "Доп. вес" };
 
   function metricField(name, label, placeholder, value, units = "") {
     const [min, max] = fieldLimits()[name];
@@ -176,11 +178,11 @@
     const count = idea.basis === "per_dumbbell" ? control("units", units ? `×${units}` : "×—", "sr-count",
       `aria-label="Гантелей: ${units ?? "не указано"}" aria-pressed="${draft.units != null}"`) : "";
     const rir = current.exercise.mode === "timed" ? "" : `<div class="sr-field">
-      <span id="sr-rir-label">Запас повторов</span><div class="sr-rir" role="group" aria-labelledby="sr-rir-label">
+      <span id="sr-rir-label">Запас</span><div class="sr-rir" role="group" aria-labelledby="sr-rir-label">
       ${[0, 1, 2, 3].map(value => control("rir", value === 3 ? "3+" : value, "", `data-value="${value}" aria-pressed="${draft.rir === value}"`)).join("")}</div></div>`;
     return `<section class="sr-card sr-input" aria-label="Результат подхода ${prior.set_index}">
       <div class="sr-input-head"><strong>Подход ${prior.set_index}</strong><div class="sr-result-state">
-        <span class="sr-status" data-confirmed="false"><i></i><span>не подтверждён</span></span>
+        <span class="sr-status" data-confirmed="false"><i></i><span class="sr-vh">не подтверждён</span></span>
         ${control("draft-reset", "↺", "sr-reset", 'aria-label="Вернуть как в плане" hidden')}</div></div>
       ${current.exercise.bodyweight !== true && current.exercise.mode !== "timed"
         ? metricField("weight", weightLabels[idea.basis] || "Вес, кг", idea.weight, draft.weight, count) : ""}
@@ -441,6 +443,7 @@
       document.body.append(box);
       this.modal = box;
       box.showModal();
+      box.focus({ preventScroll: true });
       import("./flow-ui/sensory-feedback.js").then(module => { sensory = module; }).catch(() => {});
       this.interval ??= setInterval(() => this.tick(), 100);
       loadFigures().then(() => this.fillFigures());
@@ -472,7 +475,7 @@
     togglePanel(panel) {
       this.panel = this.panel === panel ? null : panel;
       this.render(true);
-      if (this.panel) this.modal?.querySelector(".sr-panel button")?.focus();
+      if (this.panel && !this.byPointer) this.modal?.querySelector(".sr-panel button")?.focus();
     }
 
     append(record, steps, now, staged = false) {
@@ -560,11 +563,11 @@
           if (steps.length) this.append(record, steps, now);
           const [event] = this.append(record, [{ type: "session_completed" }], now, true);
           record.complete = { event };
-        } else if (command.type === "skip") {
+        } else if (command.type === "skip" || command.type === "skip-set") {
           record.undo = { until: now + C().SKIP_UNDO_MS, events: this.append(record, steps, now, true), draftKey,
             label: model.phase === "rest"
               ? `Отдых пропущен · подход ${model.prior.set_index} ${command.result || model.prior.status === "confirmed" ? "записан" : "не подтверждён"}`
-              : "Упражнение пропущено" };
+              : command.type === "skip-set" ? "Подход пропущен" : "Упражнение пропущено" };
         } else {
           this.append(record, steps, now);
           if (draftKey) delete record.drafts[draftKey];
@@ -612,6 +615,124 @@
       this.mountedId = record.id;
       if (finish) await this.issue({ type: "review" }, { recordId: record.id });
       else this.recover(record);
+    }
+
+    openEditor(trigger) {
+      const record = this.read();
+      if (!record || record.complete || record.undo) return;
+      const model = view(record);
+      if (model.phase !== "review") return;
+      const snapshot = record.snapshot;
+      const sets = model.projection.sets;
+      const openSet = keyOf(model.projection.open_set);
+      H().editor({
+        snapshot, sets, trigger, openSet, owner: this.owner, localDraft: this.editorDraft(record.id, "active"),
+        target: H().preview(snapshot, sets, null, { openSet, hasPending: model.projection.pending_event_ids.length > 0 }).first,
+        reload: async () => {
+          const latest = this.read();
+          if (latest?.id !== record.id || view(latest).phase !== "review") throw error("invalid_transition");
+          return { sets: view(latest).projection.sets };
+        },
+        save: async ({ changes, baseline }) => {
+          await this.storage.change(data => {
+            const latest = data.records[data.active];
+            if (latest?.id !== record.id || latest.complete || latest.undo) throw error("invalid_transition");
+            const current = view(latest);
+            if (current.phase !== "review") throw error("invalid_transition");
+            const rows = new Map(current.projection.sets.map(row => [keyOf(row), row]));
+            const steps = [];
+            for (const change of changes) {
+              const { plan_exercise_id, set_index, ...payload } = change;
+              const key = { plan_exercise_id, set_index };
+              const rowId = keyOf(key);
+              const before = H().result(rows.get(rowId));
+              if (keyOf(current.projection.open_set) === rowId || !H().equal(before, baseline.get(rowId) ?? H().result(null))) {
+                throw error("stale_active_result");
+              }
+              if (payload.status === "confirmed") steps.push({ type: "set_confirmed", key, payload });
+              else {
+                if (before.status !== payload.status) {
+                  steps.push({ type: payload.status === "skipped" ? "set_skipped" : "set_unconfirmed", key });
+                }
+                if (payload.note !== before.note) steps.push({ type: "note_added", key, payload: { note: payload.note ?? "" } });
+              }
+            }
+            const events = this.append(latest, steps, Date.now());
+            const projected = view(latest).projection;
+            if (events.some(event => projected.pending_event_ids.includes(event.id))) throw error("invalid_transition");
+            return events.length > 0;
+          });
+          this.syncSoon();
+          this.refresh();
+        },
+      });
+    }
+
+    editorDraft(sessionId, mode) {
+      const key = `${mode}:${sessionId}`;
+      const saved = this.storage.read().editorDrafts?.[key];
+      const token = id();
+      return {
+        saved: saved?.state,
+        write: state => this.storage.change(data => {
+          const drafts = data.editorDrafts ??= {};
+          const current = drafts[key];
+          if (current && current.token !== token && current.token !== saved?.token) {
+            if (!state) return false;
+            throw error("editor_draft_changed");
+          }
+          if (state) drafts[key] = { token, state };
+          else if (current) delete drafts[key];
+          else return false;
+          return true;
+        }),
+      };
+    }
+
+    getEdit(sessionId) {
+      return this.storage.read().edits?.[sessionId] ?? null;
+    }
+
+    storeEdit(sessionId, draft, expected) {
+      return this.storage.change(data => {
+        data.edits ??= {};
+        const pending = data.edits[sessionId]?.args?.event.id;
+        if (pending && pending !== expected) throw error("edit_already_pending");
+        if (draft) data.edits[sessionId] = draft;
+        else delete data.edits[sessionId];
+      });
+    }
+
+    saveEdit(sessionId, { changes, revision, pending, persist }) {
+      if (!navigator.locks) throw error("local_lock");
+      return navigator.locks.request(`${this.storage.key}:edit:${sessionId}`, async () => {
+        if (!this.owner.current()) throw error("sport_owner_changed");
+        const stored = this.getEdit(sessionId)?.args;
+        if (stored && stored.event.id !== pending?.event.id) throw error("edit_already_pending");
+        let args = pending;
+        if (!args) {
+          const at = Date.now();
+          const [event] = this.append({ events: [], lastAt: 0 },
+            [{ type: "result_edited", payload: { changes } }], at, true);
+          args = { session_id: sessionId, expected_results_revision: revision, event };
+          await persist(args);
+        }
+        try {
+          const reply = await request("edit_set_results", args);
+          if (!reply.receipt || reply.receipt.event_id !== args.event.id
+              || reply.receipt.committed_revision !== args.expected_results_revision + 1) throw error("network");
+          await this.storeEdit(sessionId, null, args.event.id);
+          return reply;
+        } catch (reason) {
+          if (reason.message === "no_changes") {
+            await this.storeEdit(sessionId, null, args.event.id);
+            return null;
+          }
+          if (reason.message === "stale_results_revision") await persist(null, true);
+          else if (!networkError(reason)) await persist(null);
+          throw reason;
+        }
+      });
     }
 
     async restoreDeferred() {
@@ -675,15 +796,26 @@
             if (!acknowledged) throw error("network");
             await this.storage.change(next => mergeReply(next.records[record.id], reply, batch));
           } else if (record.complete) {
+            if (record.complete.expectedStream == null) {
+              await this.storage.change(next => {
+                const latest = next.records[record.id];
+                if (latest.complete?.event.id !== record.complete.event.id || latest.complete.expectedStream != null) return false;
+                latest.complete.expectedStream = latest.version;
+                return true;
+              });
+              continue;
+            }
             const reply = await request("complete_session", {
-              session_id: record.id, expected_stream_version: record.version,
+              session_id: record.id, expected_stream_version: record.complete.expectedStream,
               expected_results_revision: 0, event: record.complete.event,
             });
+            if (reply.receipt?.committed_revision !== 1 || reply.session?.status !== "completed") throw error("network");
             await this.storage.change(next => {
               const latest = next.records[record.id];
               mergeReply(latest, reply);
               if (latest.complete?.event.id === record.complete.event.id) latest.complete = null;
             });
+            H().invalidate();
           } else {
             if (record.undo) this.syncSoon(Math.max(0, record.undo.until - Date.now()));
             return;
@@ -704,11 +836,17 @@
           const status = reason.status ?? (reason.reply && !networkError(reason) ? 409 : null);
           if (status >= 400 && status < 500 || reason.message === "stale_session") {
             const reply = await request("read_session", { session_id: record.id }).catch(() => null);
-            const retry = reason.message === "stale_session" && reply && staleRetries < 2;
+            const staleComplete = reason.message === "stale_session" && record.complete?.expectedStream != null && !record.events.length;
+            const retry = !staleComplete && reason.message === "stale_session" && reply && staleRetries < 2;
             await this.storage.change(next => {
               const latest = next.records[record.id];
               if (!latest) return false;
               if (reply) mergeReply(latest, reply);
+              if (staleComplete && reply && latest.complete?.event.id === record.complete.event.id) {
+                // A definite CAS rejection permits a new completion after checking the updated review.
+                latest.complete = null;
+                this.message = reply.session.status === "completed" ? "Тренировка сохранена на другом устройстве." : messages.stale_session;
+              }
               if (!retry && (latest.start || latest.events.length || latest.complete)) {
                 latest.syncError = { code: reason.message, status: status ?? 409 };
               }
@@ -778,9 +916,8 @@
       const number = clock.querySelector("b");
       const label = clock.querySelector("small");
       const digits = model.overtime ? "+" + format(overtime) : format(model.limit || model.phase === "rest" ? remaining : elapsed);
-      const caption = model.paused ? "Коснитесь, чтобы продолжить"
-        : model.overtime ? "Переработка" : model.phase === "work" ? model.limit ? `ориентир ${format(model.limit / 1000)}` : "Прошло"
-          : model.phase === "rest" ? "отдых" : "";
+      const caption = !model.paused && !model.overtime && model.phase === "work" && model.limit
+        ? `/ ${format(model.limit / 1000)}` : "";
       if (number.textContent !== digits) number.textContent = digits;
       if (label.textContent !== caption) label.textContent = caption;
       timer.dataset.overtime = String(model.overtime);
@@ -790,14 +927,33 @@
 
     timer(model) {
       const rest = model.phase === "rest";
+      const delta = rest && this.restDelta?.phase === phaseSignature(model) && this.restDelta.until > Date.now()
+        ? this.restDelta : null;
       return `<div class="sr-timer" data-paused="${model.paused}" ${rest ? "data-sr-swipe" : ""}>
         <div class="sr-column" aria-hidden="true"><i></i></div>
-        <span class="sr-pause-tag" ${model.paused ? "" : "hidden"}><i></i>Пауза</span>
+        <span class="sr-pause-tag" ${model.paused ? "" : "hidden"}>${glyph("play")}Пауза</span>
+        ${delta?.seconds ? `<span class="sr-delta" role="status">${delta.seconds > 0 ? "+" : "−"}${Math.abs(delta.seconds)} с</span>` : ""}
         <div class="sr-timer-row ${rest ? "" : "sr-solo"}">
           ${rest ? control("adjust", "−15", "sr-adjust", 'aria-label="Минус 15 секунд" data-value="-15"') : ""}
           ${control("pause", "<b>0:00</b><small></small>", "sr-clock", `aria-label="${model.paused ? "Продолжить" : "Пауза"}" aria-pressed="${model.paused}"`)}
           ${rest ? control("adjust", "+15", "sr-adjust", 'aria-label="Плюс 15 секунд" data-value="15"') : ""}
-        </div></div>`;
+        </div>${rest ? this.swipeHint("Пропустить отдых") : ""}</div>`;
+    }
+
+    swipeHint(label) {
+      return `<span class="sr-swipe-hint" aria-hidden="true">‹${this.hintVisible ? ` <span>${label}</span>` : ""}</span>`;
+    }
+
+    showSwipeHint() {
+      if (this.hintSeen) return;
+      this.hintSeen = true;
+      const key = "flow.sport.swipe-hint.v2";
+      try {
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, "1");
+      } catch {}
+      this.hintVisible = true;
+      setTimeout(() => { this.hintVisible = false; this.refresh(); }, 3600);
     }
 
     head(model) {
@@ -809,7 +965,7 @@
         return `<i class="${name}"></i>`;
       }).join("") : "";
       return `<header class="sr-head">${iconButton("close-menu", "close", "Завершить или свернуть", "sr-bare")}
-        <div class="sr-title"><span>${model.phase === "rest" ? "<small>Отдых · </small>" : ""}${esc(title)}</span>
+        <div class="sr-title"><span>${model.phase === "rest" ? `<small aria-label="Отдых">${glyph("clock")}</small> ` : ""}${esc(title)}</span>
           ${sets ? `<span class="sr-segments" aria-hidden="true">${sets}</span>` : ""}</div>
         ${iconButton("menu", "more", "Действия тренировки", "sr-bare", `aria-expanded="${this.panel === "menu"}"`)}</header>`;
     }
@@ -824,13 +980,13 @@
       const primary = e.mode === "timed" ? format(e.work_seconds ?? 0)
         : load ? `${load.units ? load.units + " × " : ""}${kg(load.kg)}<small>кг</small>`
           : esc(e.reps || e.target || "");
-      const goal = e.mode === "timed" ? "<b>на время</b>" : load && e.reps ? `<b>${esc(e.reps)}</b>повторов`
+      const goal = e.mode === "timed" ? `<b aria-label="На время">${glyph("clock")}</b>` : load && e.reps ? `<b>× ${esc(e.reps)}</b>`
         : e.bodyweight ? "<b>свой вес</b>" : "";
       return `${this.head(model)}<div class="sr-body">
         <div class="sr-media" data-sr-swipe><div class="sr-no-media">${technique(e, true)}<div data-sr-figure="current"></div></div>
           ${control("tech", "", "sr-media-tap", 'aria-label="Техника и мышцы"')}
-          <span class="sr-flash" aria-hidden="true"><i>${glyph("check")}</i></span></div>
-        <div class="sr-target" data-sr-swipe><div><span>Подход ${current.set_index} / ${e.sets}</span><strong>${primary}</strong></div>
+          <span class="sr-flash" aria-hidden="true"><i>${glyph("check")}</i></span>${this.swipeHint("Пропустить упражнение")}</div>
+        <div class="sr-target" data-sr-swipe><div><span aria-label="Подход ${current.set_index} из ${e.sets}">${current.set_index}/${e.sets}</span><strong>${primary}</strong></div>
           <div class="sr-goal">${goal}</div></div>${this.timer(model)}</div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("done", e.mode === "timed" ? "Закончить раньше" : "Подход выполнен", e.mode === "timed" ? "ghost-button" : "primary-button")}</footer>`;
     }
@@ -841,8 +997,8 @@
         ${resultCard(model, record.drafts[keyOf(prior)] ?? {})}
         <section class="sr-card sr-next" data-sr-swipe>
         <div class="sr-thumb">${next ? '<div data-sr-figure="next"></div>' : glyph("check")}</div>
-        <div><small>${next ? `Далее · подход ${next.set_index} / ${next.exercise.sets}` : "Это был последний подход"}</small>
-        <strong>${next ? esc([next.exercise.name !== model.current.exercise.name ? next.exercise.name : "", target(next.exercise)].filter(Boolean).join(" · ")) : "Дальше — итоги"}</strong></div></section></div>
+        <div><small>${next ? `Далее · ${next.set_index}/${next.exercise.sets}` : "Последний подход"}</small>
+        ${next ? `<strong>${esc([next.exercise.name !== model.current.exercise.name ? next.exercise.name : "", target(next.exercise)].filter(Boolean).join(" · "))}</strong>` : ""}</div></section></div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("advance", next ? "Записать и начать подход" : "Записать и завершить", "primary-button")}</footer>`;
     }
 
@@ -857,18 +1013,27 @@
         <footer class="sr-foot">${this.pauseButton(model)}${control("start", "Начать", "primary-button")}</footer>`;
       if (model.phase === "work" && model.replay.open && model.current) return this.work(model);
       if (model.phase === "rest" && model.prior && model.current) return this.rest(model, record);
-      if (model.phase === "review") {
-        const confirmed = model.projection.sets.filter(row => row.status === "confirmed").length;
-        const unconfirmed = model.projection.sets.filter(row => row.status === "unconfirmed").length;
-        const pending = record.complete ? 'aria-disabled="true" disabled' : "";
-        return this.simple("Завершить тренировку",
-          `<p>Подтверждено подходов: ${confirmed}</p>${unconfirmed ? `<p>Без данных: ${unconfirmed}</p>` : ""}`,
-          control("seal", record.complete ? record.syncError ? "Ожидает отправки" : "Сохраняем…" : "Сохранить", "primary-button", pending) +
-          (record.complete ? "" : control("return", "Вернуться к тренировке")) +
-          (record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""));
+      if (model.phase === "review" || model.phase === "completed") {
+        const completed = model.phase === "completed";
+        const saved = completed && !record.events.length;
+        const seconds = completed ? model.projection.elapsed_seconds
+          : Math.max(0, Math.floor((Date.now() - Date.parse(model.replay.startedAt)) / 1000));
+        const active = completed ? null : {
+          openSet: keyOf(model.projection.open_set), hasPending: model.projection.pending_event_ids.length > 0,
+        };
+        const info = H().preview(record.snapshot, model.projection.sets, seconds, active);
+        const title = completed ? saved ? "Сохранено" : "Тренировка завершена" : "Итоги";
+        const edit = completed
+          ? saved ? control("open-history", info.first ? "Дополнить" : "Изменить", "ghost-button") : ""
+          : !record.complete ? control("edit-review", info.first ? "Дополнить" : "Изменить", "ghost-button") : "";
+        return `<header class="sh-head"><h2>${title}</h2></header><div class="sr-body sh-content">
+          <h3>${esc(record.snapshot.workout.title)}</h3>${info.summary}${edit}
+          ${info.list}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
+          <footer class="sr-foot sh-foot">${completed ? control("dismiss", "Закрыть", "primary-button")
+            : (record.complete ? "" : control("return", "Вернуться")) +
+              control("seal", record.complete ? record.syncError || !navigator.onLine ? "Ожидает отправки" : "Сохраняем…" : "Сохранить",
+                "primary-button", record.complete ? "disabled" : "")}</footer>`;
       }
-      if (model.phase === "completed") return this.simple(record.events.length ? "Тренировка завершена" : "Тренировка сохранена",
-        "", control("dismiss", "Закрыть", "primary-button"));
       if (model.phase === "abandoned") return this.simple("Тренировка отменена", "", control("dismiss", "Закрыть", "primary-button"));
       return this.simple("Тренировка", "", control("review", "Завершить") + control("dismiss", "Свернуть"));
     }
@@ -941,6 +1106,7 @@
         title = "Действия";
         items = model.current ? control("tech", "Техника и мышцы") : "";
         if (model.phase === "work" || model.phase === "rest") items += control("skip", model.phase === "rest" ? "Пропустить отдых" : "Пропустить упражнение");
+        if (model.phase === "work" && model.replay.open) items += control("skip-set", "Пропустить подход");
         items += control("review", "Завершить");
       }
       return `<div class="sr-panel-backdrop"><section class="sr-panel" aria-label="${title}"><header><h2>${title}</h2>
@@ -952,10 +1118,13 @@
       let record;
       try { record = this.read(); } catch { record = null; }
       const model = record ? view(record) : null;
+      if (model?.phase === "rest" || model?.phase === "work" && model.replay.open) this.showSwipeHint();
       if (this.interruption && model && this.interruption.key !== phaseSignature(model)) this.interruption = null;
       const signature = JSON.stringify([record?.id, model && phaseSignature(model), model?.paused, model?.overtime && model.phase,
         model?.projection.sets.map(row => [keyOf(row), row.status, Date.parse(row.recorded_at)]), this.panel, this.conflict?.id, !!this.interruption,
-        record?.complete?.event.id, record?.syncError?.code, record?.undo?.until, record?.deferred?.length, this.busy]);
+        record?.complete?.event.id, record?.complete && navigator.onLine, record?.syncError?.code, record?.undo?.until,
+        record?.deferred?.length, this.busy, this.hintVisible,
+        this.restDelta?.until > Date.now() ? this.restDelta.until : null]);
       const screenKey = JSON.stringify([record?.id, model?.phase, this.conflict?.id, !!this.interruption]);
       const rebuild = force || signature !== this.signature;
       this.model = model;
@@ -965,8 +1134,8 @@
         const focusAction = oldFocus?.dataset.sr;
         const focusId = oldFocus?.id;
         const html = this.conflict ? this.simple("Есть незавершённая тренировка",
-          this.conflictDetails(), control("conflict-continue", "Продолжить", "primary-button") +
-          control("conflict-finish", "Завершить") + control("dismiss", "Не сейчас"))
+          this.conflictDetails(), control("conflict-continue", "Продолжить её", "primary-button") +
+          control("conflict-finish", "Завершить её") + control("dismiss", "Не сейчас"))
           : model ? this.screen(model, record) : this.simple(this.busy ? "Открываем тренировку…" : "Тренировка",
             "", this.busy ? control("dismiss", "Закрыть") : control("retry", "Повторить", "primary-button") + control("dismiss", "Закрыть"));
         let screen = this.modal.querySelector(".sr-screen");
@@ -1073,6 +1242,8 @@
           return;
         }
         if (action === "restore-results") { await this.restoreDeferred(); this.refresh(true); return; }
+        if (action === "edit-review") { this.openEditor(this.modal.querySelector('[data-sr="edit-review"]')); return; }
+        if (action === "open-history") { await H().open(this.recordId, this.modal.querySelector('[data-sr="open-history"]')); return; }
         if (action === "draft-reset") { await this.field(null, null); return; }
         if (["step", "rir", "units"].includes(action)) {
           const record = this.read();
@@ -1105,11 +1276,20 @@
         }
         if (action === "done") this.flashing = true;
         const changed = await this.issue(command, { recordId: this.recordId, signature: phaseSignature(model) });
+        if (action === "adjust" && changed) {
+          this.restDelta = { phase: phaseSignature(model), until: Date.now() + 2500,
+            seconds: view(this.read()).projection.rest_adjustment_seconds };
+          setTimeout(() => this.refresh(), 2500);
+        }
         if (action === "done" && changed && this.modal?.open) {
           sensory?.sensorySignal("success", { host: this.modal });
-          this.modal.classList.add("sr-done");
-          await new Promise(resolve => setTimeout(resolve, 300));
-          this.modal?.classList.remove("sr-done");
+          const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "off";
+          if (!reduced) {
+            this.modal.classList.add("sr-done");
+            await new Promise(resolve => setTimeout(resolve, 420));
+            this.modal?.classList.remove("sr-done");
+          }
+          await new Promise(resolve => setTimeout(resolve, reduced ? 400 : 230));
         }
       } catch (reason) { this.fail(reason); }
       finally {
@@ -1144,6 +1324,8 @@
     runner = new Runner(active);
     return runner;
   }
+
+  window.SportRunReview = { owner, acquire, request };
 
   function refreshSportSurface() {
     if (typeof spRerender === "function" && typeof ui !== "undefined" && ui.page === "sport") spRerender(true);
