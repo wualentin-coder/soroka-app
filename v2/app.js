@@ -1,4 +1,4 @@
-﻿/* Дизайн-прототип: все записи хранятся только в этом браузере. */
+/* Дизайн-прототип: все записи хранятся только в этом браузере. */
 const STORAGE_KEY = "soroka-planner-prototype-v1";
 function classicDesign() { return document.documentElement.dataset.flowDesign === "classic"; }
 /** The classic shell retains its original theme choices; Magic has three dark surfaces. */
@@ -692,10 +692,14 @@ const flowPatchPages = new Set(["render", "pc"]);
 const flowPatchStats = { patched: 0, replaced: 0, inserted: 0, removed: 0, text: 0, attrs: 0 };
 window.flowRenderPatchStats = flowPatchStats;
 const flowGlyphId = /light-glyph-\d+/g;
+// Значки библиотеки нумеруют градиенты заново при каждой сборке страницы:
+// номер — это не изменение содержимого, а новая метка того же значка.
+const flowCollectionGlyphId = /collection-light-\d+/g;
+const flowStableHtml = value => String(value).replace(flowGlyphId, "#").replace(flowCollectionGlyphId, "#");
 const flowRuntimeNode = node => node.nodeType === 1 && node.matches(".flow-surface-contour,.flow-surface-response,.flow-input-light,.flow-input-source,.flow-input-spread,.flow-motion-indicator,.flow-control-response");
 // Эти атрибуты дописывают скрипты оформления — их не снимаем, даже если в разметке их нет.
 const flowKeepAttr = name => /^(data-flow|data-magic|data-light|data-motion|tabindex$|inert$)/.test(name);
-const flowAttrValue = value => String(value).replace(flowGlyphId, "#");
+const flowAttrValue = value => flowStableHtml(value);
 let flowRenderTimer = 0;
 /** Схлопывает пачку перерисовок одного тика (ответ ПК + toast + финиш кнопки) в одну. */
 function scheduleRender() {
@@ -769,6 +773,64 @@ function flowPatchRender(nav, page, overlay) {
   flowPatchStats.patched++;
   return true;
 }
+/**
+ * Обновляет окно поверх страницы, оставляя живым сам узел окна. Контур окна
+ * (`.flow-surface-contour`) и его анимация при этом не пересоздаются — экран не
+ * моргает; поле, в котором печатают, и прокрутка окна остаются на месте.
+ * false — окно нужно собрать заново (другое окно, карта, уход/въезд окна).
+ */
+function flowRefreshOverlay(nav, overlay) {
+  if (!ui.sheet || ui.sheet !== renderedSheetOwner) return false;
+  const current = [];
+  for (let node = nav.nextSibling; node; node = node.nextSibling) if (node.nodeType === 1 && !flowRuntimeNode(node)) current.push(node);
+  const template = document.createElement("template");
+  template.innerHTML = overlay;
+  const next = [...template.content.childNodes].filter(node => node.nodeType === 1);
+  const from = current.find(node => node.classList.contains("modal-backdrop"));
+  const to = next.find(node => node.classList.contains("modal-backdrop"));
+  const fromSheet = from?.querySelector(":scope > .sheet");
+  const toSheet = to?.querySelector(":scope > .sheet");
+  if (!fromSheet || !toSheet) return false;
+  // Окно закрывается — его собирают прежним путём, иначе анимация ухода оборвётся.
+  if (from.classList.contains("sheet-leave") || to.querySelector("canvas,video,iframe,.leaflet-container")) return false;
+  flowSyncWindowAttrs(from, to);
+  flowSyncWindowAttrs(fromSheet, toSheet);
+  // Контур окна не сдвигаем: перемещение узла в DOM запускает его анимацию заново.
+  const runtime = [...fromSheet.childNodes].filter(flowRuntimeNode);
+  for (const node of [...fromSheet.childNodes]) if (!runtime.includes(node)) node.remove();
+  const content = document.createDocumentFragment();
+  content.append(...toSheet.childNodes);
+  fromSheet.insertBefore(content, runtime[0] || null);
+  const toast = next.find(node => node.classList.contains("toast"));
+  const oldToast = current.find(node => node.classList.contains("toast"));
+  if (toast) { if (oldToast) oldToast.replaceWith(toast); else from.after(toast); }
+  else oldToast?.remove();
+  current.forEach(node => { if (node !== from && node !== oldToast) node.remove(); });
+  if (typeof installSwipeCards === "function") installSwipeCards(from);
+  flowPatchStats.patched++;
+  return true;
+}
+// Узел окна сохраняется, поэтому его data-* (состояние ввода, правки) не снимаем.
+function flowSyncWindowAttrs(from, to) {
+  for (const name of to.getAttributeNames()) {
+    const value = to.getAttribute(name);
+    if (name === "class") { if (flowAttrValue(from.getAttribute("class") ?? "") !== flowAttrValue(value)) flowSyncClass(from, to); continue; }
+    if (from.getAttribute(name) === value) continue;
+    from.setAttribute(name, value);
+    flowPatchStats.attrs++;
+  }
+  for (const name of from.getAttributeNames()) {
+    if (to.hasAttribute(name) || name === "class" || name === "style" || name.startsWith("data-") || name.startsWith("aria-") || flowKeepAttr(name)) continue;
+    from.removeAttribute(name);
+    flowPatchStats.attrs++;
+  }
+}
+/** Счётчик входящих в боковой панели: оболочка остаётся, меняем только число. */
+function flowSyncInboxCount() {
+  const button = app.querySelector('.sidebar [data-page="inbox"]'), count = button?.querySelector('.nav-count');
+  if (data.inbox.length) { if (count) count.textContent = String(data.inbox.length); else button?.insertAdjacentHTML("beforeend", `<span class="nav-count">${data.inbox.length}</span>`); }
+  else count?.remove();
+}
 function focusRouteHeading() {
   const heading = app.querySelector(".main h1");
   if (!heading || ui.sheet) return;
@@ -823,7 +885,10 @@ function render() {
     afterRender(scroll);
     return;
   }
-  if (nav && page === renderedShell && shellChrome === renderedShellChrome && !hasMap(sheet) && !(nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container"))) {
+  const sameRenderedPage = classicDesign() ? page === renderedShell : flowStableHtml(page) === flowStableHtml(renderedShell);
+  if (nav && sameRenderedPage && shellChrome === renderedShellChrome && !hasMap(sheet) && !(nav.parentElement.querySelector(":scope > .mobile-nav ~ * .leaflet-container"))) {
+    // Окно то же — меняем его содержимое, не пересоздавая узел окна и контур.
+    if (!classicDesign() && flowRefreshOverlay(nav, overlay)) { afterRender(scroll); return; }
     while (nav.nextSibling) nav.nextSibling.remove();
     nav.insertAdjacentHTML("afterend", overlay);
     nav.parentElement.querySelectorAll(":scope > .mobile-nav ~ *").forEach(installSwipeCards);
@@ -841,12 +906,36 @@ function render() {
   if(!classicDesign()&&nav&&ui.page==='today'&&plan&&shellChrome===renderedShellChrome&&!hasMap(sheet)&&!nav.parentElement.querySelector(':scope > .mobile-nav ~ * .leaflet-container')){
     renderedShell=page;
     const main=plan.parentElement;if(!window.flowMagicPatchPlan?.(main,page))main.innerHTML=page;
-    while(nav.nextSibling)nav.nextSibling.remove();nav.insertAdjacentHTML('afterend',overlay);
-    const inboxButton=app.querySelector('.sidebar [data-page="inbox"]'),inbox=inboxButton?.querySelector('.nav-count');
-    if(data.inbox.length){if(inbox)inbox.textContent=String(data.inbox.length);else inboxButton?.insertAdjacentHTML('beforeend',`<span class="nav-count">${data.inbox.length}</span>`);}else inbox?.remove();
+    if(!flowRefreshOverlay(nav,overlay)){while(nav.nextSibling)nav.nextSibling.remove();nav.insertAdjacentHTML('afterend',overlay);}
+    flowSyncInboxCount();
     installSwipeCards(main);nav.parentElement.querySelectorAll(':scope > .mobile-nav ~ *').forEach(installSwipeCards);
     if(retainRouteFocus)focusRouteHeading();else if(navigationFocus)focusCurrentNavigation(navigationFocus);
     afterRender(scroll);return;
+  }
+  // Тот же раздел, изменилось только его содержимое: боковая панель, шапка с
+  // островком, кнопка ассистента и нижняя навигация остаются живыми, поэтому их
+  // анимации не перезапускаются. Разделы со своими картами собираются прежним путём.
+  if (nav && !classicDesign() && shellChrome && shellChrome === renderedShellChrome
+    && flowStableHtml(page) !== flowStableHtml(renderedShell) && !hasMap(page) && !hasMap(renderedShell)
+    && !app.querySelector(".dm-workspace > .main .leaflet-container")) {
+    const main = app.querySelector(".dm-workspace > .main");
+    if (main) {
+      renderedShell = page;
+      main.innerHTML = page;
+      installSwipeCards(main);
+      if (!flowRefreshOverlay(nav, overlay)) {
+        while (nav.nextSibling) nav.nextSibling.remove();
+        nav.insertAdjacentHTML("afterend", overlay);
+        nav.parentElement.querySelectorAll(":scope > .mobile-nav ~ *").forEach(installSwipeCards);
+      }
+      flowSyncInboxCount();
+      const savedTabs = main.querySelector('.subtabs[role="tablist"]');
+      const selectedSavedTab = savedTabs?.querySelector('[aria-selected="true"]');
+      if (selectedSavedTab) savedTabs.scrollLeft = selectedSavedTab.offsetLeft - savedTabs.offsetLeft - (savedTabs.clientWidth - selectedSavedTab.offsetWidth) / 2;
+      if (retainRouteFocus) focusRouteHeading(); else if (navigationFocus) focusCurrentNavigation(navigationFocus);
+      afterRender(scroll);
+      return;
+    }
   }
   disposeAddressMap();
   if (typeof disposeLoyaltyMap === "function") disposeLoyaltyMap();
