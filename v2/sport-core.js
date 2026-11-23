@@ -124,6 +124,7 @@ var SportCore = (() => {
     hasOwn: () => hasOwn,
     hasVideo: () => hasVideo,
     holdSecondsFor: () => holdSecondsFor,
+    inventoryLite: () => inventoryLite,
     isBodyweight: () => isBodyweight,
     isFavorite: () => isFavorite,
     isMorningEvening: () => isMorningEvening,
@@ -200,6 +201,7 @@ var SportCore = (() => {
     shoeSizeRu: () => shoeSizeRu,
     shouldAskWakeTime: () => shouldAskWakeTime,
     sizingMeasurements: () => sizingMeasurements,
+    sportAchievable: () => achievable,
     sportRunDraftResult: () => sportRunDraftResult,
     sportRunEvents: () => sportRunEvents,
     sportRunInterruption: () => sportRunInterruption,
@@ -3208,6 +3210,60 @@ ${JSON.stringify(context, null, 2)}
     if (!state || typeof state !== "object" || Array.isArray(state)) return false;
     const sport2 = state.sport2;
     return !!sport2 && typeof sport2 === "object" && !Array.isArray(sport2) && sport2.enabled === true;
+  }
+
+  // sport/core/src/inventory.ts
+  function inventoryLite(value) {
+    if (!object2(value)) throw new RangeError("inventory");
+    if (!Object.keys(value).length) return {};
+    const { handles, plates, limits } = value;
+    const weight = (n, min, max) => typeof n === "number" && Number.isFinite(n) && n >= min && n <= max && Math.abs(n * 1e3 - Math.round(n * 1e3)) < 1e-7;
+    if (!object2(handles) || !weight(handles.mass_kg, 1e-3, 80) || !integer2(handles.sleeve_slots, 1, 12) || !integer2(handles.count, 1, 2) || !weight(handles.collar_kg, 0, 5) || !Array.isArray(plates) || plates.length > 12 || !object2(limits) || limits.max_per_dumbbell_kg !== null && !weight(limits.max_per_dumbbell_kg, 1e-3, 200)) {
+      throw new RangeError("inventory");
+    }
+    const masses = /* @__PURE__ */ new Set();
+    const clean = plates.map((plate) => {
+      if (!object2(plate) || !weight(plate.mass_kg, 1e-3, 50) || !integer2(plate.count, 1, 64) || masses.has(plate.mass_kg)) {
+        throw new RangeError("inventory");
+      }
+      masses.add(plate.mass_kg);
+      return { mass_kg: plate.mass_kg, count: plate.count };
+    });
+    return {
+      handles: {
+        mass_kg: handles.mass_kg,
+        sleeve_slots: handles.sleeve_slots,
+        count: handles.count,
+        collar_kg: handles.collar_kg
+      },
+      plates: clean.sort((a, b) => a.mass_kg - b.mass_kg),
+      limits: { max_per_dumbbell_kg: limits.max_per_dumbbell_kg }
+    };
+  }
+
+  // sport/core/src/loadout.ts
+  function achievable(inventory, units) {
+    const { handles, plates, limits } = inventory;
+    if (!handles || !plates || ![1, 2].includes(units) || handles.count < units) return [];
+    const grams = (kg) => Math.round(1e3 * kg);
+    const base = grams(handles.mass_kg) + grams(handles.collar_kg);
+    const cap = grams(limits?.max_per_dumbbell_kg ?? 200);
+    if (base > cap) return [];
+    const bySlots = Array.from({ length: handles.sleeve_slots + 1 }, () => /* @__PURE__ */ new Set());
+    bySlots[0].add(base);
+    for (const plate of plates) {
+      const symmetric = Math.floor(plate.count / (2 * units));
+      for (let used = handles.sleeve_slots - 1; used >= 0; used--) {
+        for (const mass of bySlots[used]) {
+          for (let take = 1; take <= symmetric && used + take <= handles.sleeve_slots; take++) {
+            const combined = mass + 2 * take * grams(plate.mass_kg);
+            if (combined > cap) break;
+            bySlots[used + take].add(combined);
+          }
+        }
+      }
+    }
+    return [...new Set(bySlots.flatMap((weights) => [...weights]))].sort((a, b) => a - b).map((g) => g / 1e3);
   }
   return __toCommonJS(core_exports);
 })();
