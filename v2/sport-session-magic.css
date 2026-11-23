@@ -20,9 +20,81 @@ html[data-flow-design="magic"] .ss-page .ss-main.ss-has-flow{position:relative;i
 html[data-flow-design="magic"] .ss-page .ss-main.ss-rest:before{content:none}
 html[data-flow-design="magic"] .ss-page .ss-primary{background:var(--accent-soft);color:var(--accent);border:1px solid var(--line);box-shadow:none}
 .ss-flow-column{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
-.ss-flow-volume{position:absolute;inset:0;overflow:hidden;clip-path:inset(0% 0 0 0);background:radial-gradient(ellipse at 16% 28%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 68%),linear-gradient(180deg,color-mix(in srgb,var(--accent) 34%,var(--page)),color-mix(in srgb,var(--accent) 23%,var(--page)) 54%,color-mix(in srgb,var(--accent) 14%,var(--page)))}
+.ss-flow-volume{position:absolute;inset:0;overflow:hidden;clip-path:inset(0% 0 0 0);background:radial-gradient(ellipse at 18% 24%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 70%),linear-gradient(180deg,color-mix(in srgb,var(--accent) 25%,var(--page)),color-mix(in srgb,var(--accent) 17%,var(--page)) 56%,color-mix(in srgb,var(--accent) 9%,var(--page)))}
 .ss-flow-refraction{position:absolute;inset:-8% -12%;pointer-events:none;background:radial-gradient(ellipse at 72% 56%,color-mix(in srgb,var(--text) 12%,transparent),transparent 48%),linear-gradient(118deg,transparent 20%,color-mix(in srgb,var(--accent) 18%,transparent) 39%,color-mix(in srgb,var(--text) 10%,transparent) 48%,transparent 68%)}
 .ss-flow-surface{position:absolute;inset:0;pointer-events:none}
-.ss-flow-surface:before{content:'';position:absolute;inset:-9px 0 auto;height:22px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 24%,transparent) 34%,color-mix(in srgb,var(--accent) 50%,transparent) 43%,color-mix(in srgb,var(--accent) 18%,transparent) 68%,transparent)}
-.ss-flow-surface:after{content:'';position:absolute;inset:0 0 auto;height:1.5px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 35%,transparent),color-mix(in srgb,var(--accent) 80%,var(--text)) 35%,color-mix(in srgb,var(--accent) 65%,var(--text)) 68%,color-mix(in srgb,var(--accent) 40%,transparent))}
+.ss-flow-surface:before{content:'';position:absolute;inset:-22px 0 auto;height:46px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 12%,transparent) 46%,color-mix(in srgb,var(--accent) 5%,transparent) 72%,transparent)}
+.ss-flow-surface:after{display:none}
 @media(max-width:350px){html[data-flow-design="magic"] .ss-page .ss-timer-line{gap:8px}html[data-flow-design="magic"] .ss-page .ss-magic-face .ss-timer-tap b{font-size:68px}html[data-flow-design="magic"] .ss-page .ss-magic-face[data-long="true"] .ss-timer-tap b{font-size:43px}.ss-magic-face,.ss-page .ss-magic-face>.ss-timer-tap{min-height:146px;height:146px}.ss-magic-face>.ss-timer-material,.ss-magic-face>.ss-timer-response{inset:0 -20px}}
+
+/* Спокойные подчёркивания вместо изогнутых border-bottom от общей формы кнопок. */
+html[data-flow-design="magic"] .ss-page .ss-kind-switch button,
+html[data-flow-design="magic"] .ss-page .ss-tabs button {
+  position: relative; border-bottom: 0 !important; border-radius: 0 !important;
+}
+html[data-flow-design="magic"] .ss-page .ss-kind-switch button.on::after,
+html[data-flow-design="magic"] .ss-page .ss-tabs button.on::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  border-radius: 2px 2px 0 0; background: var(--accent);
+}
+
+/* Раунд 2: пауза читается, «+» не теряется, setup-кнопка — главная. */
+html[data-flow-design="magic"] .ss-page .ss-pause-word {
+  margin-left: 8px; color: var(--muted); font-family: Manrope, sans-serif;
+  font-size: 14px; font-weight: 500; letter-spacing: 0;
+}
+html[data-flow-design="magic"] .ss-page .ss-timer-adjust {
+  border-color: color-mix(in srgb, var(--text) 22%, transparent);
+  color: var(--text);
+}
+html[data-flow-design="magic"] .ss-page .ss-footer-setup .ss-primary {
+  background: var(--accent); color: var(--accent-ink); border-color: transparent;
+}
+html[data-flow-design="magic"] .ss-page .ss-footer-setup .ss-primary:hover { background: var(--accent); }
+html[data-flow-design="magic"] .ss-page .ss-disclosure > summary::after {
+  content: ""; width: 8px; height: 8px; font-size: 0; border-right: 1.6px solid var(--muted);
+  border-bottom: 1.6px solid var(--muted); transform: rotate(45deg);
+  transition: transform .18s ease;
+}
+html[data-flow-design="magic"] .ss-page .ss-disclosure[open] > summary::after { transform: rotate(225deg); }
+html[data-flow-design="magic"] .ss-page .ss-next span:not(.ss-next-marker) { color: var(--muted); font-size: 11px; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-flow-design="magic"] .ss-page .ss-disclosure > summary::after { transition: none; }
+}
+
+html[data-flow-design="magic"] .ss-page .ss-kind-switch button { min-width: 44px; }
+html[data-flow-design="magic"] .ss-page .ss-preference input {
+  width: 44px; height: 44px; flex: none; transform: scale(.55); transform-origin: center;
+  margin-right: -10px;
+}
+
+html[data-flow-design="magic"] .ss-page .ss-preference { position: relative; }
+html[data-flow-design="magic"] .ss-page .ss-preference input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  margin: 0; opacity: 0; transform: none; cursor: pointer;
+}
+html[data-flow-design="magic"] .ss-page .ss-preference::after {
+  content: ""; width: 24px; height: 24px; flex: none; border-radius: 8px;
+  border: 1px solid var(--ss-border); background: var(--surface);
+}
+html[data-flow-design="magic"] .ss-page .ss-preference:has(input:checked)::after {
+  background: var(--accent); border-color: var(--accent);
+  box-shadow: inset 0 0 0 5px var(--surface);
+}
+
+html[data-flow-design="magic"] .ss-page .ss-preference input[type="checkbox"] {
+  position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
+  margin: 0 !important; opacity: 0 !important; transform: none !important; cursor: pointer;
+}
+
+html[data-flow-design="magic"] .ss-page .ss-exercise-title h1 {
+  font-family: Manrope, "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-weight: 650; font-size: clamp(26px, 7vw, 34px); line-height: 1.15;
+  letter-spacing: -.02em;
+}
+html[data-flow-design="magic"] .ss-page .ss-tabs button {
+  min-width: 44px; padding-left: 6px; padding-right: 6px;
+}
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .ss-page .ss-tabs { gap: 12px; }
+}
