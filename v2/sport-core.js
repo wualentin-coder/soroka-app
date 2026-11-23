@@ -34,6 +34,9 @@ var SportCore = (() => {
     FINGER_NAMES: () => FINGER_NAMES,
     GOALS: () => GOALS,
     GYM_REFERENCE: () => GYM_REFERENCE,
+    LOADOUT_COLLAR_COST: () => LOADOUT_COLLAR_COST,
+    LOADOUT_K: () => LOADOUT_K,
+    LOADOUT_LAMBDA: () => LOADOUT_LAMBDA,
     MAX_EQUIPMENT_KG: () => MAX_EQUIPMENT_KG,
     MAX_GOAL_TARGET: () => MAX_GOAL_TARGET,
     MAX_IMPORT_BYTES: () => MAX_IMPORT_BYTES,
@@ -202,6 +205,11 @@ var SportCore = (() => {
     shouldAskWakeTime: () => shouldAskWakeTime,
     sizingMeasurements: () => sizingMeasurements,
     sportAchievable: () => achievable,
+    sportDumbbellConfigurations: () => configurations,
+    sportLoadoutHint: () => loadoutHint,
+    sportLoadoutTransition: () => transition,
+    sportPlanCost: () => planCost,
+    sportPlanOrder: () => planOrder,
     sportRunDraftResult: () => sportRunDraftResult,
     sportRunEvents: () => sportRunEvents,
     sportRunInterruption: () => sportRunInterruption,
@@ -3242,11 +3250,77 @@ ${JSON.stringify(context, null, 2)}
   }
 
   // sport/core/src/loadout.ts
+  var LOADOUT_K = 5;
+  var LOADOUT_COLLAR_COST = 1;
+  var LOADOUT_LAMBDA = 2;
+  var MAX_SIDE_STATES = 4096;
+  var EPSILON = 1e-9;
+  var grams = (value) => Math.round(value * 1e3);
+  var fromGrams = (value) => Math.round(value) / 1e3;
+  var kgText = (value) => fromGrams(grams(value)).toFixed(3).replace(/\.?0+$/, "").replace(".", ",");
+  var sentence = (text) => text ? text[0].toUpperCase() + text.slice(1) : text;
+  function geometry(inventory) {
+    const handles = inventory?.handles;
+    if (!handles || !Array.isArray(inventory?.plates)) return null;
+    if (!Number.isFinite(handles.mass_kg) || handles.mass_kg <= 0) return null;
+    if (!Number.isInteger(handles.sleeve_slots) || handles.sleeve_slots < 1) return null;
+    if (!Number.isInteger(handles.count) || handles.count < 1) return null;
+    const cap = inventory?.limits?.max_per_dumbbell_kg ?? 200;
+    if (!Number.isFinite(cap) || cap <= 0) return null;
+    return {
+      handleMass: grams(handles.mass_kg),
+      // collar_kg — оба замка одной ручки, см. комментарий в начале файла.
+      lockMass: grams(handles.collar_kg ?? 0),
+      slots: handles.sleeve_slots,
+      handles: Math.min(2, handles.count),
+      cap: grams(cap),
+      plates: inventory.plates.map((plate) => ({ mass: grams(plate.mass_kg), count: plate.count }))
+    };
+  }
+  function lexLess(a, b) {
+    for (let index = 0; index < Math.min(a.length, b.length); index++) {
+      if (a[index] !== b[index]) return a[index] < b[index];
+    }
+    return a.length < b.length;
+  }
+  function prune(states, target) {
+    const kept = [...states.entries()].sort((a, b) => Math.abs(a[0] - target) - Math.abs(b[0] - target) || a[0] - b[0]).slice(0, MAX_SIDE_STATES);
+    return new Map(kept);
+  }
+  function sideStates(g, units, targetSide) {
+    const base = g.handleMass + g.lockMass;
+    if (base > g.cap) return [];
+    const sideCap = Math.max(0, Math.floor((g.cap - base) / 2));
+    let states = /* @__PURE__ */ new Map();
+    states.set(0, { counts: g.plates.map(() => 0), plates: 0 });
+    for (let index = 0; index < g.plates.length; index++) {
+      const plate = g.plates[index];
+      const limit = Math.floor(plate.count / (2 * units));
+      if (limit < 1) continue;
+      const next = new Map(states);
+      for (const [mass, state] of states) {
+        let total = mass;
+        for (let take = 1; take <= limit && state.plates + take <= g.slots; take++) {
+          total += plate.mass;
+          if (total > sideCap) break;
+          const counts = state.counts.slice();
+          counts[index] += take;
+          const plates = state.plates + take;
+          const previous = next.get(total);
+          if (!previous || plates < previous.plates || plates === previous.plates && lexLess(counts, previous.counts)) {
+            next.set(total, { counts, plates });
+          }
+        }
+      }
+      states = next;
+      if (states.size > MAX_SIDE_STATES) states = prune(states, targetSide);
+    }
+    return [...states.entries()].map(([mass, state]) => ({ mass, ...state }));
+  }
   function achievable(inventory, units) {
     const { handles, plates, limits } = inventory;
     if (!handles || !plates || ![1, 2].includes(units) || handles.count < units) return [];
-    const grams = (kg) => Math.round(1e3 * kg);
-    const base = grams(handles.mass_kg) + grams(handles.collar_kg);
+    const base = grams(handles.mass_kg) + grams(handles.collar_kg ?? 0);
     const cap = grams(limits?.max_per_dumbbell_kg ?? 200);
     if (base > cap) return [];
     const bySlots = Array.from({ length: handles.sleeve_slots + 1 }, () => /* @__PURE__ */ new Set());
@@ -3264,6 +3338,467 @@ ${JSON.stringify(context, null, 2)}
       }
     }
     return [...new Set(bySlots.flatMap((weights) => [...weights]))].sort((a, b) => a - b).map((g) => g / 1e3);
+  }
+  function configurations(inventory, target, options = {}) {
+    const units = target?.units;
+    const wanted = target?.kg;
+    if (units !== 1 && units !== 2) return [];
+    if (typeof wanted !== "number" || !Number.isFinite(wanted) || wanted <= 0) return [];
+    const g = geometry(inventory);
+    if (!g || g.handles < units) return [];
+    const wantedGrams = grams(wanted);
+    const base = g.handleMass + g.lockMass;
+    if (base > g.cap) return [];
+    const wantedSide = Math.max(0, Math.floor((wantedGrams - base) / 2));
+    const limit = Math.max(1, Math.min(20, Math.floor(options.k ?? LOADOUT_K)));
+    const allowAbove = options.allowAbove === true;
+    const candidates = sideStates(g, units, wantedSide).map((side) => ({
+      units,
+      kg: fromGrams(base + 2 * side.mass),
+      target_kg: wanted,
+      sides: Array.from({ length: units }, () => side.counts.slice()),
+      plate_count: side.plates * 2 * units,
+      mass: base + 2 * side.mass,
+      perSide: side.plates
+    })).filter((item) => item.mass <= g.cap && (allowAbove || item.mass <= wantedGrams));
+    candidates.sort((a, b) => Math.abs(a.mass - wantedGrams) - Math.abs(b.mass - wantedGrams) || a.perSide - b.perSide || a.mass - b.mass || (lexLess(a.sides[0], b.sides[0]) ? -1 : lexLess(b.sides[0], a.sides[0]) ? 1 : 0));
+    return candidates.slice(0, limit).map(({ mass, perSide, ...rest }) => rest);
+  }
+  var MAX_DP_STATES = 64;
+  var zeroSide = (g) => g.plates.map(() => 0);
+  function allocationOf(inventory, config) {
+    const g = geometry(inventory);
+    if (!g) return null;
+    const sides = [zeroSide(g), zeroSide(g)];
+    if (!config) return { sides };
+    if (!Array.isArray(config.sides) || !config.sides.length || config.sides.length > 2) return null;
+    for (let handle = 0; handle < config.sides.length; handle++) {
+      const side = config.sides[handle];
+      if (!Array.isArray(side) || side.length !== g.plates.length) return null;
+      for (let index = 0; index < side.length; index++) {
+        const count = side[index];
+        if (!Number.isInteger(count) || count < 0) return null;
+        sides[handle][index] = count;
+      }
+    }
+    return { sides };
+  }
+  function mergeChanges(handles, key) {
+    const totals = /* @__PURE__ */ new Map();
+    for (const handle of handles) for (const item of handle[key]) totals.set(item.mass_kg, (totals.get(item.mass_kg) ?? 0) + item.count);
+    return [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([mass_kg, count]) => ({ mass_kg, count }));
+  }
+  function sameChanges(a, b) {
+    const same = (left, right) => left.length === right.length && left.every((item, index) => item.mass_kg === right[index].mass_kg && item.count === right[index].count);
+    return same(a.removed, b.removed) && same(a.added, b.added);
+  }
+  function move(g, from, to, collarCost) {
+    if (to.units !== 1 && to.units !== 2) return null;
+    if (!Array.isArray(to.sides) || to.sides.length !== to.units) return null;
+    const before = from.sides.map((side) => side.slice());
+    while (before.length < 2) before.push(zeroSide(g));
+    const after = before.map((side) => side.slice());
+    for (let handle = 0; handle < to.units; handle++) {
+      const side = to.sides[handle];
+      if (!Array.isArray(side) || side.length !== g.plates.length) return null;
+      for (let index = 0; index < side.length; index++) {
+        if (!Number.isInteger(side[index]) || side[index] < 0 || side[index] > g.slots) return null;
+      }
+      after[handle] = side.slice();
+    }
+    const used = g.plates.map((_, index) => after.reduce((sum, side) => sum + side[index], 0) * 2);
+    const heaviest = g.plates.map((_, index) => index).sort((a, b) => g.plates[b].mass - g.plates[a].mass || a - b);
+    for (const index of heaviest) {
+      for (let handle = to.units; handle < after.length && used[index] > g.plates[index].count; handle++) {
+        const take = Math.min(after[handle][index], Math.ceil((used[index] - g.plates[index].count) / 2));
+        after[handle][index] -= take;
+        used[index] -= take * 2;
+      }
+    }
+    if (used.some((count, index) => count > g.plates[index].count)) return null;
+    const perHandle = [];
+    let cost = 0;
+    let affected = 0;
+    for (let handle = 0; handle < after.length; handle++) {
+      const removed = [];
+      const added = [];
+      let operations = 0;
+      for (let index = 0; index < g.plates.length; index++) {
+        const delta = after[handle][index] - before[handle][index];
+        if (delta === 0) continue;
+        const count = Math.abs(delta) * 2;
+        if (delta > 0) added.push({ mass_kg: fromGrams(g.plates[index].mass), count });
+        else removed.push({ mass_kg: fromGrams(g.plates[index].mass), count });
+        operations += count;
+      }
+      if (operations > 0) {
+        affected += 2;
+        cost += operations + 2 * collarCost;
+      }
+      perHandle.push({ removed, added, operations });
+    }
+    const keep = Math.max(to.units, perHandle[1].operations > 0 ? 2 : to.units);
+    const handles = perHandle.slice(0, keep).map(({ removed, added }) => ({ removed, added }));
+    const identical = handles.every((handle) => sameChanges(handle, handles[0]));
+    return {
+      cost,
+      affected_sides: affected,
+      changed: affected > 0,
+      identical,
+      sides: after,
+      removed: mergeChanges(handles, "removed"),
+      added: mergeChanges(handles, "added"),
+      handles
+    };
+  }
+  function transition(inventory, from, to, options = {}) {
+    if (!to) return null;
+    const g = geometry(inventory);
+    if (!g) return null;
+    const state = allocationOf(inventory, from);
+    if (!state) return null;
+    const result2 = move(g, state, to, options.collarCost ?? LOADOUT_COLLAR_COST);
+    return result2 && {
+      cost: result2.cost,
+      changed: result2.changed,
+      affected_sides: result2.affected_sides,
+      identical: result2.identical,
+      removed: result2.removed,
+      added: result2.added,
+      handles: result2.handles
+    };
+  }
+  function plateList(changes) {
+    return [...changes].sort((a, b) => a.mass_kg - b.mass_kg).map((item) => `${item.count}×${kgText(item.mass_kg)}`).join(", ");
+  }
+  function loadoutHint(inventory, from, to) {
+    if (!to || to.units !== 1 && to.units !== 2 || typeof to.kg !== "number" || !(to.kg > 0)) {
+      return { status: "unknown", text: "Пересборка не рассчитана" };
+    }
+    const g = geometry(inventory);
+    if (!g || !g.plates.length) return { status: "unknown", text: "Инвентарь не указан — пересборку не считаю" };
+    const target = configurations(inventory, { units: to.units, kg: to.kg })[0];
+    if (!target) return { status: "unreachable", text: `${kgText(to.kg)} кг недостижимы с этим набором` };
+    let source = null;
+    if (from && (from.units === 1 || from.units === 2) && typeof from.kg === "number" && from.kg > 0) {
+      source = configurations(inventory, { units: from.units, kg: from.kg })[0] ?? null;
+      if (!source) return { status: "unknown", text: "Прошлый вес недостижим — пересборку не считаю" };
+    }
+    const move2 = transition(inventory, source, target);
+    if (!move2 || !move2.changed) return { status: "same", text: "Без пересборки" };
+    const parts = [];
+    if (target.units === 1) parts.push("одна гантель");
+    if (Math.abs(target.kg - to.kg) > EPSILON) parts.push(`${kgText(target.kg)} вместо ${kgText(to.kg)} кг`);
+    if (move2.identical) {
+      if (move2.removed.length) parts.push(`сними ${plateList(move2.removed)}`);
+      if (move2.added.length) parts.push(`поставь ${plateList(move2.added)}`);
+    } else {
+      const names = ["первая гантель", "вторая гантель"];
+      const each = move2.handles.flatMap((handle, index) => {
+        const bits = [];
+        if (handle.removed.length) bits.push(`сними ${plateList(handle.removed)}`);
+        if (handle.added.length) bits.push(`поставь ${plateList(handle.added)}`);
+        return bits.length ? [`${names[index] ?? `гантель ${index + 1}`}: ${bits.join(" · ")}`] : [];
+      });
+      if (each.length) parts.push(each.join(" · "));
+    }
+    return { status: "change", text: sentence(parts.join(" · ")) };
+  }
+  function targetOf(exercise2) {
+    const units = exercise2.units === 1 || exercise2.units === 2 ? exercise2.units : null;
+    const kg = typeof exercise2.kg === "number" && exercise2.kg > 0 ? exercise2.kg : null;
+    return units && kg ? { units, kg } : null;
+  }
+  function unitPlan(unit, inventory, options) {
+    const configs = unit.exercises.map((exercise2) => {
+      const target = targetOf(exercise2);
+      const list3 = target ? configurations(inventory, target, options) : [];
+      return { target, best: list3[0] ?? null, list: list3 };
+    });
+    let last = -1;
+    configs.forEach((item, index) => {
+      if (item.target) last = index;
+    });
+    if (last < 0) return { configs, last, candidates: [null] };
+    const list2 = configs[last].list;
+    const candidates = list2.length ? list2.filter((item) => item.kg === list2[0].kg) : [null];
+    return { configs, last, candidates };
+  }
+  function entryCost(g, from, plan, exit, collarCost) {
+    let allocation = from;
+    let cost = 0;
+    if (!g) return { cost, allocation };
+    for (let index = 0; index < plan.configs.length; index++) {
+      const item = plan.configs[index];
+      if (!item.target) continue;
+      const config = index === plan.last ? exit : item.best;
+      if (!config) continue;
+      const step = move(g, allocation, config, collarCost);
+      if (!step) continue;
+      cost += step.cost;
+      allocation = { sides: step.sides };
+    }
+    return { cost, allocation };
+  }
+  function stateKey(allocation) {
+    return allocation.sides.map((side) => side.join(",")).join("|");
+  }
+  function unitPriority(unit) {
+    return unit.exercises.some((exercise2) => exercise2.priority === "primary");
+  }
+  function unitCompound(unit) {
+    const values = unit.exercises.map((exercise2) => exercise2.compound).filter((value) => typeof value === "boolean");
+    if (!values.length) return null;
+    return values.some(Boolean) && !values.every(Boolean) ? null : values[0] === true;
+  }
+  function unitMuscles(unit) {
+    return new Set(unit.exercises.flatMap((exercise2) => exercise2.muscles ?? []));
+  }
+  function precedence(units) {
+    const preds = units.map(() => /* @__PURE__ */ new Set());
+    const succ = units.map(() => /* @__PURE__ */ new Set());
+    const reaches = (start, goal) => {
+      const stack = [start];
+      const seen = /* @__PURE__ */ new Set();
+      while (stack.length) {
+        const node = stack.pop();
+        if (node === goal) return true;
+        if (seen.has(node)) continue;
+        seen.add(node);
+        for (const next of succ[node]) stack.push(next);
+      }
+      return false;
+    };
+    const add = (from, to) => {
+      if (from === to || preds[to].has(from) || reaches(to, from)) return;
+      preds[to].add(from);
+      succ[from].add(to);
+    };
+    for (let from = 0; from < units.length; from++) {
+      for (let to = 0; to < units.length; to++) {
+        if (from === to) continue;
+        if (unitPriority(units[from]) && !unitPriority(units[to])) add(from, to);
+      }
+    }
+    for (let from = 0; from < units.length; from++) {
+      if (unitCompound(units[from]) !== true) continue;
+      for (let to = 0; to < units.length; to++) {
+        if (from === to || unitCompound(units[to]) !== false) continue;
+        const shared = [...unitMuscles(units[from])].some((muscle) => unitMuscles(units[to]).has(muscle));
+        if (shared) add(from, to);
+      }
+    }
+    return preds;
+  }
+  function compareSequence(a, b) {
+    if (Math.abs(a.score - b.score) > EPSILON) return a.score - b.score;
+    if (a.deviation !== b.deviation) return a.deviation - b.deviation;
+    for (let index = 0; index < Math.min(a.sequence.length, b.sequence.length); index++) {
+      if (a.sequence[index] !== b.sequence[index]) return a.sequence[index] - b.sequence[index];
+    }
+    return a.sequence.length - b.sequence.length;
+  }
+  function evaluate(sequence, plans, g, initial, lambda, collarCost) {
+    let allocation = initial;
+    let cost = 0;
+    let deviation = 0;
+    const states = [];
+    const costs = [];
+    const placed = /* @__PURE__ */ new Set();
+    for (const unit of sequence) {
+      for (let index = 0; index < unit; index++) if (!placed.has(index)) deviation++;
+      const exit = plans[unit].candidates[0] ?? null;
+      const step = entryCost(g, allocation, plans[unit], exit, collarCost);
+      cost += step.cost;
+      allocation = step.allocation;
+      costs.push(step.cost);
+      states.push(exit);
+      placed.add(unit);
+    }
+    return { score: cost + lambda * deviation, cost, deviation, states, costs, allocation };
+  }
+  function greedyOrder(units, plans, preds, g, initial, lambda, collarCost) {
+    const sequence = [];
+    const placed = /* @__PURE__ */ new Set();
+    let allocation = initial;
+    while (sequence.length < units.length) {
+      let best = null;
+      for (let unit = 0; unit < units.length; unit++) {
+        if (placed.has(unit) || [...preds[unit]].some((pred) => !placed.has(pred))) continue;
+        let deviation = 0;
+        for (let index = 0; index < unit; index++) if (!placed.has(index)) deviation++;
+        for (const config of plans[unit].candidates) {
+          const step = entryCost(g, allocation, plans[unit], config, collarCost);
+          const score = step.cost + lambda * deviation;
+          const candidate = { unit, config, score, deviation, cost: step.cost };
+          if (!best || score < best.score - EPSILON || Math.abs(score - best.score) <= EPSILON && (deviation < best.deviation || deviation === best.deviation && unit < best.unit)) best = candidate;
+        }
+      }
+      if (!best) break;
+      sequence.push(best.unit);
+      placed.add(best.unit);
+      allocation = entryCost(g, allocation, plans[best.unit], best.config, collarCost).allocation;
+    }
+    return sequence;
+  }
+  function validSequence(sequence, preds) {
+    const position = /* @__PURE__ */ new Map();
+    sequence.forEach((unit, index) => position.set(unit, index));
+    return sequence.every((unit) => [...preds[unit]].every((pred) => (position.get(pred) ?? -1) < position.get(unit)));
+  }
+  function improveOrder(sequence, plans, preds, g, initial, lambda, collarCost) {
+    let best = { ...evaluate(sequence, plans, g, initial, lambda, collarCost), sequence: [...sequence] };
+    for (let pass = 0; pass < sequence.length; pass++) {
+      let improved = false;
+      for (let left = 0; left < sequence.length - 1 && !improved; left++) {
+        for (let right = left + 1; right < sequence.length; right++) {
+          const candidate = [...sequence];
+          [candidate[left], candidate[right]] = [candidate[right], candidate[left]];
+          if (!validSequence(candidate, preds)) continue;
+          const scored = { ...evaluate(candidate, plans, g, initial, lambda, collarCost), sequence: candidate };
+          if (compareSequence(scored, best) < 0) {
+            best = scored;
+            sequence = candidate;
+            improved = true;
+            break;
+          }
+        }
+      }
+      if (!improved) break;
+    }
+    return { ...best, sequence };
+  }
+  function unreachableUnits(units, plans) {
+    return units.flatMap((unit, index) => unit.exercises.flatMap((exercise2, item) => plans[index].configs[item]?.target && !plans[index].configs[item].best ? [exercise2.id] : []));
+  }
+  function planOrder(input) {
+    const units = input.units ?? [];
+    const options = {
+      k: input.k,
+      collarCost: input.collarCost ?? LOADOUT_COLLAR_COST,
+      allowAbove: input.allowAbove
+    };
+    const collarCost = options.collarCost ?? LOADOUT_COLLAR_COST;
+    const lambda = input.lambda ?? LOADOUT_LAMBDA;
+    const g = geometry(input.inventory);
+    const initial = allocationOf(input.inventory, input.initial ?? null) ?? { sides: [[], []] };
+    const plans = units.map((unit) => unitPlan(unit, input.inventory, options));
+    const unreachable = unreachableUnits(units, plans);
+    const blockType = input.type ?? "";
+    const fixed = input.order_policy !== "reorderable" || ["warmup", "mobility", "cooldown"].includes(blockType);
+    const given = units.map((_, index) => index);
+    if (fixed) {
+      const result3 = evaluate(given, plans, g, initial, lambda, collarCost);
+      return {
+        order: given.map((index) => units[index].id),
+        states: result3.states,
+        costs: result3.costs,
+        cost: result3.cost,
+        deviation: result3.deviation,
+        fixed: true,
+        unreachable
+      };
+    }
+    const preds = precedence(units);
+    let sequence;
+    let result2;
+    if (units.length <= 10) {
+      const dp = Array.from({ length: 1 << units.length }, () => /* @__PURE__ */ new Map());
+      dp[0].set(stateKey(initial), {
+        score: 0,
+        cost: 0,
+        deviation: 0,
+        sequence: [],
+        costs: [],
+        states: [],
+        allocation: initial,
+        state: null
+      });
+      for (let mask = 0; mask < dp.length; mask++) {
+        for (const node of dp[mask].values()) {
+          for (let unit = 0; unit < units.length; unit++) {
+            if (mask & 1 << unit) continue;
+            if ([...preds[unit]].some((pred) => !(mask & 1 << pred))) continue;
+            let added = 0;
+            for (let index = 0; index < unit; index++) if (!(mask & 1 << index)) added++;
+            for (const config of plans[unit].candidates) {
+              const step = entryCost(g, node.allocation, plans[unit], config, collarCost);
+              const nextMask = mask | 1 << unit;
+              const key = stateKey(step.allocation);
+              const score = node.score + step.cost + lambda * added;
+              const candidate = {
+                score,
+                cost: node.cost + step.cost,
+                deviation: node.deviation + added,
+                sequence: [...node.sequence, unit],
+                costs: [...node.costs, step.cost],
+                states: [...node.states, config],
+                allocation: step.allocation,
+                state: config
+              };
+              const previous = dp[nextMask].get(key);
+              if (!previous || compareSequence(candidate, previous) < 0) dp[nextMask].set(key, candidate);
+            }
+          }
+        }
+        if (dp[mask].size > MAX_DP_STATES) {
+          const kept = [...dp[mask].entries()].sort((a, b) => compareSequence(a[1], b[1])).slice(0, MAX_DP_STATES);
+          dp[mask] = new Map(kept);
+        }
+      }
+      let best = null;
+      for (const node of dp[(1 << units.length) - 1].values()) {
+        if (!best || compareSequence(node, best) < 0) best = node;
+      }
+      sequence = best?.sequence ?? given;
+      result2 = best ?? { ...evaluate(sequence, plans, g, initial, lambda, collarCost), sequence };
+    } else {
+      sequence = greedyOrder(units, plans, preds, g, initial, lambda, collarCost);
+      result2 = improveOrder(sequence, plans, preds, g, initial, lambda, collarCost);
+      sequence = result2.sequence;
+    }
+    return {
+      order: sequence.map((index) => units[index].id),
+      states: result2.states,
+      costs: result2.costs,
+      cost: result2.cost,
+      deviation: result2.deviation,
+      fixed: false,
+      unreachable
+    };
+  }
+  function planCost(input, order) {
+    const units = input.units ?? [];
+    if (order.length !== units.length) return null;
+    const position = new Map(units.map((unit, index) => [unit.id, index]));
+    const sequence = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const id2 of order) {
+      const index = position.get(id2);
+      if (index === void 0 || seen.has(index)) return null;
+      seen.add(index);
+      sequence.push(index);
+    }
+    const options = {
+      k: input.k,
+      collarCost: input.collarCost ?? LOADOUT_COLLAR_COST,
+      allowAbove: input.allowAbove
+    };
+    const collarCost = options.collarCost ?? LOADOUT_COLLAR_COST;
+    const lambda = input.lambda ?? LOADOUT_LAMBDA;
+    const g = geometry(input.inventory);
+    const initial = allocationOf(input.inventory, input.initial ?? null) ?? { sides: [[], []] };
+    const plans = units.map((unit) => unitPlan(unit, input.inventory, options));
+    const result2 = evaluate(sequence, plans, g, initial, lambda, collarCost);
+    return {
+      order: sequence.map((index) => units[index].id),
+      states: result2.states,
+      costs: result2.costs,
+      cost: result2.cost,
+      deviation: result2.deviation,
+      fixed: input.order_policy !== "reorderable",
+      unreachable: unreachableUnits(units, plans)
+    };
   }
   return __toCommonJS(core_exports);
 })();
