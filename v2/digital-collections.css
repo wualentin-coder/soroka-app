@@ -378,6 +378,8 @@ html[data-flow-design=magic] .dc2-window-lists .dc2-window-head h2 .dc2-title-bu
 html[data-flow-design=magic] .dc2-window-lists .dc2-window-head h2 .dc2-title-button:active{opacity:.65}
 html[data-flow-design=magic] .dc2-window-lists #saved-form{flex:0 0 auto;height:auto;overflow:visible}
 html[data-flow-design=magic] .dc2-window-lists #saved-form>.dc2-window-body{flex:none;height:auto;min-height:0;overflow:visible}
+/* В редакторе пункты списка лежат вне прокручиваемого тела формы, поэтому прокручивается само окно. */
+html[data-flow-design=magic] .sheet.dc2-window-lists.dc2-editor{overflow-y:auto;overscroll-behavior:contain}
 html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true] .dc2-form-more,
 html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true] .dc2-window-actions{display:none}
 html[data-flow-design=magic] .dc2-window-lists #saved-form[data-title-only=true]>.dc2-window-body{padding-bottom:0}
