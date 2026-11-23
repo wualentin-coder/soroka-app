@@ -168,6 +168,14 @@
   const suggestions = model => C().sportRunSuggestions(model);
   const owns = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
   const weightLabels = { per_dumbbell: "Вес", total: "Общий", machine: "Тренажёр", additional: "Доп. вес" };
+  const inventoryKey = scope => `flow.sport.inventory.v1:${scope}`;
+  const readInventory = scope => {
+    try {
+      const data = JSON.parse(localStorage.getItem(inventoryKey(scope)) || "null");
+      return data && typeof data === "object" && !Array.isArray(data) ? data : null;
+    } catch { return null; }
+  };
+  const lowerFirst = text => text ? text[0].toLocaleLowerCase("ru") + text.slice(1) : text;
 
   function metricField(name, label, placeholder, value, units = "") {
     const [min, max] = fieldLimits()[name];
@@ -260,6 +268,11 @@
       this.option = null;
       this.modal = null;
       this.panel = null;
+      this.inventory = readInventory(owner.scope);
+      this.inventoryRequest = null;
+      this.inventoryFetched = false;
+      this.loadoutKey = "";
+      this.loadoutText = "";
       this.conflict = null;
       this.interruption = null;
       this.message = "";
@@ -304,6 +317,7 @@
       this.trigger = trigger;
       this.message = "";
       this.mount();
+      this.loadInventory();
       let record;
       try {
         record = this.read();
@@ -1011,6 +1025,7 @@
       }
       const model = view(record);
       this.paintClock(model);
+      this.paintLoadout(model);
       const ready = record.undo ? Date.now() >= record.undo.until
         : !record.complete && !model.paused && model.deadline != null && model.deadline <= Date.now();
       if (ready && !this.ticking && this.clockFailure !== phaseSignature(model)) {
@@ -1065,6 +1080,57 @@
       timer.dataset.overtime = String(model.overtime);
       const level = model.limit ? Math.max(0, Math.min(1, model.remainingMs / model.limit)) : 0;
       timer.style.setProperty("--sr-waterline", `${100 * (1 - level)}%`);
+    }
+
+    // Справочник с сервера нужен только для подсказки о пересборке. Кэш на
+    // устройстве позволяет показать её и без сети; ошибка ответа ничего не
+    // меняет в тренировке.
+    loadInventory() {
+      if (this.inventoryFetched || this.inventoryRequest || !navigator.onLine || !this.owner.current()) return;
+      this.inventoryRequest = request("analysis_settings")
+        .then(reply => {
+          if (!this.owner.current()) return;
+          const inventory = reply?.settings?.inventory;
+          if (!inventory || typeof inventory !== "object" || Array.isArray(inventory)) return;
+          this.inventoryFetched = true;
+          if (JSON.stringify(inventory) === JSON.stringify(this.inventory)) return;
+          this.inventory = inventory;
+          this.loadoutKey = "";
+          try { localStorage.setItem(inventoryKey(this.owner.scope), JSON.stringify(inventory)); } catch {}
+          this.refresh();
+        })
+        .catch(() => {})
+        .finally(() => { this.inventoryRequest = null; });
+    }
+
+    loadoutLine(model) {
+      if (!model || model.phase !== "rest" || !model.next || !model.prior || !this.inventory) return "";
+      if (model.next.plan_exercise_id === model.prior.plan_exercise_id) return "";
+      const load = model.next.exercise.load;
+      if (!load || load.basis !== "per_dumbbell" || !(load.kg > 0) || (load.units !== 1 && load.units !== 2)) return "";
+      const prior = model.prior;
+      const basis = prior.actual_weight_basis ?? prior.planned?.basis ?? null;
+      const kilograms = Number(prior.actual_kg ?? prior.planned?.kg);
+      if (basis !== "per_dumbbell" || !(kilograms > 0)) return "";
+      const units = prior.actual_units ?? prior.planned?.units ?? null;
+      const key = `${JSON.stringify(this.inventory)}|${units}:${kilograms}|${load.units}:${load.kg}`;
+      if (this.loadoutKey === key) return this.loadoutText;
+      const hint = typeof C()?.sportLoadoutHint === "function"
+        ? C().sportLoadoutHint(this.inventory, units === 1 || units === 2 ? { units, kg: kilograms } : null,
+          { units: load.units, kg: load.kg }) : null;
+      this.loadoutKey = key;
+      this.loadoutText = hint && (hint.status === "change" || hint.status === "unreachable")
+        ? `Следующее упражнение: ${lowerFirst(hint.text)}` : "";
+      return this.loadoutText;
+    }
+
+    paintLoadout(model) {
+      const node = this.modal?.querySelector("[data-sr-loadout]");
+      if (!node) return;
+      const text = this.loadoutLine(model);
+      if (node.textContent !== text) node.textContent = text;
+      node.hidden = !text;
+      node.style.display = text ? "" : "none";
     }
 
     timer(model) {
@@ -1140,7 +1206,8 @@
         <section class="sr-card sr-next" data-sr-swipe>
         <div class="sr-thumb">${next ? '<div data-sr-figure="next"></div>' : glyph("check")}</div>
         <div><small>${next ? `Далее · подход ${next.set_index} / ${next.exercise.sets}` : "Последний подход"}</small>
-        ${next ? `<strong>${esc([next.exercise.name !== model.current.exercise.name ? next.exercise.name : "", target(next.exercise)].filter(Boolean).join(" · "))}</strong>` : ""}</div></section></div>
+        ${next ? `<strong>${esc([next.exercise.name !== model.current.exercise.name ? next.exercise.name : "", target(next.exercise)].filter(Boolean).join(" · "))}</strong>` : ""}
+        ${next ? `<small class="sr-loadout" data-sr-loadout hidden style="display:none"></small>` : ""}</div></section></div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("advance", next ? "Записать и начать подход" : "Записать и завершить", "primary-button")}</footer>`;
     }
 
@@ -1359,6 +1426,7 @@
       }
       if (model && !this.conflict) this.paintDraft(model, record);
       if (model) this.paintClock(model);
+      if (model && !this.conflict) this.paintLoadout(model);
     }
 
     fillFigures() {
