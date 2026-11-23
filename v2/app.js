@@ -1,4 +1,4 @@
-/* Дизайн-прототип: все записи хранятся только в этом браузере. */
+﻿/* Дизайн-прототип: все записи хранятся только в этом браузере. */
 const STORAGE_KEY = "soroka-planner-prototype-v1";
 function classicDesign() { return document.documentElement.dataset.flowDesign === "classic"; }
 /** The classic shell retains its original theme choices; Magic has three dark surfaces. */
