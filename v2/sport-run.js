@@ -905,6 +905,7 @@
               if (latest.complete?.event.id === record.complete.event.id) latest.complete = null;
             });
             H().invalidate();
+            window.SportCoach?.invalidate(record.id);
           } else {
             if (record.undo) this.syncSoon(Math.max(0, record.undo.until - Date.now()));
             if (!terminal(view(record).projection.phase)) await this.reconcile(record);
@@ -927,6 +928,25 @@
             this.refresh();
             refreshSportSurface();
             continue;
+          }
+          if (reason.message === "plan_version_stale" && record.start && record.events.length === 1 &&
+            record.events[0].id === record.start.event.id && !record.undo && !record.complete && staleRetries < 2) {
+            const { snapshot, ...args } = await this.resolvePlan({ key: record.sourceKey }, record.id);
+            if (snapshot && args.plan_version !== record.start.plan_version) {
+              const updated = await this.storage.change(next => {
+                const latest = next.records[record.id];
+                if (!latest?.start || latest.start.event.id !== record.start.event.id ||
+                  latest.events.length !== 1 || latest.undo || latest.complete || latest.abandon) return false;
+                latest.start = { ...latest.start, ...args };
+                latest.snapshot = snapshot;
+                return true;
+              });
+              if (updated) {
+                staleRetries++;
+                this.refresh(true);
+                continue;
+              }
+            }
           }
           if (reason.message === "open_session_exists") {
             const open = await request("read_session", { open: true }).catch(() => null);
@@ -1141,7 +1161,7 @@
       if (model.phase === "rest" && model.prior && model.current) return this.rest(model, record);
       if (model.phase === "review" || model.phase === "completed") {
         const completed = model.phase === "completed";
-        const saved = completed && !record.events.length;
+        const saved = completed && !record.events.length && !record.complete && !record.start;
         const seconds = completed ? model.projection.elapsed_seconds
           : Math.max(0, Math.floor((Date.now() - Date.parse(model.replay.startedAt)) / 1000));
         const active = completed ? null : {
@@ -1155,6 +1175,7 @@
         const menu = completed || record.complete ? "" : iconButton("menu", "more", "Действия тренировки", "sr-bare");
         return `<header class="sh-head sr-review-head"><h2>${title}</h2>${menu}</header><div class="sr-body sh-content">
           <h3>${saved ? esc(record.snapshot.workout.title) : "Проверьте перед сохранением"}</h3>${info.summary}${edit}
+          ${saved ? window.SportCoach?.slot(record.id) || "" : ""}
           ${info.list}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
           <footer class="sr-foot sh-foot">${completed ? control("dismiss", "Закрыть", "primary-button")
             : (record.complete ? "" : control("return", "Вернуться")) +
