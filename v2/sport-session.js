@@ -40,7 +40,7 @@
     return result ? el('sp-session-journal', `<small>В прошлый раз</small><span>${text(result.label)}</span>`, 'ss-previous-result', `aria-label="Прошлый результат: ${text(result.label)}. Открыть журнал"`) : '';
   }
   function header(m, label) {
-    return `<header class="ss-head"><div class="ss-brand"><span class="ss-brand-mark" aria-hidden="true">${SP_ICON.play}</span><span>${m.option.kind==='splits'?'Растяжка':'Сила'}</span></div><div class="ss-head-actions">${flowSportAuto.view()?.active&&flowSportAuto.view().step.block==='warmup'&&flowSportAuto.view().step.kind!=='boundary'?el('sp-auto-skip-warmup','Пропустить','ss-text','aria-label="Пропустить разминку"'):''}${!result&&!m.session.finished?el('sp-session-list',icon('list'),'ss-icon','aria-label="Все упражнения"'):''}${el('sp-session-minimize', icon('close'), 'ss-icon', 'aria-label="Свернуть тренировку"')}</div></header>
+    return `<header class="ss-head"><div class="ss-brand"><span class="ss-brand-mark" aria-hidden="true">${SP_ICON.play}</span></div><div class="ss-head-actions">${flowSportAuto.view()?.active&&flowSportAuto.view().step.block==='warmup'&&flowSportAuto.view().step.kind!=='boundary'?el('sp-auto-skip-warmup','Пропустить','ss-text','aria-label="Пропустить разминку"'):''}${!result&&!m.session.finished?el('sp-session-list',icon('list'),'ss-icon','aria-label="Все упражнения"'):''}${el('sp-session-minimize', icon('close'), 'ss-icon', 'aria-label="Свернуть тренировку"')}</div></header>
       <div class="ss-route" aria-label="Выполнено ${m.doneSets} из ${m.totalSets} подходов">${m.exercises.map((e, i) => `<i class="${m.counts[i] >= m.totals[i] ? 'done' : i === m.index ? 'active' : ''}" style="--ss-fill:${Math.round(m.counts[i] / m.totals[i] * 100)}%"></i>`).join('')}</div>
       <div class="ss-breadcrumb"><span>${flowSportAuto.view()?.active?'<b data-sp-elapsed aria-label="Время тренировки">00:00</b>':''}</span><span aria-label="Выполнено подходов">${m.doneSets}/${m.totalSets}</span></div>`;
   }
@@ -54,19 +54,20 @@
       <p class="ss-setup-meta">${m.exercises.length} ${spPlural(m.exercises.length,'упражнение','упражнения','упражнений')} · ${m.totalSets} ${spPlural(m.totalSets,'подход','подхода','подходов')}</p>
       <details class="ss-disclosure"><summary>Упражнения</summary><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i,false)).join('')}</div></details>
       <details class="ss-disclosure"><summary>Настройки</summary>${warmup.length?`<label class="ss-preference"><span>Разминка</span><input type="checkbox" data-ss-auto-setting="warmup" ${config.warmup?'checked':''}></label>`:''}<label class="ss-preference"><span>Карта мышц</span><input type="checkbox" data-ss-map ${state.map?'checked':''}></label>${window.flowSportRuntime?'':el('sp-session-demo','Показ · 6 с','ss-text','aria-label="Быстрый показ с сокращёнными интервалами по 6 секунд"')}</details></section>
-      <footer class="ss-footer">${flowSportAuto.startError()?`<p class="ss-quiet" role="alert">${text(flowSportAuto.startError())}</p>`:''}${el('sp-session-begin',m.doneSets?'Продолжить':'Старт','primary-button ss-primary')}</footer>`;
+      <footer class="ss-footer ss-footer-setup">${flowSportAuto.startError()?`<p class="ss-quiet" role="alert">${text(flowSportAuto.startError())}</p>`:''}${el('sp-session-begin',m.doneSets?'Продолжить':'Начать','primary-button ss-primary')}</footer>`;
   }
   function automatic(m,auto){
     const stamp=`data-ss-step="${text(flowSportAuto.commandKey())}"`;
     const step=auto.step,e=step.exercise,resting=step.kind==='rest'||step.kind==='between',preparing=step.kind==='prep';
     if(step.kind==='boundary')return `<section class="ss-main ss-summary"><h1 data-ss-heading tabindex="-1">Разминка завершена</h1></section><footer class="ss-footer">${el('sp-auto-continue-block','Продолжить','primary-button ss-primary',stamp)}</footer>`;
     const upcoming=resting||preparing?step:auto.next;
-    const nextCard=upcoming?`<aside class="ss-next"><div><small>Далее</small><strong>${text(upcoming.exercise.name)}</strong></div></aside>`:'';
+    const nextCard=upcoming?`<aside class="ss-next"><div><small>Далее</small><strong>${text(upcoming.exercise.name)}</strong>${upcoming.set&&upcoming.total?`<span>подход ${upcoming.set} / ${upcoming.total}</span>`:''}</div></aside>`:'';
+    const pauseWord=auto.paused?'<span class="ss-pause-word">· пауза</span>':'';
     const digits=el('sp-auto-pause','<b data-sp-time>--:--</b>','ss-timer-tap',`${stamp} data-ss-clock-tap aria-label="${auto.paused?'Продолжить':'Приостановить'} таймер" aria-pressed="${auto.paused}"`);
     const clock=`<div class="ss-timer-cluster"><div class="ss-timer-line">${el('sp-adjust','−','ss-timer-adjust',`${stamp} data-d="-15" aria-label="Уменьшить время на 15 секунд"`)}${window.flowSportMagic?flowSportMagic.face(digits):digits}${el('sp-adjust','+','ss-timer-adjust',`${stamp} data-d="15" aria-label="Добавить 15 секунд"`)}</div></div>`;
     const dose=target(e),doseLabel=m.C.holdSecondsFor(e)||e.mode==='manual'?dose:`${dose} повт.`;
-    const setTrack=`<div class="ss-approach"><strong>Подход <b>${step.set}</b><span> / ${step.total}</span></strong><small>${text(doseLabel)}</small></div>`;
-    const headline=resting||preparing?`<div class="ss-rest-title"><h1 data-ss-heading tabindex="-1">${preparing?'Подготовка':'Отдых'}</h1></div>${setTrack}${clock}${nextCard}`:`<div class="ss-exercise-title"><h1 data-ss-heading tabindex="-1">${text(e.name)}</h1></div>${setTrack}${step.block==='main'?previous(m,e):''}${clock}${media({...m,exercise:e})}`;
+    const setTrack=resting?'':`<div class="ss-approach"><strong>Подход <b>${step.set}</b><span> / ${step.total}</span></strong><small>${text(doseLabel)}</small></div>`;
+    const headline=resting||preparing?`<div class="ss-rest-title"><h1 data-ss-heading tabindex="-1">${preparing?'Подготовка':'Отдых'}${pauseWord}</h1></div>${setTrack}${clock}${nextCard}`:`<div class="ss-exercise-title"><h1 data-ss-heading tabindex="-1">${text(e.name)}${pauseWord}</h1></div>${setTrack}${step.block==='main'?previous(m,e):''}${clock}${media({...m,exercise:e})}`;
     return `<section class="ss-main ${resting||preparing?'ss-rest':'ss-automatic-work'} ss-has-flow" data-ss-swipe="${resting?'rest':'exercise'}" ${stamp}>${window.flowSportMagic?.column()||''}${auto.fast?'<p class="ss-demo-pill">Показ · 6 с</p>':''}${headline}${auto.error?`<p class="ss-quiet" role="alert">${text(auto.error)}</p>`:''}</section><footer class="ss-footer ${resting?'':'ss-footer-minimal'}">${resting?el('sp-auto-skip-rest','← Пропустить','primary-button ss-primary',`${stamp} aria-label="Пропустить отдых"`):el('sp-auto-skip-exercise','← Пропустить','ss-text',`${stamp} aria-label="Пропустить упражнение"`)+el(preparing?'sp-auto-skip-rest':'sp-auto-complete',preparing?'Продолжить':'Готово','primary-button ss-primary',`${stamp} aria-label="${preparing?'Начать сейчас':'Закончить подход раньше'}"`)}</footer>`;
   }
   function warmup(m) {
@@ -115,8 +116,14 @@
     return `<section class="ss-main"><h1 data-ss-heading tabindex="-1">Упражнения</h1><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i)).join('')}</div><div class="ss-session-links">${el('sp-session-journal','Журнал','ss-text')}${el('sp-session-finish','Завершить','ss-text')}${el('sp-session-stop','Остановить','ss-text')}</div></section><footer class="ss-footer">${el('sp-session-back','Назад','primary-button ss-primary')}</footer>`;
   }
   function summary(m, confirm = false) {
-    const complete=m.done===m.exercises.length;
-    return `<section class="ss-main ss-summary"><h1 data-ss-heading tabindex="-1">${confirm?'Завершить?':'Готово'}</h1><p class="ss-setup-meta">${m.doneSets}/${m.totalSets} подходов · ${m.done}/${m.exercises.length} упражнений</p>${confirm&&!complete?'<p class="ss-quiet">Оставшиеся подходы не засчитаются.</p>':''}<details class="ss-disclosure"><summary>Результаты</summary><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i,false)).join('')}</div><p class="ss-quiet">${m.automatic?'Повторы и вес не измерялись. ':''}<span data-ss-sync role="status">${syncText()}</span></p></details></section><footer class="ss-footer">${el(confirm?'sp-session-confirm-finish':'sp-session-minimize',confirm?'Завершить':'Закрыть','primary-button ss-primary')}${confirm?el('sp-session-back','Продолжить','ss-text'):''}</footer>`;
+    const complete = m.doneSets >= m.totalSets && m.done >= m.exercises.length;
+    const seconds = SP().workoutSeconds(spState().state, m.session.option) ?? flowSportAuto.view()?.elapsed ?? null;
+    const timeLabel = seconds == null ? "" : seconds < 3600
+      ? `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
+      : SP().formatDuration(seconds);
+    const time = timeLabel ? ` · ${timeLabel}` : "";
+    const title = confirm ? (complete ? 'Завершить тренировку?' : 'Завершить досрочно?') : (complete ? 'Тренировка завершена' : 'Завершено досрочно');
+    return `<section class="ss-main ss-summary"><h1 data-ss-heading tabindex="-1">${title}</h1><p class="ss-setup-meta">${m.doneSets} из ${m.totalSets} подходов · ${m.done} из ${m.exercises.length} упражнений${time}</p>${confirm&&!complete?'<p class="ss-quiet">Оставшиеся подходы не засчитаются.</p>':''}<details class="ss-disclosure"><summary>Результаты</summary><div class="ss-program">${m.exercises.map((e,i)=>row(m,e,i,false)).join('')}</div><p class="ss-quiet">${m.automatic?'Повторы и вес не измерялись. ':''}<span data-ss-sync role="status">${syncText()}</span></p></details></section><footer class="ss-footer">${el(confirm?'sp-session-confirm-finish':'sp-session-minimize',confirm?'Завершить':'Закрыть','primary-button ss-primary')}${confirm?el('sp-session-back','Продолжить','ss-text'):''}</footer>`;
   }
   const syncText=()=>!spState().saveError&&!spState().pending?.length&&!spFlushing?'Сохранено.':'Ожидает синхронизации.';
   function html() {
@@ -159,7 +166,12 @@
     },
     'sp-session-begin': () => {
       const m=safe();if(!m)return;
-      if(flowSportAuto.begin(m)===false){redraw(true);return;}state.started=true;state.view='work';state.media=null;redraw(true);
+      if(flowSportAuto.begin(m)===false){
+        // Свободная тренировка живёт без длительностей из плана: ведём её вручную.
+        if(!m.option.key.startsWith('free|')){redraw(true);return;}
+        state.started=true;state.view='work';state.media=null;redraw(true);return;
+      }
+      state.started=true;state.view='work';state.media=null;redraw(true);
     },
     'sp-session-demo': () => {const m=safe();if(!m)return;if(flowSportAuto.begin(m,true)===false)return;state.started=true;state.view='work';redraw(true);},
     'sp-auto-pause':control=>{if(flowSportAuto.accepts(control.dataset.ssStep))flowSportAuto.pause();},
