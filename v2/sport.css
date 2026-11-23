@@ -1,6 +1,6 @@
 /* «Спорт» — WooSport в стиле Flow: те же карточки, акцент и шрифт, что у «Английского». */
-.sp-page { display: grid; gap: 12px; padding-bottom: 28px; }
-.app-shell:has(.sp-page) .fab { display: none; }
+.sp-screen { display: grid; gap: 12px; padding-bottom: 28px; }
+.app-shell:has(.sp-screen) .fab { display: none; }
 body.sp-has-bar .app-shell { padding-bottom: 64px; }
 .sp-ic { width: 16px; height: 16px; flex: none; display: inline-block; vertical-align: -3px; }
 .sp-demo { margin: 0; padding: 8px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 700; text-align: center; }
@@ -502,8 +502,8 @@ body.sp-has-bar .fab { transform: translateY(-64px); }
 .sp-muscle-card small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sp-muscle-thumb svg { display: block; width: 100%; height: auto; }
 /* Колонка страницы не шире экрана: числа и степперы сжимаются, а не раздвигают карточки. */
-.sp-page { grid-template-columns: minmax(0, 1fr); }
-.sp-page > * { min-width: 0; }
+.sp-screen { grid-template-columns: minmax(0, 1fr); }
+.sp-screen > * { min-width: 0; }
 .sp-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .sp-stats dd { overflow-wrap: anywhere; }
 .sp-goal-entry { flex-wrap: wrap; }
@@ -618,6 +618,835 @@ html[data-flow-design="magic"] .sp-runner-body h2{font-family:var(--display,Geor
 html[data-flow-design="magic"] .sp-runner-zone{background:var(--surface)}
 html[data-flow-design="magic"] .sp-goal-head{min-height:52px;padding:14px 0}
 html[data-flow-design="magic"] .sp-goal-head small{font-size:12px;line-height:1.5}
+
+/* 13.11.2026 · Спорт собран заново: одна сцена, тихий материал, общий контур.
+   Корень .sp-screen не входит в lv-sp-v10, поэтому общая учебная обёртка
+   больше не перестраивает раздел и не прячет шапку на телефоне. */
+.sp-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 18px; }
+.sp-head > div { min-width: 0; }
+.sp-head-kicker { margin: 0 0 4px; color: var(--muted); font-size: 10.5px; line-height: 1.4; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.sp-head h1 { margin: 0; font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: clamp(34px, 9vw, 42px); line-height: 1; font-weight: 500; letter-spacing: -.045em; }
+.sp-screen { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 20px; width: 100%; max-width: 760px; margin: 0 auto; padding: 0 0 40px; }
+.sp-screen > * { min-width: 0; }
+body.sp-has-bar .sp-screen { padding-bottom: 150px; }
+.sp-screen .sp-card { display: grid; gap: 10px; padding: 0; border: 0; border-radius: 0; background: none; color: var(--text); animation: none; }
+.sp-screen .sp-card h2 { margin: 0; font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: 25px; line-height: 1.08; font-weight: 500; letter-spacing: -.025em; }
+.sp-screen .sp-kicker { margin: 0; color: var(--muted); font-size: 10.5px; line-height: 1.5; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.sp-screen .sp-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sp-screen .sp-card-head > span { color: var(--muted); font-size: 11px; }
+.sp-screen .sp-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.sp-screen .sp-tabs button { position: relative; height: 44px; min-width: 0; padding: 0 2px; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 600; letter-spacing: -.01em; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-screen .sp-tabs button.active { background: none; color: var(--text); box-shadow: none; }
+.sp-screen .sp-tabs button.active::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: var(--accent); }
+.sp-screen .sp-tabs .sp-dot { position: absolute; top: 9px; right: 7px; width: 5px; height: 5px; margin: 0; }
+.sp-screen .sp-demo { order: 20; margin: 2px 0 0; padding: 0; background: none; color: var(--muted); font-size: 10.5px; font-weight: 500; line-height: 1.6; text-align: center; }
+.sp-screen .sp-error { margin: 0; padding: 10px 12px; border-radius: 14px; background: var(--warn-soft); color: var(--warn); font-size: 12px; line-height: 1.5; font-weight: 600; }
+
+/* Неделя: плоская, без карточки вокруг календаря. */
+.sp-screen .sp-week { display: grid; gap: 8px; padding: 0; border: 0; border-radius: 0; background: none; }
+.sp-screen .sp-week-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-screen .sp-week-head .icon-button { width: 44px; height: 44px; border: 0; background: none; color: var(--muted); }
+.sp-screen .sp-week-head .icon-button:last-child { transform: none; }
+.sp-screen .sp-week-title { flex: 1; display: grid; gap: 2px; padding: 2px 0; border: 0; background: none; color: var(--text); font: inherit; text-align: center; cursor: pointer; }
+.sp-screen .sp-week-title b { font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: 19px; line-height: 1.2; font-weight: 500; letter-spacing: -.02em; }
+.sp-screen .sp-week-title small { color: var(--muted); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.sp-screen .sp-week-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.sp-screen .sp-week-days button { position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 60px; padding: 7px 0 9px; border: 0; border-radius: 14px; background: none; color: var(--text); font: inherit; cursor: pointer; }
+.sp-screen .sp-week-days small { color: var(--muted); font-size: 10px; font-weight: 600; }
+.sp-screen .sp-week-days b { font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.sp-screen .sp-week-days i { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
+.sp-screen .sp-week-days .plan i { background: color-mix(in srgb, var(--text) 28%, transparent); }
+.sp-screen .sp-week-days .part i { background: var(--accent); opacity: .55; }
+.sp-screen .sp-week-days .done i { background: var(--accent); }
+.sp-screen .sp-week-days .missed i { background: var(--warn); opacity: .7; }
+.sp-screen .sp-week-days .on { background: color-mix(in srgb, var(--accent) 13%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 32%, var(--line)); }
+.sp-screen .sp-week-days .on b, .sp-screen .sp-week-days .on small { color: var(--text); }
+.sp-screen .sp-week-days .today b { color: var(--accent); }
+.sp-screen .sp-week-days .on i { opacity: 1; }
+.sp-screen .sp-week-days .on.plan i { background: var(--accent); }
+.sp-screen .sp-today-return { justify-self: center; min-height: 44px; color: var(--muted); font-size: 11px; }
+
+/* Главная сцена дня: единственная мягкая поверхность. */
+.sp-screen .sp-focus { display: grid; gap: 12px; padding: 18px; border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line)); border-radius: 24px; background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, var(--surface)) 0%, var(--surface) 58%); }
+.sp-screen .sp-focus-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 10px; line-height: 1.5; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.sp-screen .sp-focus-meta span:last-child { max-width: 48%; text-align: right; letter-spacing: .02em; text-transform: none; font-weight: 600; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-screen .sp-focus-title { display: grid; gap: 5px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-focus-title h2 { margin: 0; font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: clamp(28px, 8.4vw, 34px); line-height: 1.04; font-weight: 500; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.sp-screen .sp-focus-title small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.sp-screen .sp-focus-progress { height: 3px; }
+.sp-screen .sp-focus-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.sp-screen .sp-focus-foot > span { flex: 1 1 120px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.sp-screen .sp-focus-foot .primary-button { flex: 0 0 auto; min-height: 46px; padding: 0 20px; border-radius: 16px; font-size: 13px; }
+.sp-screen .sp-done-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; color: var(--accent); font-size: 12px; font-weight: 650; }
+.sp-screen .sp-quiet-pill { color: var(--muted); font-size: 12px; font-weight: 600; }
+.sp-screen .sp-quiet-row { display: flex; align-items: center; gap: 12px; padding: 14px 0 0; border-top: 1px solid var(--line); }
+.sp-screen .sp-quiet-row-main { flex: 1; min-width: 0; display: grid; gap: 3px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-quiet-row-main small { color: var(--muted); font-size: 9.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.sp-screen .sp-quiet-row-main strong { font-size: 16px; line-height: 1.3; font-weight: 600; }
+.sp-screen .sp-quiet-row-main span { color: var(--muted); font-size: 11px; }
+.sp-screen .sp-quiet-row .primary-button { flex: none; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--accent); font-size: 12px; }
+.sp-screen .sp-quiet-state { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); }
+.sp-screen .sp-quiet-state h2 { margin: 0; font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: 28px; line-height: 1.1; font-weight: 500; }
+.sp-screen .sp-quiet-state p { margin: 0; }
+.sp-screen .sp-quiet-add { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 14px 16px; border: 1px dashed var(--line); border-radius: 18px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-quiet-add > span { flex: 1; display: grid; gap: 3px; }
+.sp-screen .sp-quiet-add strong { font-size: 14px; font-weight: 600; }
+.sp-screen .sp-quiet-add small { color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+/* Тихие блоки и строки: общий контур страницы вместо карточек в карточках. */
+.sp-screen .sp-block { display: grid; gap: 8px; padding-top: 18px; border-top: 1px solid var(--line); }
+.sp-screen .sp-block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 28px; }
+.sp-screen .sp-block-head h2 { margin: 0; font-size: 14px; line-height: 1.4; font-weight: 650; letter-spacing: -.01em; }
+.sp-screen .sp-block-head > span { color: var(--muted); font-size: 11px; }
+.sp-screen .sp-block .sp-card { padding-top: 0; border-top: 0; }
+.sp-screen .sp-list-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; width: 100%; }
+.sp-screen .sp-list-row:first-child { border-top: 0; }
+.sp-screen .sp-list-row > span:first-child { display: grid; gap: 2px; min-width: 0; }
+.sp-screen .sp-list-row b { font-size: 14px; font-weight: 600; }
+.sp-screen .sp-list-row small, .sp-screen .sp-list-row time { color: var(--muted); font-size: 11px; }
+.sp-screen .sp-list-row > b { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.sp-screen .sp-details { padding: 0; border-top: 1px solid var(--line); }
+.sp-screen .sp-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 6px 0; font-size: 13px; font-weight: 600; }
+.sp-screen .sp-details > summary small { margin: 0; color: var(--muted); font-size: 11px; }
+.sp-screen .sp-details > summary::after { content: "+"; color: var(--muted); font-size: 18px; font-weight: 400; }
+.sp-screen .sp-details[open] > summary::after { content: "−"; }
+.sp-screen .sp-steps-list { margin: 4px 0 12px; }
+.sp-screen .sp-steps-list li { min-height: 38px; }
+.sp-screen .sp-habit { border-top: 1px solid var(--line); }
+.sp-screen .sp-habit-row { min-height: 56px; }
+.sp-screen .sp-habit-name { font-size: 14px; font-weight: 600; }
+.sp-screen .sp-check { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: none; }
+.sp-screen .sp-check.on { border-color: var(--accent); background: var(--accent); }
+.sp-screen .sp-streak { font-size: 11px; }
+.sp-screen .sp-counter { padding: 0; border-top: 1px solid var(--line); }
+.sp-screen .sp-counter-row { min-height: 56px; padding: 8px 0; }
+.sp-screen .sp-counter-row strong { font-size: 14px; font-weight: 600; }
+.sp-screen .sp-clock b { font-size: 17px; font-weight: 600; }
+.sp-screen .sp-ghost-card, .sp-screen .sp-empty { border: 0; background: none; }
+
+/* Тренировка: одна поверхность, строки идут сверху вниз без вложенных карточек. */
+.sp-screen .sp-mini-tabs { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid var(--line); }
+.sp-screen .sp-mini-tabs button { position: relative; min-height: 42px; padding: 0 0 8px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.sp-screen .sp-mini-tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+.sp-screen .sp-kind-tabs { justify-self: start; gap: 20px; border-bottom: 0; }
+.sp-screen .sp-kind-tabs button { min-height: 36px; padding-bottom: 4px; }
+.sp-screen .sp-workout-surface { display: grid; gap: 0; padding: 18px; border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line)); border-radius: 24px; background: var(--surface); }
+.sp-screen .sp-workout-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 12px; }
+.sp-screen .sp-workout-head > div { flex: 1; min-width: 0; }
+.sp-screen .sp-workout-head h2 { margin: 4px 0; font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: clamp(27px, 7.8vw, 33px); line-height: 1.05; font-weight: 500; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.sp-screen .sp-workout-head .section-note { margin: 0; font-size: 11.5px; line-height: 1.5; }
+.sp-screen .sp-workout-run { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.sp-screen .sp-workout-run svg { width: 14px; height: 14px; }
+.sp-screen .sp-workout-time { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.sp-screen .sp-workout-progress { display: grid; gap: 6px; padding: 0 0 12px; }
+.sp-screen .sp-workout-progress small { color: var(--muted); font-size: 10.5px; line-height: 1.5; }
+.sp-screen .sp-ex-list { border-top: 1px solid var(--line); }
+.sp-screen .sp-ex { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 10px; padding: 0; border: 0; border-bottom: 1px solid var(--line); }
+.sp-screen .sp-ex:last-child { border-bottom: 0; }
+.sp-screen .sp-ex-tap { grid-column: 1; display: flex; align-items: flex-start; gap: 10px; min-height: 54px; padding: 12px 0 6px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-ex-num { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--surface-soft); color: var(--muted); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sp-screen .sp-ex.active .sp-ex-num { background: var(--accent-soft); color: var(--accent); }
+.sp-screen .sp-ex.done .sp-ex-num { background: var(--accent); color: var(--accent-ink); }
+.sp-screen .sp-ex-main { display: grid; gap: 3px; min-width: 0; }
+.sp-screen .sp-ex-main strong { font-size: 14px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+.sp-screen .sp-ex.done .sp-ex-main strong { color: var(--muted); }
+.sp-screen .sp-ex-main small { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10.5px; line-height: 1.4; }
+.sp-screen .sp-ex-main .sp-ex-kit { width: 14px; height: 14px; display: inline-grid; place-items: center; background: none; border-radius: 0; }
+.sp-screen .sp-ex-main .sp-ex-kit .sp-ic { width: 12px; height: 12px; }
+.sp-screen .sp-ex-side { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; display: grid; justify-items: center; align-content: start; gap: 2px; width: 54px; padding-top: 8px; }
+.sp-screen .sp-ex-side .sp-glyph-open { width: 52px; height: 48px; padding: 0; border: 0; background: none; opacity: .72; }
+.sp-screen .sp-ex-side .sp-glyph { position: static; display: block; width: 100%; height: 100%; }
+.sp-screen .sp-ex-side .sp-ex-reset { width: auto; min-height: 28px; padding: 0 6px; border: 0; background: none; color: var(--muted); font-size: 10px; }
+.sp-screen .sp-ex-side .sp-ex-reset .sp-ic { width: 12px; height: 12px; }
+.sp-screen .sp-ex-result { grid-column: 1; padding: 0 0 10px 38px; }
+.sp-screen .sp-ex-result .sp-ex-meta { display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+.sp-screen .sp-ex-result .sp-ex-meta .sp-ex-kit { display: none; }
+.sp-screen .sp-ex-result .sp-ex-meta.empty { color: var(--accent); }
+.sp-screen .sp-ex-result .sp-ex-meta:disabled { cursor: default; opacity: .7; }
+.sp-screen .sp-add-ex { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+.sp-screen .sp-workout-surface > .primary-button { margin-top: 12px; min-height: 48px; border-radius: 16px; font-size: 13px; }
+.sp-screen .sp-workout-surface > .primary-button.soft { border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); }
+.sp-screen .sp-workout-done { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sp-screen .sp-workout-done-main { flex: 1; display: grid; gap: 4px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-workout-done-main small { display: flex; align-items: center; gap: 5px; color: var(--accent); font-size: 11px; font-weight: 650; }
+.sp-screen .sp-workout-done-main strong { font-size: 17px; font-weight: 600; }
+.sp-screen .sp-workout-surface.is-finished .sp-ex { opacity: .62; }
+.sp-screen .sp-warmup { margin: 0; }
+.sp-screen .sp-warmup > summary { min-height: 48px; }
+.sp-screen .sp-rest { gap: 12px; }
+.sp-screen .sp-rest li { gap: 3px; }
+.sp-screen .sp-rest li b { font-size: 13px; font-weight: 600; }
+.sp-screen .sp-rest li span { font-size: 12px; line-height: 1.6; }
+.sp-screen .sp-variant { padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.sp-screen .sp-variant.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.sp-screen .sp-variant span small { font-size: 11px; }
+.sp-screen .sp-agenda-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-agenda-row:first-of-type { border-top: 0; }
+.sp-screen .sp-agenda-row > span:first-child { display: grid; gap: 2px; min-width: 0; }
+.sp-screen .sp-agenda-row b { color: var(--muted); font-size: 10.5px; font-weight: 600; }
+.sp-screen .sp-agenda-row strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.sp-screen .sp-agenda-row small { color: var(--muted); font-size: 10.5px; }
+.sp-screen .sp-agenda-row > span:last-child { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sp-screen .sp-row-actions { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; }
+.sp-screen .sp-row-actions .text-action { min-height: 44px; color: var(--muted); font-size: 11.5px; }
+
+/* История: журнал первым, цели и тело ниже. */
+.sp-screen .sp-week-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; padding: 0 0 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sp-screen .sp-week-line b { color: var(--text); font-size: 15px; font-weight: 600; }
+.sp-screen .sp-week-line span + span { position: relative; padding-left: 16px; }
+.sp-screen .sp-week-line span + span::before { content: "·"; position: absolute; left: 4px; color: var(--line); }
+.sp-screen .sp-block-head .sp-mini-tabs { border-bottom: 0; gap: 12px; }
+.sp-screen .sp-block-head .sp-mini-tabs button { min-height: 32px; padding-bottom: 2px; font-size: 11px; }
+.sp-screen .sp-history-entry { padding: 0; }
+.sp-screen .sp-history-entry > summary { min-height: 56px; padding: 10px 0; align-items: center; }
+.sp-screen .sp-history-entry > summary > span { display: grid; gap: 2px; min-width: 0; }
+.sp-screen .sp-history-entry > summary b { color: var(--muted); font-size: 10.5px; font-weight: 600; }
+.sp-screen .sp-history-entry > summary strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.sp-screen .sp-history-entry > summary small { color: var(--muted); font-size: 10.5px; }
+.sp-screen .sp-history-line { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 7px 0; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-size: 12px; }
+.sp-screen .sp-history-line span { min-width: 0; overflow-wrap: anywhere; }
+.sp-screen .sp-history-line b { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.sp-screen .sp-weights p { display: flex; justify-content: space-between; gap: 12px; margin: 8px 0; font-size: 12px; }
+.sp-screen .sp-weights p span { color: var(--muted); }
+.sp-screen .sp-weights p b { font-weight: 600; }
+.sp-screen .sp-weight-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 0; font-size: 10.5px; color: var(--muted); }
+.sp-screen .sp-weight-bar i { height: 4px; border-radius: 2px; background: var(--surface-soft); overflow: hidden; }
+.sp-screen .sp-weight-bar i b { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.sp-screen .sp-weight-bar strong { color: var(--text); font-weight: 600; white-space: nowrap; }
+.sp-screen .sp-goal { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--line); }
+.sp-screen .sp-goal:first-of-type { border-top: 0; }
+.sp-screen .sp-goal-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-goal-head > span:first-child { display: grid; gap: 2px; min-width: 0; }
+.sp-screen .sp-goal-head strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.sp-screen .sp-goal-head small { color: var(--muted); font-size: 10.5px; font-weight: 500; }
+.sp-screen .sp-goal-num { display: grid; justify-items: end; gap: 1px; }
+.sp-screen .sp-goal-num b { font-size: 22px; line-height: 1.1; font-weight: 500; font-variant-numeric: tabular-nums; }
+.sp-screen .sp-goal-num small { color: var(--muted); font-size: 9.5px; }
+.sp-screen .sp-goal-head .sp-progress { grid-column: 1 / -1; height: 3px; margin-top: 4px; }
+.sp-screen .sp-goal-cap { grid-column: 1 / -1; color: var(--muted); font-size: 9.5px; }
+.sp-screen .sp-goal-body { display: grid; gap: 10px; padding: 6px 0 2px; }
+.sp-screen .sp-stat-grid div { background: none; padding: 0; border-radius: 0; }
+.sp-screen .sp-stat-grid span { font-size: 9.5px; font-weight: 600; }
+.sp-screen .sp-stat-grid b { font-size: 13px; font-weight: 600; }
+.sp-screen .sp-goal-entry { flex-wrap: wrap; }
+.sp-screen .sp-goal-entry .primary-button { min-height: 44px; }
+.sp-screen .sp-weights .up { color: var(--accent); font-style: normal; }
+.sp-screen .sp-weights .down { color: var(--warn); font-style: normal; }
+.sp-screen .sp-measure { grid-template-columns: 58px minmax(0, 1fr) auto; min-height: 40px; }
+
+/* Профиль: имя, программы, настройки — без вложенных карточек и лишних заголовков. */
+.sp-screen .sp-identity { display: grid; gap: 0; }
+.sp-screen .sp-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 6px 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-avatar { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 16px; font-weight: 700; }
+.sp-screen .sp-hero > span:nth-child(2) { display: grid; gap: 3px; min-width: 0; }
+.sp-screen .sp-hero strong { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.sp-screen .sp-hero small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.sp-screen .sp-muscle-card { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 72px; padding: 12px 0 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-muscle-thumb { width: 62px; height: 48px; overflow: hidden; }
+.sp-screen .sp-muscle-thumb svg { width: 100%; height: 100%; object-fit: contain; }
+.sp-screen .sp-muscle-card > span:nth-child(2) { display: grid; gap: 3px; min-width: 0; }
+.sp-screen .sp-muscle-card strong { font-size: 14px; font-weight: 600; }
+.sp-screen .sp-muscle-card small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.sp-screen .sp-card .sp-program-profile { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; padding: 14px; border: 0; border-radius: 18px; background: var(--surface); }
+.sp-screen .sp-program-profile > span:first-child { display: grid; gap: 2px; }
+.sp-screen .sp-program-profile .sp-progress { grid-column: 1 / -1; width: 100%; margin: 4px 0 2px; }
+.sp-screen .sp-program-profile small { color: var(--muted); font-size: 10.5px; }
+.sp-screen .sp-links { display: grid; gap: 0; padding: 0; }
+.sp-screen .sp-links button { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-screen .sp-links button:first-child { border-top: 0; }
+.sp-screen .sp-links button > span { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.sp-screen .sp-links strong { font-size: 14px; font-weight: 600; }
+.sp-screen .sp-links small { color: var(--muted); font-size: 11px; }
+.sp-screen .sp-facts { color: var(--muted); font-size: 11px; }
+.sp-screen .sp-card > .ghost-button.sp-wide { min-height: 44px; border: 1px solid var(--line); border-radius: 14px; background: none; color: var(--muted); font-size: 12px; }
+
+/* Нижняя полоса тренировки: тише, без неоновой рамки и лишних подписей. */
+.sp-bar { left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); padding: 7px 7px 7px 14px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--surface) 94%, var(--page)); box-shadow: 0 14px 34px rgba(0, 0, 0, .28); animation: none; }
+.sp-bar.work { border-color: color-mix(in srgb, var(--accent) 42%, var(--line)); }
+.sp-bar-clock small { color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.sp-bar.work .sp-bar-clock small { color: var(--accent); }
+.sp-bar-clock b { font-size: 17px; font-weight: 500; }
+.sp-bar-name { font-size: 12.5px; font-weight: 600; }
+.sp-bar-actions button, .sp-bar-close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--surface-soft); color: var(--text); }
+.sp-bar-close { background: none; color: var(--muted); }
+.sp-bar-mark { min-height: 44px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 700; }
+
+@media (max-width: 360px) {
+  .sp-screen .sp-tabs button { font-size: 11px; }
+  .sp-screen .sp-focus { padding: 15px; }
+  .sp-screen .sp-focus-title h2 { font-size: 27px; }
+  .sp-screen .sp-focus-foot .primary-button { padding: 0 14px; }
+  .sp-screen .sp-week-days button { min-height: 56px; }
+  .sp-screen .sp-week-days small { font-size: 9px; }
+  .sp-screen .sp-workout-surface { padding: 15px; }
+  .sp-screen .sp-workout-run { padding: 0 11px; }
+  .sp-screen .sp-workout-run span { font-size: 11px; }
+  .sp-screen .sp-muscle-card { grid-template-columns: 50px minmax(0, 1fr) auto; }
+  .sp-screen .sp-muscle-thumb { width: 50px; height: 40px; }
+  .sp-screen .sp-ex-side { width: 44px; }
+  .sp-screen .sp-ex-side .sp-glyph-open { width: 44px; height: 42px; }
+  .sp-screen .sp-ex-result { padding-left: 38px; }
+}
+
+@media (min-width: 900px) {
+  .sp-screen { max-width: 980px; }
+  .sp-screen[data-view="today"], .sp-screen[data-view="training"] { display: grid; grid-template-columns: 280px minmax(0, 1fr); column-gap: 32px; }
+  .sp-screen[data-view="today"] > .sp-week, .sp-screen[data-view="training"] > .sp-week { grid-column: 1; grid-row: 1 / span 4; align-self: start; position: sticky; top: 16px; }
+  .sp-screen[data-view="today"] > :not(.sp-week), .sp-screen[data-view="training"] > :not(.sp-week) { grid-column: 2; }
+  .sp-screen[data-view="profile"], .sp-screen[data-view="goals"] { max-width: 760px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-screen .sp-progress i, .sp-screen .sp-goal-head .sp-progress i { transition: none; }
+}
+
+
+/* Точность поверх общего каскада: sport.css подключён раньше digital-*,
+   поэтому ключевые свойства поверхности и вкладок закрепляем на уровне раздела. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-card {
+  padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+  background: none !important; box-shadow: none !important; animation: none !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs {
+  padding: 0 !important; border: 0 !important; border-bottom: 1px solid var(--line) !important;
+  border-radius: 0 !important; background: none !important; box-shadow: none !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button.active,
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs [aria-selected="true"] {
+  background: none !important; box-shadow: none !important; border-radius: 0 !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .flow-motion-indicator { display: none !important; }
+html[data-flow-design="magic"] .dm-main .sp-screen .primary-button {
+  box-shadow: none !important; border: 0 !important; background: var(--accent) !important;
+  color: var(--accent-ink) !important; transform: none;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .primary-button.soft {
+  background: var(--surface-soft) !important; color: var(--text) !important;
+  border: 1px solid var(--line) !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .ghost-button,
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-row .primary-button {
+  box-shadow: none !important; background: var(--surface) !important; color: var(--accent) !important;
+  border: 1px solid var(--line) !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-foot .primary-button,
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-row .primary-button {
+  border-radius: 14px !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus { border-color: color-mix(in srgb, var(--accent) 16%, var(--line)); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-surface { border-color: color-mix(in srgb, var(--accent) 14%, var(--line)); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-state { background: var(--surface); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-import-open { box-shadow: none !important; }
+
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-card > .sp-card-head .sp-kicker {
+  color: var(--text) !important; font-size: 14px !important; font-weight: 650 !important;
+  letter-spacing: -.01em !important; text-transform: none !important; line-height: 1.4;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-card > .sp-card-head .sp-kicker + span { color: var(--muted); font-size: 11px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-block-head .sp-mini-tabs button.active {
+  background: none !important; box-shadow: none !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-kind-tabs button.active {
+  background: none !important; box-shadow: none !important; border-radius: 0 !important;
+}
+
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-mini-tabs button {
+  min-height: 44px !important; border-bottom-color: transparent !important; border-radius: 0 !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-mini-tabs button.active {
+  border-bottom-color: transparent !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-mini-tabs button.active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  border-radius: 2px 2px 0 0; background: var(--accent);
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-card > .sp-kicker {
+  color: var(--text) !important; font-size: 14px !important; font-weight: 650 !important;
+  letter-spacing: -.01em !important; text-transform: none !important; line-height: 1.4;
+}
+
+
+/* Шапка и вкладки — часть той же колонки, поэтому на ПК выровнены с контентом. */
+.sp-head { margin: 0; }
+@media (min-width: 900px) {
+  .sp-screen[data-view="today"] > .sp-head,
+  .sp-screen[data-view="training"] > .sp-head,
+  .sp-screen[data-view="today"] > .sp-tabs,
+  .sp-screen[data-view="training"] > .sp-tabs,
+  .sp-screen[data-view="profile"] > .sp-head,
+  .sp-screen[data-view="profile"] > .sp-tabs,
+  .sp-screen[data-view="goals"] > .sp-head,
+  .sp-screen[data-view="goals"] > .sp-tabs { grid-column: 1 / -1; }
+  .sp-screen[data-view="today"] > .sp-head,
+  .sp-screen[data-view="training"] > .sp-head,
+  .sp-screen[data-view="profile"] > .sp-head,
+  .sp-screen[data-view="goals"] > .sp-head { grid-row: 1; }
+  .sp-screen[data-view="today"] > .sp-tabs,
+  .sp-screen[data-view="training"] > .sp-tabs,
+  .sp-screen[data-view="profile"] > .sp-tabs,
+  .sp-screen[data-view="goals"] > .sp-tabs { grid-row: 2; }
+  .sp-screen[data-view="today"] > .sp-week,
+  .sp-screen[data-view="training"] > .sp-week { grid-column: 1; grid-row: 3 / span 6; }
+  .sp-screen[data-view="today"] > :not(.sp-week):not(.sp-head):not(.sp-tabs),
+  .sp-screen[data-view="training"] > :not(.sp-week):not(.sp-head):not(.sp-tabs) { grid-column: 2; }
+}
+
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-result {
+  display: flex; align-items: center; gap: 8px;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-result .sp-ex-meta { flex: 1; min-width: 0; min-height: 44px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-result .sp-ex-reset {
+  flex: none; min-height: 44px; padding: 0 8px; border: 0; background: none;
+  color: var(--muted); font-size: 10px;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-side { width: 52px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-side .sp-glyph-open { width: 52px; height: 48px; min-height: 44px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-title { min-height: 44px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .text-action { min-height: 44px; display: inline-flex; align-items: center; }
+html[data-flow-design="magic"] .dm-main .sp-screen .icon-button { min-height: 44px; min-width: 44px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-kind-tabs button { min-height: 44px; padding-bottom: 8px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-row .primary-button { min-height: 44px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary { min-height: 56px; }
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-side,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-side .sp-glyph-open { width: 44px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-result .sp-ex-reset { padding: 0 4px; }
+}
+
+
+/* Полоса активной тренировки — вторичный контрол, не второй главный CTA. */
+.sp-bar { border: 1px solid var(--line); background: var(--surface); box-shadow: 0 8px 22px rgba(0, 0, 0, .18); }
+.sp-bar.work { border-color: color-mix(in srgb, var(--accent) 28%, var(--line)); }
+.sp-bar-mark { background: var(--accent-soft); color: var(--accent); }
+html[data-flow-design="magic"] .sp-bar .sp-bar-mark { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
+
+
+.sp-bar-mark { width: 44px; min-width: 44px; padding: 0; display: grid; place-items: center; }
+.sp-bar-mark svg { width: 16px; height: 16px; }
+.sp-bar-name { font-size: 12.5px; }
+
+
+@media (min-width: 900px) {
+  .sp-screen .sp-tabs { display: flex; gap: 30px; }
+  .sp-screen .sp-tabs button { flex: 0 0 auto; min-width: 0; padding: 0 2px; }
+  .sp-screen .sp-tabs button.active::after { left: 0; right: 0; }
+}
+
+
+.sp-week-summary { display: none; }
+@media (min-width: 900px) {
+  .sp-screen .sp-week-summary {
+    display: grid; gap: 4px; margin-top: 22px; padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .sp-screen .sp-week-summary small { color: var(--muted); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .sp-screen .sp-week-summary b { font-family: var(--display, "FlowDisplay", Georgia, serif); font-size: 24px; font-weight: 500; letter-spacing: -.03em; }
+  .sp-screen .sp-week-summary span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+}
+
+
+/* Общая форма кнопок и вкладок остаётся спокойной и в Classic. */
+.sp-screen .flow-motion-indicator { display: none !important; }
+.sp-screen .primary-button, .sp-screen .ghost-button { box-shadow: none !important; }
+.sp-screen .sp-tabs button.active { background: none !important; box-shadow: none !important; }
+
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-day {
+  min-height: 44px; aspect-ratio: auto;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-calendar .sp-weekdays span { font-size: 10px; }
+
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-state .sp-row-actions {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-state .sp-row-actions > button {
+  width: 100%; flex: none; min-height: 46px;
+}
+.sp-screen .sp-quiet-state .sp-row-actions > .primary-button { flex: none; }
+.sp-screen .sp-quiet-state .sp-row-actions > .ghost-button { flex: none; }
+
+
+/* 13.11.2026 · раунд 2 арт-директора: один H1, рабочая плотность,
+   честные состояния, прямые разделители и настоящая поверхность недели. */
+html[data-flow-design="magic"] .dm-main .sp-screen { gap: 16px; max-width: 980px; }
+html[data-flow-design="magic"] .dm-main .sp-head { margin: 0; }
+html[data-flow-design="magic"] .dm-main .sp-head h1 { font-size: 32px; line-height: 1; letter-spacing: -.045em; }
+
+/* Вкладки — один ряд, 14px, без пилюли. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs {
+  display: flex; align-items: stretch; justify-content: space-between; gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button {
+  flex: 0 0 auto; height: 44px; padding: 0 2px; font-size: 14px; font-weight: 600;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button.active { font-weight: 650; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button.active::after { left: 0; right: 0; }
+
+/* Неделя — снова одна мягкая поверхность, а не подпись на фоне. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week {
+  padding: 14px; border: 1px solid var(--line); border-radius: 24px;
+  background: var(--surface); position: relative; z-index: 1; gap: 10px;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-head { gap: 2px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-title {
+  flex: 1; display: flex; align-items: center; justify-content: flex-start;
+  padding: 0 2px; text-align: left;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-title b {
+  font-family: Manrope, "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-size: 15px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-month-toggle { color: var(--muted); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days { gap: 2px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days button { min-height: 64px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-summary { margin-top: 2px; }
+
+/* Один главный заголовок: карточка тренировки уже не H1. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus { padding: 16px 18px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-meta {
+  align-items: center; color: var(--muted); font-size: 12px; font-weight: 600;
+  letter-spacing: 0; text-transform: none;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-meta span:first-child { color: var(--accent); font-size: 13px; font-weight: 600; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-meta span:last-child { color: var(--muted); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-title h2 { font-size: 26px; line-height: 1.1; letter-spacing: -.02em; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-foot > span { font-size: 12px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-row-main small { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+
+/* Секции и строки: прямые разделители, без дуг от общего радиуса кнопок. */
+html[data-flow-design="magic"] .dm-main .sp-screen :is(.sp-list-row:not(.sp-program-profile), .sp-agenda-row, .sp-links button, .sp-muscle-card, .sp-hero, .sp-history-entry, .sp-habit, .sp-counter) { border-radius: 0 !important; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-block { gap: 8px; padding-top: 16px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-block-head h2 { font-size: 15px; font-weight: 650; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-list-row { min-height: 56px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-list-row small { font-size: 12px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-links button { min-height: 56px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-muscle-card { min-height: 76px; }
+
+/* Раскрытие — шеврон; «+» остаётся только для добавления. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-details > summary::after {
+  content: ""; width: 8px; height: 8px; flex: none; margin-left: 4px;
+  border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted);
+  transform: rotate(45deg); transition: transform .18s ease;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-details[open] > summary::after { transform: rotate(225deg); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary::after { display: none; }
+
+/* Тренировка: одна поверхность, кнопка в нижней строке. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-segment.sp-kind-switch {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;
+  padding: 4px; border-radius: 14px; background: var(--surface-soft);
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-kind-switch button {
+  min-height: 44px; min-width: 44px; padding: 0 10px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-kind-switch button.active {
+  background: var(--surface); color: var(--text); box-shadow: 0 1px 0 var(--line);
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-day-workout { display: grid; gap: 16px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-day-workout > .sp-workout-surface { margin-top: 8px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-head { display: grid; gap: 4px; padding-bottom: 10px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 11.5px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-meta span:first-child { color: var(--accent); font-size: 13px; font-weight: 600; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-head h2 { margin: 2px 0; font-size: 26px; line-height: 1.1; letter-spacing: -.02em; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot > span { color: var(--muted); font-size: 12px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot .primary-button { flex: none; min-height: 46px; padding: 0 20px; border-radius: 14px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-progress { padding-bottom: 8px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-warmup > summary > span { display: grid; gap: 2px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-warmup > summary b { font-size: 14px; font-weight: 600; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-warmup > summary small { font-size: 11px; color: var(--muted); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-warmup-done { width: 28px; height: 28px; display: grid; place-items: center; color: var(--accent); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-warmup-done svg { width: 16px; height: 16px; }
+
+/* История в профиле: статус второй строкой, шеврон справа. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 56px; padding: 10px 0;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary > span:first-child { display: grid; gap: 2px; min-width: 0; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary b { color: var(--muted); font-size: 11px; font-weight: 600; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary strong { font-size: 14px; font-weight: 600; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry > summary small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-mark { width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); flex: none; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-mark svg { width: 15px; height: 15px; transition: transform .18s ease; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-entry[open] .sp-history-mark svg { transform: rotate(90deg); }
+
+/* Цели: без «40% цели», компактная строка. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal { gap: 5px; padding: 11px 0; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-head { min-height: 52px; gap: 4px 12px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-num b { font-size: 20px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-head .sp-progress { margin-top: 2px; }
+
+/* Профиль: контурный инициал, факты вместо инструкций. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-avatar {
+  background: transparent; color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line));
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-hero small { font-size: 12px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-links small { font-size: 12px; }
+
+/* Пустой и счётчики: обычные строки, не промо-карточка. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-add-row {
+  display: flex; align-items: center; width: 100%; min-height: 44px; padding: 10px 0;
+  border: 0; border-top: 1px solid var(--line); background: none; color: var(--accent);
+  font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-day-counters { display: grid; gap: 0; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-day-counters-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; color: var(--muted); font-size: 11px; }
+
+/* Лист упражнения: 12/16 по сетке, сердце в шапке, основной вес. */
+html[data-flow-design="magic"] body .sp-sheet .sheet-head h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+html[data-flow-design="magic"] body .sp-sheet .sp-sheet-like { margin-left: auto; color: var(--muted); }
+html[data-flow-design="magic"] body .sp-sheet .sp-sheet-like.on { color: #ff6b81; }
+html[data-flow-design="magic"] body .sp-sheet .sp-runner-scheme { margin: 0 0 12px; }
+html[data-flow-design="magic"] body .sp-sheet .sp-ex-sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+html[data-flow-design="magic"] body .sp-sheet .sp-ex-sheet-actions .ghost-button { flex: 0 1 auto; min-height: 44px; }
+html[data-flow-design="magic"] body .sp-sheet .sp-ex-sheet-actions .primary-button { flex: 1 1 180px; min-height: 44px; }
+html[data-flow-design="magic"] body .sp-sheet .sp-tech { margin: 0 0 16px; font-size: 14px; line-height: 1.7; }
+html[data-flow-design="magic"] body .sp-sheet .sp-video { margin: 0 0 16px; }
+html[data-flow-design="magic"] body .sp-sheet .sp-map { margin: 0 0 8px; }
+html[data-flow-design="magic"] body .sp-sheet .sp-video-poster { position: relative; }
+html[data-flow-design="magic"] body .sp-sheet .sp-video-poster::after {
+  content: ""; position: absolute; inset: auto 0 0; height: 45%;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .68));
+  border-radius: 0 0 14px 14px; pointer-events: none;
+}
+html[data-flow-design="magic"] body .sp-sheet .sp-video-poster > span,
+html[data-flow-design="magic"] body .sp-sheet .sp-video-poster > small { position: relative; z-index: 1; }
+
+/* 320: дни и нижние строки не должны молча терять размер. */
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs { gap: 4px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button { font-size: 13px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week { padding: 12px 10px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days { gap: 0; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days button { min-height: 44px; padding: 5px 0 6px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-title b { font-size: 14px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-foot > span,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot > span { flex: 1 1 100%; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-foot .primary-button,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot .primary-button { width: 100%; }
+}
+
+/* 1100: шапка в одной колонке, тело крупнее, дни шире. */
+@media (min-width: 900px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen,
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="profile"],
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="goals"] { max-width: 980px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="profile"] > :not(.sp-head):not(.sp-tabs),
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="goals"] > :not(.sp-head):not(.sp-tabs) { width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; }
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="today"],
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="training"] { grid-template-columns: 340px minmax(0, 1fr); column-gap: 32px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button { font-size: 14.5px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen { font-size: 14px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen :is(.sp-focus-foot > span, .sp-workout-foot > span, .sp-list-row small, .sp-agenda-row small, .sp-history-entry > summary small, .sp-links small, .sp-focus-meta span:last-child, .sp-workout-meta) { font-size: 12px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-block-head h2 { font-size: 15px; }
+  html[data-flow-design="magic"] .dm-main .sp-bar { left: auto; right: 20px; width: clamp(320px, calc(100vw - 660px), 560px); margin: 0; transform: none; }
+}
+
+/* Низкий экран: шапка, вкладки и неделя не съедают тренировку. */
+@media (max-height: 600px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen { gap: 10px; }
+  html[data-flow-design="magic"] .dm-main .sp-head h1 { font-size: 24px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button { height: 40px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week { padding: 8px 10px; gap: 4px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-head { min-height: 36px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days button { min-height: 44px; padding: 3px 0 4px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days small { font-size: 9px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-title b { font-size: 14px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-summary { display: none !important; }
+  html[data-flow-design="magic"] .dm-main .sp-bar { display: none; }
+  html[data-flow-design="magic"] .dm-main .sp-focus { padding: 13px 14px; }
+  html[data-flow-design="magic"] .dm-main .sp-focus-title h2 { font-size: 24px; }
+  html[data-flow-design="magic"] .dm-main .sp-day-workout { gap: 10px; }
+  html[data-flow-design="magic"] .dm-main .sp-day-workout > .sp-workout-surface { margin-top: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-details > summary::after,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-history-mark svg { transition: none; }
+}
+
+
+/* Точные размеры после аудита: вкладки, действия, дни недели, цели. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button { min-width: 44px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .text-action { min-width: 44px; justify-content: center; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot { flex-wrap: wrap; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-foot { flex-wrap: wrap; }
+
+/* 320: дни на всю ширину поверхности, 41×44 — явное исключение, не молчаливое. */
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week { padding: 12px 0; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-head { padding: 0 10px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days { gap: 0; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days button { min-height: 44px; padding: 4px 0 5px; }
+}
+
+/* 1100: левая колонка шире, дни ≥44. */
+@media (min-width: 900px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="today"],
+  html[data-flow-design="magic"] .dm-main .sp-screen[data-view="training"] { grid-template-columns: 360px minmax(0, 1fr); }
+}
+
+/* Цели: строка около 76px, без третьего повтора процента. */
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal { padding: 8px 0; gap: 3px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-head { min-height: 44px; gap: 2px 10px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-num b { font-size: 18px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-head .sp-progress { margin-top: 0; }
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-head { padding: 0 !important; }
+
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button { font-size: 14px; }
+}
+
+@media (max-height: 600px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days { display: none; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-day-workout { display: flex; flex-direction: column; gap: 10px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-day-workout > .sp-workout-surface { order: -1; margin-top: 0; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-kind-switch button { min-height: 40px; }
+}
+
+@media (max-height: 600px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-surface { padding: 10px 12px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-head { gap: 2px; padding-bottom: 4px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-head h2 { margin: 0; font-size: 22px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-head .section-note { font-size: 11px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-progress { padding-bottom: 2px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot { margin-top: 2px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-foot .primary-button { min-height: 44px; }
+}
+
+
+/* История внутри окна профиля использует тот же тихий ряд, что и страница. */
+.sp-sheet .sp-mini-tabs { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); margin: 4px 0 8px; }
+.sp-sheet .sp-mini-tabs button {
+  position: relative; min-height: 44px; padding: 0 0 8px; border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0 !important; background: none; color: var(--muted); font: inherit;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.sp-sheet .sp-mini-tabs button.active { color: var(--text); border-bottom-color: var(--accent); background: none; box-shadow: none; }
+.sp-sheet .sp-history-entry { padding: 0; border-radius: 0 !important; }
+.sp-sheet .sp-history-entry > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 56px; padding: 10px 0;
+}
+.sp-sheet .sp-history-entry > summary::after { display: none !important; }
+.sp-sheet .sp-history-entry > summary > span:first-child { display: grid; gap: 2px; min-width: 0; }
+.sp-sheet .sp-history-entry > summary b { color: var(--muted); font-size: 11px; font-weight: 600; }
+.sp-sheet .sp-history-entry > summary strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.sp-sheet .sp-history-entry > summary small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.sp-sheet .sp-history-mark { width: 44px; height: 44px; flex: none; display: grid; place-items: center; color: var(--muted); }
+.sp-sheet .sp-history-mark svg { width: 15px; height: 15px; transition: transform .18s ease; }
+.sp-sheet .sp-history-entry[open] .sp-history-mark svg { transform: rotate(90deg); }
+.sp-sheet .sp-history-line { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 7px 0; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-size: 12px; }
+.sp-sheet .sp-history-line b { color: var(--muted); font-weight: 600; }
+.sp-sheet .sp-weights p { display: flex; justify-content: space-between; gap: 12px; margin: 8px 0; font-size: 12px; }
+.sp-sheet .sp-weights p span { color: var(--muted); }
+.sp-sheet .sp-weight-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 0; font-size: 11px; color: var(--muted); }
+.sp-sheet .sp-weight-bar i { height: 4px; border-radius: 2px; background: var(--surface-soft); overflow: hidden; }
+.sp-sheet .sp-weight-bar i b { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.sp-sheet .sp-weight-bar strong { color: var(--text); font-weight: 600; white-space: nowrap; }
+
+html[data-flow-design="magic"] body .sp-sheet .sp-video-poster > span {
+  position: absolute; inset: 0; margin: auto; z-index: 2;
+}
+html[data-flow-design="magic"] body .sp-sheet .sp-video-poster > small {
+  position: absolute; left: 12px; bottom: 10px; z-index: 2;
+}
+
+html[data-flow-design="magic"] body .sp-sheet .sheet-head h2 {
+  font-family: Manrope, "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-size: 20px; font-weight: 600; letter-spacing: -.02em;
+}
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-kicker {
+  text-transform: none !important; letter-spacing: 0 !important;
+  font-size: 13px !important; font-weight: 600 !important;
+}
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-quiet-state > .sp-kicker { color: var(--accent) !important; }
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-title b { font-size: 13.5px; }
+}
+
+@media (min-width: 900px) {
+  html[data-flow-design="magic"] body .sp-bar {
+    left: auto; right: 20px; width: clamp(320px, calc(100vw - 660px), 560px);
+    max-width: none; margin: 0; transform: none;
+  }
+}
+
+.sp-sheet .sp-history-entry > summary > span:first-child { justify-items: start; }
+.sp-sheet .sp-history-entry > summary small { text-align: left; }
+
+.sp-week-summary small {
+  text-transform: none !important; letter-spacing: 0 !important;
+  font-size: 12px !important; font-weight: 600 !important;
+}
+@media (min-width: 900px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-focus-meta span:last-child,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-workout-meta,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-summary span,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-head small,
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal-num small { font-size: 12px; }
+}
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-goal { padding: 11px 0; }
+
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs .sp-dot {
+  position: static !important; display: inline-block; width: 5px; height: 5px;
+  margin: 0 0 0 4px; vertical-align: middle;
+}
+
+@media (max-height: 600px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs button { height: 44px; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-kind-switch button { min-height: 44px; }
+}
+
+
+/* Раунд 3: дни 44px с локальной прокруткой, читаемая мета, sticky-вкладки. */
+.sp-screen .sp-week-days small { font-size: 12px; }
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-main small,
+html[data-flow-design="magic"] .dm-main .sp-screen .sp-ex-result .sp-ex-meta { font-size: 12px; }
+
+@media (max-width: 900px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs {
+    position: sticky; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 35;
+    background: var(--page); padding-top: 4px; margin-top: -4px;
+  }
+}
+
+@media (max-width: 360px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days {
+    display: flex; gap: 0; overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none; scroll-snap-type: x mandatory;
+  }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days::-webkit-scrollbar { display: none; }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days button {
+    flex: 0 0 44px; min-width: 44px; scroll-snap-align: center;
+  }
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-week-days small { font-size: 11px; }
+}
+
+@media (max-width: 900px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs {
+    top: 48px; background: var(--page) !important;
+    box-shadow: 0 1px 0 var(--line);
+  }
+}
+@media (max-width: 900px) {
+  html[data-flow-design="magic"] .dm-main .sp-screen .sp-tabs {
+    top: var(--sp-sticky-top, 60px) !important;
+    background: var(--page) !important;
+    box-shadow: 0 1px 0 var(--line);
+  }
+}
 
 /* Sport 2.0 programme overview, scoped to the opt-in view. */
 :is(.sp-screen, .sp-page) .sp2-programs { display: grid; gap: 12px; }
