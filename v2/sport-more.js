@@ -191,6 +191,9 @@ function sp2SettingsScreen() {
     ${row(icon("archive"), "Программы", "sp-programs")}
   </section>
   <h2 class="sp2-f-section-title">Тренер</h2>${window.SportCoach?.slot("settings") || ""}
+  <h2 class="sp2-f-section-title">Здоровье</h2><section class="sp2-f-card sp2-f-settings">
+    ${row(icon("health"), "Часы", "sp-health", "Mi Band · Health Connect")}
+  </section>
   <h2 class="sp2-f-section-title">Профиль</h2><section class="sp2-f-card sp2-f-settings">
     ${row(icon("health"), "Мой профиль", "sp-tab", state.trainingProfile?.name || "", "profile")}
   </section>`;
