@@ -207,6 +207,39 @@ SP_FORMS.free = () => {
   s.date = d.date; s.sheet = null; s.tab = "training"; render();
 };
 
+/**
+ * «Выполнить сегодня»: план другого дня превращается в свободную тренировку на
+ * сегодняшнюю дату. Подходы пишутся в сегодняшний день, а план дня-источника
+ * остаётся как был. Повторное нажатие продолжает уже созданную копию.
+ */
+/** Уже созданная копия плана другого дня на сегодня — для подписи «Продолжить». */
+function spTodayCopyKey(option) {
+  const hit = Object.entries(spState().state.freeWorkouts || {}).find(([, w]) => !w.deleted && w.date === SP().todayKey() && (w.sourceKey ? w.sourceKey === option.key : w.title === option.plan.title));
+  return hit ? `free|${hit[0]}` : "";
+}
+function spPlanForToday(option) {
+  const C = SP(), s = spState(), today = C.todayKey();
+  const existing = spTodayCopyKey(option);
+  const id = existing ? existing.slice(5) : crypto.randomUUID().slice(0, 12);
+  s.date = today;
+  s.weekStart = C.startOfWeekKey(today);
+  s.kind = "main";
+  s.workoutPreviewKey = `free|${id}`;
+  if (existing) return existing;
+  const exercises = option.plan.exercises.map(plan => {
+    const seconds = C.holdSecondsFor(plan);
+    const reps = seconds ? "" : String(plan.sets_reps || "").replace(/^\s*\d+\s*[×xх]\s*/i, "").trim();
+    return { name: plan.name, sets: C.exerciseSets(plan), reps: reps.slice(0, 10), seconds, rest: Number(plan.rest) || 90, bodyweight: plan.bodyweight, technique: plan.technique || "" };
+  });
+  const copy = { title: String(option.plan.title || "Тренировка").trim().slice(0, 80), date: today, exercises, createdAt: new Date().toISOString(), sourceKey: option.key };
+  spUpdate(prev => {
+    const next = { ...prev, freeWorkouts: { ...prev.freeWorkouts, [id]: copy } };
+    const created = spFreeOptions(next).find(o => o.key === `free|${id}`);
+    return created ? C.chooseOption(next, created) : next;
+  }).catch(() => {});
+  return `free|${id}`;
+}
+
 SP_SHEETS.swap = sheet => {
   const s = spState(), names = spExerciseNames(s.state).filter(n => n !== sheet.from && n !== sheet.original);
   return { title: "Заменить упражнение", body: `<p class="section-note">Вместо «${spEsc(sheet.from)}». Подходы и схема остаются из плана, уже отмеченное не пропадает.</p><form data-sp-form="swap"><label class="field">Новое упражнение<input name="name" list="sp-swap-names" maxlength="160" required placeholder="Например, тяга резинки к поясу"></label><datalist id="sp-swap-names">${names.map(n => `<option value="${spEsc(n)}">`).join("")}</datalist><label class="field">Как делать (необязательно)<textarea name="technique" rows="2" maxlength="1000"></textarea></label><label class="sp-check-line"><input type="checkbox" name="all" checked>Во всей программе, а не только сегодня</label><div class="sheet-actions">${sheet.swapped ? `<button class="ghost-button" type="button" data-action="sp-swap-undo">Вернуть как в плане</button>` : ""}<button class="primary-button" type="submit">Заменить</button></div></form>` };
@@ -230,6 +263,19 @@ Object.assign(SP_ACTIONS, {
     if (!confirm("Удалить свободную тренировку? Отмеченные подходы тоже пропадут.")) return;
     spUpdate(prev => { const { [id]: _gone, ...rest } = prev.freeWorkouts || {}; return { ...prev, freeWorkouts: rest }; }).catch(() => {});
     spClose();
+  },
+  "sp-run-day": control => {
+    if (spTimerGuard()) return;
+    const s = spState(), C = SP();
+    const option = spOptions().all.find(o => o.key === control.dataset.key);
+    if (!option || option.historyOnly) return;
+    if (option.date <= C.todayKey()) { SP_ACTIONS["sp-start-day"](control); return; }
+    const key = spPlanForToday(option);
+    const run = spOptions().visible.find(o => o.key === key);
+    if (!run) { render(); return; }
+    if (s.state.workouts?.[run.key]) { toast("Эта тренировка уже отмечена сегодня"); render(); return; }
+    spTimerRegister(run, false, false);
+    spTimer.runner = true; spTimer.dismissed = false; spOverlay(true);
   },
   "sp-swap-undo": () => {
     const s = spState(), C = SP(), sheet = s.sheet;
