@@ -48,6 +48,10 @@
 @media(prefers-reduced-motion:reduce){:root:not([data-motion-mode=on]) .assistant-fab .af-fab-orbit::after{animation:none!important}}
 
 /* The same ambient star now hosts the real Flow composer. */
+/* Route rendering briefly creates the plain .fab before the launcher binds.
+   Keep that first computed style transparent too: otherwise the theme transition
+   animates its former accent fill into a large disc around the star. */
+html[data-flow-assistant="app"] .fab{background:transparent;color:var(--accent);border:0;box-shadow:none}
 html[data-flow-design="magic"] .fab.assistant-fab{background:transparent;border:0;box-shadow:none;width:72px;height:72px;color:var(--accent);padding:0;z-index:35}
 html[data-flow-design="magic"] .dm-live-assistant{font-family:Manrope,"Segoe UI",sans-serif;z-index:1100}
 html[data-flow-design="magic"] .dm-assistant-active .main,html[data-flow-design="magic"] .dm-assistant-active .mobile-nav,html[data-flow-design="magic"] .dm-assistant-active .mobile-brand{filter:brightness(.32) saturate(.6) blur(1.8px)}
@@ -206,8 +210,3 @@ html[data-flow-design=magic] .dm-live-assistant[data-layout=dock] .fa-idle-copy{
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-ime-settling=true] :is(.fa-context,.fa-request,.fa-result,.fa-status,.fa-answer,.fa-dock){opacity:0;animation:none!important;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode] :is(.fa-context,.fa-request,.fa-result){animation:none;}
 html[data-flow-design=magic] .dm-live-assistant[data-layout=dock][data-hero-mode] .fa-star:before{inset:-20px;animation:none;}
-
-/* Route rendering briefly creates the plain .fab before the launcher binds.
-   Keep that first computed style transparent too: otherwise the theme transition
-   animates its former accent fill into a large disc around the star. */
-html[data-flow-assistant="app"] .fab{background:transparent;color:var(--accent);border:0;box-shadow:none}
