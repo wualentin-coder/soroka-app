@@ -58,20 +58,54 @@
     return state;
   }
 
-  async function run(action) {
-    if (!available) { toast?.("Часы подключаются только в приложении Flow на Android."); return; }
+  async function run(action, silent = false) {
+    if (!available) { if (!silent) toast?.("Часы подключаются только в приложении Flow на Android."); return; }
     busy = action;
     repaint();
     try {
       state = await request(action);
-      if (action === "sync") toast?.(state?.status === "error" ? (state.error || "Синхронизация не удалась") : "Синхронизация завершена");
+      if (action === "sync") lastSyncAt = Date.now();
+      if (action === "sync" && !silent) toast?.(state?.status === "error" ? (state.error || "Синхронизация не удалась") : "Синхронизация завершена");
     } catch (error) {
-      toast?.(error.message || "Не получилось. Попробуйте ещё раз.");
+      if (!silent) toast?.(error.message || "Не получилось. Попробуйте ещё раз.");
     } finally {
       busy = "";
       repaint();
     }
   }
+
+  // Автосинк: в начале тренировки, раз в пять минут по ходу, сразу после
+  // окончания и ещё раз через 10 минут — Mi Fitness отдаёт запись не мгновенно.
+  let lastSyncAt = 0;
+  let workoutActive = false;
+  let duringTimer = null;
+  let afterTimers = [];
+  const canAutoSync = () => available && state?.enabled === true && !busy;
+  async function autoSync() {
+    if (!canAutoSync()) return;
+    if (Date.now() - lastSyncAt < 60 * 1000) return;
+    await run("sync", true);
+  }
+  addEventListener("flow:sport-clock", event => {
+    const active = event?.detail?.active === true;
+    if (active && !workoutActive) {
+      workoutActive = true;
+      void autoSync();
+      duringTimer = setInterval(() => { void autoSync(); }, 5 * 60 * 1000);
+    }
+    if (!active && workoutActive) {
+      workoutActive = false;
+      if (duringTimer) { clearInterval(duringTimer); duringTimer = null; }
+      afterTimers.forEach(timer => clearTimeout(timer));
+      afterTimers = [2 * 60 * 1000, 10 * 60 * 1000].map(delay => setTimeout(() => { void autoSync(); }, delay));
+      void autoSync();
+    }
+  });
+  addEventListener("flow:resume", () => {
+    if (Date.now() - lastSyncAt > 10 * 60 * 1000) void autoSync();
+  });
+  if (available) void load();
+
 
   const STATUS = {
     unsupported: "Health Connect недоступен на этом телефоне.",
