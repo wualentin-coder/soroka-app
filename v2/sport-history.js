@@ -416,7 +416,7 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       box.innerHTML = `<section class="sr-screen">${head("Тренировка")}<div class="sh-content">
         <h3>${esc(session.plan_snapshot.workout.title)}</h3><p class="sh-muted">${esc(dateLabel(session))}
         ${session.results_revision > 1 ? ` · Правка · ревизия ${session.results_revision}` : ""}</p>
-        ${info.summary}${info.list || '<p class="sh-muted">Подходов нет</p>'}</div>
+        ${info.summary}${window.SportCoach?.slot(session.id) || ""}${info.list || '<p class="sh-muted">Подходов нет</p>'}</div>
         ${foot("", button("edit", info.first ? "Дополнить" : "Изменить", "primary-button"))}</section>`;
     }
     function refresh() {
@@ -458,6 +458,7 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
           if (!owner.current()) return;
           if (receipt?.session && receipt.projection.revision === receipt.session.results_revision) shown = receipt;
           else await reload().catch(() => null);
+          window.SportCoach?.invalidate(sessionId);
           if (box.open) paint();
           await refresh();
           if (typeof toast === "function") toast(receipt ? "Сохранено" : "Без изменений");
