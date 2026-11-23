@@ -6,13 +6,23 @@
 
 // ------------------------------------------------------------ цели
 
-// «Цели» — весь прогресс: неделя, цели, тело, рекорды.
 function spHistoryScreen() {
   const s = spState(), C = SP();
   if (C.isSport2Enabled(s.state) && window.SportHistory) return window.SportHistory.list();
-  return spGoalsScreen();
+  const { visible } = spOptions();
+  const week = spWeekStats(visible, s.state);
+  const builtIn = C.visibleBuiltInGoals(s.state);
+  const custom = C.activeCustomGoals(s.state);
+  const view = s.historyView === "exercises" ? "exercises" : "sessions";
+  const weekLine = `<section class="sp-week-line" aria-label="Итоги недели"><span>Тренировки <b>${week.done}</b> из ${week.planned}</span><span>Время <b>${week.seconds ? C.formatDuration(week.seconds) : "—"}</b></span><span>Отметки <b>${week.habits}%</b></span></section>`;
+  const feed = `<section class="sp-block sp-history-block"><div class="sp-block-head"><h2>Журнал</h2><div class="sp-mini-tabs" role="group" aria-label="Вид истории"><button type="button" class="${view === "sessions" ? "active" : ""}" data-action="sp-history-view" data-view="sessions">Занятия</button><button type="button" class="${view === "exercises" ? "active" : ""}" data-action="sp-history-view" data-view="exercises">Упражнения</button></div></div>${spHistoryList(view)}</section>`;
+  const goals = `<section class="sp-block"><div class="sp-block-head"><h2>Цели</h2><button class="text-action" type="button" data-action="sp-goal-new">+ цель</button></div>${builtIn.map(key => spBuiltInGoal(key)).join("")}${custom.map(([id, goal]) => spCustomGoal(id, goal)).join("") || (builtIn.length ? "" : `<p class="section-note">Целей пока нет — добавьте первую.</p>`)}</section>`;
+  const body = spBodyCard();
+  const records = spRecordsCard();
+  return `${weekLine}${feed}${goals}${body}${records}`;
 }
-
+// Прежний экран целей оставлен для совместимости: он же используется, если
+// history-маршрут отсутствует.
 function spGoalsScreen() {
   const s = spState(), C = SP();
   const { visible } = spOptions();
@@ -44,7 +54,7 @@ function spBodyCard() {
 function spRecordsCard() {
   const s = spState(), C = SP();
   const records = spRecords(s.state).slice(0, s.open.records ? 50 : 5);
-  if (!records.length) return `<section class="sp-card"><p class="sp-kicker">Рекорды</p><p class="section-note">Записывайте вес в строке упражнения — лучший результат по каждому появится здесь.</p></section>`;
+  if (!records.length) return `<section class="sp-card"><p class="sp-kicker">Рекорды</p><p class="section-note">Пока нет рекордов.</p></section>`;
   const total = spRecords(s.state).length;
   return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Рекорды</p><span>${total} ${spPlural(total, "упражнение", "упражнения", "упражнений")}</span></div>${records.map(r => `<div class="sp-list-row"><span><b>${spEsc(r.exercise)}</b><small>${spDateShort(r.date)} · ${r.bodyweight ? "свой вес, за подход" : spEsc(C.WEIGHT_BASIS[r.basis || "per_dumbbell"]).toLocaleLowerCase()}</small></span><b>${r.bodyweight ? `${r.reps} повт.` : `${spKg(r.kilograms)} кг${r.reps ? ` × ${r.reps}` : ""}`}</b></div>`).join("")}${total > 5 ? `<button class="text-action" type="button" data-action="sp-toggle-open" data-key="records">${s.open.records ? "Свернуть" : `Все рекорды · ${total}`}</button>` : ""}</section>`;
 }
@@ -62,7 +72,7 @@ function spEstimate(points, target) {
 function spGoalRow({ id, title, label, current, target, suffix, body }) {
   const percent = Math.min(100, ((current ?? 0) / target) * 100);
   const open = spState().open[`goal:${id}`];
-  return `<div class="sp-goal ${percent >= 100 ? "done" : ""} ${open ? "open" : ""}"><button type="button" class="sp-goal-head" data-action="sp-toggle-open" data-key="goal:${spEsc(id)}" aria-expanded="${Boolean(open)}"><span><strong>${spEsc(title)}</strong><small>${percent >= 100 ? "Цель достигнута" : spEsc(label)}</small></span><span class="sp-goal-num"><b>${current ?? "—"}${spEsc(suffix)}</b><small>из ${target}${spEsc(suffix)}</small></span><span class="sp-progress"><i style="width:${percent}%"></i></span><small class="sp-goal-cap">${current === null ? "Запишите первый результат" : `${Math.round(percent)}% цели`}</small></button>${open ? `<div class="sp-goal-body">${body}</div>` : ""}</div>`;
+  return `<div class="sp-goal ${percent >= 100 ? "done" : ""} ${open ? "open" : ""}"><button type="button" class="sp-goal-head" data-action="sp-toggle-open" data-key="goal:${spEsc(id)}" aria-expanded="${Boolean(open)}"><span><strong>${spEsc(title)}</strong><small>${percent >= 100 ? "Цель достигнута" : spEsc(label)}</small></span><span class="sp-goal-num"><b>${current ?? "—"}${spEsc(suffix)}</b><small>из ${target}${spEsc(suffix)}</small></span><span class="sp-progress"><i style="width:${percent}%"></i></span></button>${open ? `<div class="sp-goal-body">${body}</div>` : ""}</div>`;
 }
 function spGoalEntry(id, current, unit, editing) {
   const draft = spState().goalDraft?.[id] ?? "";
@@ -180,6 +190,7 @@ function sp2SettingsScreen() {
     ${row(SP_ICON.dumbbell, "Инвентарь", "sp-tab", equipment, "inventory")}
     ${row(icon("archive"), "Программы", "sp-programs")}
   </section>
+  <h2 class="sp2-f-section-title">Тренер</h2>${window.SportCoach?.slot("settings") || ""}
   <h2 class="sp2-f-section-title">Профиль</h2><section class="sp2-f-card sp2-f-settings">
     ${row(icon("health"), "Мой профиль", "sp-tab", state.trainingProfile?.name || "", "profile")}
   </section>`;
@@ -198,14 +209,17 @@ function spProfileScreen() {
   const programs = C.programSummaries(s.catalog, all, state).filter(p => (state.programLifecycle?.[p.key]?.status ?? "active") === "active");
   const progressByProgram = new Map(spProgramProgress(all, state, true).map(p => [p.key, p]));
   const archived = C.programSummaries(s.catalog, all, state).filter(p => state.programLifecycle?.[p.key]?.status === "archived").length;
-  const journal = C.workoutJournal(visible, state);
   const owned = C.EQUIPMENT.filter(item => C.hasEquipment(state, item.id));
   const liked = C.favoriteExercises(state);
+  const journal = C.workoutJournal(visible, state);
+  const profileFields = C.PROFILE_FIELDS.filter(field => !field.health);
+  const filledFields = profileFields.filter(field => String(profile[field.key] ?? "").trim()).length;
   const n = C.notificationSettings(state.notificationSettings);
   const on = ["shower", "workout"].filter(k => n[k].enabled).length + Object.values(state.customHabits || {}).filter(h => !h.archived && C.habitNotifies(h) && C.habitReminders(h).length).length;
   const row = (action, title, note, need, extra = "") => `<button type="button" ${action}><span><strong>${title}</strong>${note ? `<small>${note}</small>` : ""}${extra}</span>${need ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>`;
-  return `<section class="sp-card sp-hero-card"><button type="button" class="sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc((profile.name?.trim() || tgName) ? name.slice(0, 1).toUpperCase() : "?")}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : name)}</strong><small>${gaps.profile ? "Анкета не заполнена" : "Анкета"}</small></span>${gaps.profile ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>
-      <button type="button" class="sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Выберите мышцы, которые хотите развивать")}</small></span>${gaps.muscles ? '<i class="sp-dot"></i>' : ""}</button></section>
+  const identityName = profile.name?.trim() || tgName ? name : "Заполнить анкету";
+  return `<section class="sp-identity"><button type="button" class="sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc((profile.name?.trim() || tgName) ? name.slice(0, 1).toUpperCase() : "?")}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : identityName)}</strong><small>Заполнено ${filledFields} из ${profileFields.length}</small></span>${icon("arrow", "icon-sm")}</button>
+      <button type="button" class="sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Не выбраны")}</small></span>${icon("arrow", "icon-sm")}</button></section>
     <section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Программы</p>${archived ? `<button class="text-action" type="button" data-action="sp-programs" data-archive="1">Архив · ${archived}</button>` : ""}</div>
       ${programs.length ? programs.map(p => {
         const dates = [...p.dates].sort(), progress = progressByProgram.get(p.key);
@@ -213,13 +227,13 @@ function spProfileScreen() {
         const day = progress ? progress.day > 0 ? `день ${progress.day} из ${progress.span}` : `старт ${spDateShort(progress.first)}` : "";
         return `<button type="button" class="sp-list-row sp-program-profile" data-action="sp-programs"><span><b>${spEsc(p.title)}</b><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])}` : ""}</small>${progress ? `<span class="sp-progress" role="progressbar" aria-label="Прогресс программы ${spEsc(p.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${percent}%"></i></span><small>Сделано ${progress.done} из ${progress.sessions} · ${day}</small>` : ""}</span>${icon("arrow", "icon-sm")}</button>`;
       }).join("") : `<p class="section-note">Пока нет. Ниже — составить с ИИ по вашим данным.</p>`}
-      <button class="primary-button sp-wide" type="button" data-action="sp-import-open">Новая программа с ИИ</button></section>
+      <button class="ghost-button sp-wide" type="button" data-action="sp-import-open">+ Новая программа с ИИ</button></section>
     <div class="sp-card sp-links">
-      ${row('data-action="sp-profile-section" data-section="body"', "Замеры", gaps.measurements.length ? `не хватает: ${gaps.measurements.map(f => f.label.toLocaleLowerCase()).join(", ")}` : "вес, обхваты, свои параметры", gaps.measurements.length > 0)}
-      ${row('data-action="sp-profile-section" data-section="equipment"', "Инвентарь и рабочие веса", gaps.equipment ? "не указан" : "", gaps.equipment, gaps.equipment ? "" : `<span class="sp-facts">${owned.map(item => `<span title="${spEsc(item.label)}">${spEquipIcon(item.id)}${item.weighed && C.equipmentKg(state, item.id) ? `<b>${C.equipmentKg(state, item.id)} кг</b>` : ""}</span>`).join("")}</span>`)}
-      ${row('data-action="sp-profile-section" data-section="favorites"', "Любимые упражнения", liked.length ? liked.slice(0, 3).map(i => spEsc(i.name)).join(", ") + (liked.length > 3 ? ` и ещё ${liked.length - 3}` : "") : "отмечаются в окне упражнения", false)}
-      ${row('data-action="sp-profile-section" data-section="history"', "История занятий", journal.length ? `${journal.length} ${spPlural(journal.length, "занятие", "занятия", "занятий")}` : "пока пусто", false)}
-      ${row('data-action="sp-sizes"', "Размеры одежды", "по меркам стопы, талии, груди и росту", false)}
+      ${row('data-action="sp-profile-section" data-section="body"', "Замеры", gaps.measurements.length ? `не хватает: ${gaps.measurements.map(f => f.label.toLocaleLowerCase()).join(", ")}` : "Заполнены", false)}
+      ${row('data-action="sp-profile-section" data-section="equipment"', "Инвентарь и рабочие веса", gaps.equipment ? "Не указан" : `${owned.length} ${spPlural(owned.length, "позиция", "позиции", "позиций")}`, false, gaps.equipment ? "" : `<span class="sp-facts">${owned.map(item => `<span title="${spEsc(item.label)}">${spEquipIcon(item.id)}${item.weighed && C.equipmentKg(state, item.id) ? `<b>${C.equipmentKg(state, item.id)} кг</b>` : ""}</span>`).join("")}</span>`)}
+      ${row('data-action="sp-profile-section" data-section="favorites"', "Любимые упражнения", liked.length ? liked.slice(0, 3).map(i => spEsc(i.name)).join(", ") + (liked.length > 3 ? ` и ещё ${liked.length - 3}` : "") : "Не выбраны", false)}
+      ${row('data-action="sp-profile-section" data-section="history"', "История занятий", journal.length ? `${journal.length} ${spPlural(journal.length, "занятие", "занятия", "занятий")}` : "Пока пусто", false)}
+      ${row('data-action="sp-sizes"', "Размеры одежды", "Не указаны", false)}
       ${row('data-action="sp-reminders"', "Напоминания", on ? `${on} ${spPlural(on, "включено", "включено", "включено")} · ${spEsc(n.timeZone)}` : "все выключены", false)}
     </div>`;
 }
@@ -478,28 +492,38 @@ function spFavorites() {
 }
 SP_ACTIONS["sp-unlike"] = control => spUpdate(prev => SP().removeFavorite(prev, control.dataset.key)).catch(() => {});
 
-// История
-function spHistory(sheet) {
-  if (SP().isSport2Enabled(spState().state) && window.SportHistory) return window.SportHistory.list();
+// История: тот же источник, что и окно «История занятий», но списком на экране.
+function spHistoryList(view = "sessions") {
   const C = SP(), state = spState().state, options = spOptions().visible;
-  const view = sheet.view || "sessions";
-  const tabs = `<div class="sp-segment small"><button type="button" class="${view === "sessions" ? "active" : ""}" data-action="sp-history-view" data-view="sessions">Занятия</button><button type="button" class="${view === "exercises" ? "active" : ""}" data-action="sp-history-view" data-view="exercises">По упражнениям</button></div>`;
   if (view === "sessions") {
     const workouts = C.workoutJournal(options, state);
-    return `${tabs}<p class="section-note">Занятия и отмеченные подходы появляются здесь сами.</p>${workouts.length ? workouts.map(w => `<details class="sp-details"><summary>${spDateShort(w.date)} · ${spEsc(w.title)}</summary><p class="section-note">${spEsc(w.program)} · ${w.consciouslyFinished ? "завершена" : "частично выполнена"}${w.seconds ? ` · ${C.formatDuration(w.seconds)}` : ""}${w.status === "archived" ? " · план в архиве" : w.status === "deleted" ? " · план удалён" : ""}</p>${w.exercises.map(e => `<p class="sp-history-line"><span>${spEsc(e.name)}</span><b>${e.completedSets}/${e.plannedSets}</b></p>`).join("")}</details>`).join("") : `<p class="section-note">История пока пуста. Отметьте подход или завершите тренировку — она появится здесь.</p>`}`;
+    return workouts.length ? workouts.map(w => {
+      const finished = Boolean(w.consciousFinished) || options.some(o => o.date === w.date && o.kind === w.kind && state.workouts?.[o.key]);
+      const doneSets = w.exercises.reduce((sum, e) => sum + e.completedSets, 0);
+      const totalSets = w.exercises.reduce((sum, e) => sum + e.plannedSets, 0);
+      const complete = finished && totalSets > 0 && doneSets >= totalSets;
+      const label = `${finished ? "завершена" : "частично"}${complete ? "" : ` · ${doneSets} из ${totalSets}`}${w.seconds ? ` · ${C.formatDuration(w.seconds)}` : ""}`;
+      return `<details class="sp-details sp-history-entry"><summary><span><b>${spDateShort(w.date)}</b><strong>${spEsc(w.title)}</strong><small>${label}</small></span><span class="sp-history-mark" aria-hidden="true">${icon("right", "icon-sm")}</span></summary><p class="section-note">${spEsc(w.program)}${w.status === "archived" ? " · план в архиве" : w.status === "deleted" ? " · план удалён" : ""}</p>${w.exercises.map(e => `<p class="sp-history-line"><span>${spEsc(e.name)}</span><b>${e.completedSets}/${e.plannedSets}</b></p>`).join("")}</details>`;
+    }).join("") : `<p class="section-note">История пока пуста. Отметьте подход или завершите тренировку — она появится здесь.</p>`;
   }
   const stats = C.exerciseStats(options, state);
-  return `${tabs}<p class="section-note">Сколько раз выполнено и как менялся рабочий вес. Упражнения объединяются по названию.</p>${stats.length ? stats.map(stat => {
+  return stats.length ? stats.map(stat => {
     const weights = stat.weights, last = weights[weights.length - 1], first = weights[0];
     const mixed = new Set(weights.map(w => w.basis || "per_dumbbell")).size > 1;
     const peak = Math.max(...weights.map(w => w.kilograms), 1);
     const delta = last && first ? last.kilograms - first.kilograms : 0;
-    return `<details class="sp-details"><summary>${spEsc(stat.name)} <small>${stat.sessions} ${spPlural(stat.sessions, "раз", "раза", "раз")}</small></summary><p class="section-note">Подходов: ${stat.completedSets} из ${stat.plannedSets} · последний раз ${spDateShort(stat.lastDate)}</p>
+    return `<details class="sp-details sp-history-entry"><summary><span><b>${spEsc(stat.name)}</b><small>${stat.sessions} ${spPlural(stat.sessions, "раз", "раза", "раз")} · ${stat.completedSets} из ${stat.plannedSets} подходов</small></span><span class="sp-history-mark" aria-hidden="true">${icon("right", "icon-sm")}</span></summary>
       ${weights.length ? `<div class="sp-weights"><p><span>${spEsc(C.WEIGHT_BASIS[last.basis || "per_dumbbell"])}</span><b>${spKg(last.kilograms)} кг${weights.length > 1 && !mixed && delta ? ` <em class="${delta > 0 ? "up" : "down"}">${delta > 0 ? "+" : "−"}${spKg(Math.abs(delta))}</em>` : ""}</b></p>${weights.slice(-8).map(w => `<div class="sp-weight-bar"><span>${spDateShort(w.date)}</span><i><b style="width:${Math.max(6, w.kilograms / peak * 100)}%"></b></i><strong>${spKg(w.kilograms)} кг${w.reps ? ` × ${w.reps}` : ""}</strong></div>`).join("")}</div>` : `<p class="section-note">Вес ещё не записан.</p>`}
-</details>`;
-  }).join("") : `<p class="section-note">Пока нечего показать. Отметьте подход или запишите вес.</p>`}`;
+ </details>`;
+  }).join("") : `<p class="section-note">Пока нечего показать. Отметьте подход или запишите вес.</p>`;
 }
-SP_ACTIONS["sp-history-view"] = control => { spState().sheet.view = control.dataset.view; render(); };
+function spHistory(sheet) {
+  if (SP().isSport2Enabled(spState().state) && window.SportHistory) return window.SportHistory.list();
+  const view = sheet.view || "sessions";
+  const tabs = `<div class="sp-mini-tabs" role="group" aria-label="Вид истории"><button type="button" class="${view === "sessions" ? "active" : ""}" data-action="sp-history-view" data-view="sessions">Занятия</button><button type="button" class="${view === "exercises" ? "active" : ""}" data-action="sp-history-view" data-view="exercises">Упражнения</button></div>`;
+  return `${tabs}${spHistoryList(view)}`;
+}
+SP_ACTIONS["sp-history-view"] = control => { const s = spState(); s.historyView = control.dataset.view; if (s.sheet) s.sheet.view = control.dataset.view; render(); };
 
 // ------------------------------------------------------------ настройки, программы, экспорт
 
