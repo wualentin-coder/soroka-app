@@ -100,8 +100,13 @@ function spLoad(readOnly=false) {
   return spCall(readOnly?"peek":"load").then(accept).catch(error => {
     if(!current())return;
     const cached=!readOnly&&runtime?.recover();
-    if(cached){accept(cached);s.saveError="Нет связи. План сохранён на устройстве.";return;}
-    if(!readOnly){s.error = "Не удалось загрузить данные спорта. Проверьте связь.";console.warn(error);}
+    if(cached){accept(cached);s.saveError="Нет связи. Покажу сохранённое.";return;}
+    if(!readOnly){
+      s.error = !navigator.onLine
+        ? "Нет связи. Сохранённых данных на устройстве нет."
+        : "Сервер не ответил.";
+      console.warn(error);
+    }
   })
     .finally(() => { if(current()){s.loading = false; spRerender(true);} });
 }
@@ -167,7 +172,7 @@ window.addEventListener("online", () => spFlush().catch(() => {}));
 function spRerender(force = false) {
   if (!["sport", "today"].includes(ui.page)) return;
   const field = document.activeElement;
-  if (!force && field && field.closest?.(".sp-sheet, .sp-page, .sp2-f") && /INPUT|TEXTAREA|SELECT/.test(field.tagName) && field.type !== "checkbox" && field.type !== "range") return;
+  if (!force && field && field.closest?.(".sp-sheet, .sp-screen") && /INPUT|TEXTAREA|SELECT/.test(field.tagName) && field.type !== "checkbox" && field.type !== "range") return;
   render();
 }
 // Вернулись в приложение — подтянуть то, что отметили кнопкой в Telegram.
@@ -193,7 +198,8 @@ function spDay() { const s = spState(); return SP().programDaySince(s.startedOn 
 function spOptions() {
   const s = spState(), C = SP();
   const programs = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined, s.state);
-  const all = spApplySwaps(spApplyExtras([...programs, ...spFreeOptions(s.state)], s.state), s.state);
+  let all = spApplySwaps(spApplyExtras([...programs, ...spFreeOptions(s.state)], s.state), s.state);
+  if (C.isSport2Enabled(s.state) && !s.practicePreview) all = window.SportCoach?.overlay(all, s.state) || all;
   return { all, visible: C.visibleWorkoutOptions(all, s.state) };
 }
 // ------------------------------------------------------------ значки (из WooSport)
@@ -241,6 +247,33 @@ const spEquipIcon = id => SP_EQUIPMENT_ICON[id] ? `<svg class="sp-ic" viewBox="0
 
 const SP_TABS = [["today", "Сегодня"], ["training", "Тренировка"], ["goals", "Цели"], ["profile", "Профиль"]];
 
+/** Шапка раздела остаётся видимой и на телефоне: это не lv/dm-заголовок,
+ *  который общая оболочка скрывает в компактном режиме. */
+function spScreenHeader() {
+  return `<header class="sp-head"><h1>Спорт</h1></header>`;
+}
+function spShell(content, view = "") {
+  return `<div class="sp-screen"${view ? ` data-view="${view}"` : ""}>${spScreenHeader()}${content}</div>`;
+}
+/** На 320 ряд дней прокручивается локально; выбранный день остаётся видимым. */
+function spCenterWeekDay() {
+  const row = document.querySelector(".sp-screen .sp-week-days");
+  if (!row || row.scrollWidth <= row.clientWidth + 1) return;
+  const active = row.querySelector(".on");
+  if (!active) return;
+  row.scrollLeft = Math.max(0, active.offsetLeft - (row.clientWidth - active.offsetWidth) / 2);
+}
+/** Вкладки стоят ровно под текущей высотой общей шапки, даже когда она сжимается. */
+function spUpdateStickyTop() {
+  if (!document.querySelector(".sp-screen .sp-tabs")) return;
+  const topbar = document.querySelector(".dm-topbar");
+  const top = topbar ? Math.max(0, Math.round(topbar.getBoundingClientRect().bottom)) : 0;
+  document.documentElement.style.setProperty("--sp-sticky-top", `${top}px`);
+}
+document.addEventListener("scroll", spUpdateStickyTop, { passive: true });
+window.addEventListener("resize", spUpdateStickyTop);
+setInterval(() => { if (document.querySelector(".sp-screen")) spUpdateStickyTop(); }, 500);
+
 const SP2_TABS = [["today", "Сегодня"], ["training", "Программа"], ["history", "История"]];
 const SP2_SUBSCREENS = { settings: "Настройки спорта", inventory: "Инвентарь", profile: "Мой профиль", goals: "Мои цели", workout: "Состав и замены" };
 function sp2Screen(failed, banner) {
@@ -253,7 +286,8 @@ function sp2Screen(failed, banner) {
       <nav class="sp2-f-tabs" role="tablist" aria-label="Спорт">${SP2_TABS.map(([key, label]) => `<button type="button" role="tab" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}</button>`).join("")}</nav>`;
   const screens = {
     today: spTodayScreen, training: spTrainingScreen, history: spHistoryScreen, goals: spGoalsScreen,
-    profile: spProfileScreen, settings: sp2SettingsScreen, inventory: spEquipment, workout: sp2WorkoutScreen,
+    profile: spProfileScreen, settings: sp2SettingsScreen,
+    inventory: () => (window.SportCoach?.slot("inventory") || "") + spEquipment(), workout: sp2WorkoutScreen,
   };
   return `<div class="sp-screen sp2-f" data-view="${s.tab}">${head}${failed}${(screens[s.tab] || spTodayScreen)()}${banner}</div>${spSheetHtml()}`;
 }
@@ -328,34 +362,37 @@ function sp2DayHero(options, date) {
   const sets = plan.exercises.reduce((sum, e) => sum + C.exerciseSets(e), 0);
   const start = (option, main) => open(option)
     ? `<button class="${main ? "primary-button sp2-f-primary" : "ghost-button"}" type="button" data-action="sp-start-day" data-key="${spEsc(option.key)}">${C.optionCompletion(option, s.state) > 0 || spTimer.session?.key === option.key ? "Продолжить" : "Начать"}</button>`
-    : sp2Completed(option, s.state) ? `<span class="sp2-f-complete">${icon("check")} Готово</span>` : "";
+    : sp2Completed(option, s.state) ? `<span class="sp2-f-complete">${icon("check")} Готово</span>`
+    : date > today && !option.historyOnly && option.kind === "main" ? `<button class="${main ? "primary-button sp2-f-primary" : "ghost-button"}" type="button" data-action="sp-run-day" data-key="${spEsc(option.key)}">${s.state.workoutTimes?.[spTodayCopyKey(option)] ? "Продолжить" : "Выполнить сегодня"}</button>` : "";
   return `<article class="sp2-f-card sp2-f-hero">
     ${media ? `<div class="sp2-f-media" role="img" aria-label="${spEsc(C.muscleNames([...new Set([...primary, ...secondary])]))}">${media}</div>` : ""}
     <div class="sp2-f-herobody"><p class="sp2-f-kicker">${label(lead)} дня${week ? ` · неделя ${week}, день ${weekDay}` : ""}</p><h2>${spEsc(plan.title)}</h2>
     <p class="sp2-f-chips">${duration ? `<span>${duration}</span>` : ""}<span>${count} ${spPlural(count, "упражнение", "упражнения", "упражнений")}</span>${plan.focus ? `<span>${spEsc(plan.focus)}</span>` : ""}</p></div></article>
     <button class="sp2-f-card sp2-f-composition" type="button" data-action="sp-2-workout" data-key="${spEsc(lead.key)}"><strong>Состав и замены</strong><span>${sets} ${spPlural(sets, "подход", "подхода", "подходов")} ${icon("right")}</span></button>
-    ${open(lead) ? `<div class="sp2-f-cta">${start(lead, true)}</div>` : start(lead, true)}
+    ${open(lead) || (date > today && !sp2Completed(lead, s.state)) ? `<div class="sp2-f-cta">${start(lead, true)}</div>` : start(lead, true)}
     ${selected.filter(option => option !== lead).map(option => `<div class="sp2-f-card sp2-f-secondary"><button type="button" data-action="sp-2-workout" data-key="${spEsc(option.key)}"><small>${label(option)}</small><strong>${spEsc(option.plan.title)}</strong></button>${start(option, false)}</div>`).join("")}`;
 }
 
 function renderSportPage() {
   const s = spState();
   if(s.practicePreview&&!s.loading&&!s.error)spLoad();
-  if (!SP()) return `${header("Спорт", "", "")}<div class="sp-page"><p class="section-note">Не загрузился модуль спорта — обновите приложение.</p></div>`;
+  if (!SP()) return spShell(`<p class="section-note">Не загрузился модуль спорта — обновите приложение.</p>`);
   if (!s.state) {
     spLoad();
-    return `${header("Спорт", "", "")}<div class="sp-page">${s.error ? `<section class="en-wait en-load-error" role="status"><strong>Не удалось загрузить спорт</strong><p class="section-note">${spEsc(s.error)}</p><button type="button" class="ghost-button" data-action="sp-load-retry">Попробовать снова</button></section>` : `<div class="en-wait" role="status" aria-busy="true"><span class="live-spin" aria-hidden="true"></span><p class="section-note">Загружаем тренировки…</p></div>`}</div>`;
+    return spShell(s.error ? `<section class="en-wait en-load-error" role="status"><strong>Не удалось загрузить спорт</strong><p class="section-note">${spEsc(s.error)}</p><button type="button" class="ghost-button" data-action="sp-load-retry">Повторить</button></section>` : `<div class="en-wait" role="status" aria-busy="true"><span class="live-spin" aria-hidden="true"></span><p class="section-note">Загружаем тренировки…</p></div>`);
   }
   const C = SP();
   const banner = s.demo ? `<p class="sp-demo">Демо WooSport · данные не сохраняются</p>` : "";
-  const failed = (s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "") + (s.error ? `<div class="sp-error" role="status">${spEsc(s.error)} <button type="button" class="text-action" data-action="sp-load-retry">Попробовать снова</button></div>` : "");
+  const failed = (s.saveError ? `<p class="sp-error" role="alert">${spEsc(s.saveError)}</p>` : "") + (s.error ? `<div class="sp-error" role="status">${spEsc(s.error)} <button type="button" class="text-action" data-action="sp-load-retry">Повторить</button></div>` : "");
   if (C.isSport2Enabled(s.state)) return sp2Screen(failed, banner);
   if (SP2_SUBSCREENS[s.tab] && !SP_TABS.some(([key]) => key === s.tab)) s.tab = "today";
+  const profileGap = C.profileGaps(s.state).profile;
   const tabItems = SP_TABS;
   if (s.tab === "history") s.tab = "goals";
-  const tabs = `<div class="sp-tabs" role="tablist">${tabItems.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}${key === "profile" && C.profileGaps(s.state).any ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
+  const tabs = `<div class="sp-tabs" role="tablist">${tabItems.map(([key, label]) => `<button type="button" role="tab" class="${s.tab === key ? "active" : ""}" aria-selected="${s.tab === key}" data-action="sp-tab" data-tab="${key}">${label}${key === "profile" && profileGap ? '<i class="sp-dot" aria-label="есть незаполненное"></i>' : ""}</button>`).join("")}</div>`;
   const body = s.tab === "history" ? spHistoryScreen() : s.tab === "training" ? spTrainingScreen() : s.tab === "goals" ? spGoalsScreen() : s.tab === "profile" ? spProfileScreen() : spTodayScreen();
-  return `${header("Спорт", "", "")}<div class="sp-page">${banner}${failed}${tabs}${body}</div>${spSheetHtml()}`;
+  setTimeout(() => { spCenterWeekDay(); spUpdateStickyTop(); }, 0);
+  return spShell(`${failed}${tabs}${body}${banner}`, s.tab) + spSheetHtml();
 }
 // ------------------------------------------------------------ окна (шторки Flow)
 
@@ -366,7 +403,7 @@ function spSheetHtml() {
   if (!s.sheet || !SP_SHEETS[s.sheet.kind]) return "";
   const view = SP_SHEETS[s.sheet.kind](s.sheet);
   if (!view) return "";
-  return `<div class="modal-backdrop sp-backdrop" data-action="sp-backdrop"><section class="sheet sp-sheet ${view.wide ? "is-wide" : ""}${SP().isSport2Enabled(s.state) && s.sheet.kind === "section" && s.sheet.section === "equipment" ? " sp2-equipment" : ""}${SP().isSport2Enabled(s.state) && s.sheet.kind === "reminders" ? " sp2-reminders" : ""}" role="dialog" aria-modal="true" aria-label="${spEsc(view.title)}"><div class="sheet-handle"></div><div class="sheet-head"><h2>${spEsc(view.title)}</h2><button class="icon-button" type="button" data-action="sp-close" aria-label="Закрыть">${icon("close")}</button></div>${view.body}${s.sheetError ? `<p class="sp-error" role="alert">${spEsc(s.sheetError)}</p>` : ""}</section></div>`;
+  return `<div class="modal-backdrop sp-backdrop" data-action="sp-backdrop"><section class="sheet sp-sheet ${view.wide ? "is-wide" : ""}${SP().isSport2Enabled(s.state) && s.sheet.kind === "section" && s.sheet.section === "equipment" ? " sp2-equipment" : ""}${SP().isSport2Enabled(s.state) && s.sheet.kind === "reminders" ? " sp2-reminders" : ""}" role="dialog" aria-modal="true" aria-label="${spEsc(view.title)}"><div class="sheet-handle"></div><div class="sheet-head"><h2>${spEsc(view.title)}</h2>${view.action || ""}<button class="icon-button" type="button" data-action="sp-close" aria-label="Закрыть">${icon("close")}</button></div>${view.body}${s.sheetError ? `<p class="sp-error" role="alert">${spEsc(s.sheetError)}</p>` : ""}</section></div>`;
 }
 function spSheetError(message) { spState().sheetError = message; render(); }
 
@@ -379,11 +416,10 @@ function spTodayScreen() {
   const today = C.todayKey(), date = s.date;
   const { visible } = spOptions();
   const parts = C.isSport2Enabled(s.state)
-    ? [sp2DayHeading(date), sp2Week(visible), sp2DayHero(visible, date)]
+    ? [sp2DayHeading(date), sp2Week(visible), sp2DayHero(visible, date), window.SportCoach?.slot("latest") || ""]
     : [spWeekStrip(visible), spDayWorkoutCard(visible, date)];
   parts.push(spTestCard(visible, date));
   if (date <= today) parts.push(spDayList(visible, date));
-  if (date === today) parts.push(spCountersCard());
   return parts.join("");
 }
 /** Неделя полосой: выбор дня для «Сегодня» и «Тренировки». Месяц — по нажатию. */
@@ -398,25 +434,26 @@ function spWeekStrip(options) {
     const pct = Math.max(...main.map(o => C.optionCompletion(o, s.state)));
     return date > today ? "plan" : pct === 100 ? "done" : date < today ? "missed" : pct > 0 ? "part" : "plan";
   };
-  const label = s.date === today ? "Сегодня" : s.date === C.offsetDateKey(today, -1) ? "Вчера" : s.date === C.offsetDateKey(today, 1) ? "Завтра" : "";
+  const label = s.date === C.offsetDateKey(today, -1) ? "Вчера" : s.date === C.offsetDateKey(today, 1) ? "Завтра" : "";
   const month = s.monthOpen ? spCalendar(options) : "";
-  return `<section class="sp-week"><div class="sp-week-head"><button class="icon-button" type="button" data-action="sp-week-shift" data-d="-1" aria-label="Неделя назад">${icon("left", "icon-sm")}</button><button type="button" class="sp-week-title" data-action="sp-month" aria-expanded="${Boolean(s.monthOpen)}"><b>${label ? `${label} · ` : ""}${spDateLong(s.date)}</b><small>${s.monthOpen ? "Скрыть месяц" : "Месяц"}</small></button><button class="icon-button" type="button" data-action="sp-week-shift" data-d="1" aria-label="Неделя вперёд">${icon("right", "icon-sm")}</button></div>
-    <div class="sp-week-days">${days.map((d, i) => `<button type="button" class="${[d === s.date ? "on" : "", d === today ? "today" : "", status(d)].join(" ")}" data-action="sp-date" data-date="${d}" aria-pressed="${d === s.date}"><small>${names[i]}</small><b>${Number(d.slice(8))}</b><i></i></button>`).join("")}</div>
+  const week = spWeekStats(options, s.state);
+  return `<section class="sp-week"><div class="sp-week-head"><button class="icon-button" type="button" data-action="sp-week-shift" data-d="-1" aria-label="Неделя назад">${icon("left", "icon-sm")}</button><div class="sp-week-title"><b>${label ? `${label} · ` : ""}${spDateLong(s.date)}</b></div><button class="icon-button sp-month-toggle" type="button" data-action="sp-month" aria-expanded="${Boolean(s.monthOpen)}" aria-label="${s.monthOpen ? "Скрыть месяц" : "Показать месяц"}">${icon("calendar", "icon-sm")}</button><button class="icon-button" type="button" data-action="sp-week-shift" data-d="1" aria-label="Неделя вперёд">${icon("right", "icon-sm")}</button></div>
+    <div class="sp-week-days" data-sp-week-days>${days.map((d, i) => `<button type="button" class="${[d === s.date ? "on" : "", d === today ? "today" : "", status(d)].join(" ")}" data-action="sp-date" data-date="${d}" aria-pressed="${d === s.date}"><small>${names[i]}</small><b>${Number(d.slice(8))}</b><i></i></button>`).join("")}</div>
+    <div class="sp-week-summary"><small>На этой неделе</small><b>${week.done} из ${week.planned}</b><span>${week.seconds ? C.formatDuration(week.seconds) : "Пока без времени"}${week.habits ? ` · ${week.habits}% отметок` : ""}</span></div>
     ${s.date !== today ? `<button class="text-action sp-center" type="button" data-action="sp-today">Вернуться к сегодня</button>` : ""}</section>${month}`;
 }
 
-/** Тренировка выбранного дня одной карточкой: начать или продолжить в один шаг. */
+/** Тренировка выбранного дня: одно главное действие и тихие подробности. */
 function spDayWorkoutCard(options, date) {
   const s = spState(), C = SP(), today = C.todayKey();
   const sport2 = C.isSport2Enabled(s.state);
   const kinds = ["main", "splits"].map(kind => C.selectedOption(options, date, kind, s.state)).filter(Boolean);
   if (!kinds.length) {
-    if (C.withinProgram(options, date)) return `<section class="sp-card sp-today-workout rest">${sport2 ? "" : '<p class="sp-kicker">Тренировка дня</p>'}<h2>День отдыха</h2>${sport2 ? "" : '<p class="section-note">Мышцы растут между тренировками. Лёгкое движение, сон и вода — лучшее, что можно сделать сегодня.</p>'}<button class="text-action" type="button" data-action="sp-free-new">${sport2 ? "Свободная тренировка" : "+ Всё-таки потренироваться"}</button></section>`;
+    if (C.withinProgram(options, date)) return `<section class="sp-quiet-state">${sport2 ? "" : '<p class="sp-kicker">Тренировка дня</p>'}<h2>День отдыха</h2>${sport2 ? "" : '<p class="section-note">Мышцы растут между тренировками. Лёгкое движение, сон и вода — лучшее, что можно сделать сегодня.</p>'}<button class="text-action" type="button" data-action="sp-free-new">${sport2 ? "Свободная тренировка" : "+ Всё-таки потренироваться"}</button></section>`;
     const programs = spProgramProgress(options, s.state).length;
-    return `<section class="sp-card sp-today-workout empty"><p class="sp-kicker">Тренировка дня</p><h2>${programs ? "На этот день ничего нет" : "Программы ещё нет"}</h2><p class="section-note">${programs ? "Можно записать свободную тренировку." : "Составьте её с ИИ: анкета и инвентарь в профиле уйдут ему вместе с инструкцией. Или запишите тренировку сами."}</p><div class="sp-row-actions">${programs ? "" : `<button class="primary-button" type="button" data-action="sp-import-open">Новая программа с ИИ</button>`}<button class="ghost-button" type="button" data-action="sp-free-new">Свободная тренировка</button></div></section>`;
+    return `<section class="sp-quiet-state"><p class="sp-kicker">Тренировка дня</p><h2>${programs ? "На этот день ничего нет" : "Программы ещё нет"}</h2>${programs ? `<p class="section-note">Можно записать свободную тренировку.</p>` : ""}<div class="sp-row-actions">${programs ? "" : `<button class="primary-button" type="button" data-action="sp-import-open">Новая программа с ИИ</button>`}<button class="ghost-button" type="button" data-action="sp-free-new">Свободная тренировка</button></div></section>`;
   }
-  const lead = sport2 ? kinds.find(option => date <= today && !s.state.workouts?.[option.key] && C.optionCompletion(option, s.state) !== 100) || kinds[0] : null;
-  return kinds.map(option => {
+  const items = kinds.map(option => {
     const checks = C.optionChecks(option, s.state);
     const total = option.plan.exercises.length;
     const done = option.plan.exercises.filter((e, i) => C.completedSets(checks[i], C.exerciseSets(e)) >= C.exerciseSets(e)).length;
@@ -424,16 +461,32 @@ function spDayWorkoutCard(options, date) {
     const finished = Boolean(s.state.workouts?.[option.key]) || pct === 100;
     const seconds = C.workoutSeconds(s.state, option);
     const future = date > today;
-    const action = finished ? `<span class="sp-pill done">${icon("check", "icon-sm")}Готово${seconds ? ` · ${C.formatDuration(seconds)}` : ""}</span>`
-      : future ? `<span class="sp-pill">${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}</span>`
-      : option.historyOnly ? "" : `<button class="${sport2 && option !== lead ? "ghost-button" : "primary-button"}" type="button" data-action="sp-start-day" data-key="${spEsc(option.key)}">${pct > 0 ? "Продолжить" : "Начать"}</button>`;
-    const muscles = sport2 && option === lead ? C.knownMuscles(option.plan.exercises.flatMap(e => e.muscles?.primary || [])) : [];
-    if (muscles.length && !window.SportFigures) spFiguresNeeded();
-    const figure = muscles.length && window.SportFigures
-      ? `<span class="sp2-day-figure">${spFigureSvg(spShapes(muscles), new Set(), window.SportFigures.FIGURE_VIEWBOX, false)}</span>` : "";
-    return `<section class="sp-card sp-today-workout ${sport2 ? "sp2-day" : ""}"><div class="sp-card-head"><p class="sp-kicker">${option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</p><span>${spEsc(option.programTitle)}</span></div><button type="button" class="sp-today-title" data-action="sp-tab" data-tab="training">${figure}<h2>${spEsc(option.plan.title)}</h2>${option.plan.focus ? `<small>${spEsc(option.plan.focus)}</small>` : ""}</button>
-      <span class="sp-progress"><i style="width:${pct}%"></i></span><div class="sp-card-head"><span class="section-note">${sport2 && option === lead ? `≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))} · ${total} упр.` : `${done} из ${total} упражнений · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(option.plan))}`}</span>${action}</div></section>`;
-  }).join("");
+    const doneSets = option.plan.exercises.reduce((sum, e, i) => sum + C.completedSets(checks[i], C.exerciseSets(e)), 0);
+    const totalSets = option.plan.exercises.reduce((sum, e) => sum + C.exerciseSets(e), 0);
+    return { option, total, done, doneSets, totalSets, pct, finished, seconds, future };
+  });
+  const primary = items.find(item => !item.finished && !item.future) || items[0];
+  const others = items.filter(item => item !== primary);
+  const action = (item, isPrimary = true) => item.finished
+    ? `<span class="sp-done-pill">${icon("check", "icon-sm")}Готово${item.seconds ? ` · ${C.formatDuration(item.seconds)}` : ""}</span>`
+    : item.future ? (item.option.kind === "main"
+      ? `<button class="${sport2 && !isPrimary ? "ghost-button" : "primary-button"}" type="button" data-action="sp-run-day" data-key="${spEsc(item.option.key)}">${s.state.workoutTimes?.[spTodayCopyKey(item.option)] ? "Продолжить" : "Выполнить сегодня"}</button>`
+      : `<span class="sp-quiet-pill">${C.formatDuration(C.estimateWorkoutSeconds(item.option.plan))}</span>`)
+    : item.option.historyOnly ? "" : `<button class="${sport2 && !isPrimary ? "ghost-button" : "primary-button"}" type="button" data-action="sp-start-day" data-key="${spEsc(item.option.key)}">${item.pct > 0 || spTimer.session?.key === item.option.key ? "Продолжить" : "Начать"}</button>`;
+  const lead = primary;
+  const leadDescription = sport2
+    ? `≈ ${C.formatDuration(C.estimateWorkoutSeconds(lead.option.plan))} · ${lead.total} упр.`
+    : `${lead.doneSets} из ${lead.totalSets} подходов · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(lead.option.plan))}`;
+  const muscleIds = sport2 ? lead.option.plan.exercises.flatMap(e => e.muscles?.primary || []) : [];
+  const muscles = sport2 ? C.knownMuscles(muscleIds) : [];
+  if (sport2 && muscles.length && !window.SportFigures) spFiguresNeeded();
+  const figure = sport2 && muscles.length && window.SportFigures
+    ? `<span class="sp2-day-figure">${spFigureSvg(spShapes(muscles), new Set(), window.SportFigures.FIGURE_VIEWBOX, false)}</span>` : "";
+  const focus = `<section class="sp-focus ${sport2 ? "sp2-day" : ""} ${lead.finished ? "is-done" : ""}"><div class="sp-focus-meta"><span>${lead.option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</span><span>${spEsc(lead.option.programTitle)}</span></div><button type="button" class="sp-focus-title" data-action="sp-tab" data-tab="training">${figure}<h2>${spEsc(lead.option.plan.title)}</h2>${lead.option.plan.focus ? `<small>${spEsc(lead.option.plan.focus)}</small>` : ""}</button>
+    <span class="sp-progress sp-focus-progress" role="progressbar" aria-label="Выполнено подходов" aria-valuemin="0" aria-valuemax="${lead.totalSets}" aria-valuenow="${lead.doneSets}"><i style="width:${lead.pct}%"></i></span>
+    <div class="sp-focus-foot"><span>${leadDescription}</span>${action(lead)}</div></section>`;
+  const rest = others.map(item => `<section class="sp-quiet-row"><button type="button" class="sp-quiet-row-main" data-action="sp-tab" data-tab="training"><small>${item.option.kind === "splits" ? "Растяжка дня" : "Тренировка дня"}</small><strong>${spEsc(item.option.plan.title)}</strong><span>${item.doneSets} из ${item.totalSets} подходов · ≈ ${C.formatDuration(C.estimateWorkoutSeconds(item.option.plan))}</span></button>${action(item, false)}</section>`).join("");
+  return `${focus}${rest}`;
 }
 
 /** Всё, что отмечается за день, — одним списком: подвижность, душ, свои привычки. Подъём и сон — в разделе «Сон». */
@@ -447,7 +500,11 @@ function spDayList(options, date) {
     if (habit.archived || habit.createdOn > date) continue;
     rows.push(spHabitRow({ id, label: habit.name, marks: s.state.habitChecks?.[id] || {}, date, total: C.habitTarget(habit), dayParts: C.isMorningEvening(habit), since: habit.createdOn, reminders: C.habitReminders(habit).map(r => r.time), editable: true }));
   }
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">${date === today ? "Отметить сегодня" : "Отметки дня"}</p><button class="text-action" type="button" data-action="sp-habit-new">+ привычка</button></div>${rows.join("")}</section>`;
+  const counters = spCounterRows();
+  const counterBlock = counters
+    ? `<div class="sp-day-counters"><div class="sp-day-counters-head"><span>Без срывов</span><button class="text-action" type="button" data-action="sp-counter-new">+ счётчик</button></div>${counters}</div>`
+    : `<button class="sp-add-row" type="button" data-action="sp-counter-new">+ счётчик</button>`;
+  return `<section class="sp-block"><div class="sp-block-head"><h2>${date === today ? "Отметки дня" : "Отметки"}</h2><button class="text-action" type="button" data-action="sp-habit-new">+ привычка</button></div>${rows.join("")}${counterBlock}</section>`;
 }
 /** Утренняя подвижность — не разминка перед занятием: она про тело, одинаковая в любой день. */
 function spMobilityRow(date, plan) {
@@ -521,11 +578,11 @@ function spStrip(days, began) {
 
 
 
-function spCountersCard() {
+function spCounterRows() {
   const s = spState(), C = SP();
   const now = Date.now();
   const entries = C.activeCounters(s.state.counters || {}, now);
-  const rows = entries.map(([id, counter]) => {
+  return entries.map(([id, counter]) => {
     const t = C.elapsedTime(counter.startedAt, now);
     const st = C.counterStats(counter, now);
     const open = s.open[`counter:${id}`];
@@ -539,8 +596,6 @@ function spCountersCard() {
     }
     return `<div class="sp-counter ${open ? "open" : ""}"><button type="button" class="sp-counter-row" data-action="sp-toggle-open" data-key="counter:${spEsc(id)}" aria-expanded="${Boolean(open)}"><span><strong><i class="sp-caret"></i>${spEsc(counter.name)}</strong><small>С ${new Date(counter.startedAt).toLocaleDateString("ru-RU")}</small></span><span class="sp-clock"><b>${t.days} <small>${spPlural(t.days, "день", "дня", "дней")}</small></b><span data-sp-clock="${spEsc(counter.startedAt)}">${[t.hours, t.minutes, t.seconds].map(n => String(n).padStart(2, "0")).join(":")}</span></span></button>${goal}${more}</div>`;
   }).join("");
-  if (!rows) return `<button type="button" class="sp-card sp-ghost-card" data-action="sp-counter-new"><span><strong>Счётчик без срывов</strong><small>«Не курю», «Без сладкого» — сколько дней держитесь</small></span>${icon("plus", "icon-sm")}</button>`;
-  return `<section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Без срывов</p><button class="text-action" type="button" data-action="sp-counter-new">+ счётчик</button></div>${rows}</section>`;
 }
 setInterval(() => {
   if (ui.page !== "sport" || !SP()) return;
@@ -560,8 +615,8 @@ function spTestCard(options, date) {
   const ago = last ? Math.round((Date.parse(`${C.todayKey()}T12:00:00Z`) - Date.parse(`${last}T12:00:00Z`)) / 86400000) : null;
   return `<section class="sp-card sp-test"><p class="sp-kicker">Контрольная точка</p><h2>${spEsc(chosen.plan.title)}</h2>${chosen.plan.focus ? `<p class="section-note">${spEsc(chosen.plan.focus)}</p>` : ""}
     <ol class="sp-steps-list">${chosen.plan.exercises.map(e => `<li><span>${spEsc(e.name)}</span><b>${spEsc(e.sets_reps)}</b></li>`).join("")}</ol>
-    <button class="primary-button sp-wide" type="button" data-action="sp-tab" data-tab="goals" ${readOnly ? "disabled" : ""}>${readOnly ? "Тест по плану" : "Записать результаты"}</button>
-    <div class="sp-test-measure"><span><strong>Обхваты и вес</strong><small>${ago === null ? "Ещё ни разу не записаны" : ago <= 0 ? "Записаны сегодня" : `Последний раз ${ago} ${spPlural(ago, "день", "дня", "дней")} назад`}</small></span><button class="ghost-button" type="button" data-action="sp-profile-section" data-section="body" ${readOnly ? "disabled" : ""}>Записать замеры</button></div></section>`;
+    <button class="ghost-button sp-wide" type="button" data-action="sp-tab" data-tab="goals" ${readOnly ? "disabled" : ""}>${readOnly ? "Тест по плану" : "Записать результаты"}</button>
+    <div class="sp-test-measure"><span><strong>Обхваты и вес</strong><small>${ago === null ? "Ещё ни разу не записаны" : ago <= 0 ? "Записаны сегодня" : `Последний раз ${ago} ${spPlural(ago, "день", "дня", "дней")} назад`}</small></span><button class="text-action" type="button" data-action="sp-profile-section" data-section="body" ${readOnly ? "disabled" : ""}>Записать</button></div></section>`;
 }
 
 // ------------------------------------------------------------ окна «Сегодня»
@@ -782,3 +837,4 @@ document.addEventListener("click", event => { if (Date.now() - spSwipeIgnore < 2
 // Лента дней открывается на сегодняшнем краю.
 new MutationObserver(() => { for (const el of document.querySelectorAll("[data-sp-strip]:not([data-scrolled])")) { el.dataset.scrolled = "1"; el.scrollLeft = el.scrollWidth; } })
   .observe(document.documentElement, { childList: true, subtree: true });
+
