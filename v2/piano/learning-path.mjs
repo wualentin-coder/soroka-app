@@ -1,7 +1,7 @@
-import { COURSE, ALL_COURSE, RECOMMENDED_COURSE, normalizeCourseProgress } from './course.mjs?v=bc0d6f000e4b';
-import { CURRICULUM_V2_SKILLS } from './curriculum-v2.mjs?v=bc0d6f000e4b';
-import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=bc0d6f000e4b';
-import { isCompactFoundationLesson } from './microlearning-data.mjs?v=bc0d6f000e4b';
+import { COURSE, ALL_COURSE, RECOMMENDED_COURSE, normalizeCourseProgress } from './course.mjs?v=d7139bace65d';
+import { CURRICULUM_V2_SKILLS } from './curriculum-v2.mjs?v=d7139bace65d';
+import { CURRICULUM_SKILLS, CURRICULUM_CHECKPOINT_ALTERNATIVES, CURATED_SONG_GOALS, MUSICAL_LESSONS } from './curriculum-data.mjs?v=d7139bace65d';
+import { isCompactFoundationLesson } from './microlearning-data.mjs?v=d7139bace65d';
 
 export const LEARNING_PATH_VERSION = 'practical-path-v1';
 export const SKILLS = CURRICULUM_SKILLS.map(skill => ({ ...skill, prerequisites: [...skill.prerequisites],
