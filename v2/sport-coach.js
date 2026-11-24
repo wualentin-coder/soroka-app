@@ -80,7 +80,7 @@
 
   function overlay(options, state) {
     if (!scope || !planWorkouts.size) return options;
-    const make = (option, workout) => {
+    const make = (option, workout, plan) => {
       const blocks = workout.blocks.filter(b => !["warmup", "mobility"].includes(b.type));
       return { ...option, sport2PlanId: plan.id,
         plan: versionDay(workout, blocks, option.plan, option.kind) || option.plan,
@@ -91,14 +91,14 @@
     const known = new Set(options.map(o => o.key));
     const updated = options.map(option => {
       const match = planWorkouts.get(option.key);
-      return match && !option.historyOnly ? make(option, match.workout) : option;
+      return match && !option.historyOnly ? make(option, match.workout, match.plan) : option;
     });
     for (const [key, { plan, workout }] of planWorkouts) {
       if (known.has(key) || !key.startsWith("v2|") || !workout.date || !["main", "splits", "test"].includes(workout.kind)) continue;
       updated.push(make({
         key, originalDate: workout.date, date: SP().scheduledWorkoutDate(state, key, workout.date),
         kind: workout.kind, programTitle: plan.title || plan.content.program.title, legacy: false,
-      }, workout));
+      }, workout, plan));
     }
     return updated.filter(o => o.plan);
   }
