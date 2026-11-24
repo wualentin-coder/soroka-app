@@ -939,6 +939,21 @@
           this.refresh();
           if (!this.modal?.open) refreshSportSurface();
         } catch (reason) {
+          if (reason.message === "session_not_found") {
+            // The server no longer has this workout (deleted or belongs to another
+            // owner). Keeping the outbox would retry forever, so discard only this
+            // local record and close its screen.
+            await this.storage.change(next => {
+              const latest = next.records[record.id];
+              if (!latest) return false;
+              closeRun(next, latest);
+              delete next.records[record.id];
+              return true;
+            });
+            this.close();
+            refreshSportSurface();
+            return;
+          }
           if (record.abandon && record.start && ["open_session_exists", "plan_version_stale", "plan_not_found", "workout_not_found"].includes(reason.message)) {
             // These start rejections happen only after the RPC has excluded this start UUID.
             await this.storage.change(next => {
