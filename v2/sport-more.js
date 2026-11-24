@@ -572,7 +572,7 @@ function sp2ProgramManager(sheet) {
       <button class="text-action" type="button" data-action="sp-program-archive">К программе</button>`;
   }
   const active = sp2Programs(all)[0];
-  return `${active ? `<div class="sp-program open"><div class="sp-program-head"><span><strong>${spEsc(active.title)}</strong><small>${spDateShort(active.first)} — ${spDateShort(active.last)} · ${active.sessions} ${spPlural(active.sessions, "занятие", "занятия", "занятий")} · день ${active.day} из ${active.span}</small></span></div></div>` : `<p class="section-note">Активный план загрузится вместе с тренировкой.</p>`}
+  return `${active ? `<div class="sp-program open"><div class="sp-program-head"><span><strong>${spEsc(active.title)}</strong><small>${spDateShort(active.first)} — ${spDateShort(active.last)} · ${active.sessions} ${spPlural(active.sessions, "занятие", "занятия", "занятий")}</small><small>День ${active.day} из ${active.span}</small></span></div></div>` : `<p class="section-note">Активный план загрузится вместе с тренировкой.</p>`}
     <p class="section-note">Одна активная программа. Старые планы остаются в архиве, история не пропадает.</p>
     ${archived.length ? `<button class="text-action" type="button" data-action="sp-program-archive">Архив · ${archived.length}</button>` : ""}
     <button class="ghost-button sp-wide" type="button" data-action="sp-import-open">Собрать заново</button>`;
