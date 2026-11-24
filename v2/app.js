@@ -1665,7 +1665,7 @@ document.addEventListener("click", event => {
 }, true);
 /* Подпись поля живёт внутри как placeholder: убираем отдельную строку над полем. */
 (() => {
-  const textTypes = new Set(["text", "search", "email", "tel", "url", "number", "password"]);
+  const textTypes = new Set(["text", "search", "email", "tel", "url", "password"]);
   const skip = ".switch,.settings-row,.ss-preference,.sl-list-row,.sp-toggle,.sp-check-line,.sl-check,.gift-check,.accent-swatch,.loyalty-color-own,.loyalty-color-none,.rules-auto,.movie-cover-remove,.doc-photo-add,.pn-import,.en-go.en-upload";
   const done = new WeakSet();
   const controlOf = label => {
@@ -1690,6 +1690,9 @@ document.addEventListener("click", event => {
       if (!caption) continue;
       const text = caption.text.replace(/\s+/g, " ").trim();
       if (!text || text.length > 80) continue;
+      // В поле ввода переносим только однострочный текст: у числа, даты,
+      // списка и многострочного поля подпись должна оставаться видимой.
+      if (!(control.tagName === "INPUT" && textTypes.has(control.type))) continue;
       if (!control.getAttribute("aria-label")) control.setAttribute("aria-label", text);
       if (!control.dataset.inFieldLabel) {
         if ((control.tagName === "TEXTAREA" || (control.tagName === "INPUT" && textTypes.has(control.type))) && !control.placeholder) control.placeholder = text;
