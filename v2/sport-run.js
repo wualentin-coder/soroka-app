@@ -926,6 +926,11 @@
               });
               continue;
             }
+            // RPE must be on the row before completion enqueues the analysis:
+            // the worker reads difficulty when it claims the job.
+            if (record.feedback?.difficulty != null && !record.feedback.sent) {
+              await this.sendFeedback().catch(() => {});
+            }
             const reply = await request("complete_session", {
               session_id: record.id, expected_stream_version: record.complete.expectedStream,
               expected_results_revision: 0, event: record.complete.event,
