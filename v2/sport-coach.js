@@ -102,15 +102,37 @@
     if (data.shifted && data.days > 0) {
       text = `Программа сдвинута на ${data.days} дн. · пропущено ${data.missed}`;
     } else if (data.blocked === "consecutive") {
-      text = `${data.missed} пропуска подряд · автоперенос остановлен. Соберите программу заново.`;
+      text = `${data.missed} пропуска подряд · автоперенос остановлен. Можно сдвинуть всё вручную или собрать программу заново.`;
     } else if (data.blocked === "limit") {
-      text = `Программа отстала на ${data.missed} дн. · лимит 14 дней за 30. Нужен ручной перенос или пересборка.`;
+      text = `Программа отстала на ${data.missed} дн. · лимит автопереноса 14 дней за 30. Можно сдвинуть всё вручную.`;
     } else if (data.blocked === "ended") {
       text = `Пропущено ${data.missed} занятий, но будущих дат в программе больше нет.`;
     } else if (data.missed > 0) {
       text = `Пропущено ${data.missed} силовых. Сдвиг ждёт сети или следующего открытия.`;
     }
-    return text ? `<p class="sp2-schedule-banner" role="status">${escape(text)}</p>` : "";
+    if (!text) return "";
+    const force = data.can_force
+      ? '<button type="button" class="ghost-button" data-action="sp-schedule-force">Сдвинуть всё вручную</button>'
+      : "";
+    return `<section class="sp2-schedule-banner" role="status"><p>${escape(text)}</p>${force}</section>`;
+  }
+
+  async function forceSchedule() {
+    const data = scheduleState;
+    if (!data?.plan_id || !data?.plan_version) return false;
+    let reply;
+    try {
+      reply = await request("schedule_shift_force", {
+        plan_id: data.plan_id, expected_version: data.plan_version,
+      });
+    } catch { return false; }
+    if (!reply || reply.ok !== true || reply.shifted !== true) return false;
+    scheduleState = { ...data, ...reply };
+    scheduleKey = "";
+    scheduleAt = 0;
+    await loadPlans(true);
+    if (ui.page === "sport") spRerender(true);
+    return true;
   }
 
   function versionDay(workout, blocks, before, kind) {
@@ -586,5 +608,5 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { records.delete("latest"); loadPlans(true); } refresh(); });
   window.addEventListener("online", () => { invalidate(); loadPlans(true); });
   window.SportCoach = { slot, invalidate, overlay, loadPlans };
-  window.SportSchedule = { banner: scheduleBanner };
+  window.SportSchedule = { banner: scheduleBanner, force: forceSchedule };
 })();

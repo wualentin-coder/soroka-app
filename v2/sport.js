@@ -312,6 +312,11 @@ SP_ACTIONS["sp-2-settings"] = () => {
   s.sport2Return = s.tab;
   SP_ACTIONS["sp-tab"]({ dataset: { tab: "settings" } });
 };
+SP_ACTIONS["sp-schedule-force"] = async control => {
+  control.disabled = true;
+  const shifted = await window.SportSchedule?.force?.();
+  if (!shifted) control.disabled = false;
+};
 SP_ACTIONS["sp-2-workout"] = control => {
   if (spTimerGuard()) return;
   const s = spState(), option = spOptions().visible.find(o => o.key === control.dataset.key);

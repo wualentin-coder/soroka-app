@@ -1539,6 +1539,8 @@ html[data-flow-design="magic"] body .sp-page:has(.sh-tabs) .lv-profile-row { min
   font-size: 13px;
   line-height: 1.35;
 }
+.sp2-schedule-banner p { margin: 0; }
+.sp2-schedule-banner button { margin-top: 10px; min-height: 44px; }
 .sp2-f-dayhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
 .sp2-f-dayhead h1, .sp2-f-herobody h2 {
   font-family: "Cormorant Garamond", Georgia, serif;
