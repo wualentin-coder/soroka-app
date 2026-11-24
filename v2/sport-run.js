@@ -1284,7 +1284,7 @@
         return `<header class="sh-head sr-review-head"><h2>${title}</h2>${menu}</header><div class="sr-body sh-content">
           <h3>${saved ? esc(record.snapshot.workout.title) : "Проверьте перед сохранением"}</h3>${info.summary}${edit}
           ${saved ? window.SportCoach?.slot(record.id) || "" : ""}
-          ${info.list}${difficultyBlock}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
+          ${difficultyBlock}${info.list}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
           <footer class="sr-foot sh-foot">${completed ? control("dismiss", "Закрыть", "primary-button")
             : (record.complete ? "" : control("return", "Вернуться")) +
               control("seal", record.complete ? record.syncError || !navigator.onLine ? "Ожидает отправки" : "Сохраняем…" : "Сохранить",
