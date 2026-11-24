@@ -11,6 +11,34 @@
   const error = (code, reply) => Object.assign(new Error(code), { reply });
   const terminal = phase => phase === "abandoned" || phase === "completed";
   const cameraCoachEnabled = state => state?.coachSettings?.cameraCoach !== false;
+const coachEyesSportKeys = {
+  bw_plank: "plank",
+  db_biceps_curl: "curl",
+  bw_close_grip_pushup: "pushup",
+  bw_pushup: "pushup",
+  bw_pushup_bars: "pushup",
+  db_floor_press: "press",
+  db_shoulder_press: "press",
+  bw_squat: "squat",
+  db_goblet_squat: "squat",
+  db_front_rack_squat: "squat",
+  db_sumo_squat: "squat",
+  bw_split_squat: "lunge",
+  bw_reverse_lunge: "lunge",
+  db_reverse_lunge: "lunge",
+  db_step_up: "lunge",
+  db_lateral_raise: "lateral",
+  db_one_arm_row: "row",
+  db_bent_over_row: "row",
+  db_gorilla_row: "row",
+  bw_glute_bridge: "bridge",
+  db_glute_bridge: "bridge",
+  db_romanian_deadlift: "db_romanian_deadlift",
+  db_rear_delt_fly: "db_rear_delt_fly",
+  db_overhead_triceps_extension: "db_overhead_triceps_extension",
+  db_suitcase_carry: "db_suitcase_carry",
+};
+const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise_id || "")] || null;
   const coachEyesNames = {
     curl: ["curl", "biceps", "бицепс", "сгибан"],
     pushup: ["pushup", "отжиман"],
@@ -1271,7 +1299,7 @@
         <div class="sr-title"><span>${model.phase === "rest" ? `<small>Отдых · </small>` : ""}${esc(title)}</span>
           ${sets ? `<span class="sr-segments" aria-hidden="true">${sets}</span>` : ""}</div>
         <span class="sr-head-actions">
-          ${typeof spState === "function" && cameraCoachEnabled(spState()?.state)
+          ${typeof spState === "function" && cameraCoachEnabled(spState()?.state) && coachEyesKeyFor(current?.exercise)
             ? iconButton("camera-coach", "eye", "Тренер по камере", "sr-bare") : ""}
           ${iconButton("menu", "more", "Действия тренировки", "sr-bare", `aria-expanded="${this.panel === "menu"}"`)}
         </span></header>`;
@@ -1399,7 +1427,12 @@
       }
       const exercise = this.model?.current?.exercise ?? this.model?.prior?.exercise;
       const sportId = exercise?.exercise_id || "";
-      const deepLink = `coacheyes://set?sportExerciseId=${encodeURIComponent(sportId)}&exercise=${encodeURIComponent(sportId)}`;
+      const coachKey = coachEyesKeyFor(exercise);
+      if (!coachKey) {
+        this.cameraBox("Камера недоступна", "<p>Для этого упражнения камера пока не считает. Введите подход вручную.</p>");
+        return;
+      }
+      const deepLink = `coacheyes://set?sportExerciseId=${encodeURIComponent(sportId)}&exercise=${encodeURIComponent(coachKey)}`;
       const bridge = window.SorokaAndroid?.openCoachEyes;
       if (typeof bridge === "function") {
         try { bridge(deepLink); return; } catch (_) {}

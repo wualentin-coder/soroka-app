@@ -771,6 +771,7 @@ function flowCoachEyesReceive(payload, attempt = 0) {
   // The event may arrive on the home screen before sport-run mounted. Open the
   // Sport surface immediately, then retry; do not drop the payload after 5 s.
   try {
+    if (typeof spLoad === "function") spLoad();
     const tab = typeof SP_ACTIONS !== "undefined" && SP_ACTIONS["sp-tab"];
     if (typeof tab === "function") tab({ dataset: { tab: "today" } });
     else if (typeof navigate === "function") navigate("sport");
