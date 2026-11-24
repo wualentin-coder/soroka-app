@@ -1397,9 +1397,12 @@
         this.cameraBox("Тренер по камере", "<p>Тренер по камере выключен в настройках Спорта.</p>");
         return;
       }
+      const exercise = this.model?.current?.exercise ?? this.model?.prior?.exercise;
+      const sportId = exercise?.exercise_id || "";
+      const deepLink = `coacheyes://set?sportExerciseId=${encodeURIComponent(sportId)}&exercise=${encodeURIComponent(sportId)}`;
       const bridge = window.SorokaAndroid?.openCoachEyes;
       if (typeof bridge === "function") {
-        try { bridge(); return; } catch (_) {}
+        try { bridge(deepLink); return; } catch (_) {}
       }
       this.cameraBox("Тренер по камере", `<p>Откройте Coach Eyes, сделайте подход и нажмите «В Flow».</p>
         <p class="sr-muted">Мост к Coach Eyes в этой сборке недоступен — откройте приложение вручную.</p>`);
