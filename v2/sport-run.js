@@ -606,6 +606,9 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     commitUndo(record) {
       if (!record.undo) return;
+      if (record.undo.skipKey) {
+        record.lastSkip = { key: record.undo.skipKey, label: record.undo.label, at: Date.now() };
+      }
       record.events.push(...record.undo.events);
       if (record.undo.draftKey) delete record.drafts[record.undo.draftKey];
       const last = record.undo.events.at(-1);
@@ -705,6 +708,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         } else if (command.type === "skip" || command.type === "skip-set") {
           record.undo = { until: now + C().SKIP_UNDO_MS,
             visibleUntil: now + (C().SKIP_TOAST_MS ?? 15000), events: this.append(record, steps, now, true), draftKey,
+            skipKey: command.type === "skip-set" ? keyOf(model.current)
+              : command.type === "skip" && model.phase === "work" ? keyOf(model.current) : null,
             label: model.phase === "rest"
               ? `Отдых пропущен · подход ${model.prior.set_index} ${command.result || model.prior.status === "confirmed" ? "записан" : "не подтверждён"}`
               : command.type === "skip-set" ? "Подход пропущен" : "Упражнение пропущено" };
@@ -758,7 +763,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       else this.recover(record);
     }
 
-    openEditor(trigger) {
+    openEditor(trigger, targetKey = null) {
       const record = this.read();
       if (!record || record.complete || record.abandon || record.undo) return;
       const model = view(record);
@@ -768,7 +773,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const openSet = keyOf(model.projection.open_set);
       H().editor({
         snapshot, sets, trigger, openSet, owner: this.owner, localDraft: this.editorDraft(record.id, "active"),
-        target: H().preview(snapshot, sets, null, { openSet, hasPending: model.projection.pending_event_ids.length > 0 }).first,
+        target: targetKey ?? H().preview(snapshot, sets, null, { openSet, hasPending: model.projection.pending_event_ids.length > 0 }).first,
         reload: async () => {
           const latest = this.read();
           if (latest?.id !== record.id || view(latest).phase !== "review") throw error("invalid_transition");
@@ -1726,6 +1731,9 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         }
         if (model.phase === "work" || model.phase === "rest") items += control("skip", model.phase === "rest" ? "Пропустить отдых" : "Пропустить упражнение");
         if (model.phase === "work" && model.replay.open) items += control("skip-set", "Пропустить подход");
+        if (model.phase === "review" && this.read()?.lastSkip?.key) {
+          items += control("restore-last-skip", "Вернуть последнее пропущенное");
+        }
         if (model.phase === "work" || model.phase === "rest") items += control("review", "Завершить");
         items += control("ask-abandon", "Отменить тренировку", "ghost-button danger-button");
       }
@@ -1791,7 +1799,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         this.modal.insertAdjacentHTML("beforeend", `<aside class="sr-notices"><p data-sr-error role="alert" hidden></p>
           <p data-sr-sync role="status" hidden></p><p data-sr-notice role="status" hidden></p>
           <div data-sr-sync-error class="sr-undo" hidden><span role="alert"></span>${control("retry-sync", "Повторить", "sr-text")}</div>
-          ${record?.undo && !this.conflict && Date.now() < (record.undo.visibleUntil ?? record.undo.until) ? `<div class="sr-undo" role="status"><span>${esc(record.undo.label)}</span>${control("undo", "Отменить", "sr-text")}</div>` : ""}</aside>${model ? this.panelMarkup(model) : ""}`);
+          ${record?.undo && !this.conflict && Date.now() < (record.undo.visibleUntil ?? record.undo.until) ? `<div class="sr-undo" role="status"><span>${esc(record.undo.label)}</span>${control("undo", "Отменить", "sr-text")}${control("commit-undo", "Продолжить", "sr-text")}</div>` : ""}</aside>${model ? this.panelMarkup(model) : ""}`);
         this.screenKey = screenKey;
         this.signature = signature;
         this.fillFigures();
@@ -1896,7 +1904,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           this.togglePanel("confirm-abandon");
           return;
         }
-        if (record.undo && !["undo", "menu", "panel-close"].includes(action)) return;
+        if (record.undo && !["undo", "commit-undo", "menu", "panel-close"].includes(action)) return;
         if (["menu", "close-menu", "tech", "panel-close"].includes(action)) {
           this.togglePanel(action === "panel-close" ? null : action);
           return;
@@ -1940,6 +1948,30 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           return;
         }
         if (action === "undo") { await this.issue({ type: "undo" }, { recordId: this.recordId }); return; }
+        if (action === "commit-undo") {
+          await this.storage.change(data => {
+            const latest = data.records[this.recordId];
+            if (!latest?.undo) return false;
+            this.commitUndo(latest);
+            return true;
+          });
+          this.refresh(true);
+          this.syncSoon();
+          return;
+        }
+        if (action === "restore-last-skip") {
+          const latest = this.read();
+          if (!latest?.lastSkip?.key || view(latest).phase !== "review") return;
+          const key = latest.lastSkip.key;
+          await this.storage.change(data => {
+            const next = data.records[this.recordId];
+            if (next) delete next.lastSkip;
+            return true;
+          });
+          this.togglePanel(null);
+          this.openEditor(this.modal.querySelector('[data-sr="edit-review"]'), key);
+          return;
+        }
         const command = action.startsWith("recover-") ? { type: "recover", choice: action.slice(8) }
           : action === "adjust" ? { type: "adjust", seconds: Number(data.value) } : { type: action };
         this.panel = null;

@@ -3017,7 +3017,7 @@ ${JSON.stringify(context, null, 2)}
   // sport/core/src/session/run.ts
   var PREPARATION_MS = 5e3;
   var SKIP_TOAST_MS = 15e3;
-  var SKIP_UNDO_MS = 6e4;
+  var SKIP_UNDO_MS = 15e3;
   var keyOf = (key) => setKey(key.plan_exercise_id, key.set_index);
   var eventFor = (type, key, payload) => ({ type, key, payload });
   var addressed = (key) => ({ plan_exercise_id: key.plan_exercise_id, set_index: key.set_index });
