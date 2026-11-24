@@ -374,7 +374,7 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     const { sessions, error, cursor, busy } = surface;
     mount.innerHTML = `<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => `<button type="button" class="sh-history-row"
       data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
-      <small>${esc(dateLabel(session))}</small></span><span>${clock(session.elapsed_seconds)}
+      <small>${esc(dateLabel(session))}${session.difficulty != null ? ` · сложность ${session.difficulty}/10` : ""}</small></span><span>${clock(session.elapsed_seconds)}
       ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`).join("")}</div>` : ""}
       ${error ? `<p role="alert">${esc(error)}</p><button type="button" class="ghost-button" data-action="sp-session-more">Повторить</button>`
         : busy ? '<p role="status">Загрузка…</p>' : !sessions.length ? '<p>Тренировок нет</p>' : ""}
@@ -415,7 +415,8 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       const info = preview(session.plan_snapshot, projection.sets, session.elapsed_seconds);
       box.innerHTML = `<section class="sr-screen">${head("Тренировка")}<div class="sh-content">
         <h3>${esc(session.plan_snapshot.workout.title)}</h3><p class="sh-muted">${esc(dateLabel(session))}
-        ${session.results_revision > 1 ? ` · Правка · ревизия ${session.results_revision}` : ""}</p>
+        ${session.results_revision > 1 ? ` · Правка · ревизия ${session.results_revision}` : ""}
+        ${session.difficulty != null ? ` · Сложность ${session.difficulty}/10` : ""}</p>
         ${info.summary}${window.SportCoach?.slot(session.id) || ""}${info.list || '<p class="sh-muted">Подходов нет</p>'}</div>
         ${foot("", button("edit", info.first ? "Дополнить" : "Изменить", "primary-button"))}</section>`;
     }
