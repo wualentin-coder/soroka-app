@@ -356,10 +356,13 @@ function sp2Week(options) {
 function sp2DayHero(options, date) {
   const s = spState(), C = SP();
   const selected = ["main", "splits"].map(kind => C.selectedOption(options, date, kind, s.state)).filter(Boolean);
-  if (!selected.length) return `<section class="sp2-f-card sp2-f-plan"><h2>${C.withinProgram(options, date) ? "День отдыха" : "На эту дату занятий нет"}</h2><button class="ghost-button" data-action="sp-tab" data-tab="training" type="button">Открыть программу</button></section>`;
+  const free = options.filter(option => option.key.startsWith("free|") && option.date === date &&
+    !option.historyOnly && !option.deleted);
+  const all = [...selected, ...free.filter(option => !selected.some(item => item.key === option.key))];
+  if (!all.length) return `<section class="sp2-f-card sp2-f-plan"><h2>${C.withinProgram(options, date) ? "День отдыха" : "На эту дату занятий нет"}</h2><button class="ghost-button" data-action="sp-tab" data-tab="training" type="button">Открыть программу</button></section>`;
   const today = C.todayKey();
   const open = option => date <= today && !option.historyOnly && !sp2Completed(option, s.state);
-  const lead = selected.find(open) || selected[0];
+  const lead = all.find(open) || all[0];
   const plan = lead.plan;
   const primary = C.knownMuscles(plan.exercises.flatMap(e => e.muscles?.primary || []));
   const secondary = C.knownMuscles(plan.exercises.flatMap(e => e.muscles?.secondary || []));
@@ -367,7 +370,7 @@ function sp2DayHero(options, date) {
   const figures = window.SportFigures;
   const media = figures && (primary.length || secondary.length)
     ? spFigureSvg(spShapes(primary), spShapes(secondary), figures.FIGURE_VIEWBOX, false) : "";
-  const label = option => option.kind === "splits" ? "Растяжка" : "Тренировка";
+  const label = option => option.key.startsWith("free|") ? "Свободная" : option.kind === "splits" ? "Растяжка" : "Тренировка";
   const program = sp2Programs(options).find(p => p.key === C.optionProgramKey(lead));
   const startDate = program && sp2ProgramStart(program);
   const original = lead.originalDate || lead.date;
@@ -386,7 +389,7 @@ function sp2DayHero(options, date) {
     <p class="sp2-f-chips">${duration ? `<span>${duration}</span>` : ""}<span>${count} ${spPlural(count, "упражнение", "упражнения", "упражнений")}</span>${plan.focus ? `<span>${spEsc(plan.focus)}</span>` : ""}</p></div></article>
     <button class="sp2-f-card sp2-f-composition" type="button" data-action="sp-2-workout" data-key="${spEsc(lead.key)}"><strong>Состав и замены</strong><span>${sets} ${spPlural(sets, "подход", "подхода", "подходов")} ${icon("right")}</span></button>
     ${open(lead) || (date > today && !sp2Completed(lead, s.state)) ? `<div class="sp2-f-cta">${start(lead, true)}</div>` : start(lead, true)}
-    ${selected.filter(option => option !== lead).map(option => `<div class="sp2-f-card sp2-f-secondary"><button type="button" data-action="sp-2-workout" data-key="${spEsc(option.key)}"><small>${label(option)}</small><strong>${spEsc(option.plan.title)}</strong></button>${start(option, false)}</div>`).join("")}`;
+    ${all.filter(option => option !== lead).map(option => `<div class="sp2-f-card sp2-f-secondary"><button type="button" data-action="sp-2-workout" data-key="${spEsc(option.key)}"><small>${label(option)}</small><strong>${spEsc(option.plan.title)}</strong></button>${start(option, false)}</div>`).join("")}`;
 }
 
 function renderSportPage() {
