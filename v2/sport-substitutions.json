@@ -1,0 +1,6747 @@
+{
+  "version": 1,
+  "catalog_version": 1,
+  "generated_from": "data/exercises.seed.json",
+  "home_equipment": [
+    "bodyweight",
+    "dumbbells",
+    "bench"
+  ],
+  "policy": {
+    "max_alternatives": 3,
+    "min_score": 30,
+    "equipment": "цель замены требует только home_equipment",
+    "muscles": "общая основная мышца или общая мышца внутри той же группы",
+    "laterality": "exact > one_side (unilateral/alternating) > both_sides; замена без пары запрещена",
+    "cycles": "канонические рёбра (canonical=true) образуют DAG; обратные ссылки не участвуют в цепочках"
+  },
+  "summary": {
+    "exercises": 88,
+    "covered": 88,
+    "alternatives": 243,
+    "canonical": 203,
+    "reverse": 40,
+    "canonical_cycle_free": true
+  },
+  "exercises": [
+    {
+      "id": "band_lateral_walk",
+      "name": "Боковые шаги с резинкой",
+      "group": "Ноги",
+      "equipment": [
+        "band"
+      ],
+      "laterality": "alternating",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "quads",
+        "adductors"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bulgarian_split_squat",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет резинки: вариант — гантели и скамья или стул."
+        },
+        {
+          "id": "db_reverse_lunge",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет резинки: вариант — гантели."
+        },
+        {
+          "id": "db_step_up",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет резинки: вариант — гантели и скамья или стул."
+        }
+      ]
+    },
+    {
+      "id": "band_pull_apart",
+      "name": "Разведение резинки",
+      "group": "Плечи и шея",
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_rear"
+      ],
+      "secondary": [
+        "mid_back",
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_rear_delt_fly",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_rear"
+          ],
+          "why": "Дома нет резинки: вариант — гантели."
+        },
+        {
+          "id": "bw_prone_t_raise",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_rear"
+          ],
+          "why": "Дома нет резинки: вариант — свой вес."
+        },
+        {
+          "id": "bw_wall_slides",
+          "score": 40,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps",
+            "mid_back"
+          ],
+          "same_primary": [],
+          "why": "Дома нет резинки: вариант — свой вес."
+        }
+      ]
+    },
+    {
+      "id": "bb_back_squat",
+      "name": "Присед со штангой",
+      "group": "Ноги",
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "hamstrings",
+        "lower_back",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_front_rack_squat",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "db_goblet_squat",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "bw_squat",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет штанги: вариант — свой вес."
+        }
+      ]
+    },
+    {
+      "id": "bb_bench_press",
+      "name": "Жим штанги лёжа",
+      "group": "Грудь",
+      "equipment": [
+        "barbell",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bench_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет штанги и скамьи или стула: вариант — гантели и скамья или стул."
+        },
+        {
+          "id": "db_floor_fly",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет штанги и скамьи или стула: вариант — гантели."
+        },
+        {
+          "id": "db_floor_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench",
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет штанги и скамьи или стула: вариант — гантели и скамья или стул."
+        }
+      ]
+    },
+    {
+      "id": "bb_deadlift",
+      "name": "Становая тяга",
+      "group": "Ноги",
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes",
+        "hamstrings",
+        "lower_back"
+      ],
+      "secondary": [
+        "quads",
+        "traps",
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "db_hip_thrust",
+          "score": 71,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет штанги: вариант — гантели и скамья или стул."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 71,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "db_good_morning",
+          "score": 70,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bb_overhead_press",
+      "name": "Жим штанги стоя",
+      "group": "Плечи и шея",
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_front"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_side",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_arnold_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "triceps",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "db_shoulder_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "triceps",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Дома нет штанги: вариант — гантели и скамья или стул."
+        },
+        {
+          "id": "db_front_raise",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bb_romanian_deadlift",
+      "name": "Румынская тяга со штангой",
+      "group": "Ноги",
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "hamstrings"
+      ],
+      "secondary": [
+        "glutes",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_good_morning",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "db_romanian_deadlift",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "db_single_leg_rdl",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bb_row",
+      "name": "Тяга штанги в наклоне",
+      "group": "Спина",
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "mid_back"
+      ],
+      "secondary": [
+        "lats",
+        "biceps",
+        "delts_rear",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 76,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps",
+            "delts_rear",
+            "lower_back"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        },
+        {
+          "id": "bw_scapular_retraction",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "delts_rear"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Дома нет штанги: вариант — свой вес."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Дома нет штанги: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bw_arm_circles",
+      "name": "Круги руками",
+      "group": "Плечи и шея",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_side"
+      ],
+      "secondary": [
+        "delts_front",
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_upright_row",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_side",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_side"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_lateral_raise",
+          "score": 58,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_side",
+            "delts_front",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_side"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "bw_wall_slides",
+          "score": 44,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps",
+            "delts_front"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция, передняя дельта."
+        }
+      ]
+    },
+    {
+      "id": "bw_back_steps",
+      "name": "Шаги назад",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "quads",
+        "calves"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_glute_bridge",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Похожая нагрузка: ягодицы, бицепс бедра."
+        },
+        {
+          "id": "bw_hip_hinge_shift",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Похожая нагрузка: ягодицы, бицепс бедра."
+        },
+        {
+          "id": "db_hip_thrust",
+          "score": 58,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "bw_bird_dog",
+      "name": "Птица-собака",
+      "group": "Корпус",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "abs"
+      ],
+      "secondary": [
+        "lower_back",
+        "mid_back",
+        "glutes"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_dead_bug",
+          "score": 62,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "abs"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Та же нагрузка, но попеременно вместо одной стороны."
+        },
+        {
+          "id": "bw_plank",
+          "score": 52,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "abs"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Та же нагрузка, но две стороны вместо одной стороны."
+        },
+        {
+          "id": "bw_side_plank_knee",
+          "score": 44,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "abs",
+            "glutes"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: пресс, ягодицы."
+        }
+      ]
+    },
+    {
+      "id": "bw_calf_raise",
+      "name": "Подъёмы на носки стоя",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "calves"
+      ],
+      "secondary": [],
+      "alternatives": [
+        {
+          "id": "bw_heel_toe_rock",
+          "score": 63,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "calves"
+          ],
+          "same_primary": [
+            "calves"
+          ],
+          "why": "Похожая нагрузка: икры."
+        },
+        {
+          "id": "bw_squat",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "calves"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: икры."
+        },
+        {
+          "id": "bw_back_steps",
+          "score": 41,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "calves"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: икры."
+        }
+      ]
+    },
+    {
+      "id": "bw_cat_cow",
+      "name": "Кошка-корова",
+      "group": "Спина",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "lower_back"
+      ],
+      "secondary": [
+        "mid_back",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_scapular_retraction",
+          "score": 41,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: середина спины."
+        },
+        {
+          "id": "bw_thoracic_extension",
+          "score": 41,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: середина спины."
+        },
+        {
+          "id": "db_bent_over_row",
+          "score": 32,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lower_back",
+            "mid_back"
+          ],
+          "same_primary": [],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_chin_tuck",
+      "name": "Втягивание подбородка лёжа",
+      "group": "Плечи и шея",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "neck"
+      ],
+      "secondary": [
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_wall_slides",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция."
+        },
+        {
+          "id": "bw_prone_t_raise",
+          "score": 41,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция."
+        },
+        {
+          "id": "bw_arm_circles",
+          "score": 36,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция."
+        }
+      ]
+    },
+    {
+      "id": "bw_chin_up",
+      "name": "Подтягивания обратным хватом",
+      "group": "Спина",
+      "equipment": [
+        "pullup_bar"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "lats"
+      ],
+      "secondary": [
+        "biceps",
+        "mid_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет турника: вариант — гантели."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет турника: вариант — гантели."
+        },
+        {
+          "id": "db_pullover",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет турника: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bw_close_grip_pushup",
+      "name": "Отжимания узким хватом на упорах",
+      "group": "Руки",
+      "equipment": [
+        "pushup_bars",
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [
+        "chest_mid",
+        "delts_front",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_floor_triceps_extension",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "triceps",
+            "chest_mid"
+          ],
+          "same_primary": [
+            "triceps"
+          ],
+          "why": "Дома нет упоров: вариант — гантели."
+        },
+        {
+          "id": "db_overhead_triceps_extension",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "triceps"
+          ],
+          "same_primary": [
+            "triceps"
+          ],
+          "why": "Дома нет упоров: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bw_dead_bug",
+      "name": "Мёртвый жук",
+      "group": "Корпус",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "alternating",
+      "primary": [
+        "abs"
+      ],
+      "secondary": [
+        "obliques",
+        "hip_flexors"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_bird_dog",
+          "score": 62,
+          "kind": "laterality",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "abs"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Сильная замена. Та же нагрузка, но одна сторона вместо попеременного выполнения."
+        },
+        {
+          "id": "bw_plank",
+          "score": 55,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "abs",
+            "obliques"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Та же нагрузка, но две стороны вместо попеременного выполнения."
+        },
+        {
+          "id": "db_russian_twist",
+          "score": 40,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "abs",
+            "obliques",
+            "hip_flexors"
+          ],
+          "same_primary": [],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_doorway_stretch",
+      "name": "Растяжка в дверном проёме",
+      "group": "Грудь",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest"
+      ],
+      "secondary": [
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_wall_slides",
+          "score": 100,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [
+            "delts_front"
+          ],
+          "same_primary": [],
+          "why": "Раскрывает грудь и плечи у стены — мягкая замена растяжке."
+        },
+        {
+          "id": "bw_thoracic_extension",
+          "score": 95,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [],
+          "same_primary": [],
+          "why": "Разгибание грудного отдела раскрывает грудь без опоры на дверь."
+        },
+        {
+          "id": "bw_prone_t_raise",
+          "score": 90,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [],
+          "same_primary": [],
+          "why": "Работает на заднюю дельту и раскрытие груди лёжа."
+        }
+      ]
+    },
+    {
+      "id": "bw_glute_bridge",
+      "name": "Ягодичный мост",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_hip_hinge_shift",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "lower_back"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Похожая нагрузка: ягодицы, бицепс бедра, поясница."
+        },
+        {
+          "id": "bw_back_steps",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: ягодицы, бицепс бедра."
+        },
+        {
+          "id": "db_hip_thrust",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "bw_hanging_leg_raise",
+      "name": "Подъём ног в висе",
+      "group": "Корпус",
+      "equipment": [
+        "pullup_bar"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "abs_lower"
+      ],
+      "secondary": [
+        "hip_flexors",
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_dead_bug",
+          "score": 90,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "hip_flexors"
+          ],
+          "same_primary": [],
+          "why": "Мёртвый жук тренирует низ пресса и сгибатели бедра лёжа, без виса."
+        }
+      ]
+    },
+    {
+      "id": "bw_heel_toe_rock",
+      "name": "Перекат с пяток на носки",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "calves"
+      ],
+      "secondary": [
+        "quads"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_calf_raise",
+          "score": 63,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "calves"
+          ],
+          "same_primary": [
+            "calves"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: икры."
+        },
+        {
+          "id": "bw_back_steps",
+          "score": 49,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "calves",
+            "quads"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: икры, квадрицепс."
+        },
+        {
+          "id": "bw_march_in_place",
+          "score": 49,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "calves",
+            "quads"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: икры, квадрицепс."
+        }
+      ]
+    },
+    {
+      "id": "bw_hip_flexor_stretch",
+      "name": "Растяжка сгибателей бедра",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "hip_flexors"
+      ],
+      "secondary": [
+        "quads"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_hip_hinge_shift",
+          "score": 100,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [],
+          "same_primary": [],
+          "why": "Мягкая мобилизация таза и передней поверхности бедра."
+        },
+        {
+          "id": "bw_reverse_lunge",
+          "score": 95,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads"
+          ],
+          "same_primary": [],
+          "why": "Динамическая замена статической растяжке сгибателей бедра."
+        },
+        {
+          "id": "bw_split_squat",
+          "score": 90,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads"
+          ],
+          "same_primary": [],
+          "why": "Сплит-присед мягко растягивает переднюю часть бедра."
+        }
+      ]
+    },
+    {
+      "id": "bw_hip_hinge_shift",
+      "name": "Наклоны с отведением таза",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_glute_bridge",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "lower_back"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: ягодицы, бицепс бедра, поясница."
+        },
+        {
+          "id": "db_hip_thrust",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_march_in_place",
+      "name": "Ходьба на месте",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "hip_flexors"
+      ],
+      "secondary": [
+        "quads",
+        "calves"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_hip_flexor_stretch",
+          "score": 60,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "hip_flexors",
+            "quads"
+          ],
+          "same_primary": [
+            "hip_flexors"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "bw_back_steps",
+          "score": 44,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "calves"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: квадрицепс, икры."
+        },
+        {
+          "id": "bw_squat",
+          "score": 44,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "calves"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: квадрицепс, икры."
+        }
+      ]
+    },
+    {
+      "id": "bw_plank",
+      "name": "Планка",
+      "group": "Корпус",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "abs"
+      ],
+      "secondary": [
+        "obliques",
+        "delts_front",
+        "quads"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_dead_bug",
+          "score": 55,
+          "kind": "laterality",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "abs",
+            "obliques"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Сильная замена. Та же нагрузка, но попеременно вместо двух сторон."
+        },
+        {
+          "id": "bw_side_plank_knee",
+          "score": 37,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "abs",
+            "obliques"
+          ],
+          "same_primary": [],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        }
+      ]
+    },
+    {
+      "id": "bw_prone_t_raise",
+      "name": "Подъём рук лёжа на животе",
+      "group": "Плечи и шея",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_rear"
+      ],
+      "secondary": [
+        "mid_back",
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_rear_delt_fly",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_rear"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "bw_wall_slides",
+          "score": 49,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps",
+            "mid_back"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция, середина спины."
+        },
+        {
+          "id": "db_upright_row",
+          "score": 37,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_pullup",
+      "name": "Подтягивания прямым хватом",
+      "group": "Спина",
+      "equipment": [
+        "pullup_bar"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "lats"
+      ],
+      "secondary": [
+        "biceps",
+        "mid_back",
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет турника: вариант — гантели."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет турника: вариант — гантели."
+        },
+        {
+          "id": "db_pullover",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет турника: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bw_pushup",
+      "name": "Отжимания",
+      "group": "Грудь",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_wall_pushup",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Похожая нагрузка: середина груди, трицепс, передняя дельта."
+        },
+        {
+          "id": "db_bench_press",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_floor_fly",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_pushup_bars",
+      "name": "Отжимания на упорах",
+      "group": "Грудь",
+      "equipment": [
+        "pushup_bars",
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_pushup",
+          "score": 70,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front",
+            "abs"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет упоров: вариант — свой вес."
+        },
+        {
+          "id": "bw_wall_pushup",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет упоров: вариант — свой вес."
+        },
+        {
+          "id": "db_bench_press",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет упоров: вариант — гантели и скамья или стул."
+        }
+      ]
+    },
+    {
+      "id": "bw_reverse_lunge",
+      "name": "Выпады назад",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "hamstrings"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_split_squat",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Похожая нагрузка: квадрицепс, ягодицы, бицепс бедра."
+        },
+        {
+          "id": "bw_step_up",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bench",
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_bulgarian_split_squat",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "bw_scapular_retraction",
+      "name": "Сведение лопаток стоя",
+      "group": "Спина",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "mid_back"
+      ],
+      "secondary": [
+        "traps",
+        "delts_rear"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_thoracic_extension",
+          "score": 71,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Похожая нагрузка: середина спины, трапеция."
+        },
+        {
+          "id": "db_bent_over_row",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "delts_rear"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "bw_thoracic_rotation",
+          "score": 57,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        }
+      ]
+    },
+    {
+      "id": "bw_side_plank_knee",
+      "name": "Боковая планка с колен",
+      "group": "Корпус",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "obliques"
+      ],
+      "secondary": [
+        "abs",
+        "glutes",
+        "delts_side"
+      ],
+      "alternatives": [
+        {
+          "id": "db_suitcase_carry",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "obliques"
+          ],
+          "same_primary": [
+            "obliques"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_russian_twist",
+          "score": 49,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "obliques",
+            "abs"
+          ],
+          "same_primary": [
+            "obliques"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_split_squat",
+      "name": "Сплит-присед",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "hamstrings"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_reverse_lunge",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: квадрицепс, ягодицы, бицепс бедра."
+        },
+        {
+          "id": "db_bulgarian_split_squat",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_reverse_lunge",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_squat",
+      "name": "Приседания без веса",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "hamstrings",
+        "calves"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_reverse_lunge",
+          "score": 63,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "bw_split_squat",
+          "score": 63,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_step_up",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings",
+            "calves"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "bw_step_up",
+      "name": "Зашагивания на скамью",
+      "group": "Ноги",
+      "equipment": [
+        "bench",
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "hamstrings"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bulgarian_split_squat",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант — гантели и скамья или стул вместо скамьи или стула."
+        },
+        {
+          "id": "db_reverse_lunge",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_step_up",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант — гантели и скамья или стул вместо скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "bw_thoracic_extension",
+      "name": "Разгибание грудного отдела",
+      "group": "Спина",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "mid_back"
+      ],
+      "secondary": [
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_scapular_retraction",
+          "score": 71,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: середина спины, трапеция."
+        },
+        {
+          "id": "bw_thoracic_rotation",
+          "score": 57,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_bent_over_row",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_thoracic_rotation",
+      "name": "Вращение грудного отдела лёжа",
+      "group": "Спина",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "mid_back"
+      ],
+      "secondary": [
+        "chest",
+        "obliques"
+      ],
+      "alternatives": [
+        {
+          "id": "db_one_arm_row",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "bw_scapular_retraction",
+          "score": 57,
+          "kind": "laterality",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Сильная замена. Та же нагрузка, но две стороны вместо одной стороны."
+        },
+        {
+          "id": "db_renegade_row",
+          "score": 54,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "obliques"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_wall_pushup",
+      "name": "Отжимания от стены",
+      "group": "Грудь",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_pushup",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: середина груди, трицепс, передняя дельта."
+        },
+        {
+          "id": "db_floor_fly",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_floor_press",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench",
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "bw_wall_slides",
+      "name": "Скольжения руками по стене",
+      "group": "Плечи и шея",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "traps"
+      ],
+      "secondary": [
+        "delts_front",
+        "mid_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_shrug",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_upright_row",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_farmer_carry",
+          "score": 42,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "bw_wrist_warmup",
+      "name": "Разминка кистей",
+      "group": "Руки",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "forearms"
+      ],
+      "secondary": [],
+      "alternatives": [
+        {
+          "id": "db_farmer_carry",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "forearms"
+          ],
+          "same_primary": [
+            "forearms"
+          ],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_biceps_curl",
+          "score": 30,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "forearms"
+          ],
+          "same_primary": [],
+          "why": "Вариант — гантели вместо своего веса."
+        },
+        {
+          "id": "db_hammer_curl",
+          "score": 30,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "forearms"
+          ],
+          "same_primary": [],
+          "why": "Вариант — гантели вместо своего веса."
+        }
+      ]
+    },
+    {
+      "id": "cable_face_pull",
+      "name": "Тяга к лицу на блоке",
+      "group": "Плечи и шея",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_rear"
+      ],
+      "secondary": [
+        "mid_back",
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_rear_delt_fly",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_rear"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "bw_prone_t_raise",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_rear"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — свой вес."
+        },
+        {
+          "id": "bw_wall_slides",
+          "score": 40,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps",
+            "mid_back"
+          ],
+          "same_primary": [],
+          "why": "Дома нет тренажёрного зала: вариант — свой вес."
+        }
+      ]
+    },
+    {
+      "id": "cable_row",
+      "name": "Тяга нижнего блока",
+      "group": "Спина",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "mid_back"
+      ],
+      "secondary": [
+        "lats",
+        "biceps",
+        "delts_rear"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 74,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps",
+            "delts_rear"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "bw_scapular_retraction",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "delts_rear"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — свой вес."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "cable_triceps_pushdown",
+      "name": "Разгибание рук на блоке",
+      "group": "Руки",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [],
+      "alternatives": [
+        {
+          "id": "db_floor_triceps_extension",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "triceps"
+          ],
+          "same_primary": [
+            "triceps"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_overhead_triceps_extension",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "triceps"
+          ],
+          "same_primary": [
+            "triceps"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "db_arnold_press",
+      "name": "Жим Арнольда",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_front"
+      ],
+      "secondary": [
+        "delts_side",
+        "triceps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_front_raise",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Похожая нагрузка: передняя дельта, средняя дельта."
+        },
+        {
+          "id": "db_shoulder_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side",
+            "triceps"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_lateral_raise",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: передняя дельта, средняя дельта."
+        }
+      ]
+    },
+    {
+      "id": "db_bench_press",
+      "name": "Жим гантелей лёжа",
+      "group": "Грудь",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_floor_press",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench",
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Похожая нагрузка: середина груди, трицепс, передняя дельта."
+        },
+        {
+          "id": "db_fly",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Похожая нагрузка: середина груди, передняя дельта."
+        },
+        {
+          "id": "db_floor_fly",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_bent_over_row",
+      "name": "Тяга двух гантелей в наклоне",
+      "group": "Спина",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "mid_back",
+        "lats"
+      ],
+      "secondary": [
+        "biceps",
+        "delts_rear",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_renegade_row",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Та же нагрузка, но попеременно вместо двух сторон."
+        },
+        {
+          "id": "db_pullover",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: широчайшие."
+        },
+        {
+          "id": "db_one_arm_row",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps",
+            "delts_rear"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_biceps_curl",
+      "name": "Сгибание рук с гантелями",
+      "group": "Руки",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "db_hammer_curl",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "biceps",
+            "forearms"
+          ],
+          "same_primary": [
+            "biceps"
+          ],
+          "why": "Похожая нагрузка: бицепс, предплечья."
+        },
+        {
+          "id": "db_concentration_curl",
+          "score": 58,
+          "kind": "laterality",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "biceps",
+            "forearms"
+          ],
+          "same_primary": [
+            "biceps"
+          ],
+          "why": "Сильная замена. Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_farmer_carry",
+          "score": 39,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "forearms"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: предплечья."
+        }
+      ]
+    },
+    {
+      "id": "db_bulgarian_split_squat",
+      "name": "Болгарский сплит-присед с гантелями",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_single_leg_rdl",
+          "score": 71,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "abs"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант без скамьи или стула."
+        },
+        {
+          "id": "bw_reverse_lunge",
+          "score": 70,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Сильная замена. Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_step_up",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads",
+            "glutes"
+          ],
+          "why": "Похожая нагрузка: квадрицепс, ягодицы, бицепс бедра."
+        }
+      ]
+    },
+    {
+      "id": "db_concentration_curl",
+      "name": "Концентрированное сгибание с гантелью",
+      "group": "Руки",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "db_biceps_curl",
+          "score": 58,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "biceps",
+            "forearms"
+          ],
+          "same_primary": [
+            "biceps"
+          ],
+          "why": "Та же нагрузка, но две стороны вместо одной стороны."
+        },
+        {
+          "id": "db_hammer_curl",
+          "score": 58,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "biceps",
+            "forearms"
+          ],
+          "same_primary": [
+            "biceps"
+          ],
+          "why": "Та же нагрузка, но две стороны вместо одной стороны."
+        }
+      ]
+    },
+    {
+      "id": "db_farmer_carry",
+      "name": "Прогулка с гантелями",
+      "group": "Руки",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "forearms",
+        "traps"
+      ],
+      "secondary": [
+        "abs",
+        "obliques"
+      ],
+      "alternatives": [
+        {
+          "id": "db_shrug",
+          "score": 59,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [
+            "traps",
+            "forearms"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Похожая нагрузка: трапеция, предплечья."
+        },
+        {
+          "id": "bw_wrist_warmup",
+          "score": 59,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "forearms"
+          ],
+          "same_primary": [
+            "forearms"
+          ],
+          "why": "Сильная замена. Вариант — свой вес вместо гантелей."
+        },
+        {
+          "id": "db_upright_row",
+          "score": 51,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Похожая нагрузка: трапеция."
+        }
+      ]
+    },
+    {
+      "id": "db_floor_fly",
+      "name": "Разведение гантелей лёжа на полу",
+      "group": "Грудь",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "delts_front",
+        "triceps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_squeeze_press",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front",
+            "triceps"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Похожая нагрузка: середина груди, передняя дельта, трицепс."
+        },
+        {
+          "id": "db_bench_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front",
+            "triceps"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Сильная замена. Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_floor_press",
+      "name": "Жим гантелей лёжа на полу",
+      "group": "Грудь",
+      "equipment": [
+        "dumbbells",
+        "bench",
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bench_press",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: середина груди, трицепс, передняя дельта."
+        },
+        {
+          "id": "db_fly",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Похожая нагрузка: середина груди, передняя дельта."
+        },
+        {
+          "id": "db_squeeze_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_floor_triceps_extension",
+      "name": "Разгибание рук с гантелями лёжа на полу",
+      "group": "Руки",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [
+        "chest_mid"
+      ],
+      "alternatives": [
+        {
+          "id": "db_overhead_triceps_extension",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "triceps"
+          ],
+          "same_primary": [
+            "triceps"
+          ],
+          "why": "Похожая нагрузка: трицепс."
+        }
+      ]
+    },
+    {
+      "id": "db_fly",
+      "name": "Разведение гантелей лёжа",
+      "group": "Грудь",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bench_press",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: середина груди, передняя дельта."
+        },
+        {
+          "id": "db_floor_fly",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_squeeze_press",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_front_rack_squat",
+      "name": "Приседания с гантелями у плеч",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_goblet_squat",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Похожая нагрузка: квадрицепс, ягодицы, пресс."
+        },
+        {
+          "id": "db_reverse_lunge",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "bw_squat",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант — свой вес вместо гантелей."
+        }
+      ]
+    },
+    {
+      "id": "db_front_raise",
+      "name": "Подъём гантелей перед собой",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_front"
+      ],
+      "secondary": [
+        "delts_side"
+      ],
+      "alternatives": [
+        {
+          "id": "db_arnold_press",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: передняя дельта, средняя дельта."
+        },
+        {
+          "id": "db_shoulder_press",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_lateral_raise",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: передняя дельта, средняя дельта."
+        }
+      ]
+    },
+    {
+      "id": "db_glute_bridge",
+      "name": "Ягодичный мост с гантелью",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_sumo_squat",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Похожая нагрузка: ягодицы, бицепс бедра."
+        },
+        {
+          "id": "db_single_leg_rdl",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "abs"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_hip_thrust",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_goblet_squat",
+      "name": "Гоблет-присед с гантелью",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_front_rack_squat",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: квадрицепс, ягодицы, пресс."
+        },
+        {
+          "id": "db_reverse_lunge",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "bw_squat",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант — свой вес вместо гантелей."
+        }
+      ]
+    },
+    {
+      "id": "db_good_morning",
+      "name": "Наклоны с гантелями на плечах",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "hamstrings"
+      ],
+      "secondary": [
+        "glutes",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_romanian_deadlift",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Похожая нагрузка: бицепс бедра, ягодицы, поясница."
+        },
+        {
+          "id": "db_single_leg_rdl",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_glute_bridge",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: бицепс бедра, ягодицы."
+        }
+      ]
+    },
+    {
+      "id": "db_gorilla_row",
+      "name": "Тяга гантелей «горилла»",
+      "group": "Спина",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "alternating",
+      "primary": [
+        "mid_back",
+        "lats"
+      ],
+      "secondary": [
+        "biceps",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_renegade_row",
+          "score": 79,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "abs",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Похожая нагрузка: середина спины, широчайшие, пресс."
+        },
+        {
+          "id": "db_one_arm_row",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Сильная замена. Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_hammer_curl",
+      "name": "Подъём гантелей «молотом»",
+      "group": "Руки",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "db_biceps_curl",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "biceps",
+            "forearms"
+          ],
+          "same_primary": [
+            "biceps"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: бицепс, предплечья."
+        },
+        {
+          "id": "db_farmer_carry",
+          "score": 39,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "forearms"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: предплечья."
+        }
+      ]
+    },
+    {
+      "id": "db_hip_thrust",
+      "name": "Хип-траст с гантелью",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "quads"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bulgarian_split_squat",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_step_up",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "quads"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_lateral_lunge",
+      "name": "Боковые выпады с гантелью",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "adductors",
+        "quads"
+      ],
+      "secondary": [
+        "glutes"
+      ],
+      "alternatives": [
+        {
+          "id": "db_reverse_lunge",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Похожая нагрузка: квадрицепс, ягодицы."
+        },
+        {
+          "id": "db_bulgarian_split_squat",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_step_up",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_lateral_raise",
+      "name": "Подъём гантелей в стороны",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_side"
+      ],
+      "secondary": [
+        "traps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_upright_row",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_side",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_side"
+          ],
+          "why": "Похожая нагрузка: средняя дельта, трапеция."
+        },
+        {
+          "id": "bw_arm_circles",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_side",
+            "traps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "delts_side"
+          ],
+          "why": "Сильная замена. Вариант — свой вес вместо гантелей."
+        },
+        {
+          "id": "db_shrug",
+          "score": 44,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция."
+        }
+      ]
+    },
+    {
+      "id": "db_one_arm_row",
+      "name": "Тяга гантели в наклоне",
+      "group": "Спина",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "mid_back"
+      ],
+      "secondary": [
+        "lats",
+        "biceps",
+        "delts_rear"
+      ],
+      "alternatives": [
+        {
+          "id": "db_gorilla_row",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_bent_over_row",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps",
+            "delts_rear"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Сильная замена. Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_renegade_row",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_overhead_triceps_extension",
+      "name": "Разгибание рук из-за головы",
+      "group": "Руки",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [],
+      "alternatives": [
+        {
+          "id": "db_floor_triceps_extension",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "triceps"
+          ],
+          "same_primary": [
+            "triceps"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: трицепс."
+        }
+      ]
+    },
+    {
+      "id": "db_pullover",
+      "name": "Пуловер с гантелью",
+      "group": "Спина",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "lats"
+      ],
+      "secondary": [
+        "chest_mid",
+        "triceps"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Похожая нагрузка: широчайшие."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 55,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Та же нагрузка, но попеременно вместо двух сторон."
+        },
+        {
+          "id": "db_renegade_row",
+          "score": 33,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [],
+          "why": "Та же нагрузка, но попеременно вместо двух сторон."
+        }
+      ]
+    },
+    {
+      "id": "db_rear_delt_fly",
+      "name": "Разведение гантелей в наклоне",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_rear"
+      ],
+      "secondary": [
+        "mid_back",
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_prone_t_raise",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "mid_back",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_rear"
+          ],
+          "why": "Сильная замена. Вариант — свой вес вместо гантелей."
+        },
+        {
+          "id": "db_upright_row",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_rear",
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: задняя дельта, трапеция."
+        },
+        {
+          "id": "db_shrug",
+          "score": 44,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: трапеция."
+        }
+      ]
+    },
+    {
+      "id": "db_renegade_row",
+      "name": "Тяга гантелей в планке",
+      "group": "Спина",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "alternating",
+      "primary": [
+        "mid_back",
+        "abs"
+      ],
+      "secondary": [
+        "lats",
+        "biceps",
+        "obliques"
+      ],
+      "alternatives": [
+        {
+          "id": "db_gorilla_row",
+          "score": 79,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "mid_back",
+            "abs",
+            "lats",
+            "biceps"
+          ],
+          "same_primary": [
+            "mid_back"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: середина спины, пресс, широчайшие."
+        },
+        {
+          "id": "bw_dead_bug",
+          "score": 52,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [
+            "abs",
+            "obliques"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Вариант — свой вес вместо гантелей."
+        },
+        {
+          "id": "bw_bird_dog",
+          "score": 51,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": false,
+          "shared_muscles": [
+            "abs",
+            "mid_back"
+          ],
+          "same_primary": [
+            "abs"
+          ],
+          "why": "Вариант — свой вес вместо гантелей."
+        }
+      ]
+    },
+    {
+      "id": "db_reverse_lunge",
+      "name": "Выпады назад с гантелями",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_single_leg_rdl",
+          "score": 77,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "abs"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Похожая нагрузка: ягодицы, бицепс бедра, пресс."
+        },
+        {
+          "id": "db_lateral_lunge",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: квадрицепс, ягодицы."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Та же нагрузка, но две стороны вместо одной стороны."
+        }
+      ]
+    },
+    {
+      "id": "db_romanian_deadlift",
+      "name": "Румынская тяга с одной гантелью",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "hamstrings"
+      ],
+      "secondary": [
+        "glutes",
+        "lower_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_good_morning",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: бицепс бедра, ягодицы, поясница."
+        },
+        {
+          "id": "db_single_leg_rdl",
+          "score": 66,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes",
+            "lower_back"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо двух сторон."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 46,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings",
+            "glutes"
+          ],
+          "same_primary": [],
+          "why": "Похожая нагрузка: бицепс бедра, ягодицы."
+        }
+      ]
+    },
+    {
+      "id": "db_russian_twist",
+      "name": "Русские скручивания с гантелью",
+      "group": "Корпус",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "alternating",
+      "primary": [
+        "obliques"
+      ],
+      "secondary": [
+        "abs",
+        "hip_flexors"
+      ],
+      "alternatives": [
+        {
+          "id": "db_suitcase_carry",
+          "score": 55,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "obliques"
+          ],
+          "same_primary": [
+            "obliques"
+          ],
+          "why": "Та же нагрузка, но одна сторона вместо попеременного выполнения."
+        },
+        {
+          "id": "bw_side_plank_knee",
+          "score": 51,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "obliques",
+            "abs"
+          ],
+          "same_primary": [
+            "obliques"
+          ],
+          "why": "Сильная замена. Вариант — свой вес вместо гантелей."
+        }
+      ]
+    },
+    {
+      "id": "db_shoulder_press",
+      "name": "Жим гантелей сидя",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_front"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_side"
+      ],
+      "alternatives": [
+        {
+          "id": "db_arnold_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "triceps",
+            "delts_side"
+          ],
+          "same_primary": [
+            "delts_front"
+          ],
+          "why": "Сильная замена. Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_lateral_raise",
+          "score": 40,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_front",
+            "delts_side"
+          ],
+          "same_primary": [],
+          "why": "Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_upright_row",
+          "score": 38,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_side"
+          ],
+          "same_primary": [],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_shrug",
+      "name": "Шраги",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "traps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "alternatives": [
+        {
+          "id": "db_upright_row",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Похожая нагрузка: трапеция."
+        },
+        {
+          "id": "db_farmer_carry",
+          "score": 59,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": false,
+          "shared_muscles": [
+            "traps",
+            "forearms"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: трапеция, предплечья."
+        }
+      ]
+    },
+    {
+      "id": "db_single_leg_rdl",
+      "name": "Румынская тяга на одной ноге",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary": [
+        "lower_back",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_reverse_lunge",
+          "score": 77,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "abs"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: ягодицы, бицепс бедра, пресс."
+        },
+        {
+          "id": "db_step_up",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант со скамьёй или стулом."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 63,
+          "kind": "laterality",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Та же нагрузка, но две стороны вместо одной стороны."
+        }
+      ]
+    },
+    {
+      "id": "db_squeeze_press",
+      "name": "Жим гантелей с сведением",
+      "group": "Грудь",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_floor_fly",
+          "score": 72,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: середина груди, трицепс, передняя дельта."
+        },
+        {
+          "id": "db_floor_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "dumbbells",
+            "bench",
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Обратная замена. Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_step_up",
+      "name": "Зашагивания с гантелями",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "calves"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_reverse_lunge",
+          "score": 70,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Сильная замена. Вариант без скамьи или стула."
+        },
+        {
+          "id": "db_sumo_squat",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Вариант без скамьи или стула."
+        }
+      ]
+    },
+    {
+      "id": "db_suitcase_carry",
+      "name": "Удержание гантели «чемодан»",
+      "group": "Корпус",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "obliques"
+      ],
+      "secondary": [
+        "forearms",
+        "traps"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_side_plank_knee",
+          "score": 59,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "obliques"
+          ],
+          "same_primary": [
+            "obliques"
+          ],
+          "why": "Сильная замена. Вариант — свой вес вместо гантелей."
+        },
+        {
+          "id": "db_russian_twist",
+          "score": 55,
+          "kind": "laterality",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "one_side",
+          "same_group": true,
+          "shared_muscles": [
+            "obliques"
+          ],
+          "same_primary": [
+            "obliques"
+          ],
+          "why": "Обратная замена. Та же нагрузка, но попеременно вместо одной стороны."
+        }
+      ]
+    },
+    {
+      "id": "db_sumo_squat",
+      "name": "Сумо-присед с гантелью",
+      "group": "Ноги",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes",
+        "adductors"
+      ],
+      "secondary": [
+        "quads",
+        "hamstrings"
+      ],
+      "alternatives": [
+        {
+          "id": "db_glute_bridge",
+          "score": 69,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: ягодицы, бицепс бедра."
+        },
+        {
+          "id": "db_hip_thrust",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": false,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "quads",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Обратная замена. Вариант со скамьёй или стулом."
+        }
+      ]
+    },
+    {
+      "id": "db_upright_row",
+      "name": "Тяга гантелей к подбородку",
+      "group": "Плечи и шея",
+      "equipment": [
+        "dumbbells"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "delts_side",
+        "traps"
+      ],
+      "secondary": [
+        "biceps",
+        "delts_rear"
+      ],
+      "alternatives": [
+        {
+          "id": "db_lateral_raise",
+          "score": 74,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "delts_side",
+            "traps"
+          ],
+          "same_primary": [
+            "delts_side"
+          ],
+          "why": "Сильная замена. Похожая нагрузка: средняя дельта, трапеция."
+        },
+        {
+          "id": "db_shrug",
+          "score": 66,
+          "kind": "muscle",
+          "canonical": false,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "traps"
+          ],
+          "same_primary": [
+            "traps"
+          ],
+          "why": "Обратная замена. Похожая нагрузка: трапеция."
+        }
+      ]
+    },
+    {
+      "id": "kb_goblet_squat",
+      "name": "Гоблет-присед с гирей",
+      "group": "Ноги",
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_front_rack_squat",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет гири: вариант — гантели."
+        },
+        {
+          "id": "db_goblet_squat",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "abs"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет гири: вариант — гантели."
+        },
+        {
+          "id": "bw_squat",
+          "score": 62,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет гири: вариант — свой вес."
+        }
+      ]
+    },
+    {
+      "id": "kb_swing",
+      "name": "Махи гирей",
+      "group": "Ноги",
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings",
+        "lower_back",
+        "abs"
+      ],
+      "alternatives": [
+        {
+          "id": "db_glute_bridge",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "abs"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет гири: вариант — гантели."
+        },
+        {
+          "id": "bw_glute_bridge",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "lower_back"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет гири: вариант — свой вес."
+        },
+        {
+          "id": "bw_hip_hinge_shift",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes",
+            "hamstrings",
+            "lower_back"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Дома нет гири: вариант — свой вес."
+        }
+      ]
+    },
+    {
+      "id": "mach_assisted_pullup",
+      "name": "Подтягивания в гравитроне",
+      "group": "Спина",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "lats"
+      ],
+      "secondary": [
+        "biceps",
+        "mid_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 68,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_pullover",
+          "score": 57,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "mach_chest_press",
+      "name": "Жим в тренажёре",
+      "group": "Грудь",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "chest_mid"
+      ],
+      "secondary": [
+        "triceps",
+        "delts_front"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bench_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели и скамья или стул."
+        },
+        {
+          "id": "db_floor_fly",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_floor_press",
+          "score": 66,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells",
+            "bench",
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "chest_mid",
+            "triceps",
+            "delts_front"
+          ],
+          "same_primary": [
+            "chest_mid"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели и скамья или стул."
+        }
+      ]
+    },
+    {
+      "id": "mach_lat_pulldown",
+      "name": "Тяга верхнего блока",
+      "group": "Спина",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "lats"
+      ],
+      "secondary": [
+        "biceps",
+        "mid_back"
+      ],
+      "alternatives": [
+        {
+          "id": "db_bent_over_row",
+          "score": 71,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_gorilla_row",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "alternating",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "lats",
+            "mid_back",
+            "biceps"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_pullover",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "lats"
+          ],
+          "same_primary": [
+            "lats"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "mach_leg_curl",
+      "name": "Сгибание ног в тренажёре",
+      "group": "Ноги",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "hamstrings"
+      ],
+      "secondary": [],
+      "alternatives": [
+        {
+          "id": "db_good_morning",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_romanian_deadlift",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_single_leg_rdl",
+          "score": 49,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "hamstrings"
+          ],
+          "same_primary": [
+            "hamstrings"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "mach_leg_extension",
+      "name": "Разгибание ног в тренажёре",
+      "group": "Ноги",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [],
+      "alternatives": [
+        {
+          "id": "db_front_rack_squat",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_goblet_squat",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "bw_squat",
+          "score": 59,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — свой вес."
+        }
+      ]
+    },
+    {
+      "id": "mach_leg_press",
+      "name": "Жим ногами",
+      "group": "Ноги",
+      "equipment": [
+        "gym"
+      ],
+      "laterality": "bilateral",
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "hamstrings"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_squat",
+          "score": 65,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes",
+            "hamstrings"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — свой вес."
+        },
+        {
+          "id": "db_front_rack_squat",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        },
+        {
+          "id": "db_goblet_squat",
+          "score": 63,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "quads",
+            "glutes"
+          ],
+          "same_primary": [
+            "quads"
+          ],
+          "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    }
+  ],
+  "warmups": {
+    "strength": {
+      "id": "warmup_strength",
+      "title": "Тёплый старт перед силовой",
+      "duration_min": 8,
+      "note": "Сначала общая разминка, затем по одному подходу на те же паттерны, что в основной части.",
+      "items": [
+        {
+          "exercise_id": "bw_march_in_place",
+          "mode": "time",
+          "value": 60,
+          "unit": "sec",
+          "note": "спокойный темп, руки работают"
+        },
+        {
+          "exercise_id": "bw_arm_circles",
+          "mode": "time",
+          "value": 30,
+          "unit": "sec",
+          "note": "по 15 секунд в каждую сторону"
+        },
+        {
+          "exercise_id": "bw_cat_cow",
+          "mode": "reps",
+          "value": 8,
+          "unit": "reps",
+          "note": "медленно, на дыхании"
+        },
+        {
+          "exercise_id": "bw_hip_hinge_shift",
+          "mode": "reps",
+          "value": 10,
+          "unit": "reps",
+          "note": "таз назад, спина прямая"
+        },
+        {
+          "exercise_id": "bw_squat",
+          "mode": "reps",
+          "value": 12,
+          "unit": "reps",
+          "note": "не до отказа"
+        },
+        {
+          "exercise_id": "bw_glute_bridge",
+          "mode": "reps",
+          "value": 12,
+          "unit": "reps",
+          "note": "сжать ягодицы вверху"
+        },
+        {
+          "exercise_id": "bw_scapular_retraction",
+          "mode": "reps",
+          "value": 10,
+          "unit": "reps",
+          "note": "лопатки вниз, плечи не поднимать"
+        },
+        {
+          "exercise_id": "bw_wrist_warmup",
+          "mode": "time",
+          "value": 30,
+          "unit": "sec",
+          "note": "кисти перед хватом"
+        }
+      ]
+    },
+    "posture": {
+      "id": "warmup_posture",
+      "title": "Тёплый старт перед комплексом осанки",
+      "duration_min": 6,
+      "note": "Мягкая мобилизация без боли; дыхание ровное, амплитуда комфортная.",
+      "items": [
+        {
+          "exercise_id": "bw_chin_tuck",
+          "mode": "reps",
+          "value": 10,
+          "unit": "reps",
+          "note": "затылок назад, подбородок вниз"
+        },
+        {
+          "exercise_id": "bw_cat_cow",
+          "mode": "reps",
+          "value": 8,
+          "unit": "reps",
+          "note": "разогреть спину"
+        },
+        {
+          "exercise_id": "bw_thoracic_rotation",
+          "mode": "reps",
+          "value": 8,
+          "unit": "reps",
+          "per_side": true,
+          "note": "медленно, без боли"
+        },
+        {
+          "exercise_id": "bw_thoracic_extension",
+          "mode": "reps",
+          "value": 10,
+          "unit": "reps",
+          "note": "движение в грудном отделе"
+        },
+        {
+          "exercise_id": "bw_wall_slides",
+          "mode": "reps",
+          "value": 12,
+          "unit": "reps",
+          "note": "рёбра у стены"
+        },
+        {
+          "exercise_id": "bw_glute_bridge",
+          "mode": "reps",
+          "value": 12,
+          "unit": "reps",
+          "note": "таз нейтрально"
+        }
+      ]
+    }
+  },
+  "templates": {
+    "strength": {
+      "id": "template_strength_home",
+      "title": "Силовая дома · всё тело",
+      "warmup_id": "warmup_strength",
+      "note": "Одна тренировка на всё тело с парой гантелей и стулом; отдых 75–90 секунд.",
+      "blocks": [
+        {
+          "exercise_id": "db_goblet_squat",
+          "sets": 3,
+          "reps": "10-12",
+          "rest_sec": 90
+        },
+        {
+          "exercise_id": "db_bent_over_row",
+          "sets": 3,
+          "reps": "8-10",
+          "rest_sec": 90
+        },
+        {
+          "exercise_id": "db_floor_press",
+          "sets": 3,
+          "reps": "8-12",
+          "rest_sec": 90
+        },
+        {
+          "exercise_id": "db_romanian_deadlift",
+          "sets": 3,
+          "reps": "10-12",
+          "rest_sec": 90
+        },
+        {
+          "exercise_id": "db_shoulder_press",
+          "sets": 2,
+          "reps": "10-12",
+          "rest_sec": 75
+        },
+        {
+          "exercise_id": "db_farmer_carry",
+          "sets": 2,
+          "seconds": 40,
+          "rest_sec": 75
+        }
+      ],
+      "cooldown": [
+        {
+          "exercise_id": "bw_thoracic_rotation",
+          "mode": "reps",
+          "value": 8,
+          "per_side": true
+        },
+        {
+          "exercise_id": "bw_doorway_stretch",
+          "mode": "time",
+          "value": 30,
+          "unit": "sec"
+        }
+      ]
+    },
+    "posture": {
+      "id": "template_posture_daily",
+      "title": "Коррекция осанки · ежедневный комплекс",
+      "warmup_id": "warmup_posture",
+      "note": "Постоянный комплекс на 8 упражнений; 2 подхода, спокойный темп, без боли.",
+      "blocks": [
+        {
+          "exercise_id": "bw_chin_tuck",
+          "sets": 2,
+          "reps": "10",
+          "rest_sec": 30
+        },
+        {
+          "exercise_id": "bw_thoracic_extension",
+          "sets": 2,
+          "reps": "10",
+          "rest_sec": 30
+        },
+        {
+          "exercise_id": "bw_wall_slides",
+          "sets": 2,
+          "reps": "12",
+          "rest_sec": 30
+        },
+        {
+          "exercise_id": "db_one_arm_row",
+          "sets": 2,
+          "reps": "8",
+          "per_side": true,
+          "rest_sec": 45
+        },
+        {
+          "exercise_id": "bw_dead_bug",
+          "sets": 2,
+          "reps": "10",
+          "per_side": true,
+          "rest_sec": 30
+        },
+        {
+          "exercise_id": "bw_glute_bridge",
+          "sets": 2,
+          "reps": "12",
+          "rest_sec": 30
+        },
+        {
+          "exercise_id": "bw_doorway_stretch",
+          "sets": 2,
+          "seconds": 30,
+          "rest_sec": 20
+        },
+        {
+          "exercise_id": "bw_hip_flexor_stretch",
+          "sets": 2,
+          "seconds": 30,
+          "per_side": true,
+          "rest_sec": 20
+        }
+      ],
+      "cooldown": [
+        {
+          "exercise_id": "bw_cat_cow",
+          "mode": "reps",
+          "value": 6
+        },
+        {
+          "exercise_id": "bw_chin_tuck",
+          "mode": "reps",
+          "value": 8
+        }
+      ]
+    }
+  }
+}

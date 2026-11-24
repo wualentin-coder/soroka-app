@@ -467,6 +467,13 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       ${line}${dots}${label}${xLabels}</svg>`;
   }
 
+  function tableMarkup(item, metric) {
+    const series = item.series.slice(-8);
+    return `<table class="sh-chart-table"><caption>${metric === "volume" ? "Объём" : "Вес"} по подтверждённым подходам</caption>
+      <thead><tr><th>Дата</th><th>${metric === "volume" ? "Объём, кг" : "Вес, кг"}</th><th>Повторы</th></tr></thead>
+      <tbody>${series.map(point => `<tr><td>${esc(shortDay(point.date))}</td><td>${oneDecimal(metric === "volume" ? point.volume : point.kg)}</td><td>${point.reps}</td></tr>`).join("")}</tbody></table>`;
+  }
+
   function paintFeed() {
     const mount = document.querySelector("[data-sh-feed]");
     if (!mount || !surface?.owner.current()) return;
@@ -494,17 +501,19 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     const frequencyTile = summaries.length
       ? `<div class="sh-tile"><span>Частота</span><b>${oneDecimal(frequency)}</b><small>в неделю · 4 нед.${recent.length < 2 ? " · мало данных" : ""}</small></div>` : "";
     const metric = surface.metric === "volume" ? "volume" : "kg";
+    const table = Boolean(surface.table);
     const chart = top
       ? `<section class="sh-chart-card" aria-label="Динамика">
           <div class="sh-chart-head"><div><b>${esc(top.name)}</b><span>${metric === "volume" ? "объём, кг" : "вес, кг"}</span></div>
-            <div class="sh-seg" role="group" aria-label="Показатель"><button type="button" data-action="sp-history-metric" data-metric="kg" aria-pressed="${metric === "kg"}">Вес</button><button type="button" data-action="sp-history-metric" data-metric="volume" aria-pressed="${metric === "volume"}">Объём</button></div></div>
-          ${chartSvg(top, metric)}
+            <div class="sh-chart-tools"><div class="sh-seg" role="group" aria-label="Показатель"><button type="button" data-action="sp-history-metric" data-metric="kg" aria-pressed="${metric === "kg"}">Вес</button><button type="button" data-action="sp-history-metric" data-metric="volume" aria-pressed="${metric === "volume"}">Объём</button></div><button type="button" class="sh-table-btn" data-action="sp-history-table" aria-pressed="${table}">Таблица</button></div></div>
+          ${table ? tableMarkup(top, metric) : chartSvg(top, metric)}
           <p class="sh-chart-note">${top.series.length > 1 ? "Только подтверждённые подходы" : `Ещё ${2 - top.series.length} тренировки до линии`}</p>
-          ${plateau ? `<details class="sh-plateau"><summary>Плато · ${plateau.weeks} нед.</summary><div><p>${plateau.item.series.slice(-3).map(point => `${esc(shortDay(point.date))} — ${oneDecimal(point.kg)} кг × ${point.reps}`).join(" · ")}</p><p class="sh-muted">Наблюдение, не диагноз.</p></div></details>` : ""}
+          ${plateau ? `<details class="sh-plateau"><summary>Плато · ${plateau.weeks} нед.</summary><div><p>${plateau.item.series.slice(-3).map(point => `${esc(shortDay(point.date))} — ${oneDecimal(point.kg)} кг × ${point.reps}`).join(" · ")}</p><p class="sh-muted">Наблюдение, не диагноз.</p></div></details>`
+            : top.series.length < 4 ? `<p class="sh-plateau-note">Плато: недостаточно данных · ${top.series.length} из 4 тренировок.</p>` : ""}
         </section>` : "";
     const stats = summaries.length
       ? `<section class="sh-stats"><p class="sh-verdict">${verdict}</p><div class="sh-tiles">${recordTile}${frequencyTile}</div>${chart}</section>
-        ${version ? `<p class="sh-plan-row"><span>План · v${version}</span><span>снимок тренировки</span></p>` : ""}` : "";
+        ${version ? `<button type="button" class="sh-plan-row" data-action="sp-history-versions"><span>План · v${version}</span><span>версии плана ${icon("right")}</span></button>` : ""}` : "";
     mount.innerHTML = `${stats}<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => {
       const summary = details.get(session.id);
       return `<button type="button" class="sh-history-row" data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
@@ -523,7 +532,7 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       return;
     }
     if (reset || !surface?.owner.current()) surface = {
-      owner, sessions: [], details: new Map(), cursor: null, ready: false, busy: false, error: "", metric: "kg",
+      owner, sessions: [], details: new Map(), cursor: null, ready: false, busy: false, error: "", metric: "kg", table: false,
     };
     const state = surface;
     if (state.busy || state.ready && !more) { paintFeed(); return; }
@@ -617,6 +626,27 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     await show();
   }
 
+  SP_SHEETS["sh-history-versions"] = () => {
+    const versions = new Map();
+    for (const detail of surface?.details?.values() || []) {
+      const session = detail.session;
+      const version = Number(session.plan_version) || 0;
+      if (!version) continue;
+      const item = versions.get(version) ?? { version, count: 0, first: session.workout_date, last: session.workout_date };
+      item.count += 1;
+      if (session.workout_date < item.first) item.first = session.workout_date;
+      if (session.workout_date > item.last) item.last = session.workout_date;
+      versions.set(version, item);
+    }
+    const rows = [...versions.values()].sort((a, b) => b.version - a.version).map((item) =>
+      `<div class="sh-version-row"><b>v${item.version}</b><span>${esc(shortDay(item.first))} — ${esc(shortDay(item.last))}</span><small>${item.count} ${item.count === 1 ? "тренировка" : "тренировки"} · снимок плана</small></div>`).join("");
+    return {
+      title: "Версии плана",
+      body: `${rows || `<p class="sh-muted">История версий появится после завершённых тренировок.</p>`}
+        <p class="sh-muted">Прошедшие тренировки остаются снимком своей версии. Вернуть версию можно в Coach.</p>`,
+    };
+  };
+
   window.SportHistory = { list, preview, editor, open, result, equal, invalidate: () => { surface = null; },
     stats: { sessionSummary, aggregate, plateauOf } };
   Object.assign(SP_ACTIONS, {
@@ -627,5 +657,11 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       surface.metric = control.dataset.metric === "volume" ? "volume" : "kg";
       paintFeed();
     },
+    "sp-history-table": () => {
+      if (!surface) return;
+      surface.table = !surface.table;
+      paintFeed();
+    },
+    "sp-history-versions": () => spOpen("sh-history-versions"),
   });
 })();

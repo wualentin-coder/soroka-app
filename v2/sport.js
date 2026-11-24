@@ -291,11 +291,11 @@ window.addEventListener("resize", spUpdateStickyTop);
 setInterval(() => { if (document.querySelector(".sp-screen")) spUpdateStickyTop(); }, 500);
 
 const SP2_TABS = [["today", "Сегодня"], ["training", "Программа"], ["history", "История"]];
-const SP2_SUBSCREENS = { settings: "Настройки спорта", inventory: "Инвентарь", profile: "Мой профиль", goals: "Мои цели", workout: "Состав и замены", library: "Библиотека" };
+const SP2_SUBSCREENS = { settings: "Настройки спорта", inventory: "Инвентарь", profile: "Мой профиль", goals: "Мои цели", workout: "Состав и замены", library: "Библиотека", autoreg: "Готовность", flex: "Гибкость" };
 function sp2Screen(failed, banner) {
   const s = spState();
   const title = SP2_SUBSCREENS[s.tab];
-  const back = s.tab === "settings" ? s.sport2Return || "today" : s.tab === "workout" ? s.workoutReturn || "training" : s.tab === "library" ? s.libraryReturn || "today" : "settings";
+  const back = s.tab === "settings" ? s.sport2Return || "today" : s.tab === "workout" ? s.workoutReturn || "training" : s.tab === "library" ? s.libraryReturn || "today" : ["autoreg", "flex"].includes(s.tab) ? s.extraReturn || "today" : "settings";
   const head = title
     ? `<header class="sp2-f-head sub"><button class="sp2-f-icon" type="button" data-action="sp-tab" data-tab="${back}" aria-label="Назад">${icon("left")}</button><h1>${title}</h1></header>`
     : `<header class="sp2-f-head"><strong>Спорт</strong><span class="sp2-f-head-actions"><button class="sp2-f-icon" type="button" data-action="sp-2-library" aria-label="Библиотека упражнений">${icon("list")}</button><button class="sp2-f-icon gear" type="button" data-action="sp-2-settings" aria-label="Настройки спорта">${icon("settings")}</button></span></header>
@@ -305,6 +305,8 @@ function sp2Screen(failed, banner) {
     profile: spProfileScreen, settings: sp2SettingsScreen,
     inventory: () => (window.SportCoach?.slot("inventory") || "") + spEquipment(), workout: sp2WorkoutScreen,
     library: () => window.SportCatalogUI?.screen() || "",
+    autoreg: () => window.SportExtra?.autoregScreen() || "",
+    flex: () => window.SportExtra?.flexScreen() || "",
   };
   return `<div class="sp-screen sp2-f" data-view="${s.tab}">${head}${failed}${(screens[s.tab] || spTodayScreen)()}${banner}</div>${spSheetHtml()}`;
 }
@@ -442,7 +444,7 @@ function spTodayScreen() {
   const today = C.todayKey(), date = s.date;
   const { visible } = spOptions();
   const parts = C.isSport2Enabled(s.state)
-    ? [sp2DayHeading(date), sp2Week(visible), window.SportSchedule?.banner() || "", sp2DayHero(visible, date), window.SportCoach?.slot("latest") || ""]
+    ? [sp2DayHeading(date), sp2Week(visible), window.SportSchedule?.banner() || "", sp2DayHero(visible, date), window.SportExtra?.quick() || "", window.SportCoach?.slot("latest") || ""]
     : [spWeekStrip(visible), spDayWorkoutCard(visible, date)];
   parts.push(spTestCard(visible, date));
   if (date <= today) parts.push(spDayList(visible, date));

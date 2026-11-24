@@ -473,11 +473,12 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const sessionId = id();
       const { snapshot, ...args } = await this.resolvePlan(option, sessionId);
       if (!this.modal?.open) return;
+      const localSnapshot = snapshot ? window.SportExtra?.adjustPlan?.(option.key, snapshot) || snapshot : args.manual_workout;
       const made = await this.storage.change(data => {
         const active = data.records[data.active];
         if (active && (!terminal(view(active).projection.phase) || active.start || active.events.length || active.abandon)) return false;
         const record = {
-          id: sessionId, sourceKey: option.key, snapshot: snapshot ?? args.manual_workout,
+          id: sessionId, sourceKey: option.key, snapshot: localSnapshot,
           version: 0, events: [], drafts: {}, lastAt: 0, startSent: false,
         };
         const [start] = this.append(record, [{ type: "session_started" }], Date.now());
