@@ -54,6 +54,7 @@ var SportCore = (() => {
     REQUIRED_LABELS: () => REQUIRED_LABELS,
     SIZE_SOURCES: () => SIZE_SOURCES,
     SIZING_MEASURES: () => SIZING_MEASURES,
+    SKIP_TOAST_MS: () => SKIP_TOAST_MS,
     SKIP_UNDO_MS: () => SKIP_UNDO_MS,
     STRETCHING_RULES: () => STRETCHING_RULES,
     TRAINING_PLACES: () => TRAINING_PLACES,
@@ -2365,10 +2366,11 @@ ${JSON.stringify(context, null, 2)}
         str(b.title, `${bp}.title`, 160);
         list(b.exercises, `${bp}.exercises`, 100).forEach((item3, ei) => {
           const ep = `${bp}.exercises[${ei}]`;
-          const e = object(item3, ep, ["id", "name", "sets", "mode", "work_seconds", "rest_seconds", "technique"], ["reps", "target", "video", "muscles", "bodyweight", "weight_kg", "weight_basis", "execution_seconds"]);
+          const e = object(item3, ep, ["id", "name", "sets", "mode", "work_seconds", "rest_seconds", "technique"], ["reps", "target", "video", "muscles", "bodyweight", "weight_kg", "weight_basis", "execution_seconds", "exercise_id"]);
           id(e.id, `${ep}.id`);
           str(e.name, `${ep}.name`, 160);
           str(e.technique, `${ep}.technique`, 3e3);
+          if (hasOwn(e, "exercise_id")) str(e.exercise_id, `${ep}.exercise_id`, 200);
           if (exerciseIds.has(e.id)) fail(`${ep}.id`, "повтор ID упражнения в занятии");
           exerciseIds.add(e.id);
           integer(e.sets, `${ep}.sets`, 1, 100);
@@ -3014,7 +3016,8 @@ ${JSON.stringify(context, null, 2)}
 
   // sport/core/src/session/run.ts
   var PREPARATION_MS = 5e3;
-  var SKIP_UNDO_MS = 5e3;
+  var SKIP_TOAST_MS = 15e3;
+  var SKIP_UNDO_MS = 6e4;
   var keyOf = (key) => setKey(key.plan_exercise_id, key.set_index);
   var eventFor = (type, key, payload) => ({ type, key, payload });
   var addressed = (key) => ({ plan_exercise_id: key.plan_exercise_id, set_index: key.set_index });

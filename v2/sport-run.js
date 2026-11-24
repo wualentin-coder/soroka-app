@@ -71,6 +71,13 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
   };
   const sameTime = (a, b) => Date.parse(a) === Date.parse(b);
+  /** A deliberate horizontal swipe, not a short horizontal drift or edge gesture. */
+  function isSkipSwipe({ x, y, dx, dy, elapsed, width }) {
+    const edge = 24;
+    const minimum = width <= 360 ? 64 : 72;
+    return Number.isFinite(elapsed) && elapsed >= 90 && x >= edge && x <= width - edge
+      && dx >= minimum && dx > 1.6 * Math.abs(dy);
+  }
   /** Открытый подход: пустой можно закрыть, с повторами — сначала завершить. */
   function openSetStatus(model, draft) {
     if (!model?.projection?.open_set) return "none";
@@ -521,7 +528,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         }
         if (event.target.closest('[data-sr="done"]')) sensory?.sensoryGesture(box, event.target.closest("button"), event);
         if (!event.isPrimary || event.button !== 0 || event.target.closest("input,button:not(.sr-media-tap,.sr-clock)")) return;
-        if (event.target.closest("[data-sr-swipe]")) this.swipe = { x: event.clientX, y: event.clientY, id: event.pointerId };
+        if (event.target.closest("[data-sr-swipe]")) this.swipe = { x: event.clientX, y: event.clientY, id: event.pointerId, at: performance.now() };
       });
       box.addEventListener("keydown", event => {
         this.byPointer = false;
@@ -533,7 +540,9 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         this.swipe = null;
         if (!swipe || event.pointerId !== swipe.id) return;
         const dx = swipe.x - event.clientX, dy = Math.abs(swipe.y - event.clientY);
-        if (dx >= 52 && dx > 1.35 * dy) {
+        const width = this.modal?.clientWidth || window.innerWidth || 390;
+        if (isSkipSwipe({ x: swipe.x, y: swipe.y, dx, dy,
+          elapsed: performance.now() - (swipe.at ?? 0), width })) {
           this.swipedAt = performance.now();
           this.act("skip");
         }
@@ -681,7 +690,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           record.undo = null;
           return true;
         }
-        if (record.undo) return false;
+        if (record.undo && command.type !== "undo") this.commitUndo(record);
         if (command.type === "seal" && model.phase !== "review") return false;
         const draftKey = model.phase === "rest" && model.prior && ["advance", "skip", "review"].includes(command.type) ? keyOf(model.prior) : null;
         if (draftKey) {
@@ -694,7 +703,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           const [event] = this.append(record, [{ type: "session_completed" }], now, true);
           record.complete = { event };
         } else if (command.type === "skip" || command.type === "skip-set") {
-          record.undo = { until: now + C().SKIP_UNDO_MS, events: this.append(record, steps, now, true), draftKey,
+          record.undo = { until: now + C().SKIP_UNDO_MS,
+            visibleUntil: now + (C().SKIP_TOAST_MS ?? 15000), events: this.append(record, steps, now, true), draftKey,
             label: model.phase === "rest"
               ? `Отдых пропущен · подход ${model.prior.set_index} ${command.result || model.prior.status === "confirmed" ? "записан" : "не подтверждён"}`
               : command.type === "skip-set" ? "Подход пропущен" : "Упражнение пропущено" };
@@ -717,7 +727,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       try {
         await this.storage.change(data => {
           const record = data.records[data.active];
-          if (!record || record.abandon || record.undo || record.id !== this.recordId || phaseSignature(view(record)) !== phaseSignature(model)) return false;
+          if (!record || record.abandon || record.id !== this.recordId || phaseSignature(view(record)) !== phaseSignature(model)) return false;
+          if (record.undo) this.commitUndo(record);
           const key = keyOf(model.prior);
           const draft = record.drafts[key] ??= {};
           if (onlyIfUntouched && owns(draft, name)) return false;
@@ -1709,6 +1720,10 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         if (typeof spState === "function" && cameraCoachEnabled(spState()?.state) && model.phase !== "review") {
           items += control("camera-coach", "Тренер по камере");
         }
+        const undo = this.read()?.undo;
+        if (undo && Date.now() >= (undo.visibleUntil ?? undo.until)) {
+          items += control("undo", "Вернуть последнее пропущенное");
+        }
         if (model.phase === "work" || model.phase === "rest") items += control("skip", model.phase === "rest" ? "Пропустить отдых" : "Пропустить упражнение");
         if (model.phase === "work" && model.replay.open) items += control("skip-set", "Пропустить подход");
         if (model.phase === "work" || model.phase === "rest") items += control("review", "Завершить");
@@ -1770,13 +1785,13 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         }
         screen.dataset.phase = record?.abandon ? "abandon-pending" : model?.phase ?? "idle";
         screen.innerHTML = html;
-        screen.inert = !!this.panel || (!!record?.undo && !this.conflict);
+        screen.inert = !!this.panel;
         this.modal.querySelector(".sr-notices")?.remove();
         this.modal.querySelector(".sr-panel-backdrop")?.remove();
         this.modal.insertAdjacentHTML("beforeend", `<aside class="sr-notices"><p data-sr-error role="alert" hidden></p>
           <p data-sr-sync role="status" hidden></p><p data-sr-notice role="status" hidden></p>
           <div data-sr-sync-error class="sr-undo" hidden><span role="alert"></span>${control("retry-sync", "Повторить", "sr-text")}</div>
-          ${record?.undo && !this.conflict ? `<div class="sr-undo" role="status"><span>${esc(record.undo.label)}</span>${control("undo", "Отменить", "sr-text")}</div>` : ""}</aside>${model ? this.panelMarkup(model) : ""}`);
+          ${record?.undo && !this.conflict && Date.now() < (record.undo.visibleUntil ?? record.undo.until) ? `<div class="sr-undo" role="status"><span>${esc(record.undo.label)}</span>${control("undo", "Отменить", "sr-text")}</div>` : ""}</aside>${model ? this.panelMarkup(model) : ""}`);
         this.screenKey = screenKey;
         this.signature = signature;
         this.fillFigures();
@@ -1881,7 +1896,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           this.togglePanel("confirm-abandon");
           return;
         }
-        if (record.undo && action !== "undo") return;
+        if (record.undo && !["undo", "menu", "panel-close"].includes(action)) return;
         if (["menu", "close-menu", "tech", "panel-close"].includes(action)) {
           this.togglePanel(action === "panel-close" ? null : action);
           return;
