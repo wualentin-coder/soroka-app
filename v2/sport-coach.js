@@ -140,7 +140,8 @@
     return {
       ...before, routine_type: before?.routine_type || kind, title: workout.title, focus: workout.focus,
       exercises: blocks.flatMap(block => block.exercises.map(e => ({
-        id: e.plan_exercise_id, name: e.name, sets: e.sets, mode: e.mode,
+        id: e.plan_exercise_id, plan_exercise_id: e.plan_exercise_id, exercise_id: e.exercise_id,
+        name: e.name, sets: e.sets, mode: e.mode,
         sets_reps: e.mode === "manual" && e.sets === 1 ? e.target || "" :
           e.sets + " × " + (e.mode === "timed" ? e.work_seconds + " сек" : e.mode === "reps" ? e.reps || "" : e.target || ""),
         hold: e.work_seconds, rest: e.rest_seconds, executionSeconds: e.execution_seconds, bodyweight: e.bodyweight,
