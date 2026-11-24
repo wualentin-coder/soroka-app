@@ -159,7 +159,7 @@
     }
     const warmup = core.warmupFor("strength", matrix, catalog);
     if (!warmup) return { title: "Тёплый старт", body: `<p class="sp2-ex-note">В матрице нет тёплого старта.</p>` };
-    return { title: "Тёплый старт", body: `<p class="sp2-ex-note">${esc(warmup.title)} · ${warmup.duration_min} мин · ${warmup.items.length} движений</p><div class="sp2-ex-warm">${warmup.items.map((item) => `<span>${esc(item.name)} · ${item.mode === "time" ? `${item.value} с` : `${item.value}`}${item.note ? ` · ${esc(item.note)}` : ""}</span>`).join("")}</div><div class="sheet-actions"><button class="ghost-button" type="button" data-action="sp-backdrop">Отмена</button><button class="primary-button" type="button" data-action="sp2-flex-warm-add">Добавить</button></div>` };
+    return { title: "Тёплый старт", body: `<p class="sp2-ex-note">${esc(warmup.title)} · ${warmup.duration_min} мин · ${warmup.items.length} движений</p><div class="sp2-ex-warm">${warmup.items.map((item) => `<span>${esc(item.name)} · ${item.mode === "time" ? `${item.value} с` : `${item.value}`}${item.note ? ` · ${esc(item.note)}` : ""}</span>`).join("")}</div><div class="sheet-actions"><button class="ghost-button" type="button" data-action="sp2-close">Отмена</button><button class="primary-button" type="button" data-action="sp2-flex-warm-add">Добавить</button></div>` };
   }
 
   SP_SHEETS["sp2-swap"] = (sheet) => alternativesSheet(sheet);
@@ -234,7 +234,7 @@
       spUpdate((prev) => ({ ...prev, sport2Flex: { ...(prev.sport2Flex || {}), reminders: toggleReminder(current, index) } })).catch(() => {});
       render();
     },
-    "sp-backdrop": () => spClose(),
+    "sp2-close": () => spClose(),
   });
 
   window.SportExtra = {
