@@ -190,7 +190,9 @@ function sp2SettingsScreen() {
     ${row(SP_ICON.dumbbell, "Инвентарь", "sp-tab", equipment, "inventory")}
     ${row(icon("archive"), "Программы", "sp-programs")}
   </section>
-  <h2 class="sp2-f-section-title">Тренер</h2>${window.SportCoach?.slot("settings") || ""}
+  <h2 class="sp2-f-section-title">Тренер</h2><section class="sp2-f-card sp2-f-settings">
+    ${row(icon("eye"), "Тренер по камере", "sp-camera-coach", state.coachSettings?.cameraCoach !== false ? "Вкл." : "Выкл.")}
+  </section>${window.SportCoach?.slot("settings") || ""}
   <h2 class="sp2-f-section-title">Здоровье</h2><section class="sp2-f-card sp2-f-settings">
     ${row(icon("health"), "Часы", "sp-health", "Mi Band · Health Connect")}
   </section>
@@ -533,6 +535,12 @@ function spHistory(sheet) {
   return `${tabs}${spHistoryList(view)}`;
 }
 SP_ACTIONS["sp-history-view"] = control => { const s = spState(); s.historyView = control.dataset.view; if (s.sheet) s.sheet.view = control.dataset.view; render(); };
+SP_ACTIONS["sp-camera-coach"] = () => {
+  const current = spState().state?.coachSettings?.cameraCoach !== false;
+  spUpdate(prev => ({ ...prev, coachSettings: { ...(prev.coachSettings || {}), cameraCoach: !current } }))
+    .then(() => toast(!current ? "Тренер по камере включён" : "Тренер по камере выключен"))
+    .catch(() => toast("Не сохранилось — попробуйте ещё раз"));
+};
 
 // ------------------------------------------------------------ настройки, программы, экспорт
 

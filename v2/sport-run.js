@@ -10,6 +10,31 @@
   const keyOf = target => target ? JSON.stringify([target.plan_exercise_id, target.set_index]) : "";
   const error = (code, reply) => Object.assign(new Error(code), { reply });
   const terminal = phase => phase === "abandoned" || phase === "completed";
+  const cameraCoachEnabled = state => state?.coachSettings?.cameraCoach !== false;
+  const coachEyesNames = {
+    curl: ["curl", "biceps", "бицепс", "сгибан"],
+    pushup: ["pushup", "отжиман"],
+    press: ["press", "жим"],
+    squat: ["squat", "присед"],
+    lunge: ["lunge", "выпад"],
+    lateral: ["lateral", "в стороны", "разведен"],
+    plank: ["plank", "планк"],
+    row: ["row", "тяга"],
+    situp: ["situp", "скручиван", "пресс", "dead bug", "мертвый"],
+    bridge: ["bridge", "мост", "ягодичн"],
+  };
+  const coachEyesText = value => String(value ?? "").toLocaleLowerCase("ru")
+    .replace(/ё/g, "е").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  function coachEyesMatch(exercise, key, title) {
+    const name = coachEyesText(exercise?.name);
+    const id = coachEyesText(exercise?.exercise_id);
+    const titleText = coachEyesText(title);
+    const parts = coachEyesNames[String(key ?? "").toLocaleLowerCase("en")] ?? [key];
+    return parts.some(part => {
+      const needle = coachEyesText(part);
+      return needle && (name.includes(needle) || id.includes(needle) || titleText.includes(needle));
+    });
+  }
   const emptyStore = () => ({ active: null, records: {}, plans: {} });
   const networkError = reason => reason.reply?.retryable || reason.message === "sport2_unavailable"
     || (reason.status ? reason.status >= 500 : !reason.reply);
@@ -289,6 +314,8 @@
       this.loadoutText = "";
       this.conflict = null;
       this.interruption = null;
+      this.camera = null;
+      this.cameraDialog = null;
       this.message = "";
       this.retryTimer = null;
       this.interval = null;
@@ -1242,6 +1269,8 @@
       return `<header class="sr-head">${iconButton("close-menu", "close", "Завершить или свернуть", "sr-bare")}
         <div class="sr-title"><span>${model.phase === "rest" ? `<small>Отдых · </small>` : ""}${esc(title)}</span>
           ${sets ? `<span class="sr-segments" aria-hidden="true">${sets}</span>` : ""}</div>
+        ${typeof spState === "function" && cameraCoachEnabled(spState()?.state)
+          ? iconButton("camera-coach", "eye", "Тренер по камере", "sr-bare") : ""}
         ${iconButton("menu", "more", "Действия тренировки", "sr-bare", `aria-expanded="${this.panel === "menu"}"`)}</header>`;
     }
 
@@ -1334,6 +1363,171 @@
       return this.simple("Тренировка", "", control("review", "Завершить") + control("dismiss", "Свернуть"));
     }
 
+    closeCameraDialog() {
+      if (this.cameraDialog?.open) this.cameraDialog.close();
+      this.cameraDialog = null;
+    }
+
+    cameraBox(title, body) {
+      this.closeCameraDialog();
+      const dialog = document.createElement("dialog");
+      dialog.className = "sport-run sr-camera";
+      dialog.innerHTML = `<section class="sr-screen"><header class="sh-head"><h2>${esc(title)}</h2>
+        <button type="button" class="ghost-button" data-camera-close>Закрыть</button></header>
+        <div class="sr-body sh-content">${body}</div></section>`;
+      dialog.addEventListener("click", event => {
+        if (event.target.closest("[data-camera-close]") || event.target === dialog) dialog.close();
+      });
+      dialog.addEventListener("close", () => {
+        dialog.remove();
+        if (this.cameraDialog === dialog) this.cameraDialog = null;
+      }, { once: true });
+      document.body.append(dialog);
+      dialog.showModal();
+      this.cameraDialog = dialog;
+      return dialog;
+    }
+
+    openCameraCoach() {
+      const state = typeof spState === "function" ? spState()?.state : null;
+      if (!cameraCoachEnabled(state)) {
+        this.cameraBox("Тренер по камере", "<p>Тренер по камере выключен в настройках Спорта.</p>");
+        return;
+      }
+      const bridge = window.SorokaAndroid?.openCoachEyes;
+      if (typeof bridge === "function") {
+        try { bridge(); return; } catch (_) {}
+      }
+      this.cameraBox("Тренер по камере", `<p>Откройте Coach Eyes, сделайте подход и нажмите «В Flow».</p>
+        <p class="sr-muted">Мост к Coach Eyes в этой сборке недоступен — откройте приложение вручную.</p>`);
+    }
+
+    cameraMatch(payload) {
+      const record = this.read(), model = this.model;
+      if (!record || !model) return null;
+      const candidates = [];
+      if (model.phase === "rest" && model.prior) candidates.push({ kind: "rest", target: model.prior });
+      if (model.phase === "work" && model.current) candidates.push({ kind: "work", target: model.current });
+      for (const workout of [...(payload?.workouts ?? [])].reverse()) {
+        for (const candidate of candidates) {
+          if (!coachEyesMatch(candidate.target.exercise, workout.exerciseKey, workout.exerciseTitle)) continue;
+          const set = [...(workout.sets ?? [])].reverse()[0];
+          if (!set) continue;
+          return { ...candidate, workout, set, key: keyOf(candidate.target) };
+        }
+      }
+      return null;
+    }
+
+    applyCoachEyes(payload) {
+      const state = typeof spState === "function" ? spState()?.state : null;
+      if (!cameraCoachEnabled(state)) return;
+      const match = this.cameraMatch(payload);
+      if (!match) {
+        this.cameraNoActive(payload, "Нет подходящего активного подхода. Результат не записан.");
+        return;
+      }
+      match.noteBase = ["Coach Eyes",
+        Number.isFinite(match.set.avgScore) ? `техника ${match.set.avgScore}` : "",
+        match.set.topError ? `ошибка «${match.set.topError}»` : ""].filter(Boolean).join(" · ");
+      this.camera = match;
+      this.cameraResultSheet(match);
+    }
+
+    cameraResultSheet(match) {
+      const dose = match.target.exercise.mode === "timed"
+        ? `${Number(match.set.holdSec) || 0} с` : `${Number(match.set.reps) || 0} повторов`;
+      const score = Number.isFinite(match.set.avgScore) ? ` · техника ${match.set.avgScore}` : "";
+      const dialog = this.cameraBox("Результат из Coach Eyes", `<p><strong>${esc(match.target.exercise.name)}</strong></p>
+        <p>${esc(dose)}${esc(score)}</p>
+        ${match.set.topError ? `<p class="sr-muted">${esc(match.set.topError)}</p>` : ""}
+        <p class="sr-muted">В заметку: ${esc(match.noteBase)}</p>
+        <div class="sr-actions"><button type="button" class="primary-button" data-camera-apply>Применить</button>
+        <button type="button" class="ghost-button" data-camera-fix>Исправить</button></div>`);
+      dialog.addEventListener("click", event => {
+        if (event.target.closest("[data-camera-apply]")) void this.applyCamera(match, true);
+        else if (event.target.closest("[data-camera-fix]")) void this.applyCamera(match, false);
+      });
+    }
+
+    async applyCamera(match, feedback) {
+      const record = this.read();
+      if (!record) return;
+      const draft = {};
+      if (match.target.exercise.mode === "timed") {
+        if (Number(match.set.holdSec) > 0) draft.seconds = Number(match.set.holdSec);
+      } else if (Number(match.set.reps) > 0) {
+        draft.reps = Number(match.set.reps);
+      }
+      const live = view(record).projection.sets.find(row => keyOf(row) === match.key);
+      const note = [live?.note, match.noteBase].filter(Boolean).join("; ").slice(0, 1000);
+      this.closeCameraDialog();
+      try {
+        await this.storage.change(data => {
+          const latest = data.records[this.recordId];
+          if (!latest || latest.id !== this.recordId || latest.abandon) return false;
+          latest.drafts[match.key] = { ...(latest.drafts[match.key] ?? {}), ...draft };
+          this.append(latest, [{ type: "note_added", plan_exercise_id: match.target.plan_exercise_id,
+            set_index: match.target.set_index, payload: { note } }], Date.now());
+          return true;
+        });
+        if (match.kind === "work") await this.issue({ type: "done" }, { recordId: this.recordId });
+        this.refresh(true);
+        if (feedback) this.cameraFeedback(match);
+        else requestAnimationFrame(() => this.modal?.querySelector('[data-sr="step"][data-field="reps"], [data-sr="step"][data-field="seconds"]')?.focus({ preventScroll: true }));
+      } catch (reason) { this.fail(reason); }
+    }
+
+    cameraFeedback(match) {
+      let feel = "normal";
+      const dialog = this.cameraBox("Как прошло?", `<p>Оцените подход, чтобы тренер учёл это в анализе.</p>
+        <div class="sr-actions">${["easy", "normal", "hard"].map(value =>
+          `<button type="button" class="ghost-button" data-camera-feel="${value}" aria-pressed="${value === feel}">${
+            value === "easy" ? "Легко" : value === "normal" ? "Нормально" : "Тяжело"}</button>`).join("")}</div>
+        <label class="field">Заметка<textarea data-camera-note maxlength="300" rows="2" placeholder="Что заметили?"></textarea></label>
+        <label class="sp-toggle"><input type="checkbox" data-camera-pain><span></span>Было больно</label>
+        <div class="sr-actions"><button type="button" class="primary-button" data-camera-save>Сохранить</button>
+        <button type="button" class="ghost-button" data-camera-skip>Пропустить</button></div>`);
+      dialog.querySelectorAll("[data-camera-feel]").forEach(button => {
+        button.addEventListener("click", () => {
+          feel = button.dataset.cameraFeel;
+          dialog.querySelectorAll("[data-camera-feel]").forEach(item =>
+            item.setAttribute("aria-pressed", String(item === button)));
+        });
+      });
+      dialog.addEventListener("click", async event => {
+        if (event.target.closest("[data-camera-skip]")) { this.closeCameraDialog(); return; }
+        if (!event.target.closest("[data-camera-save]")) return;
+        const noteInput = dialog.querySelector("[data-camera-note]");
+        const pain = Boolean(dialog.querySelector("[data-camera-pain]")?.checked);
+        const label = feel === "easy" ? "легко" : feel === "hard" ? "тяжело" : "нормально";
+        const note = [match.noteBase, `самочувствие: ${label}`, `боль: ${pain ? "да" : "нет"}`,
+          String(noteInput?.value ?? "").trim()].filter(Boolean).join("; ").slice(0, 1000);
+        try {
+          await this.storage.change(data => {
+            const latest = data.records[this.recordId];
+            if (!latest || latest.id !== this.recordId || latest.abandon) return false;
+            this.append(latest, [{ type: "note_added", plan_exercise_id: match.target.plan_exercise_id,
+              set_index: match.target.set_index, payload: { note } }], Date.now());
+            latest.feedback = { ...(latest.feedback ?? {}),
+              difficulty: latest.feedback?.difficulty ?? (feel === "hard" ? 8 : feel === "easy" ? 3 : 5), sent: false };
+            latest.cameraFeedback = { feel, pain, note: String(noteInput?.value ?? "").trim() || null };
+            return true;
+          });
+          this.closeCameraDialog();
+          this.refresh(true);
+        } catch (reason) { this.fail(reason); }
+      });
+    }
+
+    cameraNoActive(payload, reason) {
+      const options = (payload?.workouts ?? []).map((workout, index) =>
+        `<option value="${index}">${esc(workout.exerciseTitle || workout.exerciseKey || "Упражнение")}</option>`).join("");
+      this.cameraBox("Результат из Coach Eyes", `<p class="sr-muted">${esc(reason || "Нет активной тренировки. Результат не записан.")}</p>
+        ${options ? `<label class="field">Упражнение<select>${options}</select></label>` : ""}
+        <p class="sr-muted">Данные не записаны в чужую сессию.</p>`);
+    }
+
     simple(title, body, actions) {
       return `<main class="sr-simple"><h2>${title}</h2>${body}<div class="sr-actions">${actions}</div></main>`;
     }
@@ -1415,6 +1609,9 @@
       } else {
         title = "Действия";
         items = model.current && model.phase !== "review" ? control("tech", "Техника и мышцы") : "";
+        if (typeof spState === "function" && cameraCoachEnabled(spState()?.state) && model.phase !== "review") {
+          items += control("camera-coach", "Тренер по камере");
+        }
         if (model.phase === "work" || model.phase === "rest") items += control("skip", model.phase === "rest" ? "Пропустить отдых" : "Пропустить упражнение");
         if (model.phase === "work" && model.replay.open) items += control("skip-set", "Пропустить подход");
         if (model.phase === "work" || model.phase === "rest") items += control("review", "Завершить");
@@ -1557,6 +1754,7 @@
       const model = this.model;
       this.message = "";
       try {
+        if (action === "camera-coach") { this.openCameraCoach(); return; }
         if (action === "retry") { const { option, trigger } = this; this.close(); await this.open(option, trigger); return; }
         if (action === "retry-sync") { await this.retrySync(); return; }
         if (action === "conflict-continue" || action === "conflict-finish") {
@@ -1688,6 +1886,48 @@
     runner.syncSoon();
     return runner;
   }
+
+  function coachEyesFallback(payload, reason) {
+    const options = (payload?.workouts ?? []).map((workout) =>
+      `<option>${esc(workout.exerciseTitle || workout.exerciseKey || "Упражнение")}</option>`).join("");
+    const dialog = document.createElement("dialog");
+    dialog.className = "sport-run sr-camera";
+    dialog.innerHTML = `<section class="sr-screen"><header class="sh-head"><h2>Результат из Coach Eyes</h2>
+      <button type="button" class="ghost-button" data-camera-close>Закрыть</button></header>
+      <div class="sr-body sh-content"><p class="sr-muted">${esc(reason)}</p>
+      ${options ? `<label class="field">Упражнение<select>${options}</select></label>` : ""}
+      <p class="sr-muted">Данные не записаны в чужую сессию.</p></div></section>`;
+    dialog.addEventListener("click", event => {
+      if (event.target.closest("[data-camera-close]") || event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => dialog.remove(), { once: true });
+    document.body.append(dialog);
+    dialog.showModal();
+  }
+
+  function receiveCoachEyes(payload, attempt = 0) {
+    if (!payload || payload.schema !== "coach-eyes.workout" || payload.version !== 1) return;
+    const active = activeRun();
+    if (active) {
+      window.__flowCoachEyes = null;
+      active.next.open(null, null, true).then(() => active.next.applyCoachEyes(payload))
+        .catch(() => active.next.cameraNoActive(payload, "Не удалось открыть тренировку. Результат не записан."));
+      return;
+    }
+    if (attempt < 2) {
+      setTimeout(() => receiveCoachEyes(payload, attempt + 1), 500);
+      return;
+    }
+    window.__flowCoachEyes = null;
+    const next = acquire();
+    if (next) next.cameraNoActive(payload, "Нет активной тренировки. Результат не записан.");
+    else coachEyesFallback(payload, "Нет активной тренировки. Результат не записан.");
+  }
+
+  window.addEventListener("flow:coach-eyes", event => {
+    if (event.detail) receiveCoachEyes(event.detail);
+  });
+  if (window.__flowCoachEyes) receiveCoachEyes(window.__flowCoachEyes);
 
   window.SportRunReview = { owner, acquire, request };
 

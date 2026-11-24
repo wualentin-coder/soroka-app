@@ -326,3 +326,10 @@ html[data-motion="off"] .sport-run * { animation: none !important; transition: n
   .sport-run .sr-scale { grid-template-columns: repeat(10, minmax(36px, 1fr)); }
   .sport-run .sr-scale-button { min-height: 40px; }
 }
+
+/* Coach Eyes: result and feedback sheets. */
+.sport-run.sr-camera .sr-screen { max-height: 88vh; overflow: auto; }
+.sport-run.sr-camera .field { display: block; margin-top: 12px; }
+.sport-run.sr-camera textarea { box-sizing: border-box; width: 100%; min-height: 68px; resize: vertical; }
+.sport-run.sr-camera .sp-toggle { margin-top: 10px; }
+
