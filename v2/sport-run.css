@@ -210,6 +210,18 @@
 .sport-run .sr-panel h2 { margin: 0; }
 .sport-run .sr-panel .sr-muted { margin: 0; }
 .sport-run .sr-review-head { justify-content: space-between; }
+.sport-run .sr-difficulty {
+  display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: var(--magic-card-radius, 22px); background: var(--surface);
+}
+.sport-run .sr-difficulty legend { padding: 0 4px; font-weight: 750; }
+.sport-run .sr-difficulty p { margin: 0; font-size: 13px; }
+.sport-run .sr-scale { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 6px; }
+.sport-run .sr-scale-button {
+  min-height: 44px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface-soft); color: var(--text); font-weight: 750;
+}
+.sport-run .sr-scale-button[aria-pressed="true"] { border-color: var(--sr-line); background: var(--sr-soft); color: var(--accent); }
 .sport-run .sr-panel-figure { max-width: 240px; width: 100%; justify-self: center; }
 .sport-run .sr-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sport-run .sr-pause-tag svg, .sport-run .sr-title small svg { width: 15px; height: 15px; vertical-align: middle; }
@@ -259,3 +271,58 @@ html[data-motion="off"] .sport-run * { animation: none !important; transition: n
 .sport-run .sr-title > span:first-child small { color: var(--muted); font-size: inherit; }
 .sport-run .sr-goal small { color: var(--muted); font-size: 12px; font-weight: 650; }
 .sport-run .sr-target > div:first-child > span { color: var(--muted); font-size: 12px; }
+
+/* Active workout in landscape: media on the left, target/timer on the right.
+   Review and completed screens stay a single readable column. */
+@media (orientation: landscape) and (max-height: 620px) {
+  .sport-run { width: 100%; max-width: none; }
+  .sport-run .sr-screen {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .sport-run .sr-head { min-height: 46px; padding-top: 2px; }
+  .sport-run .sr-title { font-size: 14px; }
+  .sport-run .sr-body { gap: 10px 14px; padding-bottom: 8px; min-height: 0; }
+  .sport-run .sr-screen[data-phase="work"] .sr-body,
+  .sport-run .sr-screen[data-phase="rest"] .sr-body,
+  .sport-run .sr-screen[data-phase="preparing"] .sr-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+    grid-auto-rows: min-content;
+    align-content: start;
+    overflow: auto;
+  }
+  .sport-run .sr-screen[data-phase="preparing"] .sr-prep { display: flex; overflow: hidden; }
+  .sport-run .sr-screen[data-phase="work"] .sr-media {
+    grid-column: 1; grid-row: 1 / span 2; min-height: 0; height: 100%;
+  }
+  .sport-run .sr-screen[data-phase="work"] .sr-target { grid-column: 2; grid-row: 1; }
+  .sport-run .sr-screen[data-phase="work"] .sr-timer { grid-column: 2; grid-row: 2; }
+  .sport-run .sr-screen[data-phase="rest"] .sr-timer {
+    grid-column: 1; grid-row: 1 / span 2; max-height: none; align-self: start;
+  }
+  .sport-run .sr-screen[data-phase="rest"] .sr-input { grid-column: 2; grid-row: 1; }
+  .sport-run .sr-screen[data-phase="rest"] .sr-next { grid-column: 2; grid-row: 2; margin-top: 0; }
+  .sport-run .sr-media { min-height: 0; }
+  .sport-run .sr-no-media { padding: 10px 12px; grid-template-columns: minmax(0, 1fr) 38%; gap: 6px; }
+  .sport-run .sr-no-media ol { max-height: 170px; overflow: auto; font-size: 12px; line-height: 1.35; }
+  .sport-run .sr-no-media p { font-size: 12px; }
+  .sport-run .sr-target strong { font-size: 28px; }
+  .sport-run .sr-goal b { font-size: 17px; }
+  .sport-run .sr-timer-row { min-height: 104px; padding-block: 8px; }
+  .sport-run .sr-clock { min-height: 80px; }
+  .sport-run .sr-clock b { font-size: 54px; }
+  .sport-run .sr-input { max-height: 100%; overflow: auto; }
+  .sport-run .sr-next { grid-template-columns: 44px minmax(0, 1fr); padding: 8px 10px; }
+  .sport-run .sr-thumb { width: 44px; height: 44px; }
+  .sport-run .sr-screen[data-phase="review"] .sh-content,
+  .sport-run .sr-screen[data-phase="completed"] .sh-content {
+    width: min(100%, 880px); margin-inline: auto; overflow: auto;
+  }
+  .sport-run .sr-foot {
+    padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  .sport-run .sr-difficulty { padding: 8px 10px; }
+  .sport-run .sr-scale { grid-template-columns: repeat(10, minmax(36px, 1fr)); }
+  .sport-run .sr-scale-button { min-height: 40px; }
+}
