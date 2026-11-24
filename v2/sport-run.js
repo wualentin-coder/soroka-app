@@ -859,8 +859,18 @@
     async send() {
       let staleRetries = 0;
       while (this.owner.current() && navigator.onLine) {
-        const data = this.storage.read();
-        const record = data.records[data.active];
+        let data = this.storage.read();
+        let record = data.records[data.active];
+        if (!record) {
+          // An abandoned/completed record can lose `active` while its outbox still
+          // has unsent events. Pick it up once, otherwise the queue never drains.
+          const pending = Object.values(data.records).find(item =>
+            item.start || item.events.length || item.complete || item.abandon);
+          if (!pending) return;
+          await this.storage.change(next => { next.active = pending.id; return true; });
+          data = this.storage.read();
+          record = data.records[data.active];
+        }
         if (!record) return;
         try {
           if (record.undo && Date.now() >= record.undo.until) {
@@ -1095,12 +1105,14 @@
     }
 
     async retrySync() {
-      await this.storage.change(data => {
-        const record = data.records[data.active];
+      const changed = await this.storage.change(data => {
+        const record = data.records[data.active] ?? Object.values(data.records).find(item => item.syncError);
         if (!record?.syncError) return false;
+        data.active = record.id;
         delete record.syncError;
         return true;
       });
+      if (!changed) return;
       this.refresh();
       this.syncSoon();
     }
