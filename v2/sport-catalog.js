@@ -73,7 +73,7 @@
     const groups = core.GROUPS.map(([group]) => `<button type="button" class="sp2-lib-chip" data-lib-act="group" data-group="${esc(group)}" aria-pressed="${!lib.collection && lib.group === group}">${esc(group)}</button>`).join("");
     return `<div class="sp2-lib-meta-row"><p class="sp2-lib-meta">${core.countLabel(lib.catalog.length)} · каталог v${lib.version}</p></div>
       <div class="sp2-lib-search"><div class="sp2-lib-field">${icon("search")}
-        <input type="search" data-lib-search value="${esc(lib.query)}" placeholder="Название или мышца" aria-label="Поиск упражнений" autocomplete="off" enterkeyhint="search">
+        <input type="search" data-lib-search value="${esc(lib.query)}" placeholder="Упражнение" aria-label="Поиск упражнений" autocomplete="off" enterkeyhint="search">
         <button type="button" class="sp2-lib-clear" data-lib-act="clear" aria-label="Очистить поиск" ${lib.query ? "" : "hidden"}>${icon("close")}</button></div>
         <button type="button" class="sp2-lib-filter" data-lib-act="filter" aria-label="Фильтр по инвентарю" data-active="${lib.equipment.size ? "true" : "false"}">${icon("filter")}<span class="sp2-lib-filter-n" ${lib.equipment.size ? "" : "hidden"}>${lib.equipment.size}</span></button></div>
       <div class="sp2-lib-chips" role="group" aria-label="Фильтр по мышцам">

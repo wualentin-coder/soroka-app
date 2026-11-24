@@ -474,11 +474,19 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       <tbody>${series.map(point => `<tr><td>${esc(shortDay(point.date))}</td><td>${oneDecimal(metric === "volume" ? point.volume : point.kg)}</td><td>${point.reps}</td></tr>`).join("")}</tbody></table>`;
   }
 
+  function feedRow(session, summary) {
+    return `<button type="button" class="sh-history-row" data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
+      <small>${esc(dateLabel(session))}${summary ? ` · ${summary.confirmed}/${summary.total} подходов` : ""}${session.difficulty != null ? ` · сложность ${session.difficulty}/10` : ""}</small></span><span>${clock(session.elapsed_seconds)}
+      ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`;
+  }
+
   function paintFeed() {
     const mount = document.querySelector("[data-sh-feed]");
     if (!mount || !surface?.owner.current()) return;
     const { sessions, error, cursor, busy, details } = surface;
-    const summaries = sessions.map(session => details.get(session.id)).filter(Boolean).map(sessionSummary);
+    const summaryById = new Map();
+    for (const [id, detail] of details) summaryById.set(id, sessionSummary(detail));
+    const summaries = sessions.map(session => summaryById.get(session.id)).filter(Boolean);
     const all = aggregate(summaries);
     const weighted = all.weighted;
     const record = weighted.slice().sort((a, b) => b.kg - a.kg || b.reps - a.reps || b.date.localeCompare(a.date))[0];
@@ -514,12 +522,7 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     const stats = summaries.length
       ? `<section class="sh-stats"><p class="sh-verdict">${verdict}</p><div class="sh-tiles">${recordTile}${frequencyTile}</div>${chart}</section>
         ${version ? `<button type="button" class="sh-plan-row" data-action="sp-history-versions"><span>План · v${version}</span><span>версии плана ${icon("right")}</span></button>` : ""}` : "";
-    mount.innerHTML = `${stats}<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => {
-      const summary = details.get(session.id);
-      return `<button type="button" class="sh-history-row" data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
-      <small>${esc(dateLabel(session))}${summary ? ` · ${summary.confirmed}/${summary.total} подходов` : ""}${session.difficulty != null ? ` · сложность ${session.difficulty}/10` : ""}</small></span><span>${clock(session.elapsed_seconds)}
-      ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`;
-    }).join("")}</div>` : ""}
+    mount.innerHTML = `${stats}<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => feedRow(session, summaryById.get(session.id))).join("")}</div>` : ""}
       ${error ? `<p role="alert">${esc(error)}</p><button type="button" class="ghost-button" data-action="sp-session-more">Повторить</button>`
         : busy ? '<p role="status">Загрузка…</p>' : !sessions.length ? '<p>Тренировок нет</p>' : ""}
       ${cursor && !busy && !error ? '<button type="button" class="ghost-button" data-action="sp-session-more">Ещё</button>' : ""}`;
@@ -648,7 +651,7 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
   };
 
   window.SportHistory = { list, preview, editor, open, result, equal, invalidate: () => { surface = null; },
-    stats: { sessionSummary, aggregate, plateauOf } };
+    stats: { sessionSummary, aggregate, plateauOf, feedRow } };
   Object.assign(SP_ACTIONS, {
     "sp-session-detail": trigger => open(trigger.dataset.id, trigger),
     "sp-session-more": () => load({ more: true }),

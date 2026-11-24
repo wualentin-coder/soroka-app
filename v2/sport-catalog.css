@@ -54,6 +54,7 @@
   color: var(--text);
   font: inherit;
   font-size: 15px;
+  text-overflow: ellipsis;
 }
 .sp2-lib-field input::placeholder { color: var(--muted); }
 .sp2-lib-clear,
@@ -427,6 +428,7 @@
 .sp2-lib-eq .n { color: var(--muted); font-size: 12px; }
 @media (max-width: 360px) {
   .sp2-lib-chips { margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+  .sp2-lib-field { padding-left: 38px; padding-right: 40px; }
   .sp2-lib-card { grid-template-columns: 46px minmax(0, 1fr) 20px; padding: 10px; }
   .sp2-lib-thumb { width: 46px; height: 46px; border-radius: 13px; }
   .sp2-lib-thumb .sp-ic, .sp2-lib-thumb .icon { width: 25px; height: 25px; }

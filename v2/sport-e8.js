@@ -7,6 +7,16 @@
   const current = () => C().readSport2Profile(spState().state.sport2Profile);
   const summary = () => C().sport2ProfileSummary(spState().state.sport2Profile);
 
+  /** Every filled factor is shown; one factor must not hide the others. */
+  function effectLines(info) {
+    const lines = [];
+    if (info.goal) lines.push({ label: "Цель", text: info.goal });
+    if (info.experience) lines.push({ label: "Опыт", text: info.experience });
+    if (info.equipment) lines.push({ label: "Инвентарь", text: `${info.equipment} · после предела — повторы` });
+    if (info.limits && info.limits !== "Ограничений нет") lines.push({ label: "Ограничения", text: info.limits });
+    return lines;
+  }
+
   function card() {
     const profile = current(), info = summary();
     if (!profile.filled) {
@@ -15,7 +25,7 @@
         <p class="section-note">Цель, опыт, инвентарь и ограничения меняют программу, анализ и замены.</p></div>
         <button class="primary-button" type="button" data-action="sp2-profile-open">Заполнить</button></section>`;
     }
-    const effect = info.goal || info.experience || info.equipment || info.limits;
+    const effects = effectLines(info);
     return `<section class="sp2-e8">
       <div class="sp2-e8-head"><p class="sp-kicker">Тренер учитывает</p><button class="text-action" type="button" data-action="sp2-profile-open">Изменить</button></div>
       <div class="sp2-e8-rows">
@@ -24,7 +34,7 @@
         <div><span>Инвентарь</span><b>${esc(info.equipment || "не указан")}</b></div>
         <div><span>Ограничения</span><b>${esc(info.limits)}</b></div>
       </div>
-      <div class="sp2-e8-effect"><span>Как это влияет</span><p>${esc(effect)}</p></div>
+      <div class="sp2-e8-effect"><span>Как это влияет</span>${effects.map(line => `<p><em>${esc(line.label)}</em><span>${esc(line.text)}</span></p>`).join("")}</div>
       <p class="sp2-e8-note">Профиль уходит тренеру вместе с фактическими подходами. Ограничения также блокируют замены в E14.</p>
     </section>`;
   }
@@ -116,5 +126,5 @@
     },
   });
 
-  window.SportE8 = { card, current, summary };
+  window.SportE8 = { card, current, summary, effectLines };
 })();
