@@ -763,9 +763,19 @@ function spPollNativeTimer() {
 // Coach Eyes: единый приёмник события. Разбор и лист подхода — в sport-run.js.
 function flowCoachEyesReceive(payload, attempt = 0) {
   if (!payload) return;
+  // Share can arrive while Flow is on the home screen; open Sport so sport-run.js
+  // loads and the receiver exists. Only on the first attempt, not every retry.
+  if (attempt === 0) { try { window.sorokaOpenSport?.(); } catch (_) {} }
   const receive = window.SportCoachEyes?.receive;
   if (typeof receive === "function") { receive(payload); return; }
-  if (attempt < 25) setTimeout(() => flowCoachEyesReceive(payload, attempt + 1), 200);
+  // The event may arrive on the home screen before sport-run mounted. Open the
+  // Sport surface immediately, then retry; do not drop the payload after 5 s.
+  try {
+    const tab = typeof SP_ACTIONS !== "undefined" && SP_ACTIONS["sp-tab"];
+    if (typeof tab === "function") tab({ dataset: { tab: "today" } });
+    else if (typeof navigate === "function") navigate("sport");
+  } catch (_) {}
+  if (attempt < 40) setTimeout(() => flowCoachEyesReceive(payload, attempt + 1), 100);
 }
 window.addEventListener("flow:coach-eyes", event => flowCoachEyesReceive(event.detail));
 if (window.__flowCoachEyes) flowCoachEyesReceive(window.__flowCoachEyes);

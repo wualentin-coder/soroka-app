@@ -1405,21 +1405,77 @@
         <p class="sr-muted">Мост к Coach Eyes в этой сборке недоступен — откройте приложение вручную.</p>`);
     }
 
+    cameraExercises() {
+      const record = this.read();
+      if (!record) return [];
+      return record.snapshot.workout.blocks.flatMap(block => block.exercises.map(exercise => ({ ...exercise, block })));
+    }
+
+    cameraTargetFor(planExerciseId) {
+      const model = this.model;
+      if (!model) return null;
+      if (model.current?.exercise.plan_exercise_id === planExerciseId) return { kind: "work", target: model.current };
+      if (model.prior?.exercise.plan_exercise_id === planExerciseId) return { kind: "rest", target: model.prior };
+      const row = model.projection.sets.find(item => item.plan_exercise_id === planExerciseId && item.status !== "confirmed");
+      const exercise = this.cameraExercises().find(item => item.plan_exercise_id === planExerciseId);
+      if (!exercise) return null;
+      return { kind: "future", target: { plan_exercise_id: exercise.plan_exercise_id, set_index: row?.set_index ?? 1, exercise } };
+    }
+
     cameraMatch(payload) {
-      const record = this.read(), model = this.model;
-      if (!record || !model) return null;
+      const model = this.model, exercises = this.cameraExercises();
+      if (!model || !exercises.length) return null;
       const candidates = [];
       if (model.phase === "rest" && model.prior) candidates.push({ kind: "rest", target: model.prior });
       if (model.phase === "work" && model.current) candidates.push({ kind: "work", target: model.current });
       for (const workout of [...(payload?.workouts ?? [])].reverse()) {
+        const set = [...(workout.sets ?? [])].reverse()[0];
+        if (!set) continue;
+        if (workout.sportExerciseId) {
+          const exact = exercises.find(exercise => exercise.exercise_id === workout.sportExerciseId);
+          if (exact) {
+            const found = this.cameraTargetFor(exact.plan_exercise_id);
+            if (found) return { ...found, exact: true, workout, set, key: keyOf(found.target) };
+          }
+        }
         for (const candidate of candidates) {
           if (!coachEyesMatch(candidate.target.exercise, workout.exerciseKey, workout.exerciseTitle)) continue;
-          const set = [...(workout.sets ?? [])].reverse()[0];
-          if (!set) continue;
-          return { ...candidate, workout, set, key: keyOf(candidate.target) };
+          return { ...candidate, exact: false, workout, set, key: keyOf(candidate.target) };
         }
       }
       return null;
+    }
+
+    cameraChooseSheet(payload, match) {
+      const exercises = this.cameraExercises();
+      if (!exercises.length) { this.cameraNoActive(payload, "Нет активной тренировки. Результат не записан."); return; }
+      const workout = match?.workout ?? [...(payload?.workouts ?? [])].reverse()[0];
+      const set = match?.set ?? [...(workout?.sets ?? [])].reverse()[0];
+      if (!workout || !set) { this.cameraNoActive(payload, "В результате нет подхода. Запись не сделана."); return; }
+      const fallback = this.model?.current?.exercise?.plan_exercise_id
+        ?? this.model?.prior?.exercise?.plan_exercise_id ?? exercises[0].plan_exercise_id;
+      const selected = match?.target?.plan_exercise_id ?? fallback;
+      const options = exercises.map(exercise => `<option value="${esc(exercise.plan_exercise_id)}" ${
+        exercise.plan_exercise_id === selected ? "selected" : ""}>${esc(exercise.name)}</option>`).join("");
+      const dialog = this.cameraBox("К какому упражнению?", `<p>Coach Eyes: ${esc(workout.exerciseTitle || workout.exerciseKey || "подход")}.
+        ${Number(set.reps) > 0 ? `Повторов: ${Number(set.reps)}.` : ""}
+        Подтвердите упражнение — без этого результат не запишется.</p>
+        <label class="field">Упражнение<select data-camera-target>${options}</select></label>
+        <div class="sr-actions"><button type="button" class="primary-button" data-camera-next>Далее</button>
+        <button type="button" class="ghost-button" data-camera-close>Отмена</button></div>`);
+      dialog.addEventListener("click", event => {
+        if (!event.target.closest("[data-camera-next]")) return;
+        const targetId = dialog.querySelector("[data-camera-target]")?.value;
+        const found = this.cameraTargetFor(targetId);
+        if (!found) { this.cameraNoActive(payload, "Не удалось выбрать упражнение."); return; }
+        const next = { ...found, exact: true, workout, set, key: keyOf(found.target) };
+        next.noteBase = ["Coach Eyes",
+          Number.isFinite(set.avgScore) ? `техника ${set.avgScore}` : "",
+          set.topError ? `ошибка «${set.topError}»` : ""].filter(Boolean).join(" · ");
+        this.camera = next;
+        this.closeCameraDialog();
+        this.cameraResultSheet(next);
+      });
     }
 
     applyCoachEyes(payload) {
@@ -1427,14 +1483,16 @@
       if (!cameraCoachEnabled(state)) return;
       const match = this.cameraMatch(payload);
       if (!match) {
-        this.cameraNoActive(payload, "Нет подходящего активного подхода. Результат не записан.");
+        if (this.model && this.cameraExercises().length) this.cameraChooseSheet(payload, null);
+        else this.cameraNoActive(payload, "Нет активной тренировки. Результат не записан.");
         return;
       }
       match.noteBase = ["Coach Eyes",
         Number.isFinite(match.set.avgScore) ? `техника ${match.set.avgScore}` : "",
         match.set.topError ? `ошибка «${match.set.topError}»` : ""].filter(Boolean).join(" · ");
       this.camera = match;
-      this.cameraResultSheet(match);
+      if (match.exact) this.cameraResultSheet(match);
+      else this.cameraChooseSheet(payload, match);
     }
 
     cameraResultSheet(match) {
@@ -1917,8 +1975,13 @@
         .catch(() => active.next.cameraNoActive(payload, "Не удалось открыть тренировку. Результат не записан."));
       return;
     }
-    if (attempt < 2) {
-      setTimeout(() => receiveCoachEyes(payload, attempt + 1), 500);
+    if (attempt < 4) {
+      // Home screen: open Sport so the runtime can restore the active session.
+      try {
+        const tab = typeof SP_ACTIONS !== "undefined" && SP_ACTIONS["sp-tab"];
+        if (typeof tab === "function") tab({ dataset: { tab: "today" } });
+      } catch (_) {}
+      setTimeout(() => receiveCoachEyes(payload, attempt + 1), 300);
       return;
     }
     window.__flowCoachEyes = null;
