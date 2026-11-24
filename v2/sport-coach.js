@@ -24,6 +24,7 @@
   const records = new Map();
   const reads = new Map();
   let scope, planWorkouts = new Map(), planRequest, planTime = 0, timer, details, scheduled = false;
+  let scheduleState = null, scheduleKey = "", scheduleAt = 0;
   let surfaceEntered = false;
   const nodeByKey = new WeakMap();
 
@@ -47,8 +48,10 @@
     if (!current || !navigator.onLine || planRequest || (!force && Date.now() - planTime < 15000)) return planRequest;
     planTime = Date.now();
     const run = (async () => {
-      const result = await request("read_session_plans");
+      let result = await request("read_session_plans");
       if (!Array.isArray(result.plans)) throw new Error("network");
+      const fresh = await reschedule(result.plans);
+      if (fresh) result = fresh;
       const plans = await Promise.all(result.plans.map(p => request("read_session_plans", { plan_id: p.id })));
       if (!current.current()) return;
       const map = new Map();
@@ -62,6 +65,52 @@
     planRequest = run;
     run.finally(() => { if (planRequest === run) planRequest = null; });
     return run;
+  }
+
+  /** E11b: ask the server what is missed, shift the tail once, then refresh. */
+  async function reschedule(list) {
+    const plan = list[0];
+    if (!plan?.id || !navigator.onLine) return null;
+    const key = plan.id + ":" + plan.current_version;
+    if (scheduleKey === key && Date.now() - scheduleAt < 60000) return null;
+    scheduleKey = key;
+    scheduleAt = Date.now();
+    let status;
+    try { status = await request("schedule_status", { plan_id: plan.id }); } catch { return null; }
+    if (!status || status.ok !== true) return null;
+    scheduleState = { ...status, shifted: false };
+    if (!(status.missed > 0) || status.blocked) return null;
+    let reply;
+    try { reply = await request("schedule_shift", { plan_id: plan.id, expected_version: status.plan_version }); }
+    catch { return null; }
+    if (!reply || reply.ok !== true) return null;
+    scheduleState = { ...status, ...reply };
+    if (reply.shifted !== true && reply.duplicate !== true) return null;
+    if (reply.duplicate === true) scheduleState = null;
+    scheduleKey = plan.id + ":" + reply.version;
+    scheduleAt = Date.now();
+    try {
+      const fresh = await request("read_session_plans");
+      return Array.isArray(fresh.plans) ? fresh : null;
+    } catch { return null; }
+  }
+
+  function scheduleBanner() {
+    const data = scheduleState;
+    if (!data || data.ok !== true) return "";
+    let text = "";
+    if (data.shifted && data.days > 0) {
+      text = `Программа сдвинута на ${data.days} дн. · пропущено ${data.missed}`;
+    } else if (data.blocked === "consecutive") {
+      text = `${data.missed} пропуска подряд · автоперенос остановлен. Соберите программу заново.`;
+    } else if (data.blocked === "limit") {
+      text = `Программа отстала на ${data.missed} дн. · лимит 14 дней за 30. Нужен ручной перенос или пересборка.`;
+    } else if (data.blocked === "ended") {
+      text = `Пропущено ${data.missed} занятий, но будущих дат в программе больше нет.`;
+    } else if (data.missed > 0) {
+      text = `Пропущено ${data.missed} силовых. Сдвиг ждёт сети или следующего открытия.`;
+    }
+    return text ? `<p class="sp2-schedule-banner" role="status">${escape(text)}</p>` : "";
   }
 
   function versionDay(workout, blocks, before, kind) {
@@ -81,11 +130,16 @@
   function overlay(options, state) {
     if (!scope || !planWorkouts.size) return options;
     const make = (option, workout, plan) => {
-      const blocks = workout.blocks.filter(b => !["warmup", "mobility"].includes(b.type));
+      const warmup = workout.blocks.filter(b => b.type === "warmup");
+      const main = workout.blocks.filter(b => !["warmup", "mobility"].includes(b.type));
+      const mobility = workout.blocks.filter(b => b.type === "mobility");
+      // E11c: a mobility-only day has no strength block. Render its mobility
+      // block as the workout itself instead of dropping the day from the plan.
+      const blocks = main.length ? main : mobility;
       return { ...option, sport2PlanId: plan.id,
         plan: versionDay(workout, blocks, option.plan, option.kind) || option.plan,
-        warmup: versionDay(workout, workout.blocks.filter(b => b.type === "warmup"), option.warmup, "warmup"),
-        mobility: versionDay(workout, workout.blocks.filter(b => b.type === "mobility"), option.mobility, "mobility"),
+        warmup: versionDay(workout, warmup, option.warmup, "warmup") || option.warmup,
+        mobility: main.length ? (versionDay(workout, mobility, option.mobility, "mobility") || option.mobility) : undefined,
       };
     };
     const known = new Set(options.map(o => o.key));
@@ -530,5 +584,6 @@
   new MutationObserver(refresh).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["open"] });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { records.delete("latest"); loadPlans(true); } refresh(); });
   window.addEventListener("online", () => { invalidate(); loadPlans(true); });
-  window.SportCoach = { slot, invalidate, overlay };
+  window.SportCoach = { slot, invalidate, overlay, loadPlans };
+  window.SportSchedule = { banner: scheduleBanner };
 })();

@@ -432,7 +432,7 @@ function spTodayScreen() {
   const today = C.todayKey(), date = s.date;
   const { visible } = spOptions();
   const parts = C.isSport2Enabled(s.state)
-    ? [sp2DayHeading(date), sp2Week(visible), sp2DayHero(visible, date), window.SportCoach?.slot("latest") || ""]
+    ? [sp2DayHeading(date), sp2Week(visible), window.SportSchedule?.banner() || "", sp2DayHero(visible, date), window.SportCoach?.slot("latest") || ""]
     : [spWeekStrip(visible), spDayWorkoutCard(visible, date)];
   parts.push(spTestCard(visible, date));
   if (date <= today) parts.push(spDayList(visible, date));
