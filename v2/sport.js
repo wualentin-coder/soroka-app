@@ -355,7 +355,8 @@ function sp2Week(options) {
 }
 function sp2DayHero(options, date) {
   const s = spState(), C = SP();
-  const selected = ["main", "splits"].map(kind => C.selectedOption(options, date, kind, s.state)).filter(Boolean);
+  const planOptions = options.filter(option => option.sport2PlanId);
+  const selected = ["main", "splits"].map(kind => C.selectedOption(planOptions, date, kind, s.state)).filter(Boolean);
   const free = options.filter(option => option.key.startsWith("free|") && option.date === date &&
     !option.historyOnly && !option.deleted);
   const all = [...selected, ...free.filter(option => !selected.some(item => item.key === option.key))];
@@ -370,7 +371,7 @@ function sp2DayHero(options, date) {
   const figures = window.SportFigures;
   const media = figures && (primary.length || secondary.length)
     ? spFigureSvg(spShapes(primary), spShapes(secondary), figures.FIGURE_VIEWBOX, false) : "";
-  const label = option => option.key.startsWith("free|") ? "Свободная" : option.kind === "splits" ? "Растяжка" : "Тренировка";
+  const label = option => option.key.startsWith("free|") ? "Свободная тренировка" : option.kind === "splits" ? "Растяжка" : "Тренировка";
   const program = sp2Programs(options).find(p => p.key === C.optionProgramKey(lead));
   const startDate = program && sp2ProgramStart(program);
   const original = lead.originalDate || lead.date;
