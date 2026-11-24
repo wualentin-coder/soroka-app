@@ -214,7 +214,7 @@
   display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line);
   border-radius: var(--magic-card-radius, 22px); background: var(--surface);
 }
-.sport-run .sr-difficulty legend { padding: 0 4px; font-weight: 750; }
+.sport-run .sr-difficulty legend { padding: 0 4px; font-weight: 750; background: var(--surface); }
 .sport-run .sr-difficulty p { margin: 0; font-size: 13px; }
 .sport-run .sr-scale { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 6px; }
 .sport-run .sr-scale-button {
