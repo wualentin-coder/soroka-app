@@ -208,10 +208,13 @@ function spProfileScreen() {
   const name = profile.name?.trim() || tgName || "Профиль";
   const years = C.ageFromBirthDate(profile.birthDate, today) ?? (profile.age?.trim() ? Number(profile.age) : null);
   const selected = C.knownMuscles(state.targetMuscles);
+  const sport2 = C.isSport2Enabled(state);
   const { all, visible } = spOptions();
-  const programs = C.programSummaries(s.catalog, all, state).filter(p => (state.programLifecycle?.[p.key]?.status ?? "active") === "active");
+  const legacyPrograms = C.programSummaries(s.catalog, all, state);
+  const programs = sport2 ? [] : legacyPrograms.filter(p => (state.programLifecycle?.[p.key]?.status ?? "active") === "active");
+  const planPrograms = sport2 ? sp2Programs(all) : [];
   const progressByProgram = new Map(spProgramProgress(all, state, true).map(p => [p.key, p]));
-  const archived = C.programSummaries(s.catalog, all, state).filter(p => state.programLifecycle?.[p.key]?.status === "archived").length;
+  const archived = legacyPrograms.filter(p => state.programLifecycle?.[p.key]?.status === "archived").length;
   const owned = C.EQUIPMENT.filter(item => C.hasEquipment(state, item.id));
   const liked = C.favoriteExercises(state);
   const journal = C.workoutJournal(visible, state);
@@ -220,16 +223,19 @@ function spProfileScreen() {
   const n = C.notificationSettings(state.notificationSettings);
   const on = ["shower", "workout"].filter(k => n[k].enabled).length + Object.values(state.customHabits || {}).filter(h => !h.archived && C.habitNotifies(h) && C.habitReminders(h).length).length;
   const row = (action, title, note, need, extra = "") => `<button type="button" ${action}><span><strong>${title}</strong>${note ? `<small>${note}</small>` : ""}${extra}</span>${need ? '<i class="sp-dot"></i>' : ""}${icon("arrow", "icon-sm")}</button>`;
+  const programRow = (p, dates) => {
+    const progress = progressByProgram.get(p.key);
+    const percent = progress ? Math.round(progress.done / Math.max(1, progress.sessions) * 100) : 0;
+    const day = progress ? progress.day > 0 ? `день ${progress.day} из ${progress.span}` : `старт ${spDateShort(progress.first)}` : "";
+    return `<button type="button" class="sp-list-row sp-program-profile" data-action="sp-programs"><span><b>${spEsc(p.title)}</b><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])}` : ""}</small>${progress ? `<span class="sp-progress" role="progressbar" aria-label="Прогресс программы ${spEsc(p.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${percent}%"></i></span><small>Сделано ${progress.done} из ${progress.sessions} · ${day}</small>` : ""}</span>${icon("arrow", "icon-sm")}</button>`;
+  };
   const identityName = profile.name?.trim() || tgName ? name : "Заполнить анкету";
   return `<section class="sp-identity"><button type="button" class="sp-hero" data-action="sp-profile-section" data-section="profile"><span class="sp-avatar">${spEsc((profile.name?.trim() || tgName) ? name.slice(0, 1).toUpperCase() : "?")}</span><span><strong>${spEsc(years !== null ? `${name}, ${years}` : identityName)}</strong><small>Заполнено ${filledFields} из ${profileFields.length}</small></span>${icon("arrow", "icon-sm")}</button>
       <button type="button" class="sp-muscle-card" data-action="sp-muscles-open"><span class="sp-muscle-thumb">${window.SportFigures ? spFigureSvg(spShapes(selected), new Set(), window.SportFigures.FIGURE_VIEWBOX, false) : (spFiguresNeeded(), "")}</span><span><strong>Фокус тренировок</strong><small>${spEsc(C.muscleNames(selected) || "Не выбраны")}</small></span>${icon("arrow", "icon-sm")}</button></section>
-    <section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">Программы</p>${archived ? `<button class="text-action" type="button" data-action="sp-programs" data-archive="1">Архив · ${archived}</button>` : ""}</div>
-      ${programs.length ? programs.map(p => {
-        const dates = [...p.dates].sort(), progress = progressByProgram.get(p.key);
-        const percent = progress ? Math.round(progress.done / Math.max(1, progress.sessions) * 100) : 0;
-        const day = progress ? progress.day > 0 ? `день ${progress.day} из ${progress.span}` : `старт ${spDateShort(progress.first)}` : "";
-        return `<button type="button" class="sp-list-row sp-program-profile" data-action="sp-programs"><span><b>${spEsc(p.title)}</b><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])}` : ""}</small>${progress ? `<span class="sp-progress" role="progressbar" aria-label="Прогресс программы ${spEsc(p.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><i style="width:${percent}%"></i></span><small>Сделано ${progress.done} из ${progress.sessions} · ${day}</small>` : ""}</span>${icon("arrow", "icon-sm")}</button>`;
-      }).join("") : `<p class="section-note">Пока нет. Ниже — составить с ИИ по вашим данным.</p>`}
+    <section class="sp-card"><div class="sp-card-head"><p class="sp-kicker">${sport2 ? "Программа" : "Программы"}</p>${archived ? `<button class="text-action" type="button" data-action="sp-programs" data-archive="1">Архив · ${archived}</button>` : ""}</div>
+      ${sport2
+        ? planPrograms.length ? planPrograms.map(p => programRow(p, [p.first, p.last])).join("") : `<p class="section-note">Активный план загрузится вместе с тренировкой. Ниже — составить новый.</p>`
+        : programs.length ? programs.map(p => programRow(p, [...p.dates].sort())).join("") : `<p class="section-note">Пока нет. Ниже — составить с ИИ по вашим данным.</p>`}
       <button class="ghost-button sp-wide" type="button" data-action="sp-import-open">+ Новая программа с ИИ</button></section>
     <div class="sp-card sp-links">
       ${row('data-action="sp-profile-section" data-section="body"', "Замеры", gaps.measurements.length ? `не хватает: ${gaps.measurements.map(f => f.label.toLocaleLowerCase()).join(", ")}` : "Заполнены", false)}
@@ -540,7 +546,7 @@ SP_SHEETS.reminders = () => {
     <label class="field">Часовой пояс<select name="zone">${zones.map(z => `<option ${z === n.timeZone ? "selected" : ""}>${spEsc(z)}</option>`).join("")}</select></label>
     <p class="section-note">Приходят от бота Flow. Выполненное не напоминаем. Подъём и сон — в разделе «Сон».</p><button class="primary-button sp-wide" type="submit">Сохранить</button></form>` };
 };
-SP_SHEETS.programs = sheet => ({ title: sheet.archive ? "Архив программ" : "Программы", body: spProgramManager(sheet) });
+SP_SHEETS.programs = sheet => ({ title: sheet.archive ? "Архив программ" : "Программа", body: SP().isSport2Enabled(spState().state) ? sp2ProgramManager(sheet) : spProgramManager(sheet) });
 SP_SHEETS.sizes = () => ({ title: "Размеры одежды", body: spSizes() });
 SP_FORMS.notifications = form => {
   const C = SP(), get = name => form.elements[name];
@@ -552,6 +558,25 @@ SP_FORMS.notifications = form => {
   spUpdate(prev => ({ ...prev, notificationSettings: C.notificationSettings(settings) })).then(() => toast("Напоминания сохранены")).catch(() => toast("Не сохранилось — проверьте связь"));
   spClose();
 };
+function sp2ProgramManager(sheet) {
+  const C = SP(), s = spState(), { all } = spOptions();
+  const list = C.programSummaries(s.catalog, all, s.state);
+  const archived = list.filter(p => s.state.programLifecycle?.[p.key]?.status === "archived");
+  const archiveRow = p => {
+    const dates = [...p.dates].sort();
+    return `<div class="sp-program"><div class="sp-program-head"><span><strong>${spEsc(p.title)}</strong><small>${dates.length ? `${spDateShort(dates[0])} — ${spDateShort(dates[dates.length - 1])} · ${dates.length} ${spPlural(dates.length, "занятие", "занятия", "занятий")}` : "нет занятий"}</small></span></div></div>`;
+  };
+  if (sheet.archive) {
+    return `<p class="section-note">Старые программы только для чтения. Записи и история сохранены.</p>
+      ${archived.length ? archived.map(archiveRow).join("") : `<p class="section-note">Архив пуст.</p>`}
+      <button class="text-action" type="button" data-action="sp-program-archive">К программе</button>`;
+  }
+  const active = sp2Programs(all)[0];
+  return `${active ? `<div class="sp-program open"><div class="sp-program-head"><span><strong>${spEsc(active.title)}</strong><small>${spDateShort(active.first)} — ${spDateShort(active.last)} · ${active.sessions} ${spPlural(active.sessions, "занятие", "занятия", "занятий")} · день ${active.day} из ${active.span}</small></span></div></div>` : `<p class="section-note">Активный план загрузится вместе с тренировкой.</p>`}
+    <p class="section-note">Одна активная программа. Старые планы остаются в архиве, история не пропадает.</p>
+    ${archived.length ? `<button class="text-action" type="button" data-action="sp-program-archive">Архив · ${archived.length}</button>` : ""}
+    <button class="ghost-button sp-wide" type="button" data-action="sp-import-open">Собрать заново</button>`;
+}
 function spProgramManager(sheet) {
   const C = SP(), s = spState();
   const { all } = spOptions();
