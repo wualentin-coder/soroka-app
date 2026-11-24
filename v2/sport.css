@@ -427,6 +427,7 @@ body.sp-runner-open { overflow: hidden; }
 .sp-toggle input:checked + span::after { transform: translateX(18px); }
 .sp-program { border-top: 1px solid var(--line); padding: 8px 0; }
 .sp-program-head { display: flex; align-items: center; gap: 8px; }
+.sp-program-head > span { flex: 1; display: grid; gap: 2px; min-width: 0; }
 .sp-program-head > b { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-size: 12px; }
 .sp-program-head > button:not(.icon-button) { flex: 1; display: grid; border: 0; background: none; color: var(--text); font: inherit; text-align: left; padding: 0; cursor: pointer; }
 .sp-program-head small { color: var(--muted); font-size: 11px; }
