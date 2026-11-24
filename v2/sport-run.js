@@ -23,6 +23,12 @@
     if (reply?.ok !== true) throw error(reply?.error || "network", reply);
     return reply;
   };
+  let sportRotation = null;
+  const setSportRotation = enabled => {
+    if (sportRotation === enabled) return;
+    sportRotation = enabled;
+    try { window.SorokaNative?.sportRotation?.(enabled); } catch {}
+  };
 
   function manualPlan(option, sessionId) {
     const plan = option.plan;
@@ -408,7 +414,8 @@
         data.active = sessionId;
         data.records[sessionId] = record;
         for (const [key, old] of Object.entries(data.records)) {
-          if (key !== sessionId && !old.start && !old.events.length && !old.complete && terminal(view(old).projection.phase)) delete data.records[key];
+          if (key !== sessionId && !old.start && !old.events.length && !old.complete && terminal(view(old).projection.phase)
+            && !(old.feedback?.difficulty && !old.feedback.sent)) delete data.records[key];
         }
         return true;
       });
@@ -477,6 +484,7 @@
     }
 
     close() {
+      setSportRotation(false);
       this.modal?.close();
       this.modal?.remove();
       this.modal = null;
@@ -918,6 +926,7 @@
               mergeReply(latest, reply);
               if (latest.complete?.event.id === record.complete.event.id) latest.complete = null;
             });
+            if (record.feedback?.difficulty != null && !record.feedback.sent) await this.sendFeedback();
             H().invalidate();
             window.SportCoach?.invalidate(record.id);
           } else {
@@ -1050,6 +1059,24 @@
       if (notice && notice.until > Date.now()) {
         this.noticeTimer = setTimeout(() => this.refresh(), notice.until - Date.now());
       }
+    }
+
+    async sendFeedback() {
+      const record = this.read();
+      const difficulty = record?.feedback?.difficulty;
+      if (!Number.isInteger(difficulty)) return;
+      try {
+        const reply = await request("session_feedback", { session_id: record.id, difficulty });
+        if (reply.difficulty !== difficulty) throw error("network");
+        await this.storage.change(next => {
+          const latest = next.records[record.id];
+          if (!latest?.feedback) return false;
+          latest.feedback.sent = true;
+          return true;
+        });
+        this.message = "";
+        this.refresh(true);
+      } catch (reason) { this.fail(reason); }
     }
 
     async retrySync() {
@@ -1236,6 +1263,20 @@
         };
         const info = H().preview(record.snapshot, model.projection.sets, seconds, active);
         const title = completed ? saved ? "Сохранено" : "Тренировка завершена" : "Итоги";
+        const difficulty = record.feedback?.difficulty ?? null;
+        const difficultyBlock = completed
+          ? difficulty == null ? "" : '<p class="sr-muted">Сложность ' + difficulty + "/10" +
+            (record.feedback?.sent ? "" : " · не отправлена") + "</p>" +
+            (record.feedback?.sent ? "" : control("send-feedback", "Отправить оценку", "ghost-button"))
+          : '<fieldset class="sr-difficulty"><legend>Насколько тяжело было?</legend>' +
+            '<p class="sr-muted">1 — очень легко, 10 — на пределе</p><div class="sr-scale">' +
+            Array.from({ length: 10 }, (_, index) => {
+              const value = index + 1;
+              return control("difficulty", String(value), "sr-scale-button",
+                'data-value="' + value + '" aria-pressed="' + String(difficulty === value) + '"');
+            }).join("") + "</div>" +
+            (difficulty == null ? "" : control("skip-difficulty", "Пропустить", "ghost-button")) +
+            "</fieldset>";
         const edit = completed
           ? saved ? control("open-history", info.first ? "Дополнить" : "Изменить", "ghost-button") : ""
           : !record.complete ? control("edit-review", info.first ? "Дополнить" : "Изменить", "ghost-button") : "";
@@ -1243,7 +1284,7 @@
         return `<header class="sh-head sr-review-head"><h2>${title}</h2>${menu}</header><div class="sr-body sh-content">
           <h3>${saved ? esc(record.snapshot.workout.title) : "Проверьте перед сохранением"}</h3>${info.summary}${edit}
           ${saved ? window.SportCoach?.slot(record.id) || "" : ""}
-          ${info.list}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
+          ${info.list}${difficultyBlock}${record.deferred?.length ? control("restore-results", "Повторить запись результата") : ""}</div>
           <footer class="sr-foot sh-foot">${completed ? control("dismiss", "Закрыть", "primary-button")
             : (record.complete ? "" : control("return", "Вернуться")) +
               control("seal", record.complete ? record.syncError || !navigator.onLine ? "Ожидает отправки" : "Сохраняем…" : "Сохранить",
@@ -1344,6 +1385,7 @@
         record = displayed && terminal(displayed.base?.projection.phase) ? displayed : data.records[data.active];
       } catch { record = null; }
       const model = record ? view(record) : null;
+      setSportRotation(Boolean(record && model && !record.abandon && !terminal(model.projection.phase)));
       const closing = record?.abandon || terminal(model?.projection.phase);
       if (closing) {
         if (this.panel) this.panel = null;
@@ -1499,6 +1541,19 @@
         if (action === "restore-results") { await this.restoreDeferred(); this.refresh(true); return; }
         if (action === "edit-review") { this.openEditor(this.modal.querySelector('[data-sr="edit-review"]')); return; }
         if (action === "open-history") { await H().open(this.recordId, this.modal.querySelector('[data-sr="open-history"]')); return; }
+        if (action === "difficulty" || action === "skip-difficulty") {
+          const value = action === "difficulty" ? Number(data.value) : null;
+          if (value !== null && (!Number.isInteger(value) || value < 1 || value > 10)) return;
+          await this.storage.change(next => {
+            const latest = next.records[this.recordId];
+            if (!latest || latest.abandon || latest.id !== this.recordId) return false;
+            latest.feedback = { ...(latest.feedback ?? {}), difficulty: value, sent: false };
+            return true;
+          });
+          this.refresh(true);
+          return;
+        }
+        if (action === "send-feedback") { await this.sendFeedback(); return; }
         if (action === "draft-reset") { await this.field(null, null); return; }
         if (["step", "rir", "units"].includes(action)) {
           const record = this.read();
