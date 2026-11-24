@@ -18,6 +18,7 @@
 .sp-coach-diff { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .sp-coach-diff li { display: grid; gap: 3px; }
 .sp-coach-diff span, .sp-coach-diff small, .sp-coach-card [role="status"] small { color: var(--muted); }
+.sp-coach-meta { color: var(--muted); }
 .sp-coach-progress {
   width: 100%;
   height: 2px;
