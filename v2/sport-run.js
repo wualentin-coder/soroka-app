@@ -1924,11 +1924,7 @@
     else coachEyesFallback(payload, "Нет активной тренировки. Результат не записан.");
   }
 
-  window.addEventListener("flow:coach-eyes", event => {
-    if (event.detail) receiveCoachEyes(event.detail);
-  });
-  if (window.__flowCoachEyes) receiveCoachEyes(window.__flowCoachEyes);
-
+  window.SportCoachEyes = { receive: receiveCoachEyes };
   window.SportRunReview = { owner, acquire, request };
 
   function refreshSportSurface() {

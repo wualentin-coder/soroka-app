@@ -759,3 +759,13 @@ function spPollNativeTimer() {
     SP().saveTimer({ workout: saved.key, phase: spTimer.phase, clock: saved.clock });
   }
 }
+
+// Coach Eyes: единый приёмник события. Разбор и лист подхода — в sport-run.js.
+function flowCoachEyesReceive(payload, attempt = 0) {
+  if (!payload) return;
+  const receive = window.SportCoachEyes?.receive;
+  if (typeof receive === "function") { receive(payload); return; }
+  if (attempt < 25) setTimeout(() => flowCoachEyesReceive(payload, attempt + 1), 200);
+}
+window.addEventListener("flow:coach-eyes", event => flowCoachEyesReceive(event.detail));
+if (window.__flowCoachEyes) flowCoachEyesReceive(window.__flowCoachEyes);
