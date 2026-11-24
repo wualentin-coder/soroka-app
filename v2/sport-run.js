@@ -1904,7 +1904,6 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           this.togglePanel("confirm-abandon");
           return;
         }
-        if (record.undo && !["undo", "commit-undo", "menu", "panel-close"].includes(action)) return;
         if (["menu", "close-menu", "tech", "panel-close"].includes(action)) {
           this.togglePanel(action === "panel-close" ? null : action);
           return;
