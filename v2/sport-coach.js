@@ -7,7 +7,7 @@
     proposed: "Проверьте изменения", published: "План обновлён", no_change: "Изменений не требуется",
     failed: "Анализ не завершился", stale: "План или результаты изменились", superseded: "Есть более свежие результаты",
   };
-  const labels = { load: "Вес", reps: "Повторы", sets: "Подходы", rest_seconds: "Отдых", execution_seconds: "Время подхода", workout: "Тренировка" };
+  const labels = { load: "Вес", reps: "Повторы", sets: "Подходы", rest_seconds: "Отдых", execution_seconds: "Время подхода", date: "Дата", workout: "Тренировка" };
   const pending = job => ["queued", "running"].includes(job?.status);
   const escape = value => spEsc(String(value ?? ""));
   const btn = (action, text, cls = "ghost-button") => '<button type="button" class="' + cls + '" data-coach-action="' + action + '">' + text + "</button>";
@@ -377,6 +377,7 @@
       box.innerHTML = frame(data.versions.map(v => '<section class="sp-coach-card"><strong>Версия ' + v.version +
         (v.version === data.current_version ? " · Текущая" : "") + '</strong><p class="section-note">' +
         escape(v.source === "ai_adapt" ? "Обновление после тренировки" : v.source === "revert" ? "Откат к версии " + v.reverted_to :
+          v.source === "schedule" ? "Перенос расписания" : v.source === "user_edit" ? "Изменения вручную" :
           "Сохранённая программа") + "</p>" + diff(v.change_set) + (v.version < data.current_version ?
           '<button type="button" class="ghost-button" data-restore="' + v.version + '" data-current="' + data.current_version +
           '">Вернуть цели версии ' + v.version + "</button>" : "") + "</section>").join(""));
