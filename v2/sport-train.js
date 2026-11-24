@@ -324,7 +324,10 @@ function sp2Duration(option) {
   return seconds > 0 ? `≈ ${C.formatDuration(seconds)}` : "";
 }
 function sp2Programs(options) {
-  return spProgramProgress(options, spState().state, true).filter(program => program.options.some(o => o.kind !== "test"));
+  // Только действующий план Sport 2.0: легаси-каталог не должен возвращать
+  // выбор программы, когда в базе разрешён ровно один active.
+  return spProgramProgress(options.filter(option => option.sport2PlanId), spState().state, true)
+    .filter(program => program.options.some(o => o.kind !== "test"));
 }
 function sp2ProgramStart(program) {
   return program.options.map(o => o.originalDate || o.date).sort()[0];
