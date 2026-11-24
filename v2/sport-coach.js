@@ -82,7 +82,7 @@
     if (!scope || !planWorkouts.size) return options;
     const make = (option, workout) => {
       const blocks = workout.blocks.filter(b => !["warmup", "mobility"].includes(b.type));
-      return { ...option,
+      return { ...option, sport2PlanId: plan.id,
         plan: versionDay(workout, blocks, option.plan, option.kind) || option.plan,
         warmup: versionDay(workout, workout.blocks.filter(b => b.type === "warmup"), option.warmup, "warmup"),
         mobility: versionDay(workout, workout.blocks.filter(b => b.type === "mobility"), option.mobility, "mobility"),
