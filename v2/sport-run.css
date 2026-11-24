@@ -333,3 +333,5 @@ html[data-motion="off"] .sport-run * { animation: none !important; transition: n
 .sport-run.sr-camera textarea { box-sizing: border-box; width: 100%; min-height: 68px; resize: vertical; }
 .sport-run.sr-camera .sp-toggle { margin-top: 10px; }
 
+.sport-run .sr-head-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+

@@ -176,6 +176,7 @@
     pause: '<path d="M9 6v12M15 6v12"/>', play: '<path d="M8 5.5v13l10-6.5z"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+    eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="2.5"/>',
   };
   const glyph = name => `<svg class="sr-icon" viewBox="0 0 24 24" aria-hidden="true">${glyphs[name]}</svg>`;
   const control = (action, label, cls = "ghost-button", extra = "") =>
@@ -1269,9 +1270,11 @@
       return `<header class="sr-head">${iconButton("close-menu", "close", "Завершить или свернуть", "sr-bare")}
         <div class="sr-title"><span>${model.phase === "rest" ? `<small>Отдых · </small>` : ""}${esc(title)}</span>
           ${sets ? `<span class="sr-segments" aria-hidden="true">${sets}</span>` : ""}</div>
-        ${typeof spState === "function" && cameraCoachEnabled(spState()?.state)
-          ? iconButton("camera-coach", "eye", "Тренер по камере", "sr-bare") : ""}
-        ${iconButton("menu", "more", "Действия тренировки", "sr-bare", `aria-expanded="${this.panel === "menu"}"`)}</header>`;
+        <span class="sr-head-actions">
+          ${typeof spState === "function" && cameraCoachEnabled(spState()?.state)
+            ? iconButton("camera-coach", "eye", "Тренер по камере", "sr-bare") : ""}
+          ${iconButton("menu", "more", "Действия тренировки", "sr-bare", `aria-expanded="${this.panel === "menu"}"`)}
+        </span></header>`;
     }
 
     pauseButton(model) {
