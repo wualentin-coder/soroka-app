@@ -98,6 +98,7 @@
     if(rebuild&&root.dataset.flowDesign==='magic'&&typeof render==='function')render();
     portalActions();mountCameraControl();const next=typeof ui==='undefined'?'':ui.page;if(!next||next===page)return;page=next;root.dataset.flowPage=page;
     if(root.dataset.flowNative==='true')try{window.SorokaNative?.pianoRotation?.(page==='piano');}catch{}
+    if(page!=='sport')try{window.SorokaNative?.sportRotation?.(false);}catch{}
   }
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(route);};
   function portalActions(){
