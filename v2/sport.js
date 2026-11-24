@@ -199,8 +199,24 @@ function spOptions() {
   const s = spState(), C = SP();
   const programs = C.workoutOptions(s.planDays, s.catalog, spDay(), s.startedOn || undefined, s.state);
   let all = spApplySwaps(spApplyExtras([...programs, ...spFreeOptions(s.state)], s.state), s.state);
-  if (C.isSport2Enabled(s.state) && !s.practicePreview) all = window.SportCoach?.overlay(all, s.state) || all;
-  return { all, visible: C.visibleWorkoutOptions(all, s.state) };
+  if (C.isSport2Enabled(s.state) && !s.practicePreview) {
+    all = window.SportCoach?.overlay(all, s.state) || all;
+    // E11a: один активный план. Старые программы остаются только прошлой
+    // историей; иначе неделя и «Программа» снова смешивают несколько планов.
+    if (all.some(option => option.sport2PlanId)) {
+      const keep = option => option.sport2PlanId || option.historyOnly || option.key.startsWith("free|") ||
+        Boolean(s.state.workouts?.[option.key]) || C.optionChecks(option, s.state).some(Boolean);
+      all = all.filter(keep).map(option => option.sport2PlanId || option.historyOnly || option.key.startsWith("free|")
+        ? option : { ...option, historyOnly: true });
+    }
+  }
+  const visible = C.visibleWorkoutOptions(all, s.state);
+  // В интерактивных экранах действует только план Sport 2.0: записанная
+  // легаси-история остаётся в all, но не перебивает день новой программы.
+  if (C.isSport2Enabled(s.state) && !s.practicePreview && all.some(option => option.sport2PlanId)) {
+    return { all, visible: visible.filter(option => option.sport2PlanId || option.key.startsWith("free|")) };
+  }
+  return { all, visible };
 }
 // ------------------------------------------------------------ значки (из WooSport)
 
