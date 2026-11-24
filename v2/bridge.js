@@ -2229,6 +2229,9 @@
           if (payload?.schema === "coach-eyes.workout" && payload?.version === 1 && Array.isArray(payload.workouts)) {
             window.__flowCoachEyes = payload;
             window.dispatchEvent(new CustomEvent("flow:coach-eyes", { detail: payload }));
+            // The Sport runner is lazy-loaded. Open Sport here so sport-train.js
+            // can consume __flowCoachEyes and show the result sheet.
+            try { navigate("sport"); } catch (_) {}
             return true;
           }
         } catch (_) {}
