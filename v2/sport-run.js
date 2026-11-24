@@ -18,6 +18,14 @@
     return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
   };
   const sameTime = (a, b) => Date.parse(a) === Date.parse(b);
+  /** Открытый подход: пустой можно закрыть, с повторами — сначала завершить. */
+  function openSetStatus(model, draft) {
+    if (!model?.projection?.open_set) return "none";
+    const timed = model.current?.exercise?.mode === "timed";
+    const raw = draft?.[timed ? "seconds" : "reps"];
+    const value = raw == null || raw === "" ? 0 : Number(raw);
+    return Number.isFinite(value) && value > 0 ? "blocked" : "empty";
+  }
   const request = async (op, args = {}) => {
     const reply = await window.sorokaSport(op, args);
     if (reply?.ok !== true) throw error(reply?.error || "network", reply);
@@ -1383,8 +1391,16 @@
         title = "Тренировка идёт";
         const total = this.read().snapshot.workout.blocks.flatMap(block => block.exercises).reduce((sum, exercise) => sum + exercise.sets, 0);
         const confirmed = model.projection.sets.filter(row => row.status === "confirmed").length;
+        const open = model.projection.open_set;
+        const draft = open ? this.read().drafts?.[keyOf(model.prior ?? open)] ?? {} : {};
+        const openStatus = openSetStatus(model, draft);
+        const finish = openStatus === "blocked"
+          ? `<p class="sr-muted">Сначала завершите подход.</p>${control("go-to-set", "К подходу", "primary-button")}`
+          : openStatus === "empty"
+          ? `<p class="sr-muted">В подходе нет повторов. Его можно закрыть.</p>${control("skip-set", "Закрыть пустой подход", "primary-button")}`
+          : model.phase === "preparing" ? "" : control("review", "Завершить", "primary-button");
         items = `<p class="sr-muted">Записано ${confirmed} из ${total}</p>` + control("dismiss", "Свернуть")
-          + (model.phase === "preparing" ? "" : control("review", "Завершить", "primary-button"))
+          + finish
           + control("ask-abandon", "Отменить тренировку", "ghost-button danger-button");
       } else if (this.panel === "confirm-abandon") {
         title = "Отменить тренировку?";
@@ -1550,6 +1566,11 @@
         }
         if (!model) return;
         if (action === "keep-training") { this.togglePanel(null); return; }
+        if (action === "go-to-set") {
+          this.togglePanel(null);
+          requestAnimationFrame(() => this.modal?.querySelector('[data-sr="done"], [data-sr="advance"]')?.focus({ preventScroll: true }));
+          return;
+        }
         if (action === "confirm-abandon") {
           if (this.confirmId) await this.abandon(this.confirmId);
           return;
