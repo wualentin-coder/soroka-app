@@ -110,6 +110,36 @@
     return String(data);
   }
 
+  function money(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) return "";
+    if (number >= 0.01) return "$" + number.toFixed(2);
+    return "$" + number.toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
+  }
+
+  function exerciseName(slot) {
+    if (!slot) return "";
+    for (const entry of planWorkouts.values()) {
+      for (const block of entry.workout.blocks || []) {
+        const found = (block.exercises || []).find(item => item.plan_exercise_id === slot);
+        if (found?.name) return found.name;
+      }
+    }
+    return "";
+  }
+
+  function reference(ref) {
+    const list = Array.isArray(ref?.refs) ? ref.refs : [];
+    return list.map(entry => {
+      const value = typeof entry === "string" ? entry : entry?.set || entry?.exercise_id;
+      if (!value) return "";
+      const cut = String(value).lastIndexOf("#");
+      const slot = cut > 0 ? String(value).slice(0, cut) : String(value);
+      const index = cut > 0 ? String(value).slice(cut + 1) : "";
+      return (exerciseName(slot) || slot) + (index ? " · подход " + index : "");
+    }).filter(Boolean).join("; ");
+  }
+
   function diff(changes) {
     if (!changes?.length) return "";
     return '<ul class="sp-coach-diff">' + changes.map(c => {
@@ -125,17 +155,31 @@
   function analysisHtml(entry, key) {
     const job = entry.data?.job;
     if (!job) return key === "latest" ? "" : '<p class="section-note">Для этой тренировки анализа нет.</p>';
+    if (job.status === "stale" || job.status === "superseded") {
+      if (key === "latest") return "";
+      return '<p class="section-note">' + (job.status === "stale"
+        ? "Анализ не применён: план или результаты уже изменились."
+        : "Этот анализ устарел: есть более свежий.") + "</p>";
+    }
     let title = statusText[job.status];
     if (job.status === "published" && job.current_version !== job.published_version) title = "План менялся после этой тренировки";
     if (key === "latest") return btn("open-result", escape(title) + " ›", "text-action");
+    const shown = (job.changes || []).slice(0, 3);
+    const rest = (job.changes || []).length - shown.length;
+    const meta = [job.model, job.tokens ? job.tokens.toLocaleString("ru-RU") + " токенов" : "", money(job.cost)]
+      .filter(Boolean).join(" · ");
     return '<div role="status"><strong>' + escape(title || "Статус недоступен") + "</strong>" +
       (pending(job) ? '<div class="sp-coach-progress"></div><small>Экран можно закрыть.</small>' : "") +
       (job.summary && !pending(job) ? "<p>" + escape(job.summary) + "</p>" : "") +
+      (meta && !pending(job) ? '<p class="section-note sp-coach-meta">' + escape(meta) + "</p>" : "") +
       (job.safety || []).filter(s => s.level !== "info").map(s => '<p class="section-note">' + escape(s.text) + "</p>").join("") +
-      "</div>" + (["proposed", "published"].includes(job.status) ? diff(job.changes) : "") +
+      "</div>" + (["proposed", "published"].includes(job.status) ? diff(shown) : "") +
+      (rest > 0 ? '<p class="section-note">Ещё ' + rest + " — в «Почему».</p>" : "") +
       '<div class="sp-coach-actions">' +
+      (job.status === "failed" ? btn("retry-analysis", "Повторить", "primary-button") : "") +
       (job.status === "proposed" ? btn("confirm", "Применить", "primary-button") : "") +
       (job.status === "published" && job.current_version === job.published_version ? btn("undo", "Отменить") : "") +
+      (job.summary || (job.items || []).length || (job.changes || []).length ? btn("why", "Почему", "text-action") : "") +
       btn("history", "История изменений", "text-action") + "</div>";
   }
 
@@ -148,7 +192,9 @@
         '<label><input name="mode" type="radio" value="' + v + '" ' + (settings.mode === v ? "checked" : "") +
           "> " + title + "</label>").join("") +
       '</fieldset><button type="submit" class="ghost-button" disabled>Сохранить</button><p data-coach-feedback role="status"></p></form>' +
-      btn("latest-history", "История изменений", "text-action");
+      btn("latest-history", "История изменений", "text-action") +
+      (money(entry.data?.spent_usd) ? '<p class="section-note sp-coach-meta">Израсходовано на анализ: ' +
+        money(entry.data.spent_usd) + "</p>" : "");
     const inventory = settings.inventory;
     const handles = inventory.handles || {};
     const num = (name, title, min, max, step, val, required = true) => "<label>" + title +
@@ -175,9 +221,10 @@
   function draw(node, entry, key) {
     if (nodeByKey.get(node) === entry) return;
     nodeByKey.set(node, entry);
-    if (key === "latest") node.hidden = Boolean(entry.loading || (!entry.data?.job && !entry.error));
-    node.innerHTML = entry.loading ? empty : entry.error ? failure :
+    const html = entry.loading ? empty : entry.error ? failure :
       ["settings", "inventory"].includes(key) ? settingsHtml(entry, key) : analysisHtml(entry, key);
+    if (key === "latest") node.hidden = Boolean(entry.loading || !html || (!entry.data?.job && !entry.error));
+    node.innerHTML = html;
   }
 
   async function read(key, force = false) {
@@ -304,6 +351,69 @@
     await load().catch(() => { if (box.open && current.current()) box.innerHTML = frame(failure); });
   }
 
+  function whyHtml(job) {
+    const items = Array.isArray(job.items) ? job.items : [];
+    const of = kind => items.filter(item => item.kind === kind);
+    const block = (title, rows) => rows.length ? '<section class="sp-coach-card"><strong>' + title + "</strong>" +
+      rows.join("") + "</section>" : "";
+    const observations = of("observation").map(item => "<p>" + escape(item.body?.text || "") +
+      (reference(item.ref) ? '<br><small>Основание: ' + escape(reference(item.ref)) + "</small>" : "") + "</p>");
+    const hypotheses = of("hypothesis").map(item => "<p>" + escape(item.body?.text || "") +
+      '<br><small>Предположение · ' + escape(item.body?.confidence_label === "medium" ? "средняя уверенность" : "низкая уверенность") +
+      "</small></p>");
+    const safety = of("safety").map(item => "<p><strong>" +
+      (item.body?.level === "stop" ? "Остановиться" : item.body?.level === "caution" ? "Осторожно" : "К сведению") +
+      ".</strong> " + escape(item.body?.text || "") + "</p>");
+    const questions = of("question").map(item => "<p><strong>Вопрос тренера.</strong> " + escape(item.body?.text || "") +
+      (item.body?.reason ? '<br><small>' + escape(item.body.reason) + "</small>" : "") + "</p>");
+    const notes = of("change_note").map(item => {
+      const ref = item.ref || {};
+      const body = item.body || {};
+      const name = exerciseName(ref.plan_exercise_id) || ref.plan_exercise_id || "Упражнение";
+      return "<p><strong>" + escape(name) + "</strong> · " + escape(labels[ref.field] || ref.field || "") + " " +
+        escape(value(ref.field, body.before)) + " → " + escape(value(ref.field, body.after)) +
+        (body.reason ? '<br><small>' + escape(body.reason) + "</small>" : "") + "</p>";
+    });
+    const changes = (job.changes || []).length
+      ? '<section class="sp-coach-card"><strong>Что изменилось</strong>' + diff(job.changes) + "</section>" : "";
+    const parts = [
+      job.summary ? "<p>" + escape(job.summary) + "</p>" : "",
+      changes,
+      block("Наблюдения", observations),
+      block("Предположения", hypotheses),
+      block("Безопасность", safety),
+      block("Вопросы", questions),
+      !changes && notes.length ? '<section class="sp-coach-card"><strong>Причины изменений</strong>' + notes.join("") + "</section>" : "",
+    ].filter(Boolean);
+    const meta = [job.model, job.tokens ? job.tokens.toLocaleString("ru-RU") + " токенов" : "", money(job.cost)]
+      .filter(Boolean).join(" · ");
+    if (meta) parts.push('<p class="section-note sp-coach-meta">' + escape(meta) + "</p>");
+    return parts.length ? parts.join("") : '<p class="section-note">Тренер не оставил пояснений.</p>';
+  }
+
+  function why(job, trigger) {
+    const current = synchronize();
+    if (!current) return;
+    if (details?.open) details.close();
+    const box = document.createElement("dialog");
+    details = box;
+    box.className = "sport-run sp-coach-history sp-coach-why";
+    box.setAttribute("aria-label", "Почему тренер так решил");
+    document.body.append(box);
+    const frame = content => '<section class="sr-screen"><header class="sh-head"><h2>Почему</h2>' +
+      btn("close-why", "Закрыть") + '</header><div class="sh-content">' + content + "</div></section>";
+    box.innerHTML = frame(whyHtml(job));
+    box.addEventListener("close", () => {
+      box.remove();
+      if (details === box) details = null;
+      if (trigger?.isConnected) trigger.focus();
+    }, { once: true });
+    box.addEventListener("click", event => {
+      if (event.target.closest('[data-coach-action="close-why"]')) box.close();
+    });
+    box.showModal();
+  }
+
   function alertIn(node, message) {
     let line = node.querySelector("[data-coach-feedback]");
     if (!line) {
@@ -376,8 +486,19 @@
     const job = records.get(key)?.data?.job;
     const action = control.dataset.coachAction;
     if (action === "retry") { read(key, true); return; }
+    if (action === "retry-analysis" && job?.session_id) {
+      for (const button of node.querySelectorAll("button")) button.disabled = true;
+      try {
+        await request("analysis_retry", { session_id: job.session_id });
+        if (!current.current()) return;
+        invalidate(job.session_id);
+        read(key, true);
+      } catch { if (current.current() && node.isConnected) alertIn(node, "Не удалось повторить анализ."); }
+      return;
+    }
     if (action === "clear-inventory") { saveSettings(node, { inventory: {} }); return; }
     if (action === "open-result" && job?.session_id) { window.SportHistory.open(job.session_id, control); return; }
+    if (action === "why" && job) { why(job, control); return; }
     if (action === "history" && job?.plan_id) { history(job.plan_id, control); return; }
     if (action === "latest-history") {
       try {
