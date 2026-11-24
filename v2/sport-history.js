@@ -366,16 +366,151 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
   const request = (op, args) => window.SportRunReview.request(op, args);
   function list() {
     queueMicrotask(() => load());
-    return '<section class="sp-block sh-history-feed" data-sh-feed aria-label="Тренировки"><p role="status">Загрузка…</p></section>';
+    return '<section class="sp-block sh-history-feed" data-sh-feed aria-label="История"><p role="status">Загрузка…</p></section>';
   }
+
+  const DAY_MS = 86400000;
+  const shortDay = value => value ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" })
+    .format(new Date(value + "T12:00:00")) : "";
+  const oneDecimal = value => Number.isInteger(value) ? String(value) : value.toFixed(1).replace(".", ",");
+
+  function sessionSummary(detail) {
+    const { session, projection } = detail;
+    const rows = new Map(projection.sets.map(row => [key(row), row]));
+    const facts = [];
+    let total = 0;
+    for (const block of session.plan_snapshot.workout.blocks) {
+      for (const exercise of block.exercises) {
+        total += exercise.sets;
+        for (let n = 1; n <= exercise.sets; n++) {
+          const row = rows.get(JSON.stringify([exercise.plan_exercise_id, n]));
+          if (!row || row.status !== "confirmed") continue;
+          if (row.actual_kg != null && row.actual_reps != null) {
+            const units = row.actual_units ?? exercise.load?.units ?? 1;
+            facts.push({ date: session.workout_date, name: exercise.name, kg: row.actual_kg, reps: row.actual_reps,
+              units, volume: row.actual_kg * units * row.actual_reps, seconds: row.actual_seconds });
+          } else if (row.actual_seconds != null) {
+            facts.push({ date: session.workout_date, name: exercise.name, kg: null, reps: null, units: 1, volume: 0, seconds: row.actual_seconds });
+          }
+        }
+      }
+    }
+    return { session, facts, confirmed: projection.sets.filter(row => row.status === "confirmed").length, total };
+  }
+
+  function aggregate(details) {
+    const facts = details.flatMap(item => item.facts);
+    const weighted = facts.filter(item => item.kg != null && item.reps != null);
+    const map = new Map();
+    for (const fact of weighted) {
+      const item = map.get(fact.name) ?? { name: fact.name, points: new Map(), volume: 0 };
+      const point = item.points.get(fact.date) ?? { date: fact.date, kg: 0, reps: 0, units: 1, volume: 0 };
+      point.kg = Math.max(point.kg, fact.kg);
+      point.reps = Math.max(point.reps, fact.reps);
+      point.units = fact.units;
+      point.volume += fact.volume;
+      item.points.set(fact.date, point);
+      item.volume += fact.volume;
+      map.set(fact.name, item);
+    }
+    const list = [...map.values()].map(item => ({
+      ...item, series: [...item.points.values()].sort((a, b) => a.date.localeCompare(b.date)),
+    })).filter(item => item.series.length)
+      .sort((a, b) => b.series.length - a.series.length || b.volume - a.volume);
+    return { facts, weighted, list };
+  }
+
+  function plateauOf(list) {
+    for (const item of list) {
+      if (item.series.length < 4) continue;
+      const result = window.SportCore?.exercisePlateau?.(item.series.map(point => ({
+        date: point.date, status: "confirmed", kg: point.kg, reps: point.reps, seconds: null,
+      })));
+      if (!result?.plateau) continue;
+      const series = item.series;
+      const lastKg = series.at(-1).kg;
+      let start = series.length - 1;
+      while (start > 0 && Math.abs(series[start - 1].kg - lastKg) <= 0.001) start--;
+      const points = series.slice(start);
+      const weeks = Math.max(1, Math.round((Date.parse(series.at(-1).date) - Date.parse(series[start].date)) / (7 * DAY_MS)));
+      return { item, result, weeks, points };
+    }
+    return null;
+  }
+
+  function chartSvg(item, metric) {
+    const series = item.series.slice(-8);
+    const values = series.map(point => metric === "volume" ? point.volume : point.kg);
+    const width = 320, height = 154, left = 8, right = 10, top = 14, bottom = 30;
+    const min = Math.min(...values), max = Math.max(...values);
+    const span = max - min || Math.max(1, max * .12);
+    const low = min - span * .18, high = max + span * .18;
+    const dates = series.map(point => Date.parse(point.date + "T12:00:00"));
+    const first = Math.min(...dates), last = Math.max(...dates);
+    const x = date => left + (last === first ? (width - left - right) / 2 : (date - first) / (last - first) * (width - left - right));
+    const y = value => top + (high - value) / (high - low) * (height - top - bottom);
+    const grid = [0, .5, 1].map(step => {
+      const value = high - (high - low) * step;
+      const at = y(value);
+      return `<line x1="${left}" x2="${width - right}" y1="${at.toFixed(1)}" y2="${at.toFixed(1)}" class="sh-grid-line"/>
+        <text x="${left}" y="${(at - 3).toFixed(1)}" class="sh-axis">${Math.round(value)}</text>`;
+    }).join("");
+    const dots = series.map((point, index) => `<circle cx="${x(dates[index]).toFixed(1)}" cy="${y(values[index]).toFixed(1)}" r="4" class="sh-dot"/>`).join("");
+    const line = series.length > 1
+      ? `<polyline points="${series.map((point, index) => `${x(dates[index]).toFixed(1)},${y(values[index]).toFixed(1)}`).join(" ")}" class="sh-line"/>` : "";
+    const label = `<text x="${x(dates.at(-1)).toFixed(1)}" y="${(y(values.at(-1)) - 10).toFixed(1)}" class="sh-last" text-anchor="middle">${Math.round(values.at(-1))}</text>`;
+    const xLabels = series.length > 1
+      ? `<text x="${left}" y="${height - 8}" class="sh-axis">${esc(shortDay(series[0].date))}</text>
+         <text x="${width - right}" y="${height - 8}" class="sh-axis" text-anchor="end">${esc(shortDay(series.at(-1).date))}</text>` : "";
+    return `<svg class="sh-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(item.name)}: ${metric === "kg" ? "вес" : "объём"}">
+      ${grid}<line x1="${left}" x2="${width - right}" y1="${height - bottom}" y2="${height - bottom}" class="sh-axis-line"/>
+      ${line}${dots}${label}${xLabels}</svg>`;
+  }
+
   function paintFeed() {
     const mount = document.querySelector("[data-sh-feed]");
     if (!mount || !surface?.owner.current()) return;
-    const { sessions, error, cursor, busy } = surface;
-    mount.innerHTML = `<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => `<button type="button" class="sh-history-row"
-      data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
-      <small>${esc(dateLabel(session))}${session.difficulty != null ? ` · сложность ${session.difficulty}/10` : ""}</small></span><span>${clock(session.elapsed_seconds)}
-      ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`).join("")}</div>` : ""}
+    const { sessions, error, cursor, busy, details } = surface;
+    const summaries = sessions.map(session => details.get(session.id)).filter(Boolean).map(sessionSummary);
+    const all = aggregate(summaries);
+    const weighted = all.weighted;
+    const record = weighted.slice().sort((a, b) => b.kg - a.kg || b.reps - a.reps || b.date.localeCompare(a.date))[0];
+    const recent = summaries.filter(item => {
+      const at = Date.parse(item.session.workout_date + "T12:00:00");
+      return Number.isFinite(at) && at >= Date.now() - 28 * DAY_MS;
+    });
+    const frequency = recent.length / 4;
+    const plateau = plateauOf(all.list);
+    const top = plateau?.item || all.list[0];
+    const improvement = top && top.series.length > 1 ? top.series.at(-1).kg - top.series[0].kg : 0;
+    const version = summaries.reduce((best, item) => Math.max(best, item.session.plan_version || 0), 0);
+    const verdict = plateau
+      ? `<b>${esc(plateau.item.name)} стоит ${plateau.weeks} нед.</b><span>по ${summaries.length} подтверждённым тренировкам</span>`
+      : improvement > 0
+        ? `<b>${esc(top.name)} +${oneDecimal(improvement)} кг</b><span>по ${summaries.length} подтверждённым тренировкам</span>`
+        : `<b>${summaries.length === 1 ? "Одна тренировка" : `${summaries.length} тренировки`}</b><span>вывод появится после следующих</span>`;
+    const recordTile = record
+      ? `<div class="sh-tile"><span>Рекорд</span><b>${record.units > 1 ? `${record.units}×` : ""}${oneDecimal(record.kg)} кг</b><small>${esc(record.name)} · ${record.reps} · ${shortDay(record.date)}</small></div>` : "";
+    const frequencyTile = summaries.length
+      ? `<div class="sh-tile"><span>Частота</span><b>${oneDecimal(frequency)}</b><small>в неделю · 4 нед.${recent.length < 2 ? " · мало данных" : ""}</small></div>` : "";
+    const metric = surface.metric === "volume" ? "volume" : "kg";
+    const chart = top
+      ? `<section class="sh-chart-card" aria-label="Динамика">
+          <div class="sh-chart-head"><div><b>${esc(top.name)}</b><span>${metric === "volume" ? "объём, кг" : "вес, кг"}</span></div>
+            <div class="sh-seg" role="group" aria-label="Показатель"><button type="button" data-action="sp-history-metric" data-metric="kg" aria-pressed="${metric === "kg"}">Вес</button><button type="button" data-action="sp-history-metric" data-metric="volume" aria-pressed="${metric === "volume"}">Объём</button></div></div>
+          ${chartSvg(top, metric)}
+          <p class="sh-chart-note">${top.series.length > 1 ? "Только подтверждённые подходы" : `Ещё ${2 - top.series.length} тренировки до линии`}</p>
+          ${plateau ? `<details class="sh-plateau"><summary>Плато · ${plateau.weeks} нед.</summary><div><p>${plateau.item.series.slice(-3).map(point => `${esc(shortDay(point.date))} — ${oneDecimal(point.kg)} кг × ${point.reps}`).join(" · ")}</p><p class="sh-muted">Наблюдение, не диагноз.</p></div></details>` : ""}
+        </section>` : "";
+    const stats = summaries.length
+      ? `<section class="sh-stats"><p class="sh-verdict">${verdict}</p><div class="sh-tiles">${recordTile}${frequencyTile}</div>${chart}</section>
+        ${version ? `<p class="sh-plan-row"><span>План · v${version}</span><span>снимок тренировки</span></p>` : ""}` : "";
+    mount.innerHTML = `${stats}<h2>Тренировки</h2>${sessions.length ? `<div class="sh-history-list">${sessions.map(session => {
+      const summary = details.get(session.id);
+      return `<button type="button" class="sh-history-row" data-action="sp-session-detail" data-id="${esc(session.id)}"><span><strong>${esc(session.title || "Тренировка")}</strong>
+      <small>${esc(dateLabel(session))}${summary ? ` · ${summary.confirmed}/${summary.total} подходов` : ""}${session.difficulty != null ? ` · сложность ${session.difficulty}/10` : ""}</small></span><span>${clock(session.elapsed_seconds)}
+      ${session.results_revision > 1 ? `<small>Правка · ${session.results_revision}</small>` : ""}</span>${svg("right")}</button>`;
+    }).join("")}</div>` : ""}
       ${error ? `<p role="alert">${esc(error)}</p><button type="button" class="ghost-button" data-action="sp-session-more">Повторить</button>`
         : busy ? '<p role="status">Загрузка…</p>' : !sessions.length ? '<p>Тренировок нет</p>' : ""}
       ${cursor && !busy && !error ? '<button type="button" class="ghost-button" data-action="sp-session-more">Ещё</button>' : ""}`;
@@ -387,7 +522,9 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       document.querySelector("[data-sh-feed]").textContent = "Откройте Flow в своём аккаунте.";
       return;
     }
-    if (reset || !surface?.owner.current()) surface = { owner, sessions: [], cursor: null, ready: false, busy: false, error: "" };
+    if (reset || !surface?.owner.current()) surface = {
+      owner, sessions: [], details: new Map(), cursor: null, ready: false, busy: false, error: "", metric: "kg",
+    };
     const state = surface;
     if (state.busy || state.ready && !more) { paintFeed(); return; }
     state.busy = true;
@@ -400,6 +537,17 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
       state.sessions.push(...reply.sessions.filter(session => !seen.has(session.id)));
       state.cursor = reply.next_cursor;
       state.ready = true;
+      const pending = state.sessions.filter(session => !state.details.has(session.id)).slice(0, 20);
+      if (pending.length) {
+        const replies = await Promise.all(pending.map(async session => {
+          try { return [session.id, await request("read_session", { session_id: session.id })]; }
+          catch { return [session.id, null]; }
+        }));
+        if (!state.owner.current() || surface !== state) return;
+        for (const [id, detail] of replies) {
+          if (detail?.session && detail?.projection?.sets) state.details.set(id, detail);
+        }
+      }
     } catch (error) { state.error = problem(error); state.ready = true; }
     finally { state.busy = false; if (surface === state) paintFeed(); }
   }
@@ -469,9 +617,15 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     await show();
   }
 
-  window.SportHistory = { list, preview, editor, open, result, equal, invalidate: () => { surface = null; } };
+  window.SportHistory = { list, preview, editor, open, result, equal, invalidate: () => { surface = null; },
+    stats: { sessionSummary, aggregate, plateauOf } };
   Object.assign(SP_ACTIONS, {
     "sp-session-detail": trigger => open(trigger.dataset.id, trigger),
     "sp-session-more": () => load({ more: true }),
+    "sp-history-metric": control => {
+      if (!surface) return;
+      surface.metric = control.dataset.metric === "volume" ? "volume" : "kg";
+      paintFeed();
+    },
   });
 })();

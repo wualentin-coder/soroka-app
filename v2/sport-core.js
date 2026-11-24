@@ -56,6 +56,10 @@ var SportCore = (() => {
     SIZING_MEASURES: () => SIZING_MEASURES,
     SKIP_TOAST_MS: () => SKIP_TOAST_MS,
     SKIP_UNDO_MS: () => SKIP_UNDO_MS,
+    SPORT2_EQUIPMENT: () => SPORT2_EQUIPMENT,
+    SPORT2_EXPERIENCE: () => SPORT2_EXPERIENCE,
+    SPORT2_GOALS: () => SPORT2_GOALS,
+    SPORT2_LIMITS: () => SPORT2_LIMITS,
     STRETCHING_RULES: () => STRETCHING_RULES,
     TRAINING_PLACES: () => TRAINING_PLACES,
     TRAINING_RULES: () => TRAINING_RULES,
@@ -100,8 +104,10 @@ var SportCore = (() => {
     equipmentOf: () => equipmentOf,
     equipmentSummary: () => equipmentSummary,
     estimateWorkoutSeconds: () => estimateWorkoutSeconds,
+    exerciseAnalytics: () => exerciseAnalytics,
     exerciseEquipment: () => exerciseEquipment,
     exerciseKey: () => exerciseKey,
+    exercisePlateau: () => exercisePlateau,
     exerciseSetLogs: () => exerciseSetLogs,
     exerciseSets: () => exerciseSets,
     exerciseStats: () => exerciseStats,
@@ -146,6 +152,7 @@ var SportCore = (() => {
     measurementHistory: () => measurementHistory,
     measurementSeries: () => measurementSeries,
     measurementValue: () => measurementValue,
+    median: () => median,
     mergeCatalog: () => mergeCatalog,
     mergeMainAndPosture: () => mergeMainAndPosture,
     minutesOf: () => minutesOf,
@@ -177,6 +184,7 @@ var SportCore = (() => {
     programRank: () => scheduledProgramRank,
     programSummaries: () => programSummaries,
     raiseProgram: () => raiseProgram,
+    readSport2Profile: () => readSport2Profile,
     readSportRun: () => readSportRun,
     recentTrainingWeek: () => recentTrainingWeek,
     recordSets: () => recordSets,
@@ -205,6 +213,9 @@ var SportCore = (() => {
     shoeSizeRu: () => shoeSizeRu,
     shouldAskWakeTime: () => shouldAskWakeTime,
     sizingMeasurements: () => sizingMeasurements,
+    sport2ContextProfile: () => sport2ContextProfile,
+    sport2EquipmentText: () => sport2EquipmentText,
+    sport2ProfileSummary: () => sport2ProfileSummary,
     sportAchievable: () => achievable,
     sportDumbbellConfigurations: () => configurations,
     sportLoadoutHint: () => loadoutHint,
@@ -1435,6 +1446,73 @@ var SportCore = (() => {
     return Object.entries(state.favoriteExercises ?? {}).map(([key, value]) => ({ key, ...value })).sort((a, b) => b.addedOn.localeCompare(a.addedOn) || a.name.localeCompare(b.name));
   }
 
+  // sport/core/src/sport2Profile.ts
+  var SPORT2_GOALS = [
+    { id: "strength", label: "Сила", effect: "4–6 повторов · шаг +2 кг при RIR ≥2" },
+    { id: "mass", label: "Масса", effect: "8–12 повторов · объём" },
+    { id: "form", label: "Форма", effect: "8–10 повторов · RIR 2–3" }
+  ];
+  var SPORT2_EXPERIENCE = [
+    { id: "novice", label: "Новичок", effect: "до года · шаг меньше" },
+    { id: "middle", label: "Средний", effect: "около 1,5 лет · обычный шаг" },
+    { id: "advanced", label: "Опытный", effect: "3+ года · шаг +2 кг" }
+  ];
+  var SPORT2_EQUIPMENT = [
+    { id: "dumbbells", label: "Гантели" },
+    { id: "bench", label: "Скамья" },
+    { id: "pullup_bar", label: "Турник" },
+    { id: "band", label: "Резинка" },
+    { id: "barbell", label: "Штанга" },
+    { id: "kettlebell", label: "Гиря" }
+  ];
+  var SPORT2_LIMITS = [
+    { id: "shoulder", label: "Плечо", effect: "без жима над головой и тяги к лицу" },
+    { id: "back", label: "Поясница", effect: "без осевой нагрузки и наклонов с весом" },
+    { id: "knee", label: "Колено", effect: "без глубоких выпадов и прыжков" }
+  ];
+  var goalIds = new Set(SPORT2_GOALS.map((item) => item.id));
+  var experienceIds = new Set(SPORT2_EXPERIENCE.map((item) => item.id));
+  var equipmentIds = new Set(SPORT2_EQUIPMENT.map((item) => item.id));
+  var limitIds = new Set(SPORT2_LIMITS.map((item) => item.id));
+  function readSport2Profile(value) {
+    const raw = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    const list2 = (input, allowed) => Array.isArray(input) ? [...new Set(input.filter((id2) => typeof id2 === "string" && allowed.has(id2)))] : [];
+    const goal = typeof raw.goal === "string" && goalIds.has(raw.goal) ? raw.goal : null;
+    const experience = typeof raw.experience === "string" && experienceIds.has(raw.experience) ? raw.experience : null;
+    const equipment = list2(raw.equipment, equipmentIds);
+    const limits = list2(raw.limits, limitIds);
+    return { goal, experience, equipment, limits, filled: Boolean(goal || experience || equipment.length || limits.length) };
+  }
+  function sport2ProfileSummary(value) {
+    const profile = readSport2Profile(value);
+    const goal = SPORT2_GOALS.find((item) => item.id === profile.goal);
+    const experience = SPORT2_EXPERIENCE.find((item) => item.id === profile.experience);
+    const equipment = SPORT2_EQUIPMENT.filter((item) => profile.equipment.includes(item.id));
+    const limits = SPORT2_LIMITS.filter((item) => profile.limits.includes(item.id));
+    return {
+      goal: goal ? `${goal.label} · ${goal.effect}` : "",
+      experience: experience ? `${experience.label} · ${experience.effect}` : "",
+      equipment: equipment.length ? equipment.map((item) => item.label).join(" · ") : "",
+      limits: limits.length ? limits.map((item) => `${item.label}: ${item.effect}`).join("; ") : "Ограничений нет",
+      filled: profile.filled
+    };
+  }
+  function sport2EquipmentText(value) {
+    const profile = readSport2Profile(value);
+    const labels = SPORT2_EQUIPMENT.filter((item) => profile.equipment.includes(item.id)).map((item) => item.label);
+    return labels.length ? [...labels, "свой вес"].join(", ") : null;
+  }
+  function sport2ContextProfile(value) {
+    const profile = readSport2Profile(value);
+    const summary = sport2ProfileSummary(value);
+    const result2 = {};
+    if (summary.goal) result2["Цель"] = summary.goal;
+    if (summary.experience) result2["Опыт"] = summary.experience;
+    if (summary.equipment) result2["Инвентарь"] = summary.equipment;
+    if (profile.limits.length) result2["Ограничения"] = summary.limits;
+    return result2;
+  }
+
   // sport/core/src/trainingContext.ts
   var WEIGHT_BASIS = { per_dumbbell: "На одну гантель", total: "Общий вес с грифом", machine: "На тренажёре", additional: "Дополнительный вес" };
   function ageFromBirthDate(birthDate, today = todayKey()) {
@@ -1610,6 +1688,7 @@ var SportCore = (() => {
       return spelled ? `${raw} из ${f.slider?.max ?? 10} — ${spelled}` : raw;
     };
     const profile = includeProfile ? Object.fromEntries(PROFILE_FIELDS.filter((f) => includeHealth || !f.health).map((f) => [f.label, answer(f)])) : {};
+    if (includeProfile) Object.assign(profile, sport2ContextProfile(state.sport2Profile));
     if (includeProfile) {
       const years = ageFromBirthDate(state.trainingProfile?.birthDate, today);
       profile["Возраст, лет"] = years !== null ? String(years) : state.trainingProfile?.age?.trim() || "не указано";
@@ -1635,7 +1714,7 @@ var SportCore = (() => {
       healthIncluded: includeProfile && includeHealth,
       profileIncluded: includeProfile,
       profile,
-      equipment: includeProfile ? equipmentSummary(state) : null,
+      equipment: includeProfile ? sport2EquipmentText(state.sport2Profile) ?? equipmentSummary(state) : null,
       targetMuscles: includeProfile ? knownMuscles(state.targetMuscles).map((id2) => ({ id: id2, name: muscleLabel(id2) })) : [],
       measurements,
       workingWeights: weights,
@@ -2515,6 +2594,50 @@ ${JSON.stringify(context, null, 2)}
       next = selectWorkoutLoad(next, option, index, { kilograms: entry.kilograms, ...basis ? { basis } : {}, actualReps: top.reps });
     }
     return next;
+  }
+
+  // sport/core/src/analytics.ts
+  function median(values) {
+    if (!values.length) return null;
+    const sorted = [...values].sort((a, b) => a - b);
+    return (sorted[Math.floor((sorted.length - 1) / 2)] + sorted[Math.floor(sorted.length / 2)]) / 2;
+  }
+  function exercisePlateau(points) {
+    const rows = points.filter((point) => point.status === "confirmed" && /^\d{4}-\d{2}-\d{2}$/.test(point.date)).map((point) => ({
+      date: point.date,
+      metric: point.kg !== null && point.reps !== null ? point.kg * (1 + point.reps / 30) : point.seconds
+    })).filter((point) => point.metric !== null && Number.isFinite(point.metric) && point.metric > 0).sort((a, b) => a.date.localeCompare(b.date));
+    if (rows.length < 4) {
+      return { plateau: false, sessions: rows.length, recent_best: null, previous_best: null, change: null };
+    }
+    const recent = rows.slice(-3);
+    const earlier = rows.slice(0, -3);
+    const recentBest = Math.max(...recent.map((point) => point.metric));
+    const previousBest = Math.max(...earlier.map((point) => point.metric));
+    const change = previousBest ? (recentBest - previousBest) / previousBest : null;
+    return {
+      plateau: change !== null && change <= 5e-3,
+      sessions: rows.length,
+      recent_best: Math.round(recentBest * 100) / 100,
+      previous_best: Math.round(previousBest * 100) / 100,
+      change: change === null ? null : Math.round(change * 1e3) / 1e3
+    };
+  }
+  function exerciseAnalytics(facts) {
+    const confirmed = facts.filter((f) => f.status === "confirmed");
+    const reps = confirmed.filter((f) => f.reps !== null && f.planned?.reps_min != null && f.planned?.reps_max != null);
+    const numeric = (numbers) => numbers.filter((n) => n !== null);
+    return {
+      confirmed_fraction: facts.length ? confirmed.length / facts.length : 0,
+      in_range: reps.filter((f) => f.reps >= f.planned.reps_min && f.reps <= f.planned.reps_max).length,
+      at_top: facts.length > 0 && reps.length === facts.length && reps.every((f) => f.reps >= f.planned.reps_max),
+      below: reps.filter((f) => f.reps < f.planned.reps_min).length,
+      difficult: facts.some((f) => f.rir === 0 || f.complaint),
+      median_rest_seconds: median(numeric(confirmed.map((f) => f.rest))),
+      median_execution_seconds: median(numeric(confirmed.map((f) => f.seconds))),
+      e1rm_kg: confirmed.reduce((best, f) => f.kg !== null && f.reps !== null ? Math.max(best ?? 0, f.kg * (1 + f.reps / 30)) : best, null),
+      tonnage_kg: confirmed.reduce((sum, f) => sum + (f.kg ?? 0) * (f.units ?? 1) * (f.reps ?? 0), 0)
+    };
   }
 
   // sport/core/src/session/contract.ts

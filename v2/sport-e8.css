@@ -1,0 +1,66 @@
+/* Sport 2.0 · E8 профиль тренера. */
+.sp2-e8 {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--accent-line, color-mix(in srgb, var(--accent) 45%, var(--line)));
+  border-radius: 22px;
+  background: var(--surface);
+}
+.sp2-e8-empty { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.sp2-e8-empty h2 { margin: 2px 0 4px; font-size: 19px; }
+.sp2-e8-empty .section-note { margin: 0; }
+.sp2-e8-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sp2-e8-rows { display: grid; gap: 8px; }
+.sp2-e8-rows > div { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.sp2-e8-rows span { color: var(--muted); font-size: 12.5px; }
+.sp2-e8-rows b { font-size: 13.5px; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
+.sp2-e8-effect {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+.sp2-e8-effect span { color: var(--accent); font-size: 11.5px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.sp2-e8-effect p { margin: 0; font-size: 13px; line-height: 1.45; }
+.sp2-e8-note { margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+.sp2-e8-sec { display: grid; gap: 8px; margin-top: 14px; }
+.sp2-e8-sec h3 { margin: 0; font-size: 14px; }
+.sp2-e8-sec .section-note { margin: 0; }
+.sp2-e8-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sp2-e8-choice {
+  display: grid;
+  gap: 3px;
+  align-content: start;
+  min-height: 62px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+.sp2-e8-choice b { font-size: 13px; }
+.sp2-e8-choice small { color: var(--muted); font-size: 10.5px; line-height: 1.25; }
+.sp2-e8-choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.sp2-e8-choice[aria-pressed="true"] small { color: var(--text); }
+.sp2-e8-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp2-e8-chip {
+  min-height: 44px;
+  padding: 0 15px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.sp2-e8-chip[aria-pressed="true"] { border-color: transparent; background: var(--accent); color: var(--accent-ink); }
+@media (max-width: 360px) {
+  .sp2-e8-empty { grid-template-columns: minmax(0, 1fr); }
+  .sp2-e8-rows > div { grid-template-columns: 92px minmax(0, 1fr); }
+  .sp2-e8-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
