@@ -10,10 +10,16 @@
   const LIMIT_BLOCK = {
     shoulder: [/жим[^,.;]{0,24}(сидя|над головой|стоя)/i, /арнольд/i, /тяга к лицу/i, /face pull/i],
     back: [/станов(ая|ую|ой)/i, /наклон[^,.;]{0,24}(штанг|гантел)/i, /good morning/i, /румынск[^,.;]{0,12}тяга/i],
-    knee: [/выпад/i, /прыж/i, /бег/i],
+    knee: [/выпад/i, /прыж/i, /бег/i, /присед/i, /сплит/i, /зашагив/i, /жим ног/i, /разгибани[ея] ног/i,
+      /на одной ноге/i, /squat/i, /lunge/i, /step_?up/i, /jump/i, /leg_press/i, /leg_extension/i, /single_leg/i],
   };
+  const PAIN_ZONES = [
+    { id: "knee", label: "Колено" },
+    { id: "shoulder", label: "Плечо" },
+    { id: "back", label: "Поясница" },
+  ];
   const REMINDERS = [
-    { id: "before", name: "За 2 часа до тренировки", sub: "Вечером, если тренировка запланирована" },
+    { id: "before", name: "В день тренировки", sub: "Если тренировка по плану ещё не сделана" },
     { id: "inactive", name: "Если 2 дня без тренировок", sub: "Мягкое напоминание, без давления" },
     { id: "rest", name: "В день отдыха", sub: "Короткая подсказка про сон и движение" },
   ];
@@ -49,9 +55,69 @@
       title: "Без изменений", reason: `Готовность ${readiness}/5 · RIR ${rir}`, note: "План остаётся прежним." };
   }
 
-  function limitBlocked(name, limits = []) {
-    const text = String(name || "");
+  function limitBlocked(name, limits = [], id = "") {
+    const text = `${String(name || "")} ${String(id || "")}`;
     return limits.some((limit) => (LIMIT_BLOCK[limit] || []).some((pattern) => pattern.test(text)));
+  }
+
+  /**
+   * «Болит колено — замени на сегодня»: для каждого упражнения тренировки,
+   * которое грузит больную зону, берём лучшую замену из матрицы, которая
+   * зону не грузит и ещё не стоит в этой тренировке; если такой нет —
+   * упражнение исключается. Возвращает операции для adapt_workout.
+   */
+  const ids = (list) => (list || []).map((item) => (typeof item === "string" ? item : item?.id)).filter(Boolean);
+
+  /** Запасной вариант, когда в матрице нет безопасной замены: упражнение
+   *  каталога на те же мышцы, с тем же инвентарём, что уже есть в тренировке. */
+  function muscleFallback(source, zone, catalog, present, equipment) {
+    const primary = new Set(ids(source?.primary)), secondary = new Set(ids(source?.secondary));
+    if (!primary.size) return null;
+    let best = null;
+    for (const item of catalog) {
+      if (present.has(item.id) || limitBlocked(item.name, [zone], item.id)) continue;
+      if (!(item.measure || []).includes("reps")) continue;
+      if (!ids(item.equipment).every((id) => equipment.has(id))) continue;
+      const own = ids(item.primary), extra = ids(item.secondary);
+      const score = own.filter((id) => primary.has(id)).length * 3 + own.filter((id) => secondary.has(id)).length
+        + extra.filter((id) => primary.has(id)).length + (item.group && item.group === source.group ? 1 : 0);
+      if (score >= 3 && (!best || score > best.score)) best = { id: item.id, score, why: "те же мышцы без нагрузки на зону" };
+    }
+    return best;
+  }
+
+  function dayFixOps(workout, zone, matrix, catalog) {
+    if (!workout?.blocks || !LIMIT_BLOCK[zone]) return { ops: [], swaps: 0, drops: 0 };
+    const all = workout.blocks.flatMap((block) => block.exercises || []);
+    const present = new Set(all.map((exercise) => exercise.exercise_id).filter(Boolean));
+    const equipment = new Set(["bodyweight", ...all.flatMap((exercise) => ids(byId(catalog, exercise.exercise_id)?.equipment))]);
+    const label = PAIN_ZONES.find((item) => item.id === zone)?.label || "Боль";
+    const ops = [];
+    let swaps = 0, drops = 0;
+    // Сначала основная работа, потом разминка: разминку не заменяем силовым, а убираем.
+    const order = workout.blocks.flatMap((block) => (block.exercises || []).map((exercise) => ({ exercise, warmup: block.type === "warmup" })))
+      .sort((a, b) => Number(a.warmup) - Number(b.warmup));
+    for (const { exercise, warmup } of order) {
+      if (!limitBlocked(exercise.name, [zone], exercise.exercise_id)) continue;
+      const choice = warmup ? null : (matrix?.exercises?.find((item) => item.id === exercise.exercise_id)?.alternatives || [])
+        .filter((alternative) => alternative.canonical && !present.has(alternative.id))
+        .map((alternative) => ({ ...alternative, exercise: byId(catalog, alternative.id) }))
+        .filter((alternative) => alternative.exercise && !limitBlocked(alternative.exercise.name, [zone], alternative.id))
+        .sort((a, b) => b.score - a.score)[0]
+        || muscleFallback(byId(catalog, exercise.exercise_id), zone, catalog, present, equipment);
+      if (choice) {
+        present.add(choice.id);
+        ops.push({ op: "swap", plan_exercise_id: exercise.plan_exercise_id, exercise_id: choice.id,
+          why: `${label}: ${choice.why || "без нагрузки на зону"}`.slice(0, 300) });
+        swaps++;
+      } else {
+        ops.push({ op: "drop", plan_exercise_id: exercise.plan_exercise_id });
+        drops++;
+      }
+    }
+    // Нельзя выбросить всё: тогда честно говорим, что замен нет.
+    if (all.length && drops === all.length) return { ops: [], swaps: 0, drops: 0, empty: true };
+    return { ops, swaps, drops };
   }
 
   const byId = (catalog, id) => catalog.find((item) => item.id === id) || null;
@@ -99,7 +165,7 @@
   }
 
   function firstWeighted(snapshot) {
-    for (const block of snapshot?.workout?.blocks || []) {
+    for (const block of (snapshot?.workout || snapshot)?.blocks || []) {
       if (!["main", "splits"].includes(block.type)) continue;
       for (const exercise of block.exercises || []) {
         const kg = Number(exercise.load?.kg ?? exercise.weight_kg ?? 0);
@@ -109,65 +175,8 @@
     return null;
   }
 
-  function warmupBlock(warmup, catalog) {
-    return {
-      type: "warmup", title: "Тёплый старт", order_policy: "fixed",
-      exercises: warmup.items.map((item) => {
-        const exercise = byId(catalog, item.exercise_id);
-        const timed = item.mode === "time";
-        return {
-          plan_exercise_id: `warmup-${item.exercise_id}`,
-          exercise_id: item.exercise_id,
-          name: exercise?.name || item.exercise_id,
-          sets: 1,
-          mode: timed ? "timed" : "reps",
-          ...(timed ? { work_seconds: Number(item.value) || 30 } : { reps: String(item.value || 10), execution_seconds: 30 }),
-          rest_seconds: 15,
-          load: null, bodyweight: true, priority: null,
-          technique: item.note || "Спокойно, без боли и онемения.",
-          muscles: exercise?.muscles || { primary: [], secondary: [] },
-        };
-      }),
-    };
-  }
-
-  function adjustSnapshot(snapshot, addons = {}, catalog = []) {
-    if (!snapshot?.workout || !Array.isArray(snapshot.workout.blocks)) return null;
-    const copy = JSON.parse(JSON.stringify(snapshot));
-    let changed = false;
-    const auto = addons.autoload;
-    if (auto && Number(auto.kg) > 0) {
-      const exercise = firstWeighted(copy);
-      if (exercise) {
-        if (exercise.load) exercise.load = { ...exercise.load, kg: Number(auto.kg) };
-        if (exercise.weight_kg != null) exercise.weight_kg = Number(auto.kg);
-        if (Number(auto.sets) > 0) exercise.sets = Number(auto.sets);
-        changed = true;
-      }
-    }
-    const swap = addons.swap;
-    if (swap?.slot) {
-      for (const block of copy.workout.blocks) for (const exercise of block.exercises || []) {
-        if (exercise.plan_exercise_id !== swap.slot) continue;
-        const target = byId(catalog, swap.id);
-        if (!target) continue;
-        exercise.exercise_id = target.id;
-        exercise.name = target.name;
-        exercise.muscles = target.muscles;
-        exercise.technique = [exercise.technique, swap.why].filter(Boolean).join(" ");
-        changed = true;
-      }
-    }
-    const warmup = addons.warmup;
-    if (warmup?.items?.length && !copy.workout.blocks.some((block) => block.title === "Тёплый старт")) {
-      copy.workout.blocks.unshift(warmupBlock(warmup, catalog));
-      changed = true;
-    }
-    return changed ? copy : null;
-  }
-
   return {
-    LIMIT_BLOCK, REMINDERS, roundHalf, recommend, limitBlocked, alternativesFor, warmupFor,
-    exerciseIdForName, firstWeighted, adjustSnapshot,
+    LIMIT_BLOCK, PAIN_ZONES, REMINDERS, roundHalf, recommend, limitBlocked, alternativesFor, warmupFor,
+    exerciseIdForName, firstWeighted, dayFixOps,
   };
 });
