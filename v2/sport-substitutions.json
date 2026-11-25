@@ -16,172 +16,14 @@
     "cycles": "канонические рёбра (canonical=true) образуют DAG; обратные ссылки не участвуют в цепочках"
   },
   "summary": {
-    "exercises": 88,
-    "covered": 88,
-    "alternatives": 243,
-    "canonical": 203,
+    "exercises": 87,
+    "covered": 87,
+    "alternatives": 240,
+    "canonical": 200,
     "reverse": 40,
     "canonical_cycle_free": true
   },
   "exercises": [
-    {
-      "id": "band_lateral_walk",
-      "name": "Боковые шаги с резинкой",
-      "group": "Ноги",
-      "equipment": [
-        "band"
-      ],
-      "laterality": "alternating",
-      "primary": [
-        "glutes"
-      ],
-      "secondary": [
-        "quads",
-        "adductors"
-      ],
-      "alternatives": [
-        {
-          "id": "db_bulgarian_split_squat",
-          "score": 62,
-          "kind": "equipment",
-          "canonical": true,
-          "equipment": [
-            "dumbbells",
-            "bench"
-          ],
-          "laterality": "unilateral",
-          "laterality_fit": "one_side",
-          "same_group": true,
-          "shared_muscles": [
-            "glutes",
-            "quads"
-          ],
-          "same_primary": [
-            "glutes"
-          ],
-          "why": "Дома нет резинки: вариант — гантели и скамья или стул."
-        },
-        {
-          "id": "db_reverse_lunge",
-          "score": 62,
-          "kind": "equipment",
-          "canonical": true,
-          "equipment": [
-            "dumbbells"
-          ],
-          "laterality": "unilateral",
-          "laterality_fit": "one_side",
-          "same_group": true,
-          "shared_muscles": [
-            "glutes",
-            "quads"
-          ],
-          "same_primary": [
-            "glutes"
-          ],
-          "why": "Дома нет резинки: вариант — гантели."
-        },
-        {
-          "id": "db_step_up",
-          "score": 62,
-          "kind": "equipment",
-          "canonical": true,
-          "equipment": [
-            "dumbbells",
-            "bench"
-          ],
-          "laterality": "unilateral",
-          "laterality_fit": "one_side",
-          "same_group": true,
-          "shared_muscles": [
-            "glutes",
-            "quads"
-          ],
-          "same_primary": [
-            "glutes"
-          ],
-          "why": "Дома нет резинки: вариант — гантели и скамья или стул."
-        }
-      ]
-    },
-    {
-      "id": "band_pull_apart",
-      "name": "Разведение резинки",
-      "group": "Плечи и шея",
-      "equipment": [
-        "band"
-      ],
-      "laterality": "bilateral",
-      "primary": [
-        "delts_rear"
-      ],
-      "secondary": [
-        "mid_back",
-        "traps"
-      ],
-      "alternatives": [
-        {
-          "id": "db_rear_delt_fly",
-          "score": 66,
-          "kind": "equipment",
-          "canonical": true,
-          "equipment": [
-            "dumbbells"
-          ],
-          "laterality": "bilateral",
-          "laterality_fit": "exact",
-          "same_group": true,
-          "shared_muscles": [
-            "delts_rear",
-            "mid_back",
-            "traps"
-          ],
-          "same_primary": [
-            "delts_rear"
-          ],
-          "why": "Дома нет резинки: вариант — гантели."
-        },
-        {
-          "id": "bw_prone_t_raise",
-          "score": 65,
-          "kind": "equipment",
-          "canonical": true,
-          "equipment": [
-            "bodyweight"
-          ],
-          "laterality": "bilateral",
-          "laterality_fit": "exact",
-          "same_group": true,
-          "shared_muscles": [
-            "delts_rear",
-            "mid_back",
-            "traps"
-          ],
-          "same_primary": [
-            "delts_rear"
-          ],
-          "why": "Дома нет резинки: вариант — свой вес."
-        },
-        {
-          "id": "bw_wall_slides",
-          "score": 40,
-          "kind": "equipment",
-          "canonical": true,
-          "equipment": [
-            "bodyweight"
-          ],
-          "laterality": "bilateral",
-          "laterality_fit": "exact",
-          "same_group": true,
-          "shared_muscles": [
-            "traps",
-            "mid_back"
-          ],
-          "same_primary": [],
-          "why": "Дома нет резинки: вариант — свой вес."
-        }
-      ]
-    },
     {
       "id": "bb_back_squat",
       "name": "Присед со штангой",
@@ -6492,6 +6334,78 @@
             "quads"
           ],
           "why": "Дома нет тренажёрного зала: вариант — гантели."
+        }
+      ]
+    },
+    {
+      "id": "bw_side_lying_hip_abduction",
+      "name": "Отведение ноги лёжа на боку",
+      "group": "Ноги",
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "obliques"
+      ],
+      "alternatives": [
+        {
+          "id": "bw_glute_bridge",
+          "score": 64,
+          "kind": "muscle",
+          "canonical": true,
+          "equipment": [
+            "bodyweight"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Ягодицы без инвентаря."
+        },
+        {
+          "id": "db_lateral_lunge",
+          "score": 60,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "unilateral",
+          "laterality_fit": "exact",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes"
+          ],
+          "same_primary": [],
+          "why": "Боковое движение с гантелью."
+        },
+        {
+          "id": "db_glute_bridge",
+          "score": 58,
+          "kind": "equipment",
+          "canonical": true,
+          "equipment": [
+            "dumbbells"
+          ],
+          "laterality": "bilateral",
+          "laterality_fit": "both_sides",
+          "same_group": true,
+          "shared_muscles": [
+            "glutes"
+          ],
+          "same_primary": [
+            "glutes"
+          ],
+          "why": "Ягодицы с гантелью."
         }
       ]
     }
