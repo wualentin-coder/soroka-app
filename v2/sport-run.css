@@ -104,7 +104,8 @@
 }
 .sport-run .sr-inline { display: grid; gap: 8px; align-content: start; min-height: 0; }
 .sport-run .sr-inline-video {
-  position: relative; width: 100%; aspect-ratio: 4 / 3; border: 1px solid var(--line); border-radius: 22px;
+  /* 4:3 like the camera frame; capped by height so the set controls stay on screen. */
+  position: relative; width: min(100%, calc(46dvh * 4 / 3)); margin-inline: auto; aspect-ratio: 4 / 3; border: 1px solid var(--line); border-radius: 22px;
   background: var(--surface-raised); overflow: hidden; display: grid; place-items: center;
 }
 .sport-run .sr-inline-fallback { display: grid; gap: 2px; justify-items: center; padding: 12px; color: var(--muted); text-align: center; }
@@ -330,8 +331,9 @@ html[data-motion="off"] .sport-run * { animation: none !important; transition: n
     grid-column: 1; grid-row: 1 / span 2; align-self: start; min-height: 0;
   }
   .sport-run .sr-screen[data-phase="work"] .sr-inline-video {
-    width: min(100%, calc((100dvh - 190px) * 4 / 3)); margin-inline: auto;
+    width: min(100%, calc((100dvh - 170px) * 4 / 3)); margin-inline: auto;
   }
+  .sport-run .sr-screen[data-phase="work"] .sr-inline-note { display: none; }
   .sport-run .sr-screen[data-phase="work"] .sr-target { grid-column: 2; grid-row: 1; }
   .sport-run .sr-screen[data-phase="work"] .sr-timer { grid-column: 2; grid-row: 2; }
   .sport-run .sr-screen[data-phase="rest"] .sr-timer {
