@@ -17,7 +17,6 @@ const coachEyesSportKeys = {
   bw_close_grip_pushup: "pushup",
   bw_pushup: "pushup",
   bw_pushup_bars: "pushup",
-  db_floor_press: "press",
   db_shoulder_press: "press",
   bw_squat: "squat",
   db_goblet_squat: "squat",
@@ -288,6 +287,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     plan_not_found: "Тренировка отсутствует в новом плане.",
     plan_version_stale: "Версия плана изменилась. Журнал этой тренировки остался на устройстве.",
     no_offline_plan: "Для первого запуска этого плана нужна сеть.",
+    sharp_pain: "Сегодня отмечена острая боль — тренировка не начинается. Отдохните; при боли и онемении — к врачу.",
     invalid_measurement: "Проверьте значения в полях подхода.",
     measurement_required: "Введите вес, повторы или время подхода.",
     weight_required: "Укажите вес на гантель.",
@@ -378,6 +378,10 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       window.addEventListener("offline", () => this.refresh(), { signal });
       window.addEventListener("resize", () => { if (this.modal?.open) this.syncInline(); }, { signal });
       window.addEventListener("orientationchange", () => { if (this.modal?.open) this.syncInline(); }, { signal });
+      document.addEventListener("scroll", () => {
+        if (!this.modal?.open || !this.inline.shown || this.inline.scrollFrame) return;
+        this.inline.scrollFrame = requestAnimationFrame(() => { this.inline.scrollFrame = 0; this.syncInline(); });
+      }, { signal, capture: true, passive: true });
       window.addEventListener("pageshow", () => this.syncSoon(), { signal });
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) { this.tick(); this.syncSoon(); }
@@ -480,10 +484,13 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     async start(option) {
+      // E13: острая боль, отмеченная сегодня, блокирует старт. Правки дня
+      // (вес, замена, тёплый старт) уже лежат в версии плана на сервере.
+      if (window.SportExtra?.startBlocked?.()) throw error("sharp_pain");
       const sessionId = id();
       const { snapshot, ...args } = await this.resolvePlan(option, sessionId);
       if (!this.modal?.open) return;
-      const localSnapshot = snapshot ? window.SportExtra?.adjustPlan?.(option.key, snapshot) || snapshot : args.manual_workout;
+      const localSnapshot = snapshot || args.manual_workout;
       const made = await this.storage.change(data => {
         const active = data.records[data.active];
         if (active && (!terminal(view(active).projection.phase) || active.start || active.events.length || active.abandon)) return false;
@@ -1160,6 +1167,11 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const ready = record.undo ? Date.now() >= record.undo.until
         : !record.complete && !model.paused && model.deadline != null && model.deadline <= Date.now();
       if (ready && !this.ticking && this.clockFailure !== phaseSignature(model)) {
+        if (!record.undo && model.phase === "work" && this.inline.shown && this.inline.status === "shown") {
+          // The hold measured by the camera arrives as a normal Coach Eyes result
+          // for the set that just ended (rest card), instead of being dropped.
+          this.inlineCall("coachEyesInlineFinish");
+        }
         this.ticking = true;
         this.catchUp().catch(reason => {
           if (invalidDraft(reason)) this.clockFailure = phaseSignature(model);
@@ -1520,10 +1532,14 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     inlineEligible(model = this.model) {
-      if (!this.inlineBridge()) return false;
+      const bridge = this.inlineBridge();
+      if (!bridge) return false;
       const state = typeof spState === "function" ? spState()?.state : null;
       if (!cameraCoachEnabled(state)) return false;
       const key = coachEyesKeyFor(model?.current?.exercise);
+      // App 4.69 draws only the plank inline; 4.70+ exposes coachEyesInlineMove
+      // and runs every exercise. Without it, others keep the normal screen.
+      if (key !== "plank" && typeof bridge.coachEyesInlineMove !== "function") return false;
       return Boolean(key && window.SportInlineCore?.eligible({
         key, phase: model?.phase, paused: model?.paused, hidden: this.inline.hidden,
       }));
@@ -1532,14 +1548,16 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     inlinePanel(model) {
       if (!this.inlineEligible(model) || this.inline.hidden) return "";
       const exercise = model.current.exercise;
+      const key = coachEyesKeyFor(exercise);
+      const what = window.SportInlineCore?.timed?.(key) ? "Время удержания считает камера" : "Повторы считает камера";
       const video = `<div class="sr-inline-video" data-sr-inline-video><div class="sr-inline-fallback">
-        <span>Тренер по камере</span><b>${esc(exercise.name)}</b><small>Планка · панель 4:3</small></div></div>`;
+        <span>Тренер по камере</span><b>${esc(exercise.name)}</b><small>${what}</small></div></div>`;
       const bar = `<div class="sr-inline-bar"><span>${esc(exercise.name)}</span>
         ${this.inline.expanded
           ? control("inline-collapse", "Свернуть", "ghost-button sr-inline-button")
           : control("inline-expand", "Развернуть", "ghost-button sr-inline-button")}
         ${control("inline-hide", "Скрыть", "ghost-button sr-inline-button")}</div>
-        <p class="sr-inline-note">Подход завершится кнопкой ниже. Результат подтверждаете вы.</p>`;
+        <p class="sr-inline-note">${window.SportInlineCore?.timed?.(key) ? "Подход закончится по таймеру или кнопкой ниже." : "Закончите подход кнопкой ниже."} Результат подтверждаете вы.</p>`;
       if (this.inline.status === "finishing") {
         return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="status">
           <b>Завершаем подход…</b><p>Ждём результат камеры.</p>
@@ -1630,18 +1648,29 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       this.inlineConfigure(true);
       const target = this.modal?.querySelector("[data-sr-inline-video]");
       if (!target) return;
-      const rect = window.SportInlineCore?.rect(target.getBoundingClientRect());
+      const scroller = target.closest(".sr-body") || this.modal;
+      const outer = this.modal.getBoundingClientRect(), inner = scroller.getBoundingClientRect();
+      const top = Math.max(outer.top, inner.top), left = Math.max(outer.left, inner.left);
+      const area = { left, top, width: Math.min(outer.right, inner.right) - left, height: Math.min(outer.bottom, inner.bottom) - top };
+      const rect = window.SportInlineCore?.rect(target.getBoundingClientRect(), area);
       if (!rect) return;
       const key = coachEyesKeyFor(model.current?.exercise);
       const sportId = model.current.exercise.exercise_id || "";
       const set = String(model.current.set_index ?? "");
       if (!key) return;
-      const signature = `${key}|${sportId}|${set}|${rect.x},${rect.y},${rect.width},${rect.height}`;
+      const place = `${rect.x},${rect.y},${rect.width},${rect.height},${rect.cy ?? ""},${rect.ch ?? ""}`;
+      const signature = `${key}|${sportId}|${set}|${place}`;
       if (this.inline.shown && signature === this.inline.signature) return;
       if (this.inline.shown && !this.inline.signature) { this.inline.signature = signature; return; }
-      if (this.inline.shown) this.hideInline();
       const api = this.inlineBridge();
       if (!api) return;
+      if (this.inline.shown && window.SportInlineCore?.sameSet?.(this.inline, { key, sportId, set })
+        && typeof api.coachEyesInlineMove === "function") {
+        let moved = false;
+        try { moved = api.coachEyesInlineMove(JSON.stringify(rect)) !== false; } catch (_) { moved = false; }
+        if (moved) { this.inline.signature = signature; return; }
+      }
+      if (this.inline.shown) this.hideInline();
       let reply;
       try { reply = api.coachEyesInlineShow(JSON.stringify(rect), key, sportId); }
       catch (error) {
@@ -2022,7 +2051,10 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           if (pain) latest.cameraFeedback = { ...(latest.cameraFeedback ?? {}), pain: true };
           return true;
         });
-        if (match.kind === "work") await this.issue({ type: "done" }, { recordId: this.recordId });
+        // The clock may have closed the set meanwhile (timed hold): then the
+        // result only fills the rest card, a second "done" would be invalid.
+        const still = this.model?.phase === "work" && keyOf(this.model.current) === match.key;
+        if (match.kind === "work" && still) await this.issue({ type: "done" }, { recordId: this.recordId });
         this.refresh(true);
         if (feedback) this.cameraFeedback(match, pain);
         else requestAnimationFrame(() => this.modal?.querySelector('[data-sr="step"][data-field="reps"], [data-sr="step"][data-field="seconds"]')?.focus({ preventScroll: true }));
