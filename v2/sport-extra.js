@@ -87,11 +87,10 @@
     const readiness = [1, 2, 3, 4, 5].map((n) => `<button type="button" data-action="sp2-ar-ready" data-value="${n}" aria-pressed="${a.readiness === n}" aria-label="Готовность ${n} из 5">${n}</button>`).join("");
     const rir = [[0, "0", "RPE 10"], [1, "1", "RPE 9"], [2, "2", "RPE 8"], [3, "3+", "RPE ≤7"]]
       .map(([value, label, rpe]) => `<button type="button" data-action="sp2-ar-rir" data-value="${value}" aria-pressed="${(a.rir ?? 2) === value}"><b>${label}</b><span>${rpe}</span></button>`).join("");
-    const goal = applied ? applied
-      : rec.kind === "stop" ? `<div class="sp2-ex-stop" role="alert">${icon("flag")}<div><b>Стоп · отдых</b><span>Острая боль. Тренировку не начинай; при боли и онемении — к врачу.</span></div></div>`
-        : `<div class="sp2-ex-value"><span class="was">${rec.from != null ? `${rec.from} кг` : rec.kg > 0 ? `${rec.kg} кг` : "свой вес"}</span>${rec.canApply ? `<i>${icon("right")}</i><b>${rec.kg > 0 ? `${rec.kg} кг` : "свой вес"}</b>` : `<span class="delta">${rec.kind === "hold" ? "без роста" : "без изменений"}</span>`}</div>
+    const goal = rec.kind === "stop" ? `<div class="sp2-ex-stop" role="alert">${icon("flag")}<div><b>Стоп · отдых</b><span>Острая боль. Тренировку не начинай; при боли и онемении — к врачу.</span></div></div>`
+      : `<div class="sp2-ex-value"><span class="was">${rec.from != null ? `${rec.from} кг` : rec.kg > 0 ? `${rec.kg} кг` : "свой вес"}</span>${rec.canApply ? `<i>${icon("right")}</i><b>${rec.kg > 0 ? `${rec.kg} кг` : "свой вес"}</b>` : `<span class="delta">${rec.kind === "hold" ? "без роста" : "без изменений"}</span>`}</div>
           <p class="sp2-ex-meta">${esc(rec.reason)} · подходы ${rec.sets}${rec.canApply ? " · " + esc(rec.note) : ""}</p>
-          ${rec.canApply ? `<button class="primary-button sp2-ex-apply" type="button" data-action="sp2-ar-apply">Применить</button>` : ""}`;
+          ${rec.canApply && !applied ? `<button class="primary-button sp2-ex-apply" type="button" data-action="sp2-ar-apply">Применить</button>` : ""}`;
     const appliedNote = applied ? `<div class="sp2-ex-ok">${icon("check")}План на сегодня обновлён <button type="button" class="text-action" data-action="sp2-ar-undo">Вернуть</button></div>` : "";
     return `<section class="sp2-ex">
       <section class="sp2-ex-card"><div class="sp2-ex-head"><h2>Как вы сегодня</h2><span class="sp2-ex-pill ${a.readiness && a.readiness <= 2 ? "warn" : ""}">${a.readiness ? `${a.readiness}/5` : "—"}</span></div>
