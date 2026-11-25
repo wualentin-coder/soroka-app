@@ -67,7 +67,7 @@
     return run;
   }
 
-  /** E11b: ask the server what is missed, shift the tail once, then refresh. */
+  /** E11b: a missed workout moves to today, the rest of the plan follows it; then refresh. */
   async function reschedule(list) {
     const plan = list[0];
     if (!plan?.id || !navigator.onLine) return null;
@@ -100,11 +100,14 @@
     if (!data || data.ok !== true) return "";
     let text = "";
     if (data.shifted && data.days > 0) {
-      text = `Программа сдвинута на ${data.days} дн. · пропущено ${data.missed}`;
+      const title = data.missed_keys?.[0]?.title || data.next?.title;
+      text = data.missed > 1
+        ? `Пропущено ${data.missed} тренировки · первая перенесена на сегодня, план сдвинут на ${data.days} дн.`
+        : `${title ? "«" + title + "»" : "Пропущенная тренировка"} перенесена на сегодня · план сдвинут на ${data.days} дн.`;
     } else if (data.blocked === "consecutive") {
       text = `${data.missed} пропуска подряд · автоперенос остановлен. Можно сдвинуть всё вручную или собрать программу заново.`;
     } else if (data.blocked === "limit") {
-      text = `Программа отстала на ${data.missed} дн. · лимит автопереноса 14 дней за 30. Можно сдвинуть всё вручную.`;
+      text = `Программа отстала на ${data.lag_days ?? data.missed} дн. · лимит автопереноса 14 дней за 30. Можно сдвинуть всё вручную.`;
     } else if (data.blocked === "ended") {
       text = `Пропущено ${data.missed} занятий, но будущих дат в программе больше нет.`;
     } else if (data.missed > 0) {
