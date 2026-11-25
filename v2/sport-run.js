@@ -352,6 +352,10 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       this.interruption = null;
       this.camera = null;
       this.cameraDialog = null;
+      this.inline = {
+        shown: false, hidden: false, status: "idle", signature: "", key: "", sportId: "",
+        hiddenKey: "", timer: null, reason: "",
+      };
       this.message = "";
       this.retryTimer = null;
       this.interval = null;
@@ -368,6 +372,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       }, { signal });
       window.addEventListener("online", () => { this.syncSoon(); this.refresh(); }, { signal });
       window.addEventListener("offline", () => this.refresh(), { signal });
+      window.addEventListener("resize", () => { if (this.modal?.open) this.syncInline(); }, { signal });
+      window.addEventListener("orientationchange", () => { if (this.modal?.open) this.syncInline(); }, { signal });
       window.addEventListener("pageshow", () => this.syncSoon(), { signal });
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) { this.tick(); this.syncSoon(); }
@@ -559,6 +565,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     close() {
       setSportRotation(false);
+      this.hideInline();
       this.modal?.close();
       this.modal?.remove();
       this.modal = null;
@@ -1334,10 +1341,11 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           : esc(e.reps || e.target || "");
       const goal = e.mode === "timed" ? `<b aria-label="На время">${glyph("clock")}</b>` : load && e.reps ? `<b>${esc(e.reps)}</b><small>повторов</small>`
         : e.bodyweight ? "<b>свой вес</b>" : "";
-      return `${this.head(model)}<div class="sr-body">
-        <div class="sr-media" data-sr-swipe><div class="sr-no-media">${technique(e, true)}<div data-sr-figure="current"></div></div>
+      const inline = this.inlinePanel(model);
+      const media = inline || `<div class="sr-media" data-sr-swipe><div class="sr-no-media">${technique(e, true)}<div data-sr-figure="current"></div></div>
           ${control("tech", "", "sr-media-tap", 'aria-label="Техника и мышцы"')}
-          <span class="sr-flash" aria-hidden="true"><i>${glyph("check")}</i></span>${this.swipeHint("Пропустить упражнение")}</div>
+          <span class="sr-flash" aria-hidden="true"><i>${glyph("check")}</i></span>${this.swipeHint("Пропустить упражнение")}</div>`;
+      return `${this.head(model)}<div class="sr-body">${media}
         <div class="sr-target" data-sr-swipe><div><span aria-label="Подход ${current.set_index} из ${e.sets}">Подход ${current.set_index} / ${e.sets}</span><strong>${primary}</strong></div>
           <div class="sr-goal">${goal}</div></div>${this.timer(model)}</div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("done", e.mode === "timed" ? "Закончить раньше" : "Подход выполнен", e.mode === "timed" ? "ghost-button" : "primary-button")}</footer>`;
@@ -1458,6 +1466,147 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         <p class="sr-muted">Мост к Coach Eyes в этой сборке недоступен — откройте приложение вручную.</p>`);
     }
 
+    inlineEligible(model = this.model) {
+      if (typeof window.SorokaAndroid?.showCoachEyesInline !== "function") return false;
+      const key = coachEyesKeyFor(model?.current?.exercise);
+      return Boolean(key && window.SportInlineCore?.eligible({
+        key, phase: model?.phase, paused: model?.paused, hidden: this.inline.hidden,
+      }));
+    }
+
+    inlinePanel(model) {
+      if (!this.inlineEligible(model) || this.inline.hidden) return "";
+      const exercise = model.current.exercise;
+      const video = `<div class="sr-inline-video" data-sr-inline-video><div class="sr-inline-fallback">
+        <span>Тренер по камере</span><b>${esc(exercise.name)}</b><small>Планка · панель 4:3</small></div></div>`;
+      const bar = `<div class="sr-inline-bar"><span>${esc(exercise.name)}</span>
+        ${control("inline-expand", "Развернуть", "ghost-button sr-inline-button")}
+        ${control("inline-hide", "Скрыть", "ghost-button sr-inline-button")}</div>
+        <p class="sr-inline-note">Подход завершится кнопкой ниже. Результат подтверждаете вы.</p>`;
+      if (this.inline.status === "finishing") {
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="status">
+          <b>Завершаем подход…</b><p>Ждём результат камеры.</p>
+          <div class="sr-inline-actions">${control("inline-manual", "Ввести вручную", "ghost-button")}</div></div></section>`;
+      }
+      if (this.inline.status === "timeout") {
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="alert">
+          <b>Камера не вернула результат</b><p>Можно повторить или записать подход вручную.</p>
+          <div class="sr-inline-actions">${control("inline-retry", "Повторить", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
+      }
+      if (this.inline.status === "denied" || this.inline.status === "unavailable") {
+        const text = this.inline.status === "denied"
+          ? "Камера недоступна: нет разрешения или она занята." : "Inline-камера недоступна в этой сборке.";
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="alert">
+          <b>${text}</b><p>Откройте настройки и разрешите камеру или введите подход вручную.</p>
+          <div class="sr-inline-actions">${control("inline-settings", "Настройки", "ghost-button")}${control("inline-retry", "Повторить", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
+      }
+      return `<section class="sr-inline" data-sr-inline>${video}${bar}</section>`;
+    }
+
+    hideInline() {
+      const api = window.SorokaAndroid;
+      if (this.inline.shown && typeof api?.hideCoachEyesInline === "function") {
+        try { api.hideCoachEyesInline(); } catch (_) {}
+      }
+      this.inline.shown = false;
+      this.inline.signature = "";
+      if (this.inline.status === "shown") this.inline.status = "idle";
+      if (this.inline.status === "finishing") {
+        clearTimeout(this.inline.timer);
+        this.inline.timer = null;
+        this.inline.status = "idle";
+      }
+    }
+
+    syncInline() {
+      const model = this.model;
+      if (!model || this.conflict) { this.hideInline(); return; }
+      const key = coachEyesKeyFor(model.current?.exercise);
+      if (this.inline.hidden) {
+        if (this.inline.hiddenKey && key && this.inline.hiddenKey !== key) {
+          this.inline.hidden = false;
+          this.inline.hiddenKey = "";
+          this.inline.status = "idle";
+          queueMicrotask(() => this.render(true));
+          return;
+        }
+        this.hideInline();
+        return;
+      }
+      if (!this.inlineEligible(model)) { this.hideInline(); return; }
+      if (["denied", "unavailable", "timeout", "finishing"].includes(this.inline.status)) return;
+      const target = this.modal?.querySelector("[data-sr-inline-video]");
+      if (!target) return;
+      const rect = window.SportInlineCore?.rect(target.getBoundingClientRect());
+      if (!rect) return;
+      const sportId = model.current.exercise.exercise_id || "";
+      const signature = `${key}|${sportId}|${model.current.set_index}|${rect.x},${rect.y},${rect.width},${rect.height}`;
+      if (this.inline.shown && signature === this.inline.signature) return;
+      if (this.inline.shown) this.hideInline();
+      const api = window.SorokaAndroid;
+      if (typeof api?.showCoachEyesInline !== "function") {
+        this.inline.status = "unavailable";
+        queueMicrotask(() => this.render(true));
+        return;
+      }
+      try {
+        const reply = api.showCoachEyesInline(rect, key, sportId);
+        if (reply === false || reply?.ok === false) {
+          this.inline.status = "denied";
+          this.inline.reason = String(reply?.reason || "");
+          queueMicrotask(() => this.render(true));
+          return;
+        }
+        this.inline.shown = true;
+        this.inline.status = "shown";
+        this.inline.signature = signature;
+        this.inline.key = key;
+        this.inline.sportId = sportId;
+      } catch (_) {
+        this.inline.status = "denied";
+        queueMicrotask(() => this.render(true));
+      }
+    }
+
+    finishInline() {
+      if (this.inline.status === "finishing") return;
+      const api = window.SorokaAndroid;
+      if (typeof api?.finishCoachEyesInline !== "function") { void this.issue({ type: "done" }); return; }
+      this.inline.status = "finishing";
+      this.render(true);
+      try {
+        const reply = api.finishCoachEyesInline();
+        if (reply && reply.schema === "coach-eyes.workout") { window.SportCoachEyes?.receive?.(reply); return; }
+        if (reply === false || reply?.ok === false) {
+          this.inline.status = "timeout";
+          this.render(true);
+          return;
+        }
+      } catch (_) {
+        this.inline.status = "timeout";
+        this.render(true);
+        return;
+      }
+      clearTimeout(this.inline.timer);
+      this.inline.timer = setTimeout(() => {
+        if (this.inline.status === "finishing") {
+          this.inline.status = "timeout";
+          this.render(true);
+        }
+      }, 6000);
+    }
+
+    inlineSettings() {
+      const api = window.SorokaAndroid;
+      for (const name of ["openCoachEyesSettings", "openAppSettings", "openSettings"]) {
+        if (typeof api?.[name] === "function") {
+          try { api[name](); return; } catch (_) {}
+        }
+      }
+      this.message = "Разрешите камеру в настройках приложения.";
+      this.refresh(true);
+    }
+
     cameraExercises() {
       const record = this.read();
       if (!record) return [];
@@ -1535,6 +1684,12 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const state = typeof spState === "function" ? spState()?.state : null;
       if (!cameraCoachEnabled(state)) return;
       const match = this.cameraMatch(payload);
+      if (match) {
+        clearTimeout(this.inline.timer);
+        this.inline.timer = null;
+        this.inline.status = "idle";
+        this.hideInline();
+      }
       if (!match) {
         if (this.model && this.cameraExercises().length) this.cameraChooseSheet(payload, null);
         else this.cameraNoActive(payload, "Нет активной тренировки. Результат не записан.");
@@ -1556,15 +1711,18 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         <p>${esc(dose)}${esc(score)}</p>
         ${match.set.topError ? `<p class="sr-muted">${esc(match.set.topError)}</p>` : ""}
         <p class="sr-muted">В заметку: ${esc(match.noteBase)}</p>
+        <label class="sp-toggle"><input type="checkbox" data-camera-pain><span></span>Было больно</label>
         <div class="sr-actions"><button type="button" class="primary-button" data-camera-apply>Применить</button>
         <button type="button" class="ghost-button" data-camera-fix>Исправить</button></div>`);
       dialog.addEventListener("click", event => {
-        if (event.target.closest("[data-camera-apply]")) void this.applyCamera(match, true);
-        else if (event.target.closest("[data-camera-fix]")) void this.applyCamera(match, false);
+        if (event.target.closest("[data-camera-apply]")) {
+          const pain = Boolean(dialog.querySelector("[data-camera-pain]")?.checked);
+          void this.applyCamera(match, true, pain);
+        } else if (event.target.closest("[data-camera-fix]")) void this.applyCamera(match, false);
       });
     }
 
-    async applyCamera(match, feedback) {
+    async applyCamera(match, feedback, pain = false) {
       const record = this.read();
       if (!record) return;
       const draft = {};
@@ -1574,7 +1732,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         draft.reps = Number(match.set.reps);
       }
       const live = view(record).projection.sets.find(row => keyOf(row) === match.key);
-      const note = [live?.note, match.noteBase].filter(Boolean).join("; ").slice(0, 1000);
+      const note = [live?.note, match.noteBase, pain ? "боль: да" : ""].filter(Boolean).join("; ").slice(0, 1000);
       this.closeCameraDialog();
       try {
         await this.storage.change(data => {
@@ -1583,23 +1741,24 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           latest.drafts[match.key] = { ...(latest.drafts[match.key] ?? {}), ...draft };
           this.append(latest, [{ type: "note_added", plan_exercise_id: match.target.plan_exercise_id,
             set_index: match.target.set_index, payload: { note } }], Date.now());
+          if (pain) latest.cameraFeedback = { ...(latest.cameraFeedback ?? {}), pain: true };
           return true;
         });
         if (match.kind === "work") await this.issue({ type: "done" }, { recordId: this.recordId });
         this.refresh(true);
-        if (feedback) this.cameraFeedback(match);
+        if (feedback) this.cameraFeedback(match, pain);
         else requestAnimationFrame(() => this.modal?.querySelector('[data-sr="step"][data-field="reps"], [data-sr="step"][data-field="seconds"]')?.focus({ preventScroll: true }));
       } catch (reason) { this.fail(reason); }
     }
 
-    cameraFeedback(match) {
+    cameraFeedback(match, pain = false) {
       let feel = "normal";
       const dialog = this.cameraBox("Как прошло?", `<p>Оцените подход, чтобы тренер учёл это в анализе.</p>
         <div class="sr-actions">${["easy", "normal", "hard"].map(value =>
           `<button type="button" class="ghost-button" data-camera-feel="${value}" aria-pressed="${value === feel}">${
             value === "easy" ? "Легко" : value === "normal" ? "Нормально" : "Тяжело"}</button>`).join("")}</div>
         <label class="field">Заметка<textarea data-camera-note maxlength="300" rows="2" placeholder="Что заметили?"></textarea></label>
-        <label class="sp-toggle"><input type="checkbox" data-camera-pain><span></span>Было больно</label>
+        <label class="sp-toggle"><input type="checkbox" data-camera-pain ${pain ? "checked" : ""}><span></span>Было больно</label>
         <div class="sr-actions"><button type="button" class="primary-button" data-camera-save>Сохранить</button>
         <button type="button" class="ghost-button" data-camera-skip>Пропустить</button></div>`);
       dialog.querySelectorAll("[data-camera-feel]").forEach(button => {
@@ -1835,6 +1994,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       if (model && !this.conflict) this.paintDraft(model, record);
       if (model) this.paintClock(model);
       if (model && !this.conflict) this.paintLoadout(model);
+      if (model && !this.conflict && !record?.abandon) this.syncInline();
+      else this.hideInline();
     }
 
     fillFigures() {
@@ -1876,6 +2037,29 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       this.message = "";
       try {
         if (action === "camera-coach") { this.openCameraCoach(); return; }
+        if (action === "inline-expand") { this.hideInline(); this.openCameraCoach(); return; }
+        if (action === "inline-hide") {
+          this.inline.hidden = true;
+          this.inline.hiddenKey = coachEyesKeyFor(this.model?.current?.exercise) || "";
+          this.hideInline();
+          this.render(true);
+          return;
+        }
+        if (action === "inline-manual") {
+          this.inline.hidden = true;
+          this.inline.hiddenKey = coachEyesKeyFor(this.model?.current?.exercise) || "";
+          this.hideInline();
+          this.render(true);
+          return;
+        }
+        if (action === "inline-retry") {
+          this.inline.status = "idle";
+          this.inline.shown = false;
+          this.inline.reason = "";
+          this.render(true);
+          return;
+        }
+        if (action === "inline-settings") { this.inlineSettings(); return; }
         if (action === "retry") { const { option, trigger } = this; this.close(); await this.open(option, trigger); return; }
         if (action === "retry-sync") { await this.retrySync(); return; }
         if (action === "conflict-continue" || action === "conflict-finish") {
@@ -1899,6 +2083,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           if (action === "open-history") await H().open(this.recordId, this.modal.querySelector('[data-sr="open-history"]'));
           return;
         }
+        if (action === "done" && ["shown", "finishing"].includes(this.inline.status)) { this.finishInline(); return; }
         if (action === "ask-abandon") {
           if (record.id !== this.recordId || record.complete || terminal(model.projection.phase)) return;
           this.confirmId = record.id;
