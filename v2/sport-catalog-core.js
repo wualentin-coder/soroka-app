@@ -50,7 +50,8 @@
   }
 
   function normalize(seed) {
-    return (seed?.exercises || []).map((e) => {
+    // Merged/deprecated exercises stay for history but are not offered (no band, 26.11).
+    return (seed?.exercises || []).filter((e) => !e.status || e.status === "active").map((e) => {
       const ru = (e.instructions || []).find((item) => item.lang === "ru");
       const equipment = [...new Set([...(e.equipment?.all_of || []), ...(e.equipment?.any_of || [])])]
         .filter((id) => EQUIPMENT[id])
