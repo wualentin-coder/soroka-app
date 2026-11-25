@@ -260,7 +260,8 @@
       (job.status === "proposed" ? btn("confirm", "Применить", "primary-button") : "") +
       (job.status === "published" && job.current_version === job.published_version ? btn("undo", "Отменить") : "") +
       (job.summary || (job.items || []).length || (job.changes || []).length ? btn("why", "Почему", "text-action") : "") +
-      btn("history", "История изменений", "text-action") + "</div>";
+      btn("history", "История изменений", "text-action") + "</div>" +
+      (["proposed", "published", "insufficient"].includes(job.status) ? window.SportTips?.afterSession(job, SP().todayKey()) || "" : "");
   }
 
   function settingsHtml(entry, key) {
@@ -612,5 +613,5 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { records.delete("latest"); loadPlans(true); } refresh(); });
   window.addEventListener("online", () => { invalidate(); loadPlans(true); });
   window.SportCoach = { slot, invalidate, overlay, loadPlans };
-  window.SportSchedule = { banner: scheduleBanner, force: forceSchedule };
+  window.SportSchedule = { banner: scheduleBanner, force: forceSchedule, state: () => scheduleState };
 })();
