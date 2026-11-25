@@ -3,7 +3,7 @@
   "exercises": [
     {
       "id": "band_lateral_walk",
-      "status": "active",
+      "status": "merged",
       "names": {
         "en": "Banded lateral walk",
         "ru": "Боковые шаги с резинкой"
@@ -66,11 +66,12 @@
           "license": "own",
           "source_id": ""
         }
-      ]
+      ],
+      "merged_into": "bw_side_lying_hip_abduction"
     },
     {
       "id": "band_pull_apart",
-      "status": "active",
+      "status": "merged",
       "names": {
         "en": "Band pull-apart",
         "ru": "Разведение резинки"
@@ -133,7 +134,8 @@
           "license": "own",
           "source_id": ""
         }
-      ]
+      ],
+      "merged_into": "db_rear_delt_fly"
     },
     {
       "id": "bb_back_squat",
@@ -6563,6 +6565,78 @@
             "names",
             "instructions"
           ]
+        }
+      ]
+    },
+    {
+      "id": "bw_side_lying_hip_abduction",
+      "status": "active",
+      "names": {
+        "en": "Side-lying hip abduction",
+        "ru": "Отведение ноги лёжа на боку"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Отведение бедра лёжа"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на бок, нижнюю ногу согните, верхнюю выпрямите на одной линии с корпусом.",
+            "Поднимите верхнюю ногу вверх и чуть назад, носок смотрит вперёд.",
+            "Задержитесь на секунду вверху и медленно опустите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Заваливать таз назад и поднимать ногу вперёд. Таз стоит ровно, нога идёт чуть назад."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "obliques"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "db_lateral_lunge",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
         }
       ]
     }
