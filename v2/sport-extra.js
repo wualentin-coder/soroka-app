@@ -206,7 +206,8 @@
       if (!entry?.option) return;
       const swap = { optionKey: entry.option.key, date: entry.option.date, slot: entry.exercise?.id || null,
         id: control.dataset.id, name: control.dataset.name, why: control.dataset.why || "" };
-      spUpdate((prev) => ({ ...prev, sport2Flex: { ...(prev.sport2Flex || {}), ...swap } }))
+      spUpdate((prev) => ({ ...prev, sport2Flex: { ...(prev.sport2Flex || {}),
+        optionKey: entry.option.key, date: entry.option.date, swap } }))
         .then(() => toast(`Замена · ${swap.name}`)).catch(() => toast("Не сохранилось — проверьте связь"));
       spClose();
     },
