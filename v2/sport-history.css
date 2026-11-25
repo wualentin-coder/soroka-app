@@ -163,7 +163,7 @@
 .sport-run .sh-set[open] .sh-fields { padding: 4px 14px 14px; }
 .sport-run .sh-set[open] .sh-fields :is(input, select, textarea) { background: var(--surface); }
 
-/* История 6: вывод, плитки, график, плато. Только подтверждённые подходы. */
+/* пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 6: пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. */
 .sh-stats { display: grid; gap: 10px; }
 .sh-verdict {
   display: grid;
@@ -250,7 +250,7 @@
   .sh-stats * { transition: none !important; animation: none !important; }
 }
 
-/* E9 tails: таблица графика и версии плана. */
+/* E9 tails: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ. */
 .sh-chart-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
 .sh-table-btn {
   min-height: 36px;
@@ -288,3 +288,10 @@ button.sh-plan-row .icon { width: 14px; height: 14px; }
 .sh-version-row span { font-size: 13px; }
 .sh-version-row small { color: var(--muted); font-size: 11.5px; }
 @media (max-width: 360px) { .sh-chart-tools { justify-content: space-between; } }
+
+/* E9: РїСѓСЃС‚Р°СЏ РёСЃС‚РѕСЂРёСЏ вЂ” С‡РµСЃС‚РЅРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ, РЅРµ В«РЅРµС‚ РґР°РЅРЅС‹С…В». */
+.sh-empty-history { display: grid; justify-items: center; gap: 8px; padding: 34px 18px; border: 1px dashed var(--line); border-radius: 22px; text-align: center; }
+.sh-empty-mark { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.sh-empty-mark .icon { width: 24px; height: 24px; }
+.sh-empty-history h2 { margin: 2px 0 0; font-family: var(--display); font-size: 27px; font-weight: 500; }
+.sh-empty-history p { max-width: 42ch; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
