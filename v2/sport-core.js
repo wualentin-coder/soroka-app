@@ -23,9 +23,12 @@ var SportCore = (() => {
   var core_exports = {};
   __export(core_exports, {
     BASELINE_WINDOWS: () => BASELINE_WINDOWS,
+    COACH_CARDS: () => COACH_CARDS,
+    COACH_SOURCES: () => COACH_SOURCES,
     Countdown: () => Countdown,
     DAY_START_HOUR: () => DAY_START_HOUR,
     DEFAULT_NOTIFICATIONS: () => DEFAULT_NOTIFICATIONS,
+    DELOAD_EVERY: () => DELOAD_EVERY,
     DEMO_PLAN_DAYS: () => DEMO_PLAN_DAYS,
     DEMO_PROGRAM_DAY: () => DEMO_PROGRAM_DAY,
     EQUIPMENT: () => EQUIPMENT,
@@ -49,6 +52,7 @@ var SportCore = (() => {
     MUSCLE_IDS: () => MUSCLE_IDS,
     MUSCLE_PARTS: () => MUSCLE_PARTS,
     MUSCLE_SELECTION_GROUPS: () => MUSCLE_SELECTION_GROUPS,
+    POSTURE_IDS: () => POSTURE_IDS,
     PREP_SECONDS: () => PREP_SECONDS,
     PROFILE_FIELDS: () => PROFILE_FIELDS,
     REQUIRED_LABELS: () => REQUIRED_LABELS,
@@ -60,6 +64,7 @@ var SportCore = (() => {
     SPORT2_EXPERIENCE: () => SPORT2_EXPERIENCE,
     SPORT2_GOALS: () => SPORT2_GOALS,
     SPORT2_LIMITS: () => SPORT2_LIMITS,
+    SPORT2_LIMIT_PATTERNS: () => SPORT2_LIMIT_PATTERNS,
     STRETCHING_RULES: () => STRETCHING_RULES,
     TRAINING_PLACES: () => TRAINING_PLACES,
     TRAINING_RULES: () => TRAINING_RULES,
@@ -136,6 +141,7 @@ var SportCore = (() => {
     holdSecondsFor: () => holdSecondsFor,
     inventoryLite: () => inventoryLite,
     isBodyweight: () => isBodyweight,
+    isDeloadWeek: () => isDeloadWeek,
     isFavorite: () => isFavorite,
     isMorningEvening: () => isMorningEvening,
     isMuscleId: () => isMuscleId,
@@ -172,6 +178,7 @@ var SportCore = (() => {
     parsePlan: () => parsePlan,
     parseUniqueJson: () => parseUniqueJson,
     phaseSound: () => phaseSound,
+    pickCoachTip: () => pickCoachTip,
     playFinish: () => playFinish,
     playStart: () => playStart,
     playTick: () => playTick,
@@ -205,6 +212,7 @@ var SportCore = (() => {
     scheduledWorkoutDate: () => scheduledWorkoutDate,
     selectWorkoutLoad: () => selectWorkoutLoad,
     selectedOption: () => selectedOption,
+    sessionTrigger: () => sessionTrigger,
     setCalendarTimeZone: () => setCalendarTimeZone,
     setOptionExercise: () => setOptionExercise,
     setTimerIdentity: () => setTimerIdentity,
@@ -213,8 +221,10 @@ var SportCore = (() => {
     shoeSizeRu: () => shoeSizeRu,
     shouldAskWakeTime: () => shouldAskWakeTime,
     sizingMeasurements: () => sizingMeasurements,
+    sport2AnalysisProfile: () => sport2AnalysisProfile,
     sport2ContextProfile: () => sport2ContextProfile,
     sport2EquipmentText: () => sport2EquipmentText,
+    sport2LimitBlocks: () => sport2LimitBlocks,
     sport2ProfileSummary: () => sport2ProfileSummary,
     sportAchievable: () => achievable,
     sportDumbbellConfigurations: () => configurations,
@@ -595,10 +605,10 @@ var SportCore = (() => {
   function habitStart(marks = {}, since) {
     return since ?? Object.keys(marks).sort()[0];
   }
-  function habitDays(marks = {}, days, endDate, total = 1, since) {
+  function habitDays(marks = {}, days2, endDate, total = 1, since) {
     const began = habitStart(marks, since);
-    return Array.from({ length: days }, (_, index) => {
-      const date2 = offsetDay(endDate, index - (days - 1));
+    return Array.from({ length: days2 }, (_, index) => {
+      const date2 = offsetDay(endDate, index - (days2 - 1));
       if (!began || date2 < began) return { date: date2, state: "outside" };
       const done = habitDone(marks[date2], total);
       const state = done >= total ? "done" : date2 === endDate ? "pending" : done > 0 ? "partial" : "missed";
@@ -660,11 +670,11 @@ var SportCore = (() => {
   function counterStart(counter) {
     return [(counter.since ?? counter.startedAt).slice(0, 10), ...Object.keys(counter.relapses ?? {})].sort()[0];
   }
-  function counterDays(counter, days, endDate) {
+  function counterDays(counter, days2, endDate) {
     const relapses = counter.relapses ?? {};
     const began = counterStart(counter);
-    return Array.from({ length: days }, (_, index) => {
-      const date2 = offsetDay(endDate, index - (days - 1));
+    return Array.from({ length: days2 }, (_, index) => {
+      const date2 = offsetDay(endDate, index - (days2 - 1));
       const slips = relapses[date2] ?? 0;
       const state = slips > 0 ? "relapse" : date2 < began ? "outside" : "clean";
       return { date: date2, state, relapses: slips };
@@ -1053,9 +1063,9 @@ var SportCore = (() => {
 
   // sport/core/src/calendarProgress.ts
   function calendarPlans(planDays, routine) {
-    const days = [...new Set(planDays.map((plan) => plan.day_number))];
+    const days2 = [...new Set(planDays.map((plan) => plan.day_number))];
     const plans = /* @__PURE__ */ new Map();
-    for (const day of days) {
+    for (const day of days2) {
       const rows = planDays.filter((plan2) => plan2.day_number === day);
       const plan = routine === "main" ? mergeMainAndPosture(rows) : rows.find((row) => row.routine_type === "splits");
       if (plan) plans.set(day, plan);
@@ -1195,8 +1205,8 @@ var SportCore = (() => {
     if (!place) return null;
     if (place.where === "home") return "Занятия проходят дома, зала нет";
     if (place.where === "gym") return "Каждое занятие проходит в зале";
-    const days = (place.gymDays ?? []).filter((day) => day >= 1 && day <= 7).sort((a, b) => a - b);
-    return days.length ? `Часть дней в зале, часть дома. Дни в зале: ${days.map((day) => WEEKDAYS[day - 1]).join(", ")}; в остальные дни — только домашний инвентарь` : "Часть дней в зале, часть дома; какие именно дни — не указано, спроси";
+    const days2 = (place.gymDays ?? []).filter((day) => day >= 1 && day <= 7).sort((a, b) => a - b);
+    return days2.length ? `Часть дней в зале, часть дома. Дни в зале: ${days2.map((day) => WEEKDAYS[day - 1]).join(", ")}; в остальные дни — только домашний инвентарь` : "Часть дней в зале, часть дома; какие именно дни — не указано, спроси";
   }
   var MAX_EQUIPMENT_KG = 500;
   function equipmentOf(state) {
@@ -1511,6 +1521,37 @@ var SportCore = (() => {
     if (summary.equipment) result2["Инвентарь"] = summary.equipment;
     if (profile.limits.length) result2["Ограничения"] = summary.limits;
     return result2;
+  }
+  var SPORT2_LIMIT_PATTERNS = {
+    shoulder: [/жим[^,.;]{0,24}(сидя|над головой|стоя)/i, /арнольд/i, /тяга к лицу/i, /face pull/i, /shoulder_press/i, /overhead_press/i],
+    back: [/станов(ая|ую|ой)/i, /наклон[^,.;]{0,24}(штанг|гантел)/i, /good morning/i, /румынск[^,.;]{0,12}тяга/i, /deadlift/i, /good_morning/i],
+    knee: [
+      /выпад/i,
+      /прыж/i,
+      /бег/i,
+      /присед/i,
+      /сплит/i,
+      /зашагив/i,
+      /жим ног/i,
+      /разгибани[ея] ног/i,
+      /на одной ноге/i,
+      /squat/i,
+      /lunge/i,
+      /step_?up/i,
+      /jump/i,
+      /leg_press/i,
+      /leg_extension/i,
+      /single_leg/i
+    ]
+  };
+  function sport2LimitBlocks(name, id2, limits) {
+    const text = `${String(name ?? "")} ${String(id2 ?? "")}`;
+    return limits.some((limit) => (SPORT2_LIMIT_PATTERNS[limit] ?? []).some((pattern) => pattern.test(text)));
+  }
+  function sport2AnalysisProfile(value) {
+    const profile = readSport2Profile(value);
+    if (!profile.goal && !profile.experience && !profile.limits.length) return null;
+    return { goal: profile.goal, experience: profile.experience, limits: profile.limits };
   }
 
   // sport/core/src/trainingContext.ts
@@ -1895,10 +1936,10 @@ var SportCore = (() => {
     { days: 90, label: "3 месяца" },
     { days: 0, label: "Всё время" }
   ];
-  function baselinePoint(points, days, now = Date.now()) {
+  function baselinePoint(points, days2, now = Date.now()) {
     if (!points.length) return void 0;
-    if (days <= 0) return points[0];
-    const from = now - days * 864e5;
+    if (days2 <= 0) return points[0];
+    const from = now - days2 * 864e5;
     const before = [...points].reverse().find((point) => Date.parse(point.recordedAt) <= from);
     return before ?? points.find((point) => Date.parse(point.recordedAt) >= from) ?? points[0];
   }
@@ -1928,10 +1969,10 @@ var SportCore = (() => {
     if (now.getHours() < hour) return false;
     return !wakeLog(state)[todayKey()];
   }
-  function wakeSeries(state, days = 14, endDate = todayKey()) {
+  function wakeSeries(state, days2 = 14, endDate = todayKey()) {
     const log = wakeLog(state);
-    return Array.from({ length: days }, (_, index) => {
-      const date2 = offsetDateKey(endDate, index - (days - 1));
+    return Array.from({ length: days2 }, (_, index) => {
+      const date2 = offsetDateKey(endDate, index - (days2 - 1));
       const time = log[date2] ?? null;
       return { date: date2, time, minutes: time ? minutesOf(time) : null };
     });
@@ -3926,5 +3967,460 @@ ${JSON.stringify(context, null, 2)}
       unreachable: unreachableUnits(units, plans)
     };
   }
+
+  // sport/core/src/coachKnowledge.ts
+  var COACH_SOURCES = [
+    { id: "schoenfeld2017vol", cite: "Schoenfeld B. J. et al. Dose-response relationship between weekly resistance training volume and increases in muscle mass. J Sports Sci, 2017", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
+    { id: "pelland2026", cite: "Pelland J. et al. The resistance training dose-response: meta-regressions of weekly volume and frequency. Sports Med, 2026 (preprint 2024)", url: "https://link.springer.com/10.1007/s40279-026-02432-5" },
+    { id: "schoenfeld2016freq", cite: "Schoenfeld B. J., Ogborn D., Krieger J. W. Effects of resistance training frequency on measures of muscle hypertrophy: meta-analysis. Sports Med, 2016", url: "https://pubmed.ncbi.nlm.nih.gov/27102172/" },
+    { id: "schoenfeld2017load", cite: "Schoenfeld B. J. et al. Strength and hypertrophy adaptations between low- vs. high-load resistance training. J Strength Cond Res, 2017", url: "https://pubmed.ncbi.nlm.nih.gov/28834797/" },
+    { id: "robinson2024", cite: "Robinson Z. P. et al. Proximity to failure, strength gain and muscle hypertrophy: a series of meta-regressions. Sports Med, 2024", url: "https://rke.abertay.ac.uk/en/publications/exploring-the-dose-response-relationship-between-estimated-resist/" },
+    { id: "refalo2023", cite: "Refalo M. C. et al. Influence of resistance training proximity-to-failure on skeletal muscle hypertrophy. Sports Med, 2023", url: "https://pubmed.ncbi.nlm.nih.gov/36334240/" },
+    { id: "singer2024", cite: "Singer A. et al. Give it a rest: inter-set rest interval duration and muscle hypertrophy. Front Sports Act Living, 2024", url: "https://pubmed.ncbi.nlm.nih.gov/39205815/" },
+    { id: "schoenfeld2015tempo", cite: "Schoenfeld B. J., Ogborn D., Krieger J. Effect of repetition duration on muscle hypertrophy. Sports Med, 2015", url: "https://pubmed.ncbi.nlm.nih.gov/25601394/" },
+    { id: "coleman2024", cite: "Coleman M. et al. Gaining more from doing less? A one-week deload during resistance training. PeerJ, 2024", url: "https://pubmed.ncbi.nlm.nih.gov/38274324/" },
+    { id: "ogasawara2013", cite: "Ogasawara R. et al. Muscle hypertrophy after 6 months of continuous and periodic strength training. Eur J Appl Physiol, 2013", url: "https://link.springer.com/article/10.1007/s00421-012-2511-9" },
+    { id: "morton2018", cite: "Morton R. W. et al. Protein supplementation and resistance training-induced gains in muscle mass and strength. Br J Sports Med, 2018", url: "https://pubmed.ncbi.nlm.nih.gov/28698222/" },
+    { id: "iraki2019", cite: "Iraki J. et al. Nutrition recommendations for bodybuilders in the off-season. Sports, 2019", url: "https://pubmed.ncbi.nlm.nih.gov/31247944/" },
+    { id: "schumann2022", cite: "Schumann M. et al. Compatibility of concurrent aerobic and strength training for muscle size and function. Sports Med, 2022", url: "https://pubmed.ncbi.nlm.nih.gov/34757594/" },
+    { id: "afonso2021", cite: "Afonso J. et al. Strength training versus stretching for improving range of motion. Healthcare, 2021", url: "https://pubmed.ncbi.nlm.nih.gov/33917036/" },
+    { id: "herbert2011", cite: "Herbert R. D. et al. Stretching to prevent or reduce muscle soreness after exercise. Cochrane, 2011", url: "https://pubmed.ncbi.nlm.nih.gov/21735398/" },
+    { id: "lauersen2014", cite: "Lauersen J. B. et al. Exercise interventions to prevent sports injuries: meta-analysis of RCTs. Br J Sports Med, 2014", url: "https://pubmed.ncbi.nlm.nih.gov/24100287/" },
+    { id: "sheikhhoseini2018", cite: "Sheikhhoseini R. et al. Therapeutic exercise for forward head posture: systematic review and meta-analysis. J Manipulative Physiol Ther, 2018", url: "https://pubmed.ncbi.nlm.nih.gov/30107937/" },
+    { id: "mahmoud2019", cite: "Mahmoud N. F. et al. Forward head posture and neck pain: systematic review and meta-analysis. Curr Rev Musculoskelet Med, 2019", url: "https://pubmed.ncbi.nlm.nih.gov/31773477/" },
+    { id: "harkin2016", cite: "Harkin B. et al. Does monitoring goal progress promote goal attainment? Psychol Bull, 2016", url: "https://pubmed.ncbi.nlm.nih.gov/26479070/" },
+    { id: "lally2010", cite: "Lally P. et al. How are habits formed: modelling habit formation in the real world. Eur J Soc Psychol, 2010", url: "https://doi.org/10.1002/ejsp.674" },
+    { id: "momma2022", cite: "Momma H. et al. Muscle-strengthening activities and risk of major non-communicable diseases. Br J Sports Med, 2022", url: "https://pubmed.ncbi.nlm.nih.gov/35228201/" },
+    { id: "noetel2024", cite: "Noetel M. et al. Effect of exercise for depression: network meta-analysis of RCTs. BMJ, 2024", url: "https://www.bmj.com/content/384/bmj-2023-075847" },
+    { id: "singh2023", cite: "Singh B. et al. Physical activity for depression, anxiety and distress: an overview of systematic reviews. Br J Sports Med, 2023", url: "https://bjsm.bmj.com/content/57/18/1203" },
+    { id: "kredlow2015", cite: "Kredlow M. A. et al. The effects of physical activity on sleep: a meta-analytic review. J Behav Med, 2015", url: "https://link.springer.com/article/10.1007/s10865-015-9617-6" },
+    { id: "erickson2011", cite: "Erickson K. I. et al. Exercise training increases size of hippocampus and improves memory. PNAS, 2011", url: "https://www.pnas.org/doi/abs/10.1073/pnas.1015950108" },
+    { id: "jansson2022", cite: "Jansson A. K. et al. Resistance training and HbA1c in type 2 diabetes: meta-analysis. BMJ Open Diabetes Res Care, 2022", url: "https://drc.bmj.com/content/10/2/e002595" },
+    { id: "kelley2009", cite: "Kelley G. A., Kelley K. S. Progressive resistance training and lipids: meta-analysis of RCTs. Prev Med, 2009", url: "https://www.sciencedirect.com/science/article/abs/pii/S0091743508005616" },
+    { id: "stamatakis2022", cite: "Stamatakis E. et al. Vigorous intermittent lifestyle physical activity and mortality. Nat Med, 2022", url: "https://pubmed.ncbi.nlm.nih.gov/36482104/" },
+    { id: "dandrea2020", cite: "D'Andrea S. et al. Physical exercise acutely increases testosterone levels: meta-analysis. J Endocrinol Invest, 2020", url: "https://pubmed.ncbi.nlm.nih.gov/32297287/" },
+    { id: "riggs1981", cite: "Riggs B. L. et al. Changes in bone mineral density with aging. J Clin Invest, 1981", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC370572/" },
+    { id: "course", cite: "Курс владельца: уроки «Хватит идти вслепую», «Пропускай тренировки», «Забудь про массонабор», «Белок», «Кардио», «Растяжка НЕ…», «Топ базовых», «Объективная позиция», «Реалистичность ожиданий»", url: "" }
+  ];
+  var COACH_CARDS = [
+    // Progress and programming
+    {
+      id: "volume-sets",
+      topic: "progress",
+      triggers: ["after_session", "today"],
+      title: "Считай подходы, а не часы",
+      text: "Рост мышц больше всего зависит от числа рабочих подходов на мышцу в неделю. Ориентир — 10–20. Сегодняшние подходы идут в эту копилку.",
+      sources: ["schoenfeld2017vol", "pelland2026"]
+    },
+    {
+      id: "frequency-2x",
+      topic: "progress",
+      triggers: ["today"],
+      title: "Дважды в неделю",
+      text: "Каждая мышца в программе работает примерно два раза в неделю. Так недельный объём делится на подходы, которые можно сделать качественно.",
+      sources: ["schoenfeld2016freq"]
+    },
+    {
+      id: "reps-range",
+      topic: "progress",
+      triggers: ["today", "after_easy"],
+      title: "Вес — инструмент",
+      text: "Мышцы растут и с лёгким, и с тяжёлым весом, если подход доходит близко к пределу. Для массы удобнее 8–12 повторов: и тяжело, и техника держится.",
+      sources: ["schoenfeld2017load"]
+    },
+    {
+      id: "rir-close",
+      topic: "progress",
+      triggers: ["after_easy", "plateau"],
+      title: "1–3 повтора в запасе",
+      text: "Для роста мышц важно, насколько близко к отказу заканчивается подход. Последние повторы должны идти тяжело, но технично: 1–3 в запасе.",
+      sources: ["robinson2024", "refalo2023"]
+    },
+    {
+      id: "no-failure",
+      topic: "recovery",
+      triggers: ["after_hard"],
+      title: "Отказ не обязателен",
+      text: "Работа до полного отказа почти не добавляет роста, зато дольше восстанавливаешься. Оставляй 1–2 повтора в запасе, особенно в базовых.",
+      sources: ["refalo2023", "robinson2024"]
+    },
+    {
+      id: "rest-90",
+      topic: "progress",
+      triggers: ["today"],
+      title: "Отдых между подходами",
+      text: "Отдых больше минуты немного лучше для роста мышц: следующий подход получается полноценнее. Дольше 90 секунд — разницы почти нет.",
+      sources: ["singer2024"]
+    },
+    {
+      id: "tempo",
+      topic: "progress",
+      triggers: ["today"],
+      title: "Темп — по технике",
+      text: "Скорость повтора от полсекунды до нескольких секунд даёт похожий рост. Главное — контроль веса, особенно при опускании.",
+      sources: ["schoenfeld2015tempo"]
+    },
+    {
+      id: "plateau-check",
+      topic: "progress",
+      triggers: ["plateau"],
+      title: "Застой — это сигнал",
+      text: "Если несколько тренировок вес и повторы стоят — проверь сон, еду и запас повторов. Часто хватает добрать один повтор, а не менять программу.",
+      sources: ["course", "robinson2024"]
+    },
+    {
+      id: "basics-first",
+      topic: "progress",
+      triggers: ["early_months", "today"],
+      title: "Мало упражнений, но хорошо",
+      text: "Первые месяцы важнее отточить пару базовых движений, чем перебирать новые. Упражнение — инструмент, а результат даёт стабильная прогрессия.",
+      sources: ["course"]
+    },
+    // Recovery and breaks
+    {
+      id: "deload-light",
+      topic: "recovery",
+      triggers: ["deload"],
+      title: "Облегчённая неделя",
+      text: "Неделя с половиной подходов не отнимает мышцы и даёт суставам и голове передохнуть. Вес прежний, повторов в запасе больше.",
+      sources: ["coleman2024", "course"]
+    },
+    {
+      id: "break-ok",
+      topic: "recovery",
+      triggers: ["missed", "comeback"],
+      title: "Пауза не обнуляет",
+      text: "Перерывы в несколько недель почти не сказываются на росте мышц за полгода. Пропуск — не провал, тренировка уже перенесена.",
+      sources: ["ogasawara2013", "course"]
+    },
+    {
+      id: "comeback-easy",
+      topic: "recovery",
+      triggers: ["comeback"],
+      title: "Возвращайся мягко",
+      text: "После паузы первую неделю работай легче: меньше подходов или чуть меньше вес. Сила возвращается быстро, а риск перегрузки ниже.",
+      sources: ["course"]
+    },
+    {
+      id: "sleep-recovery",
+      topic: "recovery",
+      triggers: ["after_hard", "rest_day"],
+      title: "Сон — часть тренировки",
+      text: "Регулярные тренировки улучшают сон, а хороший сон — восстановление. После тяжёлой тренировки ранний отбой полезнее лишнего подхода.",
+      sources: ["kredlow2015"]
+    },
+    {
+      id: "rest-day",
+      topic: "recovery",
+      triggers: ["rest_day"],
+      title: "День отдыха работает",
+      text: "Мышцы растут между тренировками. Прогулка или лёгкое кардио сегодня не помешают, а помогут.",
+      sources: ["schumann2022"]
+    },
+    // Nutrition
+    {
+      id: "protein-dose",
+      topic: "nutrition",
+      triggers: ["after_session", "rest_day"],
+      title: "Белок: 1,6 г на кг",
+      text: "При тренировках прирост мышц выходит на плато около 1,6 г белка на кг веса в день. Раздели его на 3–4 приёма пищи.",
+      sources: ["morton2018", "course"]
+    },
+    {
+      id: "protein-cut",
+      topic: "nutrition",
+      triggers: ["rest_day"],
+      title: "Белок на сушке",
+      text: "При дефиците калорий белка нужно больше — 1,8–2,2 г на кг. Он сохраняет мышцы и лучше насыщает.",
+      sources: ["course", "iraki2019"]
+    },
+    {
+      id: "surplus-small",
+      topic: "nutrition",
+      triggers: ["after_session", "rest_day"],
+      title: "Небольшой профицит",
+      text: "Для роста хватает +300–500 ккал к поддержке, примерно +10%. Больше — не быстрее мышцы, а быстрее жир.",
+      sources: ["iraki2019", "course"]
+    },
+    {
+      id: "no-bulk",
+      topic: "nutrition",
+      triggers: ["rest_day"],
+      title: "Без «массонабора»",
+      text: "Цель — чуть больше энергии, чем нужно, плюс стимул от тренировок. Качели «масса → сушка» — лишний стресс для тела.",
+      sources: ["course"]
+    },
+    // Cardio
+    {
+      id: "cardio-ok",
+      topic: "cardio",
+      triggers: ["rest_day"],
+      title: "Кардио не сжигает мышцы",
+      text: "Кардио вместе с силовыми не мешает росту мышц и силы, если еды хватает. 1–2 раза по 30 минут быстрой ходьбы или велосипеда — хорошее дополнение.",
+      sources: ["schumann2022", "course"]
+    },
+    {
+      id: "cardio-split",
+      topic: "cardio",
+      triggers: ["rest_day"],
+      title: "Разведи по времени",
+      text: "Если делаешь и кардио, и силовую в один день, раздели их хотя бы на несколько часов — так меньше страдает взрывная сила.",
+      sources: ["schumann2022"]
+    },
+    // Stretching
+    {
+      id: "stretch-rom",
+      topic: "stretching",
+      triggers: ["today"],
+      title: "Подвижность даёт и силовая",
+      text: "Силовые в полной амплитуде увеличивают подвижность не хуже растяжки. Растяжка в программе — для осанки и комфорта.",
+      sources: ["afonso2021"]
+    },
+    {
+      id: "stretch-soreness",
+      topic: "stretching",
+      triggers: ["after_hard"],
+      title: "Растяжка и крепатура",
+      text: "Растяжка до или после тренировки почти не уменьшает мышечную боль. Её снимают время, сон и лёгкое движение.",
+      sources: ["herbert2011"]
+    },
+    {
+      id: "strength-injury",
+      topic: "stretching",
+      triggers: ["today"],
+      title: "Защита от травм — сила",
+      text: "Силовые тренировки снижают риск спортивных травм заметно сильнее, чем растяжка: крепче связки, кости и контроль тела.",
+      sources: ["lauersen2014", "course"]
+    },
+    // Posture
+    {
+      id: "posture-works",
+      topic: "posture",
+      triggers: ["today", "posture_photo"],
+      title: "Осанку можно улучшить",
+      text: "Упражнения на шею, грудной отдел и лопатки заметно улучшают положение головы. Комплекс короткий, но работает при регулярности.",
+      sources: ["sheikhhoseini2018"]
+    },
+    {
+      id: "posture-not-diagnosis",
+      topic: "posture",
+      triggers: ["posture_photo"],
+      title: "Фото — не диагноз",
+      text: "Связь осанки и боли в шее слабее, чем кажется. Фото раз в 4 недели — чтобы видеть изменения, а не искать болезни.",
+      sources: ["mahmoud2019"]
+    },
+    {
+      id: "posture-photo",
+      topic: "posture",
+      triggers: ["posture_photo"],
+      title: "Пора сфотографироваться",
+      text: "Прошло 4 недели — сделай фото сбоку и со спины в том же месте и свете. Так видно, что даёт комплекс осанки.",
+      sources: ["course"]
+    },
+    // Measurements and habit
+    {
+      id: "measure-why",
+      topic: "habit",
+      triggers: ["measure_due", "plateau"],
+      title: "Что измеряешь — то улучшаешь",
+      text: "Регулярная проверка прогресса повышает шанс дойти до цели. Раз в 2 месяца: фото, вес, обхваты лентой и пара силовых тестов.",
+      sources: ["harkin2016", "course"]
+    },
+    {
+      id: "measure-tape",
+      topic: "habit",
+      triggers: ["measure_due"],
+      title: "Сантиметровая лента",
+      text: "Обхваты — самый точный домашний показатель. Пять минут сейчас, и через месяц ты увидишь прогресс, даже если в зеркале его не видно.",
+      sources: ["course"]
+    },
+    {
+      id: "habit-time",
+      topic: "habit",
+      triggers: ["early_months", "missed"],
+      title: "Привычке нужно время",
+      text: "В среднем привычка закрепляется около двух месяцев, и пропуск одного раза её не ломает. Главное — вернуться к следующей тренировке.",
+      sources: ["lally2010"]
+    },
+    {
+      id: "consistency",
+      topic: "mindset",
+      triggers: ["reminder", "today"],
+      title: "Регулярность важнее идеала",
+      text: "Результат чаще теряют не из-за плохой программы, а из-за нестабильности. Средняя тренировка, сделанная сегодня, лучше идеальной завтра.",
+      sources: ["course"]
+    },
+    {
+      id: "realistic",
+      topic: "mindset",
+      triggers: ["early_months", "plateau"],
+      title: "Реалистичные ожидания",
+      text: "Заметная фигура — это 1–3 года правильных тренировок. Не сравнивай себя с роликами: сравнивай с собой месяц назад.",
+      sources: ["course"]
+    },
+    {
+      id: "beginner-mind",
+      topic: "mindset",
+      triggers: ["early_months"],
+      title: "Кирпичик к кирпичику",
+      text: "Даже с опытом полезно смотреть на технику как новичок. В фитнесе побеждают не секреты, а простые вещи, собранные в систему.",
+      sources: ["course"]
+    },
+    // Health and motivation (associations, not promises)
+    {
+      id: "health-heart",
+      topic: "health",
+      triggers: ["reminder", "after_session"],
+      title: "Сердце и сосуды",
+      text: "Силовые связаны с меньшим риском сердечно-сосудистых болезней, а вместе с кардио — ещё заметнее.",
+      sources: ["momma2022", "kelley2009"]
+    },
+    {
+      id: "health-mood",
+      topic: "health",
+      triggers: ["reminder", "after_session"],
+      title: "Лучше настроение",
+      text: "Тренировки снижают симптомы депрессии и тревоги, и силовые здесь работают не хуже бега или йоги.",
+      sources: ["noetel2024", "singh2023"]
+    },
+    {
+      id: "health-brain",
+      topic: "health",
+      triggers: ["reminder"],
+      title: "Мозгу тоже полезно",
+      text: "Регулярная нагрузка связана с лучшей памятью и вниманием, а в исследованиях даже увеличивала гиппокамп.",
+      sources: ["erickson2011"]
+    },
+    {
+      id: "health-sugar",
+      topic: "health",
+      triggers: ["after_session"],
+      title: "Сахар под контролем",
+      text: "Силовые улучшают чувствительность к инсулину и показатели сахара крови — ещё одна причина не пропускать.",
+      sources: ["jansson2022"]
+    },
+    {
+      id: "health-bones",
+      topic: "health",
+      triggers: ["reminder"],
+      title: "Крепкие кости",
+      text: "После 30 плотность костей постепенно снижается. Силовые с осевой нагрузкой — один из лучших способов её поддержать.",
+      sources: ["riggs1981"]
+    },
+    {
+      id: "health-short",
+      topic: "health",
+      triggers: ["missed", "reminder"],
+      title: "Даже несколько минут",
+      text: "Даже короткие эпизоды интенсивной активности в течение дня связаны с меньшим риском смерти. Если тренировка не влезает — 15 минут лучше нуля.",
+      sources: ["stamatakis2022", "course"]
+    },
+    {
+      id: "testosterone-myth",
+      topic: "health",
+      triggers: ["after_session"],
+      title: "Гормоны — не главное",
+      text: "Тестостерон после тренировки растёт ненадолго и за час возвращается к норме. Мышцы растут от нагрузки, еды и сна, а не от гормонального всплеска.",
+      sources: ["dandrea2020"]
+    }
+  ];
+  var DAY = 864e5;
+  var days = (from, to) => Math.round((Date.parse(to + "T12:00:00Z") - Date.parse(from + "T12:00:00Z")) / DAY);
+  function hash(text) {
+    let h = 2166136261;
+    for (const ch of text) h = Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0;
+    return h;
+  }
+  function pickCoachTip(trigger, date2, shown = {}, quietDays = 21) {
+    const all = COACH_CARDS.filter((card2) => card2.triggers.includes(trigger));
+    if (!all.length) return null;
+    const fresh = all.filter((card2) => !shown[card2.id] || days(shown[card2.id], date2) >= quietDays || shown[card2.id] === date2);
+    const pool = fresh.length ? fresh : all;
+    const today = pool.find((card2) => shown[card2.id] === date2);
+    const card = today ?? pool[hash(trigger + date2) % pool.length];
+    return { ...card, cites: card.sources.map((id2) => COACH_SOURCES.find((s) => s.id === id2)).filter((s) => !!s) };
+  }
+  function sessionTrigger(input) {
+    if (input.plateau) return "plateau";
+    if (input.deload) return "deload";
+    if ((input.difficulty ?? 0) >= 8 || input.minRir === 0) return "after_hard";
+    if (input.difficulty != null && input.difficulty <= 4) return "after_easy";
+    return "after_session";
+  }
+
+  // sport/core/src/coachRules.ts
+  var SAFE = "Без боли, онемения и головокружения — при них пропусти упражнение. Дыхание не задерживай, до отказа не работай.";
+  var POSTURE_PRE = [
+    {
+      id: "bw_chin_tuck",
+      sets: 2,
+      reps: "12",
+      execution: 60,
+      rest: 30,
+      technique: `Лёжа на спине мягко уведи подбородок назад, затылок скользит по полу. Задержка 3–5 с в каждом повторе. ${SAFE}`
+    },
+    {
+      id: "bw_thoracic_extension",
+      sets: 2,
+      reps: "10",
+      execution: 40,
+      rest: 30,
+      technique: `Разгибайся в грудном отделе, поясница и рёбра не выпирают вперёд. ${SAFE}`
+    },
+    {
+      id: "bw_wall_slides",
+      sets: 2,
+      reps: "12",
+      execution: 45,
+      rest: 30,
+      technique: `Спина и руки у стены, лопатки вниз и к позвоночнику; поясницу не прогибай. ${SAFE}`
+    }
+  ];
+  var POSTURE_MAIN = [
+    {
+      id: "db_one_arm_row",
+      alt: ["db_bent_over_row"],
+      sets: 3,
+      reps: "10–12",
+      execution: 40,
+      rest: 60,
+      technique: `Тяга одной рукой — повторы на каждую сторону. Тяни локоть к бедру, лопатка уходит назад и вниз, корпус не скручивай. ${SAFE}`
+    },
+    {
+      id: "bw_dead_bug",
+      sets: 3,
+      reps: "8–10",
+      execution: 45,
+      rest: 45,
+      technique: `Повторы на каждую сторону. Поясница прижата к полу всё время, выдох при выпрямлении. ${SAFE}`
+    },
+    {
+      id: "bw_glute_bridge",
+      sets: 3,
+      reps: "12–15",
+      execution: 45,
+      rest: 45,
+      technique: `Подъём за счёт ягодиц, вверху не прогибай поясницу, рёбра опущены. ${SAFE}`
+    }
+  ];
+  var POSTURE_COOL = [
+    {
+      id: "bw_doorway_stretch",
+      sets: 2,
+      seconds: 30,
+      rest: 15,
+      technique: `Предплечья на косяке, шаг вперёд до лёгкого натяжения в груди, без боли в плече. ${SAFE}`
+    },
+    {
+      id: "bw_hip_flexor_stretch",
+      sets: 2,
+      seconds: 30,
+      rest: 15,
+      technique: `Время на каждую сторону. Подкрути таз, ягодица задней ноги напряжена, поясницу не прогибай. ${SAFE}`
+    }
+  ];
+  var POSTURE_IDS = [...POSTURE_PRE, ...POSTURE_MAIN, ...POSTURE_COOL].flatMap((spec) => [spec.id, ...spec.alt ?? []]);
+  var DELOAD_EVERY = 7;
+  var isDeloadWeek = (week) => week > 0 && week % DELOAD_EVERY === 0;
   return __toCommonJS(core_exports);
 })();
