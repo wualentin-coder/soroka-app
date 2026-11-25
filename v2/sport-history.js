@@ -382,15 +382,19 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     for (const block of session.plan_snapshot.workout.blocks) {
       for (const exercise of block.exercises) {
         total += exercise.sets;
+        // Разминка не прогресс: её подходы не идут в графики и плато.
+        const warmup = block.type === "warmup" || exercise.is_warmup === true;
+        // Серия — по упражнению каталога: переименование или замена в другой день не рвут её.
+        const id = exercise.exercise_id || exercise.name;
         for (let n = 1; n <= exercise.sets; n++) {
           const row = rows.get(JSON.stringify([exercise.plan_exercise_id, n]));
-          if (!row || row.status !== "confirmed") continue;
+          if (!row || row.status !== "confirmed" || warmup || row.is_warmup === true) continue;
           if (row.actual_kg != null && row.actual_reps != null) {
             const units = row.actual_units ?? exercise.load?.units ?? 1;
-            facts.push({ date: session.workout_date, name: exercise.name, kg: row.actual_kg, reps: row.actual_reps,
+            facts.push({ date: session.workout_date, id, name: exercise.name, kg: row.actual_kg, reps: row.actual_reps,
               units, volume: row.actual_kg * units * row.actual_reps, seconds: row.actual_seconds });
           } else if (row.actual_seconds != null) {
-            facts.push({ date: session.workout_date, name: exercise.name, kg: null, reps: null, units: 1, volume: 0, seconds: row.actual_seconds });
+            facts.push({ date: session.workout_date, id, name: exercise.name, kg: null, reps: null, units: 1, volume: 0, seconds: row.actual_seconds });
           }
         }
       }
@@ -402,16 +406,19 @@ const summary = `<div class="sh-summary"><div class="sh-f-metrics">
     const facts = details.flatMap(item => item.facts);
     const weighted = facts.filter(item => item.kg != null && item.reps != null);
     const map = new Map();
+    // Точка дня — лучший подход целиком (вес и повторы из одного подхода,
+    // по оценке 1ПМ), а не максимум веса и максимум повторов из разных.
+    const best = fact => fact.kg * (1 + fact.reps / 30);
     for (const fact of weighted) {
-      const item = map.get(fact.name) ?? { name: fact.name, points: new Map(), volume: 0 };
-      const point = item.points.get(fact.date) ?? { date: fact.date, kg: 0, reps: 0, units: 1, volume: 0 };
-      point.kg = Math.max(point.kg, fact.kg);
-      point.reps = Math.max(point.reps, fact.reps);
-      point.units = fact.units;
+      const key = fact.id ?? fact.name;
+      const item = map.get(key) ?? { name: fact.name, points: new Map(), volume: 0 };
+      item.name = fact.name;
+      const point = item.points.get(fact.date) ?? { date: fact.date, kg: 0, reps: 0, units: 1, volume: 0, score: -1 };
+      if (best(fact) > point.score) Object.assign(point, { kg: fact.kg, reps: fact.reps, units: fact.units, score: best(fact) });
       point.volume += fact.volume;
       item.points.set(fact.date, point);
       item.volume += fact.volume;
-      map.set(fact.name, item);
+      map.set(key, item);
     }
     const list = [...map.values()].map(item => ({
       ...item, series: [...item.points.values()].sort((a, b) => a.date.localeCompare(b.date)),
