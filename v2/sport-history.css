@@ -13,7 +13,7 @@
 }
 .sh-head h2, .sh-content h3, .sh-history-feed h2 { margin: 0; font-size: 18px; }
 .sh-content h3 { font-size: 23px; overflow-wrap: anywhere; }
-.sport-run .sh-content { flex: 1; display: grid; align-content: start; gap: 12px; padding: 4px 0 16px; }
+.sport-run .sh-content { flex: 1; display: grid; align-content: start; gap: 12px; padding: 4px 0 16px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .sh-content > .ghost-button { justify-self: start; }
 .sh-muted { margin: 0; color: var(--muted); font-size: 13px; }
 .sh-summary { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-variant-numeric: tabular-nums; }

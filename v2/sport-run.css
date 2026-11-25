@@ -33,20 +33,32 @@
   cursor: pointer;
 }
 .sport-run button:focus-visible, .sport-run input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sport-run input, .sport-run textarea, .sport-run select { scroll-margin-block: 16px; }
+.sport-run .sr-body, .sport-run .sh-content { scroll-padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 .sport-run .sr-screen {
   display: flex;
   flex-direction: column;
   min-height: 100%;
   padding: env(safe-area-inset-top, 0px) var(--sr-pad) 0;
 }
+.sport-run:not(.sr-camera) .sr-screen {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
 .sport-run .sr-enter { animation: sr-enter 280ms var(--sr-ease) both; }
 @keyframes sr-enter { from { opacity: 0; transform: translateY(6px); } }
-.sport-run .sr-body { flex: 1; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; min-width: 0; }
+.sport-run .sr-body {
+  flex: 1; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; min-width: 0;
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+}
 .sport-run .sr-body > * { min-width: 0; }
 .sport-run .sr-foot {
   position: sticky;
   bottom: 0;
   z-index: 2;
+  flex: 0 0 auto;
   display: flex;
   gap: 8px;
   align-items: center;
