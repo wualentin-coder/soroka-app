@@ -6,8 +6,12 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  // v1 inline is the plank only; every other supported exercise stays full-screen.
-  const INLINE_KEYS = ["plank"];
+  // 4.70: every Coach Eyes exercise runs in the inline panel — holds (plank,
+  // carry) and counted repetitions. Same keys as native Exercise.key.
+  const INLINE_KEYS = ["plank", "db_suitcase_carry", "curl", "pushup", "press", "squat", "lunge", "lateral",
+    "row", "situp", "bridge", "db_romanian_deadlift", "db_rear_delt_fly", "db_overhead_triceps_extension"];
+  const TIMED_KEYS = ["plank", "db_suitcase_carry"];
+  const timed = (key) => TIMED_KEYS.includes(String(key || ""));
 
   function eligible({ key = null, phase = null, paused = false, hidden = false } = {}) {
     return INLINE_KEYS.includes(String(key || "")) && phase === "work" && !paused && !hidden;
@@ -66,8 +70,13 @@
     };
   }
 
-  /** CSS-pixel rect for the native panel; normalized keys are not invented. */
-  function rect(bounds) {
+  /**
+   * CSS-pixel rect for the native panel; normalized keys are not invented.
+   * [area] is the part of the screen where the panel may be seen (the scroll
+   * area between header and footer): native clips the panel to it, so a
+   * scrolled panel never covers the header or the «Подход выполнен» button.
+   */
+  function rect(bounds, area = null) {
     if (!bounds) return null;
     const left = Number(bounds.left ?? bounds.x ?? 0);
     const top = Number(bounds.top ?? bounds.y ?? 0);
@@ -77,8 +86,19 @@
     const x = Math.round(left), y = Math.round(top);
     const w = Math.round(width), h = Math.round(height);
     // Native reads x/y/w/h and multiplies CSS pixels by the display density.
-    return { x, y, w, h, width: w, height: h, left: x, top: y, right: x + w, bottom: y + h, unit: "css" };
+    const out = { x, y, w, h, width: w, height: h, left: x, top: y, right: x + w, bottom: y + h, unit: "css" };
+    if (area) {
+      const cx = Math.round(Number(area.left ?? area.x ?? 0)), cy = Math.round(Number(area.top ?? area.y ?? 0));
+      const cw = Math.round(Number(area.width ?? 0)), ch = Math.round(Number(area.height ?? 0));
+      if ([cx, cy, cw, ch].every(Number.isFinite) && cw > 0 && ch > 0) Object.assign(out, { cx, cy, cw, ch });
+    }
+    return out;
   }
 
-  return { INLINE_KEYS, eligible, rect, permission, state };
+  /** Same set, new place: only the rect changed, so native moves the panel instead of restarting it. */
+  function sameSet(a, b) {
+    return Boolean(a && b && a.key === b.key && a.sportId === b.sportId && a.set === b.set);
+  }
+
+  return { INLINE_KEYS, TIMED_KEYS, timed, eligible, rect, sameSet, permission, state };
 });
