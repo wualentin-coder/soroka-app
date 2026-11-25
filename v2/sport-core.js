@@ -4130,6 +4130,7 @@ ${JSON.stringify(context, null, 2)}
       id: "protein-cut",
       topic: "nutrition",
       triggers: ["rest_day"],
+      goals: ["form"],
       title: "Белок на сушке",
       text: "При дефиците калорий белка нужно больше — 1,8–2,2 г на кг. Он сохраняет мышцы и лучше насыщает.",
       sources: ["course", "iraki2019"]
@@ -4138,6 +4139,7 @@ ${JSON.stringify(context, null, 2)}
       id: "surplus-small",
       topic: "nutrition",
       triggers: ["after_session", "rest_day"],
+      goals: ["mass", "strength"],
       title: "Небольшой профицит",
       text: "Для роста хватает +300–500 ккал к поддержке, примерно +10%. Больше — не быстрее мышцы, а быстрее жир.",
       sources: ["iraki2019", "course"]
@@ -4146,9 +4148,28 @@ ${JSON.stringify(context, null, 2)}
       id: "no-bulk",
       topic: "nutrition",
       triggers: ["rest_day"],
+      goals: ["mass", "strength"],
       title: "Без «массонабора»",
       text: "Цель — чуть больше энергии, чем нужно, плюс стимул от тренировок. Качели «масса → сушка» — лишний стресс для тела.",
       sources: ["course"]
+    },
+    {
+      id: "recomp-energy",
+      topic: "nutrition",
+      triggers: ["after_session", "rest_day"],
+      goals: ["form"],
+      title: "Рельеф делает кухня",
+      text: "Для массы и рельефа одновременно ешь около поддержки или с небольшим дефицитом и держи белок 1,8–2 г на кг. Тренировка та же — она сохраняет и растит мышцы.",
+      sources: ["iraki2019", "course"]
+    },
+    {
+      id: "recomp-slow",
+      topic: "nutrition",
+      triggers: ["rest_day", "plateau"],
+      goals: ["form"],
+      title: "Вес на весах обманывает",
+      text: "При рекомпозиции вес может стоять, а талия уменьшаться. Смотри на обхваты и фото раз в 2 месяца, а не на ежедневные весы.",
+      sources: ["harkin2016", "course"]
     },
     // Cardio
     {
@@ -4331,8 +4352,8 @@ ${JSON.stringify(context, null, 2)}
     for (const ch of text) h = Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0;
     return h;
   }
-  function pickCoachTip(trigger, date2, shown = {}, quietDays = 21) {
-    const all = COACH_CARDS.filter((card2) => card2.triggers.includes(trigger));
+  function pickCoachTip(trigger, date2, shown = {}, quietDays = 21, goal = null) {
+    const all = COACH_CARDS.filter((card2) => card2.triggers.includes(trigger) && (!card2.goals || goal !== null && card2.goals.includes(goal)));
     if (!all.length) return null;
     const fresh = all.filter((card2) => !shown[card2.id] || days(shown[card2.id], date2) >= quietDays || shown[card2.id] === date2);
     const pool = fresh.length ? fresh : all;
