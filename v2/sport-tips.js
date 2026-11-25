@@ -42,10 +42,12 @@
       (cites || course ? `<details><summary>Источники</summary><ul>${cites}${course}</ul></details>` : "") + `</section>`;
   }
 
+  const goalOf = (state) => core()?.readSport2Profile?.(state?.sport2Profile)?.goal ?? null;
+
   function today(state, visible, date, schedule) {
     const pick = core()?.pickCoachTip;
     if (typeof pick !== "function") return "";
-    return card(pick(todayTrigger(state, visible, date, schedule), date, shownMap()), date);
+    return card(pick(todayTrigger(state, visible, date, schedule), date, shownMap(), 21, goalOf(state)), date);
   }
 
   /** Under a finished workout's analysis: hard / easy / plain. */
@@ -53,7 +55,8 @@
     const pick = core()?.pickCoachTip, trigger = core()?.sessionTrigger;
     if (typeof pick !== "function" || typeof trigger !== "function" || !job) return "";
     const hard = (job.safety || []).some((s) => s.level === "caution" || s.level === "stop");
-    return card(pick(trigger({ difficulty: hard ? 8 : job.difficulty ?? null }), date, shownMap()), date);
+    const state = window.spState?.()?.state;
+    return card(pick(trigger({ difficulty: hard ? 8 : job.difficulty ?? null }), date, shownMap(), 21, goalOf(state)), date);
   }
 
   window.SportTips = { today, afterSession, todayTrigger };
