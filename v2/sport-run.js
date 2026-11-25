@@ -1562,7 +1562,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       }
       if (this.inline.status === "timeout") {
         return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="alert">
-          <b>Камера не вернула результат</b><p>Можно повторить или записать подход вручную.</p>
+          <b>Камера не вернула результат</b><p>${this.inline.reason ? esc(this.inline.reason) : "Можно повторить или записать подход вручную."}</p>
           <div class="sr-inline-actions">${control("inline-retry", "Повторить", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
       }
       if (this.inline.status === "denied" || this.inline.status === "unavailable") {
@@ -1855,7 +1855,12 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         return;
       }
       if (reply && reply.schema === "coach-eyes.workout") { this.inlineTimeout(); return; }
-      if (reply === false || reply?.ok === false) { this.inlineTimeout(); return; }
+      if (reply === false || reply?.ok === false) {
+        const info = this.inlineNativeState();
+        this.inline.reason = String(info?.raw?.hint || "");
+        this.inlineTimeout();
+        return;
+      }
       clearTimeout(this.inline.timer);
       this.inline.timer = setTimeout(() => {
         if (this.inline.status === "finishing") this.inlineTimeout();
