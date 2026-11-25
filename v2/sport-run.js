@@ -1712,6 +1712,10 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       if (["timeout", "hidden", "unavailable", "manual", "pain", "paused"].includes(this.inline.status)) {
         if (this.inline.key === key && this.inline.set === set) return;
         this.inline.status = "idle";
+        this.inline.shown = false;
+        this.inline.signature = "";
+        queueMicrotask(() => this.render(true));
+        return;
       }
       this.inlineShow(model);
     }
