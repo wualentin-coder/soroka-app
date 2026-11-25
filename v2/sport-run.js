@@ -353,9 +353,13 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       this.camera = null;
       this.cameraDialog = null;
       this.inline = {
-        shown: false, hidden: false, status: "idle", signature: "", key: "", sportId: "",
-        hiddenKey: "", timer: null, reason: "",
+        shown: false, configured: null, hidden: false, status: "idle", signature: "", key: "", set: "", sportId: "",
+        hiddenKey: "", timer: null, hideTimer: null, reason: "", expanded: false, pain: false, expectedHide: false,
       };
+      queueMicrotask(() => {
+        if (!this.owner.current()) return;
+        this.inlineConfigure(cameraCoachEnabled(typeof spState === "function" ? spState()?.state : null));
+      });
       this.message = "";
       this.retryTimer = null;
       this.interval = null;
@@ -565,7 +569,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     close() {
       setSportRotation(false);
-      this.hideInline();
+      this.inlineClose();
       this.modal?.close();
       this.modal?.remove();
       this.modal = null;
@@ -1445,6 +1449,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     openCameraCoach() {
+      if (this.inline.shown || this.inline.configured) this.inlineClose();
       const state = typeof spState === "function" ? spState()?.state : null;
       if (!cameraCoachEnabled(state)) {
         this.cameraBox("Тренер по камере", "<p>Тренер по камере выключен в настройках Спорта.</p>");
@@ -1466,8 +1471,58 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         <p class="sr-muted">Мост к Coach Eyes в этой сборке недоступен — откройте приложение вручную.</p>`);
     }
 
+    inlineBridge() {
+      for (const host of [window.SorokaAndroid, window.SorokaNative, window.FlowAndroid, window.FlowNative]) {
+        if (host && typeof host.coachEyesInlineShow === "function") return host;
+      }
+      return null;
+    }
+
+    inlineCall(name, ...args) {
+      const api = this.inlineBridge();
+      const fn = api?.[name];
+      if (typeof fn !== "function") return undefined;
+      try { return fn.apply(api, args); } catch (_) { return undefined; }
+    }
+
+    inlineConfigure(enabled = true) {
+      if (this.inline.configured === enabled) return;
+      const api = this.inlineBridge();
+      if (!api) return;
+      if (typeof api.coachEyesInlineConfigure === "function") {
+        try { api.coachEyesInlineConfigure(enabled); } catch (_) { return; }
+      }
+      this.inline.configured = enabled;
+    }
+
+    inlinePermissionInfo() {
+      if (typeof this.inlineBridge()?.coachEyesInlinePermission !== "function") return null;
+      return window.SportInlineCore?.state?.(this.inlineCall("coachEyesInlinePermission")) || null;
+    }
+
+    inlinePermission() {
+      return this.inlinePermissionInfo()?.permission || "unknown";
+    }
+
+    async inlineRequestPermission() {
+      const api = this.inlineBridge();
+      if (typeof api?.coachEyesInlineRequestPermission !== "function") return "unknown";
+      let value = this.inlineCall("coachEyesInlineRequestPermission");
+      if (value && typeof value.then === "function") value = await value.catch(() => false);
+      if (value === false) return this.inlinePermission() === "granted" ? "granted" : "denied";
+      if (this.inlinePermission() === "granted") return "granted";
+      return value === true ? "requested" : "unknown";
+    }
+
+    inlineNativeState() {
+      if (typeof this.inlineBridge()?.coachEyesInlineState !== "function") return null;
+      return window.SportInlineCore?.state?.(this.inlineCall("coachEyesInlineState")) || null;
+    }
+
     inlineEligible(model = this.model) {
-      if (typeof window.SorokaAndroid?.showCoachEyesInline !== "function") return false;
+      if (!this.inlineBridge()) return false;
+      const state = typeof spState === "function" ? spState()?.state : null;
+      if (!cameraCoachEnabled(state)) return false;
       const key = coachEyesKeyFor(model?.current?.exercise);
       return Boolean(key && window.SportInlineCore?.eligible({
         key, phase: model?.phase, paused: model?.paused, hidden: this.inline.hidden,
@@ -1480,13 +1535,30 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const video = `<div class="sr-inline-video" data-sr-inline-video><div class="sr-inline-fallback">
         <span>Тренер по камере</span><b>${esc(exercise.name)}</b><small>Планка · панель 4:3</small></div></div>`;
       const bar = `<div class="sr-inline-bar"><span>${esc(exercise.name)}</span>
-        ${control("inline-expand", "Развернуть", "ghost-button sr-inline-button")}
+        ${this.inline.expanded
+          ? control("inline-collapse", "Свернуть", "ghost-button sr-inline-button")
+          : control("inline-expand", "Развернуть", "ghost-button sr-inline-button")}
         ${control("inline-hide", "Скрыть", "ghost-button sr-inline-button")}</div>
         <p class="sr-inline-note">Подход завершится кнопкой ниже. Результат подтверждаете вы.</p>`;
       if (this.inline.status === "finishing") {
         return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="status">
           <b>Завершаем подход…</b><p>Ждём результат камеры.</p>
           <div class="sr-inline-actions">${control("inline-manual", "Ввести вручную", "ghost-button")}</div></div></section>`;
+      }
+      if (this.inline.status === "paused") {
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="status">
+          <b>Камера на паузе</b><p>Счёт остановлен. Продолжите или введите подход вручную.</p>
+          <div class="sr-inline-actions">${control("inline-retry", "Продолжить", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
+      }
+      if (this.inline.status === "pain") {
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="alert">
+          <b>Отмечена боль</b><p>Камера остановлена. Снимите отметку или введите подход вручную.</p>
+          <div class="sr-inline-actions">${control("inline-pain-clear", "Снять отметку", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
+      }
+      if (this.inline.status === "manual") {
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="status">
+          <b>Ручной ввод</b><p>Камера выключена. Верните её или продолжите без камеры.</p>
+          <div class="sr-inline-actions">${control("inline-retry", "Вернуть камеру", "ghost-button")}${control("inline-hide", "Продолжить без камеры", "primary-button")}</div></div></section>`;
       }
       if (this.inline.status === "timeout") {
         return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="alert">
@@ -1500,22 +1572,100 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           <b>${text}</b><p>Откройте настройки и разрешите камеру или введите подход вручную.</p>
           <div class="sr-inline-actions">${control("inline-settings", "Настройки", "ghost-button")}${control("inline-retry", "Повторить", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
       }
+      if (this.inline.status === "hidden") {
+        return `<section class="sr-inline" data-sr-inline><div class="sr-inline-state" role="status">
+          <b>Камера скрыта</b><p>Можно вернуть её или записать подход вручную.</p>
+          <div class="sr-inline-actions">${control("inline-retry", "Повторить", "ghost-button")}${control("inline-manual", "Ввести вручную", "primary-button")}</div></div></section>`;
+      }
       return `<section class="sr-inline" data-sr-inline>${video}${bar}</section>`;
     }
 
     hideInline() {
-      const api = window.SorokaAndroid;
-      if (this.inline.shown && typeof api?.hideCoachEyesInline === "function") {
-        try { api.hideCoachEyesInline(); } catch (_) {}
+      if (this.inline.shown) {
+        this.inline.expectedHide = true;
+        this.inlineCall("coachEyesInlineHide");
+        clearTimeout(this.inline.hideTimer);
+        this.inline.hideTimer = setTimeout(() => { this.inline.expectedHide = false; }, 1500);
       }
       this.inline.shown = false;
       this.inline.signature = "";
+      this.inline.expanded = false;
       if (this.inline.status === "shown") this.inline.status = "idle";
       if (this.inline.status === "finishing") {
         clearTimeout(this.inline.timer);
         this.inline.timer = null;
         this.inline.status = "idle";
       }
+    }
+
+    inlineRelease() {
+      clearTimeout(this.inline.timer);
+      this.inline.timer = null;
+      clearTimeout(this.inline.hideTimer);
+      this.inline.hideTimer = null;
+      this.inline.shown = false;
+      this.inline.signature = "";
+      this.inline.status = "idle";
+      this.inline.expanded = false;
+      this.inline.expectedHide = false;
+    }
+
+    inlineClose() {
+      const pending = this.inline.shown || this.inline.configured;
+      if (pending) {
+        this.inline.expectedHide = true;
+        this.inlineCall("coachEyesInlineClose");
+      }
+      if (this.inline.configured) this.inlineConfigure(false);
+      this.inlineRelease();
+      this.inline.configured = false;
+      if (pending) {
+        this.inline.expectedHide = true;
+        clearTimeout(this.inline.hideTimer);
+        this.inline.hideTimer = setTimeout(() => { this.inline.expectedHide = false; }, 1500);
+      }
+    }
+
+    inlineShow(model) {
+      this.inlineConfigure(true);
+      const target = this.modal?.querySelector("[data-sr-inline-video]");
+      if (!target) return;
+      const rect = window.SportInlineCore?.rect(target.getBoundingClientRect());
+      if (!rect) return;
+      const key = coachEyesKeyFor(model.current?.exercise);
+      const sportId = model.current.exercise.exercise_id || "";
+      const set = String(model.current.set_index ?? "");
+      if (!key) return;
+      const signature = `${key}|${sportId}|${set}|${rect.x},${rect.y},${rect.width},${rect.height}`;
+      if (this.inline.shown && signature === this.inline.signature) return;
+      if (this.inline.shown && !this.inline.signature) { this.inline.signature = signature; return; }
+      if (this.inline.shown) this.hideInline();
+      const api = this.inlineBridge();
+      if (!api) return;
+      let reply;
+      try { reply = api.coachEyesInlineShow(JSON.stringify(rect), key, sportId); }
+      catch (error) {
+        this.inline.status = "unavailable";
+        this.inline.reason = String(error?.message || error || "");
+        queueMicrotask(() => this.render(true));
+        return;
+      }
+      if (reply === false || reply?.ok === false) {
+        const reason = String(reply?.reason ?? reply?.state ?? reply ?? "").toLocaleLowerCase("en");
+        this.inline.status = /unsupported|unavailable|not.?supported/.test(reason) ? "unavailable" : "denied";
+        this.inline.reason = reason;
+        this.inline.shown = false;
+        queueMicrotask(() => this.render(true));
+        return;
+      }
+      this.inline.shown = true;
+      this.inline.status = "shown";
+      this.inline.signature = signature;
+      this.inline.key = key;
+      this.inline.set = set;
+      this.inline.sportId = sportId;
+      this.inline.expanded = false;
+      this.inline.reason = "";
     }
 
     syncInline() {
@@ -1534,73 +1684,190 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         return;
       }
       if (!this.inlineEligible(model)) { this.hideInline(); return; }
-      if (["denied", "unavailable", "timeout", "finishing"].includes(this.inline.status)) return;
-      const target = this.modal?.querySelector("[data-sr-inline-video]");
-      if (!target) return;
-      const rect = window.SportInlineCore?.rect(target.getBoundingClientRect());
-      if (!rect) return;
-      const sportId = model.current.exercise.exercise_id || "";
-      const signature = `${key}|${sportId}|${model.current.set_index}|${rect.x},${rect.y},${rect.width},${rect.height}`;
-      if (this.inline.shown && signature === this.inline.signature) return;
-      if (this.inline.shown) this.hideInline();
-      const api = window.SorokaAndroid;
-      if (typeof api?.showCoachEyesInline !== "function") {
-        this.inline.status = "unavailable";
-        queueMicrotask(() => this.render(true));
+      const set = String(model.current.set_index ?? "");
+      const native = this.inlineNativeState();
+      if (native?.status === "denied") {
+        if (this.inline.status !== "denied") {
+          this.inline.status = "denied";
+          this.inline.shown = false;
+          this.render(true);
+        }
         return;
       }
-      try {
-        const reply = api.showCoachEyesInline(rect, key, sportId);
-        if (reply === false || reply?.ok === false) {
-          this.inline.status = "denied";
-          this.inline.reason = String(reply?.reason || "");
-          queueMicrotask(() => this.render(true));
+      if ((native?.status === "shown" || native?.status === "expanded") && !this.inline.shown) {
+        this.inline.shown = true;
+        if (native.status === "expanded") this.inline.expanded = true;
+        if (this.inline.status !== "shown") {
+          this.inline.status = "shown";
+          this.render(true);
           return;
         }
-        this.inline.shown = true;
-        this.inline.status = "shown";
-        this.inline.signature = signature;
-        this.inline.key = key;
-        this.inline.sportId = sportId;
-      } catch (_) {
+      }
+      if (native?.status === "expanded" && !this.inline.expanded) {
+        this.inline.expanded = true;
+        if (this.inline.status === "shown") this.render(true);
+        return;
+      }
+      if (this.inline.status === "denied" || this.inline.status === "finishing") return;
+      if (["timeout", "hidden", "unavailable", "manual", "pain", "paused"].includes(this.inline.status)) {
+        if (this.inline.key === key && this.inline.set === set) return;
+        this.inline.status = "idle";
+      }
+      this.inlineShow(model);
+    }
+
+    inlinePain(value) {
+      this.inline.pain = Boolean(value);
+      this.inlineCall("coachEyesInlinePain", Boolean(value));
+    }
+
+    inlineTimeout() {
+      this.inline.status = "timeout";
+      this.inline.shown = false;
+      this.inline.signature = "";
+      this.inline.expanded = false;
+      this.inlineCall("coachEyesInlineClose");
+      this.render(true);
+    }
+
+    applyInlineState(payload) {
+      if (!this.modal?.open || !payload) return;
+      if (payload.schema === "coach-eyes.workout") {
+        window.SportCoachEyes?.receive?.(payload);
+        return;
+      }
+      const info = window.SportInlineCore?.state?.(payload);
+      if (!info) return;
+      if (info.pain !== null) {
+        this.inline.pain = info.pain;
+        const box = this.cameraDialog?.querySelector("[data-camera-pain]");
+        if (box) box.checked = info.pain;
+      }
+      if (info.status === "denied") {
+        if (this.inline.status === "denied") return;
         this.inline.status = "denied";
-        queueMicrotask(() => this.render(true));
+        this.inline.shown = false;
+        this.inline.expanded = false;
+        this.inlineCall("coachEyesInlineClose");
+        this.render(true);
+        return;
+      }
+      if (info.status === "unavailable") {
+        if (this.inline.status === "unavailable") return;
+        this.inline.status = "unavailable";
+        this.inline.shown = false;
+        this.render(true);
+        return;
+      }
+      if (info.status === "paused") {
+        this.inline.shown = true;
+        if (this.inline.status === "paused") return;
+        this.inline.status = "paused";
+        this.render(true);
+        return;
+      }
+      if (info.status === "pain") {
+        this.inline.pain = Boolean(info.pain ?? true);
+        this.inline.shown = false;
+        if (this.inline.status === "pain") return;
+        this.inline.status = "pain";
+        this.inline.expanded = false;
+        this.render(true);
+        return;
+      }
+      if (info.status === "manual") {
+        this.inline.shown = false;
+        this.inline.expanded = false;
+        if (this.inline.status === "manual") return;
+        this.inline.status = "manual";
+        this.render(true);
+        return;
+      }
+      if (info.status === "finished") {
+        if (this.inline.status === "finishing" || this.inline.status === "timeout") return;
+        this.inline.status = "finishing";
+        this.render(true);
+        clearTimeout(this.inline.timer);
+        this.inline.timer = setTimeout(() => {
+          if (this.inline.status === "finishing") this.inlineTimeout();
+        }, 6000);
+        return;
+      }
+      if (info.status === "expanded") {
+        const changed = !this.inline.expanded || this.inline.status !== "shown";
+        this.inline.expanded = true;
+        this.inline.status = "shown";
+        this.inline.shown = true;
+        if (changed) this.render(true);
+        return;
+      }
+      if (info.status === "collapsed") {
+        const changed = this.inline.expanded || this.inline.status !== "shown";
+        this.inline.expanded = false;
+        this.inline.status = "shown";
+        this.inline.shown = true;
+        if (changed) this.render(true);
+        return;
+      }
+      if (info.status === "finishing") {
+        if (this.inline.status === "finishing") return;
+        this.inline.status = "finishing";
+        this.render(true);
+        return;
+      }
+      if (info.status === "hidden") {
+        if (this.inline.expectedHide) { this.inline.expectedHide = false; return; }
+        if (["timeout", "denied", "unavailable"].includes(this.inline.status)) return;
+        this.inline.shown = false;
+        this.inline.signature = "";
+        this.inline.expanded = false;
+        this.inline.status = "hidden";
+        this.render(true);
+        return;
+      }
+      if (info.status === "shown") {
+        this.inline.expectedHide = false;
+        this.inline.shown = true;
+        if (this.inline.status === "shown") return;
+        this.inline.status = "shown";
+        this.inline.signature = "";
+        this.render(true);
+        return;
+      }
+      if (info.status === "granted" && this.inline.status === "denied") {
+        this.inline.status = "idle";
+        this.inline.signature = "";
+        this.render(true);
       }
     }
 
     finishInline() {
       if (this.inline.status === "finishing") return;
-      const api = window.SorokaAndroid;
-      if (typeof api?.finishCoachEyesInline !== "function") { void this.issue({ type: "done" }); return; }
+      const api = this.inlineBridge();
+      if (typeof api?.coachEyesInlineFinish !== "function") { void this.issue({ type: "done" }); return; }
       this.inline.status = "finishing";
       this.render(true);
-      try {
-        const reply = api.finishCoachEyesInline();
-        if (reply && reply.schema === "coach-eyes.workout") { window.SportCoachEyes?.receive?.(reply); return; }
-        if (reply === false || reply?.ok === false) {
-          this.inline.status = "timeout";
-          this.render(true);
-          return;
-        }
-      } catch (_) {
-        this.inline.status = "timeout";
-        this.render(true);
+      let reply;
+      try { reply = api.coachEyesInlineFinish(); }
+      catch (_) { this.inlineTimeout(); return; }
+      if (reply && reply.schema === "coach-eyes.workout" && reply.version === 1) {
+        window.SportCoachEyes?.receive?.(reply);
         return;
       }
+      if (reply && reply.schema === "coach-eyes.workout") { this.inlineTimeout(); return; }
+      if (reply === false || reply?.ok === false) { this.inlineTimeout(); return; }
       clearTimeout(this.inline.timer);
       this.inline.timer = setTimeout(() => {
-        if (this.inline.status === "finishing") {
-          this.inline.status = "timeout";
-          this.render(true);
-        }
+        if (this.inline.status === "finishing") this.inlineTimeout();
       }, 6000);
     }
 
     inlineSettings() {
-      const api = window.SorokaAndroid;
-      for (const name of ["openCoachEyesSettings", "openAppSettings", "openSettings"]) {
-        if (typeof api?.[name] === "function") {
-          try { api[name](); return; } catch (_) {}
+      for (const api of [window.SorokaAndroid, window.SorokaNative, window.FlowAndroid]) {
+        for (const name of ["openCoachEyesSettings", "openAppSettings", "openSettings", "settings"]) {
+          if (typeof api?.[name] === "function") {
+            try { api[name](); return; } catch (_) {}
+          }
         }
       }
       this.message = "Разрешите камеру в настройках приложения.";
@@ -1685,10 +1952,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       if (!cameraCoachEnabled(state)) return;
       const match = this.cameraMatch(payload);
       if (match) {
-        clearTimeout(this.inline.timer);
-        this.inline.timer = null;
-        this.inline.status = "idle";
-        this.hideInline();
+        this.inlineRelease();
+        this.inline.pain = Boolean(match.set?.pain ?? payload?.pain ?? this.inline.pain);
       }
       if (!match) {
         if (this.model && this.cameraExercises().length) this.cameraChooseSheet(payload, null);
@@ -1711,9 +1976,12 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         <p>${esc(dose)}${esc(score)}</p>
         ${match.set.topError ? `<p class="sr-muted">${esc(match.set.topError)}</p>` : ""}
         <p class="sr-muted">В заметку: ${esc(match.noteBase)}</p>
-        <label class="sp-toggle"><input type="checkbox" data-camera-pain><span></span>Было больно</label>
+        <label class="sp-toggle"><input type="checkbox" data-camera-pain ${this.inline.pain ? "checked" : ""}><span></span>Было больно</label>
         <div class="sr-actions"><button type="button" class="primary-button" data-camera-apply>Применить</button>
         <button type="button" class="ghost-button" data-camera-fix>Исправить</button></div>`);
+      dialog.addEventListener("change", event => {
+        if (event.target.matches("[data-camera-pain]")) this.inlinePain(event.target.checked);
+      });
       dialog.addEventListener("click", event => {
         if (event.target.closest("[data-camera-apply]")) {
           const pain = Boolean(dialog.querySelector("[data-camera-pain]")?.checked);
@@ -1733,6 +2001,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       }
       const live = view(record).projection.sets.find(row => keyOf(row) === match.key);
       const note = [live?.note, match.noteBase, pain ? "боль: да" : ""].filter(Boolean).join("; ").slice(0, 1000);
+      this.inlinePain?.(pain);
       this.closeCameraDialog();
       try {
         await this.storage.change(data => {
@@ -1773,6 +2042,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         if (!event.target.closest("[data-camera-save]")) return;
         const noteInput = dialog.querySelector("[data-camera-note]");
         const pain = Boolean(dialog.querySelector("[data-camera-pain]")?.checked);
+        this.inlinePain?.(pain);
         const label = feel === "easy" ? "легко" : feel === "hard" ? "тяжело" : "нормально";
         const note = [match.noteBase, `самочувствие: ${label}`, `боль: ${pain ? "да" : "нет"}`,
           String(noteInput?.value ?? "").trim()].filter(Boolean).join("; ").slice(0, 1000);
@@ -2037,24 +2307,59 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       this.message = "";
       try {
         if (action === "camera-coach") { this.openCameraCoach(); return; }
-        if (action === "inline-expand") { this.hideInline(); this.openCameraCoach(); return; }
-        if (action === "inline-hide") {
-          this.inline.hidden = true;
-          this.inline.hiddenKey = coachEyesKeyFor(this.model?.current?.exercise) || "";
-          this.hideInline();
+        if (action === "inline-expand") {
+          const api = this.inlineBridge();
+          if (typeof api?.coachEyesInlineExpand === "function") {
+            const reply = this.inlineCall("coachEyesInlineExpand");
+            if (reply !== false && reply?.ok !== false) {
+              this.inline.expanded = true;
+              this.render(true);
+              return;
+            }
+          }
+          this.inlineClose();
+          this.openCameraCoach();
+          return;
+        }
+        if (action === "inline-collapse") {
+          this.inlineCall("coachEyesInlineCollapse");
+          this.inline.expanded = false;
           this.render(true);
           return;
         }
-        if (action === "inline-manual") {
+        if (action === "inline-hide" || action === "inline-manual") {
           this.inline.hidden = true;
           this.inline.hiddenKey = coachEyesKeyFor(this.model?.current?.exercise) || "";
           this.hideInline();
+          this.inlineRelease();
+          this.render(true);
+          return;
+        }
+        if (action === "inline-pain-clear") {
+          this.inlinePain(false);
+          this.inline.status = "idle";
+          this.inline.shown = false;
+          this.inline.signature = "";
+          this.inline.reason = "";
           this.render(true);
           return;
         }
         if (action === "inline-retry") {
+          const permission = await this.inlineRequestPermission();
+          if (permission === "denied") {
+            this.inline.status = "denied";
+            this.render(true);
+            return;
+          }
+          if (permission === "requested") {
+            this.inline.status = "denied";
+            this.inline.reason = "permission";
+            this.render(true);
+            return;
+          }
           this.inline.status = "idle";
           this.inline.shown = false;
+          this.inline.signature = "";
           this.inline.reason = "";
           this.render(true);
           return;
@@ -2234,8 +2539,31 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     dialog.showModal();
   }
 
+  const coachEyesSeen = new Map();
+  function coachEyesPayloadKey(payload) {
+    const workout = payload?.workouts?.[0];
+    const id = payload?.id ?? payload?.sessionId ?? payload?.exportedAtMs ?? workout?.id ?? workout?.startedAtMs;
+    if (id) return `id:${id}`;
+    try { return `json:${JSON.stringify(payload)}`; } catch { return ""; }
+  }
+
+  function coachEyesDuplicate(payload) {
+    const key = coachEyesPayloadKey(payload);
+    if (!key) return false;
+    const now = Date.now();
+    const seen = coachEyesSeen.get(key);
+    coachEyesSeen.set(key, now);
+    for (const [item, at] of coachEyesSeen) if (now - at > 60000) coachEyesSeen.delete(item);
+    return Boolean(seen && now - seen < 5000);
+  }
+
   function receiveCoachEyes(payload, attempt = 0) {
+    if (typeof payload === "string") {
+      try { payload = JSON.parse(payload); } catch { return; }
+    }
     if (!payload || payload.schema !== "coach-eyes.workout" || payload.version !== 1) return;
+    // Native may return the same result from Finish and dispatch it as an event.
+    if (attempt === 0 && coachEyesDuplicate(payload)) return;
     const active = activeRun();
     if (active) {
       window.__flowCoachEyes = null;
@@ -2258,7 +2586,26 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     else coachEyesFallback(payload, "Нет активной тренировки. Результат не записан.");
   }
 
-  window.SportCoachEyes = { receive: receiveCoachEyes };
+  let lastInlineState = { payload: null, at: 0 };
+  function inlineStateEvent(payload) {
+    if (typeof payload === "string") {
+      try { payload = JSON.parse(payload); } catch { return; }
+    }
+    if (!payload) return;
+    if (payload === lastInlineState.payload && Date.now() - lastInlineState.at < 500) return;
+    lastInlineState = { payload, at: Date.now() };
+    if (payload.schema === "coach-eyes.workout") { receiveCoachEyes(payload); return; }
+    const active = runner?.owner.current() ? runner : null;
+    active?.applyInlineState?.(payload);
+  }
+
+  window.SportCoachEyes = { receive: receiveCoachEyes, inlineState: inlineStateEvent };
+  for (const target of [window, typeof document !== "undefined" ? document : null]) {
+    if (typeof target?.addEventListener === "function") {
+      target.addEventListener("flow:coach-eyes-inline", event => inlineStateEvent(event.detail));
+    }
+  }
+  if (window.__flowCoachEyesInline) inlineStateEvent(window.__flowCoachEyesInline);
   window.SportRunReview = { owner, acquire, request };
 
   function refreshSportSurface() {

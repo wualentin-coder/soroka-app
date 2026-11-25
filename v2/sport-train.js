@@ -780,3 +780,22 @@ function flowCoachEyesReceive(payload, attempt = 0) {
 }
 window.addEventListener("flow:coach-eyes", event => flowCoachEyesReceive(event.detail));
 if (window.__flowCoachEyes) flowCoachEyesReceive(window.__flowCoachEyes);
+
+// Inline 4.69: state events and the single result payload share the same receiver.
+function flowCoachEyesInline(payload) {
+  if (typeof payload === "string") {
+    try { payload = JSON.parse(payload); } catch { return; }
+  }
+  if (!payload) return;
+  if (payload.schema === "coach-eyes.workout") {
+    const receive = window.SportCoachEyes?.receive;
+    if (typeof receive === "function") receive(payload);
+    else window.__flowCoachEyes = payload;
+    return;
+  }
+  const state = window.SportCoachEyes?.inlineState;
+  if (typeof state === "function") { try { state(payload); } catch (_) { window.__flowCoachEyesInline = payload; } }
+  else window.__flowCoachEyesInline = payload;
+}
+window.addEventListener("flow:coach-eyes-inline", event => flowCoachEyesInline(event.detail));
+if (window.__flowCoachEyesInline) flowCoachEyesInline(window.__flowCoachEyesInline);
