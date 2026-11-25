@@ -1540,6 +1540,21 @@ html[data-flow-design="magic"] body .sp-page:has(.sh-tabs) .lv-profile-row { min
   line-height: 1.35;
 }
 .sp2-schedule-banner p { margin: 0; }
+.sp2-coach-tip {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--sp2-wash);
+  font-size: 13px;
+}
+.sp2-coach-tip small { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.sp2-coach-tip strong { display: block; margin-top: 4px; font-size: 15px; }
+.sp2-coach-tip p { margin: 4px 0 0; line-height: 1.4; }
+.sp2-coach-tip details { margin-top: 8px; color: var(--muted); }
+.sp2-coach-tip summary { min-height: 32px; cursor: pointer; }
+.sp2-coach-tip ul { margin: 4px 0 0; padding-left: 18px; }
+.sp2-coach-tip a { color: inherit; overflow-wrap: anywhere; }
 .sp2-schedule-banner button { margin-top: 10px; min-height: 44px; }
 .sp2-f-dayhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
 .sp2-f-dayhead h1, .sp2-f-herobody h2 {
