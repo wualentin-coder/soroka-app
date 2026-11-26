@@ -1,0 +1,347 @@
+/* Flow · Glow — основа (этап 0). Источник: docs/design/glow-prototype/index.html.
+   Glow рисуется поверх Digital Magic: разметка и поведение магии остаются, здесь — только вид.
+   Подключается только при выборе «Glow · бета» (design-mode.js включает glow-*.css). */
+
+/* ── Токены и палитры ── */
+@property --glow-ang{syntax:'<angle>';inherits:false;initial-value:210deg}
+@property --glow-sx{syntax:'<percentage>';inherits:false;initial-value:20%}
+html[data-flow-skin=glow]{
+  --a1:#7b2cff;--a2:#ff3d6e;--a3:#ff8a1f;--a4:#ffd36b;
+  --glow-ink:#060608;--glow-plate:#0c0c10;
+  --glow-text:#f4f1ec;--glow-muted:rgba(244,241,236,.58);--glow-faint:rgba(244,241,236,.32);
+  --glow-ease:cubic-bezier(.19,1,.22,1);
+  --glow-grain:.13;
+  /* стекло */
+  --glow-glass:linear-gradient(160deg,rgba(255,255,255,.085),rgba(255,255,255,.02) 40%,rgba(255,255,255,.035));
+  --glow-glass-blur:blur(26px) saturate(170%);
+  --glow-glass-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 24px 60px rgba(0,0,0,.4);
+  /* магия берёт цвета отсюда */
+  --accent:var(--a3)!important;
+  --accent-strong:var(--a2)!important;
+  --energy-hot:color-mix(in srgb,var(--a4) 70%,#fff)!important;
+  --energy-cold:var(--a3)!important;
+  --page:var(--glow-ink)!important;
+  --surface:rgb(20 20 26 / .62)!important;
+  --surface-raised:rgb(28 28 36 / .72)!important;
+  --surface-soft:rgba(255,255,255,.06)!important;
+  --line:rgba(255,255,255,.1)!important;
+  --text:var(--glow-text)!important;
+  --muted:var(--glow-muted)!important;
+  --subtle:rgba(244,241,236,.46)!important;
+  --magic-card-radius:28px!important;
+  --magic-control-radius:16px!important;
+  --magic-card-line:rgba(255,255,255,.1)!important;
+  --magic-glow:color-mix(in srgb,var(--a3) 10%,transparent)!important;
+  --magic-display-font:Manrope,"Segoe UI",sans-serif!important;
+  --flow-logo-accent:var(--a3)!important;
+  color-scheme:dark;
+  background:var(--glow-ink)!important;
+}
+html[data-flow-skin=glow][data-glow-pal=abyss]{--a1:#2a1fd1;--a2:#3d5bff;--a3:#3fa2ff;--a4:#b9e2ff}
+html[data-flow-skin=glow][data-glow-pal=signal]{--a1:#0b6b3a;--a2:#19c25a;--a3:#5dff7e;--a4:#d8ffd9}
+html[data-flow-skin=glow][data-glow-pal=aurora]{--a1:#0d5c63;--a2:#2ec4b6;--a3:#7cf2d6;--a4:#e0fff7}
+html[data-flow-skin=glow][data-glow-pal=rose]{--a1:#7a1846;--a2:#d6336c;--a3:#ff7aa8;--a4:#ffe1ec}
+html[data-flow-skin=glow][data-glow-pal=ice]{--a1:#1d3a8a;--a2:#3a7bd5;--a3:#7fd1ff;--a4:#eaf8ff}
+html[data-flow-skin=glow][data-glow-pal=violet]{--a1:#3b1a8f;--a2:#7b3fe4;--a3:#b18cff;--a4:#efe6ff}
+html[data-flow-skin=glow][data-glow-pal=citrus]{--a1:#4a5a00;--a2:#9bbb00;--a3:#e3ff4f;--a4:#fbffe0}
+html[data-flow-skin=glow][data-glow-pal=mono]{--a1:#24242c;--a2:#5f5f6c;--a3:#c9c9d6;--a4:#ffffff}
+
+html[data-flow-skin=glow] body{background:transparent!important;color:var(--glow-text);font-family:Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+/* фон магии уступает среде Glow */
+html[data-flow-skin=glow]::before{display:none!important}
+html[data-flow-skin=glow] :is(.digital-atmosphere,.edge-energy){display:none!important}
+
+/* ── Среда: свет (пятна), формы, эллипсы, каустика ── */
+.glow-env{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;contain:strict;
+  --x1:-120px;--y1:-300px;--x2:150px;--y2:60px;--x3:-40px;--y3:330px;--x4:-180px;--y4:120px;--x5:110px;--y5:-160px}
+.glow-env .gb{position:absolute;left:50%;top:50%;width:var(--s);height:var(--s);margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);border-radius:50%;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--c) 85%,transparent),color-mix(in srgb,var(--c) 30%,transparent) 55%,transparent);
+  mix-blend-mode:screen;opacity:calc(var(--o) * .72);filter:blur(24px);will-change:transform;
+  translate:var(--tx) var(--ty);transition:translate 2.2s cubic-bezier(.33,1,.32,1),opacity 1s;
+  animation:var(--path) var(--dur) ease-in-out infinite alternate}
+.glow-env .b1{--c:var(--a1);--s:560px;--o:.75;--path:glowP1;--dur:26s;--tx:var(--x1);--ty:var(--y1)}
+.glow-env .b2{--c:var(--a2);--s:440px;--o:.5;--path:glowP2;--dur:31s;--tx:var(--x2);--ty:var(--y2)}
+.glow-env .b3{--c:var(--a3);--s:380px;--o:.42;--path:glowP3;--dur:23s;--tx:var(--x3);--ty:var(--y3)}
+.glow-env .b4{--c:var(--a1);--s:620px;--o:.5;--path:glowP4;--dur:37s;--tx:var(--x4);--ty:var(--y4)}
+.glow-env .b5{--c:var(--a4);--s:260px;--o:.22;--path:glowP5;--dur:19s;--tx:var(--x5);--ty:var(--y5)}
+@keyframes glowP1{0%{transform:translate(-40px,-60px) scale(1)}33%{transform:translate(50px,-10px) scale(1.12)}66%{transform:translate(-10px,40px) scale(.94)}100%{transform:translate(60px,-80px) scale(1.06)}}
+@keyframes glowP2{0%{transform:translate(30px,20px) scale(1.05)}40%{transform:translate(-60px,-30px) scale(.9)}100%{transform:translate(40px,-60px) scale(1.15)}}
+@keyframes glowP3{0%{transform:translate(0,0) scale(.95)}50%{transform:translate(70px,-50px) scale(1.2)}100%{transform:translate(-50px,30px) scale(1)}}
+@keyframes glowP4{0%{transform:translate(-30px,40px) rotate(0) scale(1)}100%{transform:translate(40px,-40px) rotate(40deg) scale(1.1)}}
+@keyframes glowP5{0%{transform:translate(-80px,0) scale(.8)}50%{transform:translate(60px,-40px) scale(1.25)}100%{transform:translate(0,50px) scale(.9)}}
+/* расстановка пятен по разделам — плавно перетекает при переходе */
+.glow-env[data-page=saved]{--x1:140px;--y1:-280px;--x2:-160px;--y2:-20px;--x3:90px;--y3:300px;--x4:180px;--y4:200px;--x5:-120px;--y5:-80px}
+.glow-env[data-page=practice]{--x1:-60px;--y1:-180px;--x2:170px;--y2:250px;--x3:-150px;--y3:120px;--x4:40px;--y4:-340px;--x5:60px;--y5:60px}
+.glow-env[data-page=more]{--x1:160px;--y1:-60px;--x2:-140px;--y2:-300px;--x3:120px;--y3:340px;--x4:-200px;--y4:260px;--x5:-40px;--y5:-200px}
+.glow-env[data-page=finance]{--x1:-160px;--y1:-260px;--x2:120px;--y2:-120px;--x3:0px;--y3:200px;--x4:160px;--y4:320px;--x5:-100px;--y5:20px}
+.glow-env[data-page=render]{--x1:100px;--y1:-320px;--x2:-120px;--y2:180px;--x3:150px;--y3:40px;--x4:-140px;--y4:-120px;--x5:40px;--y5:280px}
+.glow-env::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 0%,transparent 40%,rgba(6,6,8,.55))}
+/* свет собирается к звезде, пока ассистент слушает */
+.glow-env[data-as=listen] .gb{translate:0 230px}.glow-env[data-as=think] .gb{translate:0 140px}.glow-env[data-as=speak] .gb{translate:0 60px}
+
+.glow-env :is(.gf,.ge,.gc){position:absolute;inset:0;opacity:0;transition:opacity 1.4s ease;pointer-events:none}
+.glow-env[data-bg=forms] .gf{opacity:.8}.glow-env[data-bg=ellipse] .ge{opacity:.55}.glow-env[data-bg=caustic] .gc{opacity:1}
+.glow-env:not([data-bg=light]) .gb{opacity:0}
+/* формы: тёмные объёмы и световой шов */
+.glow-env .gf .fl{position:absolute;left:50%;top:47%;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--a3) 70%,transparent),color-mix(in srgb,var(--a2) 50%,transparent) 32%,color-mix(in srgb,var(--a1) 35%,transparent) 60%,transparent);
+  filter:blur(40px);opacity:.75;animation:glowFl 12s ease-in-out infinite alternate}
+@keyframes glowFl{0%{transform:scale(.9);opacity:.5}100%{transform:scale(1.05);opacity:.8}}
+.glow-env .gf .fq{position:absolute;width:310px;height:420px;border-radius:47%;
+  background:radial-gradient(110% 110% at var(--hx) var(--hy),#2c2535,#141019 42%,#060509 78%);
+  box-shadow:inset var(--sx) var(--sy) 60px -16px color-mix(in srgb,var(--a3) 30%,transparent),0 30px 80px rgba(0,0,0,.5);filter:blur(14px);
+  transition:translate 1.6s cubic-bezier(.33,1,.32,1);animation:glowFq 15s ease-in-out infinite alternate;animation-delay:var(--d)}
+.glow-env .gf .q1{left:calc(50% - 287px);top:calc(50% - 458px);--hx:85%;--hy:90%;--sx:-18px;--sy:-18px;--mx:-10px;--my:-14px;--d:0s}
+.glow-env .gf .q2{left:calc(50% - 9px);top:calc(50% - 474px);--hx:15%;--hy:90%;--sx:18px;--sy:-18px;--mx:14px;--my:-10px;--d:-4s}
+.glow-env .gf .q3{left:calc(50% - 299px);top:calc(50% - 22px);--hx:85%;--hy:10%;--sx:-18px;--sy:18px;--mx:-12px;--my:12px;--d:-8s}
+.glow-env .gf .q4{left:calc(50% + 3px);top:calc(50% - 34px);--hx:15%;--hy:10%;--sx:18px;--sy:18px;--mx:10px;--my:14px;--d:-11s}
+@keyframes glowFq{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(var(--mx),var(--my)) rotate(3deg)}}
+.glow-env[data-as=listen] .q1{translate:14px 16px}.glow-env[data-as=listen] .q2{translate:-14px 16px}.glow-env[data-as=listen] .q3{translate:14px -16px}.glow-env[data-as=listen] .q4{translate:-14px -16px}
+.glow-env:is([data-as=think],[data-as=speak]) .fl{animation-duration:1.6s}
+/* эллипсы: дыхание */
+.glow-env .ge{display:flex;flex-direction:column;justify-content:center;-webkit-mask:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.glow-env .ge i{flex:none;display:block;width:130%;margin:-26px 0 0 -15%;height:122px;border-radius:50%;
+  background:radial-gradient(50% 50% at 50% 50%,transparent 36%,color-mix(in srgb,var(--a1) 55%,transparent) 56%,color-mix(in srgb,var(--a2) 70%,transparent) 70%,color-mix(in srgb,var(--a3) 55%,transparent) 82%,transparent);
+  filter:blur(16px);mix-blend-mode:screen;opacity:.45;animation:glowEl 6.5s ease-in-out infinite;animation-delay:calc(var(--i) * -.8s)}
+@keyframes glowEl{0%,100%{transform:scale(.82,.9);opacity:.25}50%{transform:scale(1.04,1.06);opacity:.55}}
+.glow-env[data-as=listen] .ge i{animation-duration:2.2s}.glow-env[data-as=think] .ge i{animation-duration:1.2s}
+/* каустика: световые петли, мягкие, без белых кромок */
+.glow-env .gc::before{content:"";position:absolute;inset:-20%;background:radial-gradient(40% 30% at 30% 40%,color-mix(in srgb,var(--a1) 55%,transparent),transparent 70%),radial-gradient(40% 30% at 70% 60%,color-mix(in srgb,var(--a2) 40%,transparent),transparent 70%);animation:glowCf 22s ease-in-out infinite alternate}
+@keyframes glowCf{to{transform:translate(30px,-40px) rotate(12deg)}}
+.glow-env .gc i{position:absolute;left:50%;top:46%;width:var(--w);height:var(--h);margin:calc(var(--h) / -2) 0 0 calc(var(--w) / -2);border-radius:46% 54% 42% 58% / 55% 45% 55% 45%;
+  border:1.5px solid color-mix(in srgb,var(--c) 75%,#fff);box-shadow:0 0 22px var(--c),inset 0 0 30px color-mix(in srgb,var(--c) 35%,transparent);filter:blur(5px);
+  mix-blend-mode:screen;opacity:.5;animation:glowCr var(--t) linear infinite,glowCm calc(var(--t) * .5) ease-in-out infinite alternate}
+.glow-env .gc .c1{--w:560px;--h:430px;--c:var(--a3);--t:30s}
+.glow-env .gc .c2{--w:480px;--h:640px;--c:var(--a2);--t:36s;animation-direction:reverse,alternate}
+.glow-env .gc .c3{--w:650px;--h:360px;--c:var(--a4);--t:44s}
+.glow-env .gc .c4{--w:566px;--h:436px;--c:#6cc8ff;--t:30s;opacity:.28;margin-left:-280px}
+.glow-env .gc .c5{--w:420px;--h:520px;--c:color-mix(in srgb,var(--a3) 60%,#ff4fa0);--t:26s;animation-direction:reverse,alternate}
+@keyframes glowCr{to{rotate:360deg}}
+@keyframes glowCm{0%{border-radius:46% 54% 42% 58% / 55% 45% 55% 45%;scale:1}100%{border-radius:60% 40% 56% 44% / 40% 60% 44% 56%;scale:1.1}}
+.glow-env[data-as=listen] .gc i{scale:.82;transition:scale 1.4s var(--glow-ease)}.glow-env[data-as=think] .gc i{animation-duration:6s,3s}
+
+/* зерно поверх всего, нажатия проходят насквозь */
+.glow-grain{position:fixed;inset:-50%;z-index:2147483000;pointer-events:none;opacity:var(--glow-grain);mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:glowGrain .9s steps(6) infinite}
+@keyframes glowGrain{20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-4%,-1%)}80%{transform:translate(3%,3%)}}
+
+/* «Без движения»: среда и зерно замирают */
+html[data-flow-skin=glow][data-motion=off] :is(.glow-env,.glow-env *,.glow-env *::before,.glow-grain){animation:none!important;transition:none!important}
+
+/* ── Стекло плашек ── */
+/* Крупные плашки: стекло, бегущая грань света и свой блик (--sha/--shp/--sy/--shw/--sho/--shd задаёт glow-shell.js). */
+html[data-flow-skin=glow] .main :is(
+  .dm-plan-schedule, .dm-overdue,
+  .hero-panel, .side-card, .overview-intro, .list-panel, .info-tile,
+  .saved-pinned-panel, .saved-section-card, .project-card, .mosaic-card, .more-tile, .state-card,
+  .finance-hero, .finance-summary, .budget-card, .payment-card, .fixed-card, .smart-card,
+  .dm-finance-balance, .dm-finance-flow, .dm-finance-debt-link,
+  .en-hero, .en-situation, .en-metrics, .en-card, .en-home, .en-lesson, .en-rules,
+  .sp-card, .sl-card, .pc-card, .pc-hero, .ds2-surface, .ds-group, .ds-status, .server-kpis,
+  .dsr-main, .dsr-card, .vpn-status, .vpn-service, .rm-recent,
+  .pn-lesson-card, .pn-today-summary, .pn-readiness, .pnw-focus,
+  .settings-group, .dv-preference-card, .dc-module-card, .dc2-module
+){
+  --glow-rim-w:1px;
+  border-color:transparent!important;
+  background-color:transparent!important;
+  background-image:var(--glow-glass)!important;
+  -webkit-backdrop-filter:var(--glow-glass-blur);backdrop-filter:var(--glow-glass-blur);
+  box-shadow:var(--glow-glass-shadow)!important;
+  border-radius:28px;
+}
+/* грань и блик — только у плашек, где магия не занимает ::before/::after и которые стоят в потоке */
+html[data-flow-skin=glow] .main :is(
+  .dm-plan-schedule, .dm-overdue, .side-card, .list-panel, .saved-section-card, .dc2-module, .dc-module-card,
+  .dm-finance-balance, .dm-finance-flow, .settings-group, .dv-preference-card, .ds-group, .ds-status, .server-kpis,
+  .dsr-main, .dsr-card, .ds2-surface, .pc-hero, .en-lesson, .en-rules, .pnw-focus
+){position:relative;isolation:isolate}
+html[data-flow-skin=glow] .main :is(
+  .dm-plan-schedule, .dm-overdue, .side-card, .list-panel, .saved-section-card, .dc2-module, .dc-module-card,
+  .dm-finance-balance, .dm-finance-flow, .settings-group, .dv-preference-card, .ds-group, .ds-status, .server-kpis,
+  .dsr-main, .dsr-card, .ds2-surface, .pc-hero, .en-lesson, .en-rules, .pnw-focus
+)::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;z-index:4;
+  background:conic-gradient(from var(--glow-ang),rgba(255,255,255,.5),rgba(255,255,255,.05) 18%,rgba(255,255,255,.02) 42%,color-mix(in srgb,var(--a3) 60%,transparent) 58%,color-mix(in srgb,var(--a2) 35%,transparent) 66%,rgba(255,255,255,.04) 78%,rgba(255,255,255,.42));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:glowRim 16s linear infinite;animation-delay:var(--rd,0s)}
+@keyframes glowRim{to{--glow-ang:570deg}}
+html[data-flow-skin=glow] .main :is(
+  .dm-plan-schedule, .dm-overdue, .side-card, .list-panel, .saved-section-card, .dc2-module, .dc-module-card,
+  .dm-finance-balance, .dm-finance-flow, .settings-group, .dv-preference-card, .ds-group, .ds-status, .server-kpis,
+  .dsr-main, .dsr-card, .ds2-surface, .pc-hero, .en-lesson, .en-rules, .pnw-focus
+)::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;mix-blend-mode:screen;
+  background:
+    radial-gradient(var(--shw,60%) 45% at var(--glow-sx) var(--sy,0%),rgba(255,255,255,.075),transparent 70%),
+    linear-gradient(var(--sha,115deg),transparent calc(var(--shp,48%) - 13%),rgba(255,255,255,var(--sho,.035)) var(--shp,48%),transparent calc(var(--shp,48%) + 12%));
+  animation:glowSheen var(--shd,11s) ease-in-out infinite alternate;animation-delay:var(--rd,0s)}
+@keyframes glowSheen{to{--glow-sx:80%}}
+/* плашка внутри плашки — без второго слоя стекла */
+html[data-flow-skin=glow] .main :is(.dm-plan-schedule,.dm-overdue,.side-card,.list-panel,.saved-section-card,.dc2-module,.dc-module-card,.dm-finance-balance,.dm-finance-flow,.settings-group,.dv-preference-card,.ds-group,.ds-status,.server-kpis,.dsr-main,.dsr-card,.ds2-surface,.pc-hero,.en-lesson,.en-rules,.pnw-focus) :is(.dm-plan-schedule,.dm-overdue,.side-card,.list-panel,.saved-section-card,.dc2-module,.dc-module-card,.dm-finance-balance,.dm-finance-flow,.settings-group,.dv-preference-card,.ds-group,.ds-status,.server-kpis,.dsr-main,.dsr-card,.ds2-surface,.pc-hero,.en-lesson,.en-rules,.pnw-focus){background-image:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none!important}
+html[data-flow-skin=glow] .main :is(.dm-plan-schedule,.dm-overdue,.side-card,.list-panel,.saved-section-card,.dc2-module,.dc-module-card,.dm-finance-balance,.dm-finance-flow,.settings-group,.dv-preference-card,.ds-group,.ds-status,.server-kpis,.dsr-main,.dsr-card,.ds2-surface,.pc-hero,.en-lesson,.en-rules,.pnw-focus) :is(.dm-plan-schedule,.dm-overdue,.side-card,.list-panel,.saved-section-card,.dc2-module,.dc-module-card,.dm-finance-balance,.dm-finance-flow,.settings-group,.dv-preference-card,.ds-group,.ds-status,.server-kpis,.dsr-main,.dsr-card,.ds2-surface,.pc-hero,.en-lesson,.en-rules,.pnw-focus)::before,html[data-flow-skin=glow] .main :is(.dm-plan-schedule,.dm-overdue,.side-card,.list-panel,.saved-section-card,.dc2-module,.dc-module-card,.dm-finance-balance,.dm-finance-flow,.settings-group,.dv-preference-card,.ds-group,.ds-status,.server-kpis,.dsr-main,.dsr-card,.ds2-surface,.pc-hero,.en-lesson,.en-rules,.pnw-focus) :is(.dm-plan-schedule,.dm-overdue,.side-card,.list-panel,.saved-section-card,.dc2-module,.dc-module-card,.dm-finance-balance,.dm-finance-flow,.settings-group,.dv-preference-card,.ds-group,.ds-status,.server-kpis,.dsr-main,.dsr-card,.ds2-surface,.pc-hero,.en-lesson,.en-rules,.pnw-focus)::after{content:none}
+/* вложенная карточка календаря и строки дел внутри плашки — без второго слоя стекла */
+html[data-flow-skin=glow] .dm-plan-schedule :is(.calendar-card,.dm-calendar-surface){background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+html[data-flow-skin=glow] .dm-plan-schedule .dm-calendar-atmosphere{display:none}
+html[data-flow-skin=glow] .main :is(.task-card,.event-card):not(.overdue){background:transparent!important;box-shadow:none!important}
+html[data-flow-skin=glow] .main :is(.task-card,.event-card){border-color:rgba(255,255,255,.07)!important}
+html[data-flow-skin=glow] .main .swipe-action:not(.delete),html[data-flow-skin=glow] .main .swipe-right-indicator{background:rgb(30 30 38 / .9)}
+
+/* ── Единые плитки иконок: жидкое стекло, подкрашенное цветом раздела, светлый глиф с цветным свечением ── */
+html[data-flow-skin=glow] .main :is(.module-symbol,.dc2-module-symbol){
+  position:relative;isolation:isolate;overflow:hidden;width:44px;height:44px;border-radius:15px;display:grid;place-items:center;
+  color:color-mix(in srgb,var(--tc,var(--a3)) 28%,#fff)!important;
+  background:radial-gradient(90% 65% at 28% 0%,rgba(255,255,255,.26),transparent 62%),
+    radial-gradient(115% 80% at 50% 118%,color-mix(in srgb,var(--tc,var(--a3)) 72%,transparent),transparent 72%),
+    linear-gradient(160deg,color-mix(in srgb,var(--tc,var(--a3)) 20%,rgba(255,255,255,.07)),rgba(255,255,255,.025))!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),inset 0 0 0 1px rgba(255,255,255,.09),inset 0 -7px 14px -7px color-mix(in srgb,var(--tc,var(--a3)) 85%,transparent),0 8px 20px -8px color-mix(in srgb,var(--tc,var(--a3)) 50%,transparent)!important}
+html[data-flow-skin=glow] .main :is(.module-symbol,.dc2-module-symbol) :is(svg,img){width:22px;height:22px;filter:drop-shadow(0 0 5px var(--tc,var(--a3))) drop-shadow(0 0 12px color-mix(in srgb,var(--tc,var(--a3)) 45%,transparent))}
+/* световой глиф магии становится светлым, свечение даёт цвет раздела */
+html[data-flow-skin=glow] :is(.main .module-symbol,.main .dc2-module-symbol,.dm-bottom-nav) .light-glyph{color:inherit!important}
+html[data-flow-skin=glow] :is(.main .module-symbol,.main .dc2-module-symbol,.dm-bottom-nav) .light-glyph .li-symbol{stroke:currentColor}
+html[data-flow-skin=glow] :is(.main .module-symbol,.main .dc2-module-symbol,.dm-bottom-nav) .light-glyph :is(.li-fill,.li-dot){fill:currentColor}
+html[data-flow-skin=glow] :is(.main .module-symbol,.main .dc2-module-symbol,.dm-bottom-nav) .light-glyph .li-aura{display:none}
+/* цвет раздела */
+html[data-flow-skin=glow] .main :is(.dc-module-piano,.saved-section-notes){--tc:#b18cff}
+html[data-flow-skin=glow] .main :is(.dc-module-english,.saved-section-materials){--tc:#5ad1ff}
+html[data-flow-skin=glow] .main :is(.dc-module-sport,.saved-section-recipes){--tc:#ff8a4c}
+html[data-flow-skin=glow] .main :is(.saved-section-movies,.dc-module-render){--tc:#ff5d8f}
+html[data-flow-skin=glow] .main :is(.saved-section-addresses,.dc-module-vpn){--tc:#5dff9e}
+html[data-flow-skin=glow] .main :is(.saved-section-tickets,.dc-module-pc){--tc:#ffd36b}
+html[data-flow-skin=glow] .main :is(.saved-section-lists,.dc-module-tasks){--tc:#7cf2d6}
+html[data-flow-skin=glow] .main :is(.saved-section-products,.dc-module-server){--tc:#ffb340}
+html[data-flow-skin=glow] .main :is(.saved-section-cards,.dc-module-vault){--tc:#7fd1ff}
+html[data-flow-skin=glow] .main :is(.saved-section-birthdays,.dc-module-inbox){--tc:#ff7aa8}
+
+/* ── Заголовки разделов ── */
+html[data-flow-skin=glow] .dm-main>.page-header h1,
+html[data-flow-skin=glow] .main :is(.saved-section-heading h1,.dc2-library-head h1){font:700 26px/1.1 Manrope,system-ui,sans-serif!important;letter-spacing:-.02em!important;color:var(--glow-text)}
+html[data-flow-skin=glow] .dm-main>.page-header .eyebrow{font-size:12px;font-weight:600;color:var(--glow-faint);letter-spacing:.01em}
+html[data-flow-skin=glow] .main :is(.section-heading h2,.dc2-directory-group h2){font:600 15px/1.3 Manrope,system-ui,sans-serif!important;color:var(--glow-muted)!important;letter-spacing:0}
+html[data-flow-skin=glow] .main :where(h2,h3){font-family:Manrope,system-ui,sans-serif}
+
+/* ── Верхняя строка: стеклянные кнопки ── */
+html[data-flow-skin=glow] :is(.dm-topbar .dm-icon-button,.dm-main>.page-header .icon-button,.sheet-head>.icon-button){
+  border-radius:16px!important;border:0!important;color:var(--glow-text);
+  background:linear-gradient(160deg,rgba(255,255,255,.085),rgba(255,255,255,.02) 40%,rgba(255,255,255,.035))!important;
+  -webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -6px 12px -8px color-mix(in srgb,var(--a3) 55%,transparent)!important}
+
+/* ── Капсулы вкладок: стекло по размеру содержимого, выбранная — световая «лампа» ── */
+html[data-flow-skin=glow] .main :is(.segmented,.en-tabs,.sp-tabs,.finance-tabs,.movie-seen-tabs,.filter-buttons,.subtabs){
+  border:0!important;border-radius:18px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025))!important;
+  -webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -8px 14px -10px color-mix(in srgb,var(--a3) 40%,transparent)!important}
+html[data-flow-skin=glow] .main :is(.segmented,.en-tabs,.sp-tabs,.finance-tabs,.movie-seen-tabs,.filter-buttons,.subtabs)>:is(button,a){color:var(--glow-faint);font-weight:700;border-radius:14px!important;border-color:transparent!important;background:transparent!important;box-shadow:none!important}
+html[data-flow-skin=glow] .main :is(.segmented,.en-tabs,.sp-tabs,.finance-tabs,.movie-seen-tabs,.filter-buttons,.subtabs)>:is(button,a):is(.active,[aria-selected=true],[aria-pressed=true],[aria-current]){color:var(--glow-text)}
+html[data-flow-skin=glow] .main :is(.segmented,.en-tabs,.sp-tabs,.finance-tabs,.movie-seen-tabs,.filter-buttons,.subtabs)>.flow-motion-indicator,
+html[data-flow-skin=glow] .main .dm-calendar-view-indicator{border:0!important;border-radius:14px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.03)),radial-gradient(120% 90% at 50% 130%,color-mix(in srgb,var(--a3) 70%,transparent),transparent 75%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28)!important}
+/* без лампы магии выбранная вкладка светится сама */
+html[data-flow-skin=glow] .main :is(.segmented,.en-tabs,.sp-tabs,.finance-tabs,.movie-seen-tabs,.filter-buttons,.subtabs):not(:has(>.flow-motion-indicator,>.dm-calendar-view-indicator))>:is(button,a):is(.active,[aria-selected=true]){
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.03)),radial-gradient(120% 90% at 50% 130%,color-mix(in srgb,var(--a3) 70%,transparent),transparent 75%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28)!important}
+/* капсула по размеру содержимого: не тянется на всю ширину */
+html[data-flow-skin=glow] .main :is(.en-tabs,.sp-tabs,.finance-tabs,.movie-seen-tabs,.subtabs){width:fit-content;max-width:100%;margin-inline:auto}
+
+/* ── Кнопки действия ── */
+html[data-flow-skin=glow] .main .primary-button,html[data-flow-skin=glow] .sheet .primary-button{
+  color:#140a08!important;border:0!important;border-radius:20px!important;
+  background:linear-gradient(180deg,var(--a4),var(--a3) 60%,var(--a2))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 10px 30px color-mix(in srgb,var(--a3) 45%,transparent)!important}
+
+/* ── Шторки и окна: жидкое стекло снизу ── */
+html[data-flow-skin=glow] :is(.modal-backdrop,.enm-backdrop,.composer-scrim,.pins-drop-scrim){background:rgba(0,0,0,.45)!important}
+html[data-flow-skin=glow] :is(.sheet,.composer,.enm-song-sheet,.pins-drop-card){
+  border:0!important;border-radius:36px!important;
+  background:linear-gradient(160deg,rgb(30 28 38 / .78),rgb(14 14 20 / .86) 45%,rgb(20 18 28 / .82))!important;
+  -webkit-backdrop-filter:blur(30px) saturate(170%);backdrop-filter:blur(30px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(255,255,255,.07),0 -10px 60px rgba(0,0,0,.5)!important}
+html[data-flow-skin=glow] .sheet-handle{background:rgba(255,255,255,.28)!important}
+html[data-flow-skin=glow] .sheet .field :is(input,textarea,select){background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.08)!important;border-radius:16px!important}
+
+/* ── Нижний бар один в один с прототипом (.dock): стекло 60 px, слева/справа 14, снизу 24; значки прототипа без подписей;
+   световая черта 22×3 под выбранным; звезда 84 px по центру, выступает на 30 px ── */
+@media(max-width:760px),(orientation:landscape) and (max-height:520px) and (max-width:1100px){
+  html[data-flow-skin=glow] .dm-bottom-nav{
+    left:14px!important;right:14px!important;bottom:max(24px,calc(env(safe-area-inset-bottom) + 8px))!important;
+    width:auto!important;max-width:none!important;height:60px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;border-radius:24px!important;
+    display:grid!important;grid-template-columns:1fr 1fr 84px 1fr 1fr!important;align-items:center;isolation:isolate;
+    background:var(--glow-glass)!important;
+    -webkit-backdrop-filter:var(--glow-glass-blur)!important;backdrop-filter:var(--glow-glass-blur)!important;
+    box-shadow:var(--glow-glass-shadow)!important}
+  html[data-flow-skin=glow] .dm-bottom-nav::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;z-index:4;
+    background:conic-gradient(from var(--glow-ang),rgba(255,255,255,.5),rgba(255,255,255,.05) 18%,rgba(255,255,255,.02) 42%,color-mix(in srgb,var(--a3) 60%,transparent) 58%,color-mix(in srgb,var(--a2) 35%,transparent) 66%,rgba(255,255,255,.04) 78%,rgba(255,255,255,.42));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:glowRim 16s linear infinite}
+  html[data-flow-skin=glow] .dm-bottom-nav::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;mix-blend-mode:screen;
+    background:radial-gradient(60% 45% at var(--glow-sx) 0%,rgba(255,255,255,.075),transparent 70%),linear-gradient(115deg,transparent 35%,rgba(255,255,255,.035) 48%,transparent 60%);
+    animation:glowSheen 11s ease-in-out infinite alternate}
+  html[data-flow-skin=glow] .dm-bottom-nav>button{display:flex!important;align-items:center!important;justify-content:center!important;height:60px!important;min-height:0!important;padding:0!important;margin:0!important;
+    background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;color:rgba(244,241,236,.32)!important;position:relative;z-index:1;transition:color .3s}
+  html[data-flow-skin=glow] .dm-bottom-nav>button:nth-of-type(3){grid-column:4}
+  html[data-flow-skin=glow] .dm-bottom-nav>button:nth-of-type(4){grid-column:5}
+  /* подпись остаётся для чтения с экрана, глазами — только значок, как в прототипе */
+  html[data-flow-skin=glow] .dm-bottom-nav>button>span{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+  html[data-flow-skin=glow] .dm-bottom-nav>button>svg{display:none!important}
+  html[data-flow-skin=glow] .dm-bottom-nav>button::before{content:"";width:24px;height:24px;background:currentColor;-webkit-mask:no-repeat center/24px 24px;mask:no-repeat center/24px 24px;transition:filter .3s,transform .4s var(--glow-ease)}
+  html[data-flow-skin=glow] .dm-bottom-nav>button[data-page=today]::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223.5%22 y=%225%22 width=%2217%22 height=%2215%22 rx=%224%22/%3E%3Cpath d=%22M3.5 10h17M8 3v4M16 3v4%22/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223.5%22 y=%225%22 width=%2217%22 height=%2215%22 rx=%224%22/%3E%3Cpath d=%22M3.5 10h17M8 3v4M16 3v4%22/%3E%3C/svg%3E")}
+  html[data-flow-skin=glow] .dm-bottom-nav>button[data-page=saved]::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4-6.5 4v-16a1 1 0 0 1 1-1Z%22/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4-6.5 4v-16a1 1 0 0 1 1-1Z%22/%3E%3C/svg%3E")}
+  html[data-flow-skin=glow] .dm-bottom-nav>button[data-page=finance]::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 7.5a2 2 0 0 1 2-2h11v4%22/%3E%3Crect x=%224%22 y=%229.5%22 width=%2216%22 height=%2210%22 rx=%222.5%22/%3E%3Cpath d=%22M16 14.5h.01%22/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 7.5a2 2 0 0 1 2-2h11v4%22/%3E%3Crect x=%224%22 y=%229.5%22 width=%2216%22 height=%2210%22 rx=%222.5%22/%3E%3Cpath d=%22M16 14.5h.01%22/%3E%3C/svg%3E")}
+  html[data-flow-skin=glow] .dm-bottom-nav>button[data-page=more]::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23000%22%3E%3Ccircle cx=%226%22 cy=%2212%22 r=%221.8%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%221.8%22/%3E%3Ccircle cx=%2218%22 cy=%2212%22 r=%221.8%22/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23000%22%3E%3Ccircle cx=%226%22 cy=%2212%22 r=%221.8%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%221.8%22/%3E%3Ccircle cx=%2218%22 cy=%2212%22 r=%221.8%22/%3E%3C/svg%3E")}
+  html[data-flow-skin=glow] .dm-bottom-nav>button.active{color:var(--glow-text)!important}
+  html[data-flow-skin=glow] .dm-bottom-nav>button.active::before{filter:drop-shadow(0 0 8px var(--a3));transform:translateY(-1px)}
+  /* лампа магии становится световой чертой под выбранным разделом */
+  html[data-flow-skin=glow] .dm-bottom-nav>.flow-motion-indicator{top:0!important;bottom:0!important;height:auto!important;background:none!important;border:0!important;box-shadow:none!important;z-index:2}
+  html[data-flow-skin=glow] .dm-bottom-nav>.flow-motion-indicator::after{content:"";position:absolute;left:50%;bottom:9px;width:22px;height:3px;margin-left:-11px;border-radius:3px;background:var(--a3);box-shadow:0 0 10px var(--a3),0 0 22px var(--a2)}
+  /* звезда ассистента: центр бара, 84 px, на 30 px выше бара */
+  html[data-flow-skin=glow] .fab.assistant-fab{left:50%!important;right:auto!important;top:auto!important;margin:0 0 0 -42px!important;width:84px!important;height:84px!important;padding:0!important;
+    bottom:calc(max(24px,calc(env(safe-area-inset-bottom) + 8px)) + 6px)!important;z-index:36!important;display:grid!important;place-items:center!important;background:none!important;border:0!important;box-shadow:none!important}
+}
+/* горизонтально: тот же бар, компактный по центру */
+@media(orientation:landscape) and (max-height:520px) and (max-width:1100px){
+  html[data-flow-skin=glow] body:not(.piano-page) .dm-bottom-nav{left:50%!important;right:auto!important;width:min(440px,calc(100% - 24px))!important;translate:-50% 0;bottom:max(10px,calc(env(safe-area-inset-bottom) + 6px))!important}
+  html[data-flow-skin=glow] body:not(.piano-page) .fab.assistant-fab{bottom:calc(max(10px,calc(env(safe-area-inset-bottom) + 6px)) + 6px)!important}
+  html[data-flow-skin=glow] body:not(.piano-page) .dm-main{padding-bottom:96px}
+}
+/* звезда как в прототипе (.star): лучи, два кольца-орбиты, звезда 48 px с белым ядром, покачивание и перелив света */
+html[data-flow-skin=glow] .fab.assistant-fab .af-fab-halo{inset:-38px!important;width:auto!important;height:auto!important;border-radius:0!important;pointer-events:none;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--a4) 70%,transparent),transparent 60%),
+    linear-gradient(90deg,transparent,color-mix(in srgb,var(--a3) 70%,transparent) 50%,transparent) center/100% 2px no-repeat,
+    linear-gradient(0deg,transparent,color-mix(in srgb,var(--a3) 70%,transparent) 50%,transparent) center/2px 100% no-repeat!important;
+  filter:blur(3px)!important;opacity:.8;animation:glowStRays 7s ease-in-out infinite!important;box-shadow:none!important}
+html[data-flow-skin=glow] .fab.assistant-fab .af-fab-orbit{inset:12px!important;width:auto!important;height:auto!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:50%!important;box-shadow:none!important;background:none!important;opacity:1!important;animation:none!important;transform:rotateX(70deg)!important}
+html[data-flow-skin=glow] .fab.assistant-fab .af-fab-orbit-second{transform:rotateY(70deg)!important}
+html[data-flow-skin=glow] .fab.assistant-fab>svg{position:relative;width:48px!important;height:48px!important;overflow:visible;animation:glowStSway 7s ease-in-out infinite,glowStGlow 5s ease-in-out infinite!important}
+html[data-flow-skin=glow] .fab.assistant-fab>svg path:not(.glow-ssh){fill:url(#glow-star-fill)!important}
+html[data-flow-skin=glow] .fab.assistant-fab>svg .glow-ssh{mix-blend-mode:screen}
+html[data-flow-skin=glow] .fab.assistant-fab[aria-expanded=true]>svg{scale:1.18;rotate:45deg}
+@keyframes glowStSway{0%,100%{rotate:-4deg;translate:0 0}50%{rotate:4deg;translate:0 -2px}}
+@keyframes glowStGlow{0%,100%{filter:drop-shadow(0 0 10px var(--a4)) drop-shadow(0 0 24px var(--a3))}50%{filter:drop-shadow(0 0 14px var(--a4)) drop-shadow(0 0 34px var(--a3)) brightness(1.12)}}
+@keyframes glowStRays{0%,100%{rotate:-3deg;opacity:.7}50%{rotate:3deg;opacity:.95}}
+html[data-flow-skin=glow][data-motion=off] :is(.fab.assistant-fab svg,.fab.assistant-fab .af-fab-halo,.dm-bottom-nav::before,.dm-bottom-nav::after){animation:none!important}
+
+/* ── Лишнее, чего нет в прототипе: скрыто, функции и данные на месте (список — в GLOW-ROLLOUT.md) ── */
+/* верх: в прототипе над разделом только строка статуса и островок, кнопок поиска и быстрых настроек нет */
+html[data-flow-skin=glow] .dm-topbar :is(.camera-search,.dm-toolbar){display:none!important}
+/* План: в прототипе нет ряда «Пианино · Английский · Спорт» и блока «Просрочено» */
+html[data-flow-skin=glow] .main :is(.dm-plan-practices,.dm-overdue){display:none!important}
+
+/* место под короткий бар */
+@media(max-width:760px){
+  html[data-flow-skin=glow] .dm-main{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+}
+
+/* ── Настройки Glow: палитра и фон ── */
+.glow-pal{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;max-width:60%}
+.glow-pal button{flex:none;width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;border-radius:50%!important;border:0!important;padding:0!important;cursor:pointer;
+  background:radial-gradient(circle at 35% 30%,var(--p4),var(--p3) 45%,var(--p2) 75%,var(--p1));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 6px rgba(0,0,0,.25);transition:transform .3s var(--glow-ease),box-shadow .3s}
+.glow-pal button[aria-pressed=true]{transform:scale(1.12);box-shadow:0 0 0 2px rgba(0,0,0,.6),0 0 0 4px var(--p3),0 0 14px var(--p3)}
+.glow-pal button:focus-visible{outline:2px solid var(--p3);outline-offset:3px}
+@media(max-width:359px){.glow-pal{max-width:100%;justify-content:flex-start}}
+/* тема и акцент магии в Glow не действуют — палитра заменяет их */
+html[data-flow-skin=glow] .settings-row:has(>select[data-setting=theme],input[data-setting=accent]){display:none!important}
+/* липкие строки вкладок не закрашиваются фоном страницы — капсула лежит на среде */
+html[data-flow-skin=glow] .main .en-tabs-row{background:transparent!important}
