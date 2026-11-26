@@ -109,7 +109,7 @@
     return false;
   }
   function attach(surface) {
-    if (surfaces.has(surface) || assistantSurface(surface) || surface.closest('.dm-live-assistant') || surface.matches('.activity-island-card')) return;
+    if (surfaces.has(surface) || assistantSurface(surface) || surface.closest('.dm-live-assistant') || surface.matches('.activity-island-card') || surface.closest('.gw')) return; // экраны Glow (.gw) — стекло и грань из прототипа
     surfaces.add(surface);surfaceOwners.set(surface,ownerIdentity(surface)); surface.classList.add('flow-living-surface');
     if (getComputedStyle(surface).position === 'static') surface.classList.add('flow-surface-static');
     const contour = document.createElement('i'); contour.className = 'flow-surface-contour'; contour.setAttribute('aria-hidden', 'true');surface.append(contour);
