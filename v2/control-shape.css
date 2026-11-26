@@ -1,7 +1,7 @@
 /* Один язык формы: кнопки — скруглённые квадраты, без кругов и пилюль. */
 :root { --control-radius: 14px; }
 
-button,
+button:not(.gw button), /* экраны Glow (.gw) — формы кнопок из прототипа */
 a.primary,
 a.secondary,
 a.primary-button,
@@ -15,7 +15,7 @@ label.ghost-button,
 .ghost-button,
 .icon-button,
 .dm-icon-button,
-[role="button"]:not(.head-pill):not(.activity-island) {
+[role="button"]:not(.head-pill):not(.activity-island):not(.gw [role="button"]) {
   border-radius: var(--control-radius) !important;
 }
 
