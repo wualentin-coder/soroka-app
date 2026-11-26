@@ -82,7 +82,7 @@
     if (plate.dataset.glowSheen) return;
     const index = plate.parentElement ? [...plate.parentElement.children].indexOf(plate) : 0;
     let seed = hash(plate.className + '|' + index);
-    const next = () => { seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0; seed ^= seed >>> 13; return (seed % 10000) / 10000; };
+    const next = () => { seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0; seed = (seed ^ (seed >>> 13)) >>> 0; return (seed % 10000) / 10000; };
     const R = (a, b) => a + next() * (b - a);
     const s = plate.style;
     s.setProperty('--rd', (-R(0, 16)).toFixed(2) + 's');
