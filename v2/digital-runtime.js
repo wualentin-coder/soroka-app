@@ -37,7 +37,9 @@
     }
   } catch { /* A restricted preview still uses its stored or system preference. */ }
 
-  const reducedMotion = () => motionMode === 'off' || (motionMode === 'system' && query.matches);
+  // Glow (как прототип): системное «уменьшить движение» не глушит анимации; выключает их только явный выбор «Без движения».
+  const glowSystem = () => motionMode === 'system' && root.dataset.flowSkin === 'glow';
+  const reducedMotion = () => motionMode === 'off' || (motionMode === 'system' && query.matches && !glowSystem());
   const hapticAvailable = () => !!(window.Telegram?.WebApp?.HapticFeedback || typeof navigator.vibrate === 'function');
   function persist() {
     try { localStorage.setItem(storageKey, JSON.stringify({ motionMode, sound: settings.sound, haptics: settings.haptics, ambient: settings.ambient, soundParams })); } catch {}
@@ -80,7 +82,8 @@
   }
   function apply(save = false) {
     settings.motion = !reducedMotion();
-    if (root.dataset.motionMode !== motionMode) root.dataset.motionMode = motionMode;
+    const modeAttr = glowSystem() ? 'on' : motionMode; // CSS «уменьшенного движения» смотрит на data-motion-mode
+    if (root.dataset.motionMode !== modeAttr) root.dataset.motionMode = modeAttr;
     if (root.dataset.motion !== (settings.motion ? 'on' : 'off')) root.dataset.motion = settings.motion ? 'on' : 'off';
     audio();
     syncControls();
