@@ -2,8 +2,8 @@
 html[data-flow-controls=on]{--flow-control-ease:cubic-bezier(.4,0,.2,1);--flow-control-time:440ms}
 html[data-flow-controls=on] :is(button,a,summary,input){-webkit-tap-highlight-color:transparent}
 html[data-flow-controls=on] :is(button,summary){touch-action:manipulation}
-html[data-flow-controls=on] button:not(.piano-key):not(.pn-player-shell button):not(.flow-assistant-layer button):not(.dm-live-assistant button){transition:background-color 440ms var(--flow-control-ease),border-color 440ms var(--flow-control-ease),color 440ms var(--flow-control-ease),scale 220ms var(--flow-control-ease)}
-html[data-flow-controls=on] button:not(.piano-key):not(.pn-player-shell button):not(.flow-assistant-layer button):not(.dm-live-assistant button):active{scale:.985}
+html[data-flow-controls=on] button:not(.piano-key):not(.pn-player-shell button):not(.flow-assistant-layer button):not(.dm-live-assistant button):not(.gw button){transition:background-color 440ms var(--flow-control-ease),border-color 440ms var(--flow-control-ease),color 440ms var(--flow-control-ease),scale 220ms var(--flow-control-ease)}
+html[data-flow-controls=on] button:not(.piano-key):not(.pn-player-shell button):not(.flow-assistant-layer button):not(.dm-live-assistant button):not(.gw button):active{scale:.985}
 html[data-flow-controls=on] :is(button,a,input,textarea,select):focus:not(:focus-visible){outline:none!important}
 .flow-control-response{position:fixed;pointer-events:none;z-index:120;opacity:0;background:radial-gradient(ellipse at var(--flow-hit-x,50%) 50%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 76%);border:0;box-shadow:none;contain:strict}
 .flow-control-response[data-mode=line]{background:none}
@@ -14,7 +14,7 @@ html[data-flow-controls=on] .flow-motion-bar>:is(button,a,[role=tab]).active,htm
 .flow-motion-indicator{position:absolute;z-index:0;display:block;pointer-events:none;background:color-mix(in srgb,var(--accent) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));box-sizing:border-box}
 html[data-flow-controls=on] .switch>span{transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease)!important}
 html[data-flow-controls=on] .switch>span::before,html[data-flow-controls=on] .switch>span::after{transition:transform 520ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease)!important}
-html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select){transition:border-color 480ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease);caret-color:var(--accent)}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select):not(.gw *){transition:border-color 480ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease);caret-color:var(--accent)}
 html[data-flow-controls=on] :is(.search-box,.dc-category-search,.dc-movie-search){transition:border-color 480ms var(--flow-control-ease),background-color 480ms var(--flow-control-ease)}
 html[data-flow-controls=on] :is(.search-box,.dc-category-search,.dc-movie-search):focus-within{border-color:color-mix(in srgb,var(--accent) 52%,var(--line));box-shadow:none}
 html[data-flow-controls=on] :is(.task-check,.sl-check,.gift-check) .check-ring{transition:background-color 480ms var(--flow-control-ease),border-color 480ms var(--flow-control-ease);flex:none;aspect-ratio:1}
@@ -29,7 +29,7 @@ html[data-flow-controls=on] input[type=checkbox]:not(.switch input,.ss-toggle in
 html[data-flow-controls=on] input[type=checkbox]:not(.switch input,.ss-toggle input,.sp-switch input):checked::after{opacity:1;transform:scale(1)}
 html[data-flow-controls=on] input.flow-check-changed:checked::after{animation:flow-check-draw 520ms var(--flow-control-ease)}
 @keyframes flow-check-draw{from{opacity:0;transform:scale(.65)}to{opacity:1;transform:scale(1)}}
-html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select){border-radius:12px}
+html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),textarea,select):not(.gw *){border-radius:12px}
 html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]),textarea,select):focus{outline:none!important}
 html[data-flow-controls=on] :is(input:not([type=checkbox]):not([type=radio]):not(.search-box input),textarea,select):focus-visible{border-color:var(--accent);box-shadow:none}
 html[data-flow-controls=on][data-motion=off] input::after{animation:none!important;transition:none!important}
