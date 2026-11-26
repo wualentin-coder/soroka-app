@@ -92,12 +92,44 @@
     to.animate([{ opacity: 0, transform: `translateX(${90 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 620, delay: -elapsed, easing: EOUT }).onfinish = () => { to.style.filter = ''; };
   }
 
+  /* Живое приложение перерисовывает экран и без нажатий (синхронизация, «показать пришедшие данные» раз в 700 мс).
+     В прототипе экран перерисовывается только при переходе — поэтому:
+     • появление (.in) играет только при смене экрана; при перерисовке того же экрана — сразу на месте (gw-settled);
+     • бесконечные анимации (грань, свечение, ореолы) идут по общим часам и после перерисовки продолжаются с того же места;
+     • переходы капсул и перестановка карточек — только в ответ на действие человека (касание или клавиша за последние 0,8 с). */
+  let touched = 0;
+  for (const type of ['pointerdown', 'keydown', 'input', 'change']) document.addEventListener(type, () => { touched = performance.now(); }, true);
+  const byHand = () => performance.now() - touched < 800;
+  function settle(el, on) { if (!el) return; el.classList.toggle('gw-settled', on); }
+  function keepPhase(el) {
+    if (!el?.getAnimations) return;
+    for (const a of el.getAnimations({ subtree: true })) {
+      const t = a.effect?.getTiming?.();
+      if (t && t.iterations === Infinity && a.startTime !== 0) { try { a.startTime = 0; } catch (_) {} } // фаза = общее время (+ своя задержка элемента)
+    }
+  }
+  /* stagger прототипа: у каждой плашки свой блик и фаза грани. Значения — от класса и места плашки (а не случайные),
+     поэтому одинаковы после каждой перерисовки и ставятся в том же кадре — свет не перескакивает. */
+  const hashS = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; };
+  function stagger(scope) {
+    if (!scope) return;
+    $$('.glass,.plate-w', scope).forEach((g, n) => {
+      if (g.dataset.gwSt) return; g.dataset.gwSt = '1';
+      let seed = hashS(g.className + '|' + n);
+      const R = (a, b) => { seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0; seed = (seed ^ (seed >>> 13)) >>> 0; return a + (seed % 10000) / 10000 * (b - a); };
+      const s = g.style;
+      s.setProperty('--rd', (-R(0, 16)).toFixed(2) + 's');
+      if (!s.getPropertyValue('--sha')) { s.setProperty('--sha', R(95, 145).toFixed(0) + 'deg'); s.setProperty('--shp', R(30, 70).toFixed(0) + '%'); s.setProperty('--sy', R(-12, 22).toFixed(0) + '%');
+        s.setProperty('--shw', R(42, 78).toFixed(0) + '%'); s.setProperty('--sho', R(.025, .055).toFixed(3)); s.setProperty('--shd', R(8, 15).toFixed(1) + 's'); s.setProperty('--cgx', R(-18, 18).toFixed(0) + '%'); }
+    });
+  }
   const native = window.render;
   window.render = function (...args) {
     const before = last || current();
-    const scope = before.el, segs = scope ? segState(scope) : [], first = scope ? rects(scope) : new Map();
+    const hand = byHand(), scope = before.el, segs = scope && hand ? segState(scope) : [], first = scope && hand ? rects(scope) : new Map();
     const rect = scope && !calm() ? scope.getBoundingClientRect() : null;
     const out = native.apply(this, args);
+    try { const cur = current(); settle(cur.el, cur.key === before.key); $$('.gw').forEach(stagger); keepPhase(cur.el); $$('.gw').forEach(g => { if (g !== cur.el) keepPhase(g); }); } catch (_) {}
     // уходящий слой — сам прежний узел: при смене экрана приложение убирает его из документа (копировать не нужно)
     let clone = scope && rect && !scope.isConnected ? scope : null;
     if (clone) { $$('[id]', clone).forEach(n => n.removeAttribute('id')); clone.removeAttribute('id'); }
@@ -111,11 +143,13 @@
     } else if (now.el) {
       const since = entering ? performance.now() - entering.t : 1e9;
       if (since < 600 && now.el !== before.el) enter(now.el, entering.dir, since);
-      else { replaySegs(now.el, segs); replayFlip(now.el, first); }
+      else if (hand) { replaySegs(now.el, segs); replayFlip(now.el, first); }
     }
     return out;
   };
   // экраны записей, заметка и т. п. открываются тем же render — снимок «до» обновляем и после действий без render
-  last = current();
+  last = current(); $$('.gw').forEach(stagger);
+  // слои вне render (код, готовка, окно фильмов) — тоже со своими бликами
+  new MutationObserver(recs => { for (const r of recs) for (const n of r.addedNodes) if (n.nodeType === 1 && n.classList.contains('gw')) stagger(n); }).observe(document.body, { childList: true });
   window.flowGlowMotion = { native, blurPulse, state: () => ({ last, entering }) };
 })();
