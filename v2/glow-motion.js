@@ -32,12 +32,12 @@
   function current() {
     const sheet = $('.gw.gw-sheet') || $('.note-sheet.gw-note');
     const page = $('.dm-main > .gw') || $('.dm-main');
-    if (sheet) return { el: sheet, key: `sheet:${sheet.dataset.s || 'note'}:${ui.sheet?.id || ''}`, depth: 3, tab: TAB[ui.page] ?? 4 };
+    if (sheet) return { el: sheet, key: `sheet:${sheet.dataset.s || 'note'}:${ui.sheet?.id || ''}`, depth: 3, tab: TAB[ui.page] ?? 4, route:ui.page };
     const reco = ui.page === 'saved' && ui.savedCategory === 'movies' && ui.savedFilter === 'reco';
     const settingsPane = ui.page === 'settings' ? page?.dataset.settingsPane || '' : '';
     const key = `${ui.page}|${ui.page === 'saved' ? ui.savedCategory || '' : settingsPane}|${reco ? 'reco:' + (typeof universeUi === 'object' ? universeUi.detail?.id || universeUi.tab : '') : ''}`;
     const depth = settingsPane ? 1 : ui.page !== 'saved' ? 0 : !ui.savedCategory || ui.savedCategory === 'overview' ? 0 : reco ? 2 : 1;
-    return { el: page, key, depth, tab: TAB[ui.page] ?? 4 };
+    return { el: page, key, depth, tab: TAB[ui.page] ?? 4, route:ui.page };
   }
   let last = null;
 
@@ -88,14 +88,18 @@
       setTimeout(() => layer.remove(), 500);
     }
     if (to) enter(to, dir, 0);
-    entering = { t: performance.now(), dir };
+    entering = { t: performance.now(), dir, duration: touchScreen.matches ? 330 : 620 };
     blurPulse(14, 520);
   }
   // въезд нового экрана; если приложение сразу перерисовало экран ещё раз — продолжаем на новом узле с того же места
   let entering = null;
   function enter(to, dir, elapsed) {
-    if (!touchScreen.matches) to.style.filter = 'url(#gw-mbf)';
-    to.animate([{ opacity: 0, transform: `translateX(${90 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 620, delay: -elapsed, easing: EOUT }).onfinish = () => {
+    const touch = touchScreen.matches;
+    if (!touch) to.style.filter = 'url(#gw-mbf)';
+    to.animate(
+      [{ opacity: touch ? .65 : 0, transform: `translateX(${(touch ? 32 : 90) * dir}px)` }, { opacity: 1, transform: 'none' }],
+      { duration: touch ? 330 : 620, delay: -elapsed, easing: EOUT }
+    ).onfinish = () => {
       if (to.style.filter.includes('#gw-mbf')) to.style.filter = '';
     };
   }
@@ -134,14 +138,25 @@
   const native = window.render;
   window.render = function (...args) {
     const before = last || current();
-    const hand = byHand(), scope = before.el, segs = scope && hand ? segState(scope) : [], first = scope && hand ? rects(scope) : new Map();
-    const rect = scope && !calm() ? scope.getBoundingClientRect() : null;
+    const touch = touchScreen.matches;
+    const hand = byHand() && (!touch || before.route === ui.page);
+    const scope = before.el, segs = scope && hand ? segState(scope) : [], first = scope && hand ? rects(scope) : new Map();
+    const rect = scope && !touch && !calm() ? scope.getBoundingClientRect() : null;
     const out = native.apply(this, args);
-    try { const cur = current(); settle(cur.el, cur.key === before.key); $$('.gw').forEach(stagger); keepPhase(cur.el); $$('.gw').forEach(g => { if (g !== cur.el) keepPhase(g); }); } catch (_) {}
+    const now = current();
+    try {
+      settle(now.el, now.key === before.key);
+      if (touch) stagger(now.el);
+      else {
+        $$('.gw').forEach(stagger);
+        keepPhase(now.el);
+        $$('.gw').forEach(g => { if (g !== now.el) keepPhase(g); });
+      }
+    } catch (_) {}
     // уходящий слой — сам прежний узел: при смене экрана приложение убирает его из документа (копировать не нужно)
     let clone = scope && rect && !scope.isConnected ? scope : null;
     if (clone) { $$('[id]', clone).forEach(n => n.removeAttribute('id')); clone.removeAttribute('id'); }
-    const now = current(); last = now;
+    last = now;
     if (calm() || !now.el) return out;
     if (now.key !== before.key) {
       const dir = now.depth !== before.depth ? (now.depth > before.depth ? 1 : -1) : now.tab !== before.tab ? (now.tab > before.tab ? 1 : -1) : 1;
@@ -150,7 +165,7 @@
       swap(clone, rect, now.el, dir);
     } else if (now.el) {
       const since = entering ? performance.now() - entering.t : 1e9;
-      if (since < 600 && now.el !== before.el) enter(now.el, entering.dir, since);
+      if (entering && since < entering.duration && now.el !== before.el) enter(now.el, entering.dir, since);
       else if (hand) { replaySegs(now.el, segs); replayFlip(now.el, first); }
     }
     return out;
