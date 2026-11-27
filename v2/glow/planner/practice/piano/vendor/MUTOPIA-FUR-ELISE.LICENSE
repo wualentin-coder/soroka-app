@@ -1,0 +1,20 @@
+Für Elise, WoO 59 — Ludwig van Beethoven (1770–1827)
+
+Source: Mutopia Project, catalog 931 / Mutopia-2015/08/18-931.
+https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=931
+MIDI: https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.mid
+Edition: Breitkopf & Härtel, 1888.
+Typesetter: Stelios Samelis.
+License declared by the source: Public Domain.
+Downloaded 2026-11-03. Original MIDI: 7590 bytes.
+SHA-256: 1c12c21c7bbf4cf163896732672648a69d497636059837abd153c71abe50215a
+
+Changes in Flow Piano:
+- Exact original MIDI bytes retained as base64 in dist/fur-elise.mjs.
+- All original MIDI note events retained in their original two tracks.
+- A separate practice part selects the first 35 notes of the upper staff,
+  preserving their pitches, tick positions, duration and velocity.
+- Practice phrase boundaries are added at indices 0, 9, 17 and 27.
+- No notes are transposed or invented. Lower-staff accompaniment is not
+  included in the opening practice part. The complete original remains
+  available separately; it is not presented as monophonic beginner practice.

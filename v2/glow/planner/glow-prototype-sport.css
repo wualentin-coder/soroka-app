@@ -1,0 +1,98 @@
+.sport-run.prototype-sport-run[open] {
+  --accent: var(--a1);
+  --accent-ink: #15100e;
+  --page: var(--plate, #21142e);
+  --surface: color-mix(in srgb, var(--text) 9%, var(--page));
+  --line: color-mix(in srgb, var(--text) 18%, transparent);
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: visible;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.sport-run.prototype-sport-run:not(.sr-camera) .sr-screen {
+  padding: 0;
+  overflow: visible;
+  display: block;
+  animation: none;
+}
+
+.sport-run.prototype-sport-run:focus { outline: none; }
+.sport-run.prototype-sport-run .sr-notices {
+  position: absolute;
+  inset: auto 0 68px;
+  width: auto;
+  transform: none;
+  z-index: 6;
+}
+.prototype-sport-run .sr-notices p,
+.prototype-sport-run .sr-notices .sr-undo { --surface-raised: var(--surface); }
+.prototype-sport-run .sr-panel-backdrop { position: absolute; }
+.prototype-sport-run .spcam > .sr-inline { width: 100%; height: 100%; }
+
+.prototype-sport-run .sprun.fin {
+  min-height: 100%;
+  height: auto;
+  padding-bottom: 26px;
+}
+
+.prototype-sport-run .prototype-summary-actions {
+  position: sticky;
+  bottom: 28px;
+  z-index: 2;
+}
+
+.prototype-sport-run .prototype-summary-difficulty {
+  margin: 10px 0;
+  padding: 12px;
+}
+
+.prototype-sport-run .prototype-summary-difficulty summary { cursor: pointer; }
+.prototype-sport-run .prototype-summary-difficulty .sr-difficulty { margin: 6px 0 0; }
+
+.phone.kbon:has(.screen.on[data-s="spchat"]) #egBar { bottom: calc(var(--kb) + 8px); }
+.phone.kbon .screen[data-s="spchat"] { padding-bottom: calc(var(--kb) + 82px); }
+
+.prototype-sport-run .sprun.intro .spig.real {
+  flex: 0 1 auto;
+  aspect-ratio: 1;
+  width: 100%;
+  height: auto;
+}
+.prototype-sport-run .sprun.intro .spig img { object-fit: contain; }
+.prototype-sport-run .spich { flex-wrap: wrap; }
+.prototype-sport-run .spich .spready { color: var(--a4); white-space: nowrap; }
+.prototype-sport-run .spwork-clock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.prototype-sport-run .spwork-clock b,
+.prototype-sport-run .spman b:has([data-sport-clock]) {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .16em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.prototype-sport-run .spwork-clock b { font-size: 30px; line-height: 1.05; }
+.prototype-sport-run .prototype-clock-unit { color: var(--muted); font-size: .5em; }
+
+.sphero .prototype-sport-complete {
+  min-height: 44px;
+  padding: 10px 13px;
+  border-radius: 16px;
+  background: linear-gradient(140deg, color-mix(in srgb, #5dff9e 10%, transparent), transparent);
+}

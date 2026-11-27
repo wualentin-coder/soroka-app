@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title">
+  <title id="title">Лунный джаз — оригинальная обложка Flow Piano</title>
+  <defs>
+    <linearGradient id="night" x2=".7" y2="1"><stop stop-color="#142c46"/><stop offset=".5" stop-color="#173a49"/><stop offset="1" stop-color="#071921"/></linearGradient>
+    <radialGradient id="moonlight"><stop stop-color="#eadba7" stop-opacity=".23"/><stop offset="1" stop-color="#d6deb9" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ivory" x1="0" x2="1" y2="1"><stop stop-color="#f3e9c9"/><stop offset="1" stop-color="#aebdb0"/></linearGradient>
+    <linearGradient id="body" x2=".8" y2="1"><stop stop-color="#182b35"/><stop offset="1" stop-color="#06141c"/></linearGradient>
+  </defs>
+  <path fill="url(#night)" d="M0 0h400v600H0z"/>
+  <circle cx="265" cy="192" r="198" fill="url(#moonlight)"/>
+  <circle cx="262" cy="183" r="88" fill="#e1d9b5"/>
+  <circle cx="295" cy="155" r="86" fill="#1a394a"/>
+  <path d="M56 116c103-80 260-28 274 95s-95 174-189 147" fill="none" stroke="#b3c8b8" stroke-opacity=".19"/>
+  <path d="M28 225c58-52 149-59 231-21" fill="none" stroke="#ccbc8d" stroke-opacity=".36"/>
+  <g fill="#d9d6b5"><circle cx="73" cy="108" r="1.8"/><circle cx="157" cy="53" r="1.5"/><circle cx="316" cy="58" r="1.7"/><circle cx="350" cy="284" r="1.5"/><circle cx="43" cy="306" r="1.4"/></g>
+  <g fill="#102833"><path d="M0 335h36v-40h26v40h19v-67h39v67h24v-27h28v27h28v-43h43v43h25v-72h32v72h25v-35h39v35h36v265H0z"/><path d="M105 272v-37h4v37m176-11v-43h4v43"/></g>
+  <g fill="#b9c6a3" opacity=".32"><path d="M90 288h4v6h-4zm12 0h4v6h-4zm-12 14h4v6h-4zm12 0h4v6h-4zm179-22h4v6h-4zm0 14h4v6h-4zm58 20h4v5h-4zm12 0h4v5h-4z"/></g>
+  <path d="M400 365c-93 18-123 60-198 60S74 393 0 443v157h400z" fill="#0b242c"/>
+  <path d="M-30 465c95-68 156-12 247-46 62-23 101-68 195-54" fill="none" stroke="#87af9e" stroke-opacity=".2" stroke-width="2"/>
+  <g transform="translate(30 265) rotate(-12 160 130)">
+    <path d="M47 175V94c0-40 56-94 119-91 42 2 34 51 77 70 26 11 44 19 44 45v57z" fill="url(#body)" stroke="#6f9290" stroke-opacity=".5"/>
+    <path d="m53 99 221 19-4 14L52 117z" fill="#668c85" opacity=".6"/>
+    <path d="M51 132h223v38H51z" fill="url(#ivory)"/>
+    <path d="M66 132v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38m17-38v38" stroke="#526c68" stroke-width="1"/>
+    <path d="M61 132h10v22H61zm17 0h10v22H78zm34 0h10v22h-10zm17 0h10v22h-10zm17 0h10v22h-10zm34 0h10v22h-10zm17 0h10v22h-10zm34 0h10v22h-10zm17 0h10v22h-10zm17 0h9v22h-9z" fill="#12252c"/>
+    <path d="M51 173h223v12H51zm10 12v70h8l4-70m181 0 4 68h8v-68" fill="#09191f"/>
+    <path d="M154 21 68 87m100-72L82 83" stroke="#b8c8ac" stroke-opacity=".16" stroke-width="2"/>
+  </g>
+  <path d="M0 555h400v45H0z" fill="#06171f" opacity=".25"/>
+</svg>

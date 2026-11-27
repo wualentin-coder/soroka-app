@@ -1,0 +1,6644 @@
+{
+  "catalog_version": 1,
+  "exercises": [
+    {
+      "id": "band_lateral_walk",
+      "status": "merged",
+      "names": {
+        "en": "Banded lateral walk",
+        "ru": "Боковые шаги с резинкой"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Шаги в сторону с резинкой"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Наденьте резинку на бёдра чуть выше колен.",
+            "Присядьте до полуприседа и сделайте шаг в сторону.",
+            "Приставьте вторую ногу, сохраняя натяжение резинки."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Волочить ноги и выпрямляться. Корпус низко, шаг короткий, колени смотрят вперёд."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "quads",
+          "adductors"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "band"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "alternating",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ],
+      "merged_into": "bw_side_lying_hip_abduction"
+    },
+    {
+      "id": "band_pull_apart",
+      "status": "merged",
+      "names": {
+        "en": "Band pull-apart",
+        "ru": "Разведение резинки"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Разведение резинки перед грудью"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите резинку двумя руками перед собой на уровне груди.",
+            "Разведите руки в стороны, растягивая резинку и сводя лопатки.",
+            "Верните руки медленно, не отпуская натяжение."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать плечи к ушам и брать слишком тугую резинку. Плечи опущены, движение плавное."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_rear"
+        ],
+        "secondary": [
+          "mid_back",
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "band"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ],
+      "merged_into": "db_rear_delt_fly"
+    },
+    {
+      "id": "bb_back_squat",
+      "status": "active",
+      "names": {
+        "en": "Barbell back squat",
+        "ru": "Присед со штангой"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Приседания со штангой"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте штангу на верх спины, стопы на ширине плеч.",
+            "Сделайте вдох, напрягите живот и приседайте, отводя таз назад.",
+            "Опуститесь до комфортной глубины и поднимитесь, толкая пол стопами."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Округлять поясницу в нижней точке и сводить колени внутрь. Колени идут по носкам, спина прямая."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "hamstrings",
+          "lower_back",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "barbell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": true,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_squat",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "mach_leg_press",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bb_bench_press",
+      "status": "active",
+      "names": {
+        "en": "Barbell bench press",
+        "ru": "Жим штанги лёжа"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим лёжа"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на скамью, стопы на полу, хват чуть шире плеч.",
+            "Снимите штангу со стоек и опустите к середине груди.",
+            "Выжмите вверх по дуге, не отрывая таз."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отбивать штангу от груди и разводить локти под прямым углом. Касание мягкое, локти ближе к корпусу."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "barbell",
+          "bench"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": true,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_bench_press",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "db_floor_press",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bb_deadlift",
+      "status": "active",
+      "names": {
+        "en": "Barbell deadlift",
+        "ru": "Становая тяга"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Становая тяга классическая"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Подойдите к штанге, стопы на ширине таза, гриф над серединой стопы.",
+            "Наклонитесь, возьмите гриф и выпрямите спину, грудь вперёд.",
+            "Встаньте, разгибая ноги и таз одновременно, гриф идёт вдоль ног.",
+            "Опустите штангу тем же путём, сгибая таз и колени."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Тянуть спиной и отрывать таз раньше плеч. Гриф ближе к телу, спина остаётся прямой."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes",
+          "hamstrings",
+          "lower_back"
+        ],
+        "secondary": [
+          "quads",
+          "traps",
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "barbell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": true,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bb_overhead_press",
+      "status": "active",
+      "names": {
+        "en": "Barbell overhead press",
+        "ru": "Жим штанги стоя"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим штанги над головой"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте, штанга на верхней части груди, хват чуть шире плеч.",
+            "Выжмите штангу вверх над головой, убирая голову назад.",
+            "Опустите снаряд к груди, держа живот в тонусе."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибать поясницу и выводить штангу вперёд. Корпус вертикален, штанга идёт над серединой стопы."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_front"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_side",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "barbell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": true,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_shoulder_press",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bb_romanian_deadlift",
+      "status": "active",
+      "names": {
+        "en": "Barbell Romanian deadlift",
+        "ru": "Румынская тяга со штангой"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Румынская тяга"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте со штангой в опущенных руках, стопы на ширине таза.",
+            "Отведите таз назад, опуская гриф вдоль ног с почти прямыми коленями.",
+            "Остановитесь на натяжении в бёдрах и вернитесь вверх."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Округлять спину и выносить гриф вперёд. Гриф скользит по ногам, лопатки сведены."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hamstrings"
+        ],
+        "secondary": [
+          "glutes",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "barbell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": true,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_romanian_deadlift",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bb_deadlift",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bb_row",
+      "status": "active",
+      "names": {
+        "en": "Bent-over barbell row",
+        "ru": "Тяга штанги в наклоне"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите штангу хватом чуть шире плеч, наклонитесь вперёд с прямой спиной.",
+            "Тяните гриф к низу живота, ведя локти назад.",
+            "Опустите штангу под контролем, не разгибая корпус."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Выпрямлять корпус рывком и работать только руками. Корпус неподвижен, тянут спина и локти."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back"
+        ],
+        "secondary": [
+          "lats",
+          "biceps",
+          "delts_rear",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "barbell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": true,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_one_arm_row",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "mach_lat_pulldown",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_arm_circles",
+      "status": "active",
+      "names": {
+        "en": "Arm circles",
+        "ru": "Круги руками"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Круги руками вперёд"
+        },
+        {
+          "lang": "ru",
+          "value": "Круги руками назад"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, разведите руки в стороны на уровне плеч.",
+            "Делайте небольшие круги руками вперёд, постепенно увеличивая амплитуду.",
+            "Через 20–30 секунд смените направление."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать плечи к ушам. Плечи опущены, работает плечевой сустав, а не трапеция."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_side"
+        ],
+        "secondary": [
+          "delts_front",
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_back_steps",
+      "status": "active",
+      "names": {
+        "en": "Backward walking",
+        "ru": "Шаги назад"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, стопы на ширине таза.",
+            "Шагните назад, мягко перекатывая стопу с носка на пятку.",
+            "Приставляйте вторую ногу и продолжайте движение назад."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Заваливать корпус вперёд, чтобы удержать равновесие. Корпус остаётся вертикальным."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "quads",
+          "calves"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_bird_dog",
+      "status": "active",
+      "names": {
+        "en": "Bird dog",
+        "ru": "Птица-собака"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Птица-собака · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Птица-собака · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте на четвереньки, спина ровная, взгляд направлен в пол.",
+            "Вытяните правую руку вперёд, а левую ногу назад — в одну линию со спиной.",
+            "Задержитесь на секунду, вернитесь в исходное и повторите на другую сторону."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Провисать в пояснице и разворачивать таз. Держите живот в тонусе, таз неподвижен."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "abs"
+        ],
+        "secondary": [
+          "lower_back",
+          "mid_back",
+          "glutes"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_calf_raise",
+      "status": "active",
+      "names": {
+        "en": "Standing calf raise",
+        "ru": "Подъёмы на носки стоя"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подъём на носки стоя"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, стопы на ширине таза.",
+            "Поднимитесь на носки как можно выше и задержитесь на секунду.",
+            "Медленно опустите пятки, не пружиня."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Пружинить и заваливать стопы наружу. Подъём идёт строго вверх, темп медленный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "calves"
+        ],
+        "secondary": []
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_cat_cow",
+      "status": "active",
+      "names": {
+        "en": "Cat-cow",
+        "ru": "Кошка-корова"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Кошка-корова на четвереньках"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте на четвереньки: ладони под плечами, колени под тазом.",
+            "На выдохе округлите спину, подберите подбородок и тянитесь макушкой вниз.",
+            "На вдохе прогните спину, поднимая грудную клетку и взгляд.",
+            "Повторяйте медленно, без рывков, в комфортной амплитуде."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Двигать только поясницей и задерживать дыхание. Спина изгибается по всей длине, вместе с грудным отделом."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "lower_back"
+        ],
+        "secondary": [
+          "mid_back",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_chin_tuck",
+      "status": "active",
+      "names": {
+        "en": "Chin tuck",
+        "ru": "Втягивание подбородка лёжа"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подбородок назад"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на спину, взгляд в потолок, шея расслаблена.",
+            "Мягко тяните затылок к полу и подбирайте подбородок, не поднимая голову.",
+            "Задержитесь на 2–3 секунды и расслабьтесь."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Давить затылком и напрягать шею. Движение лёгкое, на выдохе."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "neck"
+        ],
+        "secondary": [
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_chin_up",
+      "status": "active",
+      "names": {
+        "en": "Chin-up",
+        "ru": "Подтягивания обратным хватом"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подтягивания узким обратным хватом"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмитесь за турник снизу, ладони на ширине плеч.",
+            "Подтянитесь, пока подбородок не поднимется над перекладиной.",
+            "Опуститесь плавно, не размахивая ногами."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Сводить плечи к ушам и сокращать амплитуду. Работайте от полного виса до верха."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "lats"
+        ],
+        "secondary": [
+          "biceps",
+          "mid_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "pullup_bar"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_close_grip_pushup",
+      "status": "active",
+      "names": {
+        "en": "Close-grip push-up on bars",
+        "ru": "Отжимания узким хватом на упорах"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Установите упоры чуть уже плеч, возьмитесь за ручки.",
+            "Держите корпус в одну линию, локти прижаты к бокам.",
+            "Опуститесь и выжмитесь вверх, работая трицепсами."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Сводить кисти вплотную и заваливать запястья. Упоры стоят устойчиво, кисти под плечами."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "triceps"
+        ],
+        "secondary": [
+          "chest_mid",
+          "delts_front",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "pushup_bars"
+        ],
+        "any_of": [
+          "bodyweight"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_pushup",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_dead_bug",
+      "status": "active",
+      "names": {
+        "en": "Dead bug",
+        "ru": "Мёртвый жук"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Мёртвый жук лёжа на спине"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на спину, руки вверх, колени над тазом согнуты под прямым углом.",
+            "Прижмите поясницу к полу и вытяните одну руку и противоположную ногу.",
+            "Вернитесь и повторите на другую сторону."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отрывать поясницу от пола. Живот в тонусе, движение медленное."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "abs"
+        ],
+        "secondary": [
+          "obliques",
+          "hip_flexors"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "alternating",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_glute_bridge",
+      "status": "active",
+      "names": {
+        "en": "Glute bridge",
+        "ru": "Ягодичный мост"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Ягодичный мост лёжа"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на спину, колени согнуты, стопы на полу.",
+            "Поднимите таз, сжимая ягодицы, пока корпус не вытянется в линию.",
+            "Задержитесь на секунду и опуститесь."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Выталкивать таз поясницей. Подъём идёт за счёт ягодиц, рёбра не раскрываются."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_hanging_leg_raise",
+      "status": "active",
+      "names": {
+        "en": "Hanging leg raise",
+        "ru": "Подъём ног в висе"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подъём коленей в висе"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Повисните на турнике, хват на ширине плеч.",
+            "Поднимите прямые или слегка согнутые ноги до уровня таза.",
+            "Опустите ноги медленно, без раскачивания."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Раскачиваться и тянуть ноги за счёт инерции. Работает пресс, корпус неподвижен."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "abs_lower"
+        ],
+        "secondary": [
+          "hip_flexors",
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "pullup_bar"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_heel_toe_rock",
+      "status": "active",
+      "names": {
+        "en": "Heel-to-toe rock",
+        "ru": "Перекат с пяток на носки"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, стопы на ширине таза.",
+            "Перенесите вес на пятки, чуть приподняв носки.",
+            "Перекатитесь на носки, отрывая пятки, и вернитесь обратно.",
+            "Повторяйте в спокойном темпе, держа равновесие."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Заваливать стопы внутрь. Перекат идёт по внешнему краю стопы."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "calves"
+        ],
+        "secondary": [
+          "quads"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_hip_hinge_shift",
+      "status": "active",
+      "names": {
+        "en": "Standing hip hinge",
+        "ru": "Наклоны с отведением таза"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Отведение таза назад стоя"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, стопы на ширине таза, колени мягко согнуты.",
+            "Отведите таз назад, наклоняя корпус, пока не почувствуете натяжение в бёдрах.",
+            "Вернитесь в вертикальное положение, толкая таз вперёд.",
+            "Следите, чтобы спина оставалась прямой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Округлять поясницу. Наклон идёт от тазобедренного сустава, а не от спины."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_march_in_place",
+      "status": "active",
+      "names": {
+        "en": "Marching in place",
+        "ru": "Ходьба на месте"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, руки согните в локтях.",
+            "Поочерёдно поднимайте колени до уровня таза.",
+            "Держите корпус вертикально и дышите ровно."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Наклоняться вперёд и подпрыгивать. Шаг мягкий, вес остаётся над стопами."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hip_flexors"
+        ],
+        "secondary": [
+          "quads",
+          "calves"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_plank",
+      "status": "active",
+      "names": {
+        "en": "Plank",
+        "ru": "Планка"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Планка на предплечьях"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте в упор на предплечья, локти под плечами.",
+            "Вытяните тело в одну линию от головы до пяток.",
+            "Напрягите живот и ягодицы, дышите ровно."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Проваливать поясницу или поднимать таз слишком высоко. Таз на уровне плеч."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "abs"
+        ],
+        "secondary": [
+          "obliques",
+          "delts_front",
+          "quads"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_prone_t_raise",
+      "status": "active",
+      "names": {
+        "en": "Prone T raise",
+        "ru": "Подъём рук лёжа на животе"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подъём рук лёжа на животе · Т"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на живот, руки разведите в стороны ладонями вниз.",
+            "Приподнимите руки, сводя лопатки, и тянитесь пальцами в стороны.",
+            "Задержитесь на секунду и опустите руки."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибать поясницу и поднимать голову. Поднимаются только руки, шея расслаблена."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_rear"
+        ],
+        "secondary": [
+          "mid_back",
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_pullup",
+      "status": "active",
+      "names": {
+        "en": "Pull-up",
+        "ru": "Подтягивания прямым хватом"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подтягивания"
+        },
+        {
+          "lang": "ru",
+          "value": "Подтягивания на турнике"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмитесь за турник сверху, ладони чуть шире плеч.",
+            "Подтянитесь, сводя лопатки и поднимая грудь к перекладине.",
+            "Опуститесь под контролем, полностью выпрямляя руки."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Раскачиваться и дёргать корпусом. Движение идёт за счёт спины и рук, без рывков."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "lats"
+        ],
+        "secondary": [
+          "biceps",
+          "mid_back",
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "pullup_bar"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "mach_assisted_pullup",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bw_chin_up",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_pushup",
+      "status": "active",
+      "names": {
+        "en": "Push-up",
+        "ru": "Отжимания"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Отжимания от пола"
+        },
+        {
+          "lang": "ru",
+          "value": "Классические отжимания"
+        },
+        {
+          "lang": "ru",
+          "value": "Отжимания с ногами на опоре"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Примите упор лёжа: ладони под плечами, корпус в одну линию.",
+            "Согните локти и опуститесь, пока грудь почти не коснётся пола.",
+            "Вытолкните себя вверх, не прогибая поясницу."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Проваливать таз и разводить локти в стороны. Локти идут назад под углом около 45 градусов."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_wall_pushup",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bw_pushup_bars",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_pushup_bars",
+      "status": "active",
+      "names": {
+        "en": "Push-up on bars",
+        "ru": "Отжимания на упорах"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте упоры на ширине плеч, возьмитесь за ручки.",
+            "Примите упор лёжа или с колен, корпус прямой.",
+            "Опускайтесь между упорами до комфортной глубины и выжимайтесь вверх."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить локти строго в стороны. Локти направлены назад, ближе к корпусу."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "pushup_bars"
+        ],
+        "any_of": [
+          "bodyweight"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_pushup",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_reverse_lunge",
+      "status": "active",
+      "names": {
+        "en": "Reverse lunge",
+        "ru": "Выпады назад"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Выпады назад · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Выпады назад · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, стопы на ширине таза.",
+            "Шагните одной ногой назад и опустите колено к полу.",
+            "Оттолкнитесь передней ногой и вернитесь в исходное.",
+            "Держите корпус вертикально, колено передней ноги над стопой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Заваливать корпус вперёд и отрывать пятку передней ноги. Вес остаётся на всей стопе."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "hamstrings"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "bw_split_squat",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_scapular_retraction",
+      "status": "active",
+      "names": {
+        "en": "Standing scapular retraction",
+        "ru": "Сведение лопаток стоя"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, руки опущены вдоль тела.",
+            "Сведите лопатки к позвоночнику, не поднимая плечи.",
+            "Задержитесь на 2 секунды и вернитесь в исходное."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать плечи и выгибать поясницу. Работают только лопатки."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back"
+        ],
+        "secondary": [
+          "traps",
+          "delts_rear"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_side_plank_knee",
+      "status": "active",
+      "names": {
+        "en": "Kneeling side plank",
+        "ru": "Боковая планка с колен"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Боковая планка с колен · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Боковая планка с колен · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на бок, локоть под плечом, колени согнуты.",
+            "Поднимите таз, опираясь на предплечье и колени.",
+            "Держите корпус в одну линию от плеч до колен, дышите ровно."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Проваливать таз и заваливать плечо вперёд. Таз поднят, плечо над локтем."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "obliques"
+        ],
+        "secondary": [
+          "abs",
+          "glutes",
+          "delts_side"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_split_squat",
+      "status": "active",
+      "names": {
+        "en": "Split squat",
+        "ru": "Сплит-присед"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Сплит-присед · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Сплит-присед · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте в широкий шаг, одна нога впереди, другая сзади.",
+            "Опускайте заднее колено к полу, пока переднее не согнётся примерно до прямого угла.",
+            "Поднимитесь, отталкиваясь передней ногой, и повторите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Ставить ноги на одной линии, как на канате. Стопы стоят на ширине таза."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "hamstrings"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_squat",
+      "status": "active",
+      "names": {
+        "en": "Bodyweight squat",
+        "ru": "Приседания без веса"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Приседания с собственным весом"
+        },
+        {
+          "lang": "ru",
+          "value": "Воздушные приседания"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте, стопы на ширине плеч, носки чуть в стороны.",
+            "Отведите таз назад и согните колени, опускаясь вниз.",
+            "Держите пятки на полу и спину прямой, затем вернитесь вверх."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отрывать пятки и сводить колени внутрь. Колени идут по направлению носков."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "hamstrings",
+          "calves"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bb_back_squat",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_step_up",
+      "status": "active",
+      "names": {
+        "en": "Step-up",
+        "ru": "Зашагивания на скамью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Зашагивания на платформу"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте одну ногу на скамью, стопа полностью на поверхности.",
+            "Поднимитесь, выпрямляя ногу, и приставьте вторую ногу.",
+            "Спуститесь под контролем и повторите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отталкиваться нижней ногой и падать на скамью. Работает нога на скамье."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "hamstrings"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bench"
+        ],
+        "any_of": [
+          "bodyweight"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_thoracic_rotation",
+      "status": "active",
+      "names": {
+        "en": "Supine thoracic rotation",
+        "ru": "Вращение грудного отдела лёжа"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Вращение грудного отдела лёжа · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Вращение грудного отдела лёжа · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на бок, колени согнуты и прижаты друг к другу.",
+            "Верхнюю руку отведите назад и раскройте грудную клетку, поворачивая верх спины.",
+            "Задержитесь на вдохе и вернитесь на выдохе."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разворачивать таз вместе с корпусом. Колени остаются на месте."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back"
+        ],
+        "secondary": [
+          "chest",
+          "obliques"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_wall_pushup",
+      "status": "active",
+      "names": {
+        "en": "Wall push-up",
+        "ru": "Отжимания от стены"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте лицом к стене на расстоянии вытянутых рук.",
+            "Ладони на стене на уровне плеч, корпус прямой.",
+            "Согните локти, приблизьте грудь к стене и вернитесь."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Тянуться головой к стене и прогибаться в пояснице. Всё тело движется как одна линия."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_pushup",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "bw_wrist_warmup",
+      "status": "active",
+      "names": {
+        "en": "Wrist warm-up",
+        "ru": "Разминка кистей"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Сгибания запястий с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сожмите кисти в кулаки и разожмите несколько раз.",
+            "Вращайте кистями в одну и другую сторону.",
+            "Мягко сгибайте и разгибайте кисти в лучезапястном суставе, помогая второй рукой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Резкие движения в начале. Разминка идёт медленно, до ощущения тепла."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "forearms"
+        ],
+        "secondary": []
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "cable_face_pull",
+      "status": "active",
+      "names": {
+        "en": "Cable face pull",
+        "ru": "Тяга к лицу на блоке"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Тяга каната к лицу"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите канат двумя руками, отойдите от блока.",
+            "Тяните канат к лицу, разводя руки и сводя лопатки.",
+            "Верните руки вперёд под контролем."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Тянуть к груди и прогибать поясницу. Канат идёт к лицу, локти выше кистей."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_rear"
+        ],
+        "secondary": [
+          "mid_back",
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "cable_row",
+      "status": "active",
+      "names": {
+        "en": "Seated cable row",
+        "ru": "Тяга нижнего блока"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Тяга нижнего блока к поясу"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте, стопы на упорах, колени чуть согнуты, спина прямая.",
+            "Тяните рукоять к животу, сводя лопатки.",
+            "Верните рукоять вперёд, не округляя спину."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Раскачиваться корпусом и тянуть руками. Корпус почти неподвижен, движение начинают лопатки."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back"
+        ],
+        "secondary": [
+          "lats",
+          "biceps",
+          "delts_rear"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_one_arm_row",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "cable_triceps_pushdown",
+      "status": "active",
+      "names": {
+        "en": "Cable triceps pushdown",
+        "ru": "Разгибание рук на блоке"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Разгибание рук на блоке вниз"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте у блока, рукоять на уровне груди, локти прижаты к бокам.",
+            "Разогните руки вниз до полного выпрямления.",
+            "Верните рукоять до уровня груди, не разводя локти."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Наклоняться всем телом на рукоять. Работают только предплечья, плечи неподвижны."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "triceps"
+        ],
+        "secondary": []
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_bench_press",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell bench press",
+        "ru": "Жим гантелей лёжа"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим гантелей лёжа на скамье"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на скамью, стопы на полу, гантели над грудью.",
+            "Опустите гантели к груди, локти под углом около 45 градусов.",
+            "Выжмите вверх и сведите гантели, не стукая их."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить локти строго в стороны и брать слишком большой вес. Лопатки сведены, движение под контролем."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells",
+          "bench"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_floor_press",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bb_bench_press",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_biceps_curl",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell biceps curl",
+        "ru": "Сгибание рук с гантелями"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Сгибание руки с гантелью · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Сгибание руки с гантелью · правая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъём гантелей на бицепс"
+        },
+        {
+          "lang": "ru",
+          "value": "Сгибания рук с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели в опущенных руках ладонями вперёд.",
+            "Согните руки, не отводя локти от корпуса.",
+            "Сожмите бицепс в верхней точке и опустите под контролем."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Раскачивать корпус и выводить локти вперёд. Локти остаются на месте."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "biceps"
+        ],
+        "secondary": [
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_floor_press",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell floor press",
+        "ru": "Жим гантелей лёжа на полу"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим гантели лёжа на полу · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Жим гантели лёжа на полу · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на пол, колени согнуты, гантели над грудью.",
+            "Опускайте гантели, пока локти мягко не коснутся пола.",
+            "Выжмите снаряды вверх, не отрывая плечи от пола."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Выталкивать гантели рывком и отрывать таз. Опускание медленное, лопатки прижаты."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [
+          "bench",
+          "bodyweight"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_pushup",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "db_bench_press",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_fly",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell fly",
+        "ru": "Разведение гантелей лёжа"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Разведение гантелей лёжа на скамье"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на скамью, гантели над грудью, локти чуть согнуты.",
+            "Разведите руки в стороны до уровня груди, сохраняя угол в локтях.",
+            "Сведите руки обратно, чувствуя работу грудных."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разгибать руки и превращать разведение в жим. Угол в локтях не меняется."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells",
+          "bench"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_goblet_squat",
+      "status": "active",
+      "names": {
+        "en": "Goblet squat",
+        "ru": "Гоблет-присед с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Гоблет-присед"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите гантель обеими руками у груди.",
+            "Стопы на ширине плеч, носки чуть в стороны.",
+            "Приседайте, отводя таз назад и держа грудь открытой.",
+            "Вернитесь вверх, не теряя положения гантели."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Наклоняться вперёд вместе с гантелью. Корпус остаётся почти вертикальным."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_squat",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bb_back_squat",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_lateral_raise",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell lateral raise",
+        "ru": "Подъём гантелей в стороны"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подъём гантели в сторону · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъём гантели в сторону · правая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Разведение гантелей в стороны"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъём гантелей через стороны"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели в опущенных руках.",
+            "Поднимайте руки в стороны до уровня плеч, локти чуть согнуты.",
+            "Опускайте медленно, без маха."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать плечи и заводить руки выше плеч. Работает средняя дельта, шея расслаблена."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_side"
+        ],
+        "secondary": [
+          "traps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_one_arm_row",
+      "status": "active",
+      "names": {
+        "en": "One-arm dumbbell row",
+        "ru": "Тяга гантели в наклоне"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Тяга гантели в наклоне · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга гантели в наклоне · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте одну руку и колено на скамью, вторая рука с гантелью опущена.",
+            "Тяните гантель к поясу, ведя локоть вдоль корпуса.",
+            "Опустите снаряд, не округляя спину."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разворачивать корпус и дёргать плечом. Лопатка движется, таз остаётся неподвижным."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back"
+        ],
+        "secondary": [
+          "lats",
+          "biceps",
+          "delts_rear"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [
+          "bench"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "bb_row",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_overhead_triceps_extension",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell overhead triceps extension",
+        "ru": "Разгибание рук из-за головы"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Разгибание рук с гантелью из-за головы"
+        },
+        {
+          "lang": "ru",
+          "value": "Разгибание руки с гантелью из-за головы"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите гантель обеими руками и поднимите над головой.",
+            "Сгибая локти, опустите гантель за голову, плечи остаются на месте.",
+            "Разогните руки и вернитесь в верхнее положение."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить локти в стороны и прогибать поясницу. Локти смотрят вперёд, корпус неподвижен."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "triceps"
+        ],
+        "secondary": []
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_rear_delt_fly",
+      "status": "active",
+      "names": {
+        "en": "Bent-over dumbbell rear-delt fly",
+        "ru": "Разведение гантелей в наклоне"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Разведение гантелей в наклоне на заднюю дельту"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Наклонитесь вперёд с прямой спиной, гантели под грудью.",
+            "Разведите руки в стороны, ведя локти вверх и назад.",
+            "Опустите под контролем, не раскачивая корпус."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать корпус вместе с руками и работать трапецией. Корпус неподвижен, лопатки сведены мягко."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_rear"
+        ],
+        "secondary": [
+          "mid_back",
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_romanian_deadlift",
+      "status": "active",
+      "names": {
+        "en": "One-dumbbell Romanian deadlift",
+        "ru": "Румынская тяга с одной гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Румынская тяга с гантелью"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите гантель обеими руками перед бёдрами.",
+            "Отведите таз назад и опустите гантель вдоль ног, сохраняя спину прямой.",
+            "Почувствовав натяжение в задней поверхности бедра, вернитесь вверх."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Сгибать колени слишком сильно — это превращает движение в присед. Колени мягкие, наклон от таза."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hamstrings"
+        ],
+        "secondary": [
+          "glutes",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bb_romanian_deadlift",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_shoulder_press",
+      "status": "active",
+      "names": {
+        "en": "Seated dumbbell shoulder press",
+        "ru": "Жим гантелей сидя"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим гантелей над головой"
+        },
+        {
+          "lang": "ru",
+          "value": "Жим гантелей стоя"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте на скамью со спинкой, гантели на уровне плеч.",
+            "Выжмите гантели вверх, почти выпрямляя руки.",
+            "Опустите до уровня ушей и повторите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибать поясницу и выводить рёбра вперёд. Корпус прижат к спинке, живот в тонусе."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_front"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_side"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [
+          "bench"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bb_overhead_press",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_shrug",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell shrug",
+        "ru": "Шраги"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Шраги с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели в опущенных руках.",
+            "Поднимайте плечи вверх к ушам, не сгибая локти.",
+            "Задержитесь на секунду и опустите плечи."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Вращать плечами и сгибать руки. Плечи идут строго вверх, руки остаются прямыми."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "traps"
+        ],
+        "secondary": [
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_suitcase_carry",
+      "status": "active",
+      "names": {
+        "en": "Suitcase hold",
+        "ru": "Удержание гантели «чемодан»"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Удержание гантели «чемодан» · левая сторона"
+        },
+        {
+          "lang": "ru",
+          "value": "Удержание гантели «чемодан» · правая сторона"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, возьмите гантель в одну руку.",
+            "Опустите плечо и держите корпус вертикально, не наклоняясь в сторону.",
+            "Дышите ровно и удерживайте положение заданное время."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Компенсировать вес наклоном корпуса. Плечи на одном уровне, пресс и косые держат корпус."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "obliques"
+        ],
+        "secondary": [
+          "forearms",
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "time"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "kb_goblet_squat",
+      "status": "active",
+      "names": {
+        "en": "Kettlebell goblet squat",
+        "ru": "Гоблет-присед с гирей"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите гирю за ручки обеими руками у груди.",
+            "Приседайте, отводя таз назад и держа корпус вертикально.",
+            "Вернитесь вверх, не отпуская гирю от груди."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Наклоняться вслед за гирей и отрывать пятки. Грудь открыта, стопы прижаты к полу."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "kettlebell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_goblet_squat",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "kb_swing",
+      "status": "active",
+      "names": {
+        "en": "Kettlebell swing",
+        "ru": "Махи гирей"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Свинг гирей"
+        },
+        {
+          "lang": "ru",
+          "value": "Махи гирей двумя руками"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте гирю перед собой, стопы чуть шире плеч.",
+            "Наклонитесь, возьмите гирю и заведите её назад между ног.",
+            "Резко разогните таз, выводя гирю вперёд до уровня груди.",
+            "Позвольте гире вернуться назад и повторите в ритме."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать гирю руками и приседать вместо маха. Движение задаёт таз, руки только держат снаряд."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "lower_back",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "kettlebell"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "mach_assisted_pullup",
+      "status": "active",
+      "names": {
+        "en": "Assisted pull-up",
+        "ru": "Подтягивания в гравитроне"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подтягивания с противовесом"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте на подставку гравитрона, возьмитесь за рукояти сверху.",
+            "Подтянитесь, помогая себе весом противовеса.",
+            "Опуститесь под контролем, выпрямляя руки."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отталкиваться ногами вместо тяги. Ноги стоят на платформе, работает спина."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "lats"
+        ],
+        "secondary": [
+          "biceps",
+          "mid_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "assisted",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_pullup",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "mach_chest_press",
+      "status": "active",
+      "names": {
+        "en": "Chest press machine",
+        "ru": "Жим в тренажёре"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим от груди в тренажёре"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте, рукояти на уровне груди, стопы на полу.",
+            "Выжмите рукояти вперёд, почти выпрямляя руки.",
+            "Верните под контролем, не сводя плечи вперёд."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Выводить плечи вперёд в конце движения. Лопатки остаются сведёнными."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "mach_lat_pulldown",
+      "status": "active",
+      "names": {
+        "en": "Lat pulldown",
+        "ru": "Тяга верхнего блока"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Тяга верхнего блока к груди"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте, зажмите бёдра под упором, возьмитесь за рукоять широким хватом.",
+            "Тяните рукоять к груди, сводя лопатки.",
+            "Верните рукоять вверх, полностью выпрямляя руки."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Тянуть за голову и отклоняться назад. Тяга идёт к груди, корпус почти вертикален."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "lats"
+        ],
+        "secondary": [
+          "biceps",
+          "mid_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "mach_assisted_pullup",
+          "kind": "same",
+          "verified": false
+        },
+        {
+          "id": "bw_pullup",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "mach_leg_curl",
+      "status": "active",
+      "names": {
+        "en": "Leg curl",
+        "ru": "Сгибание ног в тренажёре"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Сгибание ног лёжа в тренажёре"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте в тренажёр, валик над пятками, колени на краю скамьи.",
+            "Согните ноги, подводя валик к ягодицам.",
+            "Опустите ноги медленно, не разгибая колени рывком."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Поднимать таз, чтобы дотянуть валик. Таз прижат, работает задняя поверхность бедра."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hamstrings"
+        ],
+        "secondary": []
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "mach_leg_extension",
+      "status": "active",
+      "names": {
+        "en": "Leg extension",
+        "ru": "Разгибание ног в тренажёре"
+      },
+      "aliases": [],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте в тренажёр, валик на голенях, колени по оси.",
+            "Разогните ноги, пока они не выпрямятся.",
+            "Опустите под контролем, не бросая вес."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Бить весом в нижней точке и отрывать таз. Движение плавное, колени не переразгибаются."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": []
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "mach_leg_press",
+      "status": "active",
+      "names": {
+        "en": "Leg press",
+        "ru": "Жим ногами"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим ногами в тренажёре"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте в тренажёр, стопы на платформе на ширине плеч.",
+            "Опускайте платформу, пока колени не согнутся примерно до прямого угла.",
+            "Выжмите платформу, не выпрямляя колени до конца."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отрывать таз от сиденья и разгибать колени в замок. Поясница прижата, колени мягкие."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "hamstrings"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "gym"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_squat",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    },
+    {
+      "id": "db_front_rack_squat",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell front rack squat",
+        "ru": "Приседания с гантелями у плеч"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Приседания с гантелями на плечах"
+        },
+        {
+          "lang": "ru",
+          "value": "Фронт-присед с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите обе гантели и положите их на плечи, ладони развёрнуты друг к другу.",
+            "Поставьте стопы на ширине плеч, поднимите локти и держите корпус вертикально.",
+            "Приседайте до параллели бёдер с полом, не отпуская гантели с плеч.",
+            "Встаньте, толкаясь стопами и не наклоняясь вперёд."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Ронять локти и наклоняться вперёд — гантели уходят с плеч. Локти высоко, грудь открыта."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads"
+        ],
+        "secondary": [
+          "glutes",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_goblet_squat",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_sumo_squat",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell sumo squat",
+        "ru": "Сумо-присед с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Сумо-присед"
+        },
+        {
+          "lang": "ru",
+          "value": "Приседания плие с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Широкий присед с гантелью"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте ноги шире плеч, носки развёрнуты наружу.",
+            "Возьмите гантель двумя руками и опустите её между ног.",
+            "Приседайте, отводя таз назад и разводя колени по направлению носков.",
+            "Встаньте, сжимая ягодицы; гантель остаётся вертикально."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Сводить колени внутрь. Колени идут по линии носков, таз отводится назад."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes",
+          "adductors"
+        ],
+        "secondary": [
+          "quads",
+          "hamstrings"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_squat",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "db_goblet_squat",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_reverse_lunge",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell reverse lunge",
+        "ru": "Выпады назад с гантелями"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Обратные выпады с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Выпады назад с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Реверсивные выпады"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели в опущенных руках по бокам.",
+            "Шагните назад и опуститесь, пока оба колена не согнутся почти до прямого угла.",
+            "Оттолкнитесь передней ногой и вернитесь в стойку.",
+            "Повторите на другую ногу."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Уводить колено передней ноги внутрь и наклонять корпус. Колено над стопой, корпус вертикальный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads",
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "bw_reverse_lunge",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_lateral_lunge",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell lateral lunge",
+        "ru": "Боковые выпады с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Боковой выпад с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Выпады в сторону с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Приседания в сторону с гантелью"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите одну гантель к груди и встаньте, поставив стопы вместе.",
+            "Шагните широко в сторону, сгибая эту ногу и отводя таз назад.",
+            "Вторая нога остаётся прямой, корпус наклоняется в сторону шага.",
+            "Оттолкнитесь и вернитесь в исходное положение."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Сгибать обе ноги и заваливать колено внутрь. Опорная нога прямая, колено над стопой."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "adductors",
+          "quads"
+        ],
+        "secondary": [
+          "glutes"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "bw_reverse_lunge",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_step_up",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell step-up",
+        "ru": "Зашагивания с гантелями"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Зашагивания на скамью с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъёмы на скамью с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Зашагивания на платформу с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите гантели в опущенные руки и встаньте перед скамьёй или устойчивой ступенькой.",
+            "Поставьте одну стопу на опору целиком.",
+            "Поднимитесь за счёт передней ноги, не отталкиваясь второй стопой.",
+            "Опуститесь тем же путём и повторите на другую ногу."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отталкиваться нижней ногой и помогать себе рывком. Работает нога на опоре, корпус вертикальный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads",
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "calves"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [
+          "bench"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "bw_step_up",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_bulgarian_split_squat",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell Bulgarian split squat",
+        "ru": "Болгарский сплит-присед с гантелями"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Болгарские выпады с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Сплит-присед с ногой на опоре"
+        },
+        {
+          "lang": "ru",
+          "value": "Болгарский присед"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте спиной к стулу и положите носок одной стопы на сиденье.",
+            "Возьмите гантели в опущенные руки и сделайте небольшой шаг вперёд.",
+            "Приседайте, пока переднее бедро не станет почти параллельно полу.",
+            "Встаньте, сохраняя вес на передней ноге."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Ставить опорную ногу слишком близко к стулу — колено уходит вперёд. Шагните так, чтобы колено оставалось над стопой."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "quads",
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [
+          "bench"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "bw_split_squat",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_single_leg_rdl",
+      "status": "active",
+      "names": {
+        "en": "Single-leg dumbbell Romanian deadlift",
+        "ru": "Румынская тяга на одной ноге"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Румынская тяга на одной ноге с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга на одной ноге с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Одноопорная румынская тяга"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите гантель в разноимённую руку и встаньте на одну ногу.",
+            "Наклоняйтесь вперёд, отводя свободную ногу назад, пока корпус и нога не вытянутся в линию.",
+            "Держите спину прямой, гантель скользит вдоль опорной ноги.",
+            "Вернитесь в стойку, не теряя равновесия."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Округлять спину и разворачивать таз. Таз смотрит в пол, спина прямая."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hamstrings",
+          "glutes"
+        ],
+        "secondary": [
+          "lower_back",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "db_romanian_deadlift",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_good_morning",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell good morning",
+        "ru": "Наклоны с гантелями на плечах"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Гуд морнинг с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Наклоны вперёд с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Наклоны корпуса с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Положите гантели на плечи, поставьте стопы на ширине таза и чуть согните колени.",
+            "Отводите таз назад, наклоняя корпус вперёд с прямой спиной.",
+            "Остановитесь, когда почувствуете натяжение в задней поверхности бедра.",
+            "Вернитесь вверх за счёт ягодиц, не прогибаясь в пояснице."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Округлять спину и брать вес больше доступного. Спина прямая, движение идёт от таза."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hamstrings"
+        ],
+        "secondary": [
+          "glutes",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_romanian_deadlift",
+          "kind": "same",
+          "verified": false
+        },
+        {
+          "id": "bw_hip_hinge_shift",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_glute_bridge",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell glute bridge",
+        "ru": "Ягодичный мост с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Ягодичный мост лёжа с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Мост с гантелью на тазу"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на пол, согните колени и поставьте стопы на ширине таза.",
+            "Положите гантель на таз и придержите её руками.",
+            "Поднимите таз, пока корпус и бёдра не образуют прямую линию.",
+            "Опуститесь и повторите, не расслабляя ягодицы внизу."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибаться в пояснице вместо разгибания таза. Вверху работает ягодица, рёбра не расходятся."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_glute_bridge",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_hip_thrust",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell hip thrust",
+        "ru": "Хип-траст с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подъём таза с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Ягодичный мост на скамье"
+        },
+        {
+          "lang": "ru",
+          "value": "Тазовый мост с опорой"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте на пол, прижавшись верхней частью спины к скамье или дивану.",
+            "Положите гантель на таз, поставьте стопы на ширине таза.",
+            "Поднимите таз до прямой линии корпуса и бёдер, подбородок прижат.",
+            "Опуститесь под контролем и повторите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Переразгибать поясницу в верхней точке. Таз поднимается за счёт ягодиц, рёбра остаются вниз."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "hamstrings",
+          "quads"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [
+          "bench"
+        ],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_glute_bridge",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_arnold_press",
+      "status": "active",
+      "names": {
+        "en": "Arnold press",
+        "ru": "Жим Арнольда"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим Арнольда с гантелями"
+        },
+        {
+          "lang": "ru",
+          "value": "Разворотный жим гантелей"
+        },
+        {
+          "lang": "ru",
+          "value": "Жим с разворотом кистей"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте или встаньте, держа гантели у плеч ладонями к себе.",
+            "Выжимайте гантели вверх, разворачивая кисти ладонями вперёд.",
+            "В верхней точке гантели почти соприкасаются.",
+            "Опустите по той же траектории, возвращая ладони к себе."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить локти в стороны и выжимать по прямой. Локти идут под кистями, разворот плавный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_front"
+        ],
+        "secondary": [
+          "delts_side",
+          "triceps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_shoulder_press",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_front_raise",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell front raise",
+        "ru": "Подъём гантелей перед собой"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Подъём гантелей вперёд"
+        },
+        {
+          "lang": "ru",
+          "value": "Фронтальные подъёмы гантелей"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъёмы рук с гантелями перед собой"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели перед бёдрами ладонями к себе.",
+            "Поднимайте прямые руки вперёд до уровня плеч.",
+            "Опустите медленно, не раскачивая корпус."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Брать вес больше доступного и помогать корпусом. Руки поднимаются без рывка, поясница не прогибается."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_front"
+        ],
+        "secondary": [
+          "delts_side"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_lateral_raise",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_upright_row",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell upright row",
+        "ru": "Тяга гантелей к подбородку"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Тяга гантелей вверх"
+        },
+        {
+          "lang": "ru",
+          "value": "Вертикальная тяга гантелей"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъём гантелей к подбородку"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели перед бёдрами, ладони к себе.",
+            "Тяните гантели вверх вдоль корпуса, ведя локти выше кистей.",
+            "Остановитесь на уровне груди и опустите под контролем."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Тянуть выше к подбородку с высокими локтями и болью в плече. Локти не выше плеч, вес умеренный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "delts_side",
+          "traps"
+        ],
+        "secondary": [
+          "biceps",
+          "delts_rear"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_lateral_raise",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_floor_fly",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell floor fly",
+        "ru": "Разведение гантелей лёжа на полу"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Разведение рук с гантелями на полу"
+        },
+        {
+          "lang": "ru",
+          "value": "Разводка гантелей на полу"
+        },
+        {
+          "lang": "ru",
+          "value": "Разведение гантелей на полу"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на пол, согните колени, поднимите гантели над грудью ладонями друг к другу.",
+            "Разведите руки в стороны, чуть сгибая локти, пока они почти не коснутся пола.",
+            "Сведите гантели обратно по дуге, не выпрямляя локти до конца."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить руки слишком глубоко и перегружать плечо. Опускайтесь до лёгкого касания пола."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "delts_front",
+          "triceps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_fly",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_squeeze_press",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell squeeze press",
+        "ru": "Жим гантелей с сведением"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Жим гантелей с давлением"
+        },
+        {
+          "lang": "ru",
+          "value": "Сжимающий жим гантелей"
+        },
+        {
+          "lang": "ru",
+          "value": "Жим гантелей с прижатием"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на пол и прижмите гантели друг к другу над грудью.",
+            "Выжимайте их вверх, продолжая давить ладонями навстречу.",
+            "Опустите к груди, сохраняя давление, и повторите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить гантели в стороны и терять давление. Ладони прижаты друг к другу всё движение."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest_mid"
+        ],
+        "secondary": [
+          "triceps",
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_floor_press",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_bent_over_row",
+      "status": "active",
+      "names": {
+        "en": "Bent-over dumbbell row",
+        "ru": "Тяга двух гантелей в наклоне"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Тяга гантелей в наклоне двумя руками"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга двух гантелей"
+        },
+        {
+          "lang": "ru",
+          "value": "Парная тяга гантелей"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите по гантели в каждую руку и наклонитесь вперёд с прямой спиной.",
+            "Чуть согните колени, гантели висят под плечами.",
+            "Тяните обе гантели к поясу, сводя лопатки.",
+            "Опустите до прямых рук, не выпрямляя корпус."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Выпрямлять корпус на каждом повторении и дёргать вес. Наклон сохраняется, тянут мышцы спины."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back",
+          "lats"
+        ],
+        "secondary": [
+          "biceps",
+          "delts_rear",
+          "lower_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bb_row",
+          "kind": "same",
+          "verified": false
+        },
+        {
+          "id": "db_one_arm_row",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_gorilla_row",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell gorilla row",
+        "ru": "Тяга гантелей «горилла»"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Горилла-тяга"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга гантелей с пола в наклоне"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга гантелей в низком наклоне"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Поставьте гантели на пол, поставьте ноги шире плеч и наклонитесь, взявшись за ручки.",
+            "Держите спину прямой, таз отведите назад.",
+            "Подтяните одну гантель к поясу, вторая остаётся на полу.",
+            "Опустите её и повторите другой рукой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разворачивать таз и раскачиваться. Корпус неподвижен, тянет рука."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back",
+          "lats"
+        ],
+        "secondary": [
+          "biceps",
+          "abs"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "alternating",
+      "alternatives": [
+        {
+          "id": "db_one_arm_row",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_pullover",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell pullover",
+        "ru": "Пуловер с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Пуловер лёжа на полу"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга гантели из-за головы лёжа"
+        },
+        {
+          "lang": "ru",
+          "value": "Пуловер с одной гантелью"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на пол и возьмите гантель двумя руками над грудью.",
+            "Заведите гантель за голову по дуге, чуть сгибая локти.",
+            "Почувствуйте растяжение в широчайших и верните гантель над грудью."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибать поясницу и брать слишком большой вес. Рёбра вниз, движение плавное."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "lats"
+        ],
+        "secondary": [
+          "chest_mid",
+          "triceps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_hammer_curl",
+      "status": "active",
+      "names": {
+        "en": "Hammer curl",
+        "ru": "Подъём гантелей «молотом»"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Молотковые сгибания рук"
+        },
+        {
+          "lang": "ru",
+          "value": "Сгибания рук молотком"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъём гантелей хватом молот"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте прямо, гантели в опущенных руках ладонями внутрь.",
+            "Сгибайте руки, сохраняя нейтральный хват.",
+            "Опустите медленно, не раскачивая корпус."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разворачивать кисти и помогать плечом. Хват нейтральный, локоть остаётся у корпуса."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "biceps"
+        ],
+        "secondary": [
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_biceps_curl",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_concentration_curl",
+      "status": "active",
+      "names": {
+        "en": "Concentration curl",
+        "ru": "Концентрированное сгибание с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Концентрированный подъём на бицепс"
+        },
+        {
+          "lang": "ru",
+          "value": "Сгибание руки с упором в бедро"
+        },
+        {
+          "lang": "ru",
+          "value": "Концентрированные сгибания с гантелью"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте на стул, поставьте ноги шире плеч и возьмите гантель в одну руку.",
+            "Упритесь локтем во внутреннюю сторону бедра.",
+            "Сгибайте руку к плечу, не отрывая локоть.",
+            "Опустите медленно и повторите другой рукой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Отрывать локоть от бедра и раскачивать корпус. Работает только предплечье."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "biceps"
+        ],
+        "secondary": [
+          "forearms"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "db_biceps_curl",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_floor_triceps_extension",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell floor triceps extension",
+        "ru": "Разгибание рук с гантелями лёжа на полу"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Французский жим гантелей на полу"
+        },
+        {
+          "lang": "ru",
+          "value": "Разгибание рук лёжа на полу"
+        },
+        {
+          "lang": "ru",
+          "value": "Трицепсовое разгибание на полу"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на пол, поднимите гантели над грудью, локти смотрят вверх.",
+            "Сгибайте локти, опуская гантели к вискам.",
+            "Разогните руки, не разводя локти в стороны."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разводить локти и выжимать как штангу. Локти неподвижны, двигается только предплечье."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "triceps"
+        ],
+        "secondary": [
+          "chest_mid"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_overhead_triceps_extension",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_farmer_carry",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell farmer carry",
+        "ru": "Прогулка с гантелями"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Фермерская прогулка"
+        },
+        {
+          "lang": "ru",
+          "value": "Ходьба с гантелями в опущенных руках"
+        },
+        {
+          "lang": "ru",
+          "value": "Прогулка фермера с гантелями"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Возьмите по гантели в каждую руку и встаньте прямо.",
+            "Идите короткими шагами, держа корпус вертикально и плечи развёрнутыми.",
+            "Дышите ровно и не наклоняйтесь в стороны."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Сгорбливаться и наклоняться в сторону тяжёлой руки. Корпус вертикальный, шаг спокойный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "forearms",
+          "traps"
+        ],
+        "secondary": [
+          "abs",
+          "obliques"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "db_suitcase_carry",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_renegade_row",
+      "status": "active",
+      "names": {
+        "en": "Renegade row",
+        "ru": "Тяга гантелей в планке"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Ренегат-тяга"
+        },
+        {
+          "lang": "ru",
+          "value": "Тяга гантелей из планки"
+        },
+        {
+          "lang": "ru",
+          "value": "Планка с тягой гантелей"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте в планку на прямых руках, положив ладони на ручки гантелей.",
+            "Держите таз неподвижно и подтяните одну гантель к поясу.",
+            "Опустите её и повторите другой рукой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Разворачивать таз при тяге. Поставьте стопы шире, корпус остаётся неподвижным."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back",
+          "abs"
+        ],
+        "secondary": [
+          "lats",
+          "biceps",
+          "obliques"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 2
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "alternating",
+      "alternatives": [
+        {
+          "id": "bw_plank",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "db_one_arm_row",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db_russian_twist",
+      "status": "active",
+      "names": {
+        "en": "Dumbbell Russian twist",
+        "ru": "Русские скручивания с гантелью"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Русский твист с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Скручивания корпуса с гантелью"
+        },
+        {
+          "lang": "ru",
+          "value": "Повороты корпуса с гантелью сидя"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте на пол, согните колени и наклоните корпус назад с прямой спиной.",
+            "Возьмите гантель двумя руками перед грудью.",
+            "Поворачивайте корпус в одну сторону, затем в другую, ведя гантель за рукой."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Круглить спину и крутить только руками. Корпус разворачивается от груди, поясница прямая."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "obliques"
+        ],
+        "secondary": [
+          "abs",
+          "hip_flexors"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "dumbbells"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 1
+        }
+      },
+      "load_type": "external",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "alternating",
+      "alternatives": [
+        {
+          "id": "bw_dead_bug",
+          "kind": "easier",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw_thoracic_extension",
+      "status": "active",
+      "names": {
+        "en": "Thoracic extension",
+        "ru": "Разгибание грудного отдела"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Прогиб в грудном отделе"
+        },
+        {
+          "lang": "ru",
+          "value": "Разгибание грудного отдела сидя"
+        },
+        {
+          "lang": "ru",
+          "value": "Мобилизация грудного отдела"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Сядьте на стул, поставьте стопы на пол и заведите руки за голову, локти разведите.",
+            "Поднимите грудную клетку и мягко прогнитесь в верхней части спины.",
+            "Вернитесь в нейтральное положение, не округляя плечи вперёд."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибаться в пояснице и тянуть подбородок вверх. Движение идёт в грудном отделе, поясница остаётся нейтральной."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "mid_back"
+        ],
+        "secondary": [
+          "traps"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_cat_cow",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bw_thoracic_rotation",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw_wall_slides",
+      "status": "active",
+      "names": {
+        "en": "Wall slides",
+        "ru": "Скольжения руками по стене"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Скольжение руками у стены"
+        },
+        {
+          "lang": "ru",
+          "value": "Подъёмы рук по стене"
+        },
+        {
+          "lang": "ru",
+          "value": "Скольжения у стены"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте спиной к стене, стопы на расстоянии шага, таз и лопатки прижаты.",
+            "Поднимите согнутые руки и прижмите тыльные стороны ладоней к стене.",
+            "Скользите руками вверх, сохраняя контакт со стеной.",
+            "Опустите руки по той же траектории, не отрывая поясницу."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Выгибать поясницу и отрывать рёбра от стены. Рёбра вниз, движение происходит только в плечах."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "traps"
+        ],
+        "secondary": [
+          "delts_front",
+          "mid_back"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [
+        {
+          "id": "bw_scapular_retraction",
+          "kind": "easier",
+          "verified": false
+        },
+        {
+          "id": "bw_prone_t_raise",
+          "kind": "same",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw_doorway_stretch",
+      "status": "active",
+      "names": {
+        "en": "Doorway stretch",
+        "ru": "Растяжка в дверном проёме"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Растяжка грудных в дверном проёме"
+        },
+        {
+          "lang": "ru",
+          "value": "Растяжка груди у двери"
+        },
+        {
+          "lang": "ru",
+          "value": "Дверная растяжка"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте в дверном проёме и положите предплечья на косяки на уровне плеч.",
+            "Шагните одной ногой вперёд и мягко подайте грудь вперёд до растяжения.",
+            "Дышите ровно и удерживайте положение 30 секунд, затем вернитесь."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибать поясницу и поднимать плечи к ушам. Корпус вертикальный, плечи опущены."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "chest"
+        ],
+        "secondary": [
+          "delts_front"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "bilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw_hip_flexor_stretch",
+      "status": "active",
+      "names": {
+        "en": "Hip flexor stretch",
+        "ru": "Растяжка сгибателей бедра"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Растяжка подвздошно-поясничной мышцы"
+        },
+        {
+          "lang": "ru",
+          "value": "Низкий выпад с растяжкой"
+        },
+        {
+          "lang": "ru",
+          "value": "Растяжка таза в выпаде"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Встаньте в выпад на одном колене, задняя стопа стоит на носке.",
+            "Подкрутите таз назад и вниз, чтобы почувствовать растяжение в передней части бедра.",
+            "Мягко подайте таз вперёд и удерживайте 30 секунд, дыша ровно.",
+            "Повторите на другую сторону."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Прогибать поясницу и выводить колено вперёд. Таз подкручен, корпус вертикальный."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "hip_flexors"
+        ],
+        "secondary": [
+          "quads"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "time"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [],
+      "sources": [
+        {
+          "source": "own",
+          "source_id": "",
+          "license": "own",
+          "fields": [
+            "names",
+            "instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw_side_lying_hip_abduction",
+      "status": "active",
+      "names": {
+        "en": "Side-lying hip abduction",
+        "ru": "Отведение ноги лёжа на боку"
+      },
+      "aliases": [
+        {
+          "lang": "ru",
+          "value": "Отведение бедра лёжа"
+        }
+      ],
+      "instructions": [
+        {
+          "lang": "ru",
+          "steps": [
+            "Лягте на бок, нижнюю ногу согните, верхнюю выпрямите на одной линии с корпусом.",
+            "Поднимите верхнюю ногу вверх и чуть назад, носок смотрит вперёд.",
+            "Задержитесь на секунду вверху и медленно опустите."
+          ],
+          "review_status": "draft"
+        }
+      ],
+      "common_errors": [
+        {
+          "lang": "ru",
+          "value": "Заваливать таз назад и поднимать ногу вперёд. Таз стоит ровно, нога идёт чуть назад."
+        }
+      ],
+      "muscles": {
+        "primary": [
+          "glutes"
+        ],
+        "secondary": [
+          "obliques"
+        ]
+      },
+      "equipment": {
+        "all_of": [
+          "bodyweight"
+        ],
+        "any_of": [],
+        "implements": {
+          "barbell": false,
+          "dumbbells": 0
+        }
+      },
+      "load_type": "bodyweight",
+      "measure": [
+        "reps"
+      ],
+      "laterality": "unilateral",
+      "alternatives": [
+        {
+          "id": "db_lateral_lunge",
+          "kind": "harder",
+          "verified": false
+        }
+      ],
+      "sources": [
+        {
+          "fields": [
+            "names",
+            "instructions"
+          ],
+          "source": "own",
+          "license": "own",
+          "source_id": ""
+        }
+      ]
+    }
+  ]
+}

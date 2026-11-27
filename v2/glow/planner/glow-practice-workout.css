@@ -1,0 +1,81 @@
+.phone:has(> .glow-sport2-run[open]) :is(.screens, .head, .dock) {
+  visibility: hidden;
+}
+
+.phone > .glow-sport2-run[open] {
+  position: absolute;
+  inset: 50px 0 20px;
+  z-index: 57;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.phone.land > .glow-sport2-run[open] { inset: 0; }
+.glow-sport2-run:not(.sr-camera) .sr-screen { padding: 10px 16px 4px; }
+.glow-sport2-run .glow-workout { gap: 6px; overflow-y: auto; scrollbar-width: none; }
+.glow-sport2-run .glow-workout-head { flex: none; min-height: 40px; margin: 0 0 4px; }
+.glow-sport2-run .glow-workout-head .ib { display: grid; place-items: center; }
+.glow-sport2-run .glow-workout-head .sprtop { flex: 1; }
+.glow-workout .spig { min-height: 120px; }
+.glow-workout .spig:not(.real) { display: grid; place-items: center; }
+.glow-workout .spig .glow-workout-figure > svg { width: min(100%, 275px); height: 100%; max-height: 260px; }
+.glow-workout .spig:not(.real) .glow-workout-figure { height: min(100%, 260px); min-height: 120px; text-align: center; }
+.glow-workout .spig.real .glow-workout-figure { position: absolute; right: 10px; bottom: 10px; width: 78px; height: 66px; }
+.glow-workout .spig.real > img { width: 100%; height: 100%; object-fit: contain; }
+.glow-workout .spii { padding-top: 6px; }
+.glow-workout .glow-workout-technique { max-height: 150px; overflow-y: auto; }
+.glow-workout .glow-workout-title { display: flex; text-align: left; margin-block: 2px 6px; min-height: 40px; }
+.glow-workout .spman { min-height: 140px; }
+.glow-workout .spnext { flex-wrap: wrap; }
+.glow-workout .spnext .sr-loadout { flex-basis: 100%; text-transform: none; letter-spacing: 0; }
+
+.glow-sport2-run .glow-workout .glow-workout-clock { border: 0; background: none; border-radius: 0; }
+.glow-sport2-run .glow-workout-clock .sr-clock { display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; min-height: 46px; height: 46px; padding: 0 10px; border-radius: 16px; }
+.glow-sport2-run .glow-workout-clock .sr-clock b { font-size: 20px; font-weight: 720; }
+.glow-workout-clock .sr-clock small:empty { display: none; }
+.glow-workout .spib > .glow-workout-clock { width: auto; flex: none; }
+.glow-workout .spib > .glow-workout-clock .btn { width: auto; min-width: 48px; height: 52px; }
+.glow-workout .spctl .sr-clock { flex: 1; }
+.glow-workout .spctl .ib { display: grid; place-items: center; }
+.glow-workout :is(.spib, .sygo, .sprctl, .ib) svg { width: 18px; height: 18px; flex: none; }
+
+.glow-sport2-run .glow-workout .sprest.sr-timer { display: flex; min-height: 155px; max-height: none; padding: 0; background: none; border: 0; border-radius: 32px; overflow: visible; }
+.glow-sport2-run .glow-workout .sprest .plate { align-self: stretch; display: flex; flex-direction: column; }
+.glow-sport2-run .glow-workout .sprest .sr-clock { position: relative; display: flex; flex: 1; justify-content: center; min-height: 0; padding: 0 8px; }
+.glow-sport2-run .glow-workout .sprest .sr-clock b { font-size: clamp(54px, 40cqh, 150px); font-weight: 800; }
+.glow-workout .sprest .sr-clock sup { align-self: center; }
+.glow-workout .sprctl { margin-block: 2px; }
+.glow-workout .glow-workout-log { display: block; padding: 0; }
+.glow-workout .splog { margin-top: 2px; padding: 10px 12px; }
+.glow-workout .splog .sr-input-head { min-height: 25px; }
+.glow-workout .splog .splc { grid-auto-columns: minmax(2.3rem, 1fr); overflow-x: auto; scrollbar-width: thin; }
+.glow-workout .splog .sr-field { margin-top: 7px; }
+.glow-workout .splog .sr-stepper button { border-color: transparent; border-radius: 13px; background: rgba(255,255,255,.07); }
+.glow-workout .sprir { margin-top: 6px; }
+.glow-workout .sprir .ezmini { grid-template-columns: repeat(4, minmax(32px, 42px)); }
+.glow-workout .sprir .ezmini button { width: 100%; border: 0; }
+.glow-workout .sprir > span { font-weight: 700; font-size: 13px; }
+.glow-workout-summary { padding-top: 8px; }
+.glow-sport2-run .sh-head.glow-workout-head { justify-content: space-between; min-height: 44px; }
+.glow-workout-summary .sh-preview-list { display: grid; gap: 8px; }
+.glow-workout-summary :is(.sh-group, .sr-difficulty) { background: color-mix(in srgb, var(--plate) 55%, transparent); }
+.glow-workout-summary .sr-scale-button { text-align: center; }
+.glow-sport2-run .sr-foot .btn { flex: 1; }
+.glow-sport2-run .sr-panel { border-radius: 28px 28px 0 0; background: color-mix(in srgb, var(--plate) 87%, var(--a1)); }
+
+.glow-workout .spcam { min-height: 160px; }
+.glow-workout .spcam .sr-inline { display: flex; flex-direction: column; height: 100%; padding: 0; border: 0; background: transparent; }
+.glow-workout .spcam .sr-inline-video { flex: 1; min-height: 115px; max-height: none; aspect-ratio: auto; margin: 0; border: 0; border-radius: 24px; }
+.glow-workout .spcam .sr-inline-bar { gap: 6px; margin: 6px 10px; }
+.glow-workout .spcam .sr-inline-note { margin: 0 10px 8px; }
+.glow-workout .spcam .sr-inline-state { margin: auto; padding: 14px; }
+
+.phone.land .glow-workout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 6px 14px; }
+.phone.land .glow-workout-head { grid-column: 2; grid-row: 1; }
+.phone.land .glow-workout :is(.spig, .spcam, .spman, .sprest) { grid-row: 1 / span 5; grid-column: 1; }
+.phone.land .glow-workout > :not(.spig, .spcam, .spman, .sprest) { grid-column: 2; }
+.phone.land .glow-workout .spnext { margin: 0; }
+.phone.land .glow-workout .spit { margin-top: 6px; }
