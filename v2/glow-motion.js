@@ -32,8 +32,9 @@
     const page = $('.dm-main > .gw') || $('.dm-main');
     if (sheet) return { el: sheet, key: `sheet:${sheet.dataset.s || 'note'}:${ui.sheet?.id || ''}`, depth: 3, tab: TAB[ui.page] ?? 4 };
     const reco = ui.page === 'saved' && ui.savedCategory === 'movies' && ui.savedFilter === 'reco';
-    const key = `${ui.page}|${ui.page === 'saved' ? ui.savedCategory || '' : ''}|${reco ? 'reco:' + (typeof universeUi === 'object' ? universeUi.detail?.id || universeUi.tab : '') : ''}`;
-    const depth = ui.page !== 'saved' ? 0 : !ui.savedCategory || ui.savedCategory === 'overview' ? 0 : reco ? 2 : 1;
+    const settingsPane = ui.page === 'settings' ? page?.dataset.settingsPane || '' : '';
+    const key = `${ui.page}|${ui.page === 'saved' ? ui.savedCategory || '' : settingsPane}|${reco ? 'reco:' + (typeof universeUi === 'object' ? universeUi.detail?.id || universeUi.tab : '') : ''}`;
+    const depth = settingsPane ? 1 : ui.page !== 'saved' ? 0 : !ui.savedCategory || ui.savedCategory === 'overview' ? 0 : reco ? 2 : 1;
     return { el: page, key, depth, tab: TAB[ui.page] ?? 4 };
   }
   let last = null;
@@ -74,6 +75,8 @@
   function swap(oldClone, rect, to, dir) {
     if (oldClone) {
       const layer = document.createElement('div');
+      layer.inert = true;
+      layer.setAttribute('aria-hidden', 'true');
       layer.className = 'gw-swapout'; layer.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${Math.min(rect.height, innerHeight - rect.top)}px;overflow:hidden;z-index:${oldClone.classList.contains('gw-sheet') ? 71 : 1};pointer-events:none;filter:url(#gw-mbf)`;
       oldClone.style.position = oldClone.classList.contains('gw-sheet') ? 'absolute' : ''; oldClone.style.inset = oldClone.classList.contains('gw-sheet') ? '0' : '';
       oldClone.style.visibility = 'visible'; layer.appendChild(oldClone);

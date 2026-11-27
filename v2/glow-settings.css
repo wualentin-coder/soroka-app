@@ -1,0 +1,197 @@
+html[data-flow-skin=glow] .gw-settings {
+  --a1: inherit;
+  --a2: inherit;
+  --a3: inherit;
+  --a4: inherit;
+  width: min(100%, 560px);
+  margin-inline: auto;
+}
+
+html[data-flow-skin=glow] .gw-settings .gw-settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.gw-settings .gw-settings-heading h1 {
+  min-width: 0;
+  font-size: 22px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.gw-settings .gw-settings-panel + .gw-settings-panel {
+  margin-top: 12px;
+}
+
+html[data-flow-skin=glow] .gw-settings .gw-settings-panel > .rw:focus-visible {
+  outline-offset: -3px;
+}
+
+html[data-flow-skin=glow] .main .gw-settings .list-panel {
+  border: 0;
+  padding: 0 12px;
+  background: transparent;
+  background-image: none !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none !important;
+}
+
+html[data-flow-skin=glow] .main .gw-settings .list-panel::before,
+html[data-flow-skin=glow] .main .gw-settings .list-panel::after {
+  content: none;
+}
+
+html[data-flow-skin=glow] .gw-settings .settings-row {
+  min-height: 58px;
+  gap: 8px 12px;
+  padding: 8px 0;
+}
+
+html[data-flow-skin=glow] .gw-settings .settings-row > div:first-child {
+  flex: 1 1 125px;
+  min-width: 0;
+}
+
+html[data-flow-skin=glow] .gw-settings .settings-row strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+html[data-flow-skin=glow] .gw-settings .settings-row span {
+  font-size: 12px;
+  color: var(--glow-text);
+  opacity: .78;
+}
+
+html[data-flow-skin=glow] .gw-settings .settings-row :is(select, input[type=time]) {
+  min-height: 44px;
+  max-width: 100%;
+  color: var(--glow-text);
+  background: var(--surface-raised);
+}
+
+.gw-settings .settings-range {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+html[data-flow-skin=glow] .gw-settings .glow-pal-row {
+  flex-wrap: wrap;
+}
+
+html[data-flow-skin=glow] .gw-settings .glow-pal {
+  flex: 1 0 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 44px);
+  max-width: 100%;
+  gap: 2px 4px;
+}
+
+html[data-flow-skin=glow] .gw-settings .glow-pal button {
+  width: 44px !important;
+  height: 44px !important;
+  display: grid;
+  place-items: center;
+  transform: none;
+  box-shadow: none;
+}
+
+html[data-flow-skin=glow] .gw-settings .glow-pal button::before {
+  content: '';
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--p4), var(--p3) 45%, var(--p2) 75%, var(--p1));
+}
+
+html[data-flow-skin=glow] .gw-settings .glow-pal button[aria-pressed=true]::before {
+  box-shadow: 0 0 0 2px var(--glow-ink), 0 0 0 4px var(--p3), 0 0 14px var(--p3);
+}
+
+.gw-settings .switch {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 44px;
+  flex: 0 0 48px;
+}
+
+.gw-settings .switch > input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+html[data-flow-skin=glow] .gw-settings .switch > span {
+  position: absolute;
+  inset: 8px 0;
+  border-radius: 14px;
+  background: rgb(255 255 255 / .12);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14);
+  opacity: 1;
+  pointer-events: none;
+}
+
+.gw-settings .switch > span::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--glow-text);
+  transition: transform 180ms var(--glow-ease);
+}
+
+html[data-flow-skin=glow] .gw-settings .switch > input:checked + span {
+  background: var(--a3);
+}
+
+.gw-settings .switch > input:checked + span::after {
+  transform: translateX(20px);
+}
+
+.gw-settings .switch > input:focus-visible + span {
+  outline: 2px solid var(--a4);
+  outline-offset: 3px;
+}
+
+.gw-settings .switch > input:disabled + span {
+  opacity: .5;
+}
+
+.gw-settings :is(.dv-effect-footer, .inline-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 4px 12px;
+}
+
+html[data-flow-skin=glow] .gw-settings :is(.dv-effect-footer, .inline-actions, .phone-panel) button:not(.rw) {
+  min-height: 44px;
+}
+
+.gw-settings :is(.gw-settings-note, .section-note, .dv-billing summary) {
+  padding: 12px;
+  font-size: 13px;
+}
+
+html[data-flow-skin=glow][data-motion=off] .gw-settings .switch > span::after {
+  transition: none;
+}
+
+@media (max-width: 430px) {
+  html[data-flow-skin=glow] .gw-settings :is(.glow-pal-row, .dv-quiet-row, .glow-bg-row) {
+    flex-wrap: wrap;
+  }
+}

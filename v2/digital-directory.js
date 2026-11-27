@@ -79,6 +79,10 @@
     const storage=native.find(group=>group.querySelector('[data-action=export-json]'));if(storage&&aside){aside.className='dv-storage-note';storage.append(aside);}
     const assistant=native.find(group=>group.querySelector('[data-setting=manualOnly]'));
     if(assistant){assistant.dataset.settingsTitle='Ассистент';assistant.querySelector('h2').textContent='Помощь Flow';const billing=document.createElement('details');billing.className='dv-billing';billing.innerHTML='<summary>Лимиты и расходы '+symbol('down')+'</summary>';for(const child of[...assistant.children])if(child.matches('.side-card,.section-note'))billing.append(child);assistant.append(billing);}
+    if(document.documentElement.dataset.flowSkin==='glow' && window.flowMagicUI.glowSettings){
+      queueMicrotask(syncEffects);
+      return window.flowMagicUI.glowSettings({native,appearance,workspace,storage,assistant,sensory:parse(effectsGroup()).content.firstElementChild});
+    }
     workspace.classList.add('dv-preference-card','dv-behavior-card');
     const other=native.filter(group=>group!==appearance);
     const disclosures=other.map((group,index)=>{

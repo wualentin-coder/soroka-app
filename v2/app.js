@@ -223,7 +223,8 @@ function save() {
 }
 let data = load();
 const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "piano"];
-function currentPage() { const name = location.hash.slice(1); if (name === "sleep") return "today"; const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
+function settingsRoute(hash = location.hash) { return /^#settings\/([a-z-]+)$/.exec(hash)?.[1] || ""; }
+function currentPage() { const name = settingsRoute() ? "settings" : location.hash.slice(1); if (name === "sleep") return "today"; const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 if (location.hash === "#sleep") history.replaceState(null, "", "#today");
 const ui = {
   page: currentPage(),
