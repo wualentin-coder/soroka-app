@@ -126,6 +126,11 @@ html[data-flow-skin=glow] :is(.digital-atmosphere,.edge-energy){display:none!imp
   animation:glowGrain .9s steps(6) infinite}
 @keyframes glowGrain{20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-4%,-1%)}80%{transform:translate(3%,3%)}}
 
+/* На сенсорном экране зерно остаётся текстурой: скачки рисунка затрагивают весь кадр. */
+@media (hover:none) and (pointer:coarse){
+  .glow-grain{inset:0;animation:none}
+}
+
 /* «Без движения»: среда и зерно замирают */
 html[data-flow-skin=glow][data-motion=off] :is(.glow-env,.glow-env *,.glow-env *::before,.glow-grain){animation:none!important;transition:none!important}
 
