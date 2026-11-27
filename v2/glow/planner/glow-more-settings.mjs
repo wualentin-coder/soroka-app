@@ -47,7 +47,7 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
     if (document.documentElement.dataset.glowRelease === 'true') {
       const url = esc2('../' + location.search + location.hash);
       $('.list', template.content)?.insertAdjacentHTML('beforeend',
-        statusRow('settings', 'Предыдущая версия', 'Flow', `<a class="btn sm glass" href="${url}">Открыть</a>`));
+        statusRow('sun', 'Предыдущая версия', 'Flow', `<a class="btn sm glass" href="${url}">Открыть</a>`));
     }
     return template.innerHTML;
   }
