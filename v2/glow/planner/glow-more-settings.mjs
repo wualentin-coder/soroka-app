@@ -44,11 +44,6 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
     template.innerHTML = lookOriginal();
     $('[data-sseg="dense"]', template.content)?.closest('.syrow')?.remove();
     $('.list', template.content)?.insertAdjacentHTML('beforeend', select('Плотность', 'density', densities, current().density || 'comfortable'));
-    if (document.documentElement.dataset.glowRelease === 'true') {
-      const url = esc2('../' + location.search + location.hash);
-      $('.list', template.content)?.insertAdjacentHTML('beforeend',
-        statusRow('sun', 'Предыдущая версия', 'Flow', `<a class="btn sm glass" href="${url}">Открыть</a>`));
-    }
     return template.innerHTML;
   }
 

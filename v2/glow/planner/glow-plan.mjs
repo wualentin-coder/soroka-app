@@ -1,6 +1,7 @@
 import { openPlannerRuntime } from './runtime-session.js';
 import { showPlanTicket, clearPlanTicket } from './glow-plan-tickets.mjs';
-import { adoptSaved } from './glow-saved.mjs';
+import { adoptSaved, openSavedRecord } from './glow-saved.mjs';
+import { openSavedNote } from './glow-notes.mjs';
 import { connectNoteWrites } from './glow-notes.mjs';
 import { connectLibrary, libraryScreens } from './glow-library-store.mjs';
 import { adoptFinance, connectFinance } from './glow-finance.mjs';
@@ -29,6 +30,7 @@ let days = new Map();
 let clock = '';
 let agendaTimer = 0;
 let pendingWriteKey = null;
+let booting = root.dataset.glowRelease === 'true';
 
 const demoBindBody = bindBody;
 const demoBindTaskList = bindTaskList;
@@ -109,7 +111,7 @@ function adopt(snapshot) {
   TIX.sort((a, b) => a.d - b.d);
   adoptSaved(state, dateDistance, validTime, clock);
   adoptFinance(state);
-  root.dataset.glowPlan = 'ready';
+  if (!booting) root.dataset.glowPlan = 'ready';
   if (previous && curId() === 'plan') updateVisibleAgenda(previous, selectedDate);
   else if (!practiceVisual && !previous && curId() === 'practice') {
     paint('practice');
@@ -125,6 +127,103 @@ function repaintCurrent() {
   paint(id);
   screen.scrollTop = scroll;
   setHead(id, 0);
+}
+
+const savedPages = { notes: ['notes','note'], lists: ['lists','list'], shop: ['lists','list'],
+  links: ['links','link'], recipes: ['recipes','recipe'], movies: ['movies','movie'],
+  goods: ['products','product'], places: ['addresses','place'], tickets: ['tickets','ticket'], cards: ['cards','card'] };
+
+function openLegacy(params = {}) {
+  const destination = new URL('../../classic.html', import.meta.url);
+  destination.search = location.search;
+  destination.hash = location.hash;
+  for (const [name, value] of Object.entries(params)) {
+    if (value == null) destination.searchParams.delete(name);
+    else destination.searchParams.set(name, value);
+  }
+  location.assign(destination.href);
+}
+
+let pendingAndroidShare = '';
+let forwardingAndroidShare = false;
+async function openAndroidShare() {
+  if (forwardingAndroidShare) return;
+  pendingAndroidShare ||= window.SorokaAndroid?.takeShared?.() || '';
+  if (!pendingAndroidShare) return;
+  forwardingAndroidShare = true;
+  try {
+    const { stageAndroidShare } = await import('./glow-android-share.mjs');
+    const id = await stageAndroidShare(pendingAndroidShare);
+    pendingAndroidShare = '';
+    openLegacy({ page: null, rid: null, open: null, share: id });
+  } catch {
+    toast('Не удалось открыть вложение');
+  } finally {
+    forwardingAndroidShare = false;
+  }
+}
+
+function openPlannerDay(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '') || !Number.isFinite(Date.parse(date))) return false;
+  const selected = fromIso(date);
+  if (dateKey(selected) !== date) return false;
+  S.sel = selected;
+  S.anchor = S.cal === 'month' ? new Date(selected.getFullYear(), selected.getMonth(), 1) : monday(selected);
+  if (curId() === 'plan') repaintCurrent();
+  else go('plan');
+  return true;
+}
+
+function openRef(ref) {
+  if (!/^[a-z]+:[1-9]\d{0,18}$/.test(ref || '')) return false;
+  const [kind, id] = ref.split(':');
+  const ticket = kind === 'event' && SAVED.find(item => item.id === 'ticket:' + id);
+  const saved = ticket || SAVED.find(item => item.id === ref);
+  if (saved) {
+    openSavedRecord(saved.id);
+    return true;
+  }
+  const collection = kind === 'task' ? state.tasks : kind === 'event' ? state.events : [];
+  const record = collection.find(item => item.id === ref);
+  if (record) {
+    if (kind === 'event' && record.due) openPlannerDay(record.due);
+    else go('tasks');
+    openEntryForm(kind, record, 'edit');
+    return true;
+  }
+  const legacyPages = { goal:'goals', debt:'debts', payment:'payments', budget:'budgets', tx:'money', metric:'metrics', project:'projects' };
+  if (!Object.hasOwn(legacyPages, kind)) return false;
+  openLegacy({ page: legacyPages[kind], rid: id, open: null });
+  return true;
+}
+
+function openInitialRoute() {
+  const params = new URLSearchParams(location.search);
+  const page = params.get('page');
+  const rid = params.get('rid');
+  const start = params.get('tgWebAppStartParam') || window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+  if (params.get('assistant') === '1') return openLegacy();
+  if (openRef(params.get('open'))) return;
+  if (!page && /^note_[1-9]\d{0,18}$/.test(start || '')) {
+    if (openRef('note:' + start.slice(5))) return;
+  }
+  if (page === 'notes' && params.get('create') === '1') { openSavedNote(); return; }
+  if (page === 'tasks' && openPlannerDay(params.get('date'))) return;
+  const tab = params.get('tab');
+  if (tab === 'vault' || tab === 'docs') { go(tab); return; }
+  if (Object.hasOwn(savedPages, page)) {
+    const [category, kind] = savedPages[page];
+    if (rid && openRef(kind + ':' + rid)) return;
+    S.cat = category; go('savedCat'); return;
+  }
+  if (page === 'events' && rid && openRef('event:' + rid)) return;
+  if (page === 'tasks' && rid && openRef('task:' + rid)) return;
+  if (['notes','metrics','upcoming','inbox','overview','events','debts','payments','money','goals','budgets'].includes(page)) return openLegacy();
+  if (['plan','saved','more','tasks','finance','render','projects','archive','settings','pc','server','vpn','docs','vault','sport','english','piano'].includes(page)) {
+    go(page); return;
+  }
+  const savedStart = state?.settings.startPage;
+  if (curId() === 'plan' && ['saved', 'finance', 'more'].includes(savedStart)) go(savedStart);
 }
 
 const selectedEntries = () => days.get(dateKey(S.sel)) || [];
@@ -557,18 +656,23 @@ try {
     if (root.dataset.glowRelease === 'true') {
       const { connectGlowPractice } = await import('./glow-practice.mjs');
       connectGlowPractice({ prototypeSport: true });
-      asTap = () => {
-        const destination = new URL('../' + location.search + location.hash, location.href);
-        destination.searchParams.set('assistant', '1');
-        location.assign(destination.href);
-      };
-      asHoldStart = asTap;
+      asStart = asHoldStart = asTap = () => openLegacy({ assistant: '1', page: null, rid: null, open: null });
     }
   }
   await runtime.load();
   connectRender();
-  const start = state?.settings.startPage;
-  if (curId() === 'plan' && ['saved', 'finance', 'more'].includes(start)) go(start);
+  if (root.dataset.glowRelease === 'true') {
+    window.sorokaOpenRef = openRef;
+    window.sorokaOpenNote = id => openRef(id);
+    window.sorokaCreateNote = () => { openSavedNote(); return true; };
+    window.sorokaOpenPC = () => { go('pc'); return true; };
+    window.sorokaOpenPlannerDay = openPlannerDay;
+    window.addEventListener('soroka-shared', openAndroidShare);
+    void openAndroidShare();
+  }
+  openInitialRoute();
+  booting = false;
+  root.dataset.glowPlan = 'ready';
 } catch (error) {
   root.dataset.glowPlan = 'error';
   toast(error?.message === 'planner_authorization_required' ? 'Открой Flow в приложении или Telegram' : 'Не удалось загрузить План');

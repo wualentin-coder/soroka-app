@@ -5,6 +5,7 @@
   let blurFrame = 0;
   const originalSwap = swap;
   const originalBlur = blurPulse;
+  const android = document.documentElement.dataset.glowAndroid === 'true';
   const practiceVisual = document.documentElement.dataset.glowPractice === 'prototype';
   const practiceRoute = id => practiceVisual && (id === 'practice' || SUBS[id] === 'practice');
   let prototypeTransition = false;
@@ -18,11 +19,11 @@
   // The calendar and screen transitions share the same horizontal SVG blur.
   blurPulse = (peak, duration) => {
     cancelAnimationFrame(blurFrame);
-    if (practiceVisual && (prototypeTransition || practiceRoute(curId()))) return originalBlur(peak, duration);
-    if (reduce || !mbK) {
+    if (android || reduce || !mbK) {
       mbB.setAttribute('stdDeviation', '0 0');
       return;
     }
+    if (practiceVisual && (prototypeTransition || practiceRoute(curId()))) return originalBlur(peak, duration);
     const start = performance.now();
     const strength = peak * mbK;
     function frame(now) {
@@ -53,6 +54,24 @@
   swap = (fromId, id, direction) => {
     const from = document.querySelector(`.screen[data-s="${fromId}"]`);
     const target = document.querySelector(`.screen[data-s="${id}"]`);
+    if (android) {
+      const to = paint(id);
+      for (const item of to.querySelectorAll('.in')) item.classList.add('glow-route-entry');
+      to.scrollTop = 0;
+      setHead(id, direction);
+      for (const screen of document.querySelectorAll('.screen.on')) {
+        if (screen === to) continue;
+        screen.classList.remove('on');
+        screen.inert = true;
+      }
+      to.inert = false;
+      to.classList.add('on');
+      if (from !== to && !reduce) {
+        to.animate([{ transform: `translateX(${12 * direction}px)` }, { transform: 'none' }],
+          { duration: 220, easing: 'cubic-bezier(.19,1,.22,1)' });
+      }
+      return;
+    }
     if (practiceRoute(fromId) || practiceRoute(id)) {
       if (transition) finish(transition);
       from.inert = target.inert = false;
@@ -72,10 +91,6 @@
       return;
     }
 
-    if (document.documentElement.dataset.glowAndroid === 'true') {
-      // On mobile the screen enters as one surface. Local card actions keep their motion.
-      for (const item of to.querySelectorAll('.in')) item.classList.add('glow-route-entry');
-    }
     if (transition) finish(transition);
     phone.classList.add('glow-transitioning');
     from.inert = true;

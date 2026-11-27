@@ -2234,10 +2234,18 @@
     document.dispatchEvent(new CustomEvent("flow:composer", { detail: { open: true, context: ctx, layer } }));
   }
   // «Поделиться» на Android: присланное в Magpie открывается в «+» — текст в поле, фото вложением.
-  function takeShared() {
+  async function takeShared() {
     if(HEADLESS)return false;
     try {
-      const raw = android && android.takeShared ? android.takeShared() : "";
+      let raw = android && android.takeShared ? android.takeShared() : "";
+      const launch = new URL(location.href);
+      const share = launch.searchParams.get("share");
+      if (share && !raw && launch.pathname.endsWith("/classic.html")) {
+        launch.searchParams.delete("share");
+        history.replaceState(history.state, "", launch);
+        const { takeAndroidShare } = await import("./glow/planner/glow-android-share.mjs");
+        raw = await takeAndroidShare(share);
+      }
       if (!raw) return;
       const shared = JSON.parse(raw);
       if (!shared || (!shared.text && !shared.file)) return;

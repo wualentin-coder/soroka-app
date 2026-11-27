@@ -2,12 +2,15 @@
   'use strict';
 
   const appearance = document.createElement('style');
+  const release = document.documentElement.dataset.glowRelease === 'true';
+  if (release) document.querySelector('#star animateTransform')?.remove();
   const prototypePractice = document.documentElement.dataset.glowPractice === 'prototype';
   const practiceScreens = prototypePractice ? ['practice', ...Object.keys(SUBS).filter(id => SUBS[id] === 'practice')] : [];
   const causticScreen = practiceScreens.length
     ? `.screen.on:not(${practiceScreens.map(id => `[data-s="${id}"]`).join(',')})`
     : '.screen.on';
   appearance.textContent = `
+    ${release ? '.phone .star svg, .phone .star .rays { animation: none; }' : ''}
     #agc > .hd { padding-bottom: 0; }
     #agenda > .rail + .ev { padding-top: 8px; }
     #agc:has(> #agenda > .nowl:last-child) { padding-bottom: 16px; }

@@ -4,48 +4,36 @@
   if (!/\bAndroid\b/i.test(navigator.userAgent)) return;
   document.documentElement.dataset.glowAndroid = 'true';
 
-  // Android Chromium can drop paint layers when many cards use backdrop filters.
-  // The navigation dock still needs its backdrop to soften the content behind it.
+  // Android keeps a stable backdrop through idle, scrolling and route changes.
   const style = document.createElement('style');
   style.textContent = `
-    .phone .glass:not(.dock) {
+    .phone :is(.glass, .tk) {
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
     }
-    .phone:has(#env[data-bg="caustic"]) .screen.on .glass:not(.glass .glass),
-    .phone:has(#env[data-bg="caustic"]) .screen.on .tk {
-      backdrop-filter: blur(10px) saturate(1.24) !important;
-      -webkit-backdrop-filter: blur(10px) saturate(1.24) !important;
+    .phone .dock {
+      background: linear-gradient(155deg, rgba(47,39,51,.72), rgba(18,15,24,.78) 63%, rgba(29,23,37,.72));
     }
-    .phone .glow-route-entry.in {
+    .phone :is(.grain, .blob, .bgf i, .bge i, .bgc i, .plate-w .halo, .plate-w .fill,
+      .crt .scan, .nowl i, .ev.now .chk, .chk.ready, .cat .cg, .star svg, .star .rays),
+    .phone .bgc::before,
+    .phone .glass::before, .phone .glass::after, .phone .isl::before, .phone .isl::after,
+    .phone #asLock:not(.on) .aarr,
+    .phone:not([data-as="listen"]) .wave i {
       animation-name: none;
     }
-    .phone:is(.glow-scrolling, .glow-transitioning) .glass::before,
-    .phone:is(.glow-scrolling, .glow-transitioning) .glass::after,
-    .phone:is(.glow-scrolling, .glow-transitioning) :is(.grain, .blob, .cat .cg, .bgc i),
-    .phone:is(.glow-scrolling, .glow-transitioning) .bgc::before {
-      animation-play-state: paused !important;
+    .phone .grain { inset: 0; }
+    .phone .blob { will-change: auto; }
+    .phone .glow-route-entry.in { animation-name: none; }
+    .phone :is(.screen.mb, .daylamp.mv, .dock .glow.mv, #pracBody) {
+      filter: none !important;
     }
   `;
   document.head.append(style);
 
-  let resumeTimer = 0;
-  function pauseMotion(screen) {
-    const phone = screen.closest('.phone');
-    phone.classList.add('glow-scrolling');
-    clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(() => phone.classList.remove('glow-scrolling'), 140);
-  }
-
-  // Pause before Chrome paints the first scroll frame, then follow momentum scroll events.
-  document.addEventListener('pointerdown', event => {
-    if (event.pointerType !== 'touch') return;
-    const screen = event.target.closest?.('.screen.on');
-    if (screen) pauseMotion(screen);
-  }, { capture: true, passive: true });
-
-  document.addEventListener('scroll', event => {
-    const screen = event.target;
-    if (screen.matches?.('.screen.on')) pauseMotion(screen);
-  }, { capture: true, passive: true });
+  document.addEventListener('DOMContentLoaded', () => {
+    const grain = document.querySelector('#phone > .grain');
+    if (grain) document.querySelector('#env').append(grain);
+    document.querySelector('#star animateTransform')?.remove();
+  }, { once: true });
 })();
