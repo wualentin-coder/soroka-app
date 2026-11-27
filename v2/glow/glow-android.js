@@ -25,7 +25,7 @@
     .phone .grain { inset: 0; }
     .phone .blob { will-change: auto; }
     .phone .glow-route-entry.in { animation-name: none; }
-    .phone :is(.screen.mb, .daylamp.mv, .dock .glow.mv, #pracBody) {
+    .phone :is(.screen.mb, .daylamp.mv, .dock .glow.mv, #pracBody):not(.glow-slide-blur) {
       filter: none !important;
     }
   `;

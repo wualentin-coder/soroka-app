@@ -168,13 +168,12 @@ export function connectGlowPractice({ prototypeSport = false } = {}) {
         body.dataset.practiceBody = kind;
         redraw(kind);
         void views[kind].open();
-        if (!reduce && document.documentElement.dataset.glowAndroid === 'true') {
-          switchMotion = body.animate([{ transform: `translateX(${12 * dir}px)` }, { transform: 'none' }],
-            { duration: 220, easing: 'cubic-bezier(.19,1,.22,1)' });
+        if (window.glowSlide) {
+          switchMotion = window.glowSlide(body, dir);
         } else if (!reduce) switchMotion = body.animate([{ opacity: 0, transform: `translateX(${60 * dir}px)` },
           { opacity: 1, transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.19,1,.22,1)' });
       };
-      if (reduce || document.documentElement.dataset.glowAndroid === 'true') { show(); return; }
+      if (reduce || window.glowSlide) { show(); return; }
       blurPulse(12, 480);
       switchMotion = body.animate([{ opacity: 1, transform: 'none' },
         { opacity: 0, transform: `translateX(${-40 * dir}px)` }], { duration: 170, fill: 'forwards' });

@@ -3,6 +3,7 @@
 
   let transition = null;
   let blurFrame = 0;
+  let androidSlide = null;
   const originalSwap = swap;
   const originalBlur = blurPulse;
   const android = document.documentElement.dataset.glowAndroid === 'true';
@@ -13,6 +14,7 @@
   const style = document.createElement('style');
   style.textContent = `
     .phone.glow-transitioning:not(.calm) .screen.on { filter: url(#mbx); }
+    .phone:not(.calm) .glow-slide-blur { filter: url(#mbx); }
   `;
   document.head.append(style);
 
@@ -51,10 +53,57 @@
     phone.classList.remove('glow-transitioning');
   }
 
+  // Android filters only the moving surface, for the fast part of its slide.
+  function slideAndroid(surface, direction) {
+    androidSlide?.cancel();
+    if (reduce || !direction) return null;
+
+    const duration = 380;
+    const peak = Math.min(12, 9 * mbK);
+    const animation = surface.animate(
+      [{ transform: `translateX(${48 * direction}px)` }, { transform: 'none' }],
+      { duration, easing: 'cubic-bezier(.19,1,.22,1)' });
+    let frame = 0;
+
+    function clearBlur() {
+      cancelAnimationFrame(frame);
+      surface.classList.remove('glow-slide-blur');
+      mbB.setAttribute('stdDeviation', '0 0');
+    }
+    function finishSlide() {
+      if (androidSlide !== run) return;
+      androidSlide = null;
+      if (peak > 0) clearBlur();
+    }
+    const run = { cancel() { finishSlide(); animation.cancel(); } };
+    androidSlide = run;
+    animation.finished.then(finishSlide, finishSlide);
+
+    if (peak > 0) {
+      surface.classList.add('glow-slide-blur');
+      const blur = () => {
+        const progress = Math.min(1, Number(animation.currentTime) / 300);
+        if (progress >= 1 || reduce || !mbK) { clearBlur(); return; }
+        mbB.setAttribute('stdDeviation', `${(peak * (1 - progress) ** 2).toFixed(2)} 0`);
+        frame = requestAnimationFrame(blur);
+      };
+      blur();
+    }
+    return animation;
+  }
+
+  if (android) {
+    window.glowSlide = slideAndroid;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) androidSlide?.cancel();
+    });
+  }
+
   swap = (fromId, id, direction) => {
     const from = document.querySelector(`.screen[data-s="${fromId}"]`);
     const target = document.querySelector(`.screen[data-s="${id}"]`);
     if (android) {
+      androidSlide?.cancel();
       const to = paint(id);
       for (const item of to.querySelectorAll('.in')) item.classList.add('glow-route-entry');
       to.scrollTop = 0;
@@ -66,10 +115,7 @@
       }
       to.inert = false;
       to.classList.add('on');
-      if (from !== to && !reduce) {
-        to.animate([{ transform: `translateX(${12 * direction}px)` }, { transform: 'none' }],
-          { duration: 220, easing: 'cubic-bezier(.19,1,.22,1)' });
-      }
+      if (from !== to) slideAndroid(to, direction);
       return;
     }
     if (practiceRoute(fromId) || practiceRoute(id)) {

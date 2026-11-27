@@ -3210,7 +3210,7 @@ input[type=range]{width:100%;accent-color:var(--a3)}
 .star .ssh{mix-blend-mode:screen}
 .phone.calm .star svg,.phone.calm .star .rays{animation:none}
 </style>
-<script src="./glow/glow-android.js?v=a34fe9c5f5"></script>
+<script src="./glow/glow-android.js?v=643c49c85f"></script>
 <script src="./glow/glow-plan-boot.js?v=324b01df44"></script>
 </head>
 <body>
@@ -7128,6 +7128,7 @@ function swapDays(el,kind,dir){
   t.animate([{opacity:0,filter:'blur(6px)',transform:`translateX(${(dir||0)*14}px)`},{opacity:1,filter:'blur(0)',transform:'none'}],{duration:420,easing:'cubic-bezier(.19,1,.22,1)'});
   t.textContent=calTitle();
   if(kind==='slide'){
+    if(window.glowSlide){box.innerHTML=daysHTML();bindDays(el);fit();window.glowSlide(box,dir);return}
     blurPulse(14,520);box.style.filter='url(#mbx)';
     box.animate([{opacity:1,transform:'none'},{opacity:0,transform:`translateX(${-46*dir}px)`}],{duration:150,easing:'cubic-bezier(.4,0,1,1)'}).onfinish=()=>{
       box.innerHTML=daysHTML();bindDays(el);fit();
@@ -7778,7 +7779,7 @@ $('#gr').oninput=e=>{phone.style.setProperty('--grain',e.target.value/100);$('#g
 /* старт */
 paint('plan').classList.add('on');setHead('plan',0);requestAnimationFrame(()=>moveGlow(false));
 </script>
-<script src="./glow/glow-navigation.js?v=9cfbae12f0"></script>
+<script src="./glow/glow-navigation.js?v=3dba896de1"></script>
 <script src="./glow/glow-appearance.js?v=69fcf675ec"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));</script>
 </body>
