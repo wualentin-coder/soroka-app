@@ -3211,7 +3211,7 @@ input[type=range]{width:100%;accent-color:var(--a3)}
 .phone.calm .star svg,.phone.calm .star .rays{animation:none}
 </style>
 <script src="./glow/glow-android.js?v=643c49c85f"></script>
-<script src="./glow/glow-plan-boot.js?v=3b1251bc30"></script>
+<script src="./glow/glow-plan-boot.js?v=c53d471f0f"></script>
 </head>
 <body>
 
@@ -5958,7 +5958,7 @@ function islFit(){const el=$('#isl');if(!el||ISL.open)return;const c=$('#islC');
 function islSync(){const el=$('#isl');if(!el)return;const st=islState();
   if(st!==ISL.st){const was=ISL.st;ISL.st=st;el.dataset.st=st;
     if(ISL.open==='act'&&(st==='idle'||st==='success'||st==='error'))islClose();
-    const c=$('#islC');c.innerHTML=islCompact(st);if(was)c.animate([{opacity:0,filter:'blur(6px)',transform:'scale(.9)'},{opacity:1,filter:'none',transform:'none'}],{duration:380,easing:'cubic-bezier(.2,.9,.3,1)'});
+    const c=$('#islC');c.innerHTML=islCompact(st);if(was&&!reduce&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c.animate([{opacity:0,filter:'blur(6px)',transform:'scale(.9)'},{opacity:1,filter:'none',transform:'none'}],{duration:380,easing:'cubic-bezier(.2,.9,.3,1)'});
     if(ISL.open==='act'){$('#islX').innerHTML=islExpanded(st)}islFit();
     el.setAttribute('aria-label',({idle:'Островок · быстрый доступ',listen:'Ассистент слушает',think:'Ассистент думает',speak:'Ассистент отвечает',render:'Рендер',timer:'Таймер отдыха',success:'Готово',error:'Ошибка'})[st]);return}
   if(st==='render'){const p=$('#islPct');p&&(p.textContent=RJ.pct+'%');$$('#isl .islring .fg').forEach(c=>c.setAttribute('stroke-dasharray',`${RJ.pct} 100`));const f=$('#islFr');f&&(f.textContent=`кадр ${RJ.frame} / ${RJ.total}${S.rpause?' · очередь на паузе':''}`)}
@@ -5977,20 +5977,48 @@ function islPanel(){const late=TASKS.filter(t=>!t.done&&t.d!=null&&t.d<=0).slice
     <div class="iqa">${[[ic.plus,'Дело','add'],[ic.note,'Заметка','note'],[ic.wallet,'Расход','spend'],[ic.dumbbell,'Таймер','timer']].map(([g,l,a])=>`<button data-isl="q-${a}"><span>${g}</span>${l}</button>`).join('')}</div></div>`}
 function islOpen(kind){const el=$('#isl'),x=$('#islX');ISL.open=kind;x.innerHTML=kind==='panel'?islPanel():islExpanded(ISL.st);
   el.classList.remove('closing');el.classList.add('open');el.classList.toggle('panel',kind==='panel');el.setAttribute('aria-expanded','true');
-  const w=kind==='panel'?372:360,hh=kind==='panel'?Math.min(600,x.firstElementChild.scrollHeight):84;
-  el.style.width=w+'px';el.style.height=hh+'px';sfx('tick');buzz(6)}
+  const w=Math.min(kind==='panel'?372:360,phone.clientWidth-18);
+  el.style.width=w+'px';
+  el.style.height=(kind==='panel'?Math.min(600,phone.clientHeight-72,x.firstElementChild.scrollHeight):84)+'px';sfx('tick');buzz(6)}
 function islClose(){const el=$('#isl');if(!ISL.open)return;ISL.open=0;el.classList.add('closing');el.classList.remove('open','panel');el.setAttribute('aria-expanded','false');islFit();
   setTimeout(()=>{if(!ISL.open){el.classList.remove('closing');$('#islX').innerHTML=''}},460)}
 function islToggle(){if(ISL.open){islClose();return}if(ISL.st==='success'||ISL.st==='error')return;islOpen(ISL.st==='idle'?'panel':'act')}
 function islGo(fn){islClose();if(phone.classList.contains('homing'))homeSet(false);setTimeout(fn,phone.classList.contains('homing')?450:260)}
+function bindAssistantHold(node, canHold){
+  let gesture=null, blockClick=false;
+  const finish=(event,cancelled)=>{
+    if(!gesture||event&&event.pointerId!==gesture.id)return;
+    const held=gesture.held;
+    clearTimeout(gesture.timer);gesture=null;node.classList.remove('press');
+    if(held){blockClick=true;asHoldEnd(cancelled)}
+  };
+  node.addEventListener('pointerdown',event=>{
+    if(gesture||event.isPrimary===false||event.button||!canHold())return;
+    blockClick=false;
+    gesture={id:event.pointerId,x:event.clientX,y:event.clientY,held:false};
+    try{node.setPointerCapture(event.pointerId)}catch(_){}
+    node.classList.add('press');
+    gesture.timer=setTimeout(()=>{
+      gesture.held=true;node.classList.remove('press');asHoldStart(node);
+    },340);
+  });
+  node.addEventListener('pointermove',event=>{
+    if(!gesture||event.pointerId!==gesture.id)return;
+    if(gesture.held){if(!AS.locked)asHoldDrag(event.clientY-gesture.y);return}
+    if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>12){blockClick=true;finish(event,true)}
+  });
+  node.addEventListener('pointerup',event=>finish(event,false));
+  node.addEventListener('pointercancel',event=>finish(event,true));
+  node.addEventListener('lostpointercapture',event=>finish(event,true));
+  node.addEventListener('click',event=>{
+    if(!blockClick||event.detail===0)return;
+    blockClick=false;event.preventDefault();event.stopImmediatePropagation();
+  },true);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)finish(null,true)});
+}
 function initIsland(){const el=$('#isl');$('#asLock').innerHTML=`<span class="alk">${sic().lock}</span><i class="aarr"></i>`;
-  let hT=null,y0=0,held=0;
-  el.addEventListener('pointerdown',e=>{if(ISL.open||e.button)return;held=0;y0=e.clientY;try{el.setPointerCapture(e.pointerId)}catch(_){}el.classList.add('press');
-    hT=setTimeout(()=>{held=1;el.classList.remove('press');asHoldStart()},340)});
-  el.addEventListener('pointermove',e=>{if(held&&!AS.locked)asHoldDrag(e.clientY-y0)});
-  const up=()=>{clearTimeout(hT);el.classList.remove('press');if(held)asHoldEnd()};
-  el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
-  el.addEventListener('click',e=>{if(held){held=0;return}
+  bindAssistantHold(el,()=>!ISL.open);
+  el.addEventListener('click',e=>{
     const b=e.target.closest('[data-isl]');
     if(!b){if(e.target.closest('#islX'))return;if(AS.state==='listen'&&AS.locked){asTap();return}islToggle();return}
     e.stopPropagation();const a=b.dataset.isl;sfx('tick');
@@ -6006,7 +6034,7 @@ function initIsland(){const el=$('#isl');$('#asLock').innerHTML=`<span class="al
     if(a==='q-note'){islGo(()=>{const n={id:'n'+Date.now(),sec:'Идеи',t:'',upd:'сейчас',html:'<p><br></p>'};NOTES.unshift(n);S.note=n.id;go('note');setTimeout(()=>kbFocus($('#nt')),560)});return}
     if(a==='q-spend'){islGo(()=>{go('finance');setTimeout(openFn,450)});return}
     if(a==='q-timer'){islGo(()=>{if(!SPR.on)spRunStart();else go('sprun');setTimeout(()=>{if(SPR.phase==='set'){SPR.phase='rest';TM.left=TM.total=60;spRunPaint()}},600)});return}});
-  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();islToggle()}if(e.key==='Escape'&&ISL.open)islClose()});
+  el.addEventListener('keydown',e=>{if(e.target===el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();islToggle()}if(e.key==='Escape'&&ISL.open){e.stopPropagation();islClose();el.focus({preventScroll:true})}});
   document.addEventListener('pointerdown',e=>{if(ISL.open&&!el.contains(e.target))islClose()});
   setInterval(islSync,500);islSync()}
 /* ── ассистент: только надиктованный текст; после обработки — результат и, если нужно, одно действие ── */
@@ -6031,7 +6059,7 @@ function asHoldStart(){if(phone.classList.contains('homing'))homeSet(false);if(A
 function asHoldDrag(dy){const l=$('#asLock');l.style.setProperty('--dy',Math.max(0,Math.min(70,dy))+'px');
   if(dy>70&&!AS.locked){AS.locked=1;l.classList.add('locked');buzz([8,30,8]);sfx('tick');
     AS.timers.forEach(clearTimeout);AS.timers=[];AS.sc=NOTE_SC;const t=$('#asxT');t.animate([{opacity:1},{opacity:0,filter:'blur(6px)'}],{duration:220}).onfinish=()=>{t.innerHTML='';t.classList.add('long');asStream(NOTE_SC.say.split(' '),0)}}}
-function asHoldEnd(){AS.released=1;const l=$('#asLock');if(AS.locked){l.classList.add('stay');return}l.classList.remove('on');
+function asHoldEnd(cancelled){if(cancelled){asClose(true);return}AS.released=1;const l=$('#asLock');if(AS.locked){l.classList.add('stay');return}l.classList.remove('on');
   if(AS.state==='listen'){AS.timers.forEach(clearTimeout);AS.timers=[];if(AS.streamed)asThink();else asT(asThink,200)}}
 function asStream(words,k){const next=()=>{if(AS.state!=='listen')return;const t=$('#asxT');$$('.aw.new',t).forEach(w=>w.classList.remove('new'));
     const w=document.createElement('span');w.className='aw new';w.textContent=(k?' ':'')+words[k];t.appendChild(w);k++;AS.streamed=1;
@@ -6067,7 +6095,7 @@ function asClose(silent){AS.timers.forEach(clearTimeout);AS.timers=[];const x=$(
   x.classList.add('out');asSet('off');star.classList.remove('live');
   setTimeout(()=>{phone.classList.remove('assisting');x.classList.remove('out','res');$('#asxT').innerHTML='';$('#asxA').innerHTML='';$('#asxC').innerHTML=''},420)}
 function initAssistant(){star.onclick=()=>asTap();
-  $('#asx').addEventListener('click',e=>{const t=e.target;
+  $('#asx').addEventListener('click',e=>{if(e.currentTarget.classList.contains('glow-assistant'))return;const t=e.target;
     if(t.closest('[data-aact]')){const sc=AS.sc;if(sc.k==='note'){asClose();setTimeout(()=>{S.note=NOTE_SC.nid;go('note')},300)}else if(sc.act==='Открыть'){asClose();setTimeout(()=>go('render'),300)}else{toast('Отменено');if(sc.k==='spend'){FTX.shift();fnAcc('card').v+=450}asClose()}return}
     if(t.closest('[data-asay]')){say(AS.sc.ans);return}
     if(AS.state==='listen'){asTap();return}

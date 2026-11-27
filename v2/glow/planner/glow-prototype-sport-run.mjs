@@ -18,7 +18,13 @@ export function prototypeExercise(raw, index) {
 
 export function prototypeWorkout({ request, refresh } = {}) {
   const original = R.sprun;
-  let box, act, withoutCamera = false, leave, finishHTML;
+  let box, act, withoutCamera = false, leave, finishHTML, islandClock;
+  function publishRest(next) {
+    if (islandClock?.seconds === next?.seconds && islandClock?.paused === next?.paused
+      && islandClock?.exercise === next?.exercise) return;
+    islandClock = next;
+    window.dispatchEvent(new CustomEvent('flow:glow-rest', { detail: next }));
+  }
   const previousDay = spDay;
   const onFinishClose = () => { finishHTML = syOnClose = null; void act?.('panel-close'); };
   function clearFinish() {
@@ -45,6 +51,7 @@ export function prototypeWorkout({ request, refresh } = {}) {
     leave?.disconnect();
     clearFinish();
     box = act = null;
+    publishRest(null);
     if (curId() === 'sprun') queueMicrotask(() => { if (!box && curId() === 'sprun') pop(); });
   }
   function workout({ model, workout, technique, inline, camera }) {
@@ -261,6 +268,8 @@ export function prototypeWorkout({ request, refresh } = {}) {
         }
       }
       const clock = dialog?.querySelector('#timerW');
+      publishRest(model.phase === 'rest' && clock ? { seconds: Number(seconds), paused: model.paused,
+        exercise: model.current?.exercise?.name || '', toggle: () => dialog.querySelector('#tGo[data-sr]')?.click() } : null);
       if (!clock) return;
       const caption = clock.querySelector('.lbl');
       const title = clock.dataset.sportNext && Number(seconds) <= 5 ? `Подготовка · ${clock.dataset.sportNext}` : 'Отдых';

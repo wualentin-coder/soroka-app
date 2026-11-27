@@ -22,6 +22,7 @@ const dateKey = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()
 
 let state = null;
 let runtime = null;
+let assistant = null;
 let busy = false;
 let formId = null;
 let entryForm = null;
@@ -202,7 +203,10 @@ function openInitialRoute() {
   const page = params.get('page');
   const rid = params.get('rid');
   const start = params.get('tgWebAppStartParam') || window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-  if (params.get('assistant') === '1') return openLegacy();
+  if (params.get('assistant') === '1') {
+    if (assistant) { assistant.open(); return; }
+    return openLegacy();
+  }
   if (openRef(params.get('open'))) return;
   if (!page && /^note_[1-9]\d{0,18}$/.test(start || '')) {
     if (openRef('note:' + start.slice(5))) return;
@@ -656,7 +660,16 @@ try {
     if (root.dataset.glowRelease === 'true') {
       const { connectGlowPractice } = await import('./glow-practice.mjs');
       connectGlowPractice({ prototypeSport: true });
-      asStart = asHoldStart = asTap = () => openLegacy({ assistant: '1', page: null, rid: null, open: null });
+      const { connectGlowAssistant } = await import('./glow-assistant.mjs');
+      assistant = connectGlowAssistant({ openNote: openSavedNote, openRecord: openRef, openDocument: secure.openDocument, openLegacy,
+        upcoming: () => (state?.events || []).filter(record => {
+          const offset = dateDistance(record.due);
+          const time = validTime(record.time);
+          return !record.done && offset !== null && (offset > 0 || offset === 0 && (!time || time >= clock));
+        }).sort((a, b) => a.due.localeCompare(b.due) || validTime(a.time).localeCompare(validTime(b.time)))
+          .slice(0, 2).map(record => ({ id: record.id, title: record.title, time: validTime(record.time) || '—',
+            date: dateDistance(record.due) === 0 ? 'Сегодня' : dateDistance(record.due) === 1 ? 'Завтра' : record.due.slice(8) + '.' + record.due.slice(5, 7) })),
+      });
     }
   }
   await runtime.load();

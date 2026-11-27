@@ -40,14 +40,14 @@ const copyField = (label, value, index) => `<button class="dfr" data-secret-copy
 export function connectMoreSecure() {
   const records = { docs: null, vault: null };
   const busy = { docs: null, vault: null };
-  let expanded = null;
+  let expanded = null, pendingDocument = null;
   let generation = 0;
   const timeoutKey = 'flow-glow-vault-timeout-v1';
   let timeout = 5;
   try { const value = Number(localStorage.getItem(timeoutKey)); if ([1, 5, 15].includes(value)) timeout = value; } catch {}
   const store = createSecureStore(getModuleHost, () => {
     generation++;
-    expanded = null;
+    expanded = pendingDocument = null;
     records.docs = records.vault = busy.docs = busy.vault = null;
     S.unlocked = false;
     if (securePages.includes(curId()) || $('#syIn').querySelector('[data-secure-form]')) closeSy();
@@ -98,7 +98,10 @@ export function connectMoreSecure() {
       const items = await call;
       if (lease !== generation || !store.isUnlocked) return;
       records[page] = items;
-      if (curId() === page) repaintMore(page);
+      if (curId() === page) {
+        repaintMore(page);
+        if (page === 'docs') revealDocument();
+      }
     } catch (error) {
       if (lease === generation && curId() === page) {
         const landing = $('[data-secure-list]', screen);
@@ -320,7 +323,24 @@ export function connectMoreSecure() {
     }, { action: 'Продолжить' });
   }, true);
 
+  function revealDocument() {
+    if (!pendingDocument || curId() !== 'docs' || !store.isUnlocked || !records.docs) return;
+    const card = $('[data-secure-id="' + pendingDocument + '"]', moreScreen('docs'));
+    pendingDocument = null;
+    if (!card) { toast('Документ не найден'); return; }
+    const button = $('[data-secure-open]', card);
+    if (button?.getAttribute('aria-expanded') === 'false') button.click();
+    card.scrollIntoView({ block: 'nearest' });
+  }
+
   return {
+    openDocument(id) {
+      if (!Number.isSafeInteger(id) || id < 1) return false;
+      pendingDocument = id;
+      if (curId() !== 'docs') go('docs');
+      revealDocument();
+      return true;
+    },
     lock: () => store.lock(),
     get timeout() { return timeout; },
     setTimeoutMinutes(value) {

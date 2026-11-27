@@ -105,11 +105,11 @@ bindNotes = screen => {
   $('[data-newnote]', screen).onclick = () => openSavedNote();
 };
 
-export function openSavedNote(id) {
+export function openSavedNote(id, description = '') {
   if (!records || draft) return;
   const existing = id == null ? null : records.get(String(id));
   if (id != null && !existing) { toast('Заметка недоступна'); return; }
-  const record = existing || { id: crypto.randomUUID(), title: '', description: '', topic: filter || '', pinned: false };
+  const record = existing || { id: crypto.randomUUID(), title: '', description, topic: filter || '', pinned: false };
   const row = noteRow(record);
   if (!existing) NOTES.push({ ...row, unsaved: true });
   const opened = { record, topic: record.topic || '', pending: false, isNew: !existing };
@@ -120,6 +120,7 @@ export function openSavedNote(id) {
   if (!existing) setTimeout(() => {
     if (draft === opened && curId() === 'note' && !opened.title.closest('.note-ed').contains(document.activeElement)) kbFocus(opened.title);
   }, 620);
+  return true;
 }
 
 R.note = () => draft && noteById(S.note) ? prototypeEditor() : '';

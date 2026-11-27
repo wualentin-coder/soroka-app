@@ -2,6 +2,24 @@ import { getModuleHost } from './runtime-session.js';
 import { wavBase64 } from './practice/voice-wav.mjs';
 
 const maximumSeconds = 25;
+const lockedSeconds = 120;
+const sampleFloor = .03;
+
+function audioSlices(chunks, rate) {
+  const limit = rate * maximumSeconds;
+  const slices = [];
+  let pending = [], frames = 0;
+  for (const chunk of chunks) {
+    if (frames + chunk.length > limit && pending.length) {
+      slices.push(pending);
+      pending = []; frames = 0;
+    }
+    pending.push(chunk);
+    frames += chunk.length;
+  }
+  if (pending.length) slices.push(pending);
+  return slices;
+}
 export const voiceAvailable = () => !!(navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext));
 
 export function createPracticeVoice(onState) {
@@ -23,7 +41,12 @@ export function createPracticeVoice(onState) {
     session = null;
     onState(value.kind, state, message);
   }
-  async function start({ kind, active, onText }) {
+  function arm(value) {
+    clearTimeout(value.limit);
+    const duration = value.extended ? lockedSeconds : maximumSeconds;
+    value.limit = setTimeout(() => void finish(), Math.max(0, duration * 1000 - (performance.now() - value.started)));
+  }
+  async function start({ kind, active, onText, onLevel }) {
     if (session) return;
     const value = session = { kind, active, onText, state: 'requesting', chunks: [], peak: 0 };
     onState(kind, value.state, 'Запрашиваем микрофон…');
@@ -48,12 +71,16 @@ export function createPracticeVoice(onState) {
         if (!current(value) || value.state !== 'listening') return;
         const data = event.inputBuffer.getChannelData(0);
         value.chunks.push(new Float32Array(data));
-        for (let i = 0; i < data.length; i += 16) value.peak = Math.max(value.peak, Math.abs(data[i]));
+        let peak = 0;
+        for (let i = 0; i < data.length; i += 16) peak = Math.max(peak, Math.abs(data[i]));
+        value.peak = Math.max(value.peak, peak);
+        onLevel?.(peak);
       };
       value.source.connect(value.input);
       value.input.connect(value.context.destination);
       value.state = 'listening';
-      value.limit = setTimeout(() => void finish(), maximumSeconds * 1000);
+      value.started = performance.now();
+      arm(value);
       onState(kind, value.state, 'Идёт запись');
     } catch (error) {
       end(value, 'idle', error.name === 'NotAllowedError' ? 'Разреши доступ к микрофону' : error.message || 'Не удалось включить микрофон');
@@ -65,19 +92,33 @@ export function createPracticeVoice(onState) {
     if (!current(value) || !value.host.isCurrent()) { end(value); return; }
     const rate = value.context.sampleRate;
     release(value);
-    if (!value.chunks.length || value.peak < .03) { end(value, 'idle', 'Ничего не слышно. Попробуй ещё раз'); return; }
+    if (!value.chunks.length || value.peak < sampleFloor) { end(value, 'idle', 'Ничего не слышно. Попробуй ещё раз'); return; }
     value.state = 'transcribing';
     onState(value.kind, value.state, 'Распознаём речь…');
     try {
-      const audio = wavBase64(value.chunks, rate);
+      const slices = audioSlices(value.chunks, rate);
       value.chunks = [];
-      const answer = await value.host.request('transcribe', { audio });
-      if (!current(value) || !value.host.isCurrent()) { end(value); return; }
-      const text = typeof answer?.text === 'string' ? answer.text.trim().slice(0, 4000) : '';
+      const phrases = [];
+      for (const frames of slices) {
+        if (!current(value) || !value.host.isCurrent()) { end(value); return; }
+        if (!frames.some(chunk => chunk.some(sample => Math.abs(sample) >= sampleFloor))) continue;
+        const answer = await value.host.request('transcribe', { audio: wavBase64(frames, rate) });
+        if (!current(value) || !value.host.isCurrent()) { end(value); return; }
+        if (typeof answer?.text === 'string' && answer.text.trim()) phrases.push(answer.text.trim());
+      }
+      const text = phrases.join(' ').slice(0, 4000);
       if (!text) throw Error('Речь не распознана. Попробуй ещё раз');
       value.onText(text);
       end(value);
     } catch (error) { end(value, 'idle', error.message || 'Не удалось распознать речь'); }
   }
-  return { start, finish, cancel: () => { if (session) end(session); } };
+  return {
+    start, finish,
+    extend() {
+      if (!session || !['requesting', 'listening'].includes(session.state)) return;
+      session.extended = true;
+      if (session.state === 'listening') arm(session);
+    },
+    cancel: () => { if (session) end(session); },
+  };
 }
