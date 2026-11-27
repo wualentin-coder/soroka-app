@@ -12,6 +12,7 @@
   if (root.dataset.flowSkin !== 'glow' || window.flowGlowMotion || typeof window.render !== 'function') return;
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const calm = () => root.dataset.motion === 'off' || document.hidden;
+  const touchScreen = window.matchMedia('(hover:none) and (pointer:coarse)');
   const EIN = 'cubic-bezier(.4,0,1,1)', EOUT = 'cubic-bezier(.19,1,.22,1)';
 
   // размытие движения: один SVG-фильтр, stdDeviation по X затухает (blurPulse прототипа)
@@ -21,6 +22,7 @@
   document.body.appendChild(svg);
   const mbB = svg.querySelector('#gw-mbb');
   function blurPulse(peak, ms) {
+    if (touchScreen.matches || calm()) return;
     const t0 = performance.now();
     (function f(t) { const p = Math.min(1, (t - t0) / ms), v = peak * (1 - p) ** 2; mbB.setAttribute('stdDeviation', v.toFixed(2) + ' 0'); if (p < 1) requestAnimationFrame(f); })(t0);
   }
@@ -77,7 +79,8 @@
       const layer = document.createElement('div');
       layer.inert = true;
       layer.setAttribute('aria-hidden', 'true');
-      layer.className = 'gw-swapout'; layer.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${Math.min(rect.height, innerHeight - rect.top)}px;overflow:hidden;z-index:${oldClone.classList.contains('gw-sheet') ? 71 : 1};pointer-events:none;filter:url(#gw-mbf)`;
+      layer.className = 'gw-swapout'; layer.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${Math.min(rect.height, innerHeight - rect.top)}px;overflow:hidden;z-index:${oldClone.classList.contains('gw-sheet') ? 71 : 1};pointer-events:none`;
+      if (!touchScreen.matches) layer.style.filter = 'url(#gw-mbf)';
       oldClone.style.position = oldClone.classList.contains('gw-sheet') ? 'absolute' : ''; oldClone.style.inset = oldClone.classList.contains('gw-sheet') ? '0' : '';
       oldClone.style.visibility = 'visible'; layer.appendChild(oldClone);
       (oldClone.classList.contains('gw-sheet') ? document.body : $('.dm-main')?.parentElement || document.body).appendChild(layer);
@@ -91,8 +94,10 @@
   // въезд нового экрана; если приложение сразу перерисовало экран ещё раз — продолжаем на новом узле с того же места
   let entering = null;
   function enter(to, dir, elapsed) {
-    to.style.filter = 'url(#gw-mbf)';
-    to.animate([{ opacity: 0, transform: `translateX(${90 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 620, delay: -elapsed, easing: EOUT }).onfinish = () => { to.style.filter = ''; };
+    if (!touchScreen.matches) to.style.filter = 'url(#gw-mbf)';
+    to.animate([{ opacity: 0, transform: `translateX(${90 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 620, delay: -elapsed, easing: EOUT }).onfinish = () => {
+      if (to.style.filter.includes('#gw-mbf')) to.style.filter = '';
+    };
   }
 
   /* Живое приложение перерисовывает экран и без нажатий (синхронизация, «показать пришедшие данные» раз в 700 мс).

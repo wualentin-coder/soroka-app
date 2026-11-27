@@ -3,18 +3,40 @@
   'use strict';
   if (document.documentElement.dataset.flowSkin !== 'glow') return;
 
-  const groups = [
-    [['appearance', 'Внешний вид', 'sun'], ['home', 'Главный экран', 'home']],
-    [['notifications', 'Уведомления', 'bell'], ['bot', 'Бот', 'message'], ['phone', 'Телефон', 'today']],
-    [['connections', 'Подключения', 'link'], ['assistant', 'Помощь Flow', 'spark']],
-    [['security', 'Безопасность', 'key'], ['data', 'Данные', 'folder']],
-  ];
-  const panes = new Map(groups.flat().map(([key, title]) => [key, title]));
+  const {settings, settingsRoutes} = window.flowGlowTemplates;
+  const routes = {look:'appearance', home:'home', notif:'notifications', bot:'bot', phone:'phone', links:'connections', ai:'assistant', sec:'security', data:'data'};
+  const panes = new Map(Object.entries(routes).map(([key, route]) => [route, settingsRoutes[key].title]));
   const list = html => `<div class="glass list gw-settings-panel">${html}</div>`;
   const body = group => [...(group?.children || [])].filter(node => node.tagName !== 'H2').map(node => node.outerHTML).join('');
   const markup = nodes => nodes.filter(Boolean).map(node => node.outerHTML).join('');
   const row = (title, glyph, attrs) => `<button type="button" class="rw" ${attrs}><span class="ic" aria-hidden="true">${icon(glyph)}</span><span><b>${title}</b></span>${icon('right', 'chev')}</button>`;
   const settingRow = (parent, key) => parent?.querySelector(`[data-setting="${key}"]`)?.closest('.settings-row');
+
+  function settingsOverview() {
+    const telegram = window.Telegram?.WebApp;
+    const user = telegram?.initDataUnsafe?.user;
+    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Flow';
+    const palette = window.flowGlow?.palette || '';
+    const values = {
+      look: palette.charAt(0).toUpperCase() + palette.slice(1),
+      home: {today:'План', saved:'Сохранённое', finance:'Финансы', more:'Ещё'}[data.settings.startPage] || 'План',
+      notif: data.settings.digest || '',
+      bot: telegram?.initData ? 'Подключён' : '',
+      phone: phoneState()?.linked ? 'Подключён' : '',
+      ai: data.settings.manualOnly ? 'Ввод вручную' : '',
+    };
+    const sections = Object.fromEntries(Object.entries(settingsRoutes).map(([id, meta]) => [id, {
+      t:meta.title, i:meta.icon, c:meta.color, summary:esc(values[id] || ''),
+    }]));
+    return settings({
+      account: {
+        initial:esc([...name][0]?.toUpperCase() || ''),
+        name:esc(name),
+        detail:telegram?.initData ? 'Telegram подключён' : window.SorokaAndroid ? 'Flow для Android' : '',
+      },
+      sections,
+    });
+  }
 
   function settingsBody(key, {native, appearance, workspace, storage, assistant, sensory}) {
     const bot = native.find(group => group.querySelector('[data-setting=context]'));
@@ -39,7 +61,7 @@
       case 'security': return list(row('Пароли', 'key', 'data-action="navigate" data-page="vault"'));
       case 'data': return list(body(storage));
     }
-    return groups.map(group => list(group.map(([id, title, glyph]) => row(title, glyph, `data-gw-settings-open="${id}"`)).join(''))).join('');
+    return settingsOverview();
   }
 
   window.flowMagicUI.glowSettings = sections => {
@@ -56,14 +78,15 @@
   };
 
   document.addEventListener('click', event => {
-    const control = event.target.closest?.('.gw-settings [data-gw-settings-open], .gw-settings [data-gw-settings-back]');
+    const control = event.target.closest?.('.gw-settings [data-stp], .gw-settings [data-gw-settings-back]');
     if (!control) return;
     if (control.hasAttribute('data-gw-settings-back')) {
       if (history.state?.glowSettingsParent) history.back();
       else location.replace('#settings');
       return;
     }
-    location.hash = `settings/${control.dataset.gwSettingsOpen}`;
+    const route = routes[control.dataset.stp];
+    if (route) location.hash = `settings/${route}`;
   });
 
   window.addEventListener('hashchange', event => {

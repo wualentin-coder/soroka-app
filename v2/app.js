@@ -224,7 +224,7 @@ function save() {
 let data = load();
 const validPages = ["today", "upcoming", "tasks", "saved", "finance", "vault", "inbox", "overview", "projects", "metrics", "archive", "settings", "more", "vpn", "server", "pc", "render", "docs", "english", "sport", "piano"];
 function settingsRoute(hash = location.hash) { return /^#settings\/([a-z-]+)$/.exec(hash)?.[1] || ""; }
-function currentPage() { const name = settingsRoute() ? "settings" : location.hash.slice(1); if (name === "sleep") return "today"; const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
+function currentPage() { const name = settingsRoute() ? "settings" : location.hash.slice(1); if (name === "sleep") return "today"; if (name === "practice" && document.documentElement.dataset.flowSkin === "glow") return "sport"; const page = validPages.includes(name) ? name : validPages.includes(data.settings.startPage) ? data.settings.startPage : "today"; return page === "overview" ? "today" : page; }
 if (location.hash === "#sleep") history.replaceState(null, "", "#today");
 const ui = {
   page: currentPage(),
@@ -286,6 +286,15 @@ const navigation = [
   ["more", "Все разделы", "overview"]
 ];
 const mobileNavigation = [["today", "План", "today"], navigation[3], navigation[4], ["more", "Ещё", "overview"]];
+const glowPracticePages = new Set(["sport", "english", "piano"]);
+function mobileNavItems() {
+  const dock = window.flowGlowTemplates?.dock;
+  if (document.documentElement.dataset.flowSkin !== "glow" || !dock) return mobileNavigation.map(item => navItem(item, true)).join("");
+  const route = glowPracticePages.has(ui.page) ? "practice" : ["today", "upcoming", "tasks"].includes(ui.page) ? "today" : ui.page === "saved" ? "saved" : "more";
+  return Object.entries(dock).map(([page, {label,svg}]) =>
+    `<button class="gw-prototype-tab ${route === page ? "active" : ""}" type="button" data-action="navigate" data-page="${page}" aria-label="${label}" ${route === page ? 'aria-current="page"' : ""}>${svg}</button>`
+  ).join("");
+}
 function navItem([page, label, symbol], mobile = false) {
   const planPage = ["today", "upcoming", "tasks"].includes(ui.page);
   const active = ui.page === page || (mobile && page === "today" && planPage) || (page === "more" && (mobile ? !planPage && !mobileNavigation.slice(0, 4).some(([name]) => name === ui.page) : !navigation.some(([name]) => name === ui.page)));
@@ -946,7 +955,7 @@ function render() {
   if (classicDesign()) {
     app.innerHTML = `<div class="app-shell"><aside class="sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · личное пространство</p></div></aside><div><div class="mobile-brand">${brand()}</div><main class="main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${overlay}</div>`;
   } else {
-  app.innerHTML = `<div class="app-shell dm-app-shell"><aside class="sidebar dm-sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · Digital Magic</p></div></aside><div class="dm-workspace">${typeof flowMagicTopbar === "function" ? flowMagicTopbar() : `<div class="mobile-brand">${brand()}</div>`}<main class="main dm-main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav dm-bottom-nav" aria-label="Основная навигация">${mobileNavigation.map(item => navItem(item, true)).join("")}</nav>${overlay}</div>`;
+  app.innerHTML = `<div class="app-shell dm-app-shell"><aside class="sidebar dm-sidebar"><div class="sidebar-brand">${brand()}</div>${sidebar}<div class="sidebar-foot"><p>Flow · Digital Magic</p></div></aside><div class="dm-workspace">${typeof flowMagicTopbar === "function" ? flowMagicTopbar() : `<div class="mobile-brand">${brand()}</div>`}<main class="main dm-main">${page}</main></div><button class="fab" type="button" data-action="${ui.page === "saved" ? "saved-new" : ui.page === "docs" ? "doc-new" : "universal-add"}" ${ui.page === "docs" ? 'data-kind="custom"' : ""} aria-label="Добавить запись">${icon("plus")}</button><nav class="mobile-nav dm-bottom-nav" aria-label="Основная навигация">${mobileNavItems()}</nav>${overlay}</div>`;
   }
   if (retainRouteFocus) focusRouteHeading();
   else if (navigationFocus) focusCurrentNavigation(navigationFocus);
@@ -1042,8 +1051,10 @@ function toggleTask(recordId) {
 }
 function navigate(page) {
   if (!confirmSheetDiscard()) return;
+  if (page === "practice" && document.documentElement.dataset.flowSkin === "glow") page = ui.glowPractice || "sport";
   if (page === "sleep") page = "today";
   if (!validPages.includes(page)) return;
+  if (glowPracticePages.has(page)) ui.glowPractice = page;
   // «Предстоящие» и «Обзор» теперь внутри «Плана».
   if (page === "upcoming" || page === "overview") page = "today";
   if (page === "today" && ui.page !== "today") { ui.selected = todayIso(); ui.calendarAnchor = ui.selected; ui.month = ui.selected.slice(0, 7) + "-01"; }

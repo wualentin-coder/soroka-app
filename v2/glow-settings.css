@@ -25,8 +25,16 @@ html[data-flow-skin=glow] .gw-settings .gw-settings-heading {
   margin-top: 12px;
 }
 
-html[data-flow-skin=glow] .gw-settings .gw-settings-panel > .rw:focus-visible {
+html[data-flow-skin=glow] .gw-settings .list > .rw:focus-visible {
   outline-offset: -3px;
+}
+
+html[data-flow-skin=glow] .gw-settings .rw {
+  grid-template-columns: 40px minmax(0,1fr) minmax(0,auto);
+}
+
+html[data-flow-skin=glow] .gw-settings .stv2 {
+  white-space: normal;
 }
 
 html[data-flow-skin=glow] .main .gw-settings .list-panel {

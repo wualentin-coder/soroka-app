@@ -351,15 +351,35 @@ html[data-flow-skin=glow] .settings-row:has(>select[data-setting=theme],input[da
 /* липкие строки вкладок не закрашиваются фоном страницы — капсула лежит на среде */
 html[data-flow-skin=glow] .main .en-tabs-row{background:transparent!important}
 
-/* Android Chrome/WebView: прямое смешивание подложки без нестабильного слоя
-   backdrop-filter. Световые грани, радиусы и фон продолжают рисоваться отдельно. */
+/* Android Chrome/WebView: отдельный контур и блик без маски, backdrop-filter
+   и смешивания слоёв при движении фона. */
 @media (hover:none) and (pointer:coarse){
-  html[data-flow-skin=glow] :is(.gw .glass, .dm-bottom-nav){
+  html[data-flow-skin=glow] :is(.gw .glass, .main [data-glow-sheen], .dm-bottom-nav){
     -webkit-backdrop-filter:none!important;
     backdrop-filter:none!important;
     background-color:color-mix(in srgb,var(--glow-ink) 35%,transparent)!important;
   }
   html[data-flow-skin=glow] .dm-bottom-nav{
     background-color:color-mix(in srgb,var(--glow-ink) 64%,transparent)!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a3) 38%,transparent),var(--glow-glass-shadow)!important;
   }
+  html[data-flow-skin=glow] .dm-bottom-nav::before,
+  html[data-flow-skin=glow] .dm-bottom-nav::after{content:none}
+  html[data-flow-skin=glow] :is(.gw .glass,.main [data-glow-sheen])::before{
+    padding:0;
+    background:none;
+    -webkit-mask:none;
+    mask:none;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a3) 25%,rgb(255 255 255 / .15));
+    animation:none!important;
+  }
+  html[data-flow-skin=glow] :is(.gw .glass,.main [data-glow-sheen])::after{
+    mix-blend-mode:normal;
+    animation:none!important;
+  }
+  html[data-flow-skin=glow] .fab.assistant-fab>svg{
+    filter:drop-shadow(0 0 10px var(--a4)) drop-shadow(0 0 24px var(--a3))!important;
+    animation:glowStSway 7s ease-in-out infinite!important;
+  }
+  html[data-flow-skin=glow] .fab.assistant-fab>svg .glow-ssh{mix-blend-mode:normal}
 }

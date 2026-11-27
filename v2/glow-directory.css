@@ -11,3 +11,22 @@ html[data-flow-skin=glow] .gw-directory .rw small {
 html[data-flow-skin=glow] .gw-directory .rw:focus-visible {
   outline-offset: -3px;
 }
+
+html[data-flow-skin=glow] .gw-practice-tabs {
+  margin-bottom: 14px;
+}
+
+html[data-flow-skin=glow] .dm-bottom-nav > .gw-prototype-tab::before {
+  content: none !important;
+}
+
+html[data-flow-skin=glow] .dm-bottom-nav > .gw-prototype-tab > svg {
+  display: block !important;
+  width: 24px;
+  height: 24px;
+}
+
+html[data-flow-skin=glow] .dm-bottom-nav > .gw-prototype-tab.active > svg {
+  filter: drop-shadow(0 0 8px var(--a3));
+  transform: translateY(-1px);
+}
