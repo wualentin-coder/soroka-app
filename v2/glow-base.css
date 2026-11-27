@@ -350,3 +350,16 @@ html[data-flow-skin=glow] .main :is(.dm-plan-practices,.dm-overdue){display:none
 html[data-flow-skin=glow] .settings-row:has(>select[data-setting=theme],input[data-setting=accent]){display:none!important}
 /* липкие строки вкладок не закрашиваются фоном страницы — капсула лежит на среде */
 html[data-flow-skin=glow] .main .en-tabs-row{background:transparent!important}
+
+/* Android Chrome/WebView: прямое смешивание подложки без нестабильного слоя
+   backdrop-filter. Световые грани, радиусы и фон продолжают рисоваться отдельно. */
+@media (hover:none) and (pointer:coarse){
+  html[data-flow-skin=glow] :is(.gw .glass, .dm-bottom-nav){
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    background-color:color-mix(in srgb,var(--glow-ink) 35%,transparent)!important;
+  }
+  html[data-flow-skin=glow] .dm-bottom-nav{
+    background-color:color-mix(in srgb,var(--glow-ink) 64%,transparent)!important;
+  }
+}
