@@ -157,7 +157,6 @@
     h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
   }, true);
   // каталог догрузился, пока экран открыт — подсказки появляются
-  new MutationObserver(() => {}).observe(document.body, { childList: false });
   setInterval(() => { if (!ours()) return; const a = $('#gw-mnauto'); if (a && !a.children.length && (universeUi.catalog || []).length) a.innerHTML = auto(); }, 700);
   window.flowGlowMarnew = { native };
 })();

@@ -1,0 +1,13 @@
+html[data-flow-skin=glow] .gw-directory .rw {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+}
+
+html[data-flow-skin=glow] .gw-directory .rw small {
+  color: var(--glow-text);
+  opacity: .78;
+  overflow-wrap: anywhere;
+}
+
+html[data-flow-skin=glow] .gw-directory .rw:focus-visible {
+  outline-offset: -3px;
+}

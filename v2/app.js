@@ -1161,7 +1161,7 @@ document.addEventListener("click", event => {
   if (action === "navigate") {
     const navArea = event.detail === 0 ? control.closest(".dm-bottom-nav,.dm-sidebar") : null;
     const navSelector = navArea?.classList.contains("dm-bottom-nav") ? ".dm-bottom-nav" : ".dm-sidebar";
-    if (control.dataset.page === "saved") ui.savedCategory = "overview";
+    if (control.dataset.page === "saved") ui.savedCategory = control.dataset.category === "sites" ? "sites" : "overview";
     if (control.dataset.page === "finance") { ui.financeTab = "overview"; ui.financeCategory = ""; }
     navigate(control.dataset.page);
     if (navArea && !ui.sheet) focusCurrentNavigation(navSelector);

@@ -114,7 +114,7 @@
   function stagger(scope) {
     if (!scope) return;
     $$('.glass,.plate-w', scope).forEach((g, n) => {
-      if (g.dataset.gwSt) return; g.dataset.gwSt = '1';
+      if (g.dataset.gwSheenReady) return; g.dataset.gwSheenReady = '1';
       let seed = hashS(g.className + '|' + n);
       const R = (a, b) => { seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0; seed = (seed ^ (seed >>> 13)) >>> 0; return a + (seed % 10000) / 10000 * (b - a); };
       const s = g.style;

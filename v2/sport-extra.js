@@ -46,7 +46,11 @@
         return false;
       } finally {
         loading = null;
-        if (spState().tab === "flex" || ["sp2-swap"].includes(spState().sheet?.kind)) render();
+        // The catalog can finish loading before the app initializes its UI.
+        if (typeof ui !== "undefined") {
+          const view = spState();
+          if (view.tab === "flex" || view.sheet?.kind === "sp2-swap") render();
+        }
       }
     })();
     return loading;
