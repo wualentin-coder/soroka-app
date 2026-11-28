@@ -670,32 +670,41 @@ try {
     }
     return template.innerHTML;
   };
-  if (!practiceVisual) {
-    const { connectGlowPractice } = await import('./glow-practice.mjs');
-    connectGlowPractice();
-  } else if (root.dataset.glowSport === 'connected') {
-    const { connectPrototypeSport } = await import('./glow-prototype-sport.mjs');
-    connectPrototypeSport();
-    if (root.dataset.glowRelease === 'true') {
+  async function connectOnlineModules() {
+    if (!practiceVisual) {
       const { connectGlowPractice } = await import('./glow-practice.mjs');
-      connectGlowPractice({ prototypeSport: true });
-      const { connectGlowAssistant } = await import('./glow-assistant.mjs');
-      assistant = connectGlowAssistant({ openNote: openSavedNote, openRecord: openRef, openDocument: secure.openDocument, openLegacy,
-        upcoming: () => (state?.events || []).filter(record => {
-          const offset = dateDistance(record.due);
-          const time = validTime(record.time);
-          return !record.done && offset !== null && (offset > 0 || offset === 0 && (!time || time >= clock));
-        }).sort((a, b) => a.due.localeCompare(b.due) || validTime(a.time).localeCompare(validTime(b.time)))
-          .slice(0, 2).map(record => ({ id: record.id, title: record.title, time: validTime(record.time) || '—',
-            date: dateDistance(record.due) === 0 ? 'Сегодня' : dateDistance(record.due) === 1 ? 'Завтра' : record.due.slice(8) + '.' + record.due.slice(5, 7) })),
-      });
+      connectGlowPractice();
+    } else if (root.dataset.glowSport === 'connected') {
+      if (root.dataset.glowRelease !== 'true') {
+        const { connectPrototypeSport } = await import('./glow-prototype-sport.mjs');
+        connectPrototypeSport();
+      } else {
+        const [{ connectPrototypeSport }, { connectGlowPractice }, { connectGlowAssistant }] = await Promise.all([
+          import('./glow-prototype-sport.mjs'), import('./glow-practice.mjs'), import('./glow-assistant.mjs'),
+        ]);
+        connectPrototypeSport();
+        connectGlowPractice({ prototypeSport: true });
+        assistant = connectGlowAssistant({ openNote: openSavedNote, openRecord: openRef, openDocument: secure.openDocument, openLegacy,
+          upcoming: () => (state?.events || []).filter(record => {
+            const offset = dateDistance(record.due);
+            const time = validTime(record.time);
+            return !record.done && offset !== null && (offset > 0 || offset === 0 && (!time || time >= clock));
+          }).sort((a, b) => a.due.localeCompare(b.due) || validTime(a.time).localeCompare(validTime(b.time)))
+            .slice(0, 2).map(record => ({ id: record.id, title: record.title, time: validTime(record.time) || '—',
+              date: dateDistance(record.due) === 0 ? 'Сегодня' : dateDistance(record.due) === 1 ? 'Завтра' : record.due.slice(8) + '.' + record.due.slice(5, 7) })),
+        });
+      }
     }
+    connectRender();
   }
+  let modules;
+  const loadOnlineModules = () => modules ??= connectOnlineModules().catch(() => { modules = null; });
   await runtime.load();
+  if (!showingCachedPlan) await loadOnlineModules();
   window.addEventListener('online', () => {
-    if (showingCachedPlan) void runtime.load().catch(() => {});
+    if (!showingCachedPlan) return;
+    void runtime.load().then(() => { if (!showingCachedPlan) return loadOnlineModules(); }).catch(() => {});
   });
-  connectRender();
   if (root.dataset.glowRelease === 'true') {
     window.sorokaOpenRef = openRef;
     window.sorokaOpenNote = id => openRef(id);
