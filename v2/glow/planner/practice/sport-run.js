@@ -86,6 +86,8 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     return Number.isFinite(value) && value > 0 ? "blocked" : "empty";
   }
   let connectedHost = null;
+  const nativeApproach = () => Boolean(connectedHost && /\bFlowNativeSet\/1\b/.test(navigator.userAgent)
+    && location.origin === "https://wualentin-coder.github.io");
   const sportState = () => connectedHost ? connectedHost.state() : typeof spState === "function" ? spState()?.state : null;
   const request = async (op, args = {}, host = connectedHost) => {
     const reply = await (host ? host.request(op, args) : window.sorokaSport(op, args));
@@ -402,7 +404,14 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         this.inline.scrollFrame = requestAnimationFrame(() => { this.inline.scrollFrame = 0; this.syncInline(); });
       }, { signal, capture: true, passive: true });
       window.addEventListener("pageshow", () => this.syncSoon(), { signal });
+      window.addEventListener("flow:resume", () => {
+        if (this.nativeSetOpening) void this.resumeAfterNativeSet();
+      }, { signal });
       document.addEventListener("visibilitychange", () => {
+        if (this.nativeSetOpening) {
+          if (!document.hidden) void this.resumeAfterNativeSet();
+          return;
+        }
         if (!document.hidden) { this.tick(); this.syncSoon(); }
         else this.modal?.querySelector("video")?.pause();
       }, { signal });
@@ -1209,7 +1218,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     tick() {
       if (!this.owner.current()) { this.dispose(); return; }
-      if (this.busy || this.conflict || this.interruption || this.flashing || this.confirmId) return;
+      if (this.nativeSetOpening || this.busy || this.conflict || this.interruption || this.flashing || this.confirmId) return;
       let record;
       try { record = this.read(); } catch { return; }
       if (!record || record.abandon || terminal(view(record).projection.phase)) {
@@ -1550,8 +1559,43 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     cameraMode(exercise) {
       if (!cameraCoachEnabled(sportState())) return null;
+      const preview = navigator.mediaDevices?.getUserMedia ? "preview" : null;
+      if (nativeApproach()) return coachEyesKeyFor(exercise) && navigator.onLine ? "analysis" : null;
       if (coachEyesKeyFor(exercise) && (typeof window.SorokaAndroid?.openCoachEyes === 'function' || this.inlineBridge())) return 'analysis';
-      return navigator.mediaDevices?.getUserMedia ? 'preview' : null;
+      return preview;
+    }
+
+    async openNativeSet() {
+      const active = this.read();
+      const slot = active && view(active).projection.open_set;
+      if (!slot || this.model?.phase !== "work" || this.model?.paused || !navigator.onLine) return;
+      this.nativeSetOpening = true;
+      try {
+        await navigator.locks.request(`${this.storage.key}:sync`, () => this.send());
+        const synced = this.read();
+        if (!synced || synced.id !== active.id || synced.start || synced.events.length || synced.syncError ||
+            keyOf(view(synced).projection.open_set) !== keyOf(slot)) throw error("network");
+        const page = new URL("./sport/approach", location.href);
+        page.search = new URLSearchParams({ session: synced.id, exercise: slot.plan_exercise_id, set: slot.set_index });
+        location.assign(page);
+      } catch (reason) {
+        this.nativeSetOpening = false;
+        throw reason;
+      }
+    }
+
+    async resumeAfterNativeSet() {
+      if (this.nativeSetResuming) return;
+      this.nativeSetResuming = true;
+      try {
+        const record = this.read();
+        if (record) await this.reconcile(record);
+      } finally {
+        this.nativeSetResuming = false;
+        this.nativeSetOpening = false;
+        this.tick();
+        this.syncSoon();
+      }
     }
 
     openCameraCoach() {
@@ -1613,6 +1657,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     inlineBridge() {
+      if (nativeApproach()) return null;
       for (const host of [window.SorokaAndroid, window.SorokaNative, window.FlowAndroid, window.FlowNative]) {
         if (host && typeof host.coachEyesInlineShow === "function") return host;
       }
@@ -2494,11 +2539,15 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     async act(action, data = {}) {
       if (action === "dismiss") { this.close(); return; }
-      if (this.busy || this.flashing) return;
+      if (this.nativeSetOpening || this.busy || this.flashing) return;
       const model = this.model;
       this.message = "";
       try {
-        if (action === "camera-coach") { this.openCameraCoach(); return; }
+        if (action === "camera-coach") {
+          if (!nativeApproach()) this.openCameraCoach();
+          else if (this.cameraMode(model?.current?.exercise) === "analysis") await this.openNativeSet();
+          return;
+        }
         if (action === "inline-expand") {
           const api = this.inlineBridge();
           if (typeof api?.coachEyesInlineExpand === "function") {
