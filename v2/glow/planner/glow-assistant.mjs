@@ -10,12 +10,21 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
   const form = document.createElement('form');
   let generation = 0, capture = 'idle', opener, speech, adding = false, clearTimer;
   let attachments = [], lastSpeech = '', rest = null;
+  const native = () => window.SorokaAndroid;
+  const nativePopup = () => native()?.assistantPopup?.() === true;
+  const handledRequests = new Set();
+  function expandFlow() {
+    if (nativePopup()) native().assistantPopupExpand?.();
+  }
   const recording = () => capture === 'requesting' || capture === 'listening';
   const motion = () => !reduce && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const style = document.createElement('style');
   style.textContent = answerStyles + ' ' + [
     '.asx.glow-assistant{justify-content:safe center;overflow:auto}',
+    'html[data-glow-assistant-popup],html[data-glow-assistant-popup] body,html[data-glow-assistant-popup] #phone{background:transparent}',
+    'html[data-glow-assistant-popup] #phone > :is(.env,.screens,.head,.home,.hbar){visibility:hidden}',
+    'html[data-glow-assistant-popup] .dock .tab{visibility:hidden}',
     '.phone.assisting .glow-assistant.out{opacity:0;pointer-events:none}',
     '.glow-assistant[data-composer] {padding:64px 16px max(118px,calc(max(var(--glow-keyboard,0px),var(--kb,0px)) + 12px));justify-content:safe end;gap:10px}',
     '.glow-assistant [hidden],.glow-assistant :is(.asxt,.asxa,.asxc):empty{display:none!important}',
@@ -112,14 +121,14 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
   const navigate = section => {
     if (section === 'today') section = 'plan';
     if (['inbox', 'upcoming', 'metrics'].includes(section)) {
-      close(false); openLegacy({ assistant: null, page: section, open: null, rid: null }); return true;
+      expandFlow(); close(false, false); openLegacy({ assistant: null, page: section, open: null, rid: null }); return true;
     }
     if (!['sport', 'english', 'piano', ...TABS, ...Object.keys(SUBS)].includes(section)) return false;
-    close(false); go(section); return true;
+    expandFlow(); close(false, false); go(section); return true;
   };
   const executor = createAssistantDeviceExecutor({ navigate,
-    openRecord: ref => { close(false); return openRecord(ref); },
-    openDocument: id => { close(false); return openDocument(id); } });
+    openRecord: ref => { expandFlow(); close(false, false); return openRecord(ref); },
+    openDocument: id => { expandFlow(); close(false, false); return openDocument(id); } });
   const session = createAssistantSession(() => getModuleHost('assistant'), {
     canAct: () => AS.state !== 'off' && !document.hidden,
     executeAction: executor,
@@ -177,7 +186,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     delete overlay.dataset.composer;
     overlay.classList.remove('out', 'res');
   }
-  function close(restore = true) {
+  function close(restore = true, dismissPopup = true) {
     if (AS.state === 'off') return;
     overlay.inert = true;
     overlay.classList.add('out');
@@ -190,6 +199,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     if (motion()) clearTimer = setTimeout(finish, 460);
     else finish();
     if (restore) opener?.focus({ preventScroll: true });
+    if (dismissPopup && nativePopup()) native().assistantPopupClose?.();
   }
   function open(source = star) {
     if (phone.classList.contains('homing')) homeSet(false);
@@ -230,7 +240,8 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     actions.replaceChildren();
     overlay.classList.add('res');
     actionButton('В заметки', () => {
-      if (openNote(undefined, text)) close(false);
+      expandFlow();
+      if (openNote(undefined, text)) close(false, false);
     });
     actionButton('Отправить', () => void submit(text, true));
     islFlash('Распознано');
@@ -287,7 +298,10 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
         const card = document.createElement('div');
         card.className = 'glass asxcard';
         card.innerHTML = '<span class="ic">' + ic.check + '</span><span><b>Сохранено</b></span>';
-        actionButton('Открыть', () => { if (openRecord(receipt.ref)) close(false); }, card);
+        actionButton('Открыть', () => {
+          expandFlow();
+          if (openRecord(receipt.ref)) close(false, false);
+        }, card);
         actions.append(card);
       }
       if (lastSpeech) {
@@ -490,10 +504,11 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
   islPanel = () => {
     const template = document.createElement('template');
     template.innerHTML = originalPanel();
-    const first = $('button[data-isl="plan"]', template.content);
-    if (first?.previousElementSibling?.classList.contains('ipl')) first.previousElementSibling.remove();
+    const sampleEvents = $$('button[data-isl="plan"]', template.content);
+    const heading = sampleEvents[0]?.previousElementSibling;
+    if (heading?.classList.contains('ipl')) heading.remove();
+    sampleEvents.forEach(row => row.remove());
     const events = upcoming();
-    first?.replaceWith();
     if (events.length) {
       const ask = $('.iask', template.content);
       ask.insertAdjacentHTML('afterend', '<div class="ipl">Ближайшее</div>' + events.map(item =>
@@ -529,6 +544,71 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     if (AS.state === 'think' || AS.state === 'speak') close(false);
     else if (recording()) close(false);
   });
-  window.addEventListener('pagehide', () => close(false));
+  function syncNativePopup() {
+    document.documentElement.toggleAttribute('data-glow-assistant-popup', nativePopup());
+  }
+  if (typeof native()?.islandReady === 'function') {
+    let lastSignal = '', lastSignalAt = 0;
+    function publishNativeSignal() {
+      const state = ISL.st;
+      const label = ({ listen: 'Слушаю', think: 'Обрабатываю', speak: 'Отвечаю' })[state] || ISL.flash?.label;
+      const active = !document.hidden && label && ['listen', 'think', 'speak', 'success', 'error'].includes(state);
+      const kind = active ? state : 'idle';
+      const visibleLabel = active ? label : 'Flow';
+      const now = Date.now();
+      const accent = getComputedStyle(phone).getPropertyValue('--a3').trim();
+      const key = JSON.stringify([kind, visibleLabel, accent]);
+      if (key === lastSignal && (kind === 'idle' || now - lastSignalAt < 5000)) return;
+      if (native()?.islandUpdate?.(JSON.stringify({ kind, label: visibleLabel, accent, at: now })) !== false) {
+        lastSignal = key;
+        lastSignalAt = now;
+      }
+    }
+    const sync = islSync;
+    islSync = () => { sync(); publishNativeSignal(); };
+    window.flowAssistant = {
+      getState: () => ({ open: AS.state !== 'off' }),
+      close: () => close(false, false),
+    };
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !ISL.open && AS.state === 'off') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (ISL.open) {
+        islClose();
+        island.focus({ preventScroll: true });
+      } else close(true, event.isTrusted);
+    }, true);
+    window.addEventListener('flow:assistantpopupchange', syncNativePopup);
+    window.addEventListener('flow:nativeisland', ({ detail }) => {
+      const { id, action, text } = detail || {};
+      if (document.hidden || typeof id !== 'string' || !/^[a-zA-Z0-9-]{1,64}$/.test(id)
+        || !['assistant', 'today', 'render', 'sport'].includes(action)) return;
+      if (!handledRequests.has(id)) {
+        if (action === 'assistant') {
+          syncNativePopup();
+          open(island);
+          showComposer(false);
+          const prompt = typeof text === 'string' ? text.trim().slice(0, 1200) : '';
+          if (prompt) void submit(prompt, true);
+        } else {
+          expandFlow();
+          close(false, false);
+          go(action === 'today' ? 'plan' : action);
+        }
+        handledRequests.add(id);
+        if (handledRequests.size > 64) handledRequests.delete(handledRequests.values().next().value);
+      }
+      native()?.islandAck?.(id);
+    });
+    const ready = () => {
+      syncNativePopup();
+      publishNativeSignal();
+      native()?.islandReady?.();
+    };
+    window.addEventListener('flow:resume', ready);
+    ready();
+  }
+  window.addEventListener('pagehide', () => close(false, false));
   return { open() { open(); showComposer(false); } };
 }
