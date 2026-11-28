@@ -30,6 +30,7 @@ let entryForm = null;
 let projectForAdd = '';
 let days = new Map();
 let clock = '';
+let clockTimer = 0;
 let agendaTimer = 0;
 let pendingWriteKey = null;
 let booting = root.dataset.glowRelease === 'true';
@@ -54,51 +55,40 @@ function updateClock(timezone, first) {
   const instant = new Date();
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: zone }).format(instant);
   clock = new Intl.DateTimeFormat('ru-RU', { timeZone: zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(instant);
+  const previousDay = dateKey(TODAY);
+  const followsToday = same(S.sel, TODAY);
+  const anchorFor = date => S.cal === 'month' ? new Date(date.getFullYear(), date.getMonth(), 1) : monday(date);
+  const showsCurrentPeriod = same(S.anchor, anchorFor(TODAY));
   const [year, month, day] = today.split('-').map(Number);
   TODAY.setFullYear(year, month - 1, day);
-  if (first) {
-    S.sel = TODAY;
-    S.anchor = S.cal === 'month' ? new Date(year, month - 1, 1) : monday(TODAY);
-  }
+  if (first || followsToday) S.sel = TODAY;
+  if (first || showsCurrentPeriod) S.anchor = anchorFor(TODAY);
   $('.status span').textContent = clock;
+  return previousDay !== today;
 }
 
-function adopt(snapshot) {
-  const previous = state;
-  const wasCached = showingCachedPlan;
-  showingCachedPlan = !!snapshot && runtime?.usingOfflineSnapshot === true;
-  const selectedDate = dateKey(S.sel);
-  clearTimeout(agendaTimer);
-  state = snapshot;
+function indexPlan() {
   days = new Map();
   S.done.clear();
   S.subs = {};
   TASKS.length = 0;
   NEAR.length = 0;
   TIX.length = 0;
-  if (!state) {
-    pendingWriteKey = null;
-    adoptSaved(null);
-    adoptFinance(null);
-    clearPlanTicket();
-    if (previous && sheetA.classList.contains('on')) closeAdd();
-    if (previous) root.dataset.glowPlan = 'error';
-    for (const id of ['plan', 'tasks', 'finance', 'projects', 'project', 'archive', ...libraryScreens]) $('.screen[data-s="' + id + '"]')?.replaceChildren();
-    return;
-  }
+  if (!state) return;
 
-  updateClock(state.timezone, !previous);
-  applyMoreLayout(state.settings);
+  const today = dateKey(TODAY);
   const projectIds = new Map(state.projects.map(project => [project.name, encodeURIComponent(project.id)]));
   for (const [kind, records] of [['task', state.tasks], ['event', state.events]]) {
     for (const record of records) {
       const offset = dateDistance(record.due);
       if (kind === 'task') TASKS.push({ id: encodeURIComponent(record.id), t: record.title, d: offset, done: record.done, p: projectIds.get(record.project) });
       if (offset === null) continue;
-      const list = days.get(record.due) || [];
-      const key = `${iso(fromIso(record.due))}-${list.length}`;
-      list.push({ kind, record });
-      days.set(record.due, list);
+      const overdue = kind === 'task' && !record.done && offset < 0;
+      const day = overdue ? today : record.due;
+      const list = days.get(day) || [];
+      const key = `${iso(fromIso(day))}-${list.length}`;
+      list.push({ kind, record, overdue });
+      days.set(day, list);
       if (kind === 'task') {
         if (record.done) S.done.add(key);
         if (record.checklist?.length) S.subs[key] = record.checklist.map(item => [item.text, item.done]);
@@ -115,10 +105,52 @@ function adopt(snapshot) {
       seat: ticket.seat || '', ic: ticket.ticketType === 'train' ? 'train' : 'film', p: ['#f2a24b', '#7a2a12'], ticket });
   }
   TIX.sort((a, b) => a.d - b.d);
+}
+
+function schedulePlanClock() {
+  clearTimeout(clockTimer);
+  if (!state || document.hidden) return;
+  clockTimer = setTimeout(tickPlanClock, 60_000 - (Date.now() % 60_000));
+}
+
+function tickPlanClock() {
+  if (state && !document.hidden) {
+    if (updateClock(state.timezone)) {
+      clearTimeout(agendaTimer);
+      indexPlan();
+      adoptSaved(state, dateDistance, validTime, clock);
+      repaintCurrent();
+    } else if (curId() === 'plan') placeNow($('.screen[data-s="plan"]'));
+  }
+  schedulePlanClock();
+}
+
+function adopt(snapshot) {
+  const previous = state;
+  const wasCached = showingCachedPlan;
+  showingCachedPlan = !!snapshot && runtime?.usingOfflineSnapshot === true;
+  const selectedDate = dateKey(S.sel);
+  clearTimeout(agendaTimer);
+  state = snapshot;
+  const newDay = state && updateClock(state.timezone, !previous);
+  indexPlan();
+  schedulePlanClock();
+  if (!state) {
+    pendingWriteKey = null;
+    adoptSaved(null);
+    adoptFinance(null);
+    clearPlanTicket();
+    if (previous && sheetA.classList.contains('on')) closeAdd();
+    if (previous) root.dataset.glowPlan = 'error';
+    for (const id of ['plan', 'tasks', 'finance', 'projects', 'project', 'archive', ...libraryScreens]) $('.screen[data-s="' + id + '"]')?.replaceChildren();
+    return;
+  }
+
+  applyMoreLayout(state.settings);
   adoptSaved(state, dateDistance, validTime, clock);
   adoptFinance(state);
   if (!booting) root.dataset.glowPlan = 'ready';
-  if (previous && curId() === 'plan' && showingCachedPlan === wasCached) updateVisibleAgenda(previous, selectedDate);
+  if (previous && !newDay && curId() === 'plan' && showingCachedPlan === wasCached) updateVisibleAgenda(previous, selectedDate);
   else if (!practiceVisual && !previous && curId() === 'practice') {
     paint('practice');
     setHead('practice', 0);
@@ -241,13 +273,20 @@ function openInitialRoute() {
 
 const selectedEntries = () => days.get(dateKey(S.sel)) || [];
 const entryKey = ({ kind, record }) => `${kind}:${record.id}`;
-const agendaEvent = ({ kind, record }) => [validTime(record.time), record.title,
+const agendaEvent = ({ kind, record, overdue }) => [overdue ? '' : validTime(record.time), record.title,
   kind === 'task' ? record.project || record.description || '' : record.description || '', priorityColors[record.priority] || '--a3'];
 
 function markAgendaRows(container, entries) {
   for (const row of $$('#agenda .ev', container)) {
     const entry = entries[Number(row.dataset.ev)];
-    if (entry) row.dataset.planEntry = entryKey(entry);
+    if (!entry) continue;
+    row.dataset.planEntry = entryKey(entry);
+    row.toggleAttribute('data-overdue', entry.overdue);
+    if (entry.overdue) {
+      const check = $('.chk', row);
+      check.title = 'Просрочено';
+      check.setAttribute('aria-label', `Выполнено: ${entry.record.title}. Просрочено.`);
+    }
   }
 }
 
@@ -284,17 +323,18 @@ function updateVisibleAgenda(previous, date) {
   const entries = selectedEntries();
   const byKey = new Map(entries.map(entry => [entryKey(entry), entry]));
   const oldTasks = new Map(previous.tasks.map(task => [String(task.id), task]));
+  const confirmedTasks = new Map(state.tasks.map(record => [entryKey({ kind: 'task', record }), record]));
   let delay = 0;
   for (const row of $$('#agenda .ev', body)) {
-    const entry = byKey.get(row.dataset.planEntry);
-    if (entry?.kind !== 'task' || !!entry.record.done === row.classList.contains('done')) continue;
-    const done = !!entry.record.done;
+    const task = confirmedTasks.get(row.dataset.planEntry);
+    if (!task || !!task.done === row.classList.contains('done')) continue;
+    const done = !!task.done;
     row.classList.toggle('done', done);
     row.classList.remove('open');
     row.setAttribute('aria-expanded', 'false');
     const button = $('.chk', row);
     button.classList.remove('ready');
-    button.setAttribute('aria-label', `${done ? 'Вернуть' : 'Выполнено'}: ${entry.record.title}`);
+    button.setAttribute('aria-label', `${done ? 'Вернуть' : 'Выполнено'}: ${task.title}`);
     if (done && !reduce) {
       row.classList.remove('now');
       const subtitle = $('.ss', row);
@@ -488,7 +528,7 @@ bindBody = screen => {
     const list = $('.subs', row);
     check.disabled = kind === 'event';
     input.disabled = kind === 'event';
-    check.classList.toggle('ready', kind === 'task' && !record.done && !!record.checklist?.length && record.checklist.every(item => item.done));
+    check.classList.toggle('ready', kind === 'task' && !item.overdue && !record.done && !!record.checklist?.length && record.checklist.every(item => item.done));
     check.onclick = event => {
       event.stopPropagation();
       const current = state?.tasks.find(task => task.id === record.id);
@@ -720,6 +760,8 @@ try {
   }
   const loadOnlineModules = () => modules ??= connectOnlineModules().catch(() => { modules = null; });
   await runtime.load();
+  document.addEventListener('visibilitychange', tickPlanClock);
+  window.addEventListener('flow:resume', tickPlanClock);
   const params = new URLSearchParams(location.search);
   if (!showingCachedPlan) {
     connectRender();

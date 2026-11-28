@@ -15,6 +15,10 @@
     #agenda > .rail + .ev { padding-top: 8px; }
     #agc:has(> #agenda > .nowl:last-child) { padding-bottom: 16px; }
     #agenda > .nowl:last-child b { right: 16px; }
+    #agenda .ev[data-overdue]:not(.done) .chk {
+      box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--a2) 68%, var(--text)),
+        0 0 15px color-mix(in srgb, var(--a2) 68%, transparent);
+    }
 
     .phone:has(#env[data-bg="caustic"]) .screen.on :is(.cal, .agc, .near, .cat, .search) {
       background: linear-gradient(152deg, rgba(255,255,255,.115), rgba(12,10,19,.11) 58%, rgba(12,10,19,.24));
