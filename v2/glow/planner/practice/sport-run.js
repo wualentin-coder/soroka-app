@@ -1467,7 +1467,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         return this.presentation.workout({ model, workout: record.snapshot.workout, target, technique,
           result: model.phase === "rest" ? resultCard(model, record.drafts[keyOf(model.prior)] ?? {}, true) : "",
           inline: model.phase === "work" ? this.inlinePanel(model) : "", swipeHint: model.phase === "rest" ? this.swipeHint("Пропустить отдых") : "",
-          camera: cameraCoachEnabled(sportState()) && (coachEyesKeyFor(model.current.exercise) || navigator.mediaDevices?.getUserMedia) });
+          camera: this.cameraMode(model.current.exercise) });
       }
       if (model.phase === "preparing") return `${this.head(model)}<div class="sr-body sr-prep"><h2>Приготовьтесь</h2>${this.timer(model)}</div>
         <footer class="sr-foot">${this.pauseButton(model)}${control("start", "Начать", "primary-button")}</footer>`;
@@ -1548,6 +1548,12 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       return dialog;
     }
 
+    cameraMode(exercise) {
+      if (!cameraCoachEnabled(sportState())) return null;
+      if (coachEyesKeyFor(exercise) && (typeof window.SorokaAndroid?.openCoachEyes === 'function' || this.inlineBridge())) return 'analysis';
+      return navigator.mediaDevices?.getUserMedia ? 'preview' : null;
+    }
+
     openCameraCoach() {
       if (this.inline.shown || this.inline.configured) this.inlineClose();
       const state = sportState();
@@ -1559,7 +1565,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const sportId = exercise?.exercise_id || "";
       const coachKey = coachEyesKeyFor(exercise);
       const bridge = window.SorokaAndroid?.openCoachEyes;
-      if (connectedHost && !bridge && !this.inlineBridge() && navigator.mediaDevices?.getUserMedia) {
+      if (connectedHost && this.cameraMode(exercise) === 'preview') {
         this.browserCamera(exercise);
         return;
       }

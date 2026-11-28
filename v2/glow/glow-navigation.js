@@ -11,6 +11,27 @@
   const practiceRoute = id => practiceVisual && (id === 'practice' || SUBS[id] === 'practice');
   let prototypeTransition = false;
 
+  const screens = [...phone.querySelectorAll('main > .screen')];
+  function focusScreen(id) {
+    for (const screen of screens) screen.inert = screen.dataset.s !== id;
+  }
+  focusScreen(curId());
+
+  const sheet = document.querySelector('#sheet');
+  const floatingBars = [
+    ['#egBar', 'egchatting'], ['#ntool', 'noting'], ['#lbar', 'listing'],
+    ['#mnbar', 'marnewing'], ['#rcbar', 'recipeing'],
+  ].map(([selector, mode]) => [document.querySelector(selector), mode]);
+  const dock = document.querySelector('#dock');
+  function syncFloatingFocus() {
+    sheet.inert = !sheet.classList.contains('on');
+    for (const [bar, mode] of floatingBars) bar.inert = !phone.classList.contains(mode);
+    dock.inert = phone.matches('.coding, .cooking, .recipeing, .marnewing, .listing, .noting, .kbon, .egchatting, .egfocus');
+  }
+  const focusObserver = new MutationObserver(syncFloatingFocus);
+  for (const element of [phone, sheet]) focusObserver.observe(element, { attributes: true, attributeFilter: ['class'] });
+  syncFloatingFocus();
+
   const style = document.createElement('style');
   style.textContent = `
     .phone.glow-transitioning:not(.calm) .screen.on { filter: url(#mbx); }
@@ -102,25 +123,20 @@
   swap = (fromId, id, direction) => {
     const from = document.querySelector(`.screen[data-s="${fromId}"]`);
     const target = document.querySelector(`.screen[data-s="${id}"]`);
+    focusScreen(id);
     if (android) {
       androidSlide?.cancel();
       const to = paint(id);
       for (const item of to.querySelectorAll('.in')) item.classList.add('glow-route-entry');
       to.scrollTop = 0;
       setHead(id, direction);
-      for (const screen of document.querySelectorAll('.screen.on')) {
-        if (screen === to) continue;
-        screen.classList.remove('on');
-        screen.inert = true;
-      }
-      to.inert = false;
+      for (const screen of screens) if (screen !== to) screen.classList.remove('on');
       to.classList.add('on');
       if (from !== to) slideAndroid(to, direction);
       return;
     }
     if (practiceRoute(fromId) || practiceRoute(id)) {
       if (transition) finish(transition);
-      from.inert = target.inert = false;
       prototypeTransition = true;
       try { return originalSwap(fromId, id, direction); }
       finally { prototypeTransition = false; }
@@ -129,7 +145,6 @@
     const incomingStart = transition && target.classList.contains('on') ? currentFrame(target)
       : { opacity: 0, transform: `translateX(${90 * direction}px)` };
     const to = paint(id);
-    to.inert = false;
     to.scrollTop = 0;
     setHead(id, direction);
     if (from === to) {
@@ -139,7 +154,6 @@
 
     if (transition) finish(transition);
     phone.classList.add('glow-transitioning');
-    from.inert = true;
 
     const outgoing = from.animate([outgoingStart, { opacity: 0, transform: `translateX(${-70 * direction}px)` }],
       { duration: 360, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });

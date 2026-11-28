@@ -77,6 +77,10 @@ export function connectGlowPractice({ prototypeSport = false } = {}) {
     .phone.land:not(.pnplay) .head { opacity: 1; pointer-events: auto; }
     .phone.pnplay .head { visibility: hidden; }
     .phone.land .screen[data-s="pnrun"] { padding-top: 58px; }
+    body:has(.pn-device-land) { padding: 0; }
+    .phone.pn-device-land { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; transition: none; }
+    .phone.pn-device-land .screen[data-s="pnrun"] { padding: 0; }
+    .phone.pn-device-land:not(.pnplay) .screen[data-s="pnrun"] { padding-top: 56px; }
   `;
   document.head.append(style);
   const home = () => $('.screen[data-s="practice"]');
@@ -114,10 +118,15 @@ export function connectGlowPractice({ prototypeSport = false } = {}) {
   } : connectGlowSport(environment);
   views.english = connectGlowEnglish(environment);
   views.piano = connectGlowPiano(environment);
+  const landscapePhone = matchMedia('(orientation: landscape) and (max-height: 540px) and (pointer: coarse)');
+  const landscapePreview = matchMedia('(min-width: 860px)');
   function orientation(id) {
-    phone.classList.toggle('land', ['sprun', 'pnrun'].includes(id) && !!SPD.land
-      && matchMedia('(min-width: 860px)').matches && document.documentElement.dataset.glowAndroid !== 'true');
+    const pianoLandscape = id === 'pnrun' && landscapePhone.matches;
+    phone.classList.toggle('pn-device-land', pianoLandscape);
+    phone.classList.toggle('land', pianoLandscape || ['sprun', 'pnrun'].includes(id) && !!SPD.land
+      && landscapePreview.matches && document.documentElement.dataset.glowAndroid !== 'true');
   }
+  for (const media of [landscapePhone, landscapePreview]) media.addEventListener('change', () => orientation(curId()));
   pseg('spland', value => {
     SPD.land = value === 'land';
     orientation(curId());
@@ -183,7 +192,7 @@ export function connectGlowPractice({ prototypeSport = false } = {}) {
   const previousSwap = swap;
   swap = (from, to, direction) => {
     if (from === 'practice') switchMotion?.cancel();
-    if (!routes.has(to)) phone.classList.remove('land', 'pnplay');
+    if (!routes.has(to)) phone.classList.remove('land', 'pn-device-land', 'pnplay');
     if (from !== to) {
       const kind = routes.get(from) || (from === 'practice' && $('#pracBody', home())?.dataset.practiceBody);
       if (kind) views[kind].leave(from, to);

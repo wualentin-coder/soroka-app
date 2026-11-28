@@ -83,6 +83,13 @@ export function prototypeWorkout({ request, refresh } = {}) {
     try { view.innerHTML = original(); }
     finally { SPD.cam = cameraSetting; Object.assign(TM, timer); spDay = previousDay; }
     const root = view.content;
+    if (camera === 'preview') {
+      const permission = root.querySelector('.spperm');
+      if (permission) {
+        permission.querySelector('b').textContent = 'Предпросмотр камеры';
+        permission.querySelector('small').textContent = 'Проверь положение в кадре. Результат вводится вручную';
+      }
+    }
     const bind = (selector, action) => root.querySelectorAll(selector).forEach(node => { node.dataset.sr = action; });
     bind('#spGo', 'start'); bind('#spDone', 'done'); bind('[data-spintro]', 'tech');
     bind('[data-spl="back"]', 'dismiss'); bind('[data-spl="x"]', 'close-menu');

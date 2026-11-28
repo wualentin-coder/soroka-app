@@ -10,6 +10,20 @@ const tabsByRoute = { enrun: 'today', endeck: 'words', encourse: 'course', enphr
   enlist: 'words', enchat: 'chat', enread: 'read' };
 const routeTitles = { enrun: 'Занятие', endeck: 'Слова', encourse: 'Курс', enphr: 'Фразы', enprog: 'Прогресс',
   enlist: 'Словарь', enchat: 'Эмма', enread: 'Медиатека', ensong: 'Песня' };
+const exerciseModes = [['cards','Карточки','copy'], ['build','Собери фразу','grip'], ['gap','Пропуск','pen'],
+  ['dictation','Диктант','play'], ['translate','Перевод','msg']];
+const practiceKinds = [
+  ['mission','Ситуации','Диалоги и ролевые задачи','flag','#5dff9e'],
+  ['sounds','Звуки','Слушать и различать','ear','#6cb6ff'],
+  ['story','Истории','Читать и пересказывать','book','#ffb547'],
+  ['radio','Аудирование','Понимать на слух','radio','#ff8a5c'],
+];
+const situations = [
+  { unitKey:'cafe', title:'В кафе', label:'Заказать кофе', opener:'Hi! What can I get for you?' },
+  { unitKey:'apartment', title:'Квартира', label:'Снять квартиру', opener:'Welcome! What are you looking for in an apartment?' },
+  { unitKey:'support', title:'Поддержка', label:'Позвонить в поддержку', opener:'Hello, support here. How can I help?' },
+  { unitKey:'interview', title:'Собеседование', label:'Собеседование', opener:'Welcome! Tell me a little about yourself.' },
+];
 let runtime;
 function loadEnglishRuntime() {
   runtime ||= Promise.all([
@@ -25,8 +39,8 @@ function loadEnglishRuntime() {
 
 export function connectGlowEnglish(env) {
   let host, owner, stop, audio, model, opening, error, work, song, selectedSong, songs = null, songError = '';
-  let tab = 'today', wordQuery = '', wordTimer, touchWords, queryGeneration = 0, requested = new Set();
-  let spoken;
+  let tab = 'today', wordQuery = '', wordFilter = 'all', wordTimer, touchWords, queryGeneration = 0, requested = new Set();
+  let spoken, startChatVoice = false;
   let voiceField, player, playerScope, songObjectURL, songMessage = '';
   const voice = createPracticeVoice((kind, state, message) => {
     if (work?.isConnected) work.voiceInput = { kind, state, message };
@@ -88,7 +102,7 @@ export function connectGlowEnglish(env) {
     refreshResource('today');
     if (tab === 'learn') {
       refreshResource('words');
-      refreshResource('wordlist', { q: wordQuery, filter: 'all' });
+      refreshResource('wordlist', { q: wordQuery, filter: wordFilter });
     } else if (tab === 'media') {
       refreshResource('books');
       if (songs === null && !songError) {
@@ -154,7 +168,11 @@ export function connectGlowEnglish(env) {
       <button class="glass ezstat" data-practice-action="progress">${eic().chart}<small>Прогресс</small></button></div>
       <div class="sylab">Разговор</div><div class="glass ezhero ezchat"><div class="ezh1"><span class="egav">Э<i></i></span>
       <span class="ezt"><b>Эмма</b><small>${label(u.topic?.title)}</small></span></div>
-      ${practiceButton('chat', 'Написать', eic().chat)}</div>`;
+      <div class="ezbtns">${practiceButton('chat', 'Написать', eic().chat)}
+      ${voiceAvailable() ? practiceButton('chat-voice', 'Голосом', eic().mic) : ''}</div></div>
+      ${model.capabilities.conversation ? '<div class="sylab">Ситуации</div><div class="ezscroll">'
+        + situations.map(({ label: title }, index) => '<button class="glass ezmt wide" data-practice-action="situation" data-index="'
+          + index + '"><span class="ic">' + eic().flag + '</span><b>' + label(title) + '</b></button>').join('') + '</div>' : ''}`;
   }
   function wordRows() {
     return (data().wordlist?.items || []).map(item => `<div class="ezwr"><b lang="en">${label(item.en)}</b><span>${label(item.ru)}</span>
@@ -171,7 +189,15 @@ export function connectGlowEnglish(env) {
       <div class="ezbtns">${model?.capabilities.deck ? practiceButton('deck', 'Учить слова', eic().words) : ''}${practiceButton('phrases', 'Фразы', eic().msg)}</div></div>
       <div class="sylab">Курс</div><button class="glass ezhero ezcourse" data-practice-action="course"><div class="ezh1"><span class="ezt">
       <small>${label(level?.level || 'Курс английского')}</small><b>${label(level?.title || level?.topic?.title || 'Программа')}</b></span>${eic().learn}</div></button>
-      <div class="sylab">Словарь</div><label class="glass syq">${eic().search}<input id="egWq" value="${label(wordQuery)}" placeholder="Слово" aria-label="Найти слово"></label>
+      ${model.capabilities.authoredPractice ? '<div class="sylab">По ситуациям</div><div class="ezgrid">'
+        + practiceKinds.map(([kind, title, detail, icon, color]) => '<button class="glass eztile" data-practice-action="authored-catalog" data-kind="'
+          + kind + '" style="--c:' + color + '"><span class="ic">' + eic()[icon] + '</span><b>' + title + '</b><small>' + detail + '</small></button>').join('') + '</div>' : ''}
+      ${model.capabilities.lesson ? '<div class="sylab">Упражнения</div><div class="ezscroll">' + exerciseModes.map(([mode, title, icon]) =>
+        '<button class="glass ezmt" data-practice-action="exercise" data-mode="' + mode + '"><span class="ic">' + (eic()[icon] || eic().learn)
+          + '</span><b>' + title + '</b></button>').join('') + '</div>' : ''}
+      <div class="sylab">Словарь</div><div class="ezfind"><label class="glass syq">${eic().search}<input id="egWq" value="${label(wordQuery)}" placeholder="Слово" aria-label="Найти слово"></label>
+      <div class="ezmini">${[['learning','Учу'],['known','Знаю'],['all','Все']].map(([key,title]) => '<button type="button" class="'
+        + (key === wordFilter ? 'on' : '') + '" aria-pressed="' + (key === wordFilter) + '" data-practice-action="word-filter" data-filter="' + key + '">' + title + '</button>').join('')}</div></div>
       <div class="glass ezwl" id="egWl">${wordRows() || moreEmpty('Нет слов')}</div>`;
   }
   function media() {
@@ -214,6 +240,28 @@ export function connectGlowEnglish(env) {
       requested.clear(); songError = ''; warm();
     } else { error = ''; env.redraw('english'); await open(); }
   }
+  function authoredCatalog(kind) {
+    const group = practiceKinds.find(row => row[0] === kind);
+    const rows = (model.catalog || []).filter(item => item.kind === kind);
+    if (!group || !rows.length) return;
+    openSy('<div class="syh">' + group[1] + '</div><div class="glass list">' + rows.map(item =>
+      moreRow(eic()[group[3]], item.title, [item.level, item.steps + ' шагов'].filter(Boolean).join(' · '),
+        'data-practice-action="authored-start" data-item="' + slug(item.id) + '"')).join('') + '</div>', sheet => {
+      delegatePractice(sheet, { 'authored-start': async button => {
+        const id = unslug(button.dataset.item);
+        if (!rows.some(item => item.id === id)) return;
+        const [seed] = crypto.getRandomValues(new Uint32Array(1));
+        await to('enrun', 'practice.start', { kind, id, seed });
+        if (curId() === 'enrun') closeSy();
+      } });
+    });
+  }
+  function queryWords() {
+    const attempt = ++queryGeneration;
+    return owner.command('words.query', { filter: wordFilter, q: wordQuery }).then(() => {
+      if (attempt === queryGeneration) paintWords(touchWords);
+    });
+  }
   function bind(el) {
     practiceTabs(el, 'data-etab', key => { if (tab === 'media') music.stop(true); tab = key; env.redraw('english'); warm(); });
     const word = $('#egWq', el);
@@ -221,16 +269,34 @@ export function connectGlowEnglish(env) {
     if (word) word.oninput = () => {
       wordQuery = word.value;
       clearTimeout(wordTimer);
-      const attempt = ++queryGeneration;
       wordTimer = setTimeout(() => {
-        if (env.selected('english') && word.isConnected) void owner?.command('words.query', { filter: 'all', q: wordQuery })
-          .then(() => { if (attempt === queryGeneration) paintWords(touchWords); }).catch(() => {});
+        if (env.selected('english') && word.isConnected) void queryWords().catch(() => {});
       }, 230);
     };
     const songsFilter = $('#egSq', el);
     if (songsFilter) songsFilter.oninput = () => { $('#egSongs', el).innerHTML = songRows(songsFilter.value); };
     delegatePractice(el, {
       retry: refresh, lesson: () => to('enrun', 'lesson.start'), course: () => to('encourse'),
+      'authored-catalog': button => authoredCatalog(button.dataset.kind),
+      'word-filter': button => {
+        wordFilter = button.dataset.filter;
+        clearTimeout(wordTimer);
+        for (const item of $$('[data-practice-action="word-filter"]', el)) {
+          item.classList.toggle('on', item === button);
+          item.setAttribute('aria-pressed', String(item === button));
+        }
+        return queryWords();
+      },
+      exercise: button => to('enrun', 'exercise.start', { mode: button.dataset.mode }),
+      'chat-voice': async () => {
+        startChatVoice = true;
+        try { await to('enchat', model.chat ? null : 'chat.start'); }
+        finally { if (curId() !== 'enchat') startChatVoice = false; }
+      },
+      situation: button => {
+        const { unitKey, title, opener } = situations[Number(button.dataset.index)];
+        return to('enchat', 'chat.start', { unitKey, title, opener });
+      },
       deck: () => to('endeck', 'deck.start'), phrases: () => to('enphr'), progress: () => to('enprog'), chat: () => to('enchat'),
       reader: () => to('enread'), book: button => to('enread', 'reader.open', { id: Number(button.dataset.book) }),
       learn() { tab = 'learn'; env.redraw('english'); warm(); },
@@ -367,6 +433,14 @@ export function connectGlowEnglish(env) {
       } catch (failure) { if (element.isConnected) element.settle(requestId, { ok: false, error: failure.message }); }
     });
     if (id === 'enchat' || !model.task && !model.reader?.book) element.selectTab(element.tab);
+    if (id === 'enchat' && startChatVoice) {
+      startChatVoice = false;
+      requestAnimationFrame(() => {
+        if (element === work && element.isConnected && curId() === 'enchat') {
+          element.shadowRoot.querySelector('[data-command="voice.start"]')?.click();
+        }
+      });
+    }
     if (id === 'enphr') {
       await domain.command('load', { resource: 'phrases' }).catch(() => {});
       if (element.isConnected && model.data?.phrases?.items?.length) {

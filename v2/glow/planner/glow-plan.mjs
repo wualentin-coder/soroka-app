@@ -1,4 +1,5 @@
 import { openPlannerRuntime } from './runtime-session.js';
+import { createPlannerOfflineCache } from './planner-offline.mjs';
 import { showPlanTicket, clearPlanTicket } from './glow-plan-tickets.mjs';
 import { adoptSaved, openSavedRecord } from './glow-saved.mjs';
 import { openSavedNote } from './glow-notes.mjs';
@@ -32,6 +33,7 @@ let clock = '';
 let agendaTimer = 0;
 let pendingWriteKey = null;
 let booting = root.dataset.glowRelease === 'true';
+let showingCachedPlan = false;
 
 const demoBindBody = bindBody;
 const demoBindTaskList = bindTaskList;
@@ -62,6 +64,8 @@ function updateClock(timezone, first) {
 
 function adopt(snapshot) {
   const previous = state;
+  const wasCached = showingCachedPlan;
+  showingCachedPlan = !!snapshot && runtime?.usingOfflineSnapshot === true;
   const selectedDate = dateKey(S.sel);
   clearTimeout(agendaTimer);
   state = snapshot;
@@ -113,7 +117,7 @@ function adopt(snapshot) {
   adoptSaved(state, dateDistance, validTime, clock);
   adoptFinance(state);
   if (!booting) root.dataset.glowPlan = 'ready';
-  if (previous && curId() === 'plan') updateVisibleAgenda(previous, selectedDate);
+  if (previous && curId() === 'plan' && showingCachedPlan === wasCached) updateVisibleAgenda(previous, selectedDate);
   else if (!practiceVisual && !previous && curId() === 'practice') {
     paint('practice');
     setHead('practice', 0);
@@ -200,6 +204,10 @@ function openRef(ref) {
 
 function openInitialRoute() {
   const params = new URLSearchParams(location.search);
+  if (showingCachedPlan) {
+    openPlannerDay(params.get('date'));
+    return;
+  }
   const page = params.get('page');
   const rid = params.get('rid');
   const start = params.get('tgWebAppStartParam') || window.Telegram?.WebApp?.initDataUnsafe?.start_param;
@@ -370,6 +378,7 @@ function updateVisibleAgenda(previous, date) {
 
 async function write(change, key = null) {
   if (!runtime || !state) return false;
+  if (showingCachedPlan) { toast('Для сохранения нужна связь'); return false; }
   if (busy) { toast('Сохранение ещё идёт'); return false; }
   const retryOnly = key === 'recover-pending' || key === 'recover' && runtime.hasPendingFinance;
   const matched = key !== null && key === pendingWriteKey;
@@ -541,12 +550,14 @@ function resetForm() {
 
 openAdd = () => {
   if (!state) { toast('Открой Flow в приложении или Telegram'); return; }
+  if (showingCachedPlan) { toast('Для сохранения нужна связь'); return; }
   resetForm();
   demoOpenAdd();
 };
 
 function openEntryForm(kind, record, mode) {
   if (busy || !state) return;
+  if (showingCachedPlan) { toast('Для изменения нужна связь'); return; }
   resetForm();
   entryForm = { kind, record, mode };
   aTitle.value = record.title;
@@ -620,7 +631,14 @@ try {
       document.head.append(sdk);
     });
   }
-  runtime = await openPlannerRuntime({ onState: adopt });
+  runtime = await openPlannerRuntime({ onState: adopt, snapshotCache: createPlannerOfflineCache(localStorage) });
+  const originalPlan = R.plan;
+  R.plan = () => (showingCachedPlan ? '<div class="sylab" role="status" data-plan-offline>Без сети · План для просмотра</div>' : '') + originalPlan();
+  const navigate = go;
+  go = id => {
+    if (showingCachedPlan && id !== 'plan' && id !== 'tasks') { toast('Раздел доступен при подключении'); return; }
+    return navigate(id);
+  };
   connectNoteWrites(write, id => runtime.resolveId(id));
   connectLibrary(write, id => runtime.resolveId(id));
   connectFinance(write, (ids, apply) => runtime.incomeSplit(ids, apply), id => runtime.resolveId(id), () => runtime.hasPendingFinance);
@@ -673,6 +691,9 @@ try {
     }
   }
   await runtime.load();
+  window.addEventListener('online', () => {
+    if (showingCachedPlan) void runtime.load().catch(() => {});
+  });
   connectRender();
   if (root.dataset.glowRelease === 'true') {
     window.sorokaOpenRef = openRef;

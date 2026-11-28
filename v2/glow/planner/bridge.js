@@ -2607,6 +2607,14 @@
   window.sorokaPlannerSession=Object.freeze({
     owner(){const token=observePlannerOwner();return document.hidden||nativeSuspended?null:token;},
     isCurrent:currentPlannerOwner,
+    async snapshotOwner(token) {
+      if (!currentPlannerOwner(token)) throw Error('planner_owner_changed');
+      const { initData, device } = plannerOwners.get(token);
+      const bytes = new TextEncoder().encode(JSON.stringify(['flow-plan-offline-v1', initData, device]));
+      const hash = await crypto.subtle.digest('SHA-256', bytes);
+      if (!currentPlannerOwner(token)) throw Error('planner_owner_changed');
+      return Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, '0')).join('');
+    },
     subscribe(listener){plannerListeners.add(listener);return()=>plannerListeners.delete(listener);},
     async englishSession(token){
       if(!currentPlannerOwner(token))throw Error('planner_owner_changed');
