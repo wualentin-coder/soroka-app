@@ -632,7 +632,7 @@ try {
     });
   }
   runtime = await openPlannerRuntime({ onState: adopt, snapshotCache: createPlannerOfflineCache(localStorage),
-    isOffline: () => navigator.onLine === false });
+    isOffline: () => navigator.onLine === false || root.hasAttribute('data-flow-offline-shell') });
   const originalPlan = R.plan;
   R.plan = () => (showingCachedPlan ? '<div class="sylab" role="status" data-plan-offline>Без сети · План для просмотра</div>' : '') + originalPlan();
   const navigate = go;
@@ -670,6 +670,23 @@ try {
     }
     return template.innerHTML;
   };
+  async function connectAssistant() {
+    const { connectGlowAssistant } = await import('./glow-assistant.mjs');
+    assistant = connectGlowAssistant({
+      navigationReady: () => !booting, openNote: openSavedNote, openRecord: openRef, openDocument: secure.openDocument, openLegacy,
+      upcoming: () => (state?.events || []).filter(record => {
+        const offset = dateDistance(record.due);
+        const time = validTime(record.time);
+        return !record.done && offset !== null && (offset > 0 || offset === 0 && (!time || time >= clock));
+      }).sort((a, b) => a.due.localeCompare(b.due) || validTime(a.time).localeCompare(validTime(b.time)))
+        .slice(0, 2).map(record => ({ id: record.id, title: record.title, time: validTime(record.time) || '—',
+          date: dateDistance(record.due) === 0 ? 'Сегодня' : dateDistance(record.due) === 1 ? 'Завтра' : record.due.slice(8) + '.' + record.due.slice(5, 7) })),
+    });
+  }
+  const assistantReady = root.dataset.glowRelease === 'true' ? connectAssistant().catch(error => {
+    console.warn('Ассистент Glow не загрузился', error);
+  }) : undefined;
+
   async function connectOnlineModules() {
     if (!practiceVisual) {
       const { connectGlowPractice } = await import('./glow-practice.mjs');
@@ -679,20 +696,12 @@ try {
         const { connectPrototypeSport } = await import('./glow-prototype-sport.mjs');
         connectPrototypeSport();
       } else {
-        const [{ connectPrototypeSport }, { connectGlowPractice }, { connectGlowAssistant }] = await Promise.all([
-          import('./glow-prototype-sport.mjs'), import('./glow-practice.mjs'), import('./glow-assistant.mjs'),
+        const [{ connectPrototypeSport }, { connectGlowPractice }] = await Promise.all([
+          import('./glow-prototype-sport.mjs'), import('./glow-practice.mjs'),
         ]);
         connectPrototypeSport();
         connectGlowPractice({ prototypeSport: true });
-        assistant = connectGlowAssistant({ openNote: openSavedNote, openRecord: openRef, openDocument: secure.openDocument, openLegacy,
-          upcoming: () => (state?.events || []).filter(record => {
-            const offset = dateDistance(record.due);
-            const time = validTime(record.time);
-            return !record.done && offset !== null && (offset > 0 || offset === 0 && (!time || time >= clock));
-          }).sort((a, b) => a.due.localeCompare(b.due) || validTime(a.time).localeCompare(validTime(b.time)))
-            .slice(0, 2).map(record => ({ id: record.id, title: record.title, time: validTime(record.time) || '—',
-              date: dateDistance(record.due) === 0 ? 'Сегодня' : dateDistance(record.due) === 1 ? 'Завтра' : record.due.slice(8) + '.' + record.due.slice(5, 7) })),
-        });
+
       }
     }
     connectRender();
@@ -714,10 +723,14 @@ try {
     window.addEventListener('soroka-shared', openAndroidShare);
     void openAndroidShare();
   }
+  await assistantReady;
   openInitialRoute();
   booting = false;
   root.dataset.glowPlan = 'ready';
+  assistant?.ready();
 } catch (error) {
   root.dataset.glowPlan = 'error';
-  toast(error?.message === 'planner_authorization_required' ? 'Открой Flow в приложении или Telegram' : 'Не удалось загрузить План');
+  if (window.SorokaAndroid?.assistantPopup?.() !== true) {
+    toast(error?.message === 'planner_authorization_required' ? 'Открой Flow в приложении или Telegram' : 'Не удалось загрузить План');
+  }
 }

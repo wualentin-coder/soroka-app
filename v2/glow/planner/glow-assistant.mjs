@@ -4,7 +4,7 @@ import { attachmentLimits, prepareAttachment } from './assistant-attachments.mjs
 import { getModuleHost } from './runtime-session.js';
 import { createPracticeVoice, voiceAvailable } from './glow-practice-voice.mjs';
 
-export function connectGlowAssistant({ upcoming, openRecord, openDocument, openNote, openLegacy }) {
+export function connectGlowAssistant({ upcoming, openRecord, openDocument, openNote, openLegacy, navigationReady = () => true }) {
   const overlay = $('#asx'), heard = $('#asxT'), answer = $('#asxA'), actions = $('#asxC');
   const island = $('#isl'), lock = $('#asLock');
   const form = document.createElement('form');
@@ -23,8 +23,11 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
   style.textContent = answerStyles + ' ' + [
     '.asx.glow-assistant{justify-content:safe center;overflow:auto}',
     'html[data-glow-assistant-popup],html[data-glow-assistant-popup] body,html[data-glow-assistant-popup] #phone{background:transparent}',
-    'html[data-glow-assistant-popup] #phone > :is(.env,.screens,.head,.home,.hbar){visibility:hidden}',
-    'html[data-glow-assistant-popup] .dock .tab{visibility:hidden}',
+    'html[data-glow-release][data-glow-assistant-popup] #phone.assisting{visibility:visible}',
+    'html[data-glow-assistant-popup] .glow-release-status,html[data-glow-assistant-popup] #phone > :is(.status,.env,.screens,.head,.home,.hbar){visibility:hidden}',
+    'html[data-glow-assistant-popup] #phone .dock{background:none;border:0;box-shadow:none;pointer-events:none;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}',
+    'html[data-glow-assistant-popup] .dock::before,html[data-glow-assistant-popup] .dock::after,html[data-glow-assistant-popup] .dock :is(.tab,.glow){visibility:hidden}',
+    'html[data-glow-assistant-popup] #star{pointer-events:auto}',
     '.phone.assisting .glow-assistant.out{opacity:0;pointer-events:none}',
     '.glow-assistant[data-composer] {padding:64px 16px max(118px,calc(max(var(--glow-keyboard,0px),var(--kb,0px)) + 12px));justify-content:safe end;gap:10px}',
     '.glow-assistant [hidden],.glow-assistant :is(.asxt,.asxa,.asxc):empty{display:none!important}',
@@ -107,7 +110,8 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     }, tray);
   }
   const view = () => ({plan:'today', practice:S.prac, savedCat:'saved', pnrun:'piano', enrun:'english', enchat:'english', enread:'english', sprun:'sport'})[curId()] || curId();
-  const active = token => token === generation && AS.state !== 'off' && !document.hidden;
+  const current = token => token === generation && AS.state !== 'off';
+  const active = token => current(token) && !document.hidden;
   const changed = () => {
     ++generation;
     session.cancel();
@@ -119,6 +123,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     island.style.removeProperty('--level');
   };
   const navigate = section => {
+    if (!navigationReady()) return false;
     if (section === 'today') section = 'plan';
     if (['inbox', 'upcoming', 'metrics'].includes(section)) {
       expandFlow(); close(false, false); openLegacy({ assistant: null, page: section, open: null, rid: null }); return true;
@@ -127,8 +132,14 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     expandFlow(); close(false, false); go(section); return true;
   };
   const executor = createAssistantDeviceExecutor({ navigate,
-    openRecord: ref => { expandFlow(); close(false, false); return openRecord(ref); },
-    openDocument: id => { expandFlow(); close(false, false); return openDocument(id); } });
+    openRecord: ref => {
+      if (!navigationReady()) return false;
+      expandFlow(); close(false, false); return openRecord(ref);
+    },
+    openDocument: id => {
+      if (!navigationReady()) return false;
+      expandFlow(); close(false, false); return openDocument(id);
+    } });
   const session = createAssistantSession(() => getModuleHost('assistant'), {
     canAct: () => AS.state !== 'off' && !document.hidden,
     executeAction: executor,
@@ -341,6 +352,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
       islFlash('Ошибка', true);
       asSet('result');
       if (!input.value && text) input.value = text;
+      if (nativePopup()) showComposer(false);
     } finally { if (active(token)) controls(); }
   }
   function submit(text, spoken = false) {
@@ -399,7 +411,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
       const prepared = [...attachments];
       for (const file of chosen.slice(0, attachmentLimits.count)) {
         const item = await prepareAttachment(file);
-        if (!active(token)) return;
+        if (!current(token)) return;
         if (prepared.some(entry => entry.id === item.id)) continue;
         if (prepared.length >= attachmentLimits.count || prepared.reduce((sum, entry) => sum + entry.size, item.size) > attachmentLimits.total) {
           throw Error('До четырёх вложений общим размером 6 МБ');
@@ -407,8 +419,8 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
         prepared.push(item);
       }
       attachments = prepared; renderAttachments();
-    } catch (error) { if (active(token)) heard.textContent = error.message; }
-    finally { if (active(token)) { adding = false; controls(); } }
+    } catch (error) { if (current(token)) heard.textContent = error.message; }
+    finally { if (current(token)) { adding = false; controls(); } }
   };
   function finishVoice() {
     if (capture === 'listening') void voice.finish();
@@ -540,13 +552,15 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
   }, true);
   window.sorokaPlannerSession?.subscribe(() => { if (AS.state !== 'off') close(false); });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) return;
+    if (!document.hidden || native()?.assistantPopupFilePicker?.() === true
+      || native()?.microphonePermissionPending?.() === true && capture === 'requesting') return;
     if (AS.state === 'think' || AS.state === 'speak') close(false);
     else if (recording()) close(false);
   });
   function syncNativePopup() {
     document.documentElement.toggleAttribute('data-glow-assistant-popup', nativePopup());
   }
+  let ready = () => {};
   if (typeof native()?.islandReady === 'function') {
     let lastSignal = '', lastSignalAt = 0;
     function publishNativeSignal() {
@@ -588,10 +602,11 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
         if (action === 'assistant') {
           syncNativePopup();
           open(island);
-          showComposer(false);
           const prompt = typeof text === 'string' ? text.trim().slice(0, 1200) : '';
           if (prompt) void submit(prompt, true);
+          else showComposer(false);
         } else {
+          if (!navigationReady()) return;
           expandFlow();
           close(false, false);
           go(action === 'today' ? 'plan' : action);
@@ -601,7 +616,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
       }
       native()?.islandAck?.(id);
     });
-    const ready = () => {
+    ready = () => {
       syncNativePopup();
       publishNativeSignal();
       native()?.islandReady?.();
@@ -610,5 +625,5 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
     ready();
   }
   window.addEventListener('pagehide', () => close(false, false));
-  return { open() { open(); showComposer(false); } };
+  return { open() { open(); showComposer(false); }, ready };
 }
