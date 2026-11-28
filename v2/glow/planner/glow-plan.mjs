@@ -631,7 +631,8 @@ try {
       document.head.append(sdk);
     });
   }
-  runtime = await openPlannerRuntime({ onState: adopt, snapshotCache: createPlannerOfflineCache(localStorage) });
+  runtime = await openPlannerRuntime({ onState: adopt, snapshotCache: createPlannerOfflineCache(localStorage),
+    isOffline: () => navigator.onLine === false });
   const originalPlan = R.plan;
   R.plan = () => (showingCachedPlan ? '<div class="sylab" role="status" data-plan-offline>Без сети · План для просмотра</div>' : '') + originalPlan();
   const navigate = go;

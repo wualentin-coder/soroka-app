@@ -190,15 +190,25 @@ export function connectGlowPractice({ prototypeSport = false } = {}) {
     }; });
   };
   const previousSwap = swap;
+  function pianoRotation(enabled) {
+    try { window.SorokaNative?.pianoRotation?.(enabled); } catch {}
+  }
   swap = (from, to, direction) => {
     if (from === 'practice') switchMotion?.cancel();
     if (!routes.has(to)) phone.classList.remove('land', 'pn-device-land', 'pnplay');
     if (from !== to) {
+      if (from === 'pnrun' || to === 'pnrun') pianoRotation(to === 'pnrun');
       const kind = routes.get(from) || (from === 'practice' && $('#pracBody', home())?.dataset.practiceBody);
       if (kind) views[kind].leave(from, to);
     }
     return previousSwap(from, to, direction);
   };
+  window.addEventListener('pagehide', () => {
+    if (curId() === 'pnrun') pianoRotation(false);
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted && curId() === 'pnrun') pianoRotation(true);
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) Object.values(views).forEach(view => view.suspend?.());
   });

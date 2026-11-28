@@ -4,7 +4,7 @@ export const plannerSyncLimit = 200;
 
 // The existing authenticated bridge owns credentials and HTTP/native fallback.
 // This owner publishes server snapshots, never a fixture or a locally saved success.
-export function createPlannerRuntime(host, {onState=()=>{}, onPhase=()=>{},outbox=null,canWrite=()=>true,onInvalidate=()=>{},snapshotCache=null}={}) {
+export function createPlannerRuntime(host, {onState=()=>{}, onPhase=()=>{},outbox=null,canWrite=()=>true,onInvalidate=()=>{},snapshotCache=null,isOffline=()=>false}={}) {
   if (!host?.owner || !host?.isCurrent || !host?.request) throw new TypeError('planner_host_required');
   const copy=value=>structuredClone(value);
   let owner=null, generation=0, state=null, phase='idle', flight=null, pending=null, ids={},scope=null;
@@ -20,6 +20,16 @@ export function createPlannerRuntime(host, {onState=()=>{}, onPhase=()=>{},outbo
     snapshotCache?.write(cacheOwner, snapshot);
     usingOfflineSnapshot=false;publish(next);return copy(next);
   }
+  function restoreOfflinePlan(){
+    if(state)return null;
+    const kept=snapshotCache?.read(cacheOwner);
+    if(!kept)return null;
+    const next=prepareSnapshot(kept);
+    usingOfflineSnapshot=true;
+    publish(next);
+    emit('offline');
+    return copy(next);
+  }
   async function load(){
     if(flight||pending)throw Error('planner_write_pending');
     const {token,epoch}=lease();emit('loading');
@@ -28,6 +38,10 @@ export function createPlannerRuntime(host, {onState=()=>{}, onPhase=()=>{},outbo
       const identity=snapshotCache && host.snapshotOwner ? await host.snapshotOwner(token).catch(()=>null) : null;
       if(!current(token,epoch))throw Error('planner_owner_changed');
       cacheOwner=identity;
+      if(isOffline()){
+        const kept=restoreOfflinePlan();
+        if(kept)return kept;
+      }
       if(outbox){const verified=await host.scope(token);if(!current(token,epoch)||!/^[a-f0-9]{64}$/.test(verified||''))throw Error('planner_verified_scope_required');scope=verified;}
       const snapshot=await host.request(token,{action:'planner_snapshot'});if(!current(token,epoch))throw Error('planner_owner_changed');const result=adopt(snapshot);
       const kept=outbox?.read(scope);if(kept){const next=copy(state);applyPlannerChanges(next,kept.changes,{});pending={owner:token,epoch,changes:kept.changes,next,outboxId:kept.id};}
@@ -40,13 +54,8 @@ export function createPlannerRuntime(host, {onState=()=>{}, onPhase=()=>{},outbo
         else {
           const unreachable=error instanceof TypeError && !error.message.startsWith('planner_full_snapshot_required')
             || error?.name==='AbortError' || [502,503,504].includes(error?.status);
-          const kept=unreachable && !state && snapshotCache?.read(cacheOwner);
-          if(kept){
-            const next=prepareSnapshot(kept);
-            usingOfflineSnapshot=true;publish(next);
-            emit('offline');
-            return copy(next);
-          }
+          const kept=unreachable && restoreOfflinePlan();
+          if(kept)return kept;
           emit(state?'offline':'error');
         }
       }

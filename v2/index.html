@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flow · Glow</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="./glow/assets/manrope.css" rel="stylesheet">
 <style>
 /* ── Flow · Glow · v2 ─────────────────────────────────────────────
    Утверждённый стиль (24.11.2026): свечение снизу плашек, жидкое стекло,
@@ -3211,7 +3210,13 @@ input[type=range]{width:100%;accent-color:var(--a3)}
 .phone.calm .star svg,.phone.calm .star .rays{animation:none}
 </style>
 <script src="./glow/glow-android.js?v=643c49c85f"></script>
-<script src="./glow/glow-plan-boot.js?v=1a9f306647"></script>
+<script src="./glow/glow-plan-boot.js?v=fcdbb3b9f6"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js")
+  .then(() => navigator.serviceWorker.ready)
+  .then(registration => { if (navigator.onLine) registration.active?.postMessage("flow-warm-classic"); })
+  .catch(() => {});
+</script>
 </head>
 <body>
 
@@ -7809,6 +7814,5 @@ paint('plan').classList.add('on');setHead('plan',0);requestAnimationFrame(()=>mo
 </script>
 <script src="./glow/glow-navigation.js?v=8b5fd4623e"></script>
 <script src="./glow/glow-appearance.js?v=69fcf675ec"></script>
-<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));</script>
 </body>
 </html>
