@@ -12,7 +12,17 @@
       -webkit-backdrop-filter: none !important;
     }
     .phone .dock {
-      background: linear-gradient(155deg, rgba(47,39,51,.72), rgba(18,15,24,.78) 63%, rgba(29,23,37,.72));
+      background: linear-gradient(155deg, rgba(47,39,51,.74), rgba(18,15,24,.81) 63%, rgba(29,23,37,.76));
+      -webkit-backdrop-filter: blur(15px) saturate(1.08) !important;
+      backdrop-filter: blur(15px) saturate(1.08) !important;
+    }
+    .phone #sySheet:has([data-sport-finish]) {
+      background: color-mix(in srgb, var(--page) 81%, transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(1.12) !important;
+      backdrop-filter: blur(20px) saturate(1.12) !important;
+    }
+    .phone #sySheet:has([data-sport-finish]) :is(.list, .sygo) {
+      background: linear-gradient(148deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
     }
     .phone :is(.grain, .blob, .bgf i, .bge i, .bgc i, .plate-w .halo, .plate-w .fill,
       .crt .scan, .nowl i, .ev.now .chk, .chk.ready, .cat .cg, .star svg, .star .rays),
