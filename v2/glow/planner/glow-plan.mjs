@@ -18,6 +18,7 @@ const practiceVisual = root.dataset.glowPractice === 'prototype';
 const priorityColors = { high: '--a1', low: '--a2', medium: '--a3' };
 const colorPriorities = { '--a1': 'high', '--a2': 'low', '--a3': 'medium' };
 const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value || '') ? value : '';
+const minutesOfDay = time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
 const dateKey = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]
   .map((part, i) => String(part).padStart(i === 0 ? 4 : 2, '0')).join('-');
 
@@ -120,7 +121,7 @@ function tickPlanClock() {
       indexPlan();
       adoptSaved(state, dateDistance, validTime, clock);
       repaintCurrent();
-    } else if (curId() === 'plan') placeNow($('.screen[data-s="plan"]'));
+    } else if (curId() === 'plan') placeNow($('.screen[data-s="plan"]'), true);
   }
   schedulePlanClock();
 }
@@ -297,9 +298,19 @@ function updateAgendaProgress(screen, entries) {
   $('#agP', screen)?.style.setProperty('--p', tasks.length ? completed / tasks.length : 0);
 }
 
+const agendaPositions = agenda => new Map($$('[data-plan-entry]', agenda).map(row => [row, row.getBoundingClientRect().top]));
+
+function animateAgendaShift(positions) {
+  const shifts = [...positions].map(([row, top]) => [row, top - row.getBoundingClientRect().top]);
+  for (const [row, dy] of shifts) {
+    if (Math.abs(dy) > 1) row.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }],
+      { duration: 560, easing: 'cubic-bezier(.19,1,.22,1)' });
+  }
+}
+
 function moveAgendaRows(agenda, nextAgenda) {
   const rows = new Map($$('[data-plan-entry]', agenda).map(row => [row.dataset.planEntry, row]));
-  const positions = new Map([...rows.values()].map(row => [row, row.getBoundingClientRect().top]));
+  const positions = agendaPositions(agenda);
   for (const nextRow of $$('.ev', nextAgenda)) {
     const row = rows.get(nextRow.dataset.planEntry);
     row.dataset.ev = nextRow.dataset.ev;
@@ -308,11 +319,7 @@ function moveAgendaRows(agenda, nextAgenda) {
     agenda.append(row);
   }
   placeNow(agenda.parentElement);
-  for (const row of $$('[data-plan-entry]', agenda)) {
-    const dy = positions.get(row) - row.getBoundingClientRect().top;
-    if (Math.abs(dy) > 1) row.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }],
-      { duration: 560, easing: 'cubic-bezier(.19,1,.22,1)' });
-  }
+  animateAgendaShift(positions);
 }
 
 function updateVisibleAgenda(previous, date) {
@@ -480,30 +487,50 @@ nearHTML = () => {
   const html = demoNearHTML();
   return html.replace('<div class="glass near"></div>', '').replace('<div class="tix"></div>', '');
 };
-nowIndex = (date, list) => {
-  if (!same(date, TODAY)) return -1;
-  let selected = -1;
-  for (const [i, [time]] of list.entries()) {
-    if (!S.done.has(`${iso(date)}-${i}`) && time && time <= clock && (selected < 0 || list[selected][0] <= time)) selected = i;
-  }
-  return selected;
-};
-placeNow = screen => {
+// The live marker owns the highlight as well as its position so the two stay in sync on a clock tick.
+nowIndex = () => -1;
+placeNow = (screen, animate = false) => {
   const agenda = $('#agenda', screen);
   if (!agenda) return;
   const current = $('.nowl', agenda);
-  const rows = $$('.ev:not(.done)', agenda);
+  const rows = $$('.ev', agenda);
   if (!same(S.sel, TODAY) || !rows.length) { current?.remove(); return; }
+  const timed = rows.filter(row => !row.classList.contains('done') && validTime(row.dataset.t));
+  const after = timed.filter(row => row.dataset.t <= clock).at(-1);
+  const before = timed.find(row => row.dataset.t > clock);
+  const lower = after ? minutesOfDay(after.dataset.t) : 0;
+  const upper = before ? minutesOfDay(before.dataset.t) : 1440;
+  const progress = Math.max(0, Math.min(1, (minutesOfDay(clock) - lower) / (upper - lower)));
   const line = current || document.createElement('div');
   if (!current) {
     line.className = 'nowl';
     line.dataset.planEntry = 'now';
-    line.innerHTML = '<i></i><span></span><b></b>';
+    line.innerHTML = '<div class="nowl-marker"><i></i><span></span><b></b></div>';
   }
-  $('span', line).textContent = clock;
-  const after = rows.filter(row => row.dataset.t <= clock).at(-1);
-  if (after && after.nextElementSibling !== line) after.after(line);
-  else if (!after && rows[0].previousElementSibling !== line) rows[0].before(line);
+  const label = $('span', line);
+  if (label.textContent !== clock) label.textContent = clock;
+  line.style.setProperty('--now-progress', String(progress));
+
+  const placed = after ? after.nextElementSibling === line : line.nextElementSibling === rows[0];
+  if (!placed) {
+    const positions = animate && current && !reduce && !matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? agendaPositions(agenda) : null;
+    agenda.insertBefore(line, after ? after.nextElementSibling : rows[0]);
+    if (positions) animateAgendaShift(positions);
+  }
+  const previous = $('.ev.now', agenda);
+  if (previous !== after) {
+    if (previous) {
+      previous.classList.remove('now');
+      const subtitle = $('.ss', previous);
+      subtitle.textContent = subtitle.textContent.replace(/^Сейчас · /, '');
+    }
+    if (after) {
+      after.classList.add('now');
+      const subtitle = $('.ss', after);
+      subtitle.textContent = 'Сейчас · ' + subtitle.textContent;
+    }
+  }
 };
 
 bindBody = screen => {

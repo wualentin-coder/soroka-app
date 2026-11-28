@@ -11,10 +11,27 @@
     : '.screen.on';
   appearance.textContent = `
     ${release ? '.phone .star svg, .phone .star .rays { animation: none; }' : ''}
+    html[data-glow-release] #phone:not(.land) { transition: none; }
+    @media (min-width: 481px) {
+      html[data-glow-release] #phone:not(.land):not(.pn-device-land) { max-height: calc(100dvh - 48px); }
+    }
+    html[data-glow-release] .cal .nav { flex: 0 0 44px; height: 44px; }
+    html[data-glow-release] :is(.screen, #sheet) :is(button.chip, .btn.sm, .seg button) { min-height: 44px; min-width: 44px; }
+    html[data-glow-release] .days.month { --h: 44px; }
+    @media (max-width: 370px) {
+      html[data-glow-release] .cal .top { display: grid; grid-template-columns: 1fr 44px 44px; }
+      html[data-glow-release] .cal .top .seg { grid-column: 1 / -1; width: auto; margin-left: 0; }
+    }
     #agc > .hd { padding-bottom: 0; }
     #agenda > .rail + .ev { padding-top: 8px; }
     #agc:has(> #agenda > .nowl:last-child) { padding-bottom: 16px; }
     #agenda > .nowl:last-child b { right: 16px; }
+    #agenda > .nowl:has(.nowl-marker) { --now-travel: 12px; height: calc(14px + var(--now-travel)); }
+    .nowl-marker {
+      position: absolute; inset: 0 0 auto; height: 14px;
+      transform: translateY(calc(var(--now-progress, 0) * var(--now-travel)));
+      transition-property: none;
+    }
     #agenda .ev[data-overdue]:not(.done) .chk {
       box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--a2) 68%, var(--text)),
         0 0 15px color-mix(in srgb, var(--a2) 68%, transparent);
