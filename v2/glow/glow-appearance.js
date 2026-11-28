@@ -11,17 +11,6 @@
     : '.screen.on';
   appearance.textContent = `
     ${release ? '.phone .star svg, .phone .star .rays { animation: none; }' : ''}
-    html[data-glow-release] #phone:not(.land) { transition: none; }
-    @media (min-width: 481px) {
-      html[data-glow-release] #phone:not(.land):not(.pn-device-land) { max-height: calc(100dvh - 48px); }
-    }
-    html[data-glow-release] .cal .nav { flex: 0 0 44px; height: 44px; }
-    html[data-glow-release] :is(.screen, #sheet) :is(button.chip, .btn.sm, .seg button) { min-height: 44px; min-width: 44px; }
-    html[data-glow-release] .days.month { --h: 44px; }
-    @media (max-width: 370px) {
-      html[data-glow-release] .cal .top { display: grid; grid-template-columns: 1fr 44px 44px; }
-      html[data-glow-release] .cal .top .seg { grid-column: 1 / -1; width: auto; margin-left: 0; }
-    }
     #agc > .hd { padding-bottom: 0; }
     #agenda > .rail + .ev { padding-top: 8px; }
     #agc:has(> #agenda > .nowl:last-child) { padding-bottom: 16px; }
