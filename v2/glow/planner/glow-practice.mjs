@@ -69,7 +69,7 @@ export function connectGlowPractice({ prototypeSport = false } = {}) {
       --warn: var(--a2); --warn-soft: color-mix(in srgb, var(--a2) 16%, transparent); --ease-out: var(--ease);
     }
     .glow-practice-workspace {
-      --fu-text: var(--text); --fu-muted: var(--muted); --fu-accent: var(--a4);
+      --fu-text: var(--text); --fu-muted: var(--muted); --fu-accent: var(--a4); --fu-on: var(--ink);
       --fu-danger: var(--a2); --fu-line: color-mix(in srgb, var(--text) 17%, transparent);
       --fu-bg: color-mix(in srgb, var(--text) 6%, transparent); --fu-surface: var(--plate);
       --fu-font: Manrope, system-ui, sans-serif; --fu-display: var(--fu-font);

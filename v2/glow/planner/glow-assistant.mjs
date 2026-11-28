@@ -125,7 +125,7 @@ export function connectGlowAssistant({ upcoming, openRecord, openDocument, openN
   const navigate = section => {
     if (!navigationReady()) return false;
     if (section === 'today') section = 'plan';
-    if (['inbox', 'upcoming', 'metrics'].includes(section)) {
+    if (['inbox', 'upcoming'].includes(section)) {
       expandFlow(); close(false, false); openLegacy({ assistant: null, page: section, open: null, rid: null }); return true;
     }
     if (!['sport', 'english', 'piano', ...TABS, ...Object.keys(SUBS)].includes(section)) return false;

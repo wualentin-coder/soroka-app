@@ -5,6 +5,7 @@ import { adoptSaved, openSavedRecord } from './glow-saved.mjs';
 import { openSavedNote } from './glow-notes.mjs';
 import { connectNoteWrites } from './glow-notes.mjs';
 import { connectLibrary, libraryScreens } from './glow-library-store.mjs';
+import { connectMetrics } from './glow-metrics.mjs';
 import { adoptFinance, connectFinance } from './glow-finance.mjs';
 import { connectRender } from './glow-render.mjs';
 import { connectMoreRecords } from './glow-more-records.mjs';
@@ -23,6 +24,7 @@ const dateKey = date => [date.getFullYear(), date.getMonth() + 1, date.getDate()
   .map((part, i) => String(part).padStart(i === 0 ? 4 : 2, '0')).join('-');
 
 let state = null;
+let openMetric;
 let runtime = null;
 let assistant = null;
 let busy = false;
@@ -143,7 +145,7 @@ function adopt(snapshot) {
     clearPlanTicket();
     if (previous && sheetA.classList.contains('on')) closeAdd();
     if (previous) root.dataset.glowPlan = 'error';
-    for (const id of ['plan', 'tasks', 'finance', 'projects', 'project', 'archive', ...libraryScreens]) $('.screen[data-s="' + id + '"]')?.replaceChildren();
+    for (const id of ['plan', 'tasks', 'finance', 'projects', 'project', 'metrics', 'archive', ...libraryScreens]) $('.screen[data-s="' + id + '"]')?.replaceChildren();
     return;
   }
 
@@ -160,7 +162,7 @@ function adopt(snapshot) {
 
 function repaintCurrent() {
   const id = curId();
-  if (!['plan', 'tasks', 'more', 'finance', 'projects', 'project', 'archive', 'settings', 'setp', 'saved', 'savedCat'].includes(id)) return;
+  if (!['plan', 'tasks', 'more', 'finance', 'projects', 'project', 'metrics', 'archive', 'settings', 'setp', 'saved', 'savedCat'].includes(id)) return;
   const screen = document.querySelector(`.screen[data-s="${id}"]`);
   const scroll = screen.scrollTop;
   paint(id);
@@ -230,7 +232,24 @@ function openRef(ref) {
     openEntryForm(kind, record, 'edit');
     return true;
   }
-  const legacyPages = { goal:'goals', debt:'debts', payment:'payments', budget:'budgets', tx:'money', metric:'metrics', project:'projects' };
+  if (kind === 'metric') { openMetric(ref); return true; }
+  if (kind === 'project') {
+    const project = state.projects.find(row => row.id === ref);
+    if (project) { S.proj = encodeURIComponent(project.id); go('project'); }
+    else { go('projects'); toast('Проект недоступен'); }
+    return true;
+  }
+  if (kind === 'goal') {
+    const goal = state.finance.goals.find(row => row.id === ref && row.target > 0);
+    S.ft = 'goals';
+    S.fgo = goal?.id || null;
+    go('finance');
+    if (goal) $('.screen[data-s="finance"] .fng.open')?.scrollIntoView({ block: 'center' });
+    else toast('Цель недоступна');
+    return true;
+  }
+  // Individual finance links still need the full record editor.
+  const legacyPages = { debt:'debts', payment:'payments', budget:'budgets', tx:'money' };
   if (!Object.hasOwn(legacyPages, kind)) return false;
   openLegacy({ page: legacyPages[kind], rid: id, open: null });
   return true;
@@ -264,7 +283,15 @@ function openInitialRoute() {
   }
   if (page === 'events' && rid && openRef('event:' + rid)) return;
   if (page === 'tasks' && rid && openRef('task:' + rid)) return;
-  if (['notes','metrics','upcoming','inbox','overview','events','debts','payments','money','goals','budgets'].includes(page)) return openLegacy();
+  const financePages = { payments: ['bills', 'payment'], money: ['ops', 'tx'], goals: ['goals', 'goal'], debts: ['debts', 'debt'] };
+  if (Object.hasOwn(financePages, page)) {
+    const [section, kind] = financePages[page];
+    if (rid && openRef(kind + ':' + rid)) return;
+    S.ft = section; go('finance'); return;
+  }
+  if (page === 'metrics') { openMetric(/^[1-9]\d{0,18}$/.test(rid || '') ? 'metric:' + rid : null); return; }
+  if (page === 'projects' && rid && openRef('project:' + rid)) return;
+  if (['upcoming','inbox','overview','events','budgets'].includes(page)) return openLegacy();
   if (['plan','saved','more','tasks','finance','render','projects','archive','settings','pc','server','vpn','docs','vault','sport','english','piano'].includes(page)) {
     go(page); return;
   }
@@ -722,6 +749,7 @@ try {
   connectNoteWrites(write, id => runtime.resolveId(id));
   connectLibrary(write, id => runtime.resolveId(id));
   connectFinance(write, (ids, apply) => runtime.incomeSplit(ids, apply), id => runtime.resolveId(id), () => runtime.hasPendingFinance);
+  openMetric = connectMetrics(() => state, write, () => dateKey(TODAY));
   connectMoreRecords({ snapshot: () => state, write, resolve: id => runtime.resolveId(id),
     editEntry: (kind, record) => openEntryForm(kind, record, 'edit'),
     addProjectTask: name => { if (name) { openAdd(); projectForAdd = name; } } });
@@ -734,6 +762,8 @@ try {
   R.more = () => {
     const template = document.createElement('template');
     template.innerHTML = originalMore();
+    const projects = template.content.querySelector('[data-go="projects"]');
+    projects?.insertAdjacentHTML('afterend', goRows([['metrics', 'list', 'Показатели', 'Личные измерения']]));
     const subtitles = {
       projects: state ? state.projects.filter(project => project.status === 'Активен').length + ' активных' : 'Проекты Flow',
       docs: 'Под замком',

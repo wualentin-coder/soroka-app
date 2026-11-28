@@ -18,7 +18,7 @@ const trashCollections = { task: 'tasks', event: 'events', note: 'notes', projec
   'finance:goal': 'finance.goals', 'finance:payment': 'finance.payments', 'finance:account': 'finance.accounts',
   'finance:budget': 'finance.budgets' };
 const trashColumn = kind => trashCollections[kind] || (kind.startsWith('saved:') ? 'saved.' + kind.slice(6) : '');
-const sectionNames = { finance:'Финансы', tasks:'Все дела', projects:'Проекты', docs:'Документы', vault:'Пароли',
+const sectionNames = { finance:'Финансы', tasks:'Все дела', projects:'Проекты', metrics:'Показатели', docs:'Документы', vault:'Пароли',
   archive:'Архив и корзина', render:'Рендер', pc:'Компьютер', server:'Сервер', vpn:'VPN', settings:'Настройки' };
 
 export function connectMoreRecords({ snapshot, write, resolve, editEntry, addProjectTask }) {

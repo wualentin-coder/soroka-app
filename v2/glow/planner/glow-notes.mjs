@@ -113,6 +113,9 @@ export function openSavedNote(id, description = '') {
   const row = noteRow(record);
   if (!existing) NOTES.push({ ...row, unsaved: true });
   const opened = { record, topic: record.topic || '', pending: false, isNew: !existing };
+  if (curId() === 'savedCat' && S.cat === 'notes') {
+    opened.list = { top: $('.screen[data-s="savedCat"]').scrollTop, query: S.nq, folder: filter };
+  }
   draft = opened;
   S.cat = 'notes';
   S.note = row.id;
@@ -234,6 +237,9 @@ async function leaveNote(navigate) {
   if (blank >= 0) NOTES.splice(blank, 1);
   draft = null;
   navigate();
+  if (opened.list && curId() === 'savedCat' && S.cat === 'notes' && opened.list.query === S.nq && opened.list.folder === filter) {
+    $('.screen[data-s="savedCat"]').scrollTop = opened.list.top;
+  }
 }
 
 go = id => {
@@ -250,7 +256,7 @@ $('#hAct').onclick = () => {
 
 document.addEventListener('keydown', event => {
   if (!draft || curId() !== 'note') return;
-  if (event.key === 'Escape') { event.preventDefault(); pop(); }
+  if (event.key === 'Escape' && !event.defaultPrevented) { event.preventDefault(); pop(); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
     event.preventDefault();
     void saveDraft(draft);

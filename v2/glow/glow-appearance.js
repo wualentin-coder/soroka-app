@@ -11,6 +11,26 @@
     : '.screen.on';
   appearance.textContent = `
     ${release ? '.phone .star svg, .phone .star .rays { animation: none; }' : ''}
+    html[data-glow-release] #phone:not(.land) { transition: none; }
+    @media (min-width: 481px) {
+      html[data-glow-release] #phone:not(.land):not(.pn-device-land) { max-height: calc(100dvh - 48px); }
+    }
+    html[data-glow-release] .cal .nav { flex: 0 0 44px; width: 44px; height: 44px; }
+    html[data-glow-release] :is(.screen, #sheet) :is(button.chip, .btn.sm, .seg button, .kseg button, .ib.add, .spx, .sptsrc) { min-height: 44px; min-width: 44px; }
+    html[data-glow-release] .screen :is(.st-i, .st-add, .st-in, .search input) { min-height: 44px; }
+    html[data-glow-release] .screen .sbox::before { inset: -15px; }
+    html[data-glow-release] .days.month { --h: 44px; }
+    @media (min-width: 320px) and (max-width: 375px) {
+      html[data-glow-release] :is(.cal, .spweek) { margin-inline: -12px; padding-inline: 2px; }
+      html[data-glow-release] #days { margin-inline: 0; padding-inline: 0; }
+      html[data-glow-release] :is(.cal .days, .cal .wk, .spweek) { column-gap: 0; }
+      html[data-glow-release] .cal .westrip { left: calc(500% / 7); }
+      html[data-glow-release] .cal .top { padding-inline: 8px; }
+    }
+    @media (max-width: 370px) {
+      html[data-glow-release] .cal .top { display: grid; grid-template-columns: 1fr 44px 44px; }
+      html[data-glow-release] .cal .top .seg { grid-column: 1 / -1; width: auto; margin-left: 0; }
+    }
     #agc > .hd { padding-bottom: 0; }
     #agenda > .rail + .ev { padding-top: 8px; }
     #agc:has(> #agenda > .nowl:last-child) { padding-bottom: 16px; }

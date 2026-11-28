@@ -11,9 +11,9 @@
   const practiceRoute = id => practiceVisual && (id === 'practice' || SUBS[id] === 'practice');
   let prototypeTransition = false;
 
-  const screens = [...phone.querySelectorAll('main > .screen')];
+  const screens = () => phone.querySelectorAll('main > .screen');
   function focusScreen(id) {
-    for (const screen of screens) screen.inert = screen.dataset.s !== id;
+    for (const screen of screens()) screen.inert = screen.dataset.s !== id;
   }
   focusScreen(curId());
 
@@ -130,7 +130,7 @@
       for (const item of to.querySelectorAll('.in')) item.classList.add('glow-route-entry');
       to.scrollTop = 0;
       setHead(id, direction);
-      for (const screen of screens) if (screen !== to) screen.classList.remove('on');
+      for (const screen of screens()) if (screen !== to) screen.classList.remove('on');
       to.classList.add('on');
       if (from !== to) slideAndroid(to, direction);
       return;
