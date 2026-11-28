@@ -86,7 +86,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     return Number.isFinite(value) && value > 0 ? "blocked" : "empty";
   }
   let connectedHost = null;
-  const nativeApproach = () => Boolean(connectedHost && /\bFlowNativeSet\/1\b/.test(navigator.userAgent)
+  const nativeApproach = () => Boolean(connectedHost && /\bFlowNativeSet\/2\b/.test(navigator.userAgent)
     && location.origin === "https://wualentin-coder.github.io");
   const sportState = () => connectedHost ? connectedHost.state() : typeof spState === "function" ? spState()?.state : null;
   const request = async (op, args = {}, host = connectedHost) => {
@@ -399,8 +399,11 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       window.addEventListener("offline", () => this.refresh(), { signal });
       window.addEventListener("resize", () => { if (this.modal?.open) this.syncInline(); }, { signal });
       window.addEventListener("orientationchange", () => { if (this.modal?.open) this.syncInline(); }, { signal });
+      window.addEventListener("flow:nativeinsets", () => {
+        if (this.nativeSetRequested) requestAnimationFrame(() => this.syncNativePlacement());
+      }, { signal });
       document.addEventListener("scroll", () => {
-        if (!this.modal?.open || !this.inline.shown || this.inline.scrollFrame) return;
+        if (!this.modal?.open || !(this.inline.shown || this.nativeSetOpening) || this.inline.scrollFrame) return;
         this.inline.scrollFrame = requestAnimationFrame(() => { this.inline.scrollFrame = 0; this.syncInline(); });
       }, { signal, capture: true, passive: true });
       window.addEventListener("pageshow", () => this.syncSoon(), { signal });
@@ -408,11 +411,9 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         if (this.nativeSetOpening) void this.resumeAfterNativeSet();
       }, { signal });
       document.addEventListener("visibilitychange", () => {
-        if (this.nativeSetOpening) {
-          if (!document.hidden) void this.resumeAfterNativeSet();
-          return;
-        }
+        if (this.nativeSetOpening) return;
         if (!document.hidden) { this.tick(); this.syncSoon(); }
+        else if (this.browserPreview) this.stopBrowserCamera();
         else this.modal?.querySelector("video")?.pause();
       }, { signal });
     }
@@ -613,8 +614,14 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     close() {
+      if (this.nativeSetOpening) {
+        this.nativeSetOpening = this.nativeSetRequested = false;
+        this.nativeSetAfterClose = null;
+        window.SorokaAndroid?.coachEyesInlineClose?.();
+      }
       setSportRotation(false);
       this.inlineClose();
+      this.stopBrowserCamera(false);
       this.closeCameraDialog();
       if (this.modal) this.presentation?.unmount();
       this.modal?.close();
@@ -1572,15 +1579,32 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       this.nativeSetOpening = true;
       try {
         await navigator.locks.request(`${this.storage.key}:sync`, () => this.send());
+        if (!this.nativeSetOpening) return;
         const synced = this.read();
         if (!synced || synced.id !== active.id || synced.start || synced.events.length || synced.syncError ||
             keyOf(view(synced).projection.open_set) !== keyOf(slot)) throw error("network");
+        this.render(true);
+        const rect = this.cameraRect(this.modal?.querySelector("[data-native-sport-camera]"));
+        if (!rect) throw error("network");
         const page = new URL("./sport/approach", location.href);
-        page.search = new URLSearchParams({ session: synced.id, exercise: slot.plan_exercise_id, set: slot.set_index });
+        this.nativeSetRectangle = JSON.stringify(rect);
+        page.search = new URLSearchParams({
+          session: synced.id, exercise: slot.plan_exercise_id, set: slot.set_index, rect: this.nativeSetRectangle,
+        });
+        this.nativeSetRequested = true;
         location.assign(page);
       } catch (reason) {
-        this.nativeSetOpening = false;
+        this.nativeSetOpening = this.nativeSetRequested = false;
         throw reason;
+      }
+    }
+
+    syncNativePlacement() {
+      if (!this.nativeSetRequested) return;
+      const rect = this.cameraRect(this.modal?.querySelector("[data-native-sport-camera]"));
+      const next = rect ? JSON.stringify(rect) : "";
+      if (next !== this.nativeSetRectangle && window.SorokaAndroid?.coachEyesInlineMove?.(next)) {
+        this.nativeSetRectangle = next;
       }
     }
 
@@ -1592,7 +1616,11 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         if (record) await this.reconcile(record);
       } finally {
         this.nativeSetResuming = false;
-        this.nativeSetOpening = false;
+        this.nativeSetOpening = this.nativeSetRequested = false;
+        const action = this.nativeSetAfterClose;
+        this.nativeSetAfterClose = null;
+        this.render(true);
+        if (action && this.modal?.open) void this.act(action);
         this.tick();
         this.syncSoon();
       }
@@ -1610,7 +1638,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       const coachKey = coachEyesKeyFor(exercise);
       const bridge = window.SorokaAndroid?.openCoachEyes;
       if (connectedHost && this.cameraMode(exercise) === 'preview') {
-        this.browserCamera(exercise);
+        void this.browserCamera();
         return;
       }
       if (!coachKey) {
@@ -1625,35 +1653,45 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         <p class="sr-muted">Мост к Coach Eyes в этой сборке недоступен — откройте приложение вручную.</p>`);
     }
 
-    browserCamera(exercise) {
-      const dialog = this.cameraBox("Камера", `<p>${esc(exercise?.name)}</p>
-        <div class="sr-inline-video glow-camera-preview"><video muted autoplay playsinline aria-label="Предпросмотр камеры"></video></div>
-        <p role="status" data-camera-status></p><button type="button" class="primary-button" data-camera-enable>Включить камеру</button>`);
-      const video = dialog.querySelector("video"), status = dialog.querySelector("[data-camera-status]");
-      const start = dialog.querySelector("[data-camera-enable]"), lifecycle = new AbortController();
-      let stream;
-      dialog.addEventListener("close", () => {
-        lifecycle.abort();
-        stream?.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-      }, { once: true });
-      document.addEventListener("visibilitychange", () => { if (document.hidden && dialog.open) dialog.close(); }, { signal: lifecycle.signal });
-      start.onclick = async () => {
-        start.disabled = true;
-        try {
-          const next = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-          if (!dialog.open || !this.owner.current()) { next.getTracks().forEach(track => track.stop()); return; }
-          stream = next;
-          video.srcObject = stream;
-          await video.play();
-          if (dialog.open) status.textContent = "Предпросмотр камеры · результат вводится после подхода";
-        } catch (failure) {
-          stream?.getTracks().forEach(track => track.stop());
-          video.srcObject = null;
-          if (dialog.open) status.textContent = failure.name === "NotAllowedError" ? "Доступ к камере отклонён" : "Камера недоступна";
-          start.disabled = false;
+    async browserCamera() {
+      const key = keyOf(this.model?.projection.open_set);
+      if (!key || this.browserPreview) return;
+      const preview = { key, stream: null, message: "Открываем камеру" };
+      this.browserPreview = preview;
+      this.render(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        if (this.browserPreview !== preview || !this.owner.current()) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
         }
-      };
+        preview.stream = stream;
+        preview.message = "";
+      } catch (failure) {
+        if (this.browserPreview !== preview) return;
+        preview.message = failure.name === "NotAllowedError" ? "Доступ к камере отклонён" : "Камера недоступна";
+      }
+      this.render(true);
+    }
+
+    stopBrowserCamera(redraw = true) {
+      this.browserPreview?.stream?.getTracks().forEach(track => track.stop());
+      this.browserPreview = null;
+      if (redraw) this.render(true);
+    }
+
+    attachBrowserPreview() {
+      const preview = this.browserPreview;
+      if (!preview) return;
+      if (this.model?.phase !== "work" || keyOf(this.model.projection.open_set) !== preview.key) {
+        this.stopBrowserCamera(false);
+        return;
+      }
+      const video = this.modal?.querySelector("[data-sr-browser-camera]");
+      if (video && preview.stream && video.srcObject !== preview.stream) {
+        video.srcObject = preview.stream;
+        video.play().catch(() => {});
+      }
     }
 
     inlineBridge() {
@@ -1720,6 +1758,17 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     inlinePanel(model) {
+      if (this.nativeSetOpening && nativeApproach()) {
+        return '<div class="sr-native-sport-host" data-native-sport-camera aria-label="Глаз тренера"></div>';
+      }
+      if (this.browserPreview && this.browserPreview.key === keyOf(model.projection.open_set)) {
+        const { stream, message } = this.browserPreview;
+        return `<div class="sr-browser-sport-host">
+          ${stream ? '<video data-sr-browser-camera muted autoplay playsinline aria-label="Предпросмотр камеры"></video>'
+            : `<p role="status">${esc(message)}</p>`}
+          ${control("browser-camera-stop", stream ? "Выключить камеру" : "Закрыть", "btn glass")}
+        </div>`;
+      }
       if (!this.inlineEligible(model) || this.inline.hidden) return "";
       const exercise = model.current.exercise;
       const key = coachEyesKeyFor(exercise);
@@ -1818,15 +1867,18 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
       }
     }
 
-    inlineShow(model) {
-      this.inlineConfigure(true);
-      const target = this.modal?.querySelector("[data-sr-inline-video]");
-      if (!target) return;
+    cameraRect(target) {
+      if (!target || !this.modal) return null;
       const scroller = target.closest(".sr-body") || this.modal;
       const outer = this.modal.getBoundingClientRect(), inner = scroller.getBoundingClientRect();
       const top = Math.max(outer.top, inner.top), left = Math.max(outer.left, inner.left);
       const area = { left, top, width: Math.min(outer.right, inner.right) - left, height: Math.min(outer.bottom, inner.bottom) - top };
-      const rect = window.SportInlineCore?.rect(target.getBoundingClientRect(), area);
+      return window.SportInlineCore?.rect(target.getBoundingClientRect(), area);
+    }
+
+    inlineShow(model) {
+      this.inlineConfigure(true);
+      const rect = this.cameraRect(this.modal?.querySelector("[data-sr-inline-video]"));
       if (!rect) return;
       const key = coachEyesKeyFor(model.current?.exercise);
       const sportId = model.current.exercise.exercise_id || "";
@@ -1872,6 +1924,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
     }
 
     syncInline() {
+      if (this.nativeSetOpening) { this.syncNativePlacement(); return; }
       const model = this.model;
       if (!model || this.conflict) { this.hideInline(); return; }
       const key = coachEyesKeyFor(model.current?.exercise);
@@ -2468,6 +2521,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
         this.signature = signature;
         this.fillFigures();
         this.presentation?.rendered?.(this.modal);
+        this.attachBrowserPreview();
         if (model?.phase === "work" && this.modal.querySelector(".sr-media")) this.fillVideo(model.current.exercise);
         const focus = focusId ? this.modal.querySelector(`#${CSS.escape(focusId)}`) : focusAction
           ? this.modal.querySelector(`[data-sr="${CSS.escape(focusAction)}"]`) : null;
@@ -2539,6 +2593,11 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
 
     async act(action, data = {}) {
       if (action === "dismiss") { this.close(); return; }
+      if (this.nativeSetOpening && action === "close-menu" && this.nativeSetRequested) {
+        this.nativeSetAfterClose = action;
+        window.SorokaAndroid?.coachEyesInlineClose?.();
+        return;
+      }
       if (this.nativeSetOpening || this.busy || this.flashing) return;
       const model = this.model;
       this.message = "";
@@ -2548,6 +2607,7 @@ const coachEyesKeyFor = exercise => coachEyesSportKeys[String(exercise?.exercise
           else if (this.cameraMode(model?.current?.exercise) === "analysis") await this.openNativeSet();
           return;
         }
+        if (action === "browser-camera-stop") { this.stopBrowserCamera(); return; }
         if (action === "inline-expand") {
           const api = this.inlineBridge();
           if (typeof api?.coachEyesInlineExpand === "function") {

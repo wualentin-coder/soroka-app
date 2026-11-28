@@ -66,7 +66,12 @@
 .glow-sport2-run .sr-foot .btn { flex: 1; }
 .glow-sport2-run .sr-panel { border-radius: 28px 28px 0 0; background: color-mix(in srgb, var(--plate) 87%, var(--a1)); }
 
-.glow-workout .spcam { min-height: 160px; }
+.glow-workout .spcam,
+.glow-sport2-run .spcam:has(> :is(.sr-native-sport-host, .sr-browser-sport-host)) { min-height: 160px; }
+.glow-sport2-run .spcam > :is(.sr-native-sport-host, .sr-browser-sport-host) { position: absolute; inset: 0; }
+.glow-sport2-run .spcam > .sr-browser-sport-host { display: grid; place-items: center; }
+.sr-browser-sport-host video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform: scaleX(-1); }
+.sr-browser-sport-host button { position: absolute; right: 8px; bottom: 8px; }
 .glow-workout .spcam .sr-inline { display: flex; flex-direction: column; height: 100%; padding: 0; border: 0; background: transparent; }
 .glow-workout .spcam .sr-inline-video { flex: 1; min-height: 115px; max-height: none; aspect-ratio: auto; margin: 0; border: 0; border-radius: 24px; }
 .glow-workout .spcam .sr-inline-bar { gap: 6px; margin: 6px 10px; }
