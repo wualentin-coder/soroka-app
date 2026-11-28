@@ -1,5 +1,5 @@
 import { getModuleHost } from './runtime-session.js';
-import { confirmMore, copyMore, moreEmpty, moreForm, moreInput, moreList, moreOptions, moreRow, repaintMore } from './glow-more-ui.mjs';
+import { confirmMore, copyMore, moreEmpty, moreForm, moreInput, moreList, moreRow, repaintMore } from './glow-more-ui.mjs';
 
 const starts = [['today', 'План'], ['saved', 'Сохранённое'], ['finance', 'Финансы'], ['more', 'Ещё']];
 const densities = [['compact', 'Компактно'], ['comfortable', 'Обычно'], ['spacious', 'Просторно']];
@@ -9,12 +9,13 @@ const times = [['digest', 'Утренняя сводка', '08:30'], ['digestEve
   ['quietFrom', 'Тихие часы · с', '23:00'], ['quietTo', 'Тихие часы · до', '08:00']];
 const appearanceGroups = ['pal', 'bg', 'crt', 'mb', 'motion', 'snd'];
 const button = (action, text) => `<button class="btn sm glass" data-more-setting-action="${action}">${text}</button>`;
-const entry = (title, input, detail = '') => `<label class="syrow more-setting"><span><b>${esc2(title)}</b>
-  ${detail ? `<small>${esc2(detail)}</small>` : ''}</span>${input}</label>`;
-const select = (title, key, items, value, attr = 'data-more-setting') => entry(title,
-  `<select class="more-setting-control" ${attr}="${key}">${moreOptions(items, value)}</select>`);
-const onOff = (title, key, value, attr = 'data-more-setting') => entry(title,
-  `<input type="checkbox" class="more-setting-control" ${attr}="${esc2(key)}"${value ? ' checked' : ''}>`);
+const choice = (title, key, items, value) => stLine(esc2(title),
+  sseg(key, items.map(([id, name]) => [String(id), esc2(name)]), String(value))
+    .replace('data-sseg=', `role="group" aria-label="${esc2(title)}" data-sseg=`));
+const switchControl = (title, key, value, attr) => `<span class="glow-setting-switch"><input type="checkbox" role="switch"
+  aria-label="${esc2(title)}" ${attr}="${esc2(key)}"${value ? ' checked' : ''}><i aria-hidden="true"></i></span>`;
+const onOff = (title, key, value, attr = 'data-more-setting') =>
+  `<label class="syrow in"><span>${esc2(title)}</span>${switchControl(title, key, value, attr)}</label>`;
 const statusRow = (icon, title, detail, action = '') => stRow(icon, esc2(title), esc2(detail), action || '<span></span>');
 const card = (icon, title, detail, action) => moreList(statusRow(icon, title, detail, action));
 const phone = () => {
@@ -42,8 +43,10 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
   function appearance() {
     const template = document.createElement('template');
     template.innerHTML = lookOriginal();
-    $('[data-sseg="dense"]', template.content)?.closest('.syrow')?.remove();
-    $('.list', template.content)?.insertAdjacentHTML('beforeend', select('Плотность', 'density', densities, current().density || 'comfortable'));
+    const density = $('[data-sseg="dense"]', template.content)?.closest('.syrow');
+    density?.insertAdjacentHTML('afterend', choice('Плотность', 'density', densities, current().density || 'comfortable'));
+    density?.remove();
+    $('[data-stsw="snd"]', template.content)?.setAttribute('aria-label', 'Звук и вибрация');
     return template.innerHTML;
   }
 
@@ -68,38 +71,50 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
   function phoneSettings() {
     const p = phone();
     if (!p) return moreEmpty('Настройки телефона открываются в Flow на Android');
-    const toggle = (title, key, value) => onOff(title, key, value, 'data-glow-phone');
+    const toggle = (icon, title, key, detail = '') =>
+      statusRow(icon, title, detail, switchControl(title, key, p[key], 'data-glow-phone'));
     const act = (id, title) => `<button class="btn sm glass" data-glow-phone-action="${esc2(id)}">${title}</button>`;
     const bankList = (items, extra) => (items || []).filter(item => item.on).map(item => item.name).concat(extra || []).join(', ') || 'Ничего не выбрано';
     const checkPermission = (key, active, text) => p[key] === false && active ? '<div class="more-secure-actions">' + act(key, text) + '</div>' : '';
-    return card('phone', 'Flow' + (p.version ? ' ' + p.version : ''), p.linked ? 'Подключён к боту' : 'Нужен код из бота', act('native', 'Подключение'))
-      + card('shield', 'Работа в фоне', p.awake ? 'Без ограничений' : 'Телефон может приостанавливать Flow', p.awake ? '' : act('battery', 'Разрешить'))
-      + '<div class="fsl">Банки</div>' + moreList(toggle('Уведомления банков', 'notify', p.notify)
+    return moreList(statusRow('phone', 'Flow' + (p.version ? ' ' + p.version : ''),
+      p.linked ? 'Подключён к боту' : 'Нужен код из бота', act('native', 'Подключение'))
+      + statusRow('shield', 'Работа в фоне', p.awake ? 'Без ограничений' : 'Телефон может приостанавливать Flow',
+        p.awake ? stOk('Разрешена') : act('battery', 'Разрешить')))
+      + '<div class="sylab">Банки</div>' + moreList(toggle('wallet', 'Уведомления банков', 'notify')
         + checkPermission('notifyAccess', p.notify, 'Разрешить уведомления банков')
         + statusRow('wallet', 'Приложения банков', bankList(p.apps, (p.customApps || []).map(row => row.label)), button('bank-app', 'Изменить'))
         + statusRow('fn', 'SMS банков', bankList(p.smsPresets, p.customSms), button('bank-sms', 'Изменить'))
         + checkPermission('smsPermission', true, 'Разрешить чтение SMS'))
-      + '<div class="fsl">На экране</div>' + moreList(toggle('Уведомления бота', 'feed', p.feed)
-        + toggle('Сообщать, что записал', 'results', p.results)
+      + '<div class="sylab">На экране</div>' + moreList(toggle('bell', 'Уведомления бота', 'feed')
+        + toggle('check', 'Сообщать, что записал', 'results')
         + checkPermission('notifyPermission', p.feed || p.results || p.renderLive || p.islandEnabled, 'Разрешить уведомления')
-        + (p.islandAvailable ? toggle('Островок поверх приложений', 'island', p.islandEnabled)
+        + (p.islandAvailable ? statusRow('screen', 'Островок поверх приложений', '', switchControl('Островок поверх приложений', 'island', p.islandEnabled, 'data-glow-phone'))
           + (p.islandEnabled && !p.islandPermission ? '<div class="more-secure-actions">' + act('overlay', 'Разрешить поверх окон') + '</div>' : '') : '')
-        + (p.renderLiveAvailable ? toggle('Рендер в Now Bar', 'renderLive', p.renderLive)
+        + (p.renderLiveAvailable ? toggle('film', 'Рендер в Now Bar', 'renderLive', 'Прогресс на экране блокировки')
           + (p.renderLive ? '<div class="more-secure-actions">' + act('renderSettings', 'Живые уведомления') + '</div>' : '') : '')
-        + toggle('Карты у края экрана', 'edge', p.edge)
+        + toggle('card', 'Карты у края экрана', 'edge')
         + (p.edgeFix ? '<div class="more-secure-actions">' + act(p.edgeFix, 'Выдать разрешение') + '</div>' : ''))
       + card('retry', 'Обновление', p.update?.text || 'Проверить версию', p.update?.busy ? '' : act(p.update?.found ? 'updateInstall' : 'updateCheck', p.update?.found ? 'Обновить' : 'Проверить'))
       + card('list', 'Журнал телефона', (p.log || []).length + ' записей', button('phone-log', 'Открыть'));
   }
+  function timeControl(key, title, fallback) {
+    const value = current()[key];
+    return `<input type="time" class="more-setting-control glow-setting-time" aria-label="${esc2(title)}"
+      data-more-setting="${key}" value="${safeTime(value) ? value : fallback}">`;
+  }
   const pages = {
     look: appearance,
-    home: () => moreList(select('Открывать первым', 'startPage', starts, current().startPage || 'today')
-      + onOff('Ближайшие события и билеты', 'next', !current().overviewHidden?.includes('next'), 'data-more-overview')),
-    notif: () => moreList(times.map(([key, title, fallback]) => entry(title,
-      `<input type="time" class="more-setting-control" data-more-setting="${key}" value="${safeTime(current()[key]) ? current()[key] : fallback}">`)).join(''))
-      + moreList(notifications.map(([key, title]) => select(title, key, modes, current()[key] || (['notifyShower', 'notifyEnglish'].includes(key) ? 'digest' : 'timed'))).join('')),
-    bot: () => moreList(statusRow('bot', 'Telegram', isTelegram() ? 'Подключён' : 'Настройки бота доступны в Telegram')
-      + select('Контекст диалога', 'context', [5, 10, 20].map(value => [value, String(value)]), current().context || 10) + calendar()),
+    home: () => moreList(choice('Открывать первым', 'startPage', starts, current().startPage || 'today'))
+      + '<div class="sylab">Блоки обзора</div>'
+      + moreList(onOff('Ближайшие события и билеты', 'next', !current().overviewHidden?.includes('next'), 'data-more-overview')),
+    notif: () => moreList(statusRow('sun', 'Утренняя сводка', 'План на день', timeControl(...times[0]))
+      + statusRow('moon', 'Вечерний разбор', 'Разобрать входящие', timeControl(...times[1])))
+      + moreList(stLine('Тихие часы', `<span class="glow-setting-times">${timeControl(...times[2])}<span aria-hidden="true">–</span>${timeControl(...times[3])}</span>`))
+      + '<div class="sylab">Напоминания</div>' + moreList(notifications.map(([key, title]) =>
+        choice(title, key, modes, current()[key] || (['notifyShower', 'notifyEnglish'].includes(key) ? 'digest' : 'timed'))).join('')),
+    bot: () => moreList(statusRow('bot', 'Telegram', '', isTelegram() ? stOk('Подключён') : ''))
+      + moreList(choice('Контекст диалога', 'context', [5, 10, 20].map(value => [value, String(value)]), current().context || 10))
+      + moreList(calendar()),
     phone: phoneSettings,
     links: () => moreList(statusRow('globe', 'Расширение Chrome', 'Слова и видео для «Английского»', button('browser', 'Подключения'))
       + statusRow('desktop', 'Агент ПК', pc.status(), button('pc', 'Открыть')) + calendar()),
@@ -108,11 +123,12 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
       const left = quota?.left != null && Number.isFinite(Number(quota.left)) ? Number(quota.left) : null;
       return (left == null ? moreEmpty('Баланс OpenRouter недоступен')
         : `<div class="glass stai"><small>Баланс OpenRouter</small><b>${label(new Intl.NumberFormat('ru', {style:'currency',currency:'USD'}).format(left))}</b></div>`)
-        + moreList(onOff('Ввод без ИИ', 'manualOnly', current().manualOnly));
+        + moreList(statusRow('fn', 'Ввод без ИИ', current().manualOnly ? 'Ассистент открывает обычные формы' : 'Ассистент разбирает текст',
+          switchControl('Ввод без ИИ', 'manualOnly', current().manualOnly, 'data-more-setting')));
     },
     sec: () => moreList(statusRow('face', 'Биометрия', window.SorokaNative?.vaultBiometricState ? 'Доступ к хранилищу на телефоне' : 'Доступна в приложении на телефоне',
       window.SorokaNative?.vaultBiometricState ? button('biometric', 'Настроить') : '')
-      + select('Блокировать при бездействии', 'timeout', [1, 5, 15].map(value => [value, value + ' мин']), secure.timeout, 'data-more-security')
+      + choice('Автоблокировка', 'timeout', [1, 5, 15].map(value => [value, value + ' мин']), secure.timeout)
       + statusRow('lock', 'Мастер-пароль', 'Для документов и паролей', button('master', 'Сменить'))
       + statusRow('key', 'Пароли', 'Зашифрованное хранилище', button('vault', 'Открыть'))),
     data: () => moreList(statusRow('data', 'Экспорт JSON', 'Записи и настройки Flow', button('export', 'Скачать'))
@@ -284,14 +300,34 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
     choice?.click();
   }
   bindSetp = screen => {
+    const syncSelection = () => {
+      for (const button of $$('[data-sseg] button, [data-stpal]', screen)) {
+        button.setAttribute('aria-pressed', button.classList.contains('on'));
+      }
+    };
+    syncSelection();
     bindSyBits(screen, (button, on) => {
       if (button.dataset.stsw === 'snd') applyAppearance('snd', on ? '1' : '0');
-    }, (key, value) => { if (appearanceGroups.includes(key)) applyAppearance(key, value); });
+    }, async (key, value) => {
+      syncSelection();
+      if (appearanceGroups.includes(key)) {
+        applyAppearance(key, value);
+      } else if (key === 'timeout') {
+        secure.setTimeoutMinutes(Number(value));
+      } else {
+        const group = $(`[data-sseg="${CSS.escape(key)}"]`, screen);
+        const restoreFocus = group?.contains(document.activeElement);
+        for (const button of $$('button', group)) button.disabled = true;
+        if (!await settingsChange(key, key === 'context' ? Number(value) : value)) repaintMore('setp');
+        if (curId() === 'setp' && restoreFocus && document.activeElement === document.body) {
+          $(`[data-sseg="${CSS.escape(key)}"] button.on`, screen)?.focus({ preventScroll: true });
+        }
+      }
+    });
     screen.onchange = async event => {
       const input = event.target;
-      const { glowPhone, moreSetting, moreOverview, moreSecurity } = input.dataset;
+      const { glowPhone, moreSetting, moreOverview } = input.dataset;
       if (glowPhone) phoneSet(glowPhone, Number(input.checked));
-      if (moreSecurity === 'timeout') secure.setTimeoutMinutes(Number(input.value));
       if (moreOverview === 'next') {
         input.disabled = true;
         const ok = await write(next => {
@@ -310,7 +346,13 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
     screen.onclick = event => {
       const control = event.target.closest('[data-more-setting-action], [data-stpal], [data-glow-phone-action]');
       if (!control) return;
-      if (control.dataset.stpal) { applyAppearance('pal', control.dataset.stpal); repaintMore('setp'); return; }
+      if (control.dataset.stpal) {
+        applyAppearance('pal', control.dataset.stpal);
+        for (const swatch of $$('[data-stpal]', screen)) swatch.classList.toggle('on', swatch === control);
+        syncSelection();
+        sfx('tick');
+        return;
+      }
       if (control.dataset.glowPhoneAction) { phoneAction(control.dataset.glowPhoneAction); return; }
       const action = control.dataset.moreSettingAction;
       if (['pc', 'vault'].includes(action)) go(action);
@@ -347,6 +389,40 @@ export function connectMoreSettings({ snapshot, write, refresh, hasPending, retr
     ? `.screen.on:not(${practiceScreens.map(id => `[data-s="${id}"]`).join(',')})`
     : '.screen.on';
   style.textContent = `
+    .screen[data-s="setp"] { container-type:inline-size; }
+    .screen[data-s="setp"] .syseg { min-width:0; max-width:100%; }
+    .screen[data-s="setp"] .syseg button { min-width:0; min-height:36px; padding-inline:7px; white-space:nowrap; }
+    .screen[data-s="setp"] .syrow > span:first-child { min-width:min-content; }
+    .screen[data-s="setp"] .syset > :nth-child(2) { overflow-wrap:anywhere; }
+    .screen[data-s="settings"] .stv2 { min-width:0; max-width:100%; white-space:normal; text-align:right; }
+    .screen[data-s="settings"] .stv2 svg { flex:none; }
+    .screen[data-s="setp"] .syset, .screen[data-s="settings"] .syset { grid-template-columns:40px minmax(0,1fr) auto; }
+    .screen[data-s="setp"] .stpal { row-gap:9px; }
+    .glow-setting-times { display:flex; align-items:center; gap:5px; }
+    .glow-setting-time.more-setting-control { max-width:none; min-height:42px; min-width:0; padding:3px 7px; border-radius:13px;
+      background:#ffffff0d; box-shadow:inset 0 0 0 1px #ffffff17; color:var(--text); color-scheme:dark; font-variant-numeric:tabular-nums; }
+    .glow-setting-switch { position:relative; width:48px; height:44px; flex:none; display:grid; align-items:center; }
+    .glow-setting-switch input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .glow-setting-switch i { position:relative; height:28px; border-radius:14px; pointer-events:none;
+      background:#ffffff14; box-shadow:inset 0 0 0 1px #ffffff1a; transition:background .35s,box-shadow .35s; }
+    .glow-setting-switch i::after { content:""; position:absolute; inset:3px auto auto 3px; width:22px; height:22px; border-radius:50%;
+      background:linear-gradient(180deg,#fff,#d6d6e2); box-shadow:0 2px 6px #0007; transition:transform .4s cubic-bezier(.2,.9,.3,1.25); }
+    .glow-setting-switch input:checked + i { background:linear-gradient(90deg,color-mix(in srgb,var(--a2) 75%,transparent),var(--a3));
+      box-shadow:inset 0 1px 0 #ffffff4d,0 0 16px color-mix(in srgb,var(--a3) 45%,transparent); }
+    .glow-setting-switch input:checked + i::after { transform:translateX(20px); }
+    .glow-setting-switch input:focus-visible + i { outline:2px solid var(--a4); outline-offset:3px; }
+    .glow-setting-switch input:disabled + i { opacity:.58; }
+    .screen[data-s="setp"] .syrow:has(.syseg,.glow-setting-times) { flex-wrap:wrap; gap:6px; }
+    .screen[data-s="setp"] [data-sseg^="notify"] { flex:1 0 100%; }
+    @container (max-width:385px) {
+      .screen[data-s="setp"] .syrow:has(.syseg:not([data-sseg="motion"],[data-sseg="context"]),.glow-setting-times) { flex-wrap:wrap; gap:6px; }
+      .screen[data-s="setp"] .syrow:has(.syseg:not([data-sseg="motion"],[data-sseg="context"])) .syseg { flex:1 0 100%; }
+    }
+    @container (max-width:380px) {
+      .screen[data-s="setp"] [data-sseg="startPage"] { flex:1 0 100%; grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-flow:row; gap:4px; }
+      .screen[data-s="setp"] [data-sseg="startPage"] .lamp { display:none; }
+      .screen[data-s="setp"] [data-sseg="startPage"] button.on { background:linear-gradient(170deg,#ffffff24,#ffffff0b 70%,color-mix(in srgb,var(--a3) 30%,transparent)); box-shadow:inset 0 1px 0 #ffffff26; }
+    }
     .glow-hide-near .screen[data-s="plan"] :is(.near,.tix) { display:none; }
     [data-glow-density="compact"] ${densityScreen} :is(.rw,.trow,.arw) { padding-block:8px; }
     [data-glow-density="spacious"] ${densityScreen} :is(.rw,.trow,.arw) { padding-block:15px; }
