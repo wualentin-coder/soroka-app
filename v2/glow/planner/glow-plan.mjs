@@ -34,6 +34,7 @@ let agendaTimer = 0;
 let pendingWriteKey = null;
 let booting = root.dataset.glowRelease === 'true';
 let showingCachedPlan = false;
+const practiceRoutes = new Set(['practice', 'sport', 'english', 'piano']);
 
 const demoBindBody = bindBody;
 const demoBindTaskList = bindTaskList;
@@ -636,8 +637,19 @@ try {
   const originalPlan = R.plan;
   R.plan = () => (showingCachedPlan ? '<div class="sylab" role="status" data-plan-offline>Без сети · План для просмотра</div>' : '') + originalPlan();
   const navigate = go;
+  let modules;
+  let practiceReady = false;
+  let navigationSequence = 0;
   go = id => {
+    const request = ++navigationSequence;
     if (showingCachedPlan && id !== 'plan' && id !== 'tasks') { toast('Раздел доступен при подключении'); return; }
+    if (booting === false && root.dataset.glowRelease === 'true' && practiceRoutes.has(id) && !practiceReady) {
+      return loadOnlineModules().then(() => {
+        if (request !== navigationSequence || showingCachedPlan) return;
+        if (practiceReady) navigate(id);
+        else toast('Не удалось открыть Занятия');
+      });
+    }
     return navigate(id);
   };
   connectNoteWrites(write, id => runtime.resolveId(id));
@@ -683,7 +695,8 @@ try {
           date: dateDistance(record.due) === 0 ? 'Сегодня' : dateDistance(record.due) === 1 ? 'Завтра' : record.due.slice(8) + '.' + record.due.slice(5, 7) })),
     });
   }
-  const assistantReady = root.dataset.glowRelease === 'true' ? connectAssistant().catch(error => {
+  const release = root.dataset.glowRelease === 'true';
+  const assistantReady = release ? connectAssistant().catch(error => {
     console.warn('Ассистент Glow не загрузился', error);
   }) : undefined;
 
@@ -701,20 +714,29 @@ try {
         ]);
         connectPrototypeSport();
         connectGlowPractice({ prototypeSport: true });
-
       }
     }
-    connectRender();
+    practiceReady = true;
   }
-  let modules;
   const loadOnlineModules = () => modules ??= connectOnlineModules().catch(() => { modules = null; });
   await runtime.load();
-  if (!showingCachedPlan) await loadOnlineModules();
+  const params = new URLSearchParams(location.search);
+  if (!showingCachedPlan) {
+    connectRender();
+    if (!release || practiceRoutes.has(params.get('page'))) {
+      await loadOnlineModules();
+      if (release && !practiceReady) throw Error('glow_practice_unavailable');
+    }
+  }
   window.addEventListener('online', () => {
     if (!showingCachedPlan) return;
-    void runtime.load().then(() => { if (!showingCachedPlan) return loadOnlineModules(); }).catch(() => {});
+    void runtime.load().then(() => {
+      if (showingCachedPlan) return;
+      connectRender();
+      return loadOnlineModules();
+    }).catch(() => {});
   });
-  if (root.dataset.glowRelease === 'true') {
+  if (release) {
     window.sorokaOpenRef = openRef;
     window.sorokaOpenNote = id => openRef(id);
     window.sorokaCreateNote = () => { openSavedNote(); return true; };
@@ -723,11 +745,12 @@ try {
     window.addEventListener('soroka-shared', openAndroidShare);
     void openAndroidShare();
   }
-  await assistantReady;
+  if (params.get('assistant') === '1') await assistantReady;
   openInitialRoute();
   booting = false;
   root.dataset.glowPlan = 'ready';
-  assistant?.ready();
+  void assistantReady?.then(() => assistant?.ready());
+  if (!showingCachedPlan) void loadOnlineModules();
 } catch (error) {
   root.dataset.glowPlan = 'error';
   if (window.SorokaAndroid?.assistantPopup?.() !== true) {

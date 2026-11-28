@@ -21,20 +21,47 @@
       html[data-glow-release]:not([data-glow-plan="ready"]) #phone { visibility: hidden; }
       .glow-release-status { position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: min(320px, 90vw); text-align: center; }
       .glow-release-status a { color: inherit; }
-      .glow-boot-ring {
-        display: block; width: 44px; height: 44px; margin: auto;
-        color: var(--a4, #ffd078);
-        filter: drop-shadow(0 0 8px color-mix(in srgb, var(--a3, #ff9635) 72%, transparent));
+      .glow-release-status:has(.glow-boot-mark) {
+        inset: 0; transform: none; width: auto; display: grid; place-items: center;
+        overflow: hidden; isolation: isolate;
+        background:
+          radial-gradient(ellipse 38% 23% at 50% 51%, color-mix(in srgb, var(--a3) 21%, transparent), transparent 100%),
+          radial-gradient(ellipse 65% 35% at 26% 37%, color-mix(in srgb, var(--a1) 26%, transparent), transparent 100%),
+          radial-gradient(ellipse 55% 35% at 68% 65%, color-mix(in srgb, var(--a2) 13%, transparent), transparent 100%),
+          var(--ink);
       }
-      .glow-boot-ring circle { fill: none; stroke: currentColor; stroke-width: 2; }
-      .glow-boot-ring circle:first-child { opacity: .17; }
-      .glow-boot-ring circle:last-child {
-        stroke-linecap: round; stroke-dasharray: 28 100;
-        transform-origin: center; animation: glow-boot-spin .95s linear infinite;
+      .glow-release-status:has(.glow-boot-mark)::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        opacity: var(--grain); mix-blend-mode: soft-light;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
       }
-      @keyframes glow-boot-spin { to { transform: rotate(1turn); } }
+      .glow-boot-mark { position: relative; width: min(176px, 52vw); aspect-ratio: 1; overflow: visible; }
+      .glow-boot-star {
+        color: var(--a4); filter: drop-shadow(0 0 11px var(--a3));
+        animation: glow-boot-arrive 520ms var(--ease) both;
+      }
+      .glow-boot-trail {
+        transform-origin: center; filter: blur(4px); fill: var(--a3); opacity: 0;
+        animation: glow-boot-trail 480ms var(--ease) both;
+      }
+      .glow-boot-satellites {
+        transform-origin: center; fill: var(--a4); opacity: .58;
+        animation: glow-boot-breathe 3.2s ease-in-out 520ms infinite alternate;
+      }
+      @keyframes glow-boot-arrive {
+        from { opacity: .2; transform: translate(-14px, 9px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes glow-boot-trail {
+        0% { opacity: .54; transform: translate(-22px, 11px) rotate(-13deg) scale(1.6, .55); }
+        72%, 100% { opacity: 0; transform: none; }
+      }
+      @keyframes glow-boot-breathe { to { opacity: .85; transform: scale(1.045); } }
+      .glow-release-status[data-motion="calm"] :is(.glow-boot-star, .glow-boot-trail, .glow-boot-satellites) {
+        animation: none;
+      }
       @media (prefers-reduced-motion: reduce) {
-        .glow-boot-ring circle:last-child { animation: none; }
+        .glow-release-status :is(.glow-boot-star, .glow-boot-trail, .glow-boot-satellites) { animation: none; }
       }
     `;
     document.head.append(releaseStyle);
@@ -46,7 +73,24 @@
       status.className = 'glow-release-status';
       status.setAttribute('role', 'status');
       status.setAttribute('aria-label', 'Загружаем Flow');
-      status.innerHTML = '<svg class="glow-boot-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="16"/><circle cx="22" cy="22" r="16" pathLength="100"/></svg>';
+      status.dataset.pal = document.getElementById('phone')?.dataset.pal || 'ember';
+      try {
+        if (localStorage.getItem('flow-glow-motion-v1') === 'calm') status.dataset.motion = 'calm';
+      } catch {}
+      status.innerHTML = `<svg class="glow-boot-mark" viewBox="0 0 160 160" aria-hidden="true">
+        <defs>
+          <path id="glow-boot-shape" d="M50 2C53 36 64 47 98 50C64 53 53 64 50 98C47 64 36 53 2 50C36 47 47 36 50 2Z"/>
+          <linearGradient id="glow-boot-light" x1="14%" y1="1%" x2="76%" y2="100%">
+            <stop offset="29%" stop-color="var(--text)"/><stop offset="76%" stop-color="var(--a4)"/><stop offset="100%" stop-color="var(--a3)"/>
+          </linearGradient>
+        </defs>
+        <g class="glow-boot-trail"><use href="#glow-boot-shape" transform="translate(45 45) scale(.70)"/></g>
+        <g class="glow-boot-satellites">
+          <use href="#glow-boot-shape" transform="translate(113 38) scale(.16)"/>
+          <use href="#glow-boot-shape" transform="translate(36 108) scale(.092)"/>
+        </g>
+        <g class="glow-boot-star"><use href="#glow-boot-shape" transform="translate(45 45) scale(.70)" fill="url(#glow-boot-light)"/></g>
+      </svg>`;
       document.body.append(status);
     }
     import(moduleURL.href).catch(() => {
